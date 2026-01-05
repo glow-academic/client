@@ -430,20 +430,37 @@ async def transaction(
 
 
 # Import v4 socket handlers to register decorators
-from app.socket.v4.agents.document.tools.title.call import document_tool_title_internal  # noqa: F401
-from app.socket.v4.agents.hint.generate import simulation_hints_generate_internal  # noqa: F401
-from app.socket.v4.agents.image.complete import image_generation_complete_internal  # noqa: F401
+from app.socket.v4.agents.document.tools.title.call import (
+    document_tool_title_internal,  # noqa: F401
+)
+from app.socket.v4.agents.hint.generate import (
+    simulation_hints_generate_internal,  # noqa: F401
+)
+from app.socket.v4.agents.image.complete import (
+    image_generation_complete_internal,  # noqa: F401
+)
 from app.socket.v4.agents.image.generate import generate_image  # noqa: F401
-from app.socket.v4.agents.rubric.tools.title.call import rubric_tool_title_internal  # noqa: F401
-from app.socket.v4.agents.scenario.tools.document.call import scenario_tool_document  # noqa: F401
-from app.socket.v4.agents.scenario.tools.image.call import scenario_tool_image  # noqa: F401
-from app.socket.v4.agents.scenario.tools.objective.call import scenario_tool_objectives  # noqa: F401
-from app.socket.v4.agents.scenario.tools.question.call import scenario_tool_questions  # noqa: F401
-from app.socket.v4.agents.scenario.tools.statement.call import (
-    scenario_tool_problem_statement_internal,
-)  # noqa: F401
-from app.socket.v4.agents.scenario.tools.title.call import scenario_tool_title_internal  # noqa: F401
-from app.socket.v4.agents.scenario.tools.video.call import scenario_tool_video  # noqa: F401
+from app.socket.v4.agents.rubric.tools.title.call import (
+    rubric_tool_title_internal,  # noqa: F401
+)
+from app.socket.v4.agents.scenario.tools.document.call import (
+    scenario_tool_document,  # noqa: F401
+)
+from app.socket.v4.agents.scenario.tools.image.call import (
+    scenario_tool_image,  # noqa: F401
+)
+from app.socket.v4.agents.scenario.tools.objective.call import (
+    scenario_tool_objectives,  # noqa: F401
+)
+from app.socket.v4.agents.scenario.tools.question.call import (
+    scenario_tool_questions,  # noqa: F401
+)
+from app.socket.v4.agents.scenario.tools.title.call import (
+    scenario_tool_title_internal,  # noqa: F401
+)
+from app.socket.v4.agents.scenario.tools.video.call import (
+    scenario_tool_video,  # noqa: F401
+)
 from app.socket.v4.log import log_run  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
@@ -594,8 +611,9 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process request and log to database."""
-        from app.infra.v4.metrics.collector import record_error, record_request
         from utils.logging.db_logger import get_logger, set_profile_id
+
+        from app.infra.v4.metrics.collector import record_error, record_request
 
         logger = get_logger(__name__)
         start_time = time.perf_counter()
@@ -674,8 +692,9 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
             # Log activity to database (fire and forget - don't block response)
             try:
-                from app.infra.v4.activity.logger import log_activity
                 from utils.logging.db_logger import profile_id_context
+
+                from app.infra.v4.activity.logger import log_activity
 
                 # Get resolved profile_id for activity logging
                 resolved_profile_id = profile_id_context.get(None)
@@ -815,8 +834,9 @@ async def init_system() -> JSONResponse:
     Performs Keycloak sync to ensure identity providers are configured.
     No authentication required - internal service-to-service call.
     """
-    from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
     from utils.logging.db_logger import get_logger
+
+    from app.infra.v4.auth.keycloak_sync import perform_keycloak_sync
 
     logger = get_logger("app.main")
 

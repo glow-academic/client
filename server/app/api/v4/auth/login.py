@@ -4,8 +4,7 @@ from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends
-from fastapi import Request
+from fastapi import APIRouter, Depends, Request
 from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.audit import audit_activity

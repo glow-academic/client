@@ -13,17 +13,15 @@ from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.debug.debug_info import DebugContext
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_client, emit_to_internal
-from app.main import UPLOAD_FOLDER, get_internal_sio, sio
+from app.main import UPLOAD_FOLDER, get_internal_sio
 from app.sql.types import (
     CreateModelRunSqlParams,
     CreateModelRunSqlRow,
     GetAudioGradingRunContextSqlParams,
     GetAudioGradingRunContextSqlRow,
     GetMessagesWithAudioSqlParams,
-    GetMessagesWithAudioSqlRow,
 )
 
 internal_sio = get_internal_sio()

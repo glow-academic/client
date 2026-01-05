@@ -24,8 +24,8 @@ async def test_simulation_next_success(
 
     # Create attempt
     from tests.integration.socket.v4.helpers import (
-        get_simulation_by_active,
         create_test_attempt,
+        get_simulation_by_active,
     )
 
     simulation_id = await get_simulation_by_active(db)

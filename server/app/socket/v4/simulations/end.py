@@ -1,17 +1,11 @@
 """Handler for simulation_text_end WebSocket event."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.sql_helper import load_sql, execute_sql_typed
-from typing import cast
-
-from app.sql.types import (
-    GetSimulationRunContextSqlParams,
-    GetSimulationRunContextSqlRow,
-)
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -19,6 +13,10 @@ from app.main import get_internal_sio, sio
 
 # Import chat creation function from start.py
 from app.socket.v4.simulations.start import simulation_chat_create_impl
+from app.sql.types import (
+    GetSimulationRunContextSqlParams,
+    GetSimulationRunContextSqlRow,
+)
 
 internal_sio = get_internal_sio()
 
@@ -740,7 +738,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                         endpoint="/socket/v4/simulations/text/end",
                         error=False,
                     )
-                except Exception as log_error:
+                except Exception:
                     pass
     except Exception as e:
         await simulation_text_end_error(
@@ -759,7 +757,7 @@ async def _end_simulation_impl(sid: str, data: EndSimulationPayload) -> None:
                 endpoint="/socket/v4/simulations/text/end",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 
@@ -786,7 +784,7 @@ async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/simulations/text/end",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
     except Exception as e:
         await simulation_text_end_error(
@@ -805,7 +803,7 @@ async def simulation_text_end(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/simulations/text/end",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

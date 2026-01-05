@@ -2,10 +2,15 @@
 
 import asyncio
 import uuid
-from pathlib import Path
 from typing import Any, cast
 
 from agents import Runner, trace
+from fastapi import APIRouter
+from openai import OpenAI
+from pydantic import BaseModel, ValidationError
+from utils.auth.decrypt_api_key import decrypt_api_key
+from utils.sql_helper import execute_sql_typed, load_sql
+
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.debug.debug_info import DebugContext
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -15,11 +20,6 @@ from app.sql.types import (
     GetAudioRunContextAndCreateRunSqlParams,
     GetAudioRunContextAndCreateRunSqlRow,
 )
-from fastapi import APIRouter
-from openai import OpenAI
-from pydantic import BaseModel, ValidationError
-from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 
@@ -171,7 +171,7 @@ async def _audio_generate_impl(sid: str, data: GenerateAudioPayload) -> None:
                     AudioGenerationErrorPayload(
                         success=False,
                         message=(
-                            f"No audio agent configured. "
+                            "No audio agent configured. "
                             "Please configure an audio agent in system settings."
                         ),
                         upload_id=str(upload_id) if upload_id else None,

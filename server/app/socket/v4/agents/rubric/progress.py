@@ -1,77 +1,128 @@
-"""Handler for rubric_progress WebSocket event - ONE EVENT PER FILE."""
+"""Handler for rubric_progress WebSocket event - dispatches to tool-specific handlers."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
-from utils.sql_helper import execute_sql_typed
+from pydantic import BaseModel
 
-from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
-from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio
-from app.sql.types import (
-    RubricGenerationErrorSqlRow,
-    RubricGenerationProgressApiRequest,
-    RubricGenerationProgressSqlParams,
-    RubricGenerationProgressSqlRow,
-)
 
 internal_sio = get_internal_sio()
+
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/rubric/rubric_generation_progress_complete.sql"
+
+class RubricProgressPayload(BaseModel):
+    """Generic rubric progress event - dispatches to tool-specific handlers."""
+
+    sid: str
+    type: str  # "tool_call_start" | "tool_call_progress"
+    rubric_id: str | None = None
+    run_id: str
+    tool_name: str
+    tool_call_id: str
+    call_id: str | None = None
+    arguments_raw: str
+
+
+class RubricProgressErrorPayload(BaseModel):
+    """Error response for rubric progress."""
+
+    success: bool
+    message: str
 
 
 async def _rubric_progress_impl(
     sid: str,
-    data: RubricGenerationProgressApiRequest,
+    data: RubricProgressPayload,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Internal implementation using typed SQL execution."""
-    try:
-        async with get_db_connection() as conn:
-            params = RubricGenerationProgressSqlParams(
-                **data.model_dump(),
-                profile_id=profile_id,  # From sid lookup
-                group_id=group_id,
+    """Dispatch to tool-specific progress handler."""
+    # Route to appropriate tool handler based on tool_name
+    if data.type == "tool_call_start":
+        # Emit tool-specific start event
+        if data.tool_name == "standard_description":
+            await internal_sio.emit(
+                "rubric_standard_description_progress",
+                {
+                    "sid": data.sid,
+                    "type": "tool_call_start",
+                    "rubric_id": data.rubric_id,
+                    "run_id": data.run_id,
+                    "tool_call_id": data.tool_call_id,
+                    "call_id": data.call_id,
+                    "tool_name": data.tool_name,
+                    "arguments_raw": data.arguments_raw,
+                },
             )
-            result = cast(
-                RubricGenerationProgressSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
+        elif data.tool_name == "create_title":
+            await internal_sio.emit(
+                "rubric_title_progress",
+                {
+                    "sid": data.sid,
+                    "type": "tool_call_start",
+                    "rubric_id": data.rubric_id,
+                    "run_id": data.run_id,
+                    "tool_call_id": data.tool_call_id,
+                    "call_id": data.call_id,
+                    "tool_name": data.tool_name,
+                    "arguments_raw": data.arguments_raw,
+                },
             )
 
-            # Emit progress event to client using typed wrapper
-            await emit_to_client("rubrics_generation_progress", result, room=sid)
-    except RuntimeError:
-        # Pool not initialized - emit error event
-        await emit_to_client(
-            "rubrics_generation_error",
-            RubricGenerationErrorSqlRow(
-                success=False,
-                message="Database connection pool not available",
-            ),
-            room=sid,
-        )
+    elif data.type == "tool_call_progress":
+        # Emit tool-specific progress event
+        if data.tool_name == "standard_description":
+            await internal_sio.emit(
+                "rubric_standard_description_progress",
+                {
+                    "sid": data.sid,
+                    "type": "tool_call_progress",
+                    "rubric_id": data.rubric_id,
+                    "run_id": data.run_id,
+                    "tool_call_id": data.tool_call_id,
+                    "call_id": data.call_id,
+                    "tool_name": data.tool_name,
+                    "arguments_raw": data.arguments_raw,
+                },
+            )
+        elif data.tool_name == "create_title":
+            await internal_sio.emit(
+                "rubric_title_progress",
+                {
+                    "sid": data.sid,
+                    "type": "tool_call_progress",
+                    "rubric_id": data.rubric_id,
+                    "run_id": data.run_id,
+                    "tool_call_id": data.tool_call_id,
+                    "call_id": data.call_id,
+                    "tool_name": data.tool_name,
+                    "arguments_raw": data.arguments_raw,
+                },
+            )
 
 
 @internal_sio.on("rubric_progress")  # type: ignore
 async def rubric_progress_internal(data: dict[str, Any]) -> None:
-    """Handle rubric_progress event from internal bus (server-to-server)."""
-    await handle_internal_event(
-        data=data,
-        request_type=RubricGenerationProgressApiRequest,
-        handler=_rubric_progress_impl,  # type: ignore[arg-type]
-        error_event_name="rubrics_generation_error",
-        error_response_type=RubricGenerationErrorSqlRow,
-    )
+    """Handle rubric_progress event from internal bus."""
+    # Only handle tool-related types
+    if data.get("type") in ("tool_call_start", "tool_call_progress"):
+        await handle_internal_event(
+            data=data,
+            request_type=RubricProgressPayload,
+            handler=_rubric_progress_impl,  # type: ignore[arg-type]
+            error_event_name="rubric_progress_error",
+            error_response_type=RubricProgressErrorPayload,
+        )
 
 
 register_server_endpoint(
     server_router,
-    "/generation_progress",
-    RubricGenerationProgressSqlRow,
-    "Progress update for rubric generation",
+    "/rubric_progress",
+    RubricProgressPayload,
+    "Dispatch rubric progress to tool-specific handlers",
 )

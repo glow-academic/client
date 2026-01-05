@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.documents.helpers import (
     create_document_api,
     delete_document_api,

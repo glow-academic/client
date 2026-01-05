@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.personas.helpers import generate_unique_persona_name
 from server.tests.e2e.personas.ui_flows import create_persona_via_ui
 

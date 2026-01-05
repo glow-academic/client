@@ -28,21 +28,21 @@ from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.utils.schema_helper import create_schema_from_dict, get_template_schema
+from app.utils.schema_helper import create_schema_from_dict
 
 # Types will be auto-generated from SQL introspection
 try:
     from app.sql.types import (
-        GetDocumentRegenerationRunContextAndCreateRunSqlParams,
-        GetDocumentRegenerationRunContextAndCreateRunSqlRow,
-        GetDocumentTemplateContextSqlParams,
-        GetDocumentTemplateContextSqlRow,
         CreateTemplateAndLinkSqlParams,
         CreateTemplateAndLinkSqlRow,
         DocumentGenerationCompleteApiRequest,
         DocumentGenerationErrorApiRequest,
         DocumentGenerationErrorSqlRow,
         DocumentGenerationProgressApiRequest,
+        GetDocumentRegenerationRunContextAndCreateRunSqlParams,
+        GetDocumentRegenerationRunContextAndCreateRunSqlRow,
+        GetDocumentTemplateContextSqlParams,
+        GetDocumentTemplateContextSqlRow,
     )
 except ImportError:
     # Types not generated yet - will be created when SQL files are processed

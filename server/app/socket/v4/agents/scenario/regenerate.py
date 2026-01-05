@@ -28,7 +28,6 @@ from app.sql.types import (
     GetScenarioRegenerationRunContextAndCreateRunSqlParams,
     GetScenarioRegenerationRunContextAndCreateRunSqlRow,
 )
-from app.utils.schema_helper import get_schema_tree
 
 internal_sio = get_internal_sio()
 SQL_PATH = "app/sql/v4/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql"
@@ -739,7 +738,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                     endpoint="/socket/v4/scenarios/regenerate",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
         except RuntimeError:
             await scenario_regeneration_error(
@@ -768,7 +767,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 endpoint="/socket/v4/scenarios/regenerate",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

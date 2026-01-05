@@ -9,8 +9,8 @@ import os
 
 import pytest
 from playwright.sync_api import Page
-
 from server.tests.e2e.auth.helpers import fetch_profile_context
+
 from server.tests.e2e.conftest import SECRET
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"

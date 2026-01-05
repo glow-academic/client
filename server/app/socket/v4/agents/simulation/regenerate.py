@@ -6,7 +6,8 @@ from typing import Any, cast
 from agents import Runner, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from jinja2 import Template
+from pydantic import Field
 from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.agents.generic_agent import GenericAgent
@@ -19,14 +20,13 @@ from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.sql.types import (
+    GetDeveloperInstructionSqlParams,
+    GetDeveloperInstructionSqlRow,
     GetSimulationRegenerationRunContextAndCreateRunApiRequest,
     GetSimulationRegenerationRunContextAndCreateRunSqlParams,
     GetSimulationRegenerationRunContextAndCreateRunSqlRow,
-    GetDeveloperInstructionSqlParams,
-    GetDeveloperInstructionSqlRow,
     LinkDeveloperMessageToRunSqlParams,
 )
-from jinja2 import Template
 
 client_router = APIRouter()
 server_router = APIRouter()
@@ -353,8 +353,9 @@ async def _simulation_regenerate_impl(
                 # Get developer instruction template from database
                 developer_message_content: str | None = None
                 try:
-                    from utils.sql_helper import execute_sql_typed
                     from typing import cast
+
+                    from utils.sql_helper import execute_sql_typed
 
                     dev_instruction_params = GetDeveloperInstructionSqlParams(
                         instruction_type="persona",

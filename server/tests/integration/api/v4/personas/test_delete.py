@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/personas/delete endpoint."""
 
-from uuid import UUID
 
 import asyncpg  # type: ignore
 import httpx
@@ -103,7 +102,6 @@ async def test_delete_persona_in_use(
     scenario_id = typed_scenario.scenario_id
 
     # Link persona to scenario using SQL file
-    from tests.sql.types import CreateScenarioPersonaLinkV4SqlParams
 
     await execute_sql_typed(
         conn=db,

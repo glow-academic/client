@@ -10,7 +10,7 @@ from utils.sql_helper import load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.typed_emit import emit_to_internal
-from app.main import get_internal_sio, get_pool, sio
+from app.main import get_internal_sio, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -259,7 +259,7 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
                     endpoint="/socket/v4/benchmark/end",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
     except Exception as e:
         await benchmark_end_error(

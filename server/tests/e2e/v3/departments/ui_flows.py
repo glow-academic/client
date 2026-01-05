@@ -5,7 +5,6 @@ from __future__ import annotations
 import sys
 
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.departments.helpers import generate_unique_department_name
 
 

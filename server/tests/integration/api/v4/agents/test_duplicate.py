@@ -64,7 +64,6 @@ async def test_duplicate_agent(
     # Create agent prompt link using SQL file
     from tests.sql.types import (
         CreateAgentPromptLinkSqlParams,
-        CreateAgentPromptLinkSqlRow,
     )
 
     await execute_sql_typed(
@@ -86,7 +85,6 @@ async def test_duplicate_agent(
     # Link to department using SQL file
     from tests.sql.types import (
         CreateAgentDepartmentLinkSqlParams,
-        CreateAgentDepartmentLinkSqlRow,
     )
 
     await execute_sql_typed(
@@ -209,7 +207,6 @@ async def test_duplicate_agent_without_departments(
     # Create agent prompt link using SQL file
     from tests.sql.types import (
         CreateAgentPromptLinkSqlParams,
-        CreateAgentPromptLinkSqlRow,
     )
 
     await execute_sql_typed(

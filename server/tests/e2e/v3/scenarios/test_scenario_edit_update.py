@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.scenarios.helpers import (
     create_scenario_api,
     delete_scenario_api,

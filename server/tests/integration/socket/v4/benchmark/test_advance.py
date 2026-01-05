@@ -15,9 +15,9 @@ async def test_benchmark_advance_success(
     """Test successful benchmark_advance event."""
     # Arrange - create attempt and test
     from tests.integration.socket.v4.helpers import (
-        get_eval_by_active,
         create_test_benchmark_attempt,
         create_test_test,
+        get_eval_by_active,
     )
 
     eval_id = await get_eval_by_active(db)

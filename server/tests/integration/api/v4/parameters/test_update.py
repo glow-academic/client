@@ -9,7 +9,6 @@ from tests.sql.types import (
     CreateTestParameterItemSqlRow,
     CreateTestParameterSqlParams,
     CreateTestParameterSqlRow,
-    GetCsDeptIdSqlParams,
     GetCsDeptIdSqlRow,
     GetParameterByIdSqlParams,
     GetParameterByIdSqlRow,

@@ -1,14 +1,15 @@
 """Insert activity record for HTTP requests."""
 
-import asyncpg  # type: ignore
 from typing import cast
+
+import asyncpg  # type: ignore
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.profile_exists import profile_exists
 from app.sql.types import (
     InfrastructureActivityInsertSqlParams,
     InfrastructureActivityInsertSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/infrastructure/infrastructure_activity_insert_complete.sql"
 

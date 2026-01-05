@@ -1,14 +1,13 @@
 """Route tests for POST /api/v4/profile/update endpoint."""
 
+from datetime import UTC, datetime
+
 import asyncpg  # type: ignore
 import httpx
 import pytest
-from datetime import UTC, datetime
-
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateProfileEmailSqlParams,
-    CreateProfileEmailSqlRow,
     CreateTestProfileSqlParams,
     CreateTestProfileSqlRow,
     GetProfileActivityLatestSqlParams,

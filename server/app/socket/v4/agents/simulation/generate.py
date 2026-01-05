@@ -10,8 +10,9 @@ from agents import Runner, function_tool, trace
 from agents.exceptions import OutputGuardrailTripwireTriggered
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
+from jinja2 import Template
 from pydantic import BaseModel, Field
-from utils.sql_helper import execute_sql_typed, load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
@@ -20,17 +21,14 @@ from app.infra.v4.documents.format_document_info import format_document_info
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, get_simulation_tool_calls_dict
 from app.sql.types import (
-    GetSimulationRunContextAndCreateRunSqlParams,
-    GetSimulationRunContextAndCreateRunSqlRow,
-    GetSimulationMessagesSqlParams,
-    GetSimulationMessagesSqlRow,
     GetDeveloperInstructionSqlParams,
     GetDeveloperInstructionSqlRow,
+    GetSimulationMessagesSqlParams,
+    GetSimulationMessagesSqlRow,
+    GetSimulationRunContextAndCreateRunSqlParams,
+    GetSimulationRunContextAndCreateRunSqlRow,
     LinkDeveloperMessageToRunSqlParams,
-    LinkDeveloperMessageToRunSqlRow,
 )
-from app.utils.schema_helper import get_schema_tree
-from jinja2 import Environment, Template
 
 internal_sio = get_internal_sio()
 
@@ -813,8 +811,10 @@ Tool Usage Instructions:
                                                     "type": "tool_call_start",
                                                     "chat_id": chat_id_str,
                                                     "run_id": str(run_id_uuid),
+                                                    "tool_call_id": real_item_id,
                                                     "call_id": call_id or real_item_id,
                                                     "tool_name": tool_name,
+                                                    "arguments_raw": "",
                                                 },
                                             )
 
@@ -1034,7 +1034,7 @@ Tool Usage Instructions:
                 ):
                     raise
                 raise
-            except Exception as stream_error:
+            except Exception:
                 raise
             finally:
                 # Complete any remaining tool calls

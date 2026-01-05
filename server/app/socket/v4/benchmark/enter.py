@@ -9,7 +9,7 @@ from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.main import get_pool, sio
+from app.main import sio
 
 logger = get_logger(__name__)
 
@@ -112,7 +112,7 @@ async def _benchmark_enter_impl(sid: str, data: BenchmarkEnterPayload) -> None:
                         endpoint="/socket/v4/benchmark/enter",
                         error=False,
                     )
-                except Exception as log_error:
+                except Exception:
                     pass
             else:
                 await benchmark_enter_error(

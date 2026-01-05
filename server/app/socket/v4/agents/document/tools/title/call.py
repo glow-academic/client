@@ -5,22 +5,22 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio
-from utils.sql_helper import execute_sql_typed
 
 # Types will be auto-generated from SQL introspection
 try:
     from app.sql.types import (
-        UpdateDocumentNameSqlParams,
-        UpdateDocumentNameSqlRow,
         DocumentTitleToolApiRequest,
         DocumentTitleToolCompleteApiRequest,
         DocumentTitleToolErrorApiRequest,
+        UpdateDocumentNameSqlParams,
+        UpdateDocumentNameSqlRow,
     )
 except ImportError:
     # Types not generated yet - using BaseModel as fallback

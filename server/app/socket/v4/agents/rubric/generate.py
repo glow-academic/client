@@ -1,5 +1,6 @@
 """Handler for rubric_generate WebSocket event."""
 
+import asyncio
 import uuid
 from typing import Any, cast
 
@@ -7,7 +8,7 @@ from agents import Runner, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import Field
-from utils.sql_helper import execute_sql_typed, load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.agents.generic_agent import GenericAgent
@@ -22,7 +23,6 @@ from app.sql.types import (
     GetRubricRunContextAndCreateRunSqlParams,
     GetRubricRunContextAndCreateRunSqlRow,
     IUpdateStandardDescriptionsV4Description,
-    RubricGenerationCompleteApiRequest,
     RubricGenerationErrorApiRequest,
     RubricGenerationErrorSqlRow,
     RubricGenerationProgressApiRequest,
@@ -342,7 +342,12 @@ Generate descriptions for ALL combinations of standard groups and standards."""
             # (get_rubric_run_context_and_create_run.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
 
-            # Run rubric generation with tracing
+            # Track tool calls for this rubric run
+            tool_calls_dict: dict[str, dict[str, Any]] = {}
+            fake_id_to_real_id: dict[str, str] = {}
+            tool_call_counter = 0
+
+            # Run rubric generation with streaming
             # ⚠️ NOTE: trace() function's group_id parameter is the resource ID (rubric_id),
             # not the database group_id. This is for OpenAI implementation compatibility.
             with trace(
@@ -352,16 +357,238 @@ Generate descriptions for ALL combinations of standard groups and standards."""
                 if rubric_id
                 else None,  # Resource ID, not database group_id
             ):
-                run_result = await Runner.run(
+                result_runner = Runner.run_streamed(
                     rubric_agent.agent(),
                     input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
+            # Store the result in active runs for potential cancellation
+            from app.infra.v4.websocket.store_active_run import store_active_run
+
+            await store_active_run(str(rubric_id) if rubric_id else sid, result_runner)
+
+            try:
+                # Process streaming events
+                async for event in result_runner.stream_events():
+                    # Check for raw_response_event and inspect data for tool call deltas
+                    if hasattr(event, "type") and event.type == "raw_response_event":
+                        event_data = getattr(event, "data", None)
+                        if not event_data:
+                            continue
+
+                        event_data_type = (
+                            getattr(event_data, "type", None)
+                            if hasattr(event_data, "type")
+                            else None
+                        )
+
+                        # Handle response.output_item.added to get tool name and item_id
+                        if event_data_type == "response.output_item.added":
+                            item = getattr(event_data, "item", None)
+                            if item:
+                                item_type = (
+                                    getattr(item, "type", None)
+                                    if hasattr(item, "type")
+                                    else None
+                                )
+                                if item_type == "function_call":
+                                    fake_item_id = getattr(item, "id", None)
+                                    tool_name = getattr(item, "name", None)
+                                    call_id = getattr(item, "call_id", None)
+
+                                    if not fake_item_id:
+                                        fake_item_id = getattr(
+                                            event_data, "item_id", None
+                                        )
+
+                                    if call_id:
+                                        real_item_id = call_id
+                                    elif fake_item_id:
+                                        tool_call_counter += 1
+                                        real_item_id = f"rubric_{tool_call_counter}_{uuid.uuid4().hex[:8]}"
+                                    else:
+                                        continue
+
+                                    if tool_name:
+                                        if fake_item_id:
+                                            fake_id_to_real_id[fake_item_id] = (
+                                                real_item_id
+                                            )
+
+                                        if real_item_id not in tool_calls_dict:
+                                            tool_calls_dict[real_item_id] = {
+                                                "name": tool_name,
+                                                "call_id": call_id,
+                                                "fake_id": fake_item_id,
+                                                "arguments_raw": "",
+                                                "completed": False,
+                                            }
+
+                                            # Emit tool call start to progress
+                                            await internal_sio.emit(
+                                                "rubric_progress",
+                                                {
+                                                    "sid": sid,
+                                                    "type": "tool_call_start",
+                                                    "rubric_id": str(rubric_id)
+                                                    if rubric_id
+                                                    else None,
+                                                    "run_id": str(model_run_id),
+                                                    "tool_call_id": real_item_id,
+                                                    "call_id": call_id or real_item_id,
+                                                    "tool_name": tool_name,
+                                                    "arguments_raw": "",
+                                                },
+                                            )
+
+                        # Handle response.function_call_arguments.delta
+                        if event_data_type == "response.function_call_arguments.delta":
+                            fake_item_id = getattr(event_data, "item_id", None)
+                            arguments_delta = getattr(event_data, "delta", None)
+                            call_id = getattr(event_data, "call_id", None)
+
+                            if not arguments_delta:
+                                continue
+
+                            if call_id:
+                                delta_real_item_id = call_id
+                            elif fake_item_id:
+                                delta_real_item_id = fake_id_to_real_id.get(
+                                    fake_item_id
+                                )
+                                if not delta_real_item_id:
+                                    continue
+                            else:
+                                continue
+
+                            tool_call_id = delta_real_item_id
+
+                            if tool_call_id not in tool_calls_dict:
+                                tool_calls_dict[tool_call_id] = {
+                                    "name": None,
+                                    "call_id": call_id,
+                                    "fake_id": fake_item_id,
+                                    "arguments_raw": "",
+                                    "completed": False,
+                                }
+
+                            tool_call_state = tool_calls_dict[tool_call_id]
+
+                            # Update tool name if we have call_id match
+                            if not tool_call_state["name"] and call_id:
+                                for tc_id, tc_state in tool_calls_dict.items():
+                                    if tc_state.get(
+                                        "call_id"
+                                    ) == call_id and tc_state.get("name"):
+                                        tool_call_state["name"] = tc_state["name"]
+                                        break
+
+                            tool_call_state["arguments_raw"] += arguments_delta
+
+                            # Only emit progress if we have a tool name
+                            if tool_call_state["name"]:
+                                # Emit progress event
+                                await internal_sio.emit(
+                                    "rubric_progress",
+                                    {
+                                        "sid": sid,
+                                        "type": "tool_call_progress",
+                                        "rubric_id": str(rubric_id)
+                                        if rubric_id
+                                        else None,
+                                        "run_id": str(model_run_id),
+                                        "tool_call_id": tool_call_id,
+                                        "call_id": call_id or tool_call_id,
+                                        "tool_name": tool_call_state["name"],
+                                        "arguments_raw": tool_call_state[
+                                            "arguments_raw"
+                                        ],
+                                    },
+                                )
+
+                        # Handle tool call completion
+                        if event_data_type == "response.output_item.done":
+                            fake_item_id = getattr(event_data, "item_id", None)
+                            item = getattr(event_data, "item", None)
+                            call_id = None
+                            if item:
+                                call_id = getattr(item, "call_id", None)
+                            if not call_id:
+                                call_id = getattr(event_data, "call_id", None)
+
+                            if call_id:
+                                done_real_item_id = call_id
+                            elif fake_item_id:
+                                done_real_item_id = fake_id_to_real_id.get(fake_item_id)
+                                if not done_real_item_id:
+                                    continue
+                            else:
+                                continue
+
+                            if done_real_item_id in tool_calls_dict:
+                                tool_call_id = done_real_item_id
+                                tool_call_state = tool_calls_dict[tool_call_id]
+
+                                if tool_call_state.get("completed"):
+                                    continue
+
+                                tool_call_state["completed"] = True
+                                tool_name = tool_call_state["name"]
+
+                                # Parse final arguments
+                                final_args = {}
+                                try:
+                                    import json
+
+                                    if tool_call_state["arguments_raw"]:
+                                        final_args = json.loads(
+                                            tool_call_state["arguments_raw"]
+                                        )
+                                except json.JSONDecodeError:
+                                    pass
+
+                                # Emit completion event
+                                await internal_sio.emit(
+                                    "rubric_complete",
+                                    {
+                                        "sid": sid,
+                                        "type": "tool_call_complete",
+                                        "rubric_id": str(rubric_id)
+                                        if rubric_id
+                                        else None,
+                                        "run_id": str(model_run_id),
+                                        "tool_call_id": tool_call_id,
+                                        "call_id": call_id or tool_call_id,
+                                        "tool_name": tool_name,
+                                        "final_content": str(final_args),
+                                        "arguments_raw": tool_call_state[
+                                            "arguments_raw"
+                                        ],
+                                    },
+                                )
+
+                                del tool_calls_dict[tool_call_id]
+
+            except BaseException as stream_error:
+                if isinstance(
+                    stream_error,
+                    (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
+                ):
+                    raise
+                raise
+            except Exception:
+                raise
+            finally:
+                # Clean up active run
+                from app.infra.v4.websocket.remove_active_run import remove_active_run
+
+                await remove_active_run(str(rubric_id) if rubric_id else sid)
+
             # Emit async pricing event (non-blocking)
             # This handles token updates and message logging in background
-            usage = run_result.context_wrapper.usage
-            assistant_output = getattr(run_result, "final_output", None) or ""
+            usage = result_runner.context_wrapper.usage
+            assistant_output = getattr(result_runner, "final_output", None) or ""
             await internal_sio.emit(
                 "log_run",
                 {
@@ -376,17 +603,16 @@ Generate descriptions for ALL combinations of standard groups and standards."""
                 },
             )
 
-            # Emit completion event via internal bus
-            # Note: Individual tool completion events are emitted separately by tool handlers
-            # trace_id comes from groups table via SQL, not passed in payload
-            await emit_to_internal(
+            # Emit run completion event (dispatched by complete.py)
+            await internal_sio.emit(
                 "rubric_complete",
-                RubricGenerationCompleteApiRequest(
-                    rubric_id=rubric_id if rubric_id else None,
-                    message="Rubric generation completed successfully",
-                ),
-                sid=sid,
-                group_id=str(group_id),
+                {
+                    "sid": sid,
+                    "type": "run_complete",
+                    "rubric_id": str(rubric_id) if rubric_id else None,
+                    "run_id": str(model_run_id),
+                    "message": "Rubric generation completed successfully",
+                },
             )
 
             # Log activity

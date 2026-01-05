@@ -6,7 +6,6 @@ import re
 import sys
 
 from playwright.sync_api import Page
-
 from server.tests.e2e.parameters.helpers import generate_unique_parameter_name
 
 

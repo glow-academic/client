@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.cohorts.helpers import (
     delete_cohort_api,
     generate_unique_cohort_name,

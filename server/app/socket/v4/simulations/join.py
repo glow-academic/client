@@ -84,7 +84,7 @@ async def _simulation_join_impl(sid: str, data: SimulationJoinPayload) -> None:
             endpoint="/socket/v4/simulations/join",
             error=False,
         )
-    except Exception as log_error:
+    except Exception:
         pass
 
 
@@ -111,7 +111,7 @@ async def simulation_join(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/simulations/join",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

@@ -16,11 +16,10 @@ async def test_simulation_join_success(
     # Arrange
     # Create scenario
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
-        TestCreateTestScenarioV4SqlParams,
-        TestCreateTestScenarioV4SqlRow,
         TestCreateTestChatV4SqlParams,
-        TestCreateTestChatV4SqlRow,
+        TestCreateTestScenarioV4SqlParams,
     )
 
     scenario_result = await execute_sql_typed(
@@ -65,11 +64,10 @@ async def test_simulation_join_custom_chat_type(
     """Test simulation_join with custom chat_type."""
     # Arrange
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
-        TestCreateTestScenarioV4SqlParams,
-        TestCreateTestScenarioV4SqlRow,
         TestCreateTestChatV4SqlParams,
-        TestCreateTestChatV4SqlRow,
+        TestCreateTestScenarioV4SqlParams,
     )
 
     scenario_result = await execute_sql_typed(

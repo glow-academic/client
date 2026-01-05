@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.agents.helpers import (
     create_agent_api,
     delete_agent_api,

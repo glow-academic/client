@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.leaderboard.helpers import (
     fetch_leaderboard_data,
     wait_for_leaderboard_load,

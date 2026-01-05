@@ -1,6 +1,6 @@
 """Integration tests for app.infra.v4.metrics.snapshot."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import asyncpg
 import pytest
@@ -16,7 +16,7 @@ class TestLogMetricsSnapshot:
     async def test_log_metrics_snapshot_success(self, db: asyncpg.Connection) -> None:
         """Test successful metrics snapshot logging."""
         # Arrange
-        ts = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        ts = datetime.now(UTC).replace(second=0, microsecond=0)
         requests_total = 100
         errors_total = 5
         avg_latency_ms = 50.5
@@ -43,7 +43,7 @@ class TestLogMetricsSnapshot:
     ) -> None:
         """Test metrics snapshot logging with zero values."""
         # Arrange
-        ts = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        ts = datetime.now(UTC).replace(second=0, microsecond=0)
 
         # Act
         await log_metrics_snapshot(

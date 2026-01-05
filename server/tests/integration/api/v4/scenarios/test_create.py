@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/scenarios/create endpoint."""
 
-import uuid
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -66,10 +65,6 @@ async def test_create_scenario_minimal(
     assert typed_scenario.active is True
 
     # Verify self-referencing tree edge was created using SQL file
-    from tests.sql.types import (
-        GetScenarioTreeEdgeV4SqlParams,
-        GetScenarioTreeEdgeV4SqlRow,
-    )
 
     tree_edge_result = await execute_sql_typed(
         conn=db,
@@ -84,10 +79,6 @@ async def test_create_scenario_minimal(
     assert typed_tree_edge.parent_id is not None
 
     # Verify problem statement was created using SQL file
-    from tests.sql.types import (
-        GetScenarioProblemStatementV4SqlParams,
-        GetScenarioProblemStatementV4SqlRow,
-    )
 
     problem_statement_result = await execute_sql_typed(
         conn=db,
@@ -133,10 +124,6 @@ async def test_create_scenario_with_departments(
     data = response.json()
 
     # Verify department link was created using SQL file
-    from tests.sql.types import (
-        GetScenarioDepartmentLinkV4SqlParams,
-        GetScenarioDepartmentLinkV4SqlRow,
-    )
 
     dept_link_result = await execute_sql_typed(
         conn=db,

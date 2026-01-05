@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/scenarios/update endpoint."""
 
-import uuid
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -14,10 +13,10 @@ from tests.sql.types import (
     GetScenarioByIdSqlRow,
     GetScenarioDepartmentLinkV4SqlParams,
     GetScenarioDepartmentLinkV4SqlRow,
-    GetScenarioProblemStatementV4SqlParams,
-    GetScenarioProblemStatementV4SqlRow,
     GetScenarioProblemStatementsV4SqlParams,
     GetScenarioProblemStatementsV4SqlRow,
+    GetScenarioProblemStatementV4SqlParams,
+    GetScenarioProblemStatementV4SqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -31,10 +30,6 @@ async def test_update_scenario(
     await get_superadmin_alias(db)
 
     # Create a scenario first using SQL file
-    from tests.sql.types import (
-        CreateTestScenarioV4SqlParams,
-        CreateTestScenarioV4SqlRow,
-    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -89,10 +84,6 @@ async def test_update_scenario(
     assert typed_scenario.active is False
 
     # Verify new problem statement was created (old one deactivated) using SQL file
-    from tests.sql.types import (
-        GetScenarioProblemStatementsV4SqlParams,
-        GetScenarioProblemStatementsV4SqlRow,
-    )
 
     problem_statements_result = await execute_sql_typed(
         conn=db,
@@ -116,10 +107,6 @@ async def test_update_scenario(
     assert typed_active_ps.problem_statement == "Updated problem statement"
 
     # Verify department link was created using SQL file
-    from tests.sql.types import (
-        GetScenarioDepartmentLinkV4SqlParams,
-        GetScenarioDepartmentLinkV4SqlRow,
-    )
 
     dept_link_result = await execute_sql_typed(
         conn=db,

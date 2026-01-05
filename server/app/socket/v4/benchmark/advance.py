@@ -134,7 +134,7 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                     endpoint="/socket/v4/benchmark/advance",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
     except Exception as e:
         await benchmark_advance_error(
@@ -151,7 +151,7 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
                 endpoint="/socket/v4/benchmark/advance",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

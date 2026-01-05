@@ -10,9 +10,7 @@ from tests.sql.types import (
     CreateTestParameterSqlParams,
     CreateTestParameterSqlRow,
     CreateTestScenarioWithParameterItemSqlParams,
-    CreateTestScenarioWithParameterItemSqlRow,
     GetParameterByIdSqlParams,
-    GetParameterByIdSqlRow,
     GetParameterItemsSqlParams,
     GetParameterItemsSqlRow,
 )

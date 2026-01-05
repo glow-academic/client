@@ -6,7 +6,6 @@ import time
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.staff.helpers import (
     create_staff_api,
     delete_staff_api,

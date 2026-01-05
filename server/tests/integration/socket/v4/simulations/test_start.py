@@ -42,9 +42,9 @@ async def test_start_simulation_success(
 
     # Verify attempt was created in database
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
         TestGetAttemptByIdV4SqlParams,
-        TestGetAttemptByIdV4SqlRow,
     )
 
     attempt_id = started_events[0]["attempt_id"]

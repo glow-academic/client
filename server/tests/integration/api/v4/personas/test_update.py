@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/personas/update endpoint."""
 
-from uuid import UUID
 
 import asyncpg  # type: ignore
 import httpx
@@ -9,10 +8,9 @@ from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateTestPersonaSqlParams,
     CreateTestPersonaSqlRow,
+    GetFirstDepartmentSqlRow,
     GetPersonaByIdSqlParams,
     GetPersonaByIdSqlRow,
-    GetFirstDepartmentSqlParams,
-    GetFirstDepartmentSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 

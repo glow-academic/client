@@ -1,6 +1,6 @@
 """Integration tests for app.infra.v4.metrics.health."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import asyncpg
 import pytest
@@ -16,7 +16,7 @@ class TestLogServiceHealth:
     async def test_log_service_health_success(self, db: asyncpg.Connection) -> None:
         """Test successful service health logging."""
         # Arrange
-        ts = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        ts = datetime.now(UTC).replace(second=0, microsecond=0)
         service = "database"
         ok = True
         latency_ms = 10.5
@@ -38,7 +38,7 @@ class TestLogServiceHealth:
     async def test_log_service_health_error(self, db: asyncpg.Connection) -> None:
         """Test service health logging with error."""
         # Arrange
-        ts = datetime.now(timezone.utc).replace(second=0, microsecond=0)
+        ts = datetime.now(UTC).replace(second=0, microsecond=0)
         service = "redis"
         ok = False
         latency_ms = 100.0

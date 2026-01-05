@@ -1,6 +1,6 @@
 """Unit tests for app.infra.v4.agents.generic_agent."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from app.infra.v4.agents.generic_agent import GenericAgent
 

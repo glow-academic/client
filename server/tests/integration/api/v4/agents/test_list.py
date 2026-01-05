@@ -201,7 +201,6 @@ async def test_list_agents_can_delete_default(
 
     from tests.sql.types import (
         CreateAgentDepartmentLinkSqlParams,
-        CreateAgentDepartmentLinkSqlRow,
     )
 
     await execute_sql_typed(
@@ -239,8 +238,8 @@ async def test_list_agents_can_delete_linked(
     from tests.sql.types import (
         CreateTestAgentSqlParams,
         CreateTestAgentSqlRow,
-        GetFirstModelSqlRow,
         GetFirstDepartmentSqlRow,
+        GetFirstModelSqlRow,
     )
 
     model_result = await execute_sql_typed(
@@ -277,7 +276,6 @@ async def test_list_agents_can_delete_linked(
 
     from tests.sql.types import (
         CreateAgentDepartmentLinkSqlParams,
-        CreateAgentDepartmentLinkSqlRow,
     )
 
     await execute_sql_typed(

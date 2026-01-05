@@ -1,7 +1,5 @@
 """Route tests for POST /api/v4/simulations/update endpoint."""
 
-import uuid
-from uuid import UUID
 
 import asyncpg  # type: ignore
 import httpx

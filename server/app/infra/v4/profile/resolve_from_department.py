@@ -1,13 +1,14 @@
 """Resolve profile ID from department cookies."""
 
-import asyncpg  # type: ignore
 from typing import cast
+
+import asyncpg  # type: ignore
+from utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     InfraResolveFromDepartmentProfileSqlParams,
     InfraResolveFromDepartmentProfileSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/v4/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"
 

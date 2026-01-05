@@ -9,19 +9,14 @@ from agents import Runner, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
 from pydantic import BaseModel, Field, ValidationError
-from utils.sql_helper import execute_sql_typed, load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
-from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.documents.format_document_info import format_document_info
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.remove_active_run import remove_active_run
 from app.infra.v4.websocket.store_active_run import store_active_run
-from app.socket.v4.agents.simulation.generate import (
-    get_simulation_conversation_history,
-)
 from app.main import get_internal_sio, sio
 
 # Types will be auto-generated from SQL introspection
@@ -607,7 +602,7 @@ async def _prompt_generate_impl(
                 ):
                     raise
                 raise
-            except Exception as stream_error:
+            except Exception:
                 raise
             finally:
                 # Clean up active run
@@ -668,7 +663,6 @@ async def _prompt_generate_impl(
 @sio.event  # type: ignore
 async def prompt_generate(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler."""
-    from app.infra.v4.websocket.handler_wrapper import handle_client_event
 
     profile_id = await find_profile_by_socket(sid)
     if not profile_id:

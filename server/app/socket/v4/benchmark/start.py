@@ -11,7 +11,7 @@ from utils.sql_helper import execute_sql_typed
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
-from app.main import get_internal_sio, get_pool, sio
+from app.main import get_internal_sio, sio
 from app.sql.types import (
     StartBenchmarkAttemptSqlParams,
     StartBenchmarkAttemptSqlRow,
@@ -128,7 +128,7 @@ async def _benchmark_start_impl(
                     endpoint="/socket/v4/benchmark/start",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
     except Exception as e:
         await benchmark_start_error(

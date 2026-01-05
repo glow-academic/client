@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.pricing.helpers import fetch_pricing_data, wait_for_pricing_load
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"

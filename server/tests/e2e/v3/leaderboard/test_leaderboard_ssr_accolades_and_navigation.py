@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.leaderboard.helpers import (
     fetch_leaderboard_data,
     verify_leaderboard_ssr,

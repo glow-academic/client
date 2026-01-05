@@ -6,14 +6,11 @@ import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateRubricDepartmentLinkSqlParams,
-    CreateRubricDepartmentLinkSqlRow,
     CreateTestRubricSqlParams,
     CreateTestRubricSqlRow,
     CreateTestStandardGroupSqlParams,
     CreateTestStandardGroupSqlRow,
     CreateTestStandardSqlParams,
-    CreateTestStandardSqlRow,
-    GetFirstDepartmentSqlParams,
     GetFirstDepartmentSqlRow,
 )
 from utils.sql_helper import execute_sql_typed

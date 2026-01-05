@@ -1,8 +1,6 @@
 """Integration tests for app.infra.v4.activity.logger."""
 
-import asyncpg
 import pytest
-from fastapi import Request
 from starlette.requests import Request as StarletteRequest
 
 from app.infra.v4.activity.audit import AuditIntent

@@ -156,7 +156,7 @@ async def _simulation_advance_impl(sid: str, data: SimulationAdvancePayload) -> 
                     endpoint="/socket/v4/simulations/advance",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
     except Exception as e:
         await simulation_advance_error(
@@ -173,7 +173,7 @@ async def _simulation_advance_impl(sid: str, data: SimulationAdvancePayload) -> 
                 endpoint="/socket/v4/simulations/advance",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

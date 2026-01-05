@@ -180,7 +180,7 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                         endpoint="/socket/v4/simulations/text/stop",
                         error=False,
                     )
-                except Exception as log_error:
+                except Exception:
                     pass
             else:
                 await simulation_stopped(
@@ -209,7 +209,7 @@ async def _simulation_text_stop_impl(sid: str, data: StopSimulationPayload) -> N
                 endpoint="/socket/v4/simulations/text/stop",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 
@@ -236,7 +236,7 @@ async def simulation_text_stop(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/simulations/text/stop",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 
@@ -305,7 +305,7 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
                 endpoint="/socket/v4/simulations/stop",
                 error=False,
             )
-        except Exception as log_error:
+        except Exception:
             pass
     except Exception as e:
         await simulation_voice_stop_error(
@@ -321,7 +321,7 @@ async def _simulation_voice_stop_impl(sid: str, data: StopVoicePayload) -> None:
                 endpoint="/socket/v4/simulations/stop",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 
@@ -346,7 +346,7 @@ async def simulation_voice_stop(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/simulations/stop",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

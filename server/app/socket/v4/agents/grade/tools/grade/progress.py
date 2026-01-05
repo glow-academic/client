@@ -1,4 +1,4 @@
-"""Handler for feedback_progress WebSocket event - ONE EVENT PER FILE."""
+"""Handler for grade_grade_progress - handles incremental updates for grade tool calls."""
 
 import uuid
 from typing import Any
@@ -8,58 +8,99 @@ from pydantic import BaseModel
 
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
-from app.infra.v4.websocket.typed_emit import emit_to_client
-from app.main import get_internal_sio
+from app.main import get_internal_sio, sio
 
 internal_sio = get_internal_sio()
+
 server_router = APIRouter()
 
 
-class FeedbackProgressPayload(BaseModel):
-    """Response indicating progress in Feedback tool."""
+class GradeGradeProgressPayload(BaseModel):
+    """Grade tool progress event."""
 
-    type: str
-    message: str | None = None
+    sid: str
+    type: str  # "tool_call_start" | "tool_call_progress"
+    chat_id: str
+    run_id: str
+    tool_call_id: str
+    call_id: str | None = None
+    tool_name: str
+    arguments_raw: str
 
 
-class FeedbackErrorPayload(BaseModel):
-    """Response indicating an error occurred in Feedback tool."""
+class GradeGradeProgressErrorPayload(BaseModel):
+    """Error response for grade grade progress."""
 
     success: bool
     message: str
 
 
-async def _feedback_progress_impl(
+# Client-facing payload models
+class GradeProgressPayload(BaseModel):
+    """Progress update for grading."""
+
+    type: str
+    chat_id: str
+    tool_name: str | None = None
+    arguments_raw: str | None = None
+
+
+async def _grade_grade_progress_impl(
     sid: str,
-    data: FeedbackProgressPayload,
+    data: GradeGradeProgressPayload,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Internal implementation - emits to client."""
-    await emit_to_client(
-        "grading_tools_feedback_progress",
-        data,
-        room=sid,
-    )
+    """Handle grade_grade_progress - tracks progress and emits to client."""
+    try:
+        chat_id_uuid = uuid.UUID(data.chat_id)
+        room = f"simulation_{chat_id_uuid}"
+
+        if data.type == "tool_call_start":
+            # Tool call started - no-op for now, will be handled on first progress
+            pass
+
+        elif data.type == "tool_call_progress":
+            # Emit progress to client
+            await sio.emit(
+                "simulations_text_grading_progress",
+                GradeProgressPayload(
+                    type="tool_call_progress",
+                    chat_id=data.chat_id,
+                    tool_name=data.tool_name,
+                    arguments_raw=data.arguments_raw,
+                ).model_dump(),
+                room=room,
+            )
+
+    except Exception as e:
+        await internal_sio.emit(
+            "grade_grade_error",
+            {
+                "sid": sid,
+                "success": False,
+                "message": str(e),
+            },
+        )
 
 
-@internal_sio.on("feedback_progress")  # type: ignore
-async def feedback_progress_internal(
+@internal_sio.on("grade_grade_progress")  # type: ignore
+async def grade_grade_progress_internal(
     data: dict[str, Any],
 ) -> None:
-    """Handle feedback_progress event from internal bus (server-to-server)."""
+    """Handle grade_grade_progress event from internal bus."""
     await handle_internal_event(
         data=data,
-        request_type=FeedbackProgressPayload,
-        handler=_feedback_progress_impl,  # type: ignore[arg-type]
-        error_event_name="grading_tools_feedback_error",
-        error_response_type=FeedbackErrorPayload,
+        request_type=GradeGradeProgressPayload,
+        handler=_grade_grade_progress_impl,  # type: ignore[arg-type]
+        error_event_name="grade_grade_error",
+        error_response_type=GradeGradeProgressErrorPayload,
     )
 
 
 register_server_endpoint(
     server_router,
-    "/feedback_progress",
-    FeedbackProgressPayload,
-    "Progress update for Feedback tool",
+    "/grade_grade_progress",
+    GradeGradeProgressPayload,
+    "Progress update for Grade tool",
 )

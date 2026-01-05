@@ -559,7 +559,7 @@ async def _simulation_voice_generate_impl(
                             "properties": properties,
                             "required": required,
                         }
-                    except Exception as e:
+                    except Exception:
                         tool_parameters = {
                             "type": "object",
                             "properties": {},

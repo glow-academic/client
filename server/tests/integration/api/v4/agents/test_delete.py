@@ -5,8 +5,6 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
-    GetAgentDepartmentLinkSqlParams,
-    GetAgentDepartmentLinkSqlRow,
     GetFirstDepartmentSqlRow,
     GetFirstModelSqlRow,
 )
@@ -116,7 +114,6 @@ async def test_delete_agent_in_use(
     # Create agent department link using SQL file
     from tests.sql.types import (
         CreateAgentDepartmentLinkSqlParams,
-        CreateAgentDepartmentLinkSqlRow,
     )
 
     await execute_sql_typed(

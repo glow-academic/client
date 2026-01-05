@@ -27,6 +27,7 @@ async def test_log_run_success(
 
     # Create a run first using SQL helper function
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import TestCreateTestRunV4SqlParams
 
     params = TestCreateTestRunV4SqlParams(
@@ -59,9 +60,9 @@ async def test_log_run_success(
 
     # Assert - verify run was updated in database
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
         TestGetRunByIdV4SqlParams,
-        TestGetRunByIdV4SqlRow,
     )
 
     run_result = await execute_sql_typed(
@@ -85,6 +86,7 @@ async def test_log_run_internal_success(
 
     # Create a run first using SQL helper function
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import TestCreateTestRunV4SqlParams
 
     params = TestCreateTestRunV4SqlParams(
@@ -114,9 +116,9 @@ async def test_log_run_internal_success(
 
     # Assert - verify run was updated in database
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
         TestGetRunByIdV4SqlParams,
-        TestGetRunByIdV4SqlRow,
     )
 
     run_result = await execute_sql_typed(
@@ -140,6 +142,7 @@ async def test_log_run_with_developer_messages(
 
     # Create a run first using SQL helper function
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import TestCreateTestRunV4SqlParams
 
     params = TestCreateTestRunV4SqlParams(
@@ -174,9 +177,9 @@ async def test_log_run_with_developer_messages(
 
     # Assert - verify developer messages were saved
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
         TestGetDeveloperMessagesCountByRunV4SqlParams,
-        TestGetDeveloperMessagesCountByRunV4SqlRow,
     )
 
     dev_messages_result = await execute_sql_typed(

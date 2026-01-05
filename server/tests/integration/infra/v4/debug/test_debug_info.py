@@ -4,7 +4,6 @@ import uuid
 
 import asyncpg
 import pytest
-from agents import RunContextWrapper
 
 from app.infra.v4.debug.debug_info import DebugContext, debug_info
 

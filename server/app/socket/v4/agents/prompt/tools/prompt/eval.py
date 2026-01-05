@@ -11,8 +11,6 @@ from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
 
-from .call import PromptPromptToolErrorSqlRow
-
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 

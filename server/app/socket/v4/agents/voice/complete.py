@@ -1,8 +1,6 @@
 """Handler for simulation_voice_complete WebSocket event - finalizes messages and runs."""
 
 import uuid
-from typing import Any
-
 from typing import Any, cast
 
 from fastapi import APIRouter

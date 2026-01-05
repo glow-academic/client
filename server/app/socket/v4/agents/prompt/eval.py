@@ -7,7 +7,6 @@ from fastapi import APIRouter
 
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
-from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
 
 internal_sio = get_internal_sio()

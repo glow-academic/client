@@ -6,16 +6,17 @@ from typing import Any, cast
 
 from agents import Runner, trace
 from agents.items import TResponseInputItem
-from app.infra.v4.agents.generic_agent import GenericAgent
-from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import AUDIO_FOLDER, UPLOAD_FOLDER, get_internal_sio, sio
 from fastapi import APIRouter
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
+
+from app.infra.v4.agents.generic_agent import GenericAgent
+from app.infra.v4.debug.debug_info import DebugContext
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.main import AUDIO_FOLDER, UPLOAD_FOLDER, get_internal_sio, sio
 
 # Types will be auto-generated from SQL introspection
 try:
@@ -211,7 +212,7 @@ async def _audio_regenerate_impl(sid: str, data: RegenerateAudioPayload) -> None
                     AudioRegenerationErrorPayload(
                         success=False,
                         message=(
-                            f"No audio agent configured. "
+                            "No audio agent configured. "
                             "Please configure an audio agent in system settings."
                         ),
                         upload_id=str(upload_id) if upload_id else None,

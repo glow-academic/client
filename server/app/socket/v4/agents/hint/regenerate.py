@@ -6,8 +6,9 @@ from typing import Any, cast
 from agents import Runner, Tool, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
+from jinja2 import Template
 from pydantic import BaseModel, Field
-from utils.sql_helper import execute_sql_typed, load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.agents.utils.build_hint_agent import build_hint_agent
 from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
@@ -18,19 +19,18 @@ from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from jinja2 import Template
 
 # Types will be auto-generated from SQL introspection
 try:
     from app.sql.types import (
-        GetHintRegenerationRunContextAndCreateRunSqlParams,
-        GetHintRegenerationRunContextAndCreateRunSqlRow,
         CreateHintsSqlParams,
         CreateHintsSqlRow,
-        GetSimulationMessagesSqlParams,
-        GetSimulationMessagesSqlRow,
         GetDeveloperInstructionSqlParams,
         GetDeveloperInstructionSqlRow,
+        GetHintRegenerationRunContextAndCreateRunSqlParams,
+        GetHintRegenerationRunContextAndCreateRunSqlRow,
+        GetSimulationMessagesSqlParams,
+        GetSimulationMessagesSqlRow,
         LinkDeveloperMessageToRunSqlParams,
     )
 except ImportError:

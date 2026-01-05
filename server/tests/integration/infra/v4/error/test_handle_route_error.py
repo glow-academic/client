@@ -2,7 +2,6 @@
 
 import pytest
 from fastapi import HTTPException
-from utils.sql_helper import load_sql
 
 from app.infra.v4.error.handle_route_error import handle_route_error
 

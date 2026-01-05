@@ -13,10 +13,10 @@ from tests.integration.socket.v4.helpers import (
     get_or_create_test_model,
     get_or_create_test_profile,
 )
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.websocket.set_socket_owner import set_socket_owner
 from app.socket.v4.benchmark.run_start import benchmark_run_start
-from utils.sql_helper import execute_sql_typed
 
 pytestmark = pytest.mark.asyncio
 

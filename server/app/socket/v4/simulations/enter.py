@@ -112,7 +112,7 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                         endpoint="/socket/v4/simulations/enter",
                         error=False,
                     )
-                except Exception as log_error:
+                except Exception:
                     pass
             else:
                 await simulation_enter_error(
@@ -139,7 +139,7 @@ async def _simulation_enter_impl(sid: str, data: SimulationEnterPayload) -> None
                 endpoint="/socket/v4/simulations/enter",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 
@@ -166,7 +166,7 @@ async def simulation_enter(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/simulations/enter",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

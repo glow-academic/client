@@ -6,7 +6,6 @@ import re
 import sys
 
 from playwright.sync_api import Page
-
 from server.tests.e2e.rubrics.helpers import generate_unique_rubric_name
 
 

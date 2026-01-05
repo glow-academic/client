@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.parameters.helpers import (
     delete_parameter_api,
     generate_unique_parameter_name,

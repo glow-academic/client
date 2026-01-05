@@ -7,8 +7,6 @@ from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateTestParameterSqlParams,
     CreateTestParameterSqlRow,
-    GetParameterByIdSqlParams,
-    GetParameterByIdSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 

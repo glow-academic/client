@@ -1,13 +1,14 @@
 """Check if a profile exists in the database."""
 
-import asyncpg  # type: ignore
 from typing import cast
+
+import asyncpg  # type: ignore
+from utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     InfrastructureActivityProfileExistsSqlParams,
     InfrastructureActivityProfileExistsSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
     "app/sql/v4/infrastructure/infrastructure_activity_profile_exists_complete.sql"

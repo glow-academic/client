@@ -1,4 +1,4 @@
-"""Handler for document_tool_title_progress WebSocket event - ONE EVENT PER FILE."""
+"""Handler for document_title_progress - handles incremental updates for create_title tool calls."""
 
 import uuid
 from typing import Any
@@ -8,59 +8,96 @@ from pydantic import BaseModel
 
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
-from app.infra.v4.websocket.typed_emit import emit_to_client
-from app.main import get_internal_sio
+from app.main import get_internal_sio, sio
 
 internal_sio = get_internal_sio()
+
 server_router = APIRouter()
 
 
 class DocumentTitleProgressPayload(BaseModel):
-    """Response indicating progress in Document Title tool."""
+    """Document title tool progress event."""
 
-    type: str
-    message: str | None = None
+    sid: str
+    type: str  # "tool_call_start" | "tool_call_progress"
+    document_id: str | None = None
+    run_id: str
+    tool_call_id: str
+    call_id: str | None = None
+    tool_name: str
+    arguments_raw: str
 
 
-class DocumentTitleErrorPayload(BaseModel):
-    """Response indicating an error occurred in Document Title tool."""
+class DocumentTitleProgressErrorPayload(BaseModel):
+    """Error response for document title progress."""
 
     success: bool
     message: str
-    trace_id: str
 
 
-async def _document_tool_title_progress_impl(
+# Client-facing payload models
+class DocumentProgressPayload(BaseModel):
+    """Progress update for document generation."""
+
+    type: str
+    document_id: str | None = None
+    tool_name: str | None = None
+    arguments_raw: str | None = None
+
+
+async def _document_title_progress_impl(
     sid: str,
     data: DocumentTitleProgressPayload,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Internal implementation - emits to client."""
-    await emit_to_client(
-        "document_tool_title_progress",
-        data,
-        room=sid,
-    )
+    """Handle document_title_progress - tracks progress and emits to client."""
+    try:
+        if data.type == "tool_call_start":
+            # Tool call started - no-op for now, will be handled on first progress
+            pass
+
+        elif data.type == "tool_call_progress":
+            # Emit progress to client
+            await sio.emit(
+                "documents_progress",
+                DocumentProgressPayload(
+                    type="tool_call_progress",
+                    document_id=data.document_id,
+                    tool_name=data.tool_name,
+                    arguments_raw=data.arguments_raw,
+                ).model_dump(),
+                room=sid,
+            )
+
+    except Exception as e:
+        await internal_sio.emit(
+            "document_title_error",
+            {
+                "sid": sid,
+                "success": False,
+                "message": str(e),
+            },
+        )
 
 
-@internal_sio.on("document_tool_title_progress")  # type: ignore
-async def title_progress_internal(
+@internal_sio.on("document_title_progress")  # type: ignore
+async def document_title_progress_internal(
     data: dict[str, Any],
 ) -> None:
-    """Handle document_tool_title_progress event from internal bus (server-to-server)."""
+    """Handle document_title_progress event from internal bus."""
     await handle_internal_event(
         data=data,
         request_type=DocumentTitleProgressPayload,
-        handler=_document_tool_title_progress_impl,  # type: ignore[arg-type]
-        error_event_name="document_tool_title_error",
-        error_response_type=DocumentTitleErrorPayload,
+        handler=_document_title_progress_impl,  # type: ignore[arg-type]
+        error_event_name="document_title_error",
+        error_response_type=DocumentTitleProgressErrorPayload,
     )
 
 
 register_server_endpoint(
     server_router,
-    "/document_tool_title_progress",
+    "/document_title_progress",
     DocumentTitleProgressPayload,
-    "Progress update for Document Title tool",
+    "Progress update for Document title tool",
 )

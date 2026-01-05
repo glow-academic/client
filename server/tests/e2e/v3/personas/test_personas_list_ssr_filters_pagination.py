@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.personas.helpers import (
     create_persona_api,
     delete_persona_api,

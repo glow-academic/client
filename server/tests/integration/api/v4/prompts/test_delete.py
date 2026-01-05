@@ -6,15 +6,10 @@ import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateAgentDepartmentPromptLinkSqlParams,
-    CreateAgentDepartmentPromptLinkSqlRow,
     CreateAgentPromptLinkInactiveSqlParams,
-    CreateAgentPromptLinkInactiveSqlRow,
     CreateAgentPromptLinkSqlParams,
-    CreateAgentPromptLinkSqlRow,
     CreatePersonaDepartmentPromptLinkSqlParams,
-    CreatePersonaDepartmentPromptLinkSqlRow,
     CreatePersonaPromptLinkSqlParams,
-    CreatePersonaPromptLinkSqlRow,
     CreateTestAgentSqlParams,
     CreateTestAgentSqlRow,
     CreateTestPersonaSqlParams,
@@ -25,7 +20,6 @@ from tests.sql.types import (
     GetAgentDepartmentPromptLinkStatusSqlRow,
     GetAgentPromptLinkStatusSqlParams,
     GetAgentPromptLinkStatusSqlRow,
-    GetFirstDepartmentSqlParams,
     GetFirstDepartmentSqlRow,
     GetPersonaDepartmentPromptLinkStatusSqlParams,
     GetPersonaDepartmentPromptLinkStatusSqlRow,

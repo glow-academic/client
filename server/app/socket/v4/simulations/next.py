@@ -1,7 +1,7 @@
 """Handler for simulation_next WebSocket event - creates fresh scenario variant and delegates to generate.py."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
@@ -68,11 +68,12 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
             profile_id_uuid = uuid.UUID(profile_id) if profile_id else None
 
             # Get parent scenario
+            from typing import cast
+
             from app.sql.types import (
                 GetScenarioByIdSqlParams,
                 GetScenarioByIdSqlRow,
             )
-            from typing import cast
 
             params = GetScenarioByIdSqlParams(scenario_id=parent_scenario_id_uuid)
             parent_scenario_result = cast(
@@ -271,7 +272,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                     endpoint="/socket/v4/simulations/next",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
     except Exception as e:
         await simulation_next_error(
@@ -288,7 +289,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 endpoint="/socket/v4/simulations/next",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

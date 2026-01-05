@@ -5,14 +5,13 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
-from pydantic import BaseModel
-from utils.sql_helper import execute_sql_typed
 
 
 # Types for debug_info function - defined locally since SQL path doesn't match type generation pattern

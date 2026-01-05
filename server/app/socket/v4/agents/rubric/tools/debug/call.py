@@ -12,7 +12,6 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_client, emit_to_internal
 from app.main import get_internal_sio
-from pydantic import BaseModel
 
 
 # Types for debug_info function - defined locally since SQL path doesn't match type generation pattern

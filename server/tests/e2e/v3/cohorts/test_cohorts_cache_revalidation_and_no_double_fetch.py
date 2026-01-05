@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.cohorts.helpers import (
     delete_cohort_api,
     fetch_cohorts_list,

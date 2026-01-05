@@ -8,8 +8,9 @@ from typing import Any, cast
 from agents import Runner, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
+from jinja2 import Template
 from pydantic import BaseModel, Field, ValidationError
-from utils.sql_helper import execute_sql_typed, load_sql
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
@@ -19,20 +20,19 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.remove_active_run import remove_active_run
 from app.infra.v4.websocket.store_active_run import store_active_run
+from app.main import get_internal_sio, sio
 from app.socket.v4.agents.simulation.generate import (
     get_simulation_conversation_history,
 )
-from app.main import get_internal_sio, sio
 from app.sql.types import (
+    GetDeveloperInstructionSqlParams,
+    GetDeveloperInstructionSqlRow,
     GetMemberRunContextAndCreateRunSqlParams,
     GetMemberRunContextAndCreateRunSqlRow,
     GetSimulationMessagesSqlParams,
     GetSimulationMessagesSqlRow,
-    GetDeveloperInstructionSqlParams,
-    GetDeveloperInstructionSqlRow,
     LinkDeveloperMessageToRunSqlParams,
 )
-from jinja2 import Template
 
 internal_sio = get_internal_sio()
 
@@ -732,7 +732,7 @@ async def _member_generate_impl(
                 ):
                     raise
                 raise
-            except Exception as stream_error:
+            except Exception:
                 raise
             finally:
                 # Clean up active run

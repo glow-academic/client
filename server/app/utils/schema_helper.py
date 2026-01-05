@@ -13,8 +13,6 @@ from typing import Any
 
 import asyncpg
 
-from utils.sql_helper import execute_sql_typed, load_sql
-
 
 async def get_schema_with_fields(
     conn: asyncpg.Connection, schema_id: uuid.UUID

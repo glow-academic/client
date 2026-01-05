@@ -54,7 +54,6 @@ async def test_remove_profiles_from_cohort(
     profile_id = typed_profile.profile_id
 
     # Add profile to cohort first using SQL file
-    from tests.sql.types import CreateCohortProfileLinkV4SqlParams
 
     await execute_sql_typed(
         conn=db,

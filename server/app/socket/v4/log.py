@@ -10,7 +10,7 @@ from utils.logging.db_logger import get_logger
 from utils.sql_helper import load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.main import UPLOAD_FOLDER, get_internal_sio, get_pool, sio
+from app.main import UPLOAD_FOLDER, get_internal_sio, sio
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -100,7 +100,7 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                         endpoint="/socket/v4/log",
                         error=False,
                     )
-                except Exception as log_error:
+                except Exception:
                     pass
             # Always save OpenAI messages as JSON file
             try:
@@ -131,11 +131,11 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                     json_file_path = UPLOAD_FOLDER / f"{run_id}.json"
                     with open(json_file_path, "w", encoding="utf-8") as f:
                         json.dump(messages, f, indent=2, ensure_ascii=False)
-            except Exception as json_error:
+            except Exception:
                 # Log error but don't fail the request
                 pass
 
-    except Exception as e:
+    except Exception:
         # Don't emit error to client - pricing is async and failures are logged
         pass
 
@@ -146,7 +146,7 @@ async def log_run(sid: str, data: dict[str, Any]) -> None:
     try:
         validated = LogRunPayload(**data)
         await _log_run_impl(sid, validated)
-    except ValidationError as e:
+    except ValidationError:
         pass
 
 
@@ -157,7 +157,7 @@ async def log_run_internal(data: dict[str, Any]) -> None:
         validated = LogRunPayload(**data)
         # Use empty string as sid for internal calls (not needed for async background work)
         await _log_run_impl("", validated)
-    except ValidationError as e:
+    except ValidationError:
         pass
 
 

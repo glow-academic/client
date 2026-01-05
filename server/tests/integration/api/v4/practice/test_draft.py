@@ -1,6 +1,5 @@
 """Route tests for PATCH /api/v4/practice/draft endpoint."""
 
-from uuid import UUID
 
 import asyncpg  # type: ignore
 import httpx

@@ -1,7 +1,5 @@
 """Integration tests for app.infra.v4.activity.audit."""
 
-import pytest
-from fastapi import Request
 from starlette.requests import Request as StarletteRequest
 
 from app.infra.v4.activity.audit import AuditIntent, audit_activity, audit_set

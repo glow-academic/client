@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/cohorts/update endpoint."""
 
-from uuid import UUID
 
 import asyncpg  # type: ignore
 import httpx
@@ -11,7 +10,6 @@ from tests.sql.types import (
     CreateTestCohortSqlRow,
     GetCohortByIdSqlParams,
     GetCohortByIdSqlRow,
-    GetFirstDepartmentSqlParams,
     GetFirstDepartmentSqlRow,
 )
 from utils.sql_helper import execute_sql_typed

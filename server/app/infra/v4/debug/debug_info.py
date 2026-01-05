@@ -1,16 +1,14 @@
 import asyncio
 import uuid
 from dataclasses import dataclass
-from typing import cast
 
 import asyncpg  # type: ignore
 from agents import RunContextWrapper, function_tool
+from utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     InfrastructureDebugInsertDebugInfoSqlParams,
-    InfrastructureDebugInsertDebugInfoSqlRow,
 )
-from utils.sql_helper import execute_sql_typed
 
 SQL_PATH = (
     "app/sql/v4/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"

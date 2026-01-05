@@ -6,7 +6,6 @@ import re
 import sys
 
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.scenarios.helpers import generate_unique_scenario_name
 
 

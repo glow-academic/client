@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/agents/create endpoint."""
 
-import uuid
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -14,9 +13,7 @@ from tests.sql.types import (
     GetAgentDepartmentLinkSqlRow,
     GetAgentPromptLinkSqlParams,
     GetAgentPromptLinkSqlRow,
-    GetFirstDepartmentSqlParams,
     GetFirstDepartmentSqlRow,
-    GetFirstModelSqlParams,
     GetFirstModelSqlRow,
 )
 from utils.sql_helper import execute_sql_typed

@@ -39,11 +39,10 @@ async def test_connect_with_profile_id_success(
 
     # Verify profile was marked as active in database
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
-        TestGetProfileByIdV4SqlParams,
-        TestGetProfileByIdV4SqlRow,
         TestGetProfileActivityV4SqlParams,
-        TestGetProfileActivityV4SqlRow,
+        TestGetProfileByIdV4SqlParams,
     )
 
     profile_result = await execute_sql_typed(
@@ -158,9 +157,9 @@ async def test_connect_invalid_guest_profile_id_string(
     """Test that invalid profile ID strings are treated as invalid/missing."""
     # Arrange - create a guest profile for testing using SQL file
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
         TestCreateTestGuestProfileV4SqlParams,
-        TestCreateTestGuestProfileV4SqlRow,
     )
 
     guest_result = await execute_sql_typed(

@@ -7,11 +7,11 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
-import asyncpg  # type: ignore
-from app.main import get_pool
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import _detect_function_in_sql, execute_sql_typed, load_sql
+from utils.sql_helper import _detect_function_in_sql, load_sql
+
+from app.main import get_pool
 
 logger = get_logger(__name__)
 
@@ -154,11 +154,12 @@ async def get_realm_name_for_department(department_id: str | None, pool: Any) ->
         import uuid
         from typing import cast
 
+        from utils.sql_helper import execute_sql_typed
+
         from app.sql.types import (
             GetRealmNameForDepartmentSqlParams,
             GetRealmNameForDepartmentSqlRow,
         )
-        from utils.sql_helper import execute_sql_typed
 
         async with pool.acquire() as conn:
             params = GetRealmNameForDepartmentSqlParams(

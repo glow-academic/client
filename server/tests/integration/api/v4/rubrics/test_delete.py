@@ -8,7 +8,6 @@ from tests.sql.types import (
     CreateTestRubricSqlParams,
     CreateTestRubricSqlRow,
     CreateTestSimulationWithRubricSqlParams,
-    CreateTestSimulationWithRubricSqlRow,
     GetRubricByIdSqlParams,
     GetRubricByIdSqlRow,
 )

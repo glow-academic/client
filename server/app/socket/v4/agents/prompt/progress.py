@@ -3,11 +3,12 @@
 import uuid
 from typing import Any
 
+from fastapi import APIRouter
+from pydantic import BaseModel
+
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio
-from fastapi import APIRouter
-from pydantic import BaseModel
 
 internal_sio = get_internal_sio()
 

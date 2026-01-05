@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.pricing.helpers import (
     verify_pricing_ssr,
     wait_for_pricing_load,

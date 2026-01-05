@@ -13,10 +13,10 @@ from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio, sio
 from app.sql.types import (
-    MemberProgressUpsertSqlParams,
-    MemberProgressUpsertSqlRow,
     GetMessageCreatedAtSqlParams,
     GetMessageCreatedAtSqlRow,
+    MemberProgressUpsertSqlParams,
+    MemberProgressUpsertSqlRow,
 )
 
 internal_sio = get_internal_sio()
@@ -179,7 +179,7 @@ async def _member_progress_impl(
                     endpoint="/socket/v4/member/progress",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
             # Trigger appropriate generate event based on audio flag (voice_mode)
             if audio:

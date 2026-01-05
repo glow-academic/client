@@ -245,7 +245,6 @@ async def test_update_agent_removes_department_links(
     # Create agent department link using SQL file
     from tests.sql.types import (
         CreateAgentDepartmentLinkSqlParams,
-        CreateAgentDepartmentLinkSqlRow,
     )
 
     await execute_sql_typed(

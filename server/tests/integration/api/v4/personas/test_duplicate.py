@@ -13,10 +13,9 @@ from tests.sql.types import (
     CreateTestPersonaSqlRow,
     CreateTestPromptSqlParams,
     CreateTestPromptSqlRow,
+    GetFirstDepartmentSqlRow,
     GetPersonaByIdSqlParams,
     GetPersonaByIdSqlRow,
-    GetFirstDepartmentSqlParams,
-    GetFirstDepartmentSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -56,7 +55,6 @@ async def test_duplicate_persona(
     dept_id = typed_dept.department_id
 
     # Link persona to department using SQL file
-    from tests.sql.types import CreatePersonaDepartmentLinkV4SqlParams
 
     await execute_sql_typed(
         conn=db,
@@ -78,7 +76,6 @@ async def test_duplicate_persona(
     prompt_id = typed_prompt.prompt_id
 
     # Link prompt to persona using SQL file
-    from tests.sql.types import CreatePersonaPromptLinkV4SqlParams
 
     await execute_sql_typed(
         conn=db,

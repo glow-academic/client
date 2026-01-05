@@ -6,11 +6,8 @@ import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateProfileEmailSqlParams,
-    CreateProfileEmailSqlRow,
     CreateTestProfileSqlParams,
     CreateTestProfileSqlRow,
-    GetProfileByIdSqlParams,
-    GetProfileByIdSqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 

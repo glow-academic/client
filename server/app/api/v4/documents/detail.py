@@ -13,7 +13,6 @@ from utils.sql_helper import execute_sql_typed
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import UPLOAD_FOLDER, get_db
-from app.utils.schema_helper import get_schema_tree
 from app.sql.types import (
     GetDocumentDetailApiRequest,
     GetDocumentDetailApiResponse,
@@ -21,6 +20,7 @@ from app.sql.types import (
     GetDocumentDetailSqlRow,
     load_sql_query,
 )
+from app.utils.schema_helper import get_schema_tree
 
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/documents/get_document_detail_complete.sql"

@@ -29,12 +29,11 @@ async def test_simulation_text_end_success(
     # Create attempt
     from tests.integration.socket.v4.helpers import (
         get_simulation_by_active,
-        create_test_attempt,
     )
     from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
         TestCreateTestAttemptV4SqlParams,
-        TestCreateTestAttemptV4SqlRow,
     )
 
     simulation_id = await get_simulation_by_active(db)

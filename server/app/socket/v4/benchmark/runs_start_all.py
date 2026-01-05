@@ -183,7 +183,7 @@ async def _benchmark_runs_start_all_impl(
                     endpoint="/socket/v4/benchmark/runs_start_all",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
 
     except ValueError as e:

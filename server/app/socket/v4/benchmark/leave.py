@@ -52,7 +52,7 @@ async def _benchmark_leave_impl(sid: str, data: BenchmarkLeavePayload) -> None:
                 endpoint="/socket/v4/benchmark/leave",
                 error=False,
             )
-        except Exception as log_error:
+        except Exception:
             pass
     else:
         await benchmark_leave_error(

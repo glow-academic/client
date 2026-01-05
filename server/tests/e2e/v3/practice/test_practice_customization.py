@@ -6,7 +6,6 @@ import re
 
 import pytest
 from playwright.sync_api import Page, expect
-
 from server.tests.e2e.practice.helpers import fetch_practice_data
 
 ADMIN_PROFILE_ID = "6a2518eb-eba7-4650-aee0-d387c3fb8265"

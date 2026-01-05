@@ -9,7 +9,7 @@ from utils.logging.db_logger import get_logger
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.cancel_active_run import cancel_active_run
-from app.main import get_pool, sio
+from app.main import sio
 
 logger = get_logger(__name__)
 
@@ -117,7 +117,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     endpoint="/socket/v4/benchmark/stop",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
     except Exception as e:
         await benchmark_stop_error(
@@ -136,7 +136,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                 endpoint="/socket/v4/benchmark/stop",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

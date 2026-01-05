@@ -1,5 +1,7 @@
 """Handler for generate_scenario WebSocket event."""
 
+import asyncio
+import json
 import os
 import uuid
 from typing import Any, cast
@@ -1139,7 +1141,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         endpoint="/socket/v4/scenarios/randomize",
                         error=False,
                     )
-                except Exception as log_error:
+                except Exception:
                     pass
                 return
 
@@ -1742,7 +1744,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                         TemplateArgsModel: type[BaseModel] | None = None
                         try:
                             TemplateArgsModel = _build_template_model(template_schema)
-                        except Exception as e:
+                        except Exception:
                             TemplateArgsModel = None
 
                         if template_schema and TemplateArgsModel:
@@ -2306,20 +2308,247 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             # (get_scenario_run_context_and_create_run.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
 
-            # Run agent (message logging and token updates happen async via pricing endpoint)
+            # Track tool calls for this scenario run
+            tool_calls_dict: dict[str, dict[str, Any]] = {}
+            fake_id_to_real_id: dict[str, str] = {}
+            tool_call_counter = 0
+
+            # Run agent with streaming (message logging and token updates happen async via pricing endpoint)
             with trace(
                 "Scenario Agent",
                 group_id=str(group_id) if group_id else None,
                 trace_id=trace_id,
             ):
-                result = await Runner.run(
+                result_runner = Runner.run_streamed(
                     agent_instance,
                     input=clean_input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
-            usage = result.context_wrapper.usage
-            assistant_output = getattr(result, "final_output", None) or ""
+            # Store the result in active runs for potential cancellation
+            from app.infra.v4.websocket.store_active_run import store_active_run
+
+            await store_active_run(str(group_id) if group_id else sid, result_runner)
+
+            try:
+                # Process streaming events
+                async for event in result_runner.stream_events():
+                    # Check for raw_response_event and inspect data for tool call deltas
+                    if hasattr(event, "type") and event.type == "raw_response_event":
+                        event_data = getattr(event, "data", None)
+                        if not event_data:
+                            continue
+
+                        event_data_type = (
+                            getattr(event_data, "type", None)
+                            if hasattr(event_data, "type")
+                            else None
+                        )
+
+                        # Handle response.output_item.added to get tool name and item_id
+                        if event_data_type == "response.output_item.added":
+                            item = getattr(event_data, "item", None)
+                            if item:
+                                item_type = (
+                                    getattr(item, "type", None)
+                                    if hasattr(item, "type")
+                                    else None
+                                )
+                                if item_type == "function_call":
+                                    fake_item_id = getattr(item, "id", None)
+                                    tool_name = getattr(item, "name", None)
+                                    call_id = getattr(item, "call_id", None)
+
+                                    if not fake_item_id:
+                                        fake_item_id = getattr(
+                                            event_data, "item_id", None
+                                        )
+
+                                    if call_id:
+                                        real_item_id = call_id
+                                    elif fake_item_id:
+                                        tool_call_counter += 1
+                                        real_item_id = f"scenario_{tool_call_counter}_{uuid.uuid4().hex[:8]}"
+                                    else:
+                                        continue
+
+                                    if tool_name:
+                                        if fake_item_id:
+                                            fake_id_to_real_id[fake_item_id] = (
+                                                real_item_id
+                                            )
+
+                                        if real_item_id not in tool_calls_dict:
+                                            tool_calls_dict[real_item_id] = {
+                                                "name": tool_name,
+                                                "call_id": call_id,
+                                                "fake_id": fake_item_id,
+                                                "arguments_raw": "",
+                                                "completed": False,
+                                            }
+
+                                            # Emit tool call start to progress
+                                            await internal_sio.emit(
+                                                "scenario_progress",
+                                                {
+                                                    "sid": sid,
+                                                    "type": "tool_call_start",
+                                                    "scenario_id": str(group_id)
+                                                    if group_id
+                                                    else None,
+                                                    "run_id": str(model_run_id),
+                                                    "tool_call_id": real_item_id,
+                                                    "call_id": call_id or real_item_id,
+                                                    "tool_name": tool_name,
+                                                    "arguments_raw": "",
+                                                },
+                                            )
+
+                        # Handle response.function_call_arguments.delta
+                        if event_data_type == "response.function_call_arguments.delta":
+                            fake_item_id = getattr(event_data, "item_id", None)
+                            arguments_delta = getattr(event_data, "delta", None)
+                            call_id = getattr(event_data, "call_id", None)
+
+                            if not arguments_delta:
+                                continue
+
+                            if call_id:
+                                delta_real_item_id = call_id
+                            elif fake_item_id:
+                                delta_real_item_id = fake_id_to_real_id.get(
+                                    fake_item_id
+                                )
+                                if not delta_real_item_id:
+                                    continue
+                            else:
+                                continue
+
+                            tool_call_id = delta_real_item_id
+
+                            if tool_call_id not in tool_calls_dict:
+                                tool_calls_dict[tool_call_id] = {
+                                    "name": None,
+                                    "call_id": call_id,
+                                    "fake_id": fake_item_id,
+                                    "arguments_raw": "",
+                                    "completed": False,
+                                }
+
+                            tool_call_state = tool_calls_dict[tool_call_id]
+
+                            # Update tool name if we have call_id match
+                            if not tool_call_state["name"] and call_id:
+                                for tc_id, tc_state in tool_calls_dict.items():
+                                    if tc_state.get(
+                                        "call_id"
+                                    ) == call_id and tc_state.get("name"):
+                                        tool_call_state["name"] = tc_state["name"]
+                                        break
+
+                            tool_call_state["arguments_raw"] += arguments_delta
+
+                            # Only emit progress if we have a tool name
+                            if tool_call_state["name"]:
+                                # Emit progress event
+                                await internal_sio.emit(
+                                    "scenario_progress",
+                                    {
+                                        "sid": sid,
+                                        "type": "tool_call_progress",
+                                        "scenario_id": str(group_id)
+                                        if group_id
+                                        else None,
+                                        "run_id": str(model_run_id),
+                                        "tool_call_id": tool_call_id,
+                                        "call_id": call_id or tool_call_id,
+                                        "tool_name": tool_call_state["name"],
+                                        "arguments_raw": tool_call_state[
+                                            "arguments_raw"
+                                        ],
+                                    },
+                                )
+
+                        # Handle tool call completion
+                        if event_data_type == "response.output_item.done":
+                            fake_item_id = getattr(event_data, "item_id", None)
+                            item = getattr(event_data, "item", None)
+                            call_id = None
+                            if item:
+                                call_id = getattr(item, "call_id", None)
+                            if not call_id:
+                                call_id = getattr(event_data, "call_id", None)
+
+                            if call_id:
+                                done_real_item_id = call_id
+                            elif fake_item_id:
+                                done_real_item_id = fake_id_to_real_id.get(fake_item_id)
+                                if not done_real_item_id:
+                                    continue
+                            else:
+                                continue
+
+                            if done_real_item_id in tool_calls_dict:
+                                tool_call_id = done_real_item_id
+                                tool_call_state = tool_calls_dict[tool_call_id]
+
+                                if tool_call_state.get("completed"):
+                                    continue
+
+                                tool_call_state["completed"] = True
+                                tool_name = tool_call_state["name"]
+
+                                # Parse final arguments
+                                final_args = {}
+                                try:
+                                    import json
+
+                                    if tool_call_state["arguments_raw"]:
+                                        final_args = json.loads(
+                                            tool_call_state["arguments_raw"]
+                                        )
+                                except json.JSONDecodeError:
+                                    pass
+
+                                # Emit completion event
+                                await internal_sio.emit(
+                                    "scenario_complete",
+                                    {
+                                        "sid": sid,
+                                        "type": "tool_call_complete",
+                                        "scenario_id": str(group_id)
+                                        if group_id
+                                        else None,
+                                        "run_id": str(model_run_id),
+                                        "tool_call_id": tool_call_id,
+                                        "call_id": call_id or tool_call_id,
+                                        "tool_name": tool_name,
+                                        "final_content": str(final_args),
+                                        "arguments_raw": tool_call_state[
+                                            "arguments_raw"
+                                        ],
+                                    },
+                                )
+
+                                del tool_calls_dict[tool_call_id]
+
+            except BaseException as stream_error:
+                if isinstance(
+                    stream_error,
+                    (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
+                ):
+                    raise
+                raise
+            except Exception:
+                raise
+            finally:
+                # Clean up active run
+                from app.infra.v4.websocket.remove_active_run import remove_active_run
+
+                await remove_active_run(str(group_id) if group_id else sid)
+
+            usage = result_runner.context_wrapper.usage
+            assistant_output = getattr(result_runner, "final_output", None) or ""
 
             # Emit async pricing event via internal bus (non-blocking)
             # This handles token updates and message logging in background
@@ -2337,16 +2566,17 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 },
             )
 
-            # Emit completion event
-            # Note: Individual tool completion events are emitted separately by tool handlers
-            # Client should listen to scenario_tool_*_complete events for actual data
-            await scenario_generation_complete(
-                ScenarioGenerationCompletePayload(
-                    success=True,
-                    message="Scenario generation completed. Check tool completion events for created resources.",
-                    trace_id=trace_id,
-                ),
-                room=sid,
+            # Emit run completion event (dispatched by complete.py)
+            await internal_sio.emit(
+                "scenario_complete",
+                {
+                    "sid": sid,
+                    "type": "run_complete",
+                    "scenario_id": str(group_id) if group_id else None,
+                    "run_id": str(model_run_id),
+                    "message": "Scenario generation completed. Check tool completion events for created resources.",
+                    "trace_id": trace_id,
+                },
             )
 
             # If simulation_id is present, emit advance event after generation completes
@@ -2371,7 +2601,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                     endpoint="/socket/v4/scenarios/generate",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
         except RuntimeError:
             error_payload = ScenarioGenerationErrorPayload(
@@ -2422,7 +2652,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 endpoint="/socket/v4/scenarios/generate",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 
@@ -2463,7 +2693,7 @@ async def scenario_randomize(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/scenarios/randomize",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 
@@ -2534,7 +2764,7 @@ async def _randomize_scenario_impl(sid: str, data: RandomizeScenarioPayload) -> 
                 endpoint="/socket/v4/scenarios/randomize",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

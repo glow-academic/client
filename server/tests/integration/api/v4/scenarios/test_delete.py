@@ -1,7 +1,5 @@
 """Route tests for POST /api/v4/scenarios/delete endpoint."""
 
-import uuid
-from uuid import UUID
 
 import asyncpg  # type: ignore
 import httpx
@@ -28,10 +26,6 @@ async def test_delete_scenario(
     await get_superadmin_alias(db)
 
     # Create a scenario using SQL file
-    from tests.sql.types import (
-        CreateTestScenarioV4SqlParams,
-        CreateTestScenarioV4SqlRow,
-    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -76,10 +70,6 @@ async def test_delete_scenario_in_use(
     await get_superadmin_alias(db)
 
     # Create a scenario using SQL file
-    from tests.sql.types import (
-        CreateTestScenarioV4SqlParams,
-        CreateTestScenarioV4SqlRow,
-    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -96,7 +86,6 @@ async def test_delete_scenario_in_use(
     scenario_id = typed_scenario.scenario_id
 
     # Get or create rubric using SQL file
-    from tests.sql.types import GetOrCreateRubricV4SqlRow
 
     rubric_result = await execute_sql_typed(
         conn=db,

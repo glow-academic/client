@@ -5,6 +5,12 @@ from datetime import UTC, datetime
 from typing import Any, cast
 
 import asyncpg  # type: ignore
+
+# Removed gen_trace_id import - trace_id comes from SQL
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+from utils.sql_helper import execute_sql_typed, load_sql
+
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -15,11 +21,6 @@ from app.sql.types import (
     StartSimulationAttemptSqlParams,
     StartSimulationAttemptSqlRow,
 )
-
-# Removed gen_trace_id import - trace_id comes from SQL
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-from utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 
@@ -210,7 +211,7 @@ async def simulation_chat_create_internal(data: dict[str, Any]) -> None:
                             "chat": chat,
                         },
                     )
-    except Exception as e:
+    except Exception:
         # Error in chat creation - Socket.IO handles logging
         pass
 
@@ -503,7 +504,7 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                     endpoint="/socket/v4/simulations/start",
                     error=False,
                 )
-            except Exception as log_error:
+            except Exception:
                 pass
     except Exception as e:
         await simulation_start_error(
@@ -522,7 +523,7 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                 endpoint="/socket/v4/simulations/start",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 
@@ -549,7 +550,7 @@ async def simulation_start(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/simulations/start",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

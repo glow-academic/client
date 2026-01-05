@@ -5,13 +5,9 @@ from utils.sql_helper import execute_sql_typed
 
 from app.sql.types import (
     GetOrCreateTestDepartmentV4SqlParams,
-    GetOrCreateTestDepartmentV4SqlRow,
     GetOrCreateTestModelV4SqlParams,
-    GetOrCreateTestModelV4SqlRow,
     GetOrCreateTestProfileV4SqlParams,
-    GetOrCreateTestProfileV4SqlRow,
     TestGetOrCreateTestAgentV4SqlParams,
-    TestGetOrCreateTestAgentV4SqlRow,
 )
 
 
@@ -75,7 +71,6 @@ async def create_test_scenario(
     """Create a test scenario using SQL helper."""
     from app.sql.types import (
         TestCreateTestScenarioV4SqlParams,
-        TestCreateTestScenarioV4SqlRow,
     )
 
     params = TestCreateTestScenarioV4SqlParams(name=name)
@@ -93,7 +88,6 @@ async def create_test_chat(
     """Create a test chat using SQL helper."""
     from app.sql.types import (
         TestCreateTestChatV4SqlParams,
-        TestCreateTestChatV4SqlRow,
     )
 
     params = TestCreateTestChatV4SqlParams(scenario_id=scenario_id, trace_id=trace_id)
@@ -115,7 +109,6 @@ async def create_test_rubric(
     """Create a test rubric using SQL helper."""
     from app.sql.types import (
         TestCreateTestRubricV4SqlParams,
-        TestCreateTestRubricV4SqlRow,
     )
 
     params = TestCreateTestRubricV4SqlParams(
@@ -135,7 +128,6 @@ async def create_test_group(
     """Create a test group using SQL helper."""
     from app.sql.types import (
         TestCreateTestGroupV4SqlParams,
-        TestCreateTestGroupV4SqlRow,
     )
 
     params = TestCreateTestGroupV4SqlParams(rubric_id=rubric_id, trace_id=trace_id)
@@ -149,7 +141,6 @@ async def create_test_group(
 
 async def get_simulation_by_active(db: asyncpg.Connection) -> str | None:
     """Get first active simulation ID using SQL helper."""
-    from app.sql.types import TestGetSimulationByActiveV4SqlRow
 
     result = await execute_sql_typed(
         conn=db,
@@ -161,7 +152,6 @@ async def get_simulation_by_active(db: asyncpg.Connection) -> str | None:
 
 async def get_eval_by_active(db: asyncpg.Connection) -> str | None:
     """Get first active eval ID using SQL helper."""
-    from app.sql.types import TestGetEvalByActiveV4SqlRow
 
     result = await execute_sql_typed(
         conn=db,
@@ -175,7 +165,6 @@ async def get_chat_by_id(db: asyncpg.Connection, chat_id: str) -> dict[str, any]
     """Get chat by ID using SQL helper."""
     from app.sql.types import (
         TestGetChatByIdV4SqlParams,
-        TestGetChatByIdV4SqlRow,
     )
 
     result = await execute_sql_typed(
@@ -198,7 +187,6 @@ async def create_test_attempt(db: asyncpg.Connection, simulation_id: str) -> str
     """Create a test attempt using SQL helper."""
     from app.sql.types import (
         TestCreateTestAttemptV4SqlParams,
-        TestCreateTestAttemptV4SqlRow,
     )
 
     params = TestCreateTestAttemptV4SqlParams(simulation_id=simulation_id)
@@ -214,7 +202,6 @@ async def create_test_benchmark_attempt(db: asyncpg.Connection, eval_id: str) ->
     """Create a test benchmark attempt using SQL helper."""
     from app.sql.types import (
         TestCreateTestBenchmarkAttemptV4SqlParams,
-        TestCreateTestBenchmarkAttemptV4SqlRow,
     )
 
     params = TestCreateTestBenchmarkAttemptV4SqlParams(eval_id=eval_id)
@@ -232,7 +219,6 @@ async def create_test_test(
     """Create a test test using SQL helper."""
     from app.sql.types import (
         TestCreateTestTestV4SqlParams,
-        TestCreateTestTestV4SqlRow,
     )
 
     params = TestCreateTestTestV4SqlParams(title=title, run_id=run_id)
@@ -250,7 +236,6 @@ async def create_test_eval_run(
     """Create a test eval run and link it to an eval using SQL helper."""
     from app.sql.types import (
         TestCreateTestEvalRunV4SqlParams,
-        TestCreateTestEvalRunV4SqlRow,
     )
 
     params = TestCreateTestEvalRunV4SqlParams(eval_id=eval_id, completed=completed)
@@ -266,7 +251,6 @@ async def create_test_eval_group(db: asyncpg.Connection, eval_id: str) -> str:
     """Create a test eval group and link it to an eval using SQL helper."""
     from app.sql.types import (
         TestCreateTestEvalGroupV4SqlParams,
-        TestCreateTestEvalGroupV4SqlRow,
     )
 
     params = TestCreateTestEvalGroupV4SqlParams(eval_id=eval_id)

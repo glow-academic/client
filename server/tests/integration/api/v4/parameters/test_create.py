@@ -5,13 +5,6 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
-    CreateParameterItemDepartmentLinkSqlParams,
-    CreateParameterItemDepartmentLinkSqlRow,
-    CreateTestParameterItemSqlParams,
-    CreateTestParameterItemSqlRow,
-    CreateTestParameterSqlParams,
-    CreateTestParameterSqlRow,
-    GetCsDeptIdSqlParams,
     GetCsDeptIdSqlRow,
     GetParameterByIdSqlParams,
     GetParameterByIdSqlRow,

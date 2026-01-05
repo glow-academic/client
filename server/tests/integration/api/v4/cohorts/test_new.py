@@ -6,12 +6,9 @@ import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateCohortDepartmentLinkSqlParams,
-    CreateCohortDepartmentLinkSqlRow,
     CreateProfileDepartmentLinkSqlParams,
-    CreateProfileDepartmentLinkSqlRow,
     CreateTestCohortSqlParams,
     CreateTestCohortSqlRow,
-    GetFirstDepartmentSqlParams,
     GetFirstDepartmentSqlRow,
     GetOrCreateTestProfileSqlParams,
     GetOrCreateTestProfileSqlRow,

@@ -109,10 +109,11 @@ async def test_benchmark_runs_start_all_with_groups(
         pytest.skip("No active evals found in test database")
 
     # Update eval to use groups
+    from utils.sql_helper import execute_sql_typed
+
     from app.sql.types import (
         TestUpdateEvalUseGroupsV4SqlParams,
     )
-    from utils.sql_helper import execute_sql_typed
 
     update_params = TestUpdateEvalUseGroupsV4SqlParams(
         eval_id=uuid.UUID(eval_id), use_groups=True

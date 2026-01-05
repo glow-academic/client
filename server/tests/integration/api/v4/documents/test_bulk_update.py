@@ -5,13 +5,8 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
-    CreateDocumentDepartmentLinkSqlParams,
-    CreateDocumentDepartmentLinkSqlRow,
-    CreateDocumentParameterItemLinkSqlParams,
-    CreateDocumentParameterItemLinkSqlRow,
     CreateTestDocumentSqlParams,
     CreateTestDocumentSqlRow,
-    GetCsDeptIdSqlParams,
     GetCsDeptIdSqlRow,
     GetDocumentByIdSqlParams,
     GetDocumentByIdSqlRow,
@@ -19,7 +14,6 @@ from tests.sql.types import (
     GetDocumentDepartmentLinkExistsSqlRow,
     GetDocumentParameterItemLinkExistsSqlParams,
     GetDocumentParameterItemLinkExistsSqlRow,
-    GetFirstParameterItemSqlParams,
     GetFirstParameterItemSqlRow,
 )
 from utils.sql_helper import execute_sql_typed

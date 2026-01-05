@@ -24,8 +24,8 @@ async def test_simulation_advance_success(
 
     # Create attempt
     from tests.integration.socket.v4.helpers import (
-        get_simulation_by_active,
         create_test_attempt,
+        get_simulation_by_active,
     )
 
     simulation_id = await get_simulation_by_active(db)
@@ -59,8 +59,8 @@ async def test_simulation_advance_missing_scenario_id(
     profile_id = await get_or_create_test_profile(db)
 
     from tests.integration.socket.v4.helpers import (
-        get_simulation_by_active,
         create_test_attempt,
+        get_simulation_by_active,
     )
 
     simulation_id = await get_simulation_by_active(db)

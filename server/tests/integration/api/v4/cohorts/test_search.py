@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/cohorts/search endpoint."""
 
-from uuid import UUID
 
 import asyncpg  # type: ignore
 import httpx
@@ -8,10 +7,8 @@ import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
     CreateCohortDepartmentLinkSqlParams,
-    CreateCohortDepartmentLinkSqlRow,
     CreateTestCohortSqlParams,
     CreateTestCohortSqlRow,
-    GetFirstDepartmentSqlParams,
     GetFirstDepartmentSqlRow,
 )
 from utils.sql_helper import execute_sql_typed

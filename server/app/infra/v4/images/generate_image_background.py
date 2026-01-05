@@ -2,7 +2,6 @@
 
 import os
 import uuid
-
 from typing import cast
 
 from utils.auth.decrypt_api_key import decrypt_api_key

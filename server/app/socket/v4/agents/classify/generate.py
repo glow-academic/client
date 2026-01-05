@@ -16,6 +16,7 @@ from agents import (
 )
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
+from jinja2 import Template
 from pydantic import BaseModel, Field, ValidationError
 from utils.sql_helper import execute_sql_typed
 
@@ -26,22 +27,18 @@ from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import TUS_UPLOADS_DIR, get_internal_sio, sio
 from app.sql.types import (
+    GetClassificationContextSqlParams,
+    GetClassificationContextSqlRow,
+    GetDeveloperInstructionSqlParams,
+    GetDeveloperInstructionSqlRow,
     GetFirstDepartmentForProfileSqlParams,
     GetFirstDepartmentForProfileSqlRow,
     GetUploadClassificationRunContextAndCreateRunSqlParams,
     GetUploadClassificationRunContextAndCreateRunSqlRow,
-    GetClassificationContextSqlParams,
-    GetClassificationContextSqlRow,
-    GetAgentToolsSqlParams,
-    GetAgentToolsSqlRow,
-    LinkSystemDeveloperMessagesToRunSqlParams,
-    LinkSystemDeveloperMessagesToRunSqlRow,
     LinkDeveloperMessageToRunSqlParams,
     LinkDeveloperMessageToRunSqlRow,
-    GetDeveloperInstructionSqlParams,
-    GetDeveloperInstructionSqlRow,
+    LinkSystemDeveloperMessagesToRunSqlParams,
 )
-from jinja2 import Template
 
 internal_sio = get_internal_sio()
 

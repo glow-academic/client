@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/scenarios/duplicate endpoint."""
 
-import uuid
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -11,12 +10,10 @@ from tests.sql.types import (
     CreateScenarioDepartmentLinkV4SqlParams,
     CreateTestScenarioV4SqlParams,
     CreateTestScenarioV4SqlRow,
-    GetScenarioDepartmentLinkV4SqlParams,
-    GetScenarioDepartmentLinkV4SqlRow,
     GetScenarioDepartmentLinksV4SqlParams,
     GetScenarioDepartmentLinksV4SqlRow,
-    GetScenarioByIdSqlParams,
-    GetScenarioByIdSqlRow,
+    GetScenarioDepartmentLinkV4SqlParams,
+    GetScenarioDepartmentLinkV4SqlRow,
 )
 from utils.sql_helper import execute_sql_typed
 
@@ -31,10 +28,6 @@ async def test_duplicate_scenario_with_departments(
     dept_id = await get_cs_dept_id(db)
 
     # Create a scenario using SQL file
-    from tests.sql.types import (
-        CreateTestScenarioV4SqlParams,
-        CreateTestScenarioV4SqlRow,
-    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -51,7 +44,6 @@ async def test_duplicate_scenario_with_departments(
     scenario_id = typed_scenario.scenario_id
 
     # Link to department using SQL file
-    from tests.sql.types import CreateScenarioDepartmentLinkV4SqlParams
 
     await execute_sql_typed(
         conn=db,
@@ -77,10 +69,6 @@ async def test_duplicate_scenario_with_departments(
     assert new_scenario_id != scenario_id
 
     # Verify department link was duplicated using SQL file
-    from tests.sql.types import (
-        GetScenarioDepartmentLinkV4SqlParams,
-        GetScenarioDepartmentLinkV4SqlRow,
-    )
 
     new_dept_link_result = await execute_sql_typed(
         conn=db,
@@ -104,10 +92,6 @@ async def test_duplicate_scenario_without_departments(
     await get_superadmin_alias(db)
 
     # Create a scenario using SQL file
-    from tests.sql.types import (
-        CreateTestScenarioV4SqlParams,
-        CreateTestScenarioV4SqlRow,
-    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -136,10 +120,6 @@ async def test_duplicate_scenario_without_departments(
     new_scenario_id = UUID(data["scenarioId"])
 
     # Verify no department links were created (original had none) using SQL file
-    from tests.sql.types import (
-        GetScenarioDepartmentLinksV4SqlParams,
-        GetScenarioDepartmentLinksV4SqlRow,
-    )
 
     dept_links_result = await execute_sql_typed(
         conn=db,

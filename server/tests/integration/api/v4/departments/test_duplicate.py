@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/departments/duplicate endpoint."""
 
-import uuid
 from uuid import UUID
 
 import asyncpg  # type: ignore

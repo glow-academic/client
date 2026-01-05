@@ -1,10 +1,11 @@
 """Attempts resource router."""
 
+from fastapi import APIRouter
+
 from app.api.v4.attempts.archive import router as archive_router
 from app.api.v4.attempts.draft import router as draft_router
 from app.api.v4.attempts.eval import router as eval_router
 from app.api.v4.attempts.simulation import router as simulation_router
-from fastapi import APIRouter
 
 router = APIRouter(prefix="/attempts", tags=["attempts"])
 

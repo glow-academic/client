@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/departments/create endpoint."""
 
-import uuid
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -8,8 +7,6 @@ import httpx
 import pytest
 from tests.seed_helpers import get_superadmin_alias  # type: ignore
 from tests.sql.types import (
-    CreateTestDepartmentSqlParams,
-    CreateTestDepartmentSqlRow,
     GetDepartmentByIdSqlParams,
     GetDepartmentByIdSqlRow,
     GetProfileDepartmentLinkV4SqlParams,
@@ -56,10 +53,6 @@ async def test_create_department(
 
     # Verify profile link was created (superadmin should be auto-linked) using SQL file
     profile_id = await get_superadmin_alias(db)
-    from tests.sql.types import (
-        GetProfileDepartmentLinkV4SqlParams,
-        GetProfileDepartmentLinkV4SqlRow,
-    )
 
     profile_link_result = await execute_sql_typed(
         conn=db,

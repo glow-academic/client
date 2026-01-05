@@ -1,7 +1,5 @@
 """Route tests for POST /api/v4/departments/delete endpoint."""
 
-import uuid
-from uuid import UUID
 
 import asyncpg  # type: ignore
 import httpx
@@ -83,7 +81,6 @@ async def test_delete_department_in_use(
     dept_id = typed_dept.department_id
 
     # Get or create rubric using SQL file
-    from tests.sql.types import GetOrCreateRubricV4SqlRow
 
     rubric_result = await execute_sql_typed(
         conn=db,
@@ -113,7 +110,6 @@ async def test_delete_department_in_use(
     simulation_id = typed_simulation.simulation_id
 
     # Link simulation to department using SQL file
-    from tests.sql.types import CreateSimulationDepartmentLinkV4SqlParams
 
     await execute_sql_typed(
         conn=db,

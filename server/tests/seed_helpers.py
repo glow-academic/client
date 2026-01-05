@@ -1,13 +1,12 @@
 """Minimal helpers to query CS seed data using typed SQL functions."""
 
 import asyncpg  # type: ignore
-from utils.sql_helper import execute_sql_typed
-
 from tests.sql.types import (
     GetCsDeptIdSqlRow,
     GetSuperadminAliasSqlParams,
     GetSuperadminAliasSqlRow,
 )
+from utils.sql_helper import execute_sql_typed
 
 
 async def get_cs_dept_id(conn: asyncpg.Connection) -> str:

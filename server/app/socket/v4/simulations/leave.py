@@ -72,7 +72,7 @@ async def _simulation_leave_impl(sid: str, data: SimulationLeavePayload) -> None
             endpoint="/socket/v4/simulations/leave",
             error=False,
         )
-    except Exception as log_error:
+    except Exception:
         pass
 
 
@@ -99,7 +99,7 @@ async def simulation_leave(sid: str, data: dict[str, Any]) -> None:
                 endpoint="/socket/v4/simulations/leave",
                 error=True,
             )
-        except Exception as log_error:
+        except Exception:
             pass
 
 

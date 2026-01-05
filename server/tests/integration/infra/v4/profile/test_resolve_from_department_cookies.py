@@ -1,6 +1,5 @@
 """Integration tests for app.infra.v4.profile.resolve_from_department_cookies."""
 
-import asyncpg
 import pytest
 
 from app.infra.v4.profile.resolve_from_department_cookies import (
