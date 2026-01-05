@@ -908,7 +908,8 @@ all_documents_array AS (
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-    LEFT JOIN html h ON h.id = dt.html_id
+    LEFT JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
+    LEFT JOIN html h ON h.id = dh.html_id
     LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
     LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
     LEFT JOIN document_fields_data dfd ON dfd.document_id = d.id
@@ -1326,7 +1327,7 @@ all_document_details_array AS (
         COALESCE(u.file_path, template_u.file_path) as file_path,
         COALESCE(u.mime_type, template_u.mime_type) as mime_type,
         COALESCE(u.id, template_u.id) as upload_id,
-        dt.html_id as html_id,
+        dh2.html_id as html_id,
         COALESCE((
             SELECT ARRAY_AGG(df.field_id)
             FROM document_fields df
@@ -1345,7 +1346,8 @@ all_document_details_array AS (
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-    LEFT JOIN html h ON h.id = dt.html_id
+    LEFT JOIN document_html dh2 ON dh2.document_id = d.id AND dh2.active = true
+    LEFT JOIN html h ON h.id = dh2.html_id
     LEFT JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
     LEFT JOIN uploads template_u ON template_u.id = hu.upload_id
     LEFT JOIN document_tree_data dtd ON dtd.document_id = d.id

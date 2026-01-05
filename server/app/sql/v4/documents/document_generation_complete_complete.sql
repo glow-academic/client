@@ -246,22 +246,38 @@ BEGIN
             ON CONFLICT (schema_id, template_id) DO UPDATE SET updated_at = NOW();
         END IF;
 
-        -- Link template to document with html_id and schema_id
-        INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
-        VALUES (document_id, template_id_val, html_id_val, schema_id_val, true, NOW(), NOW())
+        -- Link template to document (without html_id and schema_id)
+        INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
+        VALUES (document_id, template_id_val, true, NOW(), NOW())
         ON CONFLICT (document_id, template_id) DO UPDATE SET
-            html_id = EXCLUDED.html_id,
-            schema_id = EXCLUDED.schema_id,
             active = EXCLUDED.active,
             updated_at = NOW();
 
+        -- Link HTML to document via document_html junction
+        IF html_id_val IS NOT NULL THEN
+            INSERT INTO document_html (document_id, html_id, active, created_at, updated_at)
+            VALUES (document_id, html_id_val, true, NOW(), NOW())
+            ON CONFLICT (document_id, html_id) DO UPDATE SET
+                active = EXCLUDED.active,
+                updated_at = NOW();
+        END IF;
+
+        -- Link schema to document via document_schemas junction
+        IF schema_id_val IS NOT NULL THEN
+            INSERT INTO document_schemas (document_id, schema_id, active, created_at, updated_at)
+            VALUES (document_id, schema_id_val, true, NOW(), NOW())
+            ON CONFLICT (document_id, schema_id) DO UPDATE SET
+                active = EXCLUDED.active,
+                updated_at = NOW();
+        END IF;
+
         -- 4. Fetch template mapping
         SELECT jsonb_object_agg(
-            dt.html_id::text,
+            dh.html_id::text,
             jsonb_build_object(
                 'template_id', dt.template_id::text,
-                'schema_id', dt.schema_id::text,
-                'html_id', dt.html_id::text,
+                'schema_id', ds.schema_id::text,
+                'html_id', dh.html_id::text,
                 'active', dt.active,
                 'created_at', dt.created_at,
                 'updated_at', dt.updated_at
@@ -269,6 +285,8 @@ BEGIN
         )
         INTO template_mapping_val
         FROM document_templates dt
+        LEFT JOIN document_html dh ON dh.document_id = dt.document_id AND dh.active = dt.active
+        LEFT JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.active = dt.active
         WHERE dt.document_id = document_id;
     END IF;
 

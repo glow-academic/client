@@ -154,16 +154,16 @@ document_data AS (
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
-        (SELECT dt.html_id FROM document_templates dt WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as html_id,
-        (SELECT dt.schema_id FROM document_templates dt WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as schema_id,
+        (SELECT dh.html_id FROM document_html dh WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as html_id,
+        (SELECT ds.schema_id FROM document_schemas ds WHERE ds.document_id = d.id AND ds.active = true ORDER BY ds.created_at DESC LIMIT 1) as schema_id,
         (SELECT u.file_path FROM document_uploads du 
          JOIN uploads u ON u.id = du.upload_id 
          WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as file_path,
-        (SELECT u.file_path FROM document_templates dt
-         JOIN html h ON h.id = dt.html_id
-         JOIN html_uploads hu ON hu.html_id = h.id
+        (SELECT u.file_path FROM document_html dh
+         JOIN html h ON h.id = dh.html_id
+         JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
          JOIN uploads u ON u.id = hu.upload_id 
-         WHERE dt.document_id = d.id AND dt.active = true ORDER BY dt.created_at DESC LIMIT 1) as template_file_path,
+         WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as template_file_path,
         d.template,
         (SELECT ARRAY_AGG(DISTINCT st.parent_id) FROM scenario_documents sd
          JOIN scenario_tree st ON st.child_id = sd.scenario_id AND st.parent_id = st.child_id
@@ -177,11 +177,12 @@ document_active_template AS (
     SELECT 
         dt.document_id,
         dt.template_id,
-        dt.schema_id,
+        ds.schema_id,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
     FROM params x
     JOIN document_templates dt ON dt.document_id = x.document_id AND dt.active = true
+    LEFT JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.active = true
     ORDER BY dt.created_at DESC
     LIMIT 1
 ),
@@ -189,12 +190,13 @@ document_all_templates AS (
     SELECT 
         dt.document_id,
         dt.template_id,
-        dt.schema_id,
+        ds.schema_id,
         dt.active as template_active,
         dt.created_at as template_created_at,
         dt.updated_at as template_updated_at
     FROM params x
     JOIN document_templates dt ON dt.document_id = x.document_id
+    LEFT JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.active = dt.active
 ),
 user_profile AS (
     SELECT 

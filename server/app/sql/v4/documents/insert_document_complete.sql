@@ -85,16 +85,19 @@ create_template AS (
     WHERE html_id IS NOT NULL AND schema_id IS NOT NULL
       AND NOT EXISTS (
           SELECT 1 FROM document_templates dt
-          WHERE dt.html_id = html_id 
-            AND dt.schema_id = schema_id
+          JOIN document_html dh ON dh.document_id = dt.document_id AND dh.html_id = html_id AND dh.active = true
+          JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.schema_id = schema_id AND ds.active = true
+          WHERE dt.active = true
       )
     RETURNING id as template_id
 ),
 get_existing_template AS (
-    -- Get existing template if it exists (matching html_id and schema_id via document_templates)
-    SELECT dt.template_id
+    -- Get existing template if it exists (matching html_id and schema_id via document_html and document_schemas)
+    SELECT DISTINCT dt.template_id
     FROM document_templates dt
-    WHERE dt.html_id = html_id AND dt.schema_id = schema_id
+    JOIN document_html dh ON dh.document_id = dt.document_id AND dh.html_id = html_id AND dh.active = true
+    JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.schema_id = schema_id AND ds.active = true
+    WHERE dt.active = true
       AND html_id IS NOT NULL AND schema_id IS NOT NULL
     LIMIT 1
 ),
@@ -119,21 +122,45 @@ link_template_schema AS (
         updated_at = NOW()
 ),
 insert_template_link AS (
-    -- Link template to document with html_id and schema_id
-    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
+    -- Link template to document (without html_id and schema_id)
+    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
     SELECT 
         document_id,
         ti.template_id,
-        html_id,
-        schema_id,
         true,
         NOW(),
         NOW()
     FROM template_id ti
     WHERE html_id IS NOT NULL AND schema_id IS NOT NULL
     ON CONFLICT (document_id, template_id) DO UPDATE SET
-        html_id = EXCLUDED.html_id,
-        schema_id = EXCLUDED.schema_id,
+        active = true,
+        updated_at = NOW()
+),
+insert_html_link AS (
+    -- Link HTML to document via document_html junction
+    INSERT INTO document_html (document_id, html_id, active, created_at, updated_at)
+    SELECT 
+        document_id,
+        html_id,
+        true,
+        NOW(),
+        NOW()
+    WHERE html_id IS NOT NULL
+    ON CONFLICT (document_id, html_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
+insert_schema_link AS (
+    -- Link schema to document via document_schemas junction
+    INSERT INTO document_schemas (document_id, schema_id, active, created_at, updated_at)
+    SELECT 
+        document_id,
+        schema_id,
+        true,
+        NOW(),
+        NOW()
+    WHERE schema_id IS NOT NULL
+    ON CONFLICT (document_id, schema_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

@@ -105,7 +105,7 @@ SELECT
     d.name::text as document_name,
     ap.actor_name::text as actor_name,
     u.file_path::text as file_path,
-    dt.schema_id,
+    ds.schema_id,
     -- Settings fields
     s.primary_color::text as settings_primary_color,
     s.accent::text as settings_accent,
@@ -124,9 +124,11 @@ SELECT
 FROM params x
 JOIN documents d ON d.id = x.document_id
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-INNER JOIN html h ON h.id = dt.html_id
+INNER JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
+INNER JOIN html h ON h.id = dh.html_id
 INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
 INNER JOIN uploads u ON u.id = hu.upload_id
+LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
 CROSS JOIN actor_profile ap
 CROSS JOIN selected_settings ss
 LEFT JOIN settings s ON s.id = ss.settings_id

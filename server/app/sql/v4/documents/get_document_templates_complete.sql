@@ -31,13 +31,15 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT
-    dt.html_id,
+    dh.html_id,
     dt.template_id,
-    dt.schema_id,
+    ds.schema_id,
     dt.active,
     dt.created_at,
     dt.updated_at
 FROM document_templates dt
-WHERE dt.document_id = document_id
+LEFT JOIN document_html dh ON dh.document_id = dt.document_id AND dh.active = dt.active
+LEFT JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.active = dt.active
+WHERE dt.document_id = api_get_document_templates_v4.document_id
 ORDER BY dt.created_at DESC
 $$;

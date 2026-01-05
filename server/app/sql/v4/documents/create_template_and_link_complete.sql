@@ -58,11 +58,12 @@ WITH deactivate_previous AS (
       AND $5 = true
 ),
 existing_template AS (
-    -- Check if template already exists (same html_id and schema_id via document_templates)
-    SELECT dt.template_id
+    -- Check if template already exists (same html_id and schema_id via document_html and document_schemas)
+    SELECT DISTINCT dt.template_id
     FROM document_templates dt
-    WHERE dt.html_id = $2 
-      AND dt.schema_id = $4
+    JOIN document_html dh ON dh.document_id = dt.document_id AND dh.html_id = $2 AND dh.active = true
+    JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.schema_id = $4 AND ds.active = true
+    WHERE dt.active = true
     LIMIT 1
 ),
 create_template AS (
@@ -95,23 +96,49 @@ link_schema AS (
         updated_at = NOW()
 ),
 link_to_document AS (
-    -- Link template to document with html_id and schema_id
-    INSERT INTO document_templates (document_id, template_id, html_id, schema_id, active, created_at, updated_at)
+    -- Link template to document (without html_id and schema_id)
+    INSERT INTO document_templates (document_id, template_id, active, created_at, updated_at)
     SELECT 
         $1,
         ti.template_id,
-        $2,
-        $4,
         $5,
         NOW(),
         NOW()
     FROM template_id ti
     ON CONFLICT (document_id, template_id) DO UPDATE SET
-        html_id = EXCLUDED.html_id,
-        schema_id = EXCLUDED.schema_id,
         active = EXCLUDED.active,
         updated_at = NOW()
     RETURNING template_id
+),
+link_html_to_document AS (
+    -- Link HTML to document via document_html junction
+    INSERT INTO document_html (document_id, html_id, active, created_at, updated_at)
+    SELECT 
+        $1,
+        $2,
+        $5,
+        NOW(),
+        NOW()
+    FROM template_id ti
+    WHERE $2 IS NOT NULL
+    ON CONFLICT (document_id, html_id) DO UPDATE SET
+        active = EXCLUDED.active,
+        updated_at = NOW()
+),
+link_schema_to_document AS (
+    -- Link schema to document via document_schemas junction
+    INSERT INTO document_schemas (document_id, schema_id, active, created_at, updated_at)
+    SELECT 
+        $1,
+        $4,
+        $5,
+        NOW(),
+        NOW()
+    FROM template_id ti
+    WHERE $4 IS NOT NULL
+    ON CONFLICT (document_id, schema_id) DO UPDATE SET
+        active = EXCLUDED.active,
+        updated_at = NOW()
 ),
 link_to_run AS (
     -- Link template to run via tool_call if run_id provided

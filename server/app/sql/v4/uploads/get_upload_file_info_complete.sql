@@ -62,10 +62,10 @@ regular_document_upload AS (
     SELECT 
         du.document_id,
         d.template,
-        (SELECT dt.schema_id 
-         FROM document_templates dt 
-         WHERE dt.document_id = d.id AND dt.active = true 
-         ORDER BY dt.created_at DESC 
+        (SELECT ds.schema_id 
+         FROM document_schemas ds 
+         WHERE ds.document_id = d.id AND ds.active = true 
+         ORDER BY ds.created_at DESC 
          LIMIT 1) as schema_id
     FROM document_uploads du
     JOIN documents d ON d.id = du.document_id
@@ -74,18 +74,19 @@ regular_document_upload AS (
     LIMIT 1
 ),
 template_upload AS (
-    -- Case 2: Upload is a template upload (via document_templates → html → html_uploads)
+    -- Case 2: Upload is a template upload (via document_html → html → html_uploads)
     SELECT 
-        dt.document_id,
+        dh.document_id,
         d.template,
-        dt.schema_id
+        ds.schema_id
     FROM html_uploads hu
     JOIN html h ON h.id = hu.html_id
-    JOIN document_templates dt ON dt.html_id = h.id AND dt.active = true
-    JOIN documents d ON d.id = dt.document_id
+    JOIN document_html dh ON dh.html_id = h.id AND dh.active = true
+    JOIN documents d ON d.id = dh.document_id
+    LEFT JOIN document_schemas ds ON ds.document_id = dh.document_id AND ds.active = true
     WHERE hu.upload_id = (SELECT upload_id FROM params)
       AND hu.active = true
-    ORDER BY dt.created_at DESC
+    ORDER BY dh.created_at DESC
     LIMIT 1
 ),
 template_info AS (

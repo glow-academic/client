@@ -32,16 +32,18 @@ STABLE
 AS $$
 SELECT 
     u.file_path,
-    dt.schema_id,
+    ds.schema_id,
     d.classify_agent_id::text,
     d.document_agent_id::text,
     d.name,
     d.description
 FROM documents d
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
-INNER JOIN html h ON h.id = dt.html_id
+INNER JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
+INNER JOIN html h ON h.id = dh.html_id
 INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
 INNER JOIN uploads u ON u.id = hu.upload_id
+LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
 WHERE d.id = parent_document_id
 ORDER BY dt.created_at DESC
 LIMIT 1
