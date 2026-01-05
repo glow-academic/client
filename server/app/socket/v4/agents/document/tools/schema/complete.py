@@ -20,7 +20,9 @@ from utils.sql_helper import execute_sql_typed
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/documents/tools/schema/document_tool_schema_complete_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/documents/tools/schema/document_tool_schema_complete_complete.sql"
+)
 
 
 async def _document_tool_schema_complete_impl(

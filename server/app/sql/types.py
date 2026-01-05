@@ -8544,10 +8544,33 @@ class GetDocumentRunContextAndCreateRunSqlParams(BaseModel):
             self.field_ids,
         )
 
+class IGetDocumentRunContextAndCreateRunV4Field(BaseModel):
+
+    item_name: str | None
+    item_description: str | None
+    param_name: str | None
+    param_description: str | None
+
+
+
+
+class IGetDocumentRunContextAndCreateRunV4Tool(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    tool_type: str | None
+    agent_role: str | None
+    arguments: Any | None
+    argument_descriptions: Any | None
+    argument_defaults: Any | None
+    active: bool | None
+
 class GetDocumentRunContextAndCreateRunSqlRow(BaseModel):
 
     agent_id: str | None = None
     agent_name: str | None = None
+    agent_role: str | None = None
     system_prompt: str | None = None
     temperature: float | None = None
     reasoning: str | None = None
@@ -8563,6 +8586,12 @@ class GetDocumentRunContextAndCreateRunSqlRow(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
+    tools: list[IGetDocumentRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_template: str | None = None
+    developer_instruction_schema_id: UUID | None = None
+    department_name: str | None = None
+    template_context_fields: list[IGetDocumentRunContextAndCreateRunV4Field] | None = None
+    developer_message_id: UUID | None = None
 
 class GetDocumentRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -8576,6 +8605,7 @@ class GetDocumentRunContextAndCreateRunApiResponse(BaseModel):
 
     agent_id: str | None = None
     agent_name: str | None = None
+    agent_role: str | None = None
     system_prompt: str | None = None
     temperature: float | None = None
     reasoning: str | None = None
@@ -8591,6 +8621,12 @@ class GetDocumentRunContextAndCreateRunApiResponse(BaseModel):
     run_id: str | None = None
     group_id: UUID | None = None
     trace_id: str | None = None
+    tools: list[IGetDocumentRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_template: str | None = None
+    developer_instruction_schema_id: UUID | None = None
+    department_name: str | None = None
+    template_context_fields: list[IGetDocumentRunContextAndCreateRunV4Field] | None = None
+    developer_message_id: UUID | None = None
 
 
 

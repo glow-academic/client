@@ -7,9 +7,11 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio
-from app.sql.types import (DocumentToolProgressUpdateApiRequest,
-                           DocumentToolProgressUpdateSqlParams,
-                           DocumentToolProgressUpdateSqlRow)
+from app.sql.types import (
+    DocumentToolProgressUpdateApiRequest,
+    DocumentToolProgressUpdateSqlParams,
+    DocumentToolProgressUpdateSqlRow,
+)
 from fastapi import APIRouter
 from utils.sql_helper import execute_sql_typed
 
@@ -40,8 +42,12 @@ async def _document_progress_impl(
         async with get_db_connection() as conn:
             # Call SQL - SQL handles tool lookup, tool_call creation, argument accumulation
             # Get arguments_delta from data (may be arguments_raw or arguments_delta)
-            arguments_delta = getattr(data, "arguments_delta", None) or getattr(data, "arguments_raw", "") or ""
-            
+            arguments_delta = (
+                getattr(data, "arguments_delta", None)
+                or getattr(data, "arguments_raw", "")
+                or ""
+            )
+
             params = DocumentToolProgressUpdateSqlParams(
                 run_id=uuid.UUID(data.run_id),
                 tool_call_id=data.tool_call_id,
@@ -94,12 +100,20 @@ async def _document_progress_impl(
     except RuntimeError:
         await internal_sio.emit(
             "document_error",
-            {"sid": sid, "success": False, "message": "Database connection unavailable"},
+            {
+                "sid": sid,
+                "success": False,
+                "message": "Database connection unavailable",
+            },
         )
     except Exception as e:
         await internal_sio.emit(
             "document_error",
-            {"sid": sid, "success": False, "message": f"Progress update failed: {str(e)}"},
+            {
+                "sid": sid,
+                "success": False,
+                "message": f"Progress update failed: {str(e)}",
+            },
         )
 
 

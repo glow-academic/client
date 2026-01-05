@@ -29,9 +29,11 @@ class StreamEventCallbacks:
 
     def __init__(
         self,
-        on_tool_call_start: Callable[[str, str, str | None], Awaitable[None]] | None = None,
+        on_tool_call_start: Callable[[str, str, str | None], Awaitable[None]]
+        | None = None,
         on_tool_call_progress: Callable[[str, str], Awaitable[None]] | None = None,
-        on_tool_call_complete: Callable[[str, dict[str, Any]], Awaitable[None]] | None = None,
+        on_tool_call_complete: Callable[[str, dict[str, Any]], Awaitable[None]]
+        | None = None,
     ):
         """Initialize callbacks.
 
@@ -126,9 +128,7 @@ async def stream_agent_events(
 
                 # Call callback
                 if callbacks.on_tool_call_start:
-                    await callbacks.on_tool_call_start(
-                        tool_call_id, tool_name, call_id
-                    )
+                    await callbacks.on_tool_call_start(tool_call_id, tool_name, call_id)
 
         # Handle argument deltas
         elif event_data_type == "response.function_call_arguments.delta":
@@ -193,4 +193,3 @@ async def stream_agent_events(
 
             # Clean up
             del tool_calls[tool_call_id]
-

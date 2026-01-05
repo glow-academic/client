@@ -20,7 +20,9 @@ from utils.sql_helper import execute_sql_typed
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/documents/tools/title/document_tool_title_progress_update_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/documents/tools/title/document_tool_title_progress_update_complete.sql"
+)
 
 
 async def _document_tool_title_progress_impl(
@@ -34,8 +36,12 @@ async def _document_tool_title_progress_impl(
         async with get_db_connection() as conn:
             # Call SQL - SQL handles tool_call lookup and argument accumulation
             # Get arguments_delta from data (may be arguments_raw or arguments_delta)
-            arguments_delta = getattr(data, "arguments_delta", None) or getattr(data, "arguments_raw", "") or ""
-            
+            arguments_delta = (
+                getattr(data, "arguments_delta", None)
+                or getattr(data, "arguments_raw", "")
+                or ""
+            )
+
             params = DocumentToolTitleProgressUpdateSqlParams(
                 run_id=uuid.UUID(data.run_id),
                 tool_call_id=data.tool_call_id,

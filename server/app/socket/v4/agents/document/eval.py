@@ -7,9 +7,11 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.main import get_internal_sio
-from app.sql.types import (AgentsDocumentDocumentEvalStartApiRequest,
-                           AgentsDocumentDocumentEvalStartSqlParams,
-                           AgentsDocumentDocumentEvalStartSqlRow)
+from app.sql.types import (
+    AgentsDocumentDocumentEvalStartApiRequest,
+    AgentsDocumentDocumentEvalStartSqlParams,
+    AgentsDocumentDocumentEvalStartSqlRow,
+)
 from fastapi import APIRouter
 from utils.sql_helper import execute_sql_typed
 

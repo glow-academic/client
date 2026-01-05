@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/models/delete endpoint."""
 
-
 import asyncpg  # type: ignore
 import httpx
 import pytest

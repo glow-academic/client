@@ -64,7 +64,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
     if sql_path.startswith(app_sql_prefix):
         relative = sql_path[len(app_sql_prefix) :]
         parts = relative.split("/")
-        
+
         # Handle infrastructure paths: infrastructure/[category]/[operation]_complete.sql
         if len(parts) == 3 and parts[0] == "infrastructure":
             category, filename = parts[1], parts[2]
@@ -72,16 +72,16 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
                 return None
             operation = filename[: -len("_complete.sql")]
             return f"infra_{category}_{operation}".replace("-", "_")
-        
+
         # Handle arbitrary depth paths: [any]/[path]/[operation]_complete.sql
         # Extract filename (last part) and use it as the operation name
         if len(parts) < 2:
             return None
-        
+
         filename = parts[-1]
         if not filename.endswith("_complete.sql"):
             return None
-        
+
         # Extract operation name from filename (remove _complete.sql suffix)
         operation = filename[: -len("_complete.sql")]
         return operation.replace("-", "_")

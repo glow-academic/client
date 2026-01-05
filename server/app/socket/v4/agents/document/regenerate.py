@@ -4,15 +4,25 @@ import asyncio
 import uuid
 from typing import Any, cast
 
-from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
-                    ToolsToFinalOutputResult, function_tool, trace)
+from agents import (
+    FunctionToolResult,
+    RunContextWrapper,
+    Runner,
+    Tool,
+    ToolsToFinalOutputResult,
+    trace,
+)
 from agents.items import TResponseInputItem
 from app.infra.v4.agents.generic_agent import GenericAgent
-from app.infra.v4.agents.stream_agent_events import (StreamEventCallbacks,
-                                                     stream_agent_events)
+from app.infra.v4.agents.stream_agent_events import (
+    StreamEventCallbacks,
+    stream_agent_events,
+)
 from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.documents.format_document_template_context import \
-    format_document_template_context
+from app.infra.v4.documents.format_document_template_context import (
+    format_document_template_context,
+)
+from app.infra.v4.tools.build_tool_from_config import build_tool_from_config
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
@@ -20,25 +30,34 @@ from app.infra.v4.websocket.remove_active_run import remove_active_run
 from app.infra.v4.websocket.store_active_run import store_active_run
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+
 # SQL-generated types (from SQL introspection)
 from app.sql.types import (
+    GetDeveloperInstructionSqlParams,
+    GetDeveloperInstructionSqlRow,
     GetDocumentRegenerationRunContextAndCreateRunSqlParams,
     GetDocumentRegenerationRunContextAndCreateRunSqlRow,
-    GetDocumentTemplateContextSqlParams, GetDocumentTemplateContextSqlRow)
+    GetDocumentTemplateContextSqlParams,
+    GetDocumentTemplateContextSqlRow,
+    LinkDeveloperMessageToRunSqlParams,
+)
 from fastapi import APIRouter
-from pydantic import BaseModel, Field
+from jinja2 import Template
+from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed, load_sql
 
 
 # Event payload types (not SQL-generated, defined inline)
 class DocumentGenerationErrorApiRequest(BaseModel):
     """Error event payload for document generation."""
+
     document_id: str | None = None
     error_message: str
 
 
 class DocumentGenerationProgressApiRequest(BaseModel):
     """Progress event payload for document generation."""
+
     document_id: str | None = None
     progress_type: str
     message: str | None = None
@@ -220,65 +239,28 @@ async def _document_regenerate_impl(
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }
 
-            # Build document tools inline (same as generate.py)
+            # Build document tools from database configs using generic helper
             document_tools: list[Tool] = []
+            for tool_config in agent_tools_config:
+                # Skip debug_info tool - it's handled separately
+                if tool_config.get("name") == "debug_info":
+                    continue
+                try:
+                    tool = build_tool_from_config(tool_config)
+                    document_tools.append(tool)
+                except Exception as e:
+                    # Log error but continue - don't break if one tool fails
+                    import logging
 
-            # Create title tool
-            title_config = tool_config_map_doc.get("create_title")
-            if title_config:
-                title_desc = title_config.get("argument_descriptions", {}).get(
-                    "title",
-                    "A descriptive title for this content item",
-                )
-            else:
-                title_desc = "A descriptive title for this content item"
+                    logging.getLogger(__name__).warning(
+                        f"Failed to build tool {tool_config.get('name')}: {e}"
+                    )
 
-            async def create_title(
-                title: str = Field(description=title_desc),
-            ) -> str:
-                """Create a descriptive title for this document."""
-                # SQL handles persistence via tool_call_arguments
-                return "Created title successfully"
+            # Add debug_info tool if available
+            if "debug_info" in tool_config_map_doc:
+                from app.infra.v4.debug.debug_info import debug_info
 
-            document_tools.append(function_tool(create_title))
-
-            # Generate template HTML tool
-            html_config = tool_config_map_doc.get("generate_html")
-            if html_config:
-                html_desc = html_config.get("argument_descriptions", {}).get(
-                    "template_html",
-                    "Jinja template HTML content with placeholders like {{ variable_name }}",
-                )
-            else:
-                html_desc = "Jinja template HTML content with placeholders like {{ variable_name }}"
-
-            async def generate_html(
-                template_html: str = Field(description=html_desc),
-            ) -> str:
-                """Generate the Jinja template HTML for the document."""
-                # SQL handles persistence via tool_call_arguments
-                return "Generated template HTML successfully"
-
-            document_tools.append(function_tool(generate_html))
-
-            # Generate template schema tool
-            schema_config = tool_config_map_doc.get("generate_schema")
-            if schema_config:
-                schema_desc = schema_config.get("argument_descriptions", {}).get(
-                    "schema_json",
-                    "JSON string in TemplateSchema format describing the template context fields and types. Must have structure: { 'name': string, 'fields': [{ 'name': string, 'type': 'string'|'number'|'boolean'|'array'|'object', 'required': bool (optional), 'item': {...} (optional for arrays), 'fields': [...] (optional for objects) }] }",
-                )
-            else:
-                schema_desc = "JSON string in TemplateSchema format describing the template context fields and types. Must have structure: { 'name': string, 'fields': [{ 'name': string, 'type': 'string'|'number'|'boolean'|'array'|'object', 'required': bool (optional), 'item': {...} (optional for arrays), 'fields': [...] (optional for objects) }] }"
-
-            async def generate_schema(
-                schema_json: str = Field(description=schema_desc),
-            ) -> str:
-                """Generate the TemplateSchema JSON for template context."""
-                # SQL handles persistence via tool_call_arguments
-                return "Generated template schema successfully"
-
-            document_tools.append(function_tool(generate_schema))
+                document_tools.append(debug_info)
 
             # Create tool use behavior to wait for both tools to be called
             def tool_use_behavior(
@@ -369,33 +351,62 @@ async def _document_regenerate_impl(
             if context_items:
                 input_items.extend(context_items)
 
-            # Append user instructions on top (most recent instruction goes last)
+            # Get developer instruction template from database
+            developer_message_content: str | None = None
+            try:
+                dev_instruction_params = GetDeveloperInstructionSqlParams(
+                    instruction_type="document",
+                    agent_role_val="document",
+                )
+                dev_instruction_result = cast(
+                    GetDeveloperInstructionSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql",
+                        params=dev_instruction_params,
+                    ),
+                )
+                if dev_instruction_result and dev_instruction_result.template:
+                    # Render Jinja template (no context variables needed for document)
+                    template = Template(dev_instruction_result.template)
+                    developer_message_content = template.render()
+            except Exception:
+                # Fallback to hardcoded message if developer instruction not found
+                developer_message_content = (
+                    "Based on the document context provided above, regenerate the Jinja2 template HTML document and its corresponding JSON schema. "
+                    "You must call both generate_html and generate_schema tools. "
+                    "The template should be a complete HTML document with Jinja2 placeholders that fits the document's purpose and fields. "
+                    "The schema should describe all template variables including their types (string, number, boolean, array, object) and whether they are required."
+                )
+
+            # Add user instructions if provided
             if user_instructions and user_instructions.strip():
-                input_items.append(
-                    {
-                        "role": "user",
-                        "content": (
-                            "Based on the document context provided above, regenerate the Jinja2 template HTML document and its corresponding JSON schema. "
-                            "You must call both generate_html and generate_schema tools. "
-                            "The template should be a complete HTML document with Jinja2 placeholders that fits the document's purpose and fields. "
-                            "The schema should describe all template variables including their types (string, number, boolean, array, object) and whether they are required.\n\n"
-                            f"User Instructions: {user_instructions}"
-                        ),
-                    }
-                )
-            else:
-                # If no instructions, just add the regeneration instruction
-                input_items.append(
-                    {
-                        "role": "user",
-                        "content": (
-                            "Based on the document context provided above, regenerate the Jinja2 template HTML document and its corresponding JSON schema. "
-                            "You must call both generate_html and generate_schema tools. "
-                            "The template should be a complete HTML document with Jinja2 placeholders that fits the document's purpose and fields. "
-                            "The schema should describe all template variables including their types (string, number, boolean, array, object) and whether they are required."
-                        ),
-                    }
-                )
+                if developer_message_content:
+                    developer_message_content += (
+                        f"\n\nUser Instructions: {user_instructions}"
+                    )
+
+            if developer_message_content:
+                developer_message: TResponseInputItem = {
+                    "role": "developer",
+                    "content": developer_message_content,
+                }
+                input_items.append(developer_message)
+
+                # Link developer message to run
+                try:
+                    link_params = LinkDeveloperMessageToRunSqlParams(
+                        content=developer_message_content,
+                        run_id=model_run_id,
+                    )
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/simulations/link_developer_message_to_run_complete.sql",
+                        params=link_params,
+                    )
+                except Exception:
+                    # Log error but continue - message is already in input_items
+                    pass
 
             # Rate limit validation and run creation are now handled in SQL
             # (get_document_regeneration_run_context_and_create_run_complete.sql) - both happen atomically
@@ -404,7 +415,7 @@ async def _document_regenerate_impl(
             # Track completed tool names for verification (SQL handles persistence)
             completed_tool_names: set[str] = set()
             tool_call_id_to_name: dict[str, str] = {}
-            
+
             # Map tool_name to tool_type (stable enum mapping)
             TOOL_NAME_TO_TYPE = {
                 "create_title": "title",
@@ -433,7 +444,9 @@ async def _document_regenerate_impl(
 
             try:
                 # Use generic streaming helper instead of manual parsing
-                async def on_start(tool_call_id: str, tool_name: str, call_id: str | None) -> None:
+                async def on_start(
+                    tool_call_id: str, tool_name: str, call_id: str | None
+                ) -> None:
                     tool_call_id_to_name[tool_call_id] = tool_name
                     await internal_sio.emit(
                         "document_progress",
@@ -464,14 +477,16 @@ async def _document_regenerate_impl(
                         },
                     )
 
-                async def on_complete(tool_call_id: str, final_args: dict[str, Any]) -> None:
+                async def on_complete(
+                    tool_call_id: str, final_args: dict[str, Any]
+                ) -> None:
                     tool_name = tool_call_id_to_name.get(tool_call_id, "")
                     if tool_name:
                         completed_tool_names.add(tool_name)
-                    
+
                     # Map tool_name to tool_type (stable enum)
                     tool_type = TOOL_NAME_TO_TYPE.get(tool_name)
-                    
+
                     await internal_sio.emit(
                         "document_complete",
                         {
@@ -499,7 +514,9 @@ async def _document_regenerate_impl(
                         return call_id
                     return f"document_{uuid.uuid4().hex[:16]}"
 
-                await stream_agent_events(result_runner, callbacks, tool_call_id_generator)
+                await stream_agent_events(
+                    result_runner, callbacks, tool_call_id_generator
+                )
 
             except BaseException as stream_error:
                 if isinstance(
@@ -533,7 +550,10 @@ async def _document_regenerate_impl(
             )
 
             # Verify both required tools were called
-            if "generate_html" not in completed_tool_names or "generate_schema" not in completed_tool_names:
+            if (
+                "generate_html" not in completed_tool_names
+                or "generate_schema" not in completed_tool_names
+            ):
                 await emit_to_internal(
                     "document_error",
                     DocumentGenerationErrorApiRequest(

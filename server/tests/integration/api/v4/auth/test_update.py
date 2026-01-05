@@ -1,6 +1,5 @@
 """Route tests for POST /api/v4/auth/update endpoint."""
 
-
 import asyncpg  # type: ignore
 import httpx
 import pytest

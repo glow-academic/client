@@ -47,6 +47,7 @@ except ImportError:
     class GetDocumentTemplatesSqlRow(BaseModel):
         templates: list[Any] | None = None
 
+
 SQL_CREATE_TEMPLATE_PATH = "app/sql/v4/documents/create_template_and_link_complete.sql"
 
 # Map tool_type enum to event name (stable mapping based on enum)
@@ -67,7 +68,7 @@ async def _document_complete_impl(
     if data.get("type") == "tool_call_complete":
         # Get tool_type from data (should be passed from generate.py)
         tool_type = data.get("tool_type")
-        
+
         if not tool_type:
             # Fallback: try to get from tool_name (for backward compatibility during migration)
             tool_name = data.get("tool_name")
@@ -77,10 +78,12 @@ async def _document_complete_impl(
                 tool_type = "html"
             elif tool_name == "generate_schema":
                 tool_type = "schema"
-        
+
         # Route based on tool_type (stable enum)
-        tool_event_name = TOOL_TYPE_COMPLETE_EVENT_MAP.get(tool_type) if tool_type else None
-        
+        tool_event_name = (
+            TOOL_TYPE_COMPLETE_EVENT_MAP.get(tool_type) if tool_type else None
+        )
+
         if tool_event_name:
             await internal_sio.emit(
                 tool_event_name,
@@ -160,7 +163,9 @@ async def _document_complete_impl(
                     ORDER BY tc.created_at DESC
                     LIMIT 1
                 """
-                schema_result = await conn.fetchrow(schema_tool_call_query, model_run_id)
+                schema_result = await conn.fetchrow(
+                    schema_tool_call_query, model_run_id
+                )
                 if schema_result and schema_result["schema_json"]:
                     template_schema_str = schema_result["schema_json"]
 
@@ -171,7 +176,11 @@ async def _document_complete_impl(
                     template_schema = {}
 
                 # Verify both tools were called and have results
-                if not template_html or not template_schema_str or template_schema_str == "{}":
+                if (
+                    not template_html
+                    or not template_schema_str
+                    or template_schema_str == "{}"
+                ):
                     await internal_sio.emit(
                         "document_error",
                         {
@@ -203,7 +212,9 @@ async def _document_complete_impl(
 
                     async with conn.transaction():
                         # Create upload record
-                        sql_insert_upload = load_sql("app/sql/v4/uploads/insert_upload.sql")
+                        sql_insert_upload = load_sql(
+                            "app/sql/v4/uploads/insert_upload.sql"
+                        )
                         upload_id_result = await conn.fetchrow(
                             sql_insert_upload,
                             file_path,
@@ -214,10 +225,14 @@ async def _document_complete_impl(
 
                         # If documentId is provided, create template and link to document and run
                         if document_id:
-                            template_name = f"Template for {document_name or 'Document'}"
+                            template_name = (
+                                f"Template for {document_name or 'Document'}"
+                            )
 
                             # Create schema records from template_schema dict
-                            schema_id = await create_schema_from_dict(conn, template_schema)
+                            schema_id = await create_schema_from_dict(
+                                conn, template_schema
+                            )
 
                             # Create template and link to document and run using execute_sql_typed()
                             create_template_params = CreateTemplateAndLinkSqlParams(
@@ -358,8 +373,9 @@ async def document_complete_internal(
     sid = data.get("sid", "")
     if not sid:
         return
-    
+
     from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+
     profile_id = await find_profile_by_socket(sid)
     if not profile_id:
         await internal_sio.emit(
@@ -371,14 +387,14 @@ async def document_complete_internal(
             },
         )
         return
-    
+
     group_id = None
     if data.get("group_id"):
         try:
             group_id = uuid.UUID(data["group_id"])
         except (ValueError, TypeError):
             pass
-    
+
     await _document_complete_impl(sid, data, profile_id, group_id)
 
 

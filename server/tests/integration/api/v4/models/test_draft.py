@@ -1,6 +1,5 @@
 """Route tests for PATCH /api/v4/models/draft endpoint."""
 
-
 import asyncpg  # type: ignore
 import httpx
 import pytest

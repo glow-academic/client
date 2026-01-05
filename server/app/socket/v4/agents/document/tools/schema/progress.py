@@ -34,8 +34,12 @@ async def _document_tool_schema_progress_impl(
         async with get_db_connection() as conn:
             # Call SQL - SQL handles tool_call lookup and argument accumulation
             # Get arguments_delta from data (may be arguments_raw or arguments_delta)
-            arguments_delta = getattr(data, "arguments_delta", None) or getattr(data, "arguments_raw", "") or ""
-            
+            arguments_delta = (
+                getattr(data, "arguments_delta", None)
+                or getattr(data, "arguments_raw", "")
+                or ""
+            )
+
             params = DocumentToolSchemaProgressUpdateSqlParams(
                 run_id=uuid.UUID(data.run_id),
                 tool_call_id=data.tool_call_id,
