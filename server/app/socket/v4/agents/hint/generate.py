@@ -24,84 +24,41 @@ SQL_PATH_GENERATE = "app/sql/v4/simulations/generate_hints_complete.sql"
 
 async def _generate_hints_impl(
     sid: str,
-    data: GenerateHintsApiRequest,
+    data: GenerateHintsApiRequest | dict[str, Any],  # Accept dict for regenerate
     profile_id: uuid.UUID,
 ) -> None:
     """Internal implementation for hint generation - dispatches to text generation handler."""
-    # Inline mapping (no helper function)
-    AGENT_ROLE_TO_GENERATION_TYPE = {
-        "scenario": "text",
-        "document": "text",
-        "simulation": "text",
-        "grade": "text",
-        "hint": "text",
-        "classify": "text",
-        "member": "text",
-        "prompt": "text",
-        "rubric": "text",
-        "title": "text",
-        "audio": "text",  # Audio agent outputs text
-        "image": "image",
-        "video": "video",
-        "voice": "audio",  # Ephemeral sessions
-    }
-    
-    chat_id = data.chat_id
-    message_id = data.message_id
-    department_id = data.department_id
+    # Handle both GenerateHintsApiRequest and dict (for regenerate)
+    if isinstance(data, dict):
+        chat_id = uuid.UUID(data["chat_id"]) if isinstance(data["chat_id"], str) else data["chat_id"]
+        message_id = uuid.UUID(data["message_id"]) if isinstance(data["message_id"], str) else data["message_id"]
+        department_id = uuid.UUID(data["department_id"]) if isinstance(data["department_id"], str) else data["department_id"]
+        group_id = uuid.UUID(data["group_id"]) if data.get("group_id") else None
+        user_instructions = data.get("user_instructions")
+    else:
+        chat_id = data.chat_id
+        message_id = data.message_id
+        department_id = data.department_id
+        # Optional parameters for regeneration
+        group_id = getattr(data, "group_id", None)
+        user_instructions = getattr(data, "user_instructions", None)
 
     try:
         async with get_db_connection() as conn:
-            # Get context AND create run in single atomic transaction
-            # This validates rate limits and creates run atomically
-            try:
-                # Use execute_sql_typed() - auto-detects function
-                params = GenerateHintsSqlParams(
-                    message_id=message_id,
-                    chat_id=chat_id,
-                    department_id=department_id,
-                    profile_id=profile_id,  # From sid lookup
-                )
-                result = cast(
-                    GenerateHintsSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH_GENERATE, params=params),
-                )
-            except Exception as e:
-                import asyncpg  # type: ignore
-
-                error_msg = str(e)
-                # Check if it's a rate limit error from SQL (PostgreSQL exception)
-                if (
-                    isinstance(e, asyncpg.PostgresError)
-                    and "RATE_LIMIT_EXCEEDED" in error_msg
-                ):
-                    # Extract the user-friendly message
-                    user_msg = (
-                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                        if "RATE_LIMIT_EXCEEDED: " in error_msg
-                        else error_msg
-                    )
-                    from app.socket.v4.generate.text.error import \
-                        TextErrorPayload
-                    await emit_to_internal(
-                        "generate_text_error",
-                        TextErrorPayload(
-                            success=False,
-                            message=user_msg,
-                        ),
-                        sid=sid,
-                    )
-                    return
-                from app.socket.v4.generate.text.error import TextErrorPayload
-                await emit_to_internal(
-                    "generate_text_error",
-                    TextErrorPayload(
-                        success=False,
-                        message=f"Failed to initialize hint generation: {str(e)}",
-                    ),
-                    sid=sid,
-                )
-                return
+            # Get context from SQL (rate limiting handled in generation handler SQL)
+            # Use execute_sql_typed() - auto-detects function
+            params = GenerateHintsSqlParams(
+                message_id=message_id,
+                chat_id=chat_id,
+                department_id=department_id,
+                profile_id=profile_id,  # From sid lookup
+                group_id=group_id,  # Optional: for regeneration
+                user_instructions=user_instructions,  # Optional: for regeneration
+            )
+            result = cast(
+                GenerateHintsSqlRow,
+                await execute_sql_typed(conn, SQL_PATH_GENERATE, params=params),
+            )
 
             if not result:
                 from app.socket.v4.generate.text.error import TextErrorPayload
@@ -118,51 +75,28 @@ async def _generate_hints_impl(
                 )
                 return
 
-            # Extract agent_role from result
-            agent_role = result.agent_role or "hint"
-            generation_type = AGENT_ROLE_TO_GENERATION_TYPE.get(agent_role)
-            
-            if not generation_type:
-                from app.socket.v4.generate.text.error import TextErrorPayload
-                await emit_to_internal(
-                    "generate_text_error",
-                    TextErrorPayload(
-                        success=False,
-                        message=f"Unknown agent role: {agent_role}",
-                    ),
-                    sid=sid,
-                )
-                return
-
             # Transform to standardized payload
+            # Generation handler will determine handler type from agent_role
             resource_id = uuid.UUID(result.chat_id)  # Use chat_id as resource_id
             
-            # Dispatch to generation handler
+            # Dispatch to generation handler with all context
+            # Generation handler determines handler type from agent_role in SQL result
             await internal_sio.emit(
-                f"generate_{generation_type}",
+                "generate_text",  # Generation handler routes based on agent_role
                 {
                     "sid": sid,
                     "agent_id": str(result.agent_id),
                     "department_id": str(department_id) if department_id else None,
                     "resource_id": str(resource_id),
-                    "resource_type": agent_role,
+                    "resource_type": result.agent_role or "hint",  # Pass agent_role as resource_type
                     "upload_id": None,  # No audio input for hint
+                    "group_id": str(result.group_id) if result.group_id else None,  # Pass group_id for regeneration
+                    "user_instructions": user_instructions,  # Pass user_instructions for regeneration
                 },
             )
             return  # Exit early - generation handler will handle the rest
-    except RuntimeError:
-        # Pool not initialized - emit error event
-        from app.socket.v4.generate.text.error import TextErrorPayload
-        await emit_to_internal(
-            "generate_text_error",
-            TextErrorPayload(
-                success=False,
-                message="Database connection pool not available",
-            ),
-            sid=sid,
-        )
     except Exception as e:
-        # Emit error event
+        # Emit error event (rate limit errors handled in generation handler)
         from app.socket.v4.generate.text.error import TextErrorPayload
         await emit_to_internal(
             "generate_text_error",
@@ -224,9 +158,40 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
     await _generate_hints_impl(sid, request, profile_id)
 
 
+# Pydantic model for regenerate request (extends generate with required group_id)
+class HintRegenerateApiRequest(BaseModel):
+    """Request to regenerate hints for a simulation message."""
+
+    chat_id: uuid.UUID
+    message_id: uuid.UUID
+    department_id: uuid.UUID
+    group_id: uuid.UUID  # Required for regeneration
+    user_instructions: str | None = None
+
+
+@sio.event  # type: ignore
+async def simulation_hints_regenerate(sid: str, data: dict[str, Any]) -> None:
+    """Wrapper for regenerate - calls generate handler with group_id and user_instructions"""
+    await handle_client_event(
+        sid=sid,
+        data=data,
+        request_type=HintRegenerateApiRequest,
+        handler=_generate_hints_impl,  # type: ignore[arg-type]
+        error_event_name="simulation_hints_error",
+        error_response_type=None,  # Error handled via generate_text_error
+    )
+
+
 register_client_endpoint(
     client_router,
     "/generate",
     GenerateHintsApiRequest,
     "Generate hints for a simulation message",
+)
+
+register_client_endpoint(
+    client_router,
+    "/regenerate",
+    HintRegenerateApiRequest,
+    "Regenerate hints for a simulation message",
 )

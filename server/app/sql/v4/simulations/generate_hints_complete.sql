@@ -43,11 +43,14 @@ CREATE TYPE types.i_get_hint_run_context_and_create_run_v4_document AS (
 );
 
 -- 4) Recreate function
+-- Supports optional group_id and user_instructions for regeneration
 CREATE OR REPLACE FUNCTION socket_get_hint_run_context_and_create_run_v4(
     message_id uuid,
     chat_id uuid,
     department_id uuid,
-    profile_id uuid
+    profile_id uuid,
+    group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
+    user_instructions text DEFAULT NULL  -- Optional: user instructions for regeneration
 )
 RETURNS TABLE (
     -- Standardized output schema matching text generation handler
@@ -86,7 +89,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH params AS (
-    SELECT message_id, chat_id, department_id, profile_id
+    SELECT message_id, chat_id, department_id, profile_id, group_id, user_instructions
 ),
 target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, mc.content, m.created_at
@@ -247,29 +250,41 @@ document_data AS (
     WHERE sd.scenario_id = si.id AND sd.active = true
 ),
 -- Get or create group (for trace_id and group_id)
-existing_group AS (
+-- If group_id provided (regeneration), use existing group; otherwise create/get from chat
+existing_group_from_param AS (
+    SELECT g.id as group_id, g.trace_id
+    FROM params p
+    JOIN groups g ON g.id = p.group_id
+    WHERE p.group_id IS NOT NULL
+    LIMIT 1
+),
+existing_group_from_chat AS (
     SELECT g.id as group_id, g.trace_id
     FROM chat_info ci
     JOIN chat_groups cg ON cg.chat_id = ci.id
     JOIN groups g ON g.id = cg.group_id
+    WHERE NOT EXISTS (SELECT 1 FROM existing_group_from_param)
     LIMIT 1
 ),
 create_group_if_needed AS (
     INSERT INTO groups (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM chat_info ci
-    WHERE NOT EXISTS (SELECT 1 FROM existing_group)
+    WHERE NOT EXISTS (SELECT 1 FROM existing_group_from_param)
+      AND NOT EXISTS (SELECT 1 FROM existing_group_from_chat)
     RETURNING id as group_id, trace_id
 ),
 group_data AS (
     SELECT 
         COALESCE(
-            (SELECT group_id FROM existing_group LIMIT 1),
+            (SELECT group_id FROM existing_group_from_param LIMIT 1),
+            (SELECT group_id FROM existing_group_from_chat LIMIT 1),
             (SELECT group_id FROM create_group_if_needed LIMIT 1),
             gen_random_uuid()::uuid
         ) as group_id,
         COALESCE(
-            (SELECT trace_id FROM existing_group LIMIT 1),
+            (SELECT trace_id FROM existing_group_from_param LIMIT 1),
+            (SELECT trace_id FROM existing_group_from_chat LIMIT 1),
             (SELECT trace_id FROM create_group_if_needed LIMIT 1),
             gen_random_uuid()::text
         ) as trace_id

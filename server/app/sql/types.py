@@ -22932,6 +22932,8 @@ class GenerateHintsSqlParams(BaseModel):
     chat_id: UUID
     department_id: UUID
     profile_id: UUID
+    group_id: UUID | None = None
+    user_instructions: str | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -22939,6 +22941,8 @@ class GenerateHintsSqlParams(BaseModel):
             self.chat_id,
             self.department_id,
             self.profile_id,
+            self.group_id,
+            self.user_instructions,
         )
 
 class IGetHintRunContextAndCreateRunV4Document(BaseModel):
@@ -23000,6 +23004,8 @@ class GenerateHintsApiRequest(BaseModel):
     message_id: UUID
     chat_id: UUID
     department_id: UUID
+    group_id: UUID | None = None
+    user_instructions: str | None = None
 
 class GenerateHintsApiResponse(BaseModel):
 

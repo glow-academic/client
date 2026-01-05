@@ -49,13 +49,16 @@ CREATE TYPE types.i_get_text_run_context_and_create_run_v4_tool AS (
 -- 4) Recreate function
 -- Generic version that accepts agent_id, resource_id, resource_type, etc.
 -- Supports optional upload_id for audio input (used by audio agent)
+-- Supports optional group_id and user_instructions for regeneration
 CREATE OR REPLACE FUNCTION socket_get_text_run_context_and_create_run_v4(
     agent_id uuid,
     profile_id uuid,
     department_id uuid DEFAULT NULL,
     resource_id uuid DEFAULT NULL,
     resource_type text DEFAULT NULL,
-    upload_id uuid DEFAULT NULL
+    upload_id uuid DEFAULT NULL,
+    group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
+    user_instructions text DEFAULT NULL  -- Optional: user instructions for regeneration
 )
 RETURNS TABLE (
     agent_id text,
@@ -95,7 +98,9 @@ WITH params AS (
         department_id AS department_id,
         resource_id AS resource_id,
         resource_type AS resource_type,
-        upload_id AS upload_id
+        upload_id AS upload_id,
+        group_id AS group_id,
+        user_instructions AS user_instructions
 ),
 upload_info AS (
     -- Get upload information when upload_id is provided (for audio input)
@@ -107,22 +112,34 @@ upload_info AS (
     LEFT JOIN uploads u ON u.id = p.upload_id
     WHERE p.upload_id IS NOT NULL
 ),
+-- Get or create group (for trace_id and group_id)
+-- If group_id provided (regeneration), use existing group; otherwise create new one
+existing_group_from_param AS (
+    SELECT g.id as group_id, g.trace_id
+    FROM params p
+    JOIN groups g ON g.id = p.group_id
+    WHERE p.group_id IS NOT NULL
+    LIMIT 1
+),
 create_group_if_needed AS (
-    -- Create new group if needed
+    -- Create new group if needed (only if group_id not provided)
     INSERT INTO groups (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM params p
-    WHERE p.department_id IS NOT NULL
+    WHERE p.group_id IS NULL
+      AND p.department_id IS NOT NULL
     RETURNING id as group_id, trace_id
 ),
 group_data AS (
-    -- Use newly created group or existing one
+    -- Use existing group from param, newly created group, or fallback
     SELECT 
         COALESCE(
+            (SELECT group_id FROM existing_group_from_param LIMIT 1),
             (SELECT group_id FROM create_group_if_needed LIMIT 1),
             gen_random_uuid()::uuid  -- Fallback if no group created
         ) as group_id,
         COALESCE(
+            (SELECT trace_id FROM existing_group_from_param LIMIT 1),
             (SELECT trace_id FROM create_group_if_needed LIMIT 1),
             gen_random_uuid()::text  -- Fallback trace_id
         ) as trace_id

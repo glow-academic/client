@@ -60,8 +60,15 @@ async def _generate_text_impl(
             try:
                 # Use execute_sql_typed() - auto-detects function
                 # Use double star pattern - SQL handles defaults via COALESCE in params CTE
+                # Include group_id and user_instructions if present (for regeneration)
+                params_dict = data.model_dump()
+                # Add optional fields if they exist (for regeneration)
+                if hasattr(data, "group_id") and data.group_id:
+                    params_dict["group_id"] = data.group_id
+                if hasattr(data, "user_instructions") and data.user_instructions is not None:
+                    params_dict["user_instructions"] = data.user_instructions
                 params = GetTextRunContextAndCreateRunSqlParams(
-                    **data.model_dump(),
+                    **params_dict,
                     profile_id=profile_id,  # From sid lookup
                 )
                 result = cast(
@@ -216,9 +223,12 @@ async def _generate_text_impl(
                 result.developer_instruction_template
             )
             if developer_message_content:
-                # Render Jinja template
+                # Render Jinja template with user_instructions if provided (for regeneration)
                 template = Template(developer_message_content)
-                developer_message_content = template.render()
+                user_instructions = getattr(data, "user_instructions", None)
+                developer_message_content = template.render(
+                    user_instructions=user_instructions if user_instructions else ""
+                )
 
                 developer_message: TResponseInputItem = {
                     "role": "developer",
@@ -234,6 +244,7 @@ async def _generate_text_impl(
             }
             completed_tool_names: set[str] = set()
             tool_call_id_to_name: dict[str, str] = {}
+            tool_call_id_to_call_id: dict[str, str | None] = {}  # Store call_id mapping
             # Map tool_name to tool_type from database result
             tool_name_to_type: dict[str, str] = {
                 tool.name: tool.tool_type
@@ -266,6 +277,7 @@ async def _generate_text_impl(
                     tool_call_id: str, tool_name: str, call_id: str | None
                 ) -> None:
                     tool_call_id_to_name[tool_call_id] = tool_name
+                    tool_call_id_to_call_id[tool_call_id] = call_id
                     await internal_sio.emit(
                         "generate_text_progress",
                         {
@@ -304,6 +316,9 @@ async def _generate_text_impl(
                     tool_name = tool_call_id_to_name.get(tool_call_id, "")
                     if tool_name:
                         completed_tool_names.add(tool_name)
+
+                    # Get call_id from stored mapping
+                    call_id = tool_call_id_to_call_id.get(tool_call_id)
 
                     # Map tool_name to tool_type from database result
                     tool_type: str | None = (
@@ -477,10 +492,18 @@ async def generate_text(sid: str, data: dict[str, Any]) -> None:
 async def generate_text_internal(data: dict[str, Any]) -> None:
     """Handle generate_text event from internal bus (server-to-server)."""
     try:
-        payload = GetTextRunContextAndCreateRunApiRequest(**data)
+        # Extract sid first
         sid = data.get("sid", "")
         if not sid:
             return
+        
+        # Create payload from known fields (ApiRequest might not have group_id/user_instructions yet)
+        payload_dict = {
+            k: v for k, v in data.items() 
+            if k not in ("sid", "group_id", "user_instructions", "trace_id")
+        }
+        payload = GetTextRunContextAndCreateRunApiRequest(**payload_dict)
+        
         # Get profile_id from sid lookup for internal events
         from app.infra.v4.websocket.find_profile_by_socket import \
             find_profile_by_socket
@@ -498,6 +521,11 @@ async def generate_text_internal(data: dict[str, Any]) -> None:
             )
             return
         profile_id = uuid.UUID(profile_id_str)
+        
+        # Attach additional fields to payload object for passing to SQL
+        payload.group_id = uuid.UUID(data["group_id"]) if data.get("group_id") else None
+        payload.user_instructions = data.get("user_instructions")
+        
         await _generate_text_impl(sid, payload, profile_id)
     except Exception as e:
         resource_id = data.get("resource_id")
