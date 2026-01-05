@@ -7,35 +7,29 @@ import uuid
 from typing import Any, cast
 
 import asyncpg
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, create_model
-from utils.settings.theme import ThemePrimitives, derive_theme_tokens
-from utils.sql_helper import execute_sql_typed, load_sql
-
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.agents.generic_agent import GenericAgent
+from app.infra.v4.agents.utils.generation_dispatch import \
+    get_generation_handler
 from app.infra.v4.debug.debug_info import DebugContext
 from app.infra.v4.debug.debug_info import debug_info as debug_info_tool
 from app.infra.v4.documents.format_document_info import format_document_info
 from app.infra.v4.templates.jinja_renderer import render_template
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import UPLOAD_FOLDER, get_internal_sio, sio
-from app.sql.types import (
-    GetScenarioRunContextAndCreateRunSqlParams,
-    GetScenarioRunContextAndCreateRunSqlRow,
-)
+from app.sql.types import (GetScenarioRunContextAndCreateRunSqlParams,
+                           GetScenarioRunContextAndCreateRunSqlRow)
 from app.utils.schema_helper import get_schema_tree
+from fastapi import APIRouter
+from pydantic import (BaseModel, ConfigDict, Field, ValidationError,
+                      create_model)
+from utils.settings.theme import ThemePrimitives, derive_theme_tokens
+from utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 SQL_PATH = "app/sql/v4/scenario/get_scenario_run_context_and_create_run_complete.sql"
@@ -499,10 +493,8 @@ async def _randomize_missing_scenario_values(
 
     # Use typed SQL function instead of raw SQL
     try:
-        from app.sql.types import (
-            GetRandomizationDataSqlParams,
-            GetRandomizationDataSqlRow,
-        )
+        from app.sql.types import (GetRandomizationDataSqlParams,
+                                   GetRandomizationDataSqlRow)
 
         sql_params = GetRandomizationDataSqlParams(
             department_ids=dept_uuids, scenario_id=scenario_id_uuid
@@ -1257,6 +1249,40 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
             )
 
             agent_role = result.agent_role or "scenario"
+
+            # Determine generation handler based on agent role
+            try:
+                generation_type = get_generation_handler(agent_role)
+            except ValueError as e:
+                await scenario_generation_error(
+                    ScenarioGenerationErrorPayload(
+                        success=False,
+                        message=f"Unknown agent role: {agent_role}",
+                        trace_id=trace_id,
+                    ),
+                    room=sid,
+                )
+                return
+
+            # Dispatch to text generation handler (scenario agent uses text generation)
+            if generation_type == "text":
+                # Extract agent_id from result
+                agent_id_uuid = uuid.UUID(result.agent_id)
+                scenario_id_uuid = uuid.UUID(data.scenarioId) if data.scenarioId else None
+                
+                # Dispatch to generate_text internal event
+                await internal_sio.emit(
+                    "generate_text",
+                    {
+                        "sid": sid,
+                        "agent_id": str(agent_id_uuid),
+                        "department_id": str(department_id) if department_id else None,
+                        "resource_id": str(scenario_id_uuid) if scenario_id_uuid else None,
+                        "resource_type": "scenario",
+                        "upload_id": None,  # No audio input for scenario
+                    },
+                )
+                return  # Exit early - text generation handler will handle the rest
 
             # Extract run_id from result (created in same transaction)
             model_run_id = uuid.UUID(result.run_id)
@@ -2326,7 +2352,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 )
 
             # Store the result in active runs for potential cancellation
-            from app.infra.v4.websocket.store_active_run import store_active_run
+            from app.infra.v4.websocket.store_active_run import \
+                store_active_run
 
             await store_active_run(str(group_id) if group_id else sid, result_runner)
 
@@ -2543,7 +2570,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 raise
             finally:
                 # Clean up active run
-                from app.infra.v4.websocket.remove_active_run import remove_active_run
+                from app.infra.v4.websocket.remove_active_run import \
+                    remove_active_run
 
                 await remove_active_run(str(group_id) if group_id else sid)
 

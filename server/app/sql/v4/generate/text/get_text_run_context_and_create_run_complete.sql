@@ -48,12 +48,14 @@ CREATE TYPE types.i_get_text_run_context_and_create_run_v4_tool AS (
 
 -- 4) Recreate function
 -- Generic version that accepts agent_id, resource_id, resource_type, etc.
+-- Supports optional upload_id for audio input (used by audio agent)
 CREATE OR REPLACE FUNCTION socket_get_text_run_context_and_create_run_v4(
     agent_id uuid,
     profile_id uuid,
     department_id uuid DEFAULT NULL,
     resource_id uuid DEFAULT NULL,
-    resource_type text DEFAULT NULL
+    resource_type text DEFAULT NULL,
+    upload_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     agent_id text,
@@ -78,7 +80,10 @@ RETURNS TABLE (
     developer_instruction_template text,
     developer_instruction_schema_id uuid,
     department_name text,
-    developer_message_id uuid
+    developer_message_id uuid,
+    upload_id uuid,
+    file_path text,
+    mime_type text
 )
 LANGUAGE sql
 VOLATILE
@@ -89,7 +94,18 @@ WITH params AS (
         profile_id AS profile_id,
         department_id AS department_id,
         resource_id AS resource_id,
-        resource_type AS resource_type
+        resource_type AS resource_type,
+        upload_id AS upload_id
+),
+upload_info AS (
+    -- Get upload information when upload_id is provided (for audio input)
+    SELECT 
+        u.id as upload_id,
+        u.file_path,
+        u.mime_type
+    FROM params p
+    LEFT JOIN uploads u ON u.id = p.upload_id
+    WHERE p.upload_id IS NOT NULL
 ),
 create_group_if_needed AS (
     -- Create new group if needed
@@ -438,10 +454,15 @@ SELECT
     -- Department name
     cd.department_name,
     -- Developer message ID (if created/linked)
-    ldm.message_id as developer_message_id
+    ldm.message_id as developer_message_id,
+    -- Upload info (for audio input, when upload_id is provided)
+    ui.upload_id,
+    ui.file_path,
+    ui.mime_type
 FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN group_data gd
 LEFT JOIN link_developer_message_to_run ldm ON true
+LEFT JOIN upload_info ui ON true
 $$;
 

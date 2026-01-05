@@ -10066,6 +10066,7 @@ class GetTextRunContextAndCreateRunSqlParams(BaseModel):
     department_id: UUID | None = None
     resource_id: UUID | None = None
     resource_type: str | None = None
+    upload_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -10074,6 +10075,7 @@ class GetTextRunContextAndCreateRunSqlParams(BaseModel):
             self.department_id,
             self.resource_id,
             self.resource_type,
+            self.upload_id,
         )
 
 class IGetTextRunContextAndCreateRunV4Tool(BaseModel):
@@ -10113,6 +10115,9 @@ class GetTextRunContextAndCreateRunSqlRow(BaseModel):
     developer_instruction_schema_id: UUID | None = None
     department_name: str | None = None
     developer_message_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
 
 class GetTextRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -10120,6 +10125,7 @@ class GetTextRunContextAndCreateRunApiRequest(BaseModel):
     department_id: UUID | None = None
     resource_id: UUID | None = None
     resource_type: str | None = None
+    upload_id: UUID | None = None
 
 class GetTextRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -10146,6 +10152,9 @@ class GetTextRunContextAndCreateRunApiResponse(BaseModel):
     developer_instruction_schema_id: UUID | None = None
     department_name: str | None = None
     developer_message_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
 
 
 
