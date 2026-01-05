@@ -55,11 +55,13 @@ latest_grade AS (
   SELECT DISTINCT ON (c.id)
          c.id AS simulation_chat_id,
          g.score::numeric AS score,
-         g.time_taken::numeric AS time_taken_seconds,
+         COALESCE(conv.time_taken, 0)::numeric AS time_taken_seconds,
          rga.rubric_id,
          g.created_at
   FROM grades g
   LEFT JOIN rubric_grade_agents rga ON rga.id = g.rubric_grade_agent_id
+  LEFT JOIN grade_conversations gc ON gc.grade_id = g.id
+  LEFT JOIN conversations conv ON conv.id = gc.conversation_id
   JOIN runs r ON r.id = g.run_id
   JOIN group_runs gr ON gr.run_id = r.id
   JOIN grade_groups gg ON gg.group_id = gr.group_id

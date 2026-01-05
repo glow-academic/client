@@ -10671,6 +10671,52 @@ class TextToolProgressUpdateApiResponse(BaseModel):
 # Generated from: create_feedback
 
 
+# Generated from: create_grade
+
+class CreateGradeSqlParams(BaseModel):
+
+    run_id: UUID
+    rubric_grade_agent_id: UUID
+    description: str
+    passed: bool
+    score: int
+    time_taken: int
+    conversation_name: str | None = None
+    conversation_description: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.rubric_grade_agent_id,
+            self.description,
+            self.passed,
+            self.score,
+            self.time_taken,
+            self.conversation_name,
+            self.conversation_description,
+        )
+
+class CreateGradeSqlRow(BaseModel):
+
+    id: str | None = None
+
+class CreateGradeApiRequest(BaseModel):
+
+    run_id: UUID
+    rubric_grade_agent_id: UUID
+    description: str
+    passed: bool
+    score: int
+    time_taken: int
+    conversation_name: str | None = None
+    conversation_description: str | None = None
+
+class CreateGradeApiResponse(BaseModel):
+
+    id: str | None = None
+
+
+
 # Generated from: create_message_feedback_highlight
 
 class ICreateMessageFeedbackHighlightV4Highlight(BaseModel):
@@ -27789,6 +27835,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateFeedbackApiRequest",
         "CreateFeedbackApiResponse",
     ),
+    "app/sql/v4/grading/create_grade_complete.sql": (
+        "CreateGradeSqlParams",
+        "CreateGradeSqlRow",
+        "CreateGradeApiRequest",
+        "CreateGradeApiResponse",
+    ),
     "app/sql/v4/grading/create_message_feedback_highlight_complete.sql": (
         "CreateMessageFeedbackHighlightSqlParams",
         "CreateMessageFeedbackHighlightSqlRow",
@@ -30218,6 +30270,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/grading/create_feedback_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/grading/create_grade_complete.sql"]
     ) -> SqlString: ...
 
     @overload

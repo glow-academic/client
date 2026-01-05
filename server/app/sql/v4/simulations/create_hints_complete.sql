@@ -64,24 +64,37 @@ hints_with_next_idx AS (
         hta.hint_text,
         hta.idx as original_idx,
         COALESCE(
-            (SELECT MAX(sh.idx) FROM simulation_hints sh WHERE sh.simulation_message_id = message_id),
+            (SELECT MAX(mh.idx) FROM message_hints mh WHERE mh.message_id = message_id),
             -1
         ) + ROW_NUMBER() OVER (ORDER BY hta.idx) as next_idx
     FROM hint_texts_array hta
 ),
+inserted_hint_entities AS (
+    INSERT INTO hints (hint, created_at, updated_at)
+    SELECT DISTINCT
+        hwni.hint_text,
+        NOW(),
+        NOW()
+    FROM hints_with_next_idx hwni
+    ON CONFLICT DO NOTHING
+    RETURNING id, hint
+),
 inserted_hints AS (
-    INSERT INTO simulation_hints (simulation_message_id, idx, hint)
+    INSERT INTO message_hints (message_id, hint_id, idx, created_at, updated_at)
     SELECT 
         message_id,
+        ihe.id,
         hwni.next_idx,
-        hwni.hint_text
+        NOW(),
+        NOW()
     FROM hints_with_next_idx hwni
-    RETURNING simulation_message_id, idx, hint
+    JOIN inserted_hint_entities ihe ON ihe.hint = hwni.hint_text
+    RETURNING message_id, idx, (SELECT hint FROM hints WHERE id = hint_id) as hint
 )
 SELECT 
     COALESCE(
         ARRAY_AGG(
-            (simulation_message_id, idx, hint)::types.i_create_hints_v4_hint_result
+            (message_id, idx, hint)::types.i_create_hints_v4_hint_result
             ORDER BY idx
         ),
         '{}'::types.i_create_hints_v4_hint_result[]

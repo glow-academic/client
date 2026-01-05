@@ -26,13 +26,31 @@ CREATE OR REPLACE FUNCTION socket_update_grade_final_v4(
 RETURNS TABLE (
     id text
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 VOLATILE
 AS $$
+DECLARE
+    v_conversation_id uuid;
+BEGIN
+    -- Update grade
     UPDATE grades 
     SET description = description_param,
         passed = passed_param,
         score = score_param
-    WHERE id = grade_id_param
-    RETURNING id::text
-$$;
+    WHERE id = grade_id_param;
+    
+    -- Update conversation description if linked
+    SELECT conversation_id INTO v_conversation_id
+    FROM grade_conversations
+    WHERE grade_id = grade_id_param
+    LIMIT 1;
+    
+    IF v_conversation_id IS NOT NULL THEN
+        UPDATE conversations
+        SET description = description_param,
+            updated_at = NOW()
+        WHERE id = v_conversation_id;
+    END IF;
+    
+    RETURN QUERY SELECT grade_id_param::text;
+END $$;

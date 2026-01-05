@@ -850,7 +850,7 @@ previous_chats_with_grades AS (
         sc.created_at,
         scg.score,
         scg.passed,
-        scg.time_taken
+        COALESCE(conv.time_taken, 0) as time_taken
     FROM params x
     CROSS JOIN current_attempt_profile cap
     CROSS JOIN simulation_scenarios_list ssl
@@ -889,6 +889,8 @@ previous_chats_with_grades AS (
         JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
+    LEFT JOIN grade_conversations gc ON gc.grade_id = scg.id
+    LEFT JOIN conversations conv ON conv.id = gc.conversation_id
     WHERE ap2.profile_id = cap.profile_id
       AND sc.completed = true
       AND COALESCE(
@@ -904,7 +906,7 @@ previous_chats_with_grades AS (
 previous_attempt_time_aggregation AS (
     SELECT 
         ac.attempt_id,
-        COALESCE(SUM(scg.time_taken), 0)::integer as total_time_taken
+        COALESCE(SUM(COALESCE(conv.time_taken, 0)), 0)::integer as total_time_taken
     FROM previous_chats_with_grades pwg
     JOIN attempt_chats ac ON ac.attempt_id = pwg.attempt_id
     JOIN chats sc ON sc.id = ac.chat_id
@@ -916,6 +918,8 @@ previous_attempt_time_aggregation AS (
         JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
+    LEFT JOIN grade_conversations gc ON gc.grade_id = scg.id
+    LEFT JOIN conversations conv ON conv.id = gc.conversation_id
     WHERE sc.completed = true
     GROUP BY ac.attempt_id
 ),
@@ -1196,7 +1200,7 @@ messages_with_tree AS (
 grades_data AS (
     SELECT DISTINCT ON (c.id)
         c.id as chat_id,
-        (scg.id, scg.created_at, c.id, rga.rubric_id, scg.description, scg.passed, scg.score, scg.time_taken)::types.q_get_simulation_attempt_v4_grade as grade
+        (scg.id, scg.created_at, c.id, rga.rubric_id, scg.description, scg.passed, scg.score, COALESCE(conv.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
     FROM params x
     JOIN chats c ON EXISTS (
         SELECT 1 FROM chat_groups cg2
@@ -1212,6 +1216,8 @@ grades_data AS (
     JOIN runs r ON r.id = gr.run_id
     JOIN grades scg ON scg.run_id = r.id
     LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
+    LEFT JOIN grade_conversations gc ON gc.grade_id = scg.id
+    LEFT JOIN conversations conv ON conv.id = gc.conversation_id
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
@@ -1303,11 +1309,12 @@ hints_data AS (
                 (m.id,
                  COALESCE(
                      (SELECT ARRAY_AGG(
-                         (sh.simulation_message_id, sh.hint, sh.idx, sh.created_at)::types.q_get_simulation_attempt_v4_hint
-                         ORDER BY sh.idx
+                         (mh.message_id, h.hint, mh.idx, mh.created_at)::types.q_get_simulation_attempt_v4_hint
+                         ORDER BY mh.idx
                      )
-                     FROM simulation_hints sh
-                     WHERE sh.simulation_message_id = m.id),
+                     FROM message_hints mh
+                     JOIN hints h ON h.id = mh.hint_id
+                     WHERE mh.message_id = m.id),
                      '{}'::types.q_get_simulation_attempt_v4_hint[]
                  )
                 )::types.q_get_simulation_attempt_v4_hints_by_message
