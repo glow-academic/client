@@ -64,26 +64,15 @@ async def _document_generate_impl(
     group_id: uuid.UUID | None = None
 
     try:
-        # data fields are already validated as UUIDs by GetDocumentRunContextAndCreateRunApiRequest
-        # (Pydantic auto-converts strings to UUIDs)
-        department_id = data.department_id
-        document_id = data.document_id
-        document_name = data.document_name
-        document_description = data.document_description
-        field_ids = data.field_ids
-
         async with get_db_connection() as conn:
             # Get all context data AND create run in single atomic transaction
             # This validates rate limits and creates run atomically
             try:
                 # Use execute_sql_typed() - auto-detects function
+                # Use double star pattern - SQL handles defaults via COALESCE in params CTE
                 params = GetDocumentRunContextAndCreateRunSqlParams(
-                    department_id=department_id,
+                    **data.model_dump(),
                     profile_id=profile_id,  # From sid lookup
-                    document_id=document_id,
-                    document_name=document_name,
-                    document_description=document_description,
-                    field_ids=field_ids,  # Already UUIDs from Pydantic
                 )
                 result = cast(
                     GetDocumentRunContextAndCreateRunSqlRow,
@@ -107,7 +96,7 @@ async def _document_generate_impl(
                     await emit_to_internal(
                         "document_error",
                         DocumentGenerationErrorApiRequest(
-                            document_id=str(document_id) if document_id else None,
+                            document_id=str(data.document_id) if data.document_id else None,
                             error_message=user_msg,
                         ),
                         sid=sid,
@@ -116,7 +105,7 @@ async def _document_generate_impl(
                 await emit_to_internal(
                     "document_error",
                     DocumentGenerationErrorApiRequest(
-                        document_id=str(document_id) if document_id else None,
+                        document_id=str(data.document_id) if data.document_id else None,
                         error_message=f"Failed to initialize document generation: {str(e)}",
                     ),
                     sid=sid,
@@ -127,8 +116,8 @@ async def _document_generate_impl(
                 await emit_to_internal(
                     "document_error",
                     DocumentGenerationErrorApiRequest(
-                        document_id=str(document_id) if document_id else None,
-                        error_message=f"No document agent configured for department {department_id}",
+                        document_id=str(data.document_id) if data.document_id else None,
+                        error_message=f"No document agent configured for department {data.department_id}",
                     ),
                     sid=sid,
                 )
@@ -143,7 +132,7 @@ async def _document_generate_impl(
             await emit_to_internal(
                 "document_progress",
                 DocumentGenerationProgressApiRequest(
-                    document_id=str(document_id) if document_id else None,
+                    document_id=str(data.document_id) if data.document_id else None,
                     progress_type="start",
                     message=f"Starting {result.agent_name or 'document'} generation",
                 ),
@@ -151,42 +140,25 @@ async def _document_generate_impl(
                 group_id=str(group_id) if group_id else None,
             )
 
-            # Build context dict with proper type casting
-            context: dict[str, Any] = {
-                "agent_id": str(result.agent_id) if result.agent_id else "",
-                "agent_name": str(result.agent_name) if result.agent_name else "",
-                "system_prompt": str(result.system_prompt)
-                if result.system_prompt
-                else "",
-                "temperature": float(result.temperature)
-                if result.temperature is not None
-                else 0.0,
-                "reasoning": str(result.reasoning) if result.reasoning else None,
-                "model_id": str(result.model_id) if result.model_id else "",
-                "model_name": str(result.model_name) if result.model_name else "",
-                "provider": str(result.provider) if result.provider else "",
-                "base_url": str(result.base_url) if result.base_url else None,
-                "api_key": str(result.api_key) if result.api_key else "",
-                "profile_id": str(result.profile_id) if result.profile_id else "",
-            }
-
-            # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(str(result.run_id))
+            # Extract run_id from result (created in same transaction)
+            model_run_id = uuid.UUID(result.run_id)
 
             # Get tools from SQL result (composite type array)
             # Filter out tools with None names (shouldn't happen, but defensive)
-            agent_tools_config_filtered: list[Any] = [
+            agent_tools_config = [
                 tool for tool in (result.tools or []) if tool.name is not None
             ]
-            # Type assertion: after filtering, all tools have non-None names
-            agent_tools_config = agent_tools_config_filtered  # type: ignore[assignment]
-            tool_config_map_doc: dict[str, dict[str, Any]] = {}
+
+            # Build document tools from database configs using generic helper
+            document_tools: list[Tool] = []
             for tool in agent_tools_config:
-                if tool.name is not None:
-                    tool_name = cast(str, tool.name)
-                    tool_config_map_doc[tool_name] = {
+                if tool.name is None:
+                    continue
+                try:
+                    # Build tool config dict from composite type - build_tool_from_config expects dict
+                    tool_config = {
                         "id": str(tool.id),
-                        "name": tool_name,
+                        "name": tool.name,
                         "description": tool.description or "",
                         "tool_type": tool.tool_type or "",
                         "agent_role": tool.agent_role or "",
@@ -195,21 +167,6 @@ async def _document_generate_impl(
                         "argument_defaults": tool.argument_defaults,
                         "active": tool.active,
                     }
-
-            # Build document tools from database configs using generic helper
-            document_tools: list[Tool] = []
-            for tool in agent_tools_config:
-                # Skip debug_info tool - it's handled separately
-                if tool.name == "debug_info":
-                    continue
-                # tool.name is guaranteed non-None after filter above
-                if tool.name is None:
-                    continue
-                try:
-                    tool_name = cast(str, tool.name)
-                    tool_config = tool_config_map_doc.get(tool_name)
-                    if not tool_config:
-                        continue
                     built_tool = build_tool_from_config(tool_config)
                     document_tools.append(built_tool)
                 except Exception as e:
@@ -220,12 +177,6 @@ async def _document_generate_impl(
                         f"Failed to build tool {tool.name}: {e}"
                     )
 
-            # Add debug_info tool if available
-            if "debug_info" in tool_config_map_doc:
-                from app.infra.v4.debug.debug_info import debug_info
-
-                document_tools.append(debug_info)
-
             # Create tool use behavior to wait for both tools to be called
             def tool_use_behavior(
                 tool_context: RunContextWrapper[Any],
@@ -235,16 +186,16 @@ async def _document_generate_impl(
                 # For now, always return False to let agent continue calling tools
                 return ToolsToFinalOutputResult(is_final_output=False)
 
-            # Build document agent inline
+            # Build document agent inline - use SQL result fields directly
             document_agent = GenericAgent(
-                agent_name=cast(str, context["agent_name"]),
-                system_prompt=cast(str, context["system_prompt"]),
-                temperature=cast(float, context["temperature"]),
-                model_name=cast(str, context["model_name"]),
-                provider=cast(str, context["provider"]),
-                base_url=cast(str | None, context["base_url"]),
-                api_key=cast(str, context["api_key"]),
-                reasoning=cast(str | None, context["reasoning"]),
+                agent_name=result.agent_name or "",
+                system_prompt=result.system_prompt or "",
+                temperature=result.temperature or 0.0,
+                model_name=result.model_name or "",
+                provider=result.provider or "",
+                base_url=result.base_url,
+                api_key=result.api_key or "",
+                reasoning=result.reasoning,
                 tools=document_tools,
                 parallel_tool_calls=False,
                 tool_use_behavior=tool_use_behavior,
@@ -268,8 +219,8 @@ async def _document_generate_impl(
 
             # Format context for agent input
             context_items = format_document_template_context(
-                document_name=document_name,
-                document_description=document_description,
+                document_name=data.document_name,
+                document_description=data.document_description,
                 department_name=department_name,
                 fields=fields_data,
             )
@@ -299,25 +250,24 @@ async def _document_generate_impl(
 
             # Track completed tool names for verification (SQL handles persistence)
             # Get required tool names from database result
-            # tool.name is guaranteed non-None after filter above
-            required_tool_names: set[str] = set()
-            for tool in agent_tools_config:
-                if tool.name is not None:
-                    required_tool_names.add(cast(str, tool.name))
+            required_tool_names: set[str] = {
+                tool.name for tool in agent_tools_config if tool.name is not None
+            }
             completed_tool_names: set[str] = set()
             tool_call_id_to_name: dict[str, str] = {}
             # Map tool_name to tool_type from database result
-            tool_name_to_type: dict[str, str] = {}
-            for tool in agent_tools_config:
-                if tool.name is not None and tool.tool_type is not None:
-                    tool_name_to_type[cast(str, tool.name)] = cast(str, tool.tool_type)
+            tool_name_to_type: dict[str, str] = {
+                tool.name: tool.tool_type
+                for tool in agent_tools_config
+                if tool.name is not None and tool.tool_type is not None
+            }
 
             # Run document generation with streaming
             with trace(
                 "Document Agent",
                 trace_id=trace_id,  # From groups table
-                group_id=str(document_id)
-                if document_id
+                group_id=str(data.document_id)
+                if data.document_id
                 else None,  # Resource ID, not database group_id
             ):
                 result_runner = Runner.run_streamed(
@@ -331,7 +281,7 @@ async def _document_generate_impl(
                 store_active_run
 
             await store_active_run(
-                str(document_id) if document_id else sid, result_runner
+                str(data.document_id) if data.document_id else sid, result_runner
             )
 
             try:
@@ -345,7 +295,7 @@ async def _document_generate_impl(
                         {
                             "sid": sid,
                             "progress_type": "tool_call_start",
-                            "document_id": str(document_id) if document_id else None,
+                            "document_id": str(data.document_id) if data.document_id else None,
                             "run_id": str(model_run_id),
                             "tool_call_id": tool_call_id,
                             "call_id": call_id or tool_call_id,
@@ -360,7 +310,7 @@ async def _document_generate_impl(
                         {
                             "sid": sid,
                             "progress_type": "tool_call_progress",
-                            "document_id": str(document_id) if document_id else None,
+                            "document_id": str(data.document_id) if data.document_id else None,
                             "run_id": str(model_run_id),
                             "tool_call_id": tool_call_id,
                             "call_id": None,  # SQL will look it up
@@ -386,7 +336,7 @@ async def _document_generate_impl(
                         {
                             "sid": sid,
                             "type": "tool_call_complete",
-                            "document_id": str(document_id) if document_id else None,
+                            "document_id": str(data.document_id) if data.document_id else None,
                             "run_id": str(model_run_id),
                             "tool_call_id": tool_call_id,
                             "call_id": None,  # SQL will look it up
@@ -426,7 +376,7 @@ async def _document_generate_impl(
                 from app.infra.v4.websocket.remove_active_run import \
                     remove_active_run
 
-                await remove_active_run(str(document_id) if document_id else sid)
+                await remove_active_run(str(data.document_id) if data.document_id else sid)
 
             # Emit async pricing event (non-blocking)
             # This handles token updates and message logging in background
@@ -440,10 +390,10 @@ async def _document_generate_impl(
                     or "document",  # Use agent_role from database
                     "input_text_tokens": usage.input_tokens,
                     "output_text_tokens": usage.output_tokens,
-                    "system_prompt": context.get("system_prompt"),
+                    "system_prompt": result.system_prompt,
                     "input_items": input_items,  # Serialized TResponseInputItem list
                     "assistant_output": assistant_output,
-                    "department_id": str(department_id) if department_id else None,
+                    "department_id": str(data.department_id) if data.department_id else None,
                 },
             )
 
@@ -454,7 +404,7 @@ async def _document_generate_impl(
                 await emit_to_internal(
                     "document_error",
                     DocumentGenerationErrorApiRequest(
-                        document_id=str(document_id) if document_id else None,
+                        document_id=str(data.document_id) if data.document_id else None,
                         error_message=(
                             f"Agent did not call all required tools. "
                             f"Missing: {tool_names_str}"
@@ -470,39 +420,40 @@ async def _document_generate_impl(
                 {
                     "sid": sid,
                     "type": "run_complete",
-                    "document_id": str(document_id) if document_id else None,
+                    "document_id": str(data.document_id) if data.document_id else None,
                     "run_id": str(model_run_id),
                     "group_id": str(group_id) if group_id else None,
-                    "department_id": str(department_id),
-                    "document_name": document_name,
+                    "department_id": str(data.department_id),
+                    "document_name": data.document_name,
                 },
             )
 
     except RuntimeError:
         # Pool not initialized - emit error event
-        document_id_str_error: str | None = None
+        doc_id: str | None = None
         try:
-            document_id_str_error = str(document_id) if document_id else None
+            doc_id = str(data.document_id) if data.document_id else None
         except Exception:
             pass
         await emit_to_internal(
             "document_error",
             DocumentGenerationErrorApiRequest(
-                document_id=document_id_str_error,
+                document_id=doc_id,
                 error_message="Database connection pool not available",
             ),
             sid=sid,
         )
     except Exception as e:
-        document_id_str_error: str | None = None
+        # Extract document_id safely for error message
+        doc_id_err: str | None = None
         try:
-            document_id_str_error = str(document_id) if document_id else None
+            doc_id_err = str(data.document_id) if data.document_id else None
         except Exception:
             pass
         await emit_to_internal(
             "document_error",
             DocumentGenerationErrorApiRequest(
-                document_id=document_id_str_error,
+                document_id=doc_id_err,
                 error_message=str(e),
             ),
             sid=sid,
@@ -527,17 +478,10 @@ from app.main import sio
 @sio.event  # type: ignore
 async def document_generate(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler"""
-    # Convert camelCase to snake_case for ApiRequest
-    converted_data = {
-        "department_id": data.get("departmentId"),
-        "document_id": data.get("documentId"),
-        "document_name": data.get("documentName"),
-        "document_description": data.get("documentDescription"),
-        "field_ids": data.get("fieldIds"),
-    }
+    # Server always expects snake_case - frontend must convert camelCase before sending
     await handle_client_event(
         sid=sid,
-        data=converted_data,
+        data=data,
         request_type=GetDocumentRunContextAndCreateRunApiRequest,
         handler=_document_generate_impl,  # type: ignore[arg-type]
         error_event_name="documents_generation_error",
