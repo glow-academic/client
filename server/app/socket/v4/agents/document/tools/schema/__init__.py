@@ -1,4 +1,4 @@
-"""Document template schema tool event handlers."""
+"""Document schema tool event handlers."""
 
 from fastapi import APIRouter
 

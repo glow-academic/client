@@ -4,49 +4,40 @@ import asyncio
 import uuid
 from typing import Any, cast
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
-from fastapi import APIRouter
-from pydantic import BaseModel, Field
-from utils.sql_helper import execute_sql_typed, load_sql
-
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.agents.generic_agent import GenericAgent
+from app.infra.v4.agents.stream_agent_events import (StreamEventCallbacks,
+                                                     stream_agent_events)
 from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.documents.format_document_template_context import (
-    format_document_template_context,
-)
+from app.infra.v4.documents.format_document_template_context import \
+    format_document_template_context
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.utils.schema_helper import create_schema_from_dict
+from fastapi import APIRouter
+from pydantic import BaseModel, Field
+from utils.sql_helper import execute_sql_typed, load_sql
 
 # Types will be auto-generated from SQL introspection
 # For now, using try/except to handle missing types gracefully
 try:
-    from app.sql.types import (
-        CreateTemplateAndLinkSqlParams,
-        CreateTemplateAndLinkSqlRow,
-        DocumentGenerationCompleteApiRequest,
-        DocumentGenerationErrorApiRequest,
-        DocumentGenerationErrorSqlRow,
-        DocumentGenerationProgressApiRequest,
-        GetDocumentRunContextAndCreateRunApiRequest,
-        GetDocumentRunContextAndCreateRunSqlParams,
-        GetDocumentRunContextAndCreateRunSqlRow,
-        GetDocumentTemplateContextSqlParams,
-        GetDocumentTemplateContextSqlRow,
-    )
+    from app.sql.types import (CreateTemplateAndLinkSqlParams,
+                               CreateTemplateAndLinkSqlRow,
+                               DocumentGenerationCompleteApiRequest,
+                               DocumentGenerationErrorApiRequest,
+                               DocumentGenerationErrorSqlRow,
+                               DocumentGenerationProgressApiRequest,
+                               GetDocumentRunContextAndCreateRunApiRequest,
+                               GetDocumentRunContextAndCreateRunSqlParams,
+                               GetDocumentRunContextAndCreateRunSqlRow,
+                               GetDocumentTemplateContextSqlParams,
+                               GetDocumentTemplateContextSqlRow)
 except ImportError:
     # Types not generated yet - will be created when SQL files are processed
     # Using BaseModel as fallback for now
@@ -270,10 +261,6 @@ async def _document_generate_impl(
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(result.run_id)
 
-            # Module-level storage for document generation results
-            document_results: dict[str, Any] = {}
-            document_progress: dict[str, bool] = {}
-
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent_id"])
             from app.sql.types import GetAgentToolsSqlRow
@@ -306,18 +293,7 @@ async def _document_generate_impl(
                 title: str = Field(description=title_desc),
             ) -> str:
                 """Create a descriptive title for this document."""
-                document_results["title"] = title
-                document_progress["title"] = True
-                # Emit to internal bus for title creation
-                await internal_sio.emit(
-                    "document_tool_title",
-                    {
-                        "sid": sid,
-                        "trace_id": trace_id,
-                        "title": title,
-                        "document_id": str(document_id) if document_id else None,
-                    },
-                )
+                # SQL handles persistence via tool_call_arguments
                 return "Created title successfully"
 
             document_tools.append(function_tool(create_title))
@@ -336,8 +312,7 @@ async def _document_generate_impl(
                 template_html: str = Field(description=html_desc),
             ) -> str:
                 """Generate the Jinja template HTML for the document."""
-                document_results["template_html"] = template_html
-                document_progress["template_html"] = True
+                # SQL handles persistence via tool_call_arguments
                 return "Generated template HTML successfully"
 
             document_tools.append(function_tool(generate_html))
@@ -356,8 +331,7 @@ async def _document_generate_impl(
                 schema_json: str = Field(description=schema_desc),
             ) -> str:
                 """Generate the TemplateSchema JSON for template context."""
-                document_results["template_schema"] = schema_json
-                document_progress["template_schema"] = True
+                # SQL handles persistence via tool_call_arguments
                 return "Generated template schema successfully"
 
             document_tools.append(function_tool(generate_schema))
@@ -367,12 +341,9 @@ async def _document_generate_impl(
                 tool_context: RunContextWrapper[Any],
                 tool_results: list[FunctionToolResult],
             ) -> ToolsToFinalOutputResult:
-                template_html_complete = document_progress.get("template_html", False)
-                template_schema_complete = document_progress.get(
-                    "template_schema", False
-                )
-                both_complete = template_html_complete and template_schema_complete
-                return ToolsToFinalOutputResult(is_final_output=both_complete)
+                # Tool completion is checked after streaming completes by querying SQL
+                # For now, always return False to let agent continue calling tools
+                return ToolsToFinalOutputResult(is_final_output=False)
 
             # Build document agent inline
             document_agent = GenericAgent(
@@ -475,10 +446,16 @@ async def _document_generate_impl(
             # (get_document_run_context_and_create_run_complete.sql) - both happen atomically
             # If we get here, rate limit check passed and run was created successfully
 
-            # Track tool calls for this document run
-            tool_calls_dict: dict[str, dict[str, Any]] = {}
-            fake_id_to_real_id: dict[str, str] = {}
-            tool_call_counter = 0
+            # Track completed tool names for verification (SQL handles persistence)
+            completed_tool_names: set[str] = set()
+            tool_call_id_to_name: dict[str, str] = {}
+            
+            # Map tool_name to tool_type (stable enum mapping)
+            TOOL_NAME_TO_TYPE = {
+                "create_title": "title",
+                "generate_html": "html",
+                "generate_schema": "schema",
+            }
 
             # Run document generation with streaming
             with trace(
@@ -495,237 +472,82 @@ async def _document_generate_impl(
                 )
 
             # Store the result in active runs for potential cancellation
-            from app.infra.v4.websocket.store_active_run import store_active_run
+            from app.infra.v4.websocket.store_active_run import \
+                store_active_run
 
             await store_active_run(
                 str(document_id) if document_id else sid, result_runner
             )
 
             try:
-                # Process streaming events
-                async for event in result_runner.stream_events():
-                    # Check for raw_response_event and inspect data for tool call deltas
-                    if hasattr(event, "type") and event.type == "raw_response_event":
-                        event_data = getattr(event, "data", None)
-                        if not event_data:
-                            continue
+                # Use generic streaming helper instead of manual parsing
+                async def on_start(tool_call_id: str, tool_name: str, call_id: str | None) -> None:
+                    tool_call_id_to_name[tool_call_id] = tool_name
+                    await internal_sio.emit(
+                        "document_progress",
+                        {
+                            "sid": sid,
+                            "progress_type": "tool_call_start",
+                            "document_id": str(document_id) if document_id else None,
+                            "run_id": str(model_run_id),
+                            "tool_call_id": tool_call_id,
+                            "call_id": call_id or tool_call_id,
+                            "tool_name": tool_name,
+                            "arguments_raw": "",  # Empty for start
+                        },
+                    )
 
-                        event_data_type = (
-                            getattr(event_data, "type", None)
-                            if hasattr(event_data, "type")
-                            else None
-                        )
+                async def on_progress(tool_call_id: str, arguments_delta: str) -> None:
+                    await internal_sio.emit(
+                        "document_progress",
+                        {
+                            "sid": sid,
+                            "progress_type": "tool_call_progress",
+                            "document_id": str(document_id) if document_id else None,
+                            "run_id": str(model_run_id),
+                            "tool_call_id": tool_call_id,
+                            "call_id": None,  # SQL will look it up
+                            "tool_name": None,  # SQL will look it up
+                            "arguments_raw": arguments_delta,  # Delta - SQL accumulates
+                        },
+                    )
 
-                        # Handle response.output_item.added to get tool name and item_id
-                        if event_data_type == "response.output_item.added":
-                            item = getattr(event_data, "item", None)
-                            if item:
-                                item_type = (
-                                    getattr(item, "type", None)
-                                    if hasattr(item, "type")
-                                    else None
-                                )
-                                if item_type == "function_call":
-                                    fake_item_id = getattr(item, "id", None)
-                                    tool_name = getattr(item, "name", None)
-                                    call_id = getattr(item, "call_id", None)
+                async def on_complete(tool_call_id: str, final_args: dict[str, Any]) -> None:
+                    tool_name = tool_call_id_to_name.get(tool_call_id, "")
+                    if tool_name:
+                        completed_tool_names.add(tool_name)
+                    
+                    # Map tool_name to tool_type (stable enum)
+                    tool_type = TOOL_NAME_TO_TYPE.get(tool_name)
+                    
+                    await internal_sio.emit(
+                        "document_complete",
+                        {
+                            "sid": sid,
+                            "type": "tool_call_complete",
+                            "document_id": str(document_id) if document_id else None,
+                            "run_id": str(model_run_id),
+                            "tool_call_id": tool_call_id,
+                            "call_id": None,  # SQL will look it up
+                            "tool_type": tool_type,  # For routing by tool_type
+                            "final_content": str(final_args),
+                            "arguments_raw": None,  # SQL has the accumulated version
+                        },
+                    )
 
-                                    if not fake_item_id:
-                                        fake_item_id = getattr(
-                                            event_data, "item_id", None
-                                        )
+                callbacks = StreamEventCallbacks(
+                    on_tool_call_start=on_start,
+                    on_tool_call_progress=on_progress,
+                    on_tool_call_complete=on_complete,
+                )
 
-                                    if call_id:
-                                        real_item_id = call_id
-                                    elif fake_item_id:
-                                        tool_call_counter += 1
-                                        real_item_id = f"document_{tool_call_counter}_{uuid.uuid4().hex[:8]}"
-                                    else:
-                                        continue
+                # Generate tool_call_id from call_id
+                def tool_call_id_generator(call_id: str | None) -> str:
+                    if call_id:
+                        return call_id
+                    return f"document_{uuid.uuid4().hex[:16]}"
 
-                                    if tool_name:
-                                        if fake_item_id:
-                                            fake_id_to_real_id[fake_item_id] = (
-                                                real_item_id
-                                            )
-
-                                        if real_item_id not in tool_calls_dict:
-                                            tool_calls_dict[real_item_id] = {
-                                                "name": tool_name,
-                                                "call_id": call_id,
-                                                "fake_id": fake_item_id,
-                                                "arguments_raw": "",
-                                                "completed": False,
-                                            }
-
-                                            # Emit tool call start to progress
-                                            await internal_sio.emit(
-                                                "document_progress",
-                                                {
-                                                    "sid": sid,
-                                                    "type": "tool_call_start",
-                                                    "document_id": str(document_id)
-                                                    if document_id
-                                                    else None,
-                                                    "run_id": str(model_run_id),
-                                                    "tool_call_id": real_item_id,
-                                                    "call_id": call_id or real_item_id,
-                                                    "tool_name": tool_name,
-                                                    "arguments_raw": "",
-                                                },
-                                            )
-
-                        # Handle response.function_call_arguments.delta
-                        if event_data_type == "response.function_call_arguments.delta":
-                            fake_item_id = getattr(event_data, "item_id", None)
-                            arguments_delta = getattr(event_data, "delta", None)
-                            call_id = getattr(event_data, "call_id", None)
-
-                            if not arguments_delta:
-                                continue
-
-                            if call_id:
-                                delta_real_item_id = call_id
-                            elif fake_item_id:
-                                delta_real_item_id = fake_id_to_real_id.get(
-                                    fake_item_id
-                                )
-                                if not delta_real_item_id:
-                                    continue
-                            else:
-                                continue
-
-                            tool_call_id = delta_real_item_id
-
-                            if tool_call_id not in tool_calls_dict:
-                                tool_calls_dict[tool_call_id] = {
-                                    "name": None,
-                                    "call_id": call_id,
-                                    "fake_id": fake_item_id,
-                                    "arguments_raw": "",
-                                    "completed": False,
-                                }
-
-                            tool_call_state = tool_calls_dict[tool_call_id]
-
-                            # Update tool name if we have call_id match
-                            if not tool_call_state["name"] and call_id:
-                                for tc_id, tc_state in tool_calls_dict.items():
-                                    if tc_state.get(
-                                        "call_id"
-                                    ) == call_id and tc_state.get("name"):
-                                        tool_call_state["name"] = tc_state["name"]
-                                        break
-
-                            tool_call_state["arguments_raw"] += arguments_delta
-
-                            # Only emit progress if we have a tool name
-                            if tool_call_state["name"]:
-                                # Emit progress event
-                                await internal_sio.emit(
-                                    "document_progress",
-                                    {
-                                        "sid": sid,
-                                        "type": "tool_call_progress",
-                                        "document_id": str(document_id)
-                                        if document_id
-                                        else None,
-                                        "run_id": str(model_run_id),
-                                        "tool_call_id": tool_call_id,
-                                        "call_id": call_id or tool_call_id,
-                                        "tool_name": tool_call_state["name"],
-                                        "arguments_raw": tool_call_state[
-                                            "arguments_raw"
-                                        ],
-                                    },
-                                )
-
-                        # Handle tool call completion
-                        if event_data_type == "response.output_item.done":
-                            fake_item_id = getattr(event_data, "item_id", None)
-                            item = getattr(event_data, "item", None)
-                            call_id = None
-                            if item:
-                                call_id = getattr(item, "call_id", None)
-                            if not call_id:
-                                call_id = getattr(event_data, "call_id", None)
-
-                            if call_id:
-                                done_real_item_id = call_id
-                            elif fake_item_id:
-                                done_real_item_id = fake_id_to_real_id.get(fake_item_id)
-                                if not done_real_item_id:
-                                    continue
-                            else:
-                                continue
-
-                            if done_real_item_id in tool_calls_dict:
-                                tool_call_id = done_real_item_id
-                                tool_call_state = tool_calls_dict[tool_call_id]
-
-                                if tool_call_state.get("completed"):
-                                    continue
-
-                                tool_call_state["completed"] = True
-                                tool_name = tool_call_state["name"]
-
-                                # Parse final arguments
-                                final_args = {}
-                                try:
-                                    import json
-
-                                    if tool_call_state["arguments_raw"]:
-                                        final_args = json.loads(
-                                            tool_call_state["arguments_raw"]
-                                        )
-                                except json.JSONDecodeError:
-                                    pass
-
-                                # Emit completion event
-                                await internal_sio.emit(
-                                    "document_complete",
-                                    {
-                                        "sid": sid,
-                                        "type": "tool_call_complete",
-                                        "document_id": str(document_id)
-                                        if document_id
-                                        else None,
-                                        "run_id": str(model_run_id),
-                                        "tool_call_id": tool_call_id,
-                                        "call_id": call_id or tool_call_id,
-                                        "tool_name": tool_name,
-                                        "final_content": str(final_args),
-                                        "arguments_raw": tool_call_state[
-                                            "arguments_raw"
-                                        ],
-                                    },
-                                )
-
-                                # Mark tool as completed in document_progress
-                                if tool_name:
-                                    document_progress[tool_name] = True
-                                    # Store result in document_results
-                                    if (
-                                        tool_name == "create_title"
-                                        and "title" in final_args
-                                    ):
-                                        document_results["title"] = final_args["title"]
-                                    elif (
-                                        tool_name == "generate_html"
-                                        and "template_html" in final_args
-                                    ):
-                                        document_results["template_html"] = final_args[
-                                            "template_html"
-                                        ]
-                                    elif (
-                                        tool_name == "generate_schema"
-                                        and "schema_json" in final_args
-                                    ):
-                                        document_results["template_schema"] = (
-                                            final_args["schema_json"]
-                                        )
-
-                                del tool_calls_dict[tool_call_id]
+                await stream_agent_events(result_runner, callbacks, tool_call_id_generator)
 
             except BaseException as stream_error:
                 if isinstance(
@@ -738,7 +560,8 @@ async def _document_generate_impl(
                 raise
             finally:
                 # Clean up active run
-                from app.infra.v4.websocket.remove_active_run import remove_active_run
+                from app.infra.v4.websocket.remove_active_run import \
+                    remove_active_run
 
                 await remove_active_run(str(document_id) if document_id else sid)
 
@@ -760,22 +583,55 @@ async def _document_generate_impl(
                 },
             )
 
-            # Extract results from document_results (populated by tool calls)
-            template_html = document_results.get("template_html", "")
-            template_schema_str = document_results.get("template_schema", "{}")
-
-            # Parse schema JSON (from tool output string)
+            # Extract results from SQL (tool_call_arguments table)
+            # Query tool_call_arguments for completed tools
             import json
 
+            template_html = ""
+            template_schema_str = "{}"
+
+            # Get template_html from generate_html tool_call
+            html_tool_call_query = """
+                SELECT tca.arguments_json->>'template_html' as template_html
+                FROM tool_calls tc
+                JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+                JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+                JOIN tools t ON t.id = tc.tool_id
+                WHERE tcr.run_id = $1
+                  AND t.name = 'generate_html'
+                  AND tc.completed = true
+                ORDER BY tc.created_at DESC
+                LIMIT 1
+            """
+            html_result = await conn.fetchrow(html_tool_call_query, model_run_id)
+            if html_result and html_result["template_html"]:
+                template_html = html_result["template_html"]
+
+            # Get schema_json from generate_schema tool_call
+            schema_tool_call_query = """
+                SELECT tca.arguments_json->>'schema_json' as schema_json
+                FROM tool_calls tc
+                JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+                JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+                JOIN tools t ON t.id = tc.tool_id
+                WHERE tcr.run_id = $1
+                  AND t.name = 'generate_schema'
+                  AND tc.completed = true
+                ORDER BY tc.created_at DESC
+                LIMIT 1
+            """
+            schema_result = await conn.fetchrow(schema_tool_call_query, model_run_id)
+            if schema_result and schema_result["schema_json"]:
+                template_schema_str = schema_result["schema_json"]
+
+            # Parse schema JSON
             try:
                 template_schema = json.loads(template_schema_str)
             except (json.JSONDecodeError, TypeError):
                 template_schema = {}
 
             # Verify both tools were called
-            if not document_progress.get("template_html") or not document_progress.get(
-                "template_schema"
-            ):
+            if "generate_html" not in completed_tool_names or "generate_schema" not in completed_tool_names:
                 await emit_to_internal(
                     "document_error",
                     DocumentGenerationErrorApiRequest(
@@ -803,9 +659,8 @@ async def _document_generate_impl(
             # Create template directly in database
             import os
 
-            from utils.cache.invalidate_tags import invalidate_tags
-
             from app.main import UPLOAD_FOLDER
+            from utils.cache.invalidate_tags import invalidate_tags
 
             try:
                 # Save template HTML to file and create upload record
@@ -864,8 +719,7 @@ async def _document_generate_impl(
                         # Fetch updated templates and build mapping from array
                         from app.sql.types import (
                             GetDocumentTemplatesSqlParams,
-                            GetDocumentTemplatesSqlRow,
-                        )
+                            GetDocumentTemplatesSqlRow)
 
                         template_params = GetDocumentTemplatesSqlParams(
                             document_id=document_id

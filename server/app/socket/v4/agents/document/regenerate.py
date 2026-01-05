@@ -286,10 +286,6 @@ async def _document_regenerate_impl(
                 "profile_id": result.profile_id,
             }
 
-            # Module-level storage for document generation results
-            document_results: dict[str, Any] = {}
-            document_progress: dict[str, bool] = {}
-
             # Load agent tools from database
             agent_id_uuid = uuid.UUID(context["agent_id"])
             from app.sql.types import GetAgentToolsSqlRow
@@ -322,18 +318,7 @@ async def _document_regenerate_impl(
                 title: str = Field(description=title_desc),
             ) -> str:
                 """Create a descriptive title for this document."""
-                document_results["title"] = title
-                document_progress["title"] = True
-                # Emit to internal bus for title creation
-                await internal_sio.emit(
-                    "document_tool_title",
-                    {
-                        "sid": sid,
-                        "trace_id": trace_id,
-                        "title": title,
-                        "document_id": str(document_id) if document_id else None,
-                    },
-                )
+                # SQL handles persistence via tool_call_arguments
                 return "Created title successfully"
 
             document_tools.append(function_tool(create_title))
@@ -352,8 +337,7 @@ async def _document_regenerate_impl(
                 template_html: str = Field(description=html_desc),
             ) -> str:
                 """Generate the Jinja template HTML for the document."""
-                document_results["template_html"] = template_html
-                document_progress["template_html"] = True
+                # SQL handles persistence via tool_call_arguments
                 return "Generated template HTML successfully"
 
             document_tools.append(function_tool(generate_html))
@@ -372,8 +356,7 @@ async def _document_regenerate_impl(
                 schema_json: str = Field(description=schema_desc),
             ) -> str:
                 """Generate the TemplateSchema JSON for template context."""
-                document_results["template_schema"] = schema_json
-                document_progress["template_schema"] = True
+                # SQL handles persistence via tool_call_arguments
                 return "Generated template schema successfully"
 
             document_tools.append(function_tool(generate_schema))
@@ -383,11 +366,8 @@ async def _document_regenerate_impl(
                 tool_context: RunContextWrapper[Any],
                 tool_results: list[FunctionToolResult],
             ) -> ToolsToFinalOutputResult:
-                template_html_complete = document_progress.get("template_html", False)
-                template_schema_complete = document_progress.get(
-                    "template_schema", False
-                )
-                both_complete = template_html_complete and template_schema_complete
+                # Tool completion is checked after run completes by querying SQL
+                both_complete = True  # Will verify by querying SQL
                 return ToolsToFinalOutputResult(is_final_output=both_complete)
 
             # Build document agent inline (same as generate.py)
@@ -534,22 +514,55 @@ async def _document_regenerate_impl(
                 },
             )
 
-            # Extract results from document_results (populated by tool calls)
-            template_html = document_results.get("template_html", "")
-            template_schema_str = document_results.get("template_schema", "{}")
-
-            # Parse schema JSON (from tool output string)
+            # Extract results from SQL (tool_call_arguments table)
+            # Query tool_call_arguments for completed tools
             import json
 
+            template_html = ""
+            template_schema_str = "{}"
+
+            # Get template_html from generate_html tool_call
+            html_tool_call_query = """
+                SELECT tca.arguments_json->>'template_html' as template_html
+                FROM tool_calls tc
+                JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+                JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+                JOIN tools t ON t.id = tc.tool_id
+                WHERE tcr.run_id = $1
+                  AND t.name = 'generate_html'
+                  AND tc.completed = true
+                ORDER BY tc.created_at DESC
+                LIMIT 1
+            """
+            html_result = await conn.fetchrow(html_tool_call_query, model_run_id)
+            if html_result and html_result["template_html"]:
+                template_html = html_result["template_html"]
+
+            # Get schema_json from generate_schema tool_call
+            schema_tool_call_query = """
+                SELECT tca.arguments_json->>'schema_json' as schema_json
+                FROM tool_calls tc
+                JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
+                JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
+                JOIN tools t ON t.id = tc.tool_id
+                WHERE tcr.run_id = $1
+                  AND t.name = 'generate_schema'
+                  AND tc.completed = true
+                ORDER BY tc.created_at DESC
+                LIMIT 1
+            """
+            schema_result = await conn.fetchrow(schema_tool_call_query, model_run_id)
+            if schema_result and schema_result["schema_json"]:
+                template_schema_str = schema_result["schema_json"]
+
+            # Parse schema JSON
             try:
                 template_schema = json.loads(template_schema_str)
             except (json.JSONDecodeError, TypeError):
                 template_schema = {}
 
             # Verify both tools were called
-            if not document_progress.get("template_html") or not document_progress.get(
-                "template_schema"
-            ):
+            if not template_html or not template_schema_str or template_schema_str == "{}":
                 await emit_to_internal(
                     "document_error",
                     DocumentGenerationErrorApiRequest(

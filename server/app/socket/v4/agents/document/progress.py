@@ -1,136 +1,106 @@
-"""Handler for document_progress WebSocket event - dispatches to tool-specific handlers."""
+"""Handler for document_progress - routes by tool_type from SQL."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio
+from app.sql.types import (DocumentToolProgressUpdateApiRequest,
+                           DocumentToolProgressUpdateSqlParams,
+                           DocumentToolProgressUpdateSqlRow)
 from fastapi import APIRouter
-from pydantic import BaseModel
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
-
 server_router = APIRouter()
 
+SQL_PATH = "app/sql/v4/documents/document_tool_progress_update_complete.sql"
 
-class DocumentProgressPayload(BaseModel):
-    """Generic document progress event - dispatches to tool-specific handlers."""
-
-    sid: str
-    type: str  # "tool_call_start" | "tool_call_progress"
-    document_id: str | None = None
-    run_id: str
-    tool_name: str
-    tool_call_id: str
-    call_id: str | None = None
-    arguments_raw: str
-
-
-class DocumentProgressErrorPayload(BaseModel):
-    """Error response for document progress."""
-
-    success: bool
-    message: str
+# Map tool_type enum to event name (stable mapping based on enum)
+TOOL_TYPE_EVENT_MAP = {
+    "title": "document_tool_title_progress",
+    "html": "document_tool_html_progress",
+    "schema": "document_tool_schema_progress",
+}
 
 
 async def _document_progress_impl(
     sid: str,
-    data: DocumentProgressPayload,
+    data: DocumentToolProgressUpdateApiRequest,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Dispatch to tool-specific progress handler."""
-    # Route to appropriate tool handler based on tool_name
-    if data.type == "tool_call_start":
-        # Emit tool-specific start event
-        if data.tool_name == "create_title":
-            await internal_sio.emit(
-                "document_title_progress",
-                {
-                    "sid": data.sid,
-                    "type": "tool_call_start",
-                    "document_id": data.document_id,
-                    "run_id": data.run_id,
-                    "tool_call_id": data.tool_call_id,
-                    "call_id": data.call_id,
-                    "tool_name": data.tool_name,
-                    "arguments_raw": data.arguments_raw,
-                },
+    """Handle progress - SQL accumulates arguments, returns tool_type for routing."""
+    if data.progress_type not in ("tool_call_start", "tool_call_progress"):
+        return
+
+    try:
+        async with get_db_connection() as conn:
+            # Call SQL - SQL handles tool lookup, tool_call creation, argument accumulation
+            # Get arguments_delta from data (may be arguments_raw or arguments_delta)
+            arguments_delta = getattr(data, "arguments_delta", None) or getattr(data, "arguments_raw", "") or ""
+            
+            params = DocumentToolProgressUpdateSqlParams(
+                run_id=uuid.UUID(data.run_id),
+                tool_call_id=data.tool_call_id,
+                call_id=data.call_id,
+                tool_name=data.tool_name,
+                arguments_delta=arguments_delta,  # Delta - SQL accumulates
+                progress_type=data.progress_type,
+                document_id=uuid.UUID(data.document_id) if data.document_id else None,
             )
-        elif data.tool_name == "generate_html":
-            await internal_sio.emit(
-                "document_template_html_progress",
-                {
-                    "sid": data.sid,
-                    "type": "tool_call_start",
-                    "document_id": data.document_id,
-                    "run_id": data.run_id,
-                    "tool_call_id": data.tool_call_id,
-                    "call_id": data.call_id,
-                    "tool_name": data.tool_name,
-                    "arguments_raw": data.arguments_raw,
-                },
+
+            result = cast(
+                DocumentToolProgressUpdateSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
-        elif data.tool_name == "generate_schema":
+
+            # SQL returns tool_type (stable enum) - use this for routing!
+            tool_type = result.tool_type  # e.g., "title", "html", "schema"
+
+            # Route based on tool_type (not tool_name!)
+            tool_event_name = TOOL_TYPE_EVENT_MAP.get(tool_type)
+
+            if not tool_event_name:
+                await internal_sio.emit(
+                    "document_error",
+                    {
+                        "sid": sid,
+                        "success": False,
+                        "message": f"Unknown tool_type: {tool_type}",
+                    },
+                )
+                return
+
+            # Forward to tool-specific handler
             await internal_sio.emit(
-                "document_template_schema_progress",
+                tool_event_name,
                 {
-                    "sid": data.sid,
-                    "type": "tool_call_start",
+                    "sid": sid,
+                    "type": data.progress_type,
                     "document_id": data.document_id,
                     "run_id": data.run_id,
-                    "tool_call_id": data.tool_call_id,
-                    "call_id": data.call_id,
-                    "tool_name": data.tool_name,
-                    "arguments_raw": data.arguments_raw,
+                    "tool_call_id": result.tool_call_id,
+                    "call_id": result.persisted_call_id,
+                    "tool_id": str(result.tool_id),
+                    "tool_type": tool_type,  # Pass tool_type (stable enum)
+                    "tool_name": result.tool_name,  # For reference only
+                    "arguments_raw": result.arguments_raw,  # Accumulated by SQL
                 },
             )
 
-    elif data.type == "tool_call_progress":
-        # Emit tool-specific progress event
-        if data.tool_name == "create_title":
-            await internal_sio.emit(
-                "document_title_progress",
-                {
-                    "sid": data.sid,
-                    "type": "tool_call_progress",
-                    "document_id": data.document_id,
-                    "run_id": data.run_id,
-                    "tool_call_id": data.tool_call_id,
-                    "call_id": data.call_id,
-                    "tool_name": data.tool_name,
-                    "arguments_raw": data.arguments_raw,
-                },
-            )
-        elif data.tool_name == "generate_html":
-            await internal_sio.emit(
-                "document_template_html_progress",
-                {
-                    "sid": data.sid,
-                    "type": "tool_call_progress",
-                    "document_id": data.document_id,
-                    "run_id": data.run_id,
-                    "tool_call_id": data.tool_call_id,
-                    "call_id": data.call_id,
-                    "tool_name": data.tool_name,
-                    "arguments_raw": data.arguments_raw,
-                },
-            )
-        elif data.tool_name == "generate_schema":
-            await internal_sio.emit(
-                "document_template_schema_progress",
-                {
-                    "sid": data.sid,
-                    "type": "tool_call_progress",
-                    "document_id": data.document_id,
-                    "run_id": data.run_id,
-                    "tool_call_id": data.tool_call_id,
-                    "call_id": data.call_id,
-                    "tool_name": data.tool_name,
-                    "arguments_raw": data.arguments_raw,
-                },
-            )
+    except RuntimeError:
+        await internal_sio.emit(
+            "document_error",
+            {"sid": sid, "success": False, "message": "Database connection unavailable"},
+        )
+    except Exception as e:
+        await internal_sio.emit(
+            "document_error",
+            {"sid": sid, "success": False, "message": f"Progress update failed: {str(e)}"},
+        )
 
 
 @internal_sio.on("document_progress")  # type: ignore
@@ -138,20 +108,18 @@ async def document_progress_internal(
     data: dict[str, Any],
 ) -> None:
     """Handle document_progress event from internal bus."""
-    # Only handle tool-related types
-    if data.get("type") in ("tool_call_start", "tool_call_progress"):
-        await handle_internal_event(
-            data=data,
-            request_type=DocumentProgressPayload,
-            handler=_document_progress_impl,  # type: ignore[arg-type]
-            error_event_name="document_progress_error",
-            error_response_type=DocumentProgressErrorPayload,
-        )
+    await handle_internal_event(
+        data=data,
+        request_type=DocumentToolProgressUpdateApiRequest,
+        handler=_document_progress_impl,  # type: ignore[arg-type]
+        error_event_name="document_error",
+        error_response_type=None,  # Will be auto-generated from error SQL if needed
+    )
 
 
 register_server_endpoint(
     server_router,
     "/document_progress",
-    DocumentProgressPayload,
-    "Dispatch document progress to tool-specific handlers",
+    DocumentToolProgressUpdateApiRequest,
+    "Handle document tool progress updates",
 )

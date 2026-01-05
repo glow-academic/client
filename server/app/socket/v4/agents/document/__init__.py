@@ -18,11 +18,11 @@ from .tools.debug import (
 from .tools.debug import (
     server_router as debug_server_router,
 )
-from .tools.template_html import (
-    server_router as template_html_server_router,
+from .tools.html import (
+    server_router as html_server_router,
 )
-from .tools.template_schema import (
-    server_router as template_schema_server_router,
+from .tools.schema import (
+    server_router as schema_server_router,
 )
 from .tools.title import (
     client_router as title_client_router,
@@ -44,6 +44,6 @@ server_router.include_router(error_server_router)
 server_router.include_router(progress_server_router)
 server_router.include_router(eval_server_router)
 server_router.include_router(title_server_router)
-server_router.include_router(template_html_server_router)
-server_router.include_router(template_schema_server_router)
+server_router.include_router(html_server_router)
+server_router.include_router(schema_server_router)
 server_router.include_router(debug_server_router)

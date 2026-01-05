@@ -1,4 +1,4 @@
-"""Document template HTML tool event handlers."""
+"""Document HTML tool event handlers."""
 
 from fastapi import APIRouter
 
