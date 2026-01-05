@@ -1,4 +1,4 @@
-"""Handler for simulation_hints_generate WebSocket event - dispatches to text generation handler."""
+"""Handler for simulation_hints_generate WebSocket event - dispatches to generate_start."""
 
 import uuid
 from typing import Any, cast
@@ -27,7 +27,7 @@ async def _generate_hints_impl(
     data: GenerateHintsApiRequest | dict[str, Any],  # Accept dict for regenerate
     profile_id: uuid.UUID,
 ) -> None:
-    """Internal implementation for hint generation - dispatches to text generation handler."""
+    """Internal implementation for hint generation - dispatches to generate_start."""
     # Handle both GenerateHintsApiRequest and dict (for regenerate)
     if isinstance(data, dict):
         chat_id = uuid.UUID(data["chat_id"]) if isinstance(data["chat_id"], str) else data["chat_id"]
@@ -45,7 +45,7 @@ async def _generate_hints_impl(
 
     try:
         async with get_db_connection() as conn:
-            # Get context from SQL (rate limiting handled in generation handler SQL)
+            # Get context from SQL (rate limiting handled in generate/start.py)
             # Use execute_sql_typed() - auto-detects function
             params = GenerateHintsSqlParams(
                 message_id=message_id,
@@ -61,49 +61,52 @@ async def _generate_hints_impl(
             )
 
             if not result:
-                from app.socket.v4.generate.text.error import TextErrorPayload
                 await emit_to_internal(
-                    "generate_text_error",
-                    TextErrorPayload(
-                        success=False,
-                        message=(
+                    "generate_error",
+                    {
+                        "sid": sid,
+                        "error_message": (
                             f"Message {message_id} in chat {chat_id} not found or "
                             f"no hint agent configured for department {department_id}"
                         ),
-                    ),
+                        "resource_id": str(chat_id),
+                        "group_id": str(result.group_id) if result and result.group_id else None,
+                        "resource_type": "hint",
+                    },
                     sid=sid,
                 )
                 return
 
-            # Transform to standardized payload
-            # Generation handler will determine handler type from agent_role
+            # Transform to standardized payload for generate_start
             resource_id = uuid.UUID(result.chat_id)  # Use chat_id as resource_id
             
-            # Dispatch to generation handler with all context
-            # Generation handler determines handler type from agent_role in SQL result
+            # Dispatch to generate_start - it will handle mapping, group creation, run creation, rate limiting
             await internal_sio.emit(
-                "generate_text",  # Generation handler routes based on agent_role
+                "generate_start",
                 {
                     "sid": sid,
                     "agent_id": str(result.agent_id),
-                    "department_id": str(department_id) if department_id else None,
                     "resource_id": str(resource_id),
                     "resource_type": result.agent_role or "hint",  # Pass agent_role as resource_type
+                    "department_id": str(department_id) if department_id else None,
                     "upload_id": None,  # No audio input for hint
                     "group_id": str(result.group_id) if result.group_id else None,  # Pass group_id for regeneration
                     "user_instructions": user_instructions,  # Pass user_instructions for regeneration
+                    "message_id": str(message_id),  # Original message for regeneration
                 },
             )
-            return  # Exit early - generation handler will handle the rest
+            return  # Exit early - generate_start will handle the rest
     except Exception as e:
-        # Emit error event (rate limit errors handled in generation handler)
-        from app.socket.v4.generate.text.error import TextErrorPayload
+        # Emit error event to generate_error handler
         await emit_to_internal(
-            "generate_text_error",
-            TextErrorPayload(
-                success=False,
-                message=f"Hint generation failed: {str(e)}",
-            ),
+            "generate_error",
+            {
+                "sid": sid,
+                "error_message": f"Hint generation failed: {str(e)}",
+                "resource_id": str(chat_id) if "chat_id" in locals() else None,
+                "group_id": str(group_id) if group_id else None,
+                "resource_type": "hint",
+            },
             sid=sid,
         )
 
@@ -143,13 +146,15 @@ async def simulation_hints_generate_internal(data: dict[str, Any]) -> None:
 
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
-        from app.socket.v4.generate.text.error import TextErrorPayload
         await emit_to_internal(
-            "generate_text_error",
-            TextErrorPayload(
-                success=False,
-                message="No profile found for socket",
-            ),
+            "generate_error",
+            {
+                "sid": sid,
+                "error_message": "No profile found for socket",
+                "resource_id": None,
+                "group_id": None,
+                "resource_type": "hint",
+            },
             sid=sid,
         )
         return

@@ -24,6 +24,7 @@ from app.sql.types import (GetTextToolCallResultsSqlParams,
                            TextGenerationCompleteSqlRow)
 from pydantic import BaseModel
 
+
 # Placeholder for SQL-generated types (will be auto-generated when SQL is executed)
 class TextGenerationErrorApiRequest(BaseModel):
     """Placeholder - will be replaced by SQL-generated type."""
@@ -41,8 +42,9 @@ async def _generate_text_complete_impl(
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Dispatch to tool-specific complete handler by tool_type or handle run_complete."""
+    """Route completion events - tool_call_complete to agent tools, run_complete to generate/end.py."""
     event_type = data.get("type") if isinstance(data, dict) else getattr(data, "type", None)
+    
     if event_type == "tool_call_complete":
         # Tool-specific completion - route to agent-specific tool handler
         tool_name = data.get("tool_name") if isinstance(data, dict) else getattr(data, "tool_name", None)
@@ -80,106 +82,29 @@ async def _generate_text_complete_impl(
             )
 
     elif event_type == "run_complete":
-        # All tools done - extract results and finalize using comprehensive SQL function
-        run_id_str = data.get("run_id") if isinstance(data, dict) else getattr(data, "run_id", None)
-        resource_id_str = data.get("resource_id") if isinstance(data, dict) else getattr(data, "resource_id", None)
-        department_id_str = data.get("department_id") if isinstance(data, dict) else getattr(data, "department_id", None)
+        # Route to generate/end.py for centralized handling (log_run + agent end dispatch)
+        from app.socket.v4.generate.end import (GenerateEndApiRequest,
+                                                _generate_end_impl)
+
+        # Transform to GenerateEndApiRequest format
+        payload = GenerateEndApiRequest(
+            sid=sid,
+            type="run_complete",
+            resource_id=data.get("resource_id"),
+            resource_type=data.get("resource_type"),
+            run_id=data.get("run_id", ""),
+            group_id=data.get("group_id"),
+            department_id=data.get("department_id"),
+            # Include usage data for log_run
+            input_text_tokens=data.get("input_text_tokens"),
+            output_text_tokens=data.get("output_text_tokens"),
+            system_prompt=data.get("system_prompt"),
+            input_items=data.get("input_items"),
+            assistant_output=data.get("assistant_output"),
+        )
         
-        if not run_id_str:
-            await emit_to_internal(
-                "generate_text_error",
-                TextGenerationErrorApiRequest(
-                    error_message="Missing run_id in run_complete event",
-                    resource_id=resource_id_str,
-                    group_id=str(group_id) if group_id else None,
-                ),
-                sid=sid,
-            )
-            return
-
-        try:
-            async with get_db_connection() as conn:
-                model_run_id = uuid.UUID(run_id_str)
-                resource_id = uuid.UUID(resource_id_str) if resource_id_str else None
-
-                # 1. Extract tool results using SQL function
-                tool_results_params = GetTextToolCallResultsSqlParams(
-                    run_id=model_run_id
-                )
-                tool_results = cast(
-                    GetTextToolCallResultsSqlRow,
-                    await execute_sql_typed(
-                        conn, SQL_GET_TOOL_RESULTS_PATH, params=tool_results_params
-                    ),
-                )
-
-                # 2. Call comprehensive SQL function - does ALL database work
-                complete_params = TextGenerationCompleteSqlParams(
-                    profile_id=profile_id,
-                    run_id=model_run_id,
-                    resource_id=resource_id,
-                    group_id=group_id,
-                    department_id=uuid.UUID(department_id_str) if department_id_str else None,
-                )
-                complete_result = cast(
-                    TextGenerationCompleteSqlRow,
-                    await execute_sql_typed(conn, SQL_COMPLETE_PATH, params=complete_params),
-                )
-
-                # 3. Invalidate cache if resource was created
-                if resource_id:
-                    await invalidate_tags(["text_generation"])
-
-            # 4. Emit final completion to client using typed payload
-            from app.main import sio as client_sio
-            await client_sio.emit(
-                "text_generation_complete",
-                {
-                    "success": complete_result.success,
-                    "message": complete_result.message,
-                    "resource_id": str(resource_id) if resource_id else None,
-                    "tool_results": complete_result.tool_results,
-                    "trace_id": complete_result.trace_id,
-                },
-                room=sid,
-            )
-
-            # 5. Log activity
-            try:
-                await log_websocket_activity(
-                    sid=sid,
-                    event_key="text.generated",
-                    template="{{ actor.name }} generated text",
-                    context={
-                        "department_id": department_id_str,
-                    },
-                    endpoint="/socket/v4/generate/text",
-                    error=False,
-                )
-            except Exception:
-                pass
-
-        except RuntimeError:
-            # Pool not initialized - emit error event
-            await emit_to_internal(
-                "generate_text_error",
-                TextGenerationErrorApiRequest(
-                    error_message="Database connection pool not available",
-                    resource_id=resource_id_str,
-                    group_id=str(group_id) if group_id else None,
-                ),
-                sid=sid,
-            )
-        except Exception as e:
-            await emit_to_internal(
-                "generate_text_error",
-                TextGenerationErrorApiRequest(
-                    error_message=f"Failed to finalize text generation: {str(e)}",
-                    resource_id=resource_id_str,
-                    group_id=str(group_id) if group_id else None,
-                ),
-                sid=sid,
-            )
+        await _generate_end_impl(sid, payload, profile_id)
+        return
 
 
 @internal_sio.on("generate_text_complete")  # type: ignore
@@ -199,12 +124,14 @@ async def generate_text_complete_internal(
     profile_id_str = await find_profile_by_socket(sid)
     if not profile_id_str:
         await emit_to_internal(
-            "generate_text_error",
-            TextGenerationErrorApiRequest(
-                error_message="Profile not found for socket",
-                resource_id=data.get("resource_id"),
-                group_id=data.get("group_id"),
-            ),
+            "generate_error",
+            {
+                "sid": sid,
+                "error_message": "Profile not found for socket",
+                "resource_id": data.get("resource_id"),
+                "group_id": data.get("group_id"),
+                "resource_type": data.get("resource_type"),
+            },
             sid=sid,
         )
         return

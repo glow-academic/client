@@ -91,34 +91,40 @@ async def _generate_text_impl(
                         else error_msg
                     )
                     await emit_to_internal(
-                        "generate_text_error",
-                        TextGenerationErrorApiRequest(
-                            error_message=user_msg,
-                            resource_id=data.resource_id,
-                            group_id=None,  # group_id not available yet at this point
-                        ),
+                        "generate_error",
+                        {
+                            "sid": sid,
+                            "error_message": user_msg,
+                            "resource_id": str(data.resource_id) if data.resource_id else None,
+                            "group_id": None,
+                            "resource_type": data.resource_type,
+                        },
                         sid=sid,
                     )
                     return
                 await emit_to_internal(
-                    "generate_text_error",
-                    TextGenerationErrorApiRequest(
-                        error_message=f"Failed to initialize text generation: {str(e)}",
-                        resource_id=data.resource_id,
-                        group_id=None,  # group_id not available yet at this point
-                    ),
+                    "generate_error",
+                    {
+                        "sid": sid,
+                        "error_message": f"Failed to initialize text generation: {str(e)}",
+                        "resource_id": str(data.resource_id) if data.resource_id else None,
+                        "group_id": None,
+                        "resource_type": data.resource_type,
+                    },
                     sid=sid,
                 )
                 return
 
             if not result:
                 await emit_to_internal(
-                    "generate_text_error",
-                    TextGenerationErrorApiRequest(
-                        error_message=f"No agent configured for generation",
-                        resource_id=data.resource_id,
-                        group_id=None,  # group_id not available yet at this point
-                    ),
+                    "generate_error",
+                    {
+                        "sid": sid,
+                        "error_message": "No agent configured for generation",
+                        "resource_id": str(data.resource_id) if data.resource_id else None,
+                        "group_id": None,
+                        "resource_type": data.resource_type,
+                    },
                     sid=sid,
                 )
                 return
@@ -375,86 +381,84 @@ async def _generate_text_impl(
 
                 await remove_active_run(resource_id_str)
 
-            # Emit async pricing event (non-blocking)
-            # This handles token updates and message logging in background
-            usage = result_runner.context_wrapper.usage
-            assistant_output = getattr(result_runner, "final_output", None) or ""
-            await internal_sio.emit(
-                "log_run",
-                {
-                    "run_id": str(model_run_id),
-                    "operation_type": result.agent_role
-                    or "text",  # Use agent_role from database
-                    "input_text_tokens": usage.input_tokens,
-                    "output_text_tokens": usage.output_tokens,
-                    "system_prompt": result.system_prompt,
-                    "input_items": input_items,  # Serialized TResponseInputItem list
-                    "assistant_output": assistant_output,
-                    "department_id": str(data.department_id) if data.department_id else None,
-                },
-            )
-
             # Verify all required tools were called (based on database config)
             missing_tools = required_tool_names - completed_tool_names
             if missing_tools:
                 tool_names_str = ", ".join(sorted(missing_tools))
                 await emit_to_internal(
-                    "generate_text_error",
-                    TextGenerationErrorApiRequest(
-                        error_message=(
+                    "generate_error",
+                    {
+                        "sid": sid,
+                        "error_message": (
                             f"Agent did not call all required tools. "
                             f"Missing: {tool_names_str}"
                         ),
-                        resource_id=data.resource_id,
-                        group_id=group_id,  # Already UUID
-                    ),
+                        "resource_id": str(data.resource_id) if data.resource_id else None,
+                        "group_id": str(group_id) if group_id else None,
+                        "resource_type": data.resource_type,
+                    },
                     sid=sid,
                 )
                 return
 
-            # Emit run completion event - complete.py will handle result extraction
+            # Emit run completion event with usage data - generate/end.py will handle log_run
+            usage = result_runner.context_wrapper.usage
+            assistant_output = getattr(result_runner, "final_output", None) or ""
             await internal_sio.emit(
                 "generate_text_complete",
                 {
                     "sid": sid,
                     "type": "run_complete",
                     "resource_id": str(data.resource_id) if data.resource_id else None,
+                    "resource_type": data.resource_type,
                     "run_id": str(model_run_id),
                     "group_id": str(group_id) if group_id else None,
                     "department_id": str(data.department_id) if data.department_id else None,
+                    # Include usage data for log_run in generate/end.py
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": result.system_prompt,
+                    "input_items": input_items,  # Serialized TResponseInputItem list
+                    "assistant_output": assistant_output,
                 },
             )
 
     except RuntimeError:
         # Pool not initialized - emit error event
         resource_id_err: uuid.UUID | None = None
+        resource_type_err: str | None = None
         try:
             resource_id_err = data.resource_id  # Already UUID
+            resource_type_err = data.resource_type
         except Exception:
             pass
         await internal_sio.emit(
-            "generate_text_error",
+            "generate_error",
             {
                 "sid": sid,
                 "error_message": "Database connection pool not available",
                 "resource_id": str(resource_id_err) if resource_id_err else None,
                 "group_id": None,
+                "resource_type": resource_type_err,
             },
         )
     except Exception as e:
         # Extract resource_id safely for error message
         resource_id_err2: uuid.UUID | None = None
+        resource_type_err2: str | None = None
         try:
             resource_id_err2 = data.resource_id  # Already UUID
+            resource_type_err2 = data.resource_type
         except Exception:
             pass
         await internal_sio.emit(
-            "generate_text_error",
+            "generate_error",
             {
                 "sid": sid,
                 "error_message": str(e),
                 "resource_id": str(resource_id_err2) if resource_id_err2 else None,
                 "group_id": None,
+                "resource_type": resource_type_err2,
             },
         )
         # Log activity error
@@ -511,12 +515,14 @@ async def generate_text_internal(data: dict[str, Any]) -> None:
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await emit_to_internal(
-                "generate_text_error",
-                TextGenerationErrorApiRequest(
-                    error_message="Profile not found. Please reconnect.",
-                    resource_id=payload.resource_id,
-                    group_id=None,
-                ),
+                "generate_error",
+                {
+                    "sid": sid,
+                    "error_message": "Profile not found. Please reconnect.",
+                    "resource_id": str(payload.resource_id) if payload.resource_id else None,
+                    "group_id": None,
+                    "resource_type": payload.resource_type,
+                },
                 sid=sid,
             )
             return
@@ -529,15 +535,18 @@ async def generate_text_internal(data: dict[str, Any]) -> None:
         await _generate_text_impl(sid, payload, profile_id)
     except Exception as e:
         resource_id = data.get("resource_id")
+        resource_type = data.get("resource_type")
         sid = data.get("sid", "")
         if sid:
             await emit_to_internal(
-                "generate_text_error",
-                TextGenerationErrorApiRequest(
-                    error_message=f"Invalid request: {str(e)}",
-                    resource_id=uuid.UUID(resource_id) if resource_id else None,
-                    group_id=None,
-                ),
+                "generate_error",
+                {
+                    "sid": sid,
+                    "error_message": f"Invalid request: {str(e)}",
+                    "resource_id": str(resource_id) if resource_id else None,
+                    "group_id": None,
+                    "resource_type": resource_type,
+                },
                 sid=sid,
             )
 
