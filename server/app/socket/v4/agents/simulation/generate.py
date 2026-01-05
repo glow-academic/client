@@ -1119,14 +1119,14 @@ Tool Usage Instructions:
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": str(run_id_uuid),
-                    "operationType": "simulation",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": context["system_prompt"],
-                    "inputItems": input_items,
-                    "assistantOutput": None,
-                    "departmentId": str(context.get("department_id")),
+                    "run_id": str(run_id_uuid),
+                    "operation_type": "simulation",
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": context.get("system_prompt"),
+                    "input_items": input_items,
+                    "assistant_output": None,
+                    "department_id": str(context.get("department_id")) if context.get("department_id") else None,
                 },
             )
 

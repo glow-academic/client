@@ -338,14 +338,14 @@ Please provide a detailed analysis based on this request. Consider aspects such 
             await emit_to_internal(
                 "log_run",
                 {
-                    "runId": str(model_run_id),
-                    "operationType": "simulation_audio",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": audio_context_result.system_prompt,
-                    "inputItems": input_items,  # Serialized TResponseInputItem list
-                    "assistantOutput": analysis,
-                    "departmentId": str(department_id_uuid),
+                    "run_id": str(model_run_id),
+                    "operation_type": "simulation_audio",
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": audio_context_result.system_prompt,
+                    "input_items": input_items,  # Serialized TResponseInputItem list
+                    "assistant_output": analysis,
+                    "department_id": str(department_id_uuid) if department_id_uuid else None,
                 },
                 sid=sid,
                 group_id=str(group_id) if group_id else None,

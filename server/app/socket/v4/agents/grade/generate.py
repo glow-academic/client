@@ -5,37 +5,28 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any, cast
 
-from agents import (
-    FunctionToolResult,
-    RunContextWrapper,
-    Runner,
-    Tool,
-    ToolsToFinalOutputResult,
-    function_tool,
-    trace,
-)
+from agents import (FunctionToolResult, RunContextWrapper, Runner, Tool,
+                    ToolsToFinalOutputResult, function_tool, trace)
 from agents.items import TResponseInputItem
+from app.infra.v4.agents.generic_agent import GenericAgent
+from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
+from app.infra.v4.debug.debug_info import DebugContext
+from app.infra.v4.debug.debug_info import debug_info as debug_info_tool
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
+from app.main import get_internal_sio, sio
+from app.sql.types import (GetDeveloperInstructionSqlParams,
+                           GetDeveloperInstructionSqlRow,
+                           GetGradingRunContextAndCreateRunSqlParams,
+                           GetGradingRunContextAndCreateRunSqlRow,
+                           LinkDeveloperMessageToRunSqlParams)
 from fastapi import APIRouter
 from jinja2 import Template
 from pydantic import BaseModel, Field, ValidationError
 from utils.agents.create_safe_field_name import create_safe_field_name
 from utils.sql_helper import execute_sql_typed, load_sql
-
-from app.infra.v4.agents.generic_agent import GenericAgent
-from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
-from app.infra.v4.debug.debug_info import DebugContext
-from app.infra.v4.debug.debug_info import debug_info as debug_info_tool
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
-from app.main import get_internal_sio, sio
-from app.sql.types import (
-    GetDeveloperInstructionSqlParams,
-    GetDeveloperInstructionSqlRow,
-    GetGradingRunContextAndCreateRunSqlParams,
-    GetGradingRunContextAndCreateRunSqlRow,
-    LinkDeveloperMessageToRunSqlParams,
-)
 
 internal_sio = get_internal_sio()
 
@@ -273,10 +264,8 @@ async def _simulation_grading_start_impl(
                 )
 
             # Get messages using SQL file
-            from app.sql.types import (
-                GetSimulationMessagesSqlParams,
-                GetSimulationMessagesSqlRow,
-            )
+            from app.sql.types import (GetSimulationMessagesSqlParams,
+                                       GetSimulationMessagesSqlRow)
 
             SQL_MESSAGES_PATH = (
                 "app/sql/v4/simulations/get_simulation_messages_complete.sql"
@@ -900,9 +889,8 @@ async def _simulation_grading_start_impl(
                 grading_tools.append(function_tool(message_improvement))
             # Add audio grading tool if audio messages exist and audio agent is configured
             if has_audio_messages and audio_agent_id:
-                from app.socket.v4.agents.grade.tools.audio.call import (
-                    _grading_tool_audio_impl,
-                )
+                from app.socket.v4.agents.grade.tools.audio.call import \
+                    _grading_tool_audio_impl
 
                 grade_audio_config = tool_config_map_grading.get("create_analysis")
                 if grade_audio_config:
@@ -1044,7 +1032,8 @@ async def _simulation_grading_start_impl(
                 )
 
             # Store the result in active runs for potential cancellation
-            from app.infra.v4.websocket.store_active_run import store_active_run
+            from app.infra.v4.websocket.store_active_run import \
+                store_active_run
 
             await store_active_run(str(simulation_chat_id), result_runner)
 
@@ -1269,7 +1258,8 @@ async def _simulation_grading_start_impl(
                 raise
             finally:
                 # Clean up active run
-                from app.infra.v4.websocket.remove_active_run import remove_active_run
+                from app.infra.v4.websocket.remove_active_run import \
+                    remove_active_run
 
                 await remove_active_run(str(simulation_chat_id))
 
@@ -1289,14 +1279,14 @@ async def _simulation_grading_start_impl(
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": str(model_run_id),
-                    "operationType": "simulation_grade",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": agent["system_prompt"],
-                    "inputItems": input_items_with_dev,  # Serialized TResponseInputItem list
-                    "assistantOutput": assistant_output,
-                    "departmentId": str(department_id),
+                    "run_id": str(model_run_id),
+                    "operation_type": "simulation_grade",
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": agent.get("system_prompt"),
+                    "input_items": input_items_with_dev,  # Serialized TResponseInputItem list
+                    "assistant_output": assistant_output,
+                    "department_id": str(department_id) if department_id else None,
                 },
             )
 
@@ -1311,9 +1301,7 @@ async def _simulation_grading_start_impl(
                 },
             )
             # Calculate overall score from feedbacks in database
-            from app.sql.types import (
-                GetFeedbackTotalsForGradeSqlParams,
-            )
+            from app.sql.types import GetFeedbackTotalsForGradeSqlParams
 
             SQL_GET_FEEDBACKS_PATH = (
                 "app/sql/v4/grading/get_feedback_totals_for_grade_complete.sql"

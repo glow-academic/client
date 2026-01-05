@@ -318,14 +318,14 @@ async def run_eval_single_run(
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": agent_run_id,
-                    "operationType": "eval",
-                    "inputTextTokens": agent_usage.input_tokens,
-                    "outputTextTokens": agent_usage.output_tokens,
-                    "systemPrompt": modified_system_prompt,
-                    "inputItems": agent_input_items,
-                    "assistantOutput": agent_assistant_output,
-                    "departmentId": department_id if department_id else None,
+                    "run_id": agent_run_id,
+                    "operation_type": "eval",
+                    "input_text_tokens": agent_usage.input_tokens,
+                    "output_text_tokens": agent_usage.output_tokens,
+                    "system_prompt": modified_system_prompt,
+                    "input_items": agent_input_items,
+                    "assistant_output": agent_assistant_output,
+                    "department_id": department_id if department_id else None,
                 },
             )
 
@@ -582,14 +582,14 @@ async def run_eval_single_run(
         await internal_sio.emit(
             "log_run",
             {
-                "runId": eval_run_id,
-                "operationType": "eval",
-                "inputTextTokens": usage.input_tokens,
-                "outputTextTokens": usage.output_tokens,
-                "systemPrompt": context["system_prompt"],
-                "inputItems": input_items,  # Serialized TResponseInputItem list
-                "assistantOutput": assistant_output,
-                "departmentId": department_id if department_id else None,
+                "run_id": eval_run_id,
+                "operation_type": "eval",
+                "input_text_tokens": usage.input_tokens,
+                "output_text_tokens": usage.output_tokens,
+                "system_prompt": context.get("system_prompt"),
+                "input_items": input_items,  # Serialized TResponseInputItem list
+                "assistant_output": assistant_output,
+                "department_id": department_id if department_id else None,
             },
         )
 

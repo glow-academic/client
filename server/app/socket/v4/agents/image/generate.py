@@ -285,14 +285,14 @@ async def _generate_image_impl(sid: str, data: GenerateImagePayload) -> None:
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": run_id,
-                    "operationType": "image",
-                    "inputTextTokens": 0,  # Image generation doesn't use text tokens
-                    "outputTextTokens": 0,  # Image generation doesn't output text
-                    "systemPrompt": None,
-                    "inputItems": None,
-                    "assistantOutput": None,
-                    "departmentId": str(department_id) if department_id else None,
+                    "run_id": run_id,
+                    "operation_type": "image",
+                    "input_text_tokens": 0,  # Image generation doesn't use text tokens
+                    "output_text_tokens": 0,  # Image generation doesn't output text
+                    "system_prompt": None,
+                    "input_items": None,
+                    "assistant_output": None,
+                    "department_id": str(department_id) if department_id else None,
                 },
             )
 

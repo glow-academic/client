@@ -322,16 +322,16 @@ async def _video_generate_impl(sid: str, data: GenerateVideoPayload) -> None:
                     await internal_sio.emit(
                         "log_run",
                         {
-                            "runId": str(model_run_id),
-                            "operationType": "video",
-                            "inputTextTokens": 0,  # Video generation doesn't use LLM tokens
-                            "outputTextTokens": 0,  # Video generation doesn't use LLM tokens
-                            "systemPrompt": result.system_prompt or "",
-                            "inputItems": [
+                            "run_id": str(model_run_id),
+                            "operation_type": "video",
+                            "input_text_tokens": 0,  # Video generation doesn't use LLM tokens
+                            "output_text_tokens": 0,  # Video generation doesn't use LLM tokens
+                            "system_prompt": result.system_prompt or "",
+                            "input_items": [
                                 {"role": "user", "content": data.prompt}
                             ],  # Simple prompt input
-                            "assistantOutput": f"Video generated: {video_filename}",
-                            "departmentId": str(department_id)
+                            "assistant_output": f"Video generated: {video_filename}",
+                            "department_id": str(department_id)
                             if department_id
                             else None,
                         },

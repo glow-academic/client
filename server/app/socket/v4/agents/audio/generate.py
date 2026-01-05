@@ -341,14 +341,14 @@ async def _audio_generate_impl(sid: str, data: GenerateAudioPayload) -> None:
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": str(model_run_id),
-                    "operationType": "audio",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": result.system_prompt or "",
-                    "inputItems": input_items,  # Serialized TResponseInputItem list
-                    "assistantOutput": assistant_output,
-                    "departmentId": str(dept_id) if dept_id else None,
+                    "run_id": str(model_run_id),
+                    "operation_type": "audio",
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": result.system_prompt or "",
+                    "input_items": input_items,  # Serialized TResponseInputItem list
+                    "assistant_output": assistant_output,
+                    "department_id": str(dept_id) if dept_id else None,
                 },
             )
 

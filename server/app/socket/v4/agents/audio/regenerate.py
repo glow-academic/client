@@ -386,14 +386,14 @@ async def _audio_regenerate_impl(sid: str, data: RegenerateAudioPayload) -> None
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": str(model_run_id),
-                    "operationType": "audio_regeneration",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": result.system_prompt or "",
-                    "inputItems": input_items_for_agent,
-                    "assistantOutput": assistant_output,
-                    "departmentId": str(department_id) if department_id else None,
+                    "run_id": str(model_run_id),
+                    "operation_type": "audio_regeneration",
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": result.system_prompt or "",
+                    "input_items": input_items_for_agent,
+                    "assistant_output": assistant_output,
+                    "department_id": str(department_id) if department_id else None,
                 },
             )
 

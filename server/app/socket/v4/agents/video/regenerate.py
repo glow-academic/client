@@ -362,14 +362,14 @@ async def _video_regenerate_impl(sid: str, data: RegenerateVideoPayload) -> None
                     await internal_sio.emit(
                         "log_run",
                         {
-                            "runId": str(model_run_id),
-                            "operationType": "video_regeneration",
-                            "inputTextTokens": 0,
-                            "outputTextTokens": 0,
-                            "systemPrompt": result.system_prompt or "",
-                            "inputItems": [{"role": "user", "content": final_prompt}],
-                            "assistantOutput": f"Video regenerated: {video_filename}",
-                            "departmentId": str(department_id)
+                            "run_id": str(model_run_id),
+                            "operation_type": "video_regeneration",
+                            "input_text_tokens": 0,
+                            "output_text_tokens": 0,
+                            "system_prompt": result.system_prompt or "",
+                            "input_items": [{"role": "user", "content": final_prompt}],
+                            "assistant_output": f"Video regenerated: {video_filename}",
+                            "department_id": str(department_id)
                             if department_id
                             else None,
                         },

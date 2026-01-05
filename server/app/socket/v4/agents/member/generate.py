@@ -748,14 +748,14 @@ async def _member_generate_impl(
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": str(model_run_id),
-                    "operationType": "member",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": system_prompt,
-                    "inputItems": input_items,
-                    "assistantOutput": None,  # Tool calls handle their own output
-                    "departmentId": department_id_str,
+                    "run_id": str(model_run_id),
+                    "operation_type": "member",
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": system_prompt,
+                    "input_items": input_items,
+                    "assistant_output": None,  # Tool calls handle their own output
+                    "department_id": department_id_str if department_id_str else None,
                 },
             )
 

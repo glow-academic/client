@@ -560,14 +560,14 @@ Use the provided classification tools to indicate which files match each paramet
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": str(model_run_id),
-                    "operationType": "upload_classification",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": context["system_prompt"],
-                    "inputItems": input_items,  # Serialized TResponseInputItem list
-                    "assistantOutput": assistant_output,
-                    "departmentId": str(department_id) if department_id else None,
+                    "run_id": str(model_run_id),
+                    "operation_type": "upload_classification",
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": context.get("system_prompt"),
+                    "input_items": input_items,  # Serialized TResponseInputItem list
+                    "assistant_output": assistant_output,
+                    "department_id": str(department_id) if department_id else None,
                 },
             )
 

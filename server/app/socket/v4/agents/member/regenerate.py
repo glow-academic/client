@@ -403,14 +403,14 @@ async def _member_regenerate_impl(
             await internal_sio.emit(
                 "log_run",
                 {
-                    "runId": str(model_run_id),
-                    "operationType": "member_regeneration",
-                    "inputTextTokens": usage.input_tokens,
-                    "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": context["system_prompt"],
-                    "inputItems": input_items,
-                    "assistantOutput": assistant_output,
-                    "departmentId": str(context.get("department_id")),
+                    "run_id": str(model_run_id),
+                    "operation_type": "member_regeneration",
+                    "input_text_tokens": usage.input_tokens,
+                    "output_text_tokens": usage.output_tokens,
+                    "system_prompt": context.get("system_prompt"),
+                    "input_items": input_items,
+                    "assistant_output": assistant_output,
+                    "department_id": str(context.get("department_id")) if context.get("department_id") else None,
                 },
             )
 

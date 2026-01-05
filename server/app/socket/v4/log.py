@@ -2,90 +2,88 @@
 
 import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import UPLOAD_FOLDER, get_internal_sio, sio
+from app.sql.types import LogRunSqlParams, LogRunSqlRow
+from utils.sql_helper import execute_sql_typed
 
-logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-
-# Pydantic models
-class ResponseInputItem(BaseModel):
-    """Input item for agent conversation (TResponseInputItem format)."""
-
-    role: str  # "user" | "developer" | "assistant" | etc.
-    content: (
-        str | list[dict[str, Any]]
-    )  # Content can be string or list of content items
+SQL_PATH = "app/sql/v4/model_runs/log_run_complete.sql"
 
 
-class LogRunPayload(BaseModel):
-    """Request to log run pricing and metrics."""
+# Extended request type that includes fields for JSON file saving and activity logging
+# These fields are not part of the SQL function but are needed for the endpoint
+class LogRunApiRequest(BaseModel):
+    """Request to log run pricing and metrics (snake_case)."""
 
-    runId: str
-    operationType: (
-        str  # "scenario", "document", "video_outline", "simulation", "voice", etc.
-    )
-    inputTextTokens: int
-    outputTextTokens: int
-    inputAudioTokens: int | None = None
-    inputImageTokens: int | None = None
-    outputAudioTokens: int | None = None
-    cachedTextTokens: int | None = None
-    cachedAudioTokens: int | None = None
-    systemPrompt: str | None = None
-    inputItems: list[ResponseInputItem] | None = None
-    assistantOutput: str | None = None
-    departmentId: str | None = None
+    run_id: uuid.UUID
+    operation_type: str  # "scenario", "document", "video_outline", "simulation", "voice", etc.
+    input_text_tokens: int
+    output_text_tokens: int
+    input_audio_tokens: int | None = None
+    input_image_tokens: int | None = None
+    output_audio_tokens: int | None = None
+    cached_text_tokens: int | None = None
+    cached_audio_tokens: int | None = None
+    system_prompt: str | None = None
+    input_items: list[dict[str, Any]] | None = None  # TResponseInputItem format
+    assistant_output: str | None = None
+    department_id: uuid.UUID | None = None
 
 
-async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
+async def _log_run_impl(sid: str, data: LogRunApiRequest) -> None:
     """Handle run pricing and logging requests via WebSocket (async, non-blocking)."""
     try:
-        run_id = uuid.UUID(data.runId)
-        department_id = uuid.UUID(data.departmentId) if data.departmentId else None
+        run_id = data.run_id
+        department_id = data.department_id
 
-        # Extract developer message contents from inputItems
+        # Extract developer message contents from input_items
         developer_contents: list[str] = []
-        if data.inputItems:
-            for item in data.inputItems:
-                if item and item.role == "developer":
-                    content = item.content
-                    if isinstance(content, str):
-                        stripped = content.strip()
-                        if stripped:
-                            developer_contents.append(stripped)
-
-        # Get connection pool
-        # Replaced with get_db_connection()
+        if data.input_items:
+            for item in data.input_items:
+                if isinstance(item, dict):
+                    role = item.get("role")
+                    if role == "developer":
+                        content = item.get("content")
+                        if isinstance(content, str):
+                            stripped = content.strip()
+                            if stripped:
+                                developer_contents.append(stripped)
 
         async with get_db_connection() as conn:
-            # Use consolidated SQL file that handles everything in one transaction
-            sql_log_run = load_sql("app/sql/v4/model_runs/log_run_complete.sql")
-            await conn.execute(
-                sql_log_run,
-                str(run_id),
-                str(department_id) if department_id else None,
-                data.inputTextTokens,
-                data.inputAudioTokens or 0,
-                data.inputImageTokens or 0,
-                data.outputTextTokens,
-                data.outputAudioTokens or 0,
-                data.cachedTextTokens or 0,
-                data.cachedAudioTokens or 0,
-                developer_contents if developer_contents else None,
-                data.assistantOutput,
+            # Use execute_sql_typed() with auto-generated types
+            # Note: After type regeneration, department_id and assistant_output will be Optional
+            # For now, we construct params with None values (SQL function accepts NULL)
+            params_dict = {
+                "run_id": run_id,
+                "department_id": department_id,  # Can be None, SQL handles NULL
+                "input_text_tokens": data.input_text_tokens,
+                "input_audio_tokens": data.input_audio_tokens or 0,
+                "input_image_tokens": data.input_image_tokens or 0,
+                "output_text_tokens": data.output_text_tokens,
+                "output_audio_tokens": data.output_audio_tokens or 0,
+                "cached_text_tokens": data.cached_text_tokens or 0,
+                "cached_audio_tokens": data.cached_audio_tokens or 0,
+                "developer_contents": developer_contents,
+                "assistant_output": data.assistant_output or "",
+            }
+            # Use model_construct to bypass validation for optional fields until types are regenerated
+            params = LogRunSqlParams.model_construct(**params_dict)  # type: ignore
+            result = cast(
+                LogRunSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
+
             # Log activity (only for client-to-server events, not internal)
             if sid and sid != "" and sid != "internal":
                 try:
@@ -95,35 +93,38 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
                         template="{{ actor.name }} logged run",
                         context={
                             "run_id": str(run_id),
-                            "operation_type": data.operationType,
+                            "operation_type": data.operation_type,
                         },
                         endpoint="/socket/v4/log",
                         error=False,
                     )
                 except Exception:
                     pass
+
             # Always save OpenAI messages as JSON file
             try:
                 messages: list[dict[str, str]] = []
 
                 # Add system message if provided
-                if data.systemPrompt:
-                    messages.append({"role": "system", "content": data.systemPrompt})
+                if data.system_prompt:
+                    messages.append({"role": "system", "content": data.system_prompt})
 
-                # Add developer messages from inputItems
-                if data.inputItems:
-                    for item in data.inputItems:
-                        if item and item.role == "developer":
-                            content = item.content
-                            if isinstance(content, str) and content.strip():
-                                messages.append(
-                                    {"role": "developer", "content": content.strip()}
-                                )
+                # Add developer messages from input_items
+                if data.input_items:
+                    for item in data.input_items:
+                        if isinstance(item, dict):
+                            role = item.get("role")
+                            if role == "developer":
+                                content = item.get("content")
+                                if isinstance(content, str) and content.strip():
+                                    messages.append(
+                                        {"role": "developer", "content": content.strip()}
+                                    )
 
                 # Add assistant message if provided
-                if data.assistantOutput and data.assistantOutput.strip():
+                if data.assistant_output and data.assistant_output.strip():
                     messages.append(
-                        {"role": "assistant", "content": data.assistantOutput.strip()}
+                        {"role": "assistant", "content": data.assistant_output.strip()}
                     )
 
                 # Save to JSON file
@@ -144,7 +145,7 @@ async def _log_run_impl(sid: str, data: LogRunPayload) -> None:
 async def log_run(sid: str, data: dict[str, Any]) -> None:
     """Wrapper that validates payload before calling actual handler (client-to-server)."""
     try:
-        validated = LogRunPayload(**data)
+        validated = LogRunApiRequest(**data)
         await _log_run_impl(sid, validated)
     except ValidationError:
         pass
@@ -154,7 +155,7 @@ async def log_run(sid: str, data: dict[str, Any]) -> None:
 async def log_run_internal(data: dict[str, Any]) -> None:
     """Handle log_run event from internal bus (server-to-server)."""
     try:
-        validated = LogRunPayload(**data)
+        validated = LogRunApiRequest(**data)
         # Use empty string as sid for internal calls (not needed for async background work)
         await _log_run_impl("", validated)
     except ValidationError:
@@ -163,6 +164,6 @@ async def log_run_internal(data: dict[str, Any]) -> None:
 
 # FastAPI endpoint for OpenAPI documentation
 @client_router.post("/log", response_model=dict[str, bool])
-async def log_run_api(request: LogRunPayload) -> dict[str, bool]:
+async def log_run_api(request: LogRunApiRequest) -> dict[str, bool]:
     """Client-to-server event: Log run pricing and metrics (async, non-blocking)."""
     return {"success": True}
