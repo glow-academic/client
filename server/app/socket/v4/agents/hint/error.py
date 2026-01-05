@@ -25,13 +25,15 @@ async def _hint_error_impl(
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Internal implementation - emits to client."""
+    # Client expects chat_id, not resource_id
+    response_payload: HintErrorApiResponse = HintErrorApiResponse(
+        success=data.success,
+        message=data.message,
+        resource_id=data.resource_id,  # Client will interpret as chat_id
+    )
     await emit_to_client(
         "simulation_hints_error",
-        {
-            "success": data.success,
-            "message": data.message,
-            "chat_id": data.resource_id,
-        },
+        response_payload,
         room=sid,
     )
 
@@ -50,7 +52,7 @@ async def hint_error_internal(
     )
 
 
-register_server_endpoint(
+register_server_endpoint(  # type: ignore[arg-type]
     server_router,
     "/hint_error",
     HintErrorApiRequest,

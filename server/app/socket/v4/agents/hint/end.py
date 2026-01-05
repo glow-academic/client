@@ -7,7 +7,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio, sio
-from app.sql.types import HintEndApiRequest
+from app.sql.types import HintEndApiRequest, HintEndApiResponse
 from fastapi import APIRouter
 from utils.cache.invalidate_tags import invalidate_tags
 
@@ -27,12 +27,14 @@ async def _hint_end_impl(
         return  # tool_call_complete handled by tool-specific handlers
 
     if not data.run_id or not data.resource_id:
+        error_payload: HintEndApiResponse = HintEndApiResponse(
+            success=False,
+            message="Missing run_id or resource_id in run_complete event",
+            chat_id=None,
+        )
         await emit_to_client(
             "simulation_hints_error",
-            {
-                "success": False,
-                "message": "Missing run_id or resource_id in run_complete event",
-            },
+            error_payload,
             room=sid,
         )
         return
@@ -43,23 +45,26 @@ async def _hint_end_impl(
 
         # Emit final completion to client
         # Hints were already created by tools/hint.py as each tool call completed
-        await sio.emit(
+        response_payload: HintEndApiResponse = HintEndApiResponse(
+            success=True,
+            message="Hint generation completed",
+            chat_id=data.resource_id,
+        )
+        await emit_to_client(
             "simulation_hints_complete",
-            {
-                "success": True,
-                "message": "Hint generation completed",
-                "chat_id": data.resource_id,
-            },
+            response_payload,
             room=sid,
         )
 
     except Exception as e:
+        error_payload: HintEndApiResponse = HintEndApiResponse(
+            success=False,
+            message=f"Failed to finalize hint generation: {str(e)}",
+            chat_id=None,
+        )
         await emit_to_client(
             "simulation_hints_error",
-            {
-                "success": False,
-                "message": f"Failed to finalize hint generation: {str(e)}",
-            },
+            error_payload,
             room=sid,
         )
 
@@ -76,7 +81,7 @@ async def hint_end_internal(data: dict[str, Any]) -> None:
     )
 
 
-register_server_endpoint(
+register_server_endpoint(  # type: ignore[arg-type]
     server_router,
     "/hint_end",
     HintEndApiRequest,

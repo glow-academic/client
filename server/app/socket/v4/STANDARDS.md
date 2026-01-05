@@ -281,6 +281,54 @@ When one event emits to another internal event, the payload MUST use the target 
 - **Consistency**: All event chains follow the same pattern
 - **Maintainability**: Changes to SQL function automatically update types for both sides
 
+### 14. Type Annotations for Emit Functions
+
+**⚠️ CRITICAL: Explicit Type Annotations Required for Emit Functions**
+
+When passing BaseModel instances to `emit_to_client()` or `emit_to_internal()`, the type checker may not always infer the correct type. To ensure type safety and avoid linter errors, use explicit type annotations.
+
+**Pattern:**
+
+```python
+# ❌ BAD: Direct instantiation in emit call (may cause type inference issues)
+await emit_to_internal(
+    "hint_error",
+    HintErrorApiRequest(
+        success=False,
+        message="Error message",
+        resource_id=str(chat_id),
+        group_id=str(group_id) if group_id else None,
+    ),
+    sid=sid,
+)
+
+# ✅ GOOD: Explicit type annotation before emit call
+error_payload: HintErrorApiRequest = HintErrorApiRequest(
+    success=False,
+    message="Error message",
+    resource_id=str(chat_id),
+    group_id=str(group_id) if group_id else None,
+)
+await emit_to_internal(
+    "hint_error",
+    error_payload,
+    sid=sid,
+)
+```
+
+**Why This Matters:**
+
+- **Type inference**: Type checkers may infer BaseModel constructors as `dict[str, Any]` instead of the BaseModel type
+- **Compile-time safety**: Explicit annotations ensure the type checker recognizes the correct type
+- **Consistency**: All emit calls follow the same pattern for maintainability
+- **No type ignores**: Eliminates the need for `# type: ignore[arg-type]` comments
+
+**When to Use:**
+
+- Always use explicit type annotations when creating BaseModel instances for emit functions
+- Use descriptive variable names: `error_payload`, `response_payload`, `progress_payload`, etc.
+- Keep the pattern consistent across all emit calls in the codebase
+
 ## Infrastructure Helpers
 
 **⚠️ CRITICAL: Use Infrastructure Helpers for Consistency**

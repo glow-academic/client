@@ -8,6 +8,7 @@ from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio, sio
 from app.sql.types import (HintDebugCompleteApiRequest,
+                           HintDebugCompleteApiResponse,
                            HintDebugErrorApiResponse)
 from fastapi import APIRouter
 
@@ -25,12 +26,13 @@ async def _debug_tool_complete_impl(
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Handle debug tool completion - emits to client."""
+    response_payload: HintDebugCompleteApiResponse = HintDebugCompleteApiResponse(
+        success=True,
+        message="Debug info tool completed",
+    )
     await emit_to_client(
         "debug_info_complete",
-        {
-            "success": True,
-            "message": "Debug info tool completed",
-        },
+        response_payload,
         room=sid,
     )
 
@@ -47,7 +49,7 @@ async def hint_debug_complete_internal(data: dict[str, Any]) -> None:
     )
 
 
-register_server_endpoint(
+register_server_endpoint(  # type: ignore[arg-type]
     server_router,
     "/hint_debug_complete",
     HintDebugCompleteApiRequest,
