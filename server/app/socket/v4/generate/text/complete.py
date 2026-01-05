@@ -44,19 +44,40 @@ async def _generate_text_complete_impl(
     """Dispatch to tool-specific complete handler by tool_type or handle run_complete."""
     event_type = data.get("type") if isinstance(data, dict) else getattr(data, "type", None)
     if event_type == "tool_call_complete":
-        # Tool-specific completion - emit to client
-        from app.main import sio as client_sio
-        await client_sio.emit(
-            "text_tool_call_complete",
-            {
-                "success": True,
-                "resource_id": data.get("resource_id"),
-                "run_id": data.get("run_id"),
-                "tool_call_id": getattr(data, "tool_call_id", "") or "",
-                "tool_type": getattr(data, "tool_type", None),
-            },
-            room=sid,
-        )
+        # Tool-specific completion - route to agent-specific tool handler
+        tool_name = data.get("tool_name") if isinstance(data, dict) else getattr(data, "tool_name", None)
+        resource_type = data.get("resource_type") if isinstance(data, dict) else getattr(data, "resource_type", None)
+        
+        if tool_name and resource_type:
+            # Route to agent-specific tool handler
+            tool_event_name = f"{resource_type}_{tool_name}_complete"
+            await internal_sio.emit(
+                tool_event_name,
+                {
+                    "sid": sid,
+                    "resource_id": data.get("resource_id"),
+                    "run_id": data.get("run_id"),
+                    "tool_call_id": data.get("tool_call_id"),
+                    "call_id": data.get("call_id"),
+                    "tool_name": tool_name,
+                    "final_content": data.get("final_content"),
+                    "arguments_raw": data.get("arguments_raw"),
+                },
+            )
+        else:
+            # Fallback: emit generic client event
+            from app.main import sio as client_sio
+            await client_sio.emit(
+                "text_tool_call_complete",
+                {
+                    "success": True,
+                    "resource_id": data.get("resource_id"),
+                    "run_id": data.get("run_id"),
+                    "tool_call_id": getattr(data, "tool_call_id", "") or "",
+                    "tool_type": getattr(data, "tool_type", None),
+                },
+                room=sid,
+            )
 
     elif event_type == "run_complete":
         # All tools done - extract results and finalize using comprehensive SQL function

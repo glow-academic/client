@@ -272,6 +272,7 @@ async def _generate_text_impl(
                             "sid": sid,
                             "progress_type": "tool_call_start",
                             "resource_id": str(data.resource_id) if data.resource_id else None,
+                            "resource_type": data.resource_type,  # Include for routing
                             "run_id": str(model_run_id),
                             "tool_call_id": tool_call_id,
                             "call_id": call_id or tool_call_id or "",
@@ -288,6 +289,7 @@ async def _generate_text_impl(
                             "sid": sid,
                             "progress_type": "tool_call_progress",
                             "resource_id": str(data.resource_id) if data.resource_id else None,
+                            "resource_type": data.resource_type,  # Include for routing
                             "run_id": str(model_run_id),
                             "tool_call_id": tool_call_id,
                             "call_id": None,  # SQL will look it up
@@ -314,10 +316,15 @@ async def _generate_text_impl(
                             "sid": sid,
                             "type": "tool_call_complete",
                             "resource_id": str(data.resource_id) if data.resource_id else None,
+                            "resource_type": data.resource_type,  # Include for routing
                             "run_id": str(model_run_id),
                             "group_id": str(group_id) if group_id else None,
                             "tool_call_id": tool_call_id,
+                            "call_id": call_id or tool_call_id or "",
+                            "tool_name": tool_name or "",
                             "tool_type": tool_type,
+                            "final_content": str(final_args),
+                            "arguments_raw": "",  # Will be retrieved from SQL if needed
                         },
                     )
 

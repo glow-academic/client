@@ -50,32 +50,37 @@ CREATE OR REPLACE FUNCTION socket_get_hint_run_context_and_create_run_v4(
     profile_id uuid
 )
 RETURNS TABLE (
-    message_id text,
-    message_created_at timestamptz,
-    chat_id text,
-    attempt_id text,
-    scenario_id text,
-    trace_id text,
-    chat_title text,
-    simulation_id text,
-    problem_statement text,
+    -- Standardized output schema matching text generation handler
     agent_id text,
     agent_name text,
+    agent_role text,  -- Required: used for dispatch mapping
     system_prompt text,
     temperature float,
     reasoning text,
     model_id text,
     model_name text,
-    provider_name text,
+    provider text,
     base_url text,
     api_key text,
-    provider_id text,
     profile_id text,
     req_per_day integer,
     runs_today_count bigint,
     earliest_run_created_at timestamptz,
-    documents types.i_get_hint_run_context_and_create_run_v4_document[],
-    run_id text
+    run_id text,
+    group_id uuid,
+    trace_id text,
+    tools types.i_get_text_run_context_and_create_run_v4_tool[],
+    developer_instruction_template text,
+    developer_instruction_schema_id uuid,
+    department_name text,
+    developer_message_id uuid,
+    upload_id uuid,
+    file_path text,
+    mime_type text,
+    -- Agent-specific fields (minimal)
+    message_id text,
+    chat_id text,
+    documents types.i_get_hint_run_context_and_create_run_v4_document[]
 )
 LANGUAGE sql
 VOLATILE
@@ -241,40 +246,106 @@ document_data AS (
     LEFT JOIN uploads u ON u.id = du.upload_id
     WHERE sd.scenario_id = si.id AND sd.active = true
 ),
+-- Get or create group (for trace_id and group_id)
+existing_group AS (
+    SELECT g.id as group_id, g.trace_id
+    FROM chat_info ci
+    JOIN chat_groups cg ON cg.chat_id = ci.id
+    JOIN groups g ON g.id = cg.group_id
+    LIMIT 1
+),
+create_group_if_needed AS (
+    INSERT INTO groups (created_at, updated_at)
+    SELECT NOW(), NOW()
+    FROM chat_info ci
+    WHERE NOT EXISTS (SELECT 1 FROM existing_group)
+    RETURNING id as group_id, trace_id
+),
+group_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT group_id FROM existing_group LIMIT 1),
+            (SELECT group_id FROM create_group_if_needed LIMIT 1),
+            gen_random_uuid()::uuid
+        ) as group_id,
+        COALESCE(
+            (SELECT trace_id FROM existing_group LIMIT 1),
+            (SELECT trace_id FROM create_group_if_needed LIMIT 1),
+            gen_random_uuid()::text
+        ) as trace_id
+),
+-- Get agent tools as composite type array
+agent_tools_data AS (
+    SELECT 
+        ba.agent_id,
+        COALESCE(
+            ARRAY_AGG(
+                (t.id, t.name, COALESCE(t.description, ''), t.tool_type, t.agent_role::text, t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY t.tool_type, t.name
+            ),
+            '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
+        ) as tools
+    FROM best_agent ba
+    LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
+    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    GROUP BY ba.agent_id
+),
+-- Get developer instruction using agent role
+developer_instruction_data AS (
+    SELECT 
+        ba.agent_id,
+        di.template as developer_instruction_template,
+        dis.schema_id as developer_instruction_schema_id
+    FROM best_agent ba
+    INNER JOIN agents a ON a.id = ba.agent_id
+    LEFT JOIN agent_role_developer_instruction_types ardit ON ardit.agent_role = a.role
+    LEFT JOIN developer_instructions di ON di.type = ardit.developer_instruction_type AND di.active = true
+    LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
+    LIMIT 1
+),
+-- Get department name
+department_data AS (
+    SELECT 
+        p_params.department_id,
+        d.title as department_name
+    FROM params p_params
+    LEFT JOIN departments d ON d.id = p_params.department_id
+),
 -- Context data with rate limit info
 context_data AS (
     SELECT 
-        tm.id::text as message_id,
-        tm.created_at as message_created_at,
-        ci.id::text as chat_id,
-        ci.attempt_id::text as chat_attempt_id,
-        ci.scenario_id::text,
-        ci.trace_id,
-        ci.title as chat_title,
-        ai.id::text as attempt_id,
-        ai.simulation_id::text,
-        si.problem_statement,
+        -- Standardized fields
         a.id::text as agent_id,
         a.name as agent_name,
+        a.role::text as agent_role,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(p.value::text, '') as provider_name,
+        COALESCE(p.value::text, '') as provider,
         COALESCE(me.base_url, '') as base_url,
         k.key as api_key,
-        p.id::text as provider_id,
-        COALESCE(pi.profile_id, p_params.profile_id)::uuid as profile_id,
+        COALESCE(pi.profile_id, p_params.profile_id)::text as profile_id,
         prl.req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
         rt.earliest_run_created_at,
+        -- Tools data
+        COALESCE(atd.tools, '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]) as tools,
+        -- Developer instruction data
+        did.developer_instruction_template,
+        did.developer_instruction_schema_id,
+        -- Department data
+        dd.department_name,
+        -- Agent-specific fields
+        tm.id::text as message_id,
+        ci.id::text as chat_id,
         -- Aggregate documents as composite type array
         COALESCE(
             (SELECT ARRAY_AGG(
-                (dd.document_id, dd.name, dd.file_path, dd.mime_type)::types.i_get_hint_run_context_and_create_run_v4_document
-                ORDER BY dd.document_id
-            ) FROM document_data dd),
+                (dd_doc.document_id, dd_doc.name, dd_doc.file_path, dd_doc.mime_type)::types.i_get_hint_run_context_and_create_run_v4_document
+                ORDER BY dd_doc.document_id
+            ) FROM document_data dd_doc),
             '{}'::types.i_get_hint_run_context_and_create_run_v4_document[]
         ) as documents
     FROM target_message tm
@@ -286,6 +357,7 @@ context_data AS (
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     CROSS JOIN params p_params
+    CROSS JOIN group_data gd
     INNER JOIN agents a ON a.id = ba.agent_id
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p_params.department_id AND adp_prompt.active = true
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
@@ -304,6 +376,12 @@ context_data AS (
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
+    -- Join tools data
+    LEFT JOIN agent_tools_data atd ON atd.agent_id = ba.agent_id
+    -- Join developer instruction data
+    LEFT JOIN developer_instruction_data did ON did.agent_id = ba.agent_id
+    -- Join department data
+    LEFT JOIN department_data dd ON dd.department_id = p_params.department_id
     -- Validate rate limit: raises exception if exceeded
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
@@ -327,43 +405,118 @@ link_model AS (
 link_profile AS (
     -- Link profile to run if provided
     INSERT INTO run_profiles (run_id, profile_id, active)
-    SELECT lm.run_id, profile_id, true
+    SELECT lm.run_id, cd.profile_id::uuid, true
     FROM link_model lm
     CROSS JOIN context_data cd
-    WHERE profile_id IS NOT NULL
+    WHERE cd.profile_id IS NOT NULL
     RETURNING run_id
+),
+link_group AS (
+    -- Link group to run
+    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
+    SELECT gd.group_id, lp.run_id, 0, NOW(), NOW()
+    FROM link_profile lp
+    CROSS JOIN group_data gd
+    RETURNING run_id
+),
+-- Create and link developer message if template exists
+developer_message_content AS (
+    SELECT 
+        cd.developer_instruction_template as content,
+        lg.run_id
+    FROM context_data cd
+    CROSS JOIN link_group lg
+    WHERE cd.developer_instruction_template IS NOT NULL
+    LIMIT 1
+),
+developer_message_hash AS (
+    SELECT 
+        dmc.content,
+        dmc.run_id,
+        message_content_hash(dmc.content, 'developer') as hash
+    FROM developer_message_content dmc
+),
+existing_developer_message AS (
+    SELECT 
+        m.id, 
+        m.created_at,
+        dmh.run_id
+    FROM messages m
+    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN developer_message_hash dmh ON message_content_hash(mc.content, 'developer') = dmh.hash
+    WHERE m.role = 'developer'
+    LIMIT 1
+),
+new_developer_message AS (
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    FROM developer_message_hash dmh
+    WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
+    RETURNING id, created_at, updated_at
+),
+insert_developer_message_content AS (
+    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+    SELECT 
+        nm.id, 
+        0, 
+        (SELECT content FROM developer_message_hash LIMIT 1), 
+        nm.created_at, 
+        nm.updated_at
+    FROM new_developer_message nm
+),
+developer_message_final AS (
+    SELECT id, run_id FROM existing_developer_message
+    UNION ALL
+    SELECT 
+        nm.id, 
+        (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
+    FROM new_developer_message nm
+),
+link_developer_message_to_run AS (
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT dmf.id, dmf.run_id, NOW(), NOW()
+    FROM developer_message_final dmf
+    ON CONFLICT (message_id, run_id) 
+    DO UPDATE SET updated_at = NOW()
+    RETURNING message_id, run_id
 )
 SELECT 
-    -- Context data from context_data CTE
-    cd.message_id,
-    cd.message_created_at,
-    cd.chat_id,
-    cd.attempt_id,
-    cd.scenario_id,
-    cd.trace_id,
-    cd.chat_title,
-    cd.simulation_id,
-    cd.problem_statement,
+    -- Standardized output schema
     cd.agent_id,
     cd.agent_name,
+    cd.agent_role,
     cd.system_prompt,
     cd.temperature,
     cd.reasoning,
     cd.model_id,
     cd.model_name,
-    cd.provider_name,
+    cd.provider,
     cd.base_url,
     cd.api_key,
-    cd.provider_id,
     cd.profile_id,
     cd.req_per_day,
     cd.runs_today_count,
     cd.earliest_run_created_at,
-    cd.documents,
-    -- Run ID (created in this transaction)
-    cr.run_id::text as run_id
+    cr.run_id::text as run_id,
+    gd.group_id,
+    gd.trace_id::text as trace_id,
+    cd.tools,
+    cd.developer_instruction_template,
+    cd.developer_instruction_schema_id,
+    cd.department_name,
+    ldm.message_id as developer_message_id,
+    NULL::uuid as upload_id,
+    NULL::text as file_path,
+    NULL::text as mime_type,
+    -- Agent-specific fields
+    cd.message_id,
+    cd.chat_id,
+    cd.documents
 FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN link_model lm
 CROSS JOIN link_profile lp
+CROSS JOIN link_group lg
+CROSS JOIN group_data gd
+LEFT JOIN link_developer_message_to_run ldm ON true
 $$;
