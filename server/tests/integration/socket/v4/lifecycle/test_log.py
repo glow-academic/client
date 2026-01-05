@@ -10,7 +10,7 @@ from tests.integration.socket.v4.helpers import (
     get_or_create_test_profile,
 )
 
-from app.socket.v4.log import log_run, log_run_internal
+from app.socket.v4.generate.log import log_run, log_run_internal
 
 pytestmark = pytest.mark.asyncio
 

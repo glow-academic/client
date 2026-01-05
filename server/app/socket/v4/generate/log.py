@@ -66,7 +66,6 @@ async def _log_run_impl(sid: str, data: LogRunApiRequest) -> None:
             # For now, we construct params with None values (SQL function accepts NULL)
             params_dict = {
                 "run_id": run_id,
-                "department_id": department_id,  # Can be None, SQL handles NULL
                 "input_text_tokens": data.input_text_tokens,
                 "input_audio_tokens": data.input_audio_tokens or 0,
                 "input_image_tokens": data.input_image_tokens or 0,
@@ -74,6 +73,7 @@ async def _log_run_impl(sid: str, data: LogRunApiRequest) -> None:
                 "output_audio_tokens": data.output_audio_tokens or 0,
                 "cached_text_tokens": data.cached_text_tokens or 0,
                 "cached_audio_tokens": data.cached_audio_tokens or 0,
+                "department_id": department_id,  # Can be None, SQL handles NULL
                 "developer_contents": developer_contents,
                 "assistant_output": data.assistant_output or "",
             }

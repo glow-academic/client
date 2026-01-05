@@ -13,7 +13,7 @@ See `AGENTS.md` for overall architecture principles.
 
 from fastapi import APIRouter
 
-from . import agents, benchmark, connect, disconnect, log, simulations
+from . import agents, benchmark, connect, disconnect, generate, simulations
 
 # Create main router
 router = APIRouter(prefix="/socket/v4", tags=["socket"])
@@ -25,7 +25,7 @@ server_router = APIRouter(prefix="/server", tags=["socket-server"])
 # Include lifecycle routers
 client_router.include_router(connect.client_router)
 client_router.include_router(disconnect.client_router)
-client_router.include_router(log.client_router)
+client_router.include_router(generate.log.client_router)
 
 server_router.include_router(connect.server_router)
 

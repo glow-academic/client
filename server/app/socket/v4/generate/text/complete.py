@@ -123,20 +123,20 @@ async def _generate_text_complete_impl(
                 room=sid,
             )
 
-                # 5. Log activity
-                try:
-                    await log_websocket_activity(
-                        sid=sid,
-                        event_key="text.generated",
-                        template="{{ actor.name }} generated text",
-                        context={
-                            "department_id": department_id_str,
-                        },
-                        endpoint="/socket/v4/generate/text",
-                        error=False,
-                    )
-                except Exception:
-                    pass
+            # 5. Log activity
+            try:
+                await log_websocket_activity(
+                    sid=sid,
+                    event_key="text.generated",
+                    template="{{ actor.name }} generated text",
+                    context={
+                        "department_id": department_id_str,
+                    },
+                    endpoint="/socket/v4/generate/text",
+                    error=False,
+                )
+            except Exception:
+                pass
 
         except RuntimeError:
             # Pool not initialized - emit error event

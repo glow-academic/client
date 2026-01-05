@@ -32,7 +32,7 @@ async def _generate_video_progress_impl(
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Handle progress - forwards polling updates to client."""
-    # Receives polling updates from call.py
+    # Receives polling updates from start.py
     # Forwards to client as videos_generation_progress
     await emit_to_client(
         "videos_generation_progress",

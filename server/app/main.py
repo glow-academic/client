@@ -461,7 +461,7 @@ from app.socket.v4.agents.scenario.tools.title.call import (
 from app.socket.v4.agents.scenario.tools.video.call import (
     scenario_tool_video,  # noqa: F401
 )
-from app.socket.v4.log import log_run  # noqa: F401
+from app.socket.v4.generate.log import log_run  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]

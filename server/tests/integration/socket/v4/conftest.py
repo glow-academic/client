@@ -134,7 +134,7 @@ def patch_sio_instance(
         # Lifecycle
         "app.socket.v4.connect",
         "app.socket.v4.disconnect",
-        "app.socket.v4.log",
+        "app.socket.v4.generate.log",
         # Simulations
         "app.socket.v4.simulations.start",
         "app.socket.v4.simulations.join",
@@ -446,7 +446,7 @@ def patch_get_db_connection(
         # Lifecycle
         "app.socket.v4.connect",
         "app.socket.v4.disconnect",
-        "app.socket.v4.log",
+        "app.socket.v4.generate.log",
         # Simulations
         "app.socket.v4.simulations.start",
         "app.socket.v4.simulations.join",

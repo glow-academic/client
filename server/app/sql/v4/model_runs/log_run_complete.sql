@@ -1,8 +1,6 @@
 DROP FUNCTION IF EXISTS api_log_run_v4(uuid, uuid, integer, integer, integer, integer, integer, integer, integer, text[], text);
-DROP FUNCTION IF EXISTS api_log_run_v4(uuid, uuid DEFAULT NULL, integer, integer, integer, integer, integer, integer, integer, text[] DEFAULT ARRAY[]::text[], text DEFAULT NULL);
 CREATE OR REPLACE FUNCTION api_log_run_v4(
     run_id uuid,
-    department_id uuid DEFAULT NULL,
     input_text_tokens integer,
     input_audio_tokens integer,
     input_image_tokens integer,
@@ -10,6 +8,7 @@ CREATE OR REPLACE FUNCTION api_log_run_v4(
     output_audio_tokens integer,
     cached_text_tokens integer,
     cached_audio_tokens integer,
+    department_id uuid DEFAULT NULL,
     developer_contents text[] DEFAULT ARRAY[]::text[],
     assistant_output text DEFAULT NULL
 )
