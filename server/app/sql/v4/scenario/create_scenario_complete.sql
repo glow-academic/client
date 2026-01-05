@@ -530,7 +530,7 @@ link_problem_statements_to_runs AS (
     WHERE (SELECT run_id FROM params) IS NOT NULL
     AND EXISTS (
         SELECT 1 FROM problem_statements ps
-        JOIN tool_calls tc ON tc.id = ps.tool_call_id
+        JOIN calls tc ON tc.id = ps.tool_call_id
         JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
         WHERE ps.id = cps.problem_statement_id
         AND tcr.run_id = (SELECT run_id FROM params)
@@ -545,7 +545,7 @@ link_objectives_to_runs AS (
     WHERE (SELECT run_id FROM params) IS NOT NULL
     AND EXISTS (
         SELECT 1 FROM objectives o
-        JOIN tool_calls tc ON tc.id = o.tool_call_id
+        JOIN calls tc ON tc.id = o.tool_call_id
         JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
         WHERE o.id = ao.objective_id
         AND tcr.run_id = (SELECT run_id FROM params)

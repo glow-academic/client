@@ -162,16 +162,29 @@ create_user_message AS (
     RETURNING id as message_id, created_at, updated_at
 ),
 -- Insert user message content
-insert_user_message_content AS (
-    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
+insert_user_content AS (
+    INSERT INTO content (content, created_at, updated_at)
     SELECT 
-        cum.message_id,
-        0,
         p.user_instructions,
         cum.created_at,
         cum.updated_at
     FROM create_user_message cum
     CROSS JOIN params p
+    WHERE p.user_instructions IS NOT NULL
+      AND p.user_instructions != ''
+    RETURNING id as content_id, created_at, updated_at
+),
+insert_user_message_content AS (
+    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    SELECT 
+        cum.message_id,
+        ic.content_id,
+        0,
+        ic.created_at,
+        ic.updated_at
+    FROM create_user_message cum
+    CROSS JOIN params p
+    CROSS JOIN insert_user_content ic
     WHERE p.user_instructions IS NOT NULL
       AND p.user_instructions != ''
 ),
@@ -235,7 +248,8 @@ existing_developer_messages AS (
         dmh.array_idx
     FROM messages m
     JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN developer_message_hashes dmh ON message_content_hash(mc.content, 'developer') = dmh.content_hash
+    JOIN content cnt ON cnt.id = mc.content_id
+    JOIN developer_message_hashes dmh ON message_content_hash(cnt.content, 'developer') = dmh.content_hash
     WHERE m.role = 'developer'::message_role
     ORDER BY dmh.content_hash, m.id
 ),
@@ -285,16 +299,28 @@ new_developer_messages_with_content AS (
     FROM new_developer_messages_ordered nmo
     JOIN new_content_ordered nco ON nmo.rn = nco.rn
 ),
--- Insert content for new developer messages  
-insert_developer_message_contents AS (
-    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
-    SELECT 
-        ndmwc.message_id,
-        0,
+-- Insert content for new developer messages
+insert_developer_contents AS (
+    INSERT INTO content (content, created_at, updated_at)
+    SELECT DISTINCT
         ndmwc.content,
         ndmwc.created_at,
         ndmwc.updated_at
     FROM new_developer_messages_with_content ndmwc
+    RETURNING id as content_id, content, created_at, updated_at
+),
+insert_developer_message_contents AS (
+    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    SELECT 
+        ndmwc.message_id,
+        ic.content_id,
+        0,
+        ic.created_at,
+        ic.updated_at
+    FROM new_developer_messages_with_content ndmwc
+    JOIN insert_developer_contents ic ON ic.content = ndmwc.content
+        AND ic.created_at = ndmwc.created_at
+        AND ic.updated_at = ndmwc.updated_at
 ),
 -- Get all developer message IDs (existing + new)
 all_developer_message_ids AS (

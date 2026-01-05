@@ -184,9 +184,9 @@ standard_groups_unnested AS (
     CROSS JOIN UNNEST(x.standard_groups) WITH ORDINALITY as sg
     WHERE array_length(x.standard_groups, 1) > 0
 ),
--- Create placeholder tool_calls for API-updated standard_groups (not created via tool)
-placeholder_tool_calls AS (
-    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+-- Create placeholder calls for API-updated standard_groups (not created via tool)
+placeholder_calls AS (
+    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
     SELECT 
         'api_update_rubric_' || sgu.rubric_id::text || '_sg_' || sgu.group_order::text,
         NULL,
@@ -196,11 +196,11 @@ placeholder_tool_calls AS (
     FROM standard_groups_unnested sgu
     RETURNING id, call_id
 ),
-tool_calls_with_order AS (
+calls_with_order AS (
     SELECT 
         ptc.id as tool_call_id,
         (ROW_NUMBER() OVER (ORDER BY ptc.id))::int as rn
-    FROM placeholder_tool_calls ptc
+    FROM placeholder_calls ptc
 ),
 new_standard_groups AS (
     INSERT INTO standard_groups (
@@ -221,7 +221,7 @@ new_standard_groups AS (
         sgu.active,
         tcwo.tool_call_id
     FROM standard_groups_unnested sgu
-    JOIN tool_calls_with_order tcwo ON tcwo.rn = sgu.group_order
+    JOIN calls_with_order tcwo ON tcwo.rn = sgu.group_order
     RETURNING id, name, short_name, description, points, pass_points, active
 ),
 link_rubric_standard_groups AS (

@@ -34,7 +34,7 @@ messages_data AS (
     SELECT 
         m.id,
         m.role::text,
-        mc.content,
+        cnt.content,
         m.created_at,
         m.completed,
         m.audio,
@@ -43,6 +43,7 @@ messages_data AS (
     JOIN message_runs mr ON mr.run_id = p.run_id
     JOIN messages m ON m.id = mr.message_id
     LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN content cnt ON cnt.id = mc.content_id
     LEFT JOIN message_audio ma ON ma.message_id = m.id
     WHERE p.run_id IS NOT NULL
     ORDER BY m.created_at ASC  -- Order by creation time

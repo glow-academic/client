@@ -83,12 +83,12 @@ get_tool_id AS (
 get_existing_tool_call AS (
     SELECT tc.id as tool_call_id
     FROM params p
-    JOIN tool_calls tc ON tc.call_id = p.call_id
+    JOIN calls tc ON tc.call_id = p.call_id
     WHERE p.call_id IS NOT NULL
     LIMIT 1
 ),
 create_tool_call_if_needed AS (
-    INSERT INTO tool_calls (call_id, tool_id, created_at, updated_at)
+    INSERT INTO calls (call_id, tool_id, created_at, updated_at)
     SELECT p.call_id, gt.tool_id, NOW(), NOW()
     FROM params p
     CROSS JOIN get_tool_id gt
@@ -135,7 +135,7 @@ update_tool_call_arguments AS (
 ),
 -- Finalize tool call if is_complete
 finalize_tool_call AS (
-    UPDATE tool_calls
+    UPDATE calls
     SET completed = p.is_complete,
         updated_at = NOW()
     FROM params p
@@ -166,9 +166,9 @@ selected_message AS (
     SELECT message_id FROM create_message_if_needed
 ),
 -- Insert or update message content
-insert_message_content_if_needed AS (
-    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
-    SELECT sm.message_id, 0, p.message_content, NOW(), NOW()
+insert_content_if_needed AS (
+    INSERT INTO content (content, created_at, updated_at)
+    SELECT p.message_content, NOW(), NOW()
     FROM params p
     CROSS JOIN selected_message sm
     WHERE p.message_content IS NOT NULL
@@ -177,13 +177,29 @@ insert_message_content_if_needed AS (
           WHERE mc.message_id = sm.message_id 
           AND mc.idx = 0
       )
+    RETURNING id as content_id, created_at, updated_at
+),
+insert_message_content_if_needed AS (
+    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    SELECT sm.message_id, ic.content_id, 0, ic.created_at, ic.updated_at
+    FROM params p
+    CROSS JOIN selected_message sm
+    CROSS JOIN insert_content_if_needed ic
+    WHERE p.message_content IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1 FROM message_content mc 
+          WHERE mc.message_id = sm.message_id 
+          AND mc.idx = 0
+      )
 ),
 update_message_content AS (
-    UPDATE message_content mc
+    UPDATE content
     SET content = p.message_content,
         updated_at = NOW()
-    FROM params p
-    WHERE mc.message_id = (SELECT message_id FROM selected_message LIMIT 1)
+    FROM params p,
+         message_content mc
+    WHERE mc.content_id = content.id
+      AND mc.message_id = (SELECT message_id FROM selected_message LIMIT 1)
       AND mc.idx = 0
       AND p.message_content IS NOT NULL
 ),

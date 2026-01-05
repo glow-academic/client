@@ -8,7 +8,7 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 WITH tool_call AS (
-    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
     VALUES (concat('image:', uuidv7()::text), NULL, FALSE, NOW(), NOW())
     RETURNING id
 ),

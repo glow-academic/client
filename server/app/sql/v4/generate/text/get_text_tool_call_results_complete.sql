@@ -51,7 +51,7 @@ WITH tool_call_results AS (
             t.name,
             tca.arguments_json
         ) as tool_results
-    FROM tool_calls tc
+    FROM calls tc
     JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
     JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id

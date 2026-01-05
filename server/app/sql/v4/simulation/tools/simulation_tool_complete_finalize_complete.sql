@@ -43,7 +43,7 @@ WITH params AS (
 get_tool_call AS (
     SELECT tc.id as tool_call_id
     FROM params p
-    JOIN tool_calls tc ON (
+    JOIN calls tc ON (
         (p.tool_call_id IS NOT NULL AND tc.id = p.tool_call_id)
         OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
     )
@@ -51,11 +51,11 @@ get_tool_call AS (
 ),
 -- Finalize tool call
 finalize_tool_call AS (
-    UPDATE tool_calls
+    UPDATE calls
     SET completed = true,
         updated_at = NOW()
     FROM get_tool_call gtc
-    WHERE tool_calls.id = gtc.tool_call_id
+    WHERE calls.id = gtc.tool_call_id
     RETURNING id as tool_call_id
 ),
 -- Get message from tool_call or use provided message_id
@@ -78,11 +78,13 @@ selected_message AS (
 ),
 -- Update message content with final content
 update_message_content_final AS (
-    UPDATE message_content mc
+    UPDATE content
     SET content = p.final_content,
         updated_at = NOW()
-    FROM params p
-    WHERE mc.message_id = (SELECT message_id FROM selected_message LIMIT 1)
+    FROM params p,
+         message_content mc
+    WHERE mc.content_id = content.id
+      AND mc.message_id = (SELECT message_id FROM selected_message LIMIT 1)
       AND mc.idx = 0
 ),
 -- Mark message as completed

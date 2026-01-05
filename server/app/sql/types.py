@@ -6393,6 +6393,37 @@ class UpdateTestCreatedAtApiResponse(BaseModel):
 
 
 
+# Generated from: get_tool_call_by_call_id
+
+class GetToolCallByCallIdSqlParams(BaseModel):
+
+    call_id: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.call_id,
+        )
+
+class GetToolCallByCallIdSqlRow(BaseModel):
+
+    id: UUID | None = None
+    call_id: str | None = None
+    tool_id: UUID | None = None
+    completed: bool | None = None
+
+class GetToolCallByCallIdApiRequest(BaseModel):
+
+    call_id: str
+
+class GetToolCallByCallIdApiResponse(BaseModel):
+
+    id: UUID | None = None
+    call_id: str | None = None
+    tool_id: UUID | None = None
+    completed: bool | None = None
+
+
+
 # Generated from: create_cohort
 
 class CreateCohortSqlParams(BaseModel):
@@ -26077,37 +26108,6 @@ class UpsertStaffApiResponse(BaseModel):
 
 
 
-# Generated from: get_tool_call_by_call_id
-
-class GetToolCallByCallIdSqlParams(BaseModel):
-
-    call_id: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.call_id,
-        )
-
-class GetToolCallByCallIdSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: str | None = None
-    tool_id: UUID | None = None
-    completed: bool | None = None
-
-class GetToolCallByCallIdApiRequest(BaseModel):
-
-    call_id: str
-
-class GetToolCallByCallIdApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: str | None = None
-    tool_id: UUID | None = None
-    completed: bool | None = None
-
-
-
 # Generated from: check_group_stop
 
 class CheckGroupStopSqlParams(BaseModel):
@@ -27362,6 +27362,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateTestCreatedAtSqlRow",
         "UpdateTestCreatedAtApiRequest",
         "UpdateTestCreatedAtApiResponse",
+    ),
+    "app/sql/v4/calls/get_tool_call_by_call_id_complete.sql": (
+        "GetToolCallByCallIdSqlParams",
+        "GetToolCallByCallIdSqlRow",
+        "GetToolCallByCallIdApiRequest",
+        "GetToolCallByCallIdApiResponse",
     ),
     "app/sql/v4/cohorts/create_cohort_complete.sql": (
         "CreateCohortSqlParams",
@@ -29187,12 +29193,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpsertStaffApiRequest",
         "UpsertStaffApiResponse",
     ),
-    "app/sql/v4/tool_calls/get_tool_call_by_call_id_complete.sql": (
-        "GetToolCallByCallIdSqlParams",
-        "GetToolCallByCallIdSqlRow",
-        "GetToolCallByCallIdApiRequest",
-        "GetToolCallByCallIdApiResponse",
-    ),
     "app/sql/v4/tools/check_group_stop_complete.sql": (
         "CheckGroupStopSqlParams",
         "CheckGroupStopSqlRow",
@@ -29863,6 +29863,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/update_test_created_at_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/calls/get_tool_call_by_call_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -31383,11 +31388,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/staff/upsert_staff_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/tool_calls/get_tool_call_by_call_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload

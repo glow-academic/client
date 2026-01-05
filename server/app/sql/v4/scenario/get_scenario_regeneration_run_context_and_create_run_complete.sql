@@ -144,7 +144,7 @@ previous_messages_all_runs AS (
     -- Ordered chronologically across all runs
     SELECT 
         m.role,
-        mc.content,
+        cnt.content,
         m.created_at,
         gr.idx as run_idx
     FROM previous_runs_in_group prig
@@ -152,6 +152,7 @@ previous_messages_all_runs AS (
     JOIN message_runs mr ON mr.run_id = prig.run_id
     JOIN messages m ON m.id = mr.message_id
     LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN content cnt ON cnt.id = mc.content_id
     ORDER BY gr.idx ASC, m.created_at ASC  -- Order by run idx first, then message created_at
 ),
 previous_messages_array AS (

@@ -35,9 +35,16 @@ WITH assistant_message AS (
     RETURNING id, created_at, updated_at
 ),
 insert_content AS (
-    INSERT INTO message_content (message_id, idx, content, created_at, updated_at)
-    SELECT id, 0, content, created_at, updated_at
+    INSERT INTO content (content, created_at, updated_at)
+    SELECT content, created_at, updated_at
     FROM assistant_message
+    RETURNING id as content_id, created_at, updated_at
+),
+insert_message_content AS (
+    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    SELECT am.id, ic.content_id, 0, ic.created_at, ic.updated_at
+    FROM assistant_message am
+    CROSS JOIN insert_content ic
 ),
 link_to_run AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)

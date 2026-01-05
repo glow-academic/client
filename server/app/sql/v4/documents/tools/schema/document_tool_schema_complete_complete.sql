@@ -39,7 +39,7 @@ WITH params AS (
 get_tool_call AS (
     SELECT tc.id as tool_call_id, tca.arguments_raw, tca.arguments_json
     FROM params p
-    JOIN tool_calls tc ON (
+    JOIN calls tc ON (
         (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
         OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
     )
@@ -59,11 +59,11 @@ extract_schema_json AS (
 ),
 -- Finalize tool_call (mark as completed)
 finalize_tool_call AS (
-    UPDATE tool_calls
+    UPDATE calls
     SET completed = true,
         updated_at = NOW()
     FROM get_tool_call gtc
-    WHERE tool_calls.id = gtc.tool_call_id
+    WHERE calls.id = gtc.tool_call_id
     RETURNING id as tool_call_id, completed
 )
 SELECT 

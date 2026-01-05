@@ -101,7 +101,7 @@ async def _member_speak_complete_impl(
                     message_id_uuid = message_row["message_id"]
             elif data.call_id:
                 sql_get_tool_call = load_sql(
-                    "app/sql/v4/tool_calls/get_tool_call_by_call_id.sql"
+                    "app/sql/v4/calls/get_tool_call_by_call_id_complete.sql"
                 )
                 tool_call_row = await conn.fetchrow(sql_get_tool_call, data.call_id)
                 if tool_call_row:

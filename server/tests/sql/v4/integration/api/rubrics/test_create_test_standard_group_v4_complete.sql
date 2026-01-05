@@ -37,7 +37,7 @@ AS $$
             group_description,
             group_points,
             group_pass_points,
-            (SELECT id FROM tool_calls LIMIT 1)  -- Required foreign key
+            (SELECT id FROM calls LIMIT 1)  -- Required foreign key
         RETURNING id AS standard_group_id, name, short_name, description, points, pass_points, created_at, created_at AS updated_at
     )
     SELECT 

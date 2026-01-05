@@ -63,7 +63,7 @@ WITH RECURSIVE message_path AS (
         m.id, 
         c.id AS chat_id, 
         m.role, 
-        mc.content, 
+        cnt.content, 
         m.created_at, 
         m.completed, 
         m.updated_at,
@@ -78,6 +78,7 @@ WITH RECURSIVE message_path AS (
     JOIN message_runs mr ON mr.run_id = r.id
     JOIN messages m ON m.id = mr.message_id
     LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN content cnt ON cnt.id = mc.content_id
     WHERE c.id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 
@@ -91,7 +92,7 @@ WITH RECURSIVE message_path AS (
         m.id, 
         c.id AS chat_id, 
         m.role, 
-        mc.content, 
+        cnt.content, 
         m.created_at, 
         m.completed, 
         m.updated_at,
@@ -100,6 +101,7 @@ WITH RECURSIVE message_path AS (
         mp.path_root_id
     FROM messages m
     LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN content cnt ON cnt.id = mc.content_id
     JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
     JOIN message_path mp ON mp.id = mt.parent_id
     JOIN message_runs mr ON mr.message_id = m.id
@@ -119,7 +121,7 @@ messages_without_parents AS (
         m.id, 
         c.id AS chat_id, 
         m.role, 
-        mc.content, 
+        cnt.content, 
         m.created_at, 
         m.completed, 
         m.updated_at,
@@ -134,6 +136,7 @@ messages_without_parents AS (
     JOIN message_runs mr ON mr.run_id = r.id
     JOIN messages m ON m.id = mr.message_id
     LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN content cnt ON cnt.id = mc.content_id
     WHERE c.id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 

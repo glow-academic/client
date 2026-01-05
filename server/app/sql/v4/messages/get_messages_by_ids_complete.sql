@@ -47,7 +47,7 @@ messages_data AS (
     SELECT 
         m.id,
         m.role::text,
-        mc.content,
+        cnt.content,
         m.created_at,
         m.completed,
         m.audio,
@@ -57,6 +57,7 @@ messages_data AS (
     CROSS JOIN unnest(p.message_ids) AS msg_id
     JOIN messages m ON m.id = msg_id
     LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    LEFT JOIN content cnt ON cnt.id = mc.content_id
     LEFT JOIN message_audio ma ON ma.message_id = m.id
     WHERE p.message_ids IS NOT NULL
       AND array_length(p.message_ids, 1) > 0

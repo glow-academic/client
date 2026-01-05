@@ -29,7 +29,7 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT id, call_id, tool_id, completed
-FROM tool_calls
+FROM calls
 WHERE call_id = api_get_tool_call_by_call_id_v4.call_id
 LIMIT 1
 $$;

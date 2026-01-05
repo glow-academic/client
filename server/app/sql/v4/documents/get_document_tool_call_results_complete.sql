@@ -47,7 +47,7 @@ AS $$
 WITH html_result AS (
     -- Get template_html from generate_html tool_call
     SELECT tca.arguments_json->>'template_html' as template_html
-    FROM tool_calls tc
+    FROM calls tc
     JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
     JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id
@@ -60,7 +60,7 @@ WITH html_result AS (
 schema_result AS (
     -- Get schema_json from generate_schema tool_call
     SELECT tca.arguments_json->>'schema_json' as schema_json
-    FROM tool_calls tc
+    FROM calls tc
     JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
     JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id

@@ -115,7 +115,7 @@ link_to_document AS (
 ),
 link_to_run AS (
     -- Link template to run via tool_call if run_id provided
-    -- Note: This assumes templates have tool_call_id set (via tool_calls)
+    -- Note: This assumes templates have tool_call_id set (via calls)
     -- The run relationship is derived via templates → tool_call → tool_call_runs → run
     -- This CTE verifies the relationship exists but no longer inserts into template_runs
     SELECT 
@@ -124,7 +124,7 @@ link_to_run AS (
     WHERE $6 IS NOT NULL
     AND EXISTS (
         SELECT 1 FROM templates t
-        JOIN tool_calls tc ON tc.id = t.tool_call_id
+        JOIN calls tc ON tc.id = t.tool_call_id
         JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
         WHERE t.id = ltd.template_id
         AND tcr.run_id = $6

@@ -169,7 +169,7 @@ create_message_if_needed AS (
 ),
 -- Create synthetic tool call for new user messages
 user_tool_call AS (
-    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
     SELECT 'member_progress_user_' || cm.message_id::text, gst.tool_id, true, cm.created_at, cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN get_speak_tool_id gst
@@ -178,9 +178,10 @@ user_tool_call AS (
 ),
 -- Get existing tool_call_id for existing user messages
 existing_user_tool_call AS (
-    SELECT DISTINCT mc.tool_call_id
+    SELECT DISTINCT cnt.tool_call_id
     FROM latest_user_message lum
     JOIN message_content mc ON mc.message_id = lum.message_id AND mc.idx = 0
+    JOIN content cnt ON cnt.id = mc.content_id
     LIMIT 1
 ),
 -- Combine new and existing tool calls
@@ -189,12 +190,22 @@ user_tool_call_id AS (
     UNION ALL
     SELECT tool_call_id FROM existing_user_tool_call
 ),
-update_message_content_if_needed AS (
-    INSERT INTO message_content (message_id, idx, content, tool_call_id, created_at, updated_at)
-    SELECT cm.message_id, 0, p.message_content, utc.tool_call_id, cm.created_at, cm.updated_at
+insert_user_content_if_needed AS (
+    INSERT INTO content (content, tool_call_id, created_at, updated_at)
+    SELECT p.message_content, utc.tool_call_id, cm.created_at, cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN params p
     CROSS JOIN user_tool_call_id utc
+    WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
+    RETURNING id as content_id, created_at, updated_at
+),
+update_message_content_if_needed AS (
+    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    SELECT cm.message_id, ic.content_id, 0, ic.created_at, ic.updated_at
+    FROM create_message_if_needed cm
+    CROSS JOIN params p
+    CROSS JOIN user_tool_call_id utc
+    CROSS JOIN insert_user_content_if_needed ic
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
 ),
 update_existing_message AS (
@@ -207,12 +218,14 @@ update_existing_message AS (
     RETURNING id as message_id
 ),
 update_existing_message_content AS (
-    UPDATE message_content
+    UPDATE content
     SET content = p.message_content,
         updated_at = NOW()
-    FROM params p
-    WHERE message_id = (SELECT message_id FROM latest_user_message)
-      AND idx = 0
+    FROM params p,
+         message_content mc
+    WHERE mc.content_id = content.id
+      AND mc.message_id = (SELECT message_id FROM latest_user_message)
+      AND mc.idx = 0
       AND EXISTS (SELECT 1 FROM latest_user_message)
 ),
 upserted_message AS (
@@ -346,7 +359,8 @@ existing_system_message AS (
     SELECT m.id as system_message_id
     FROM messages m
     JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN system_message_hash smh ON message_content_hash(mc.content, 'system') = smh.hash
+        JOIN content cnt ON cnt.id = mc.content_id
+    JOIN system_message_hash smh ON message_content_hash(cnt.content, 'system') = smh.hash
     WHERE m.role = 'system'::message_role
     LIMIT 1
 ),
@@ -358,11 +372,20 @@ new_system_message AS (
     RETURNING id as system_message_id, created_at, updated_at
 ),
 -- Insert system message content (no tool_call_id - prompt tool moved to prompt agent)
-insert_system_content AS (
-    INSERT INTO message_content (message_id, idx, content, tool_call_id, created_at, updated_at)
-    SELECT nsm.system_message_id, 0, smc.content, NULL, nsm.created_at, nsm.updated_at
+insert_system_content_step1 AS (
+    INSERT INTO content (content, created_at, updated_at)
+    SELECT smc.content, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
+    WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
+    RETURNING id as content_id, created_at, updated_at
+),
+insert_system_content AS (
+    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    SELECT nsm.system_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
+    FROM new_system_message nsm
+    CROSS JOIN system_message_content smc
+    CROSS JOIN insert_system_content_step1 ic
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
 ),
 system_message AS (
@@ -399,7 +422,8 @@ existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
     FROM messages m
     JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN scenario_developer_hash sdh ON message_content_hash(mc.content, 'developer') = sdh.hash
+        JOIN content cnt ON cnt.id = mc.content_id
+    JOIN scenario_developer_hash sdh ON message_content_hash(cnt.content, 'developer') = sdh.hash
     WHERE m.role = 'developer'::message_role
     LIMIT 1
 ),
@@ -411,11 +435,20 @@ new_scenario_developer_message AS (
     RETURNING id as developer_message_id, created_at, updated_at
 ),
 -- Insert developer message content (no tool_call_id - instruct tool moved to prompt agent)
-insert_scenario_developer_content AS (
-    INSERT INTO message_content (message_id, idx, content, tool_call_id, created_at, updated_at)
-    SELECT nsdm.developer_message_id, 0, sdc.content, NULL, nsdm.created_at, nsdm.updated_at
+insert_scenario_developer_content_step1 AS (
+    INSERT INTO content (content, created_at, updated_at)
+    SELECT sdc.content, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc
+    WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
+    RETURNING id as content_id, created_at, updated_at
+),
+insert_scenario_developer_content AS (
+    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    SELECT nsdm.developer_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
+    FROM new_scenario_developer_message nsdm
+    CROSS JOIN scenario_developer_content sdc
+    CROSS JOIN insert_scenario_developer_content_step1 ic
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
 ),
 scenario_developer_message AS (

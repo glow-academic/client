@@ -59,14 +59,14 @@ get_tool_info AS (
 existing_tool_call AS (
     SELECT tc.id as tool_call_id, tc.call_id
     FROM params p
-    JOIN tool_calls tc ON (
+    JOIN calls tc ON (
         (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
         OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
     )
     LIMIT 1
 ),
 create_tool_call AS (
-    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
+    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
     SELECT 
         COALESCE(p.call_id, 'text_' || p.tool_call_id),
         gt.tool_id,

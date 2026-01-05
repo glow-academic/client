@@ -27,7 +27,7 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT m.id as message_id
-FROM tool_calls tc
+FROM calls tc
 JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
 JOIN message_runs mr ON mr.run_id = tcr.run_id
 JOIN messages m ON m.id = mr.message_id

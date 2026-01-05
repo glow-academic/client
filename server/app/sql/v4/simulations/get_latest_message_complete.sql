@@ -35,7 +35,7 @@ SELECT
     m.id,
     c.id AS chat_id,
     m.role,
-    mc.content,
+    cnt.content,
     m.created_at,
     m.completed,
     m.updated_at
@@ -47,6 +47,7 @@ JOIN runs r ON r.id = gr.run_id
 JOIN message_runs mr ON mr.run_id = r.id
 JOIN messages m ON m.id = mr.message_id
 LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN content cnt ON cnt.id = mc.content_id
 WHERE c.id = chat_id
   AND NOT EXISTS (
       SELECT 1 FROM message_tree mt 
