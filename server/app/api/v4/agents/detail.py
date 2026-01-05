@@ -70,7 +70,7 @@ async def get_agent_detail(
             )
 
         # Extract draft_id from API request
-        draft_id = getattr(request, 'draft_id', None)
+        draft_id = getattr(request, "draft_id", None)
 
         # Convert API request to SQL params (add profile_id from header)
         params = GetAgentDetailSqlParams(

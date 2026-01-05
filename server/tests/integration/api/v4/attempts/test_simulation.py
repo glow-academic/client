@@ -29,4 +29,3 @@ async def test_create_simulation_attempt(
     data = response.json()
 
     assert data is not None
-

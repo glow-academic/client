@@ -25,4 +25,3 @@ async def test_get_field_new(
 
     assert data is not None
     # Should return default structure for creating a new field
-

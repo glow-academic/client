@@ -40,4 +40,3 @@ async def test_upsert_staff(
     assert data["success"] is True
     assert "profiles" in data
     assert len(data["profiles"]) > 0
-

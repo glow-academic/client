@@ -25,4 +25,3 @@ async def test_get_reports_bundle(
 
     assert data is not None
     # Should return reports bundle data
-

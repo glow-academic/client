@@ -26,4 +26,3 @@ async def test_get_auth_new(
     assert data is not None
     # Should return default structure for creating a new auth entry
     # Exact fields depend on the API response structure
-

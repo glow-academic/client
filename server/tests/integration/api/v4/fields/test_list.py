@@ -26,4 +26,3 @@ async def test_list_fields(
     assert data is not None
     assert "fields" in data
     assert isinstance(data["fields"], list)
-

@@ -38,7 +38,9 @@ async def test_create_simulation(
         sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_scenario_v4_complete.sql",
         params=None,
     )
-    typed_scenario = GetOrCreateScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = GetOrCreateScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -67,14 +69,21 @@ async def test_create_simulation(
     assert data["message"] == "Simulation 'Test Simulation' created successfully"
 
     # Verify simulation was created using SQL file
-    from tests.sql.types import GetSimulationByIdWithTimeLimitV4SqlParams, GetSimulationByIdWithTimeLimitV4SqlRow
+    from tests.sql.types import (
+        GetSimulationByIdWithTimeLimitV4SqlParams,
+        GetSimulationByIdWithTimeLimitV4SqlRow,
+    )
 
     simulation_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql",
-        params=GetSimulationByIdWithTimeLimitV4SqlParams(input_simulation_id=UUID(data["simulationId"])),
+        params=GetSimulationByIdWithTimeLimitV4SqlParams(
+            input_simulation_id=UUID(data["simulationId"])
+        ),
     )
-    typed_simulation = GetSimulationByIdWithTimeLimitV4SqlRow.model_validate(simulation_result.model_dump())
+    typed_simulation = GetSimulationByIdWithTimeLimitV4SqlRow.model_validate(
+        simulation_result.model_dump()
+    )
     assert typed_simulation.simulation_id is not None
     assert typed_simulation.title == "Test Simulation"
     assert typed_simulation.description == "Test Description"
@@ -83,7 +92,10 @@ async def test_create_simulation(
     assert typed_simulation.time_limit == 60
 
     # Verify department link was created using SQL file
-    from tests.sql.types import GetSimulationDepartmentLinkV4SqlParams, GetSimulationDepartmentLinkV4SqlRow
+    from tests.sql.types import (
+        GetSimulationDepartmentLinkV4SqlParams,
+        GetSimulationDepartmentLinkV4SqlRow,
+    )
 
     dept_link_result = await execute_sql_typed(
         conn=db,
@@ -93,11 +105,16 @@ async def test_create_simulation(
             input_department_id=UUID(dept_id),
         ),
     )
-    typed_dept_link = GetSimulationDepartmentLinkV4SqlRow.model_validate(dept_link_result.model_dump())
+    typed_dept_link = GetSimulationDepartmentLinkV4SqlRow.model_validate(
+        dept_link_result.model_dump()
+    )
     assert typed_dept_link.simulation_id is not None
 
     # Verify scenario link was created using SQL file
-    from tests.sql.types import GetSimulationScenarioLinkV4SqlParams, GetSimulationScenarioLinkV4SqlRow
+    from tests.sql.types import (
+        GetSimulationScenarioLinkV4SqlParams,
+        GetSimulationScenarioLinkV4SqlRow,
+    )
 
     scenario_link_result = await execute_sql_typed(
         conn=db,
@@ -107,5 +124,7 @@ async def test_create_simulation(
             input_scenario_id=scenario_id,
         ),
     )
-    typed_scenario_link = GetSimulationScenarioLinkV4SqlRow.model_validate(scenario_link_result.model_dump())
+    typed_scenario_link = GetSimulationScenarioLinkV4SqlRow.model_validate(
+        scenario_link_result.model_dump()
+    )
     assert typed_scenario_link.simulation_id is not None

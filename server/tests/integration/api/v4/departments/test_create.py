@@ -56,7 +56,10 @@ async def test_create_department(
 
     # Verify profile link was created (superadmin should be auto-linked) using SQL file
     profile_id = await get_superadmin_alias(db)
-    from tests.sql.types import GetProfileDepartmentLinkV4SqlParams, GetProfileDepartmentLinkV4SqlRow
+    from tests.sql.types import (
+        GetProfileDepartmentLinkV4SqlParams,
+        GetProfileDepartmentLinkV4SqlRow,
+    )
 
     profile_link_result = await execute_sql_typed(
         conn=db,
@@ -66,7 +69,9 @@ async def test_create_department(
             input_profile_id=UUID(profile_id),
         ),
     )
-    typed_profile_link = GetProfileDepartmentLinkV4SqlRow.model_validate(profile_link_result.model_dump())
+    typed_profile_link = GetProfileDepartmentLinkV4SqlRow.model_validate(
+        profile_link_result.model_dump()
+    )
     assert typed_profile_link.department_id is not None
 
 

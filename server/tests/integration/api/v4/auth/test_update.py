@@ -72,4 +72,3 @@ async def test_update_auth_from_list(
 
     assert data is not None
     assert data["success"] is True
-

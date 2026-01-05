@@ -16,6 +16,8 @@ from .image import client_router as image_client_router
 from .image import server_router as image_server_router
 from .member import client_router as member_client_router
 from .member import server_router as member_server_router
+from .prompt import client_router as prompt_client_router
+from .prompt import server_router as prompt_server_router
 from .rubric import client_router as rubric_client_router
 from .rubric import server_router as rubric_server_router
 from .scenario import client_router as scenario_client_router
@@ -50,6 +52,7 @@ client_router.include_router(hint_client_router)
 client_router.include_router(grade_client_router)
 client_router.include_router(audio_client_router)
 client_router.include_router(member_client_router)
+client_router.include_router(prompt_client_router)
 
 server_router.include_router(simulation_server_router)
 server_router.include_router(voice_server_router)
@@ -63,3 +66,4 @@ server_router.include_router(hint_server_router)
 server_router.include_router(grade_server_router)
 server_router.include_router(audio_server_router)
 server_router.include_router(member_server_router)
+server_router.include_router(prompt_server_router)

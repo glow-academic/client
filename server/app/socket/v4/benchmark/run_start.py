@@ -55,7 +55,9 @@ class BenchmarkRunStartPayload(BaseModel):
 
 
 # Emit helper functions
-async def benchmark_run_start_error(payload: BenchmarkRunStartErrorPayload, room: str) -> None:
+async def benchmark_run_start_error(
+    payload: BenchmarkRunStartErrorPayload, room: str
+) -> None:
     await sio.emit("benchmarks_run_start_error", payload.model_dump(), room=room)
 
 
@@ -184,7 +186,11 @@ async def _benchmark_run_start_impl(
                     sid=sid,
                     event_key="benchmarks.run_started",
                     template="{{ actor.name }} started benchmark run",
-                    context={"attempt_id": attempt_id, "eval_id": eval_id, "run_id": run_id},
+                    context={
+                        "attempt_id": attempt_id,
+                        "eval_id": eval_id,
+                        "run_id": run_id,
+                    },
                     endpoint="/socket/v4/benchmark/run_start",
                     error=False,
                 )
@@ -252,4 +258,3 @@ async def benchmark_run_start_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while starting run."""
     return {"success": True}
-

@@ -60,4 +60,3 @@ register_server_endpoint(
     SimulationErrorPayload,
     "Error occurred in simulation operation",
 )
-

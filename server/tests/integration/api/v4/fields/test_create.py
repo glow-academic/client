@@ -34,4 +34,3 @@ async def test_create_field(
     assert data["success"] is True
     assert "fieldId" in data
     assert data["fieldId"] is not None
-

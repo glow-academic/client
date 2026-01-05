@@ -51,4 +51,3 @@ async def test_authorize_emulation(
     assert data is not None
     assert "authorized" in data
     # Authorization result depends on permissions
-

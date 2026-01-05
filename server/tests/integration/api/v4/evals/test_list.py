@@ -26,4 +26,3 @@ async def test_list_evals(
     assert data is not None
     assert "evals" in data
     assert isinstance(data["evals"], list)
-

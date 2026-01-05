@@ -28,4 +28,3 @@ async def test_get_field_detail_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

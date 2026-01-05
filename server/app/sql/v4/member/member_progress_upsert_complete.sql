@@ -357,41 +357,12 @@ new_system_message AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as system_message_id, created_at, updated_at
 ),
--- Get prompt tool_id for member agent
-get_prompt_tool_id AS (
-    SELECT id as tool_id
-    FROM tools
-    WHERE name = 'prompt' AND agent_role = 'member'::agent_role AND active = true
-    LIMIT 1
-),
--- Create synthetic tool call for new system messages
-system_tool_call AS (
-    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
-    SELECT 'member_progress_system_' || nsm.system_message_id::text, gpt.tool_id, true, nsm.created_at, nsm.updated_at
-    FROM new_system_message nsm
-    CROSS JOIN get_prompt_tool_id gpt
-    WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
-    RETURNING id as tool_call_id, created_at, updated_at
-),
--- Get existing tool_call_id for existing system messages
-existing_system_tool_call AS (
-    SELECT DISTINCT mc.tool_call_id
-    FROM existing_system_message esm
-    JOIN message_content mc ON mc.message_id = esm.system_message_id AND mc.idx = 0
-    LIMIT 1
-),
--- Combine new and existing tool calls
-system_tool_call_id AS (
-    SELECT tool_call_id FROM system_tool_call
-    UNION ALL
-    SELECT tool_call_id FROM existing_system_tool_call
-),
+-- Insert system message content (no tool_call_id - prompt tool moved to prompt agent)
 insert_system_content AS (
     INSERT INTO message_content (message_id, idx, content, tool_call_id, created_at, updated_at)
-    SELECT nsm.system_message_id, 0, smc.content, stc.tool_call_id, nsm.created_at, nsm.updated_at
+    SELECT nsm.system_message_id, 0, smc.content, NULL, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
-    CROSS JOIN system_tool_call_id stc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
 ),
 system_message AS (
@@ -439,41 +410,12 @@ new_scenario_developer_message AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
     RETURNING id as developer_message_id, created_at, updated_at
 ),
--- Get instruct tool_id for member agent
-get_instruct_tool_id AS (
-    SELECT id as tool_id
-    FROM tools
-    WHERE name = 'instruct' AND agent_role = 'member'::agent_role AND active = true
-    LIMIT 1
-),
--- Create synthetic tool call for new developer messages
-developer_tool_call AS (
-    INSERT INTO tool_calls (call_id, tool_id, completed, created_at, updated_at)
-    SELECT 'member_progress_developer_' || nsdm.developer_message_id::text, git.tool_id, true, nsdm.created_at, nsdm.updated_at
-    FROM new_scenario_developer_message nsdm
-    CROSS JOIN get_instruct_tool_id git
-    WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
-    RETURNING id as tool_call_id, created_at, updated_at
-),
--- Get existing tool_call_id for existing developer messages
-existing_developer_tool_call AS (
-    SELECT DISTINCT mc.tool_call_id
-    FROM existing_scenario_developer_message esdm
-    JOIN message_content mc ON mc.message_id = esdm.developer_message_id AND mc.idx = 0
-    LIMIT 1
-),
--- Combine new and existing tool calls
-developer_tool_call_id AS (
-    SELECT tool_call_id FROM developer_tool_call
-    UNION ALL
-    SELECT tool_call_id FROM existing_developer_tool_call
-),
+-- Insert developer message content (no tool_call_id - instruct tool moved to prompt agent)
 insert_scenario_developer_content AS (
     INSERT INTO message_content (message_id, idx, content, tool_call_id, created_at, updated_at)
-    SELECT nsdm.developer_message_id, 0, sdc.content, dtc.tool_call_id, nsdm.created_at, nsdm.updated_at
+    SELECT nsdm.developer_message_id, 0, sdc.content, NULL, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc
-    CROSS JOIN developer_tool_call_id dtc
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
 ),
 scenario_developer_message AS (

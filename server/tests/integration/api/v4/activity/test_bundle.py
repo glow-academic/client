@@ -25,4 +25,3 @@ async def test_get_activity_bundle(
 
     assert data is not None
     # Should return activity bundle data
-

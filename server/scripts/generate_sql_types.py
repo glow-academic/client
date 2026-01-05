@@ -709,13 +709,14 @@ async def execute_sql_file(
 
         # Check if it contains function definitions
         has_function = _detect_function_in_sql(sql_text)
-        
+
         # Always execute analytics view creation file (DDL only, no function)
         # This must be executed before other files that depend on the analytics view
         is_analytics_view = (
-            sql_path == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
+            sql_path
+            == f"app/sql/{VERSION}/analytics/create_analytics_view_complete.sql"
         )
-        
+
         # Execute if it contains function definitions OR is the analytics view creation file
         if not has_function and not is_analytics_view:
             return (

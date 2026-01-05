@@ -25,7 +25,9 @@ async def test_generate_certificate(
         sql_path="tests/sql/v4/integration/helpers/test_get_superadmin_alias_v4_complete.sql",
         params=None,
     )
-    typed_superadmin = GetSuperadminAliasSqlRow.model_validate(superadmin_result.model_dump())
+    typed_superadmin = GetSuperadminAliasSqlRow.model_validate(
+        superadmin_result.model_dump()
+    )
     profile_id = typed_superadmin.profile_id
 
     # v4 routes get profile_id from router dependency
@@ -48,7 +50,9 @@ async def test_generate_certificate(
         # 404 means no cohort data available - this is acceptable
         data = response.json()
         assert "detail" in data
-        assert "not found" in data["detail"].lower() or "cohort" in data["detail"].lower()
+        assert (
+            "not found" in data["detail"].lower() or "cohort" in data["detail"].lower()
+        )
 
 
 async def test_generate_certificate_profile_not_found(
@@ -70,4 +74,3 @@ async def test_generate_certificate_profile_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower() or "cohort" in data["detail"].lower()
-

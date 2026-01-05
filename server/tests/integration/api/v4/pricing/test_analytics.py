@@ -25,4 +25,3 @@ async def test_get_pricing_analytics(
 
     assert data is not None
     # Should return pricing analytics data
-

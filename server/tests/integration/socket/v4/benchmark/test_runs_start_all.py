@@ -213,4 +213,3 @@ async def test_benchmark_runs_start_all_invalid_uuid(
     error_events = mock_sio.get_events("benchmarks_runs_start_all_error")
     assert len(error_events) >= 1
     assert error_events[0]["success"] is False
-

@@ -26,4 +26,3 @@ async def test_get_settings_detail(
     assert data is not None
     # Should return settings data
     # Exact fields depend on the API response structure
-

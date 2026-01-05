@@ -62,4 +62,3 @@ async def test_delete_auth_from_list(
     assert data is not None
     assert data["success"] is True
     assert "deleted successfully" in data["message"].lower()
-

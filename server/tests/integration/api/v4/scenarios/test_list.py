@@ -28,7 +28,9 @@ async def test_list_scenarios(
             scenario_problem_statement="Test problem",
         ),
     )
-    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
 
     # v4 routes get profile_id from router dependency
@@ -68,4 +70,3 @@ async def test_list_scenarios_empty(
     assert data is not None
     assert "scenarios" in data
     assert isinstance(data["scenarios"], list)
-

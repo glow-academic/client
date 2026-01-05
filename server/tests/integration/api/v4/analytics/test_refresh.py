@@ -26,4 +26,3 @@ async def test_refresh_analytics(
     assert data is not None
     assert "success" in data
     assert data["success"] is True
-

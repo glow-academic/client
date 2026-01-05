@@ -25,4 +25,3 @@ async def test_get_pricing_detail(
 
     assert data is not None
     # Should return pricing detail data
-

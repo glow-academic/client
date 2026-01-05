@@ -22,4 +22,3 @@ async def test_get_health_bundle(
 
     assert data is not None
     # Should return health status data
-

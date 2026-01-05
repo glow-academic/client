@@ -26,4 +26,3 @@ async def test_get_pricing_runs(
     assert data is not None
     assert "runs" in data
     assert isinstance(data["runs"], list)
-

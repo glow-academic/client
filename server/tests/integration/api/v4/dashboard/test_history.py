@@ -26,4 +26,3 @@ async def test_get_dashboard_history(
     assert data is not None
     assert "history" in data
     assert isinstance(data["history"], list)
-

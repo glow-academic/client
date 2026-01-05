@@ -53,4 +53,3 @@ register_server_endpoint(
     MemberRegenerateToolCompleteApiRequest,
     "Member regenerate tool completed successfully",
 )
-

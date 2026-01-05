@@ -31,7 +31,10 @@ async def test_duplicate_scenario_with_departments(
     dept_id = await get_cs_dept_id(db)
 
     # Create a scenario using SQL file
-    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
+    from tests.sql.types import (
+        CreateTestScenarioV4SqlParams,
+        CreateTestScenarioV4SqlRow,
+    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -41,7 +44,9 @@ async def test_duplicate_scenario_with_departments(
             scenario_problem_statement="Test problem",
         ),
     )
-    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -72,7 +77,10 @@ async def test_duplicate_scenario_with_departments(
     assert new_scenario_id != scenario_id
 
     # Verify department link was duplicated using SQL file
-    from tests.sql.types import GetScenarioDepartmentLinkV4SqlParams, GetScenarioDepartmentLinkV4SqlRow
+    from tests.sql.types import (
+        GetScenarioDepartmentLinkV4SqlParams,
+        GetScenarioDepartmentLinkV4SqlRow,
+    )
 
     new_dept_link_result = await execute_sql_typed(
         conn=db,
@@ -82,7 +90,9 @@ async def test_duplicate_scenario_with_departments(
             input_department_id=UUID(dept_id),
         ),
     )
-    typed_new_dept_link = GetScenarioDepartmentLinkV4SqlRow.model_validate(new_dept_link_result.model_dump())
+    typed_new_dept_link = GetScenarioDepartmentLinkV4SqlRow.model_validate(
+        new_dept_link_result.model_dump()
+    )
     assert typed_new_dept_link.scenario_id is not None
     assert typed_new_dept_link.active is True
 
@@ -94,7 +104,10 @@ async def test_duplicate_scenario_without_departments(
     await get_superadmin_alias(db)
 
     # Create a scenario using SQL file
-    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
+    from tests.sql.types import (
+        CreateTestScenarioV4SqlParams,
+        CreateTestScenarioV4SqlRow,
+    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -104,7 +117,9 @@ async def test_duplicate_scenario_without_departments(
             scenario_problem_statement="Test problem",
         ),
     )
-    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -121,7 +136,10 @@ async def test_duplicate_scenario_without_departments(
     new_scenario_id = UUID(data["scenarioId"])
 
     # Verify no department links were created (original had none) using SQL file
-    from tests.sql.types import GetScenarioDepartmentLinksV4SqlParams, GetScenarioDepartmentLinksV4SqlRow
+    from tests.sql.types import (
+        GetScenarioDepartmentLinksV4SqlParams,
+        GetScenarioDepartmentLinksV4SqlRow,
+    )
 
     dept_links_result = await execute_sql_typed(
         conn=db,
@@ -129,6 +147,8 @@ async def test_duplicate_scenario_without_departments(
         params=GetScenarioDepartmentLinksV4SqlParams(input_scenario_id=new_scenario_id),
     )
     # execute_sql_typed returns a single row, so we check if it's None or empty
-    typed_dept_links = GetScenarioDepartmentLinksV4SqlRow.model_validate(dept_links_result.model_dump())
+    typed_dept_links = GetScenarioDepartmentLinksV4SqlRow.model_validate(
+        dept_links_result.model_dump()
+    )
     # If no links exist, the function should return NULL values
     assert typed_dept_links.scenario_id is None

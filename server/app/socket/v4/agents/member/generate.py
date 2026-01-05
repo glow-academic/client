@@ -1,12 +1,14 @@
 """Handler for member_generate WebSocket event - generates student responses."""
 
+import asyncio
+import json
 import uuid
 from typing import Any, cast
 
-from agents import Runner, trace
+from agents import Runner, function_tool, trace
 from agents.items import TResponseInputItem
 from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.agents.generic_agent import GenericAgent
@@ -15,6 +17,8 @@ from app.infra.v4.debug.debug_info import DebugContext
 from app.infra.v4.documents.format_document_info import format_document_info
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.remove_active_run import remove_active_run
+from app.infra.v4.websocket.store_active_run import store_active_run
 from app.socket.v4.agents.simulation.generate import (
     get_simulation_conversation_history,
 )
@@ -35,6 +39,97 @@ SQL_PATH_CONTEXT = (
     "app/sql/v4/member/get_member_run_context_and_create_run_complete.sql"
 )
 SQL_PATH_MESSAGES = "app/sql/v4/simulations/get_simulation_messages_complete.sql"
+
+
+# Helper functions for extracting arguments from JSON
+def extract_message_from_json(json_str: str) -> str | None:
+    """Extract message field from partial JSON string."""
+    import re
+
+    match = re.search(r'"message"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', json_str)
+    if match:
+        message_str = match.group(1)
+        try:
+            return message_str.encode("utf-8").decode("unicode_escape")
+        except Exception:
+            return message_str
+    return None
+
+
+def extract_content_from_json(json_str: str) -> str | None:
+    """Extract content field from partial JSON string."""
+    import re
+
+    match = re.search(r'"content"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', json_str)
+    if match:
+        content_str = match.group(1)
+        try:
+            return content_str.encode("utf-8").decode("unicode_escape")
+        except Exception:
+            return content_str
+    return None
+
+
+def extract_new_chars(
+    prev_json: str, new_json: str, last_index: int, field_name: str = "message"
+) -> tuple[str, int, bool]:
+    """Extract new characters from JSON string incrementally for a given field."""
+    if len(new_json) <= last_index:
+        return "", last_index, False
+
+    field_pattern = f'"{field_name}"'
+    field_start_idx = new_json.find(field_pattern, 0)
+    if field_start_idx == -1:
+        return "", last_index, False
+
+    colon_idx = new_json.find(":", field_start_idx)
+    if colon_idx == -1:
+        return "", last_index, False
+
+    quote_idx = new_json.find('"', colon_idx)
+    if quote_idx == -1:
+        return "", last_index, False
+
+    field_value_start = quote_idx + 1
+
+    if last_index < field_value_start:
+        if len(new_json) > field_value_start:
+            start_extracting_from = field_value_start
+        elif len(new_json) == field_value_start:
+            return "", field_value_start, False
+        else:
+            return "", last_index, False
+    else:
+        start_extracting_from = last_index
+
+    new_chars = []
+    i = start_extracting_from
+    in_field = True
+    escape_next = False
+
+    while i < len(new_json):
+        char = new_json[i]
+
+        if escape_next:
+            new_chars.append(char)
+            escape_next = False
+            i += 1
+            continue
+
+        if char == "\\":
+            escape_next = True
+            new_chars.append(char)
+            i += 1
+            continue
+
+        if char == '"' and not escape_next:
+            break
+
+        new_chars.append(char)
+        i += 1
+
+    new_content = "".join(new_chars)
+    return new_content, i, in_field
 
 
 # Pydantic models
@@ -77,7 +172,7 @@ async def _member_generate_impl(
                     profile_id=profile_id,
                     group_id=group_id,
                 )
-                result = cast(
+                context_result = cast(
                     GetMemberRunContextAndCreateRunSqlRow,
                     await execute_sql_typed(conn, SQL_PATH_CONTEXT, params=params),
                 )
@@ -115,7 +210,7 @@ async def _member_generate_impl(
                 )
                 return
 
-            if not result:
+            if not context_result:
                 await internal_sio.emit(
                     "member_generate_error",
                     {
@@ -127,7 +222,7 @@ async def _member_generate_impl(
                 return
 
             # Get department_id
-            department_id_str = result.department_id
+            department_id_str = context_result.department_id
             if not department_id_str:
                 await internal_sio.emit(
                     "member_generate_error",
@@ -142,65 +237,37 @@ async def _member_generate_impl(
             department_id = uuid.UUID(str(department_id_str))
 
             # Extract run_id from context (created in same transaction)
-            model_run_id = uuid.UUID(result.run_id)
-            group_id_from_result = result.group_id
-            trace_id = result.trace_id
-
-            # Build context dict from result
-            context = {
-                "chat_id": result.chat_id,
-                "chat_title": result.chat_title,
-                "trace_id": result.trace_id,
-                "attempt_id": result.attempt_id,
-                "simulation_id": result.simulation_id,
-                "scenario_id": result.scenario_id,
-                "department_id": result.department_id,
-                "problem_statement": result.problem_statement,
-                "persona_id": result.persona_id,
-                "persona_name": result.persona_name,
-                "system_prompt": result.system_prompt,
-                "temperature": float(result.temperature)
-                if result.temperature is not None
-                else 0.0,
-                "reasoning": result.reasoning,
-                "model_id": result.model_id,
-                "model_name": result.model_name,
-                "provider": result.provider,
-                "base_url": result.base_url,
-                "api_key": result.api_key,
-                "custom_model": result.custom_model,
-                "provider_id": result.provider_id,
-                "provider_name": result.provider_name,
-                "agent_id": result.agent_id,
-                "image_input_enabled": result.image_input_enabled,
-                "copy_paste_allowed": result.copy_paste_allowed,
-                "profile_id": result.profile_id,
-                "documents": result.documents,
-            }
+            model_run_id = uuid.UUID(context_result.run_id)
 
             # Build input items
             input_items: list[TResponseInputItem] = []
 
             # Format document info if documents are available
-            if context["documents"]:
+            documents = context_result.documents or []
+            if documents:
                 # Convert composite type documents to dict format for format_document_info
                 documents_dict = [
                     {
-                        "id": doc.id,
-                        "name": doc.name,
-                        "file_path": doc.file_path,
-                        "mime_type": doc.mime_type,
+                        "id": str(doc.id) if doc.id else "",
+                        "name": str(doc.name) if doc.name else "",
+                        "file_path": str(doc.file_path) if doc.file_path else "",
+                        "mime_type": str(doc.mime_type) if doc.mime_type else "",
                     }
-                    for doc in context["documents"]
+                    for doc in documents
                 ]
+                image_input_enabled = (
+                    bool(context_result.image_input_enabled)
+                    if context_result.image_input_enabled is not None
+                    else False
+                )
                 document_info = format_document_info(
-                    documents_dict, context["image_input_enabled"]
+                    documents_dict, image_input_enabled
                 )
                 input_items.append(document_info)
 
             # Get all messages using execute_sql_typed
             messages_params = GetSimulationMessagesSqlParams(chat_id=chat_id_uuid)
-            messages_result = cast(
+            messages_context_result = cast(
                 GetSimulationMessagesSqlRow,
                 await execute_sql_typed(
                     conn, SQL_PATH_MESSAGES, params=messages_params
@@ -219,27 +286,33 @@ async def _member_generate_impl(
                     "audio": msg.audio,
                     "upload_id": msg.upload_id,
                 }
-                for msg in (messages_result.messages or [])
+                for msg in (messages_context_result.messages or [])
             ]
 
             # Prepare conversation history
             conversation_history, _ = get_simulation_conversation_history(messages)
 
             # Format chat scenario
-            chat_scenario = format_chat_scenario(context["problem_statement"])
+            problem_statement = (
+                str(context_result.problem_statement)
+                if context_result.problem_statement
+                else ""
+            )
+            chat_scenario = format_chat_scenario(problem_statement)
 
             input_items.insert(0, chat_scenario)
             input_items.extend(conversation_history)
 
             # Get member agent ID
-            member_agent_id = context["agent_id"]
+            member_agent_id = context_result.agent_id
             if not member_agent_id:
                 raise ValueError(
-                    f"Member Agent not found for chat {context['chat_id']}"
+                    f"Member Agent not found for chat {context_result.chat_id}"
                 )
 
             # Load agent tools from database
-            agent_id_uuid = uuid.UUID(member_agent_id)
+            # Ensure member_agent_id is a string before converting to UUID
+            agent_id_uuid = uuid.UUID(str(member_agent_id))
             from app.sql.types import GetAgentToolsSqlRow
 
             # Function returns multiple rows, so we call it directly with fetch()
@@ -253,10 +326,24 @@ async def _member_generate_impl(
                 tool_config["name"]: tool_config for tool_config in agent_tools_config
             }
 
-            # Build member agent tools
-            # For member agent, tools are available but agent generates responses directly
-            # Tools (speak, regenerate, instruct, prompt, end_conversation, debug_info) are tracked via SQL/socket handlers
+            # Build member agent tools with function_tool wrappers
             member_tools: list[Any] = []
+
+            # Create speak tool wrapper
+            speak_config = tool_config_map.get("speak")
+            if speak_config:
+                message_desc = speak_config.get("argument_descriptions", {}).get(
+                    "message", "The message content to speak"
+                )
+            else:
+                message_desc = "The message content to speak"
+
+            async def speak(message: str = Field(description=message_desc)) -> str:
+                """Make a message speak (for user or assistant messages)."""
+                return "Tool call confirmed for speak"
+
+            if "speak" in tool_config_map:
+                member_tools.append(function_tool(speak))
 
             # Add debug_info tool if available
             if "debug_info" in tool_config_map:
@@ -264,40 +351,353 @@ async def _member_generate_impl(
 
                 member_tools.append(debug_info)
 
-            # Note: speak, regenerate, instruct, prompt, and end_conversation tools
-            # are tracked via SQL/socket handlers but don't need function_tool wrappers
-            # for member agent since it generates student responses directly
-
             # Create agent instance with loaded tools
+            persona_name = (
+                str(context_result.persona_name)
+                if context_result.persona_name
+                else "Member Agent"
+            )
+            system_prompt = (
+                str(context_result.system_prompt)
+                if context_result.system_prompt
+                else ""
+            )
+            temperature = (
+                float(context_result.temperature)
+                if context_result.temperature is not None
+                else 0.0
+            )
+            model_name = (
+                str(context_result.model_name) if context_result.model_name else ""
+            )
+            provider_name = (
+                str(context_result.provider_name)
+                if context_result.provider_name
+                else ""
+            )
+            base_url = str(context_result.base_url) if context_result.base_url else None
+            reasoning = (
+                str(context_result.reasoning) if context_result.reasoning else None
+            )
+            api_key = str(context_result.api_key) if context_result.api_key else ""
+
             member_agent = GenericAgent(
-                agent_name=context["persona_name"] or "Member Agent",
-                system_prompt=context["system_prompt"],
-                temperature=context["temperature"],
-                model_name=context["model_name"],
-                provider=context["provider_name"],
-                base_url=context["base_url"],
-                reasoning=context["reasoning"],
-                api_key=context["api_key"],
+                agent_name=persona_name,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                model_name=model_name,
+                provider=provider_name,
+                base_url=base_url,
+                reasoning=reasoning,
+                api_key=api_key,
                 tools=member_tools,
             )
 
             agent_instance = member_agent.agent()
 
+            # Track tool calls for this chat
+            tool_calls_dict: dict[str, dict[str, Any]] = {}
+            fake_id_to_real_id: dict[str, str] = {}
+            tool_call_counter = 0
+
+            # Find latest user message for branching
+            parent_message_id_for_branching: uuid.UUID | None = None
+            for msg in reversed(messages):
+                if msg.get("role") == "user":
+                    parent_message_id_for_branching = uuid.UUID(msg["id"])
+                    break
+
             # Run agent with streaming
+            chat_title = (
+                str(context_result.chat_title) if context_result.chat_title else ""
+            )
+            trace_id = str(context_result.trace_id) if context_result.trace_id else None
+            attempt_id = (
+                str(context_result.attempt_id) if context_result.attempt_id else None
+            )
+
             with trace(
-                context["chat_title"],
-                trace_id=context["trace_id"],
-                group_id=context["attempt_id"],
+                chat_title,
+                trace_id=trace_id,
+                group_id=attempt_id,
             ):
-                result_agent = await Runner.run(
+                result_runner = Runner.run_streamed(
                     agent_instance,
                     input=input_items,
                     context=DebugContext(conn=conn, run_id=model_run_id),
                 )
 
+            # Store the result in active runs for potential cancellation
+            await store_active_run(chat_id_str, result_runner)
+
+            try:
+                # Process streaming events
+                async for event in result_runner.stream_events():
+                    # Check for raw_response_event and inspect data for tool call deltas
+                    if hasattr(event, "type") and event.type == "raw_response_event":
+                        event_data = getattr(event, "data", None)
+                        if not event_data:
+                            continue
+
+                        event_data_type = (
+                            getattr(event_data, "type", None)
+                            if hasattr(event_data, "type")
+                            else None
+                        )
+
+                        # Handle response.output_item.added to get tool name and item_id
+                        if event_data_type == "response.output_item.added":
+                            item = getattr(event_data, "item", None)
+                            if item:
+                                item_type = (
+                                    getattr(item, "type", None)
+                                    if hasattr(item, "type")
+                                    else None
+                                )
+                                if item_type == "function_call":
+                                    fake_item_id = getattr(item, "id", None)
+                                    tool_name = getattr(item, "name", None)
+                                    call_id = getattr(item, "call_id", None)
+
+                                    if not fake_item_id:
+                                        fake_item_id = getattr(
+                                            event_data, "item_id", None
+                                        )
+
+                                    if call_id:
+                                        real_item_id = call_id
+                                    elif fake_item_id:
+                                        tool_call_counter += 1
+                                        real_item_id = f"{chat_id_str}_{tool_call_counter}_{uuid.uuid4().hex[:8]}"
+                                    else:
+                                        continue
+
+                                    if tool_name:
+                                        if fake_item_id:
+                                            fake_id_to_real_id[fake_item_id] = (
+                                                real_item_id
+                                            )
+
+                                        if real_item_id not in tool_calls_dict:
+                                            tool_calls_dict[real_item_id] = {
+                                                "name": tool_name,
+                                                "response_id": real_item_id,
+                                                "call_id": call_id,
+                                                "fake_id": fake_item_id,
+                                                "arguments_raw": "",
+                                                "content_so_far": "",
+                                                "db_message_id": None,
+                                                "db_tool_call_id": None,
+                                                "last_processed_index": 0,
+                                                "parent_message_id": parent_message_id_for_branching,
+                                                "completed": False,
+                                            }
+
+                                            # Emit generic tool_call_start event
+                                            await internal_sio.emit(
+                                                "member_progress",
+                                                {
+                                                    "sid": sid,
+                                                    "type": "tool_call_start",
+                                                    "chat_id": chat_id_str,
+                                                    "run_id": str(model_run_id),
+                                                    "tool_name": tool_name,
+                                                    "tool_call_id": real_item_id,
+                                                    "call_id": call_id or real_item_id,
+                                                    "arguments_raw": "",
+                                                },
+                                            )
+
+                        # Handle response.function_call_arguments.delta
+                        if event_data_type == "response.function_call_arguments.delta":
+                            fake_item_id = getattr(event_data, "item_id", None)
+                            arguments_delta = getattr(event_data, "delta", None)
+                            call_id = getattr(event_data, "call_id", None)
+
+                            if not arguments_delta:
+                                continue
+
+                            if call_id:
+                                delta_real_item_id = call_id
+                            elif fake_item_id:
+                                delta_real_item_id = fake_id_to_real_id.get(
+                                    fake_item_id
+                                )
+                                if not delta_real_item_id:
+                                    continue
+                            else:
+                                continue
+
+                            if not delta_real_item_id:
+                                continue
+
+                            tool_call_id = delta_real_item_id
+
+                            if tool_call_id not in tool_calls_dict:
+                                tool_calls_dict[tool_call_id] = {
+                                    "name": None,
+                                    "response_id": str(tool_call_id),
+                                    "call_id": call_id,
+                                    "arguments_raw": "",
+                                    "content_so_far": "",
+                                    "db_message_id": None,
+                                    "db_tool_call_id": None,
+                                    "last_processed_index": 0,
+                                    "parent_message_id": parent_message_id_for_branching,
+                                    "completed": False,
+                                }
+
+                            tool_call_state = tool_calls_dict[tool_call_id]
+
+                            if tool_call_state["name"] is None:
+                                tool_call_state["arguments_raw"] += arguments_delta
+                                continue
+
+                            tool_name = tool_call_state["name"]
+                            prev_raw = tool_call_state["arguments_raw"]
+                            tool_call_state["arguments_raw"] += arguments_delta
+                            new_raw = tool_call_state["arguments_raw"]
+
+                            # Extract content based on tool type
+                            field_name = (
+                                "message" if tool_name == "speak" else "content"
+                            )
+                            (
+                                new_chars,
+                                new_index,
+                                in_field,
+                            ) = extract_new_chars(
+                                prev_raw,
+                                new_raw,
+                                tool_call_state["last_processed_index"],
+                                field_name,
+                            )
+                            tool_call_state["last_processed_index"] = new_index
+
+                            if new_chars:
+                                tool_call_state["content_so_far"] += new_chars
+
+                                # Emit progress event (this IS the progress, not a separate handler)
+                                await internal_sio.emit(
+                                    "member_progress",
+                                    {
+                                        "sid": sid,
+                                        "type": "tool_call_progress",
+                                        "chat_id": chat_id_str,
+                                        "run_id": str(model_run_id),
+                                        "tool_name": tool_name,
+                                        "tool_call_id": tool_call_id,
+                                        "call_id": call_id or tool_call_id,
+                                        "token": new_chars,
+                                        "accumulated_content": tool_call_state[
+                                            "content_so_far"
+                                        ],
+                                        "arguments_raw": new_raw,
+                                        "parent_message_id": str(
+                                            parent_message_id_for_branching
+                                        )
+                                        if parent_message_id_for_branching
+                                        else None,
+                                    },
+                                )
+
+                    # Check for tool call completion
+                    if hasattr(event, "type") and event.type == "raw_response_event":
+                        event_data = getattr(event, "data", None)
+                        if event_data:
+                            event_data_type = (
+                                getattr(event_data, "type", None)
+                                if hasattr(event_data, "type")
+                                else None
+                            )
+                            if event_data_type == "response.output_item.done":
+                                fake_item_id = getattr(event_data, "item_id", None)
+                                item = getattr(event_data, "item", None)
+                                call_id = None
+                                if item:
+                                    call_id = getattr(item, "call_id", None)
+                                if not call_id:
+                                    call_id = getattr(event_data, "call_id", None)
+
+                                if call_id:
+                                    done_real_item_id = call_id
+                                elif fake_item_id:
+                                    done_real_item_id = fake_id_to_real_id.get(
+                                        fake_item_id
+                                    )
+                                else:
+                                    continue
+
+                                if not done_real_item_id:
+                                    continue
+
+                                if done_real_item_id in tool_calls_dict:
+                                    tool_call_id = done_real_item_id
+                                    tool_call_state = tool_calls_dict[tool_call_id]
+
+                                    if tool_call_state.get("completed"):
+                                        continue
+
+                                    tool_call_state["completed"] = True
+                                    tool_name = tool_call_state["name"]
+
+                                    # Extract final content from JSON
+                                    final_content = tool_call_state["content_so_far"]
+                                    if tool_call_state["arguments_raw"]:
+                                        try:
+                                            final_args = json.loads(
+                                                tool_call_state["arguments_raw"]
+                                            )
+                                            if (
+                                                tool_name == "speak"
+                                                and "message" in final_args
+                                            ):
+                                                final_content = final_args["message"]
+                                        except json.JSONDecodeError:
+                                            pass
+
+                                    tool_call_state["content_so_far"] = final_content
+
+                                    # Emit generic tool_call_complete event
+                                    await internal_sio.emit(
+                                        "member_complete",
+                                        {
+                                            "sid": sid,
+                                            "type": "tool_call_complete",
+                                            "chat_id": chat_id_str,
+                                            "run_id": str(model_run_id),
+                                            "tool_name": tool_name,
+                                            "tool_call_id": tool_call_id,
+                                            "call_id": call_id or tool_call_id,
+                                            "final_content": final_content,
+                                            "arguments_raw": tool_call_state[
+                                                "arguments_raw"
+                                            ],
+                                        },
+                                    )
+
+                                    del tool_calls_dict[tool_call_id]
+
+            except BaseException as stream_error:
+                if isinstance(
+                    stream_error,
+                    (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
+                ):
+                    raise
+                raise
+            except Exception as stream_error:
+                raise
+            finally:
+                # Clean up active run
+                await remove_active_run(chat_id_str)
+
             # Emit async pricing event
-            usage = result_agent.context_wrapper.usage
-            assistant_output = getattr(result_agent, "final_output", None) or ""
+            usage = result_runner.context_wrapper.usage
+            department_id_str = (
+                str(context_result.department_id)
+                if context_result.department_id
+                else ""
+            )
             await internal_sio.emit(
                 "log_run",
                 {
@@ -305,22 +705,21 @@ async def _member_generate_impl(
                     "operationType": "member",
                     "inputTextTokens": usage.input_tokens,
                     "outputTextTokens": usage.output_tokens,
-                    "systemPrompt": context["system_prompt"],
+                    "systemPrompt": system_prompt,
                     "inputItems": input_items,
-                    "assistantOutput": assistant_output,
-                    "departmentId": str(context.get("department_id")),
+                    "assistantOutput": None,  # Tool calls handle their own output
+                    "departmentId": department_id_str,
                 },
             )
 
-            # Emit completion event
+            # Emit run completion event (dispatched by complete.py)
             await internal_sio.emit(
-                "member_generate_complete",
+                "member_complete",
                 {
                     "sid": sid,
                     "type": "run_complete",
                     "chat_id": chat_id_str,
                     "run_id": str(model_run_id),
-                    "message": assistant_output,
                 },
             )
 

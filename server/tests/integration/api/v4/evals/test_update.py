@@ -34,4 +34,3 @@ async def test_update_eval_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

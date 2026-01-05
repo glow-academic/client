@@ -1,4 +1,4 @@
-"""Handler for member_prompt_eval_start WebSocket event - eval-specific logic for member prompt tool."""
+"""Handler for prompt_instruct_eval_start WebSocket event - eval-specific logic for member instruct tool."""
 
 import uuid
 from typing import Any
@@ -11,14 +11,14 @@ from app.infra.v4.websocket.openapi_helpers import register_client_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
 
-from .call import MemberPromptToolErrorSqlRow
+from .call import PromptInstructToolErrorSqlRow
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-class MemberPromptEvalStartApiRequest(BaseModel):
-    """Request to start member prompt tool eval."""
+class PromptInstructEvalStartApiRequest(BaseModel):
+    """Request to start member instruct tool eval."""
 
     test_id: str
     attempt_id: str
@@ -28,13 +28,13 @@ class MemberPromptEvalStartApiRequest(BaseModel):
     tool_id: str
 
 
-async def _member_prompt_eval_impl(
+async def _prompt_instruct_eval_impl(
     sid: str,
-    data: MemberPromptEvalStartApiRequest,
+    data: PromptInstructEvalStartApiRequest,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
-    """Handle member_prompt_eval_start requests via WebSocket."""
+    """Handle prompt_instruct_eval_start requests via WebSocket."""
     # TODO: Implement actual eval logic here
     # For now, placeholder
 
@@ -50,19 +50,19 @@ async def _member_prompt_eval_impl(
             "agent_id": None,
             "tool_id": data.tool_id,
             "success": True,
-            "message": "Member prompt eval completed successfully",
+            "message": "Member instruct eval completed successfully",
         },
         sid=sid,
     )
 
 
-@internal_sio.on("member_prompt_eval_start")  # type: ignore
-async def member_prompt_eval_internal(data: dict[str, Any]) -> None:
-    """Handle member_prompt_eval_start event from internal bus."""
+@internal_sio.on("prompt_instruct_eval_start")  # type: ignore
+async def prompt_instruct_eval_internal(data: dict[str, Any]) -> None:
+    """Handle prompt_instruct_eval_start event from internal bus."""
     await handle_internal_event(
         data=data,
-        request_type=MemberPromptEvalStartApiRequest,
-        handler=_member_prompt_eval_impl,  # type: ignore[arg-type]
+        request_type=PromptInstructEvalStartApiRequest,
+        handler=_prompt_instruct_eval_impl,  # type: ignore[arg-type]
         error_event_name="benchmark_error",
         error_response_type=None,  # Will be handled by benchmark_error handler
     )
@@ -71,7 +71,6 @@ async def member_prompt_eval_internal(data: dict[str, Any]) -> None:
 register_client_endpoint(
     server_router,
     "/eval",
-    MemberPromptEvalStartApiRequest,
-    "Execute member prompt tool for eval",
+    PromptInstructEvalStartApiRequest,
+    "Execute member instruct tool for eval",
 )
-

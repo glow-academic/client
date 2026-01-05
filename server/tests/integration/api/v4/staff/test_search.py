@@ -29,4 +29,3 @@ async def test_search_staff(
     assert data is not None
     assert "profiles" in data
     assert isinstance(data["profiles"], list)
-

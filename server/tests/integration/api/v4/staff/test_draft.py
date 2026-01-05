@@ -36,4 +36,3 @@ async def test_patch_staff_draft_create(
     assert data["newVersion"] == 1
     assert "draftExists" in data
     assert data["draftExists"] is False  # Newly created
-

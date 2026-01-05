@@ -66,25 +66,39 @@ async def test_create_scenario_minimal(
     assert typed_scenario.active is True
 
     # Verify self-referencing tree edge was created using SQL file
-    from tests.sql.types import GetScenarioTreeEdgeV4SqlParams, GetScenarioTreeEdgeV4SqlRow
+    from tests.sql.types import (
+        GetScenarioTreeEdgeV4SqlParams,
+        GetScenarioTreeEdgeV4SqlRow,
+    )
 
     tree_edge_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_tree_edge_v4_complete.sql",
-        params=GetScenarioTreeEdgeV4SqlParams(input_scenario_id=UUID(data["scenarioId"])),
+        params=GetScenarioTreeEdgeV4SqlParams(
+            input_scenario_id=UUID(data["scenarioId"])
+        ),
     )
-    typed_tree_edge = GetScenarioTreeEdgeV4SqlRow.model_validate(tree_edge_result.model_dump())
+    typed_tree_edge = GetScenarioTreeEdgeV4SqlRow.model_validate(
+        tree_edge_result.model_dump()
+    )
     assert typed_tree_edge.parent_id is not None
 
     # Verify problem statement was created using SQL file
-    from tests.sql.types import GetScenarioProblemStatementV4SqlParams, GetScenarioProblemStatementV4SqlRow
+    from tests.sql.types import (
+        GetScenarioProblemStatementV4SqlParams,
+        GetScenarioProblemStatementV4SqlRow,
+    )
 
     problem_statement_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql",
-        params=GetScenarioProblemStatementV4SqlParams(input_scenario_id=UUID(data["scenarioId"])),
+        params=GetScenarioProblemStatementV4SqlParams(
+            input_scenario_id=UUID(data["scenarioId"])
+        ),
     )
-    typed_problem_statement = GetScenarioProblemStatementV4SqlRow.model_validate(problem_statement_result.model_dump())
+    typed_problem_statement = GetScenarioProblemStatementV4SqlRow.model_validate(
+        problem_statement_result.model_dump()
+    )
     assert typed_problem_statement.scenario_id is not None
     assert typed_problem_statement.problem_statement == "Test problem statement"
 
@@ -119,7 +133,10 @@ async def test_create_scenario_with_departments(
     data = response.json()
 
     # Verify department link was created using SQL file
-    from tests.sql.types import GetScenarioDepartmentLinkV4SqlParams, GetScenarioDepartmentLinkV4SqlRow
+    from tests.sql.types import (
+        GetScenarioDepartmentLinkV4SqlParams,
+        GetScenarioDepartmentLinkV4SqlRow,
+    )
 
     dept_link_result = await execute_sql_typed(
         conn=db,
@@ -129,6 +146,8 @@ async def test_create_scenario_with_departments(
             input_department_id=UUID(dept_id),
         ),
     )
-    typed_dept_link = GetScenarioDepartmentLinkV4SqlRow.model_validate(dept_link_result.model_dump())
+    typed_dept_link = GetScenarioDepartmentLinkV4SqlRow.model_validate(
+        dept_link_result.model_dump()
+    )
     assert typed_dept_link.scenario_id is not None
     assert typed_dept_link.active is True

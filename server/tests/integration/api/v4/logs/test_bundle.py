@@ -25,4 +25,3 @@ async def test_get_logs_bundle(
 
     assert data is not None
     # Should return logs bundle data
-

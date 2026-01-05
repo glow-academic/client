@@ -61,4 +61,3 @@ async def test_get_auth_detail_from_list(
     assert data is not None
     assert "name" in data
     assert data["name"] is not None
-

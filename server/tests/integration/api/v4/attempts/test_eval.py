@@ -30,4 +30,3 @@ async def test_create_eval_attempt(
     data = response.json()
 
     assert data is not None
-

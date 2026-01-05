@@ -26,4 +26,3 @@ async def test_tus_upload(
     data = response.json()
 
     assert data is not None
-

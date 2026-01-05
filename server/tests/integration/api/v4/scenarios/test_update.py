@@ -31,7 +31,10 @@ async def test_update_scenario(
     await get_superadmin_alias(db)
 
     # Create a scenario first using SQL file
-    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
+    from tests.sql.types import (
+        CreateTestScenarioV4SqlParams,
+        CreateTestScenarioV4SqlRow,
+    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -41,7 +44,9 @@ async def test_update_scenario(
             scenario_problem_statement="Original problem",
         ),
     )
-    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -84,7 +89,10 @@ async def test_update_scenario(
     assert typed_scenario.active is False
 
     # Verify new problem statement was created (old one deactivated) using SQL file
-    from tests.sql.types import GetScenarioProblemStatementsV4SqlParams, GetScenarioProblemStatementsV4SqlRow
+    from tests.sql.types import (
+        GetScenarioProblemStatementsV4SqlParams,
+        GetScenarioProblemStatementsV4SqlRow,
+    )
 
     problem_statements_result = await execute_sql_typed(
         conn=db,
@@ -92,7 +100,9 @@ async def test_update_scenario(
         params=GetScenarioProblemStatementsV4SqlParams(input_scenario_id=scenario_id),
     )
     # Get all problem statements and check old/new
-    typed_problem_statements = GetScenarioProblemStatementsV4SqlRow.model_validate(problem_statements_result.model_dump())
+    typed_problem_statements = GetScenarioProblemStatementsV4SqlRow.model_validate(
+        problem_statements_result.model_dump()
+    )
     # The function returns a single row, but we need to check multiple rows
     # For now, verify the active one exists
     active_ps_result = await execute_sql_typed(
@@ -100,11 +110,16 @@ async def test_update_scenario(
         sql_path="tests/sql/v4/integration/api/scenarios/test_get_scenario_problem_statement_v4_complete.sql",
         params=GetScenarioProblemStatementV4SqlParams(input_scenario_id=scenario_id),
     )
-    typed_active_ps = GetScenarioProblemStatementV4SqlRow.model_validate(active_ps_result.model_dump())
+    typed_active_ps = GetScenarioProblemStatementV4SqlRow.model_validate(
+        active_ps_result.model_dump()
+    )
     assert typed_active_ps.problem_statement == "Updated problem statement"
 
     # Verify department link was created using SQL file
-    from tests.sql.types import GetScenarioDepartmentLinkV4SqlParams, GetScenarioDepartmentLinkV4SqlRow
+    from tests.sql.types import (
+        GetScenarioDepartmentLinkV4SqlParams,
+        GetScenarioDepartmentLinkV4SqlRow,
+    )
 
     dept_link_result = await execute_sql_typed(
         conn=db,
@@ -114,7 +129,9 @@ async def test_update_scenario(
             input_department_id=UUID(dept_id),
         ),
     )
-    typed_dept_link = GetScenarioDepartmentLinkV4SqlRow.model_validate(dept_link_result.model_dump())
+    typed_dept_link = GetScenarioDepartmentLinkV4SqlRow.model_validate(
+        dept_link_result.model_dump()
+    )
     assert typed_dept_link.scenario_id is not None
     assert typed_dept_link.active is True
 

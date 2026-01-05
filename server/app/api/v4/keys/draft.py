@@ -127,4 +127,3 @@ async def patch_key_draft(
             sql_params=sql_params,
             request=http_request,
         )
-

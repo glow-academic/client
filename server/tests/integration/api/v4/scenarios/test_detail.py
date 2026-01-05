@@ -30,7 +30,9 @@ async def test_get_scenario_detail(
             scenario_problem_statement="Test problem statement",
         ),
     )
-    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -70,4 +72,3 @@ async def test_get_scenario_detail_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

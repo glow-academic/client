@@ -25,4 +25,3 @@ async def test_get_leaderboard_bundle(
 
     assert data is not None
     # Should return leaderboard bundle data
-

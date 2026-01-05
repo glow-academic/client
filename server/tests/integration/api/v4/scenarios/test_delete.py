@@ -28,7 +28,10 @@ async def test_delete_scenario(
     await get_superadmin_alias(db)
 
     # Create a scenario using SQL file
-    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
+    from tests.sql.types import (
+        CreateTestScenarioV4SqlParams,
+        CreateTestScenarioV4SqlRow,
+    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -38,7 +41,9 @@ async def test_delete_scenario(
             scenario_problem_statement="Test problem",
         ),
     )
-    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -71,7 +76,10 @@ async def test_delete_scenario_in_use(
     await get_superadmin_alias(db)
 
     # Create a scenario using SQL file
-    from tests.sql.types import CreateTestScenarioV4SqlParams, CreateTestScenarioV4SqlRow
+    from tests.sql.types import (
+        CreateTestScenarioV4SqlParams,
+        CreateTestScenarioV4SqlRow,
+    )
 
     scenario_result = await execute_sql_typed(
         conn=db,
@@ -81,7 +89,9 @@ async def test_delete_scenario_in_use(
             scenario_problem_statement="Test problem",
         ),
     )
-    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = CreateTestScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -109,7 +119,9 @@ async def test_delete_scenario_in_use(
             practice_simulation=False,
         ),
     )
-    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(simulation_result.model_dump())
+    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(
+        simulation_result.model_dump()
+    )
     assert typed_simulation.simulation_id is not None
     simulation_id = typed_simulation.simulation_id
 

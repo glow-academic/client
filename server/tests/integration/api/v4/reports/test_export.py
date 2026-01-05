@@ -25,4 +25,3 @@ async def test_export_reports(
     data = response.json()
 
     assert data is not None
-

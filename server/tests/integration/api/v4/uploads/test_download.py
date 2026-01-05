@@ -28,4 +28,3 @@ async def test_download_upload_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

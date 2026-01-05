@@ -74,4 +74,3 @@ register_client_endpoint(
     MemberRegenerateEvalStartApiRequest,
     "Execute member regenerate tool for eval",
 )
-

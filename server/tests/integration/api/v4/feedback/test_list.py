@@ -26,4 +26,3 @@ async def test_list_feedback(
     assert data is not None
     assert "feedback" in data
     assert isinstance(data["feedback"], list)
-

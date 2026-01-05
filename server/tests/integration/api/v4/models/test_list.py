@@ -26,4 +26,3 @@ async def test_list_models(
     assert data is not None
     assert "models" in data
     assert isinstance(data["models"], list)
-

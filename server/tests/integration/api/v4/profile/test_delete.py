@@ -64,4 +64,3 @@ async def test_delete_profile_from_create(
 
     assert data is not None
     assert data["deleted"] is True
-

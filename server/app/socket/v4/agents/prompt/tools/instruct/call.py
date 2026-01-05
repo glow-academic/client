@@ -1,4 +1,4 @@
-"""Handler for member_instruct_tool WebSocket event - ONE EVENT PER FILE."""
+"""Handler for prompt_instruct_tool WebSocket event - ONE EVENT PER FILE."""
 
 import uuid
 from typing import Any
@@ -15,29 +15,40 @@ internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 
-class MemberInstructToolCallApiRequest(BaseModel):
+class PromptInstructToolCallApiRequest(BaseModel):
     """Request for member instruct tool call."""
 
-    content: str
+    sid: str
+    chat_id: str
+    run_id: str
+    call_id: str | None = None
+    tool_call_id: str
+    content: str | None = None
+    arguments_raw: str
 
 
-class MemberInstructToolCompleteApiRequest(BaseModel):
+class PromptInstructToolCompleteApiRequest(BaseModel):
     """Response indicating member instruct tool completed successfully."""
 
-    success: bool
-    message: str | None = None
+    sid: str
+    chat_id: str
+    run_id: str
+    tool_call_id: str
+    call_id: str | None = None
+    final_content: str
+    arguments_raw: str
 
 
-class MemberInstructToolErrorSqlRow(BaseModel):
+class PromptInstructToolErrorSqlRow(BaseModel):
     """Response indicating an error occurred in member instruct tool."""
 
     success: bool
     message: str
 
 
-async def _member_instruct_tool_call_impl(
+async def _prompt_instruct_tool_call_impl(
     sid: str,
-    data: MemberInstructToolCallApiRequest,
+    data: PromptInstructToolCallApiRequest,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
@@ -45,8 +56,8 @@ async def _member_instruct_tool_call_impl(
     # No-op for now - SQL files not yet created
     # Emit to internal complete event (will be handled by complete.py)
     await emit_to_internal(
-        "member_instruct_complete",
-        MemberInstructToolCompleteApiRequest(
+        "prompt_instruct_complete",
+        PromptInstructToolCompleteApiRequest(
             success=True,
             message="Member instruct processed successfully",
         ),
@@ -55,24 +66,23 @@ async def _member_instruct_tool_call_impl(
     )
 
 
-@internal_sio.on("member_instruct_tool")  # type: ignore
-async def member_instruct_tool_internal(
+@internal_sio.on("prompt_instruct_tool")  # type: ignore
+async def prompt_instruct_tool_internal(
     data: dict[str, Any],
 ) -> None:
-    """Handle member_instruct_tool event from internal bus (server-to-server)."""
+    """Handle prompt_instruct_tool event from internal bus (server-to-server)."""
     await handle_internal_event(
         data=data,
-        request_type=MemberInstructToolCallApiRequest,
-        handler=_member_instruct_tool_call_impl,  # type: ignore[arg-type]
-        error_event_name="member_instruct_error",
-        error_response_type=MemberInstructToolErrorSqlRow,
+        request_type=PromptInstructToolCallApiRequest,
+        handler=_prompt_instruct_tool_call_impl,  # type: ignore[arg-type]
+        error_event_name="prompt_instruct_error",
+        error_response_type=PromptInstructToolErrorSqlRow,
     )
 
 
 register_server_endpoint(
     server_router,
-    "/member_instruct_tool",
-    MemberInstructToolCallApiRequest,
+    "/prompt_instruct_tool",
+    PromptInstructToolCallApiRequest,
     "Member instruct tool handler",
 )
-

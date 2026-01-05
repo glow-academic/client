@@ -58,4 +58,3 @@ register_server_endpoint(
     MemberRegenerateProgressPayload,
     "Progress update for Member regenerate tool",
 )
-

@@ -11,8 +11,7 @@ import asyncpg  # type: ignore
 from app.main import get_pool
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import (_detect_function_in_sql, execute_sql_typed,
-                              load_sql)
+from utils.sql_helper import _detect_function_in_sql, execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 
@@ -155,8 +154,10 @@ async def get_realm_name_for_department(department_id: str | None, pool: Any) ->
         import uuid
         from typing import cast
 
-        from app.sql.types import (GetRealmNameForDepartmentSqlParams,
-                                   GetRealmNameForDepartmentSqlRow)
+        from app.sql.types import (
+            GetRealmNameForDepartmentSqlParams,
+            GetRealmNameForDepartmentSqlRow,
+        )
         from utils.sql_helper import execute_sql_typed
 
         async with pool.acquire() as conn:
@@ -271,8 +272,6 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
                     )
     except Exception as e:
         logger.warning(f"Could not ensure glow-client in master realm: {e}")
-
-
 
 
 async def sync_department_realm_by_settings(
@@ -553,7 +552,9 @@ async def sync_department_realm_by_settings(
             else:
                 # Pass NULL directly to PostgreSQL function
                 sql_params = (None,)
-            param_placeholders = ", ".join([f"${i + 1}" for i in range(len(sql_params))])
+            param_placeholders = ", ".join(
+                [f"${i + 1}" for i in range(len(sql_params))]
+            )
             function_call_sql = (
                 f'SELECT * FROM "{schema}"."{function_name}"({param_placeholders})'
             )
@@ -631,9 +632,7 @@ async def sync_department_realm_by_settings(
                     items_param_placeholders = ", ".join(
                         [f"${i + 1}" for i in range(len(items_sql_params))]
                     )
-                    items_function_call_sql = (
-                        f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
-                    )
+                    items_function_call_sql = f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
                     item_rows = await conn.fetch(
                         items_function_call_sql, *items_sql_params
                     )

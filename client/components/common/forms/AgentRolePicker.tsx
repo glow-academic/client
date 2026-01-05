@@ -68,6 +68,7 @@ export const AGENT_ROLES = [
     description: "Document generation agent",
   },
   { id: "member", name: "Member", description: "Member agent" },
+  { id: "prompt", name: "Prompt", description: "Prompt agent" },
 ] as const;
 
 export type AgentRole = (typeof AGENT_ROLES)[number]["id"];

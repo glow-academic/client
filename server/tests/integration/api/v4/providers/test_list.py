@@ -26,4 +26,3 @@ async def test_list_providers(
     assert data is not None
     assert "providers" in data
     assert isinstance(data["providers"], list)
-

@@ -25,4 +25,3 @@ async def test_get_reports_overview(
 
     assert data is not None
     # Should return reports overview data
-

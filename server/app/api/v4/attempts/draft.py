@@ -127,5 +127,3 @@ async def patch_attempt_draft(
             sql_params=sql_params,
             request=http_request,
         )
-
-

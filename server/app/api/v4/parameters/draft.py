@@ -102,7 +102,9 @@ async def patch_parameter_draft(
                 )
 
         # Convert SQL result to API response
-        api_response = PatchParameterDraftApiResponse.model_validate(result.model_dump())
+        api_response = PatchParameterDraftApiResponse.model_validate(
+            result.model_dump()
+        )
 
         # Invalidate cache after mutation
         # When creating a new draft, also invalidate profile context cache
@@ -127,4 +129,3 @@ async def patch_parameter_draft(
             sql_params=sql_params,
             request=http_request,
         )
-

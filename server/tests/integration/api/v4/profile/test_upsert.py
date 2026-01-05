@@ -86,4 +86,3 @@ async def test_upsert_profile_update(
     assert data is not None
     assert data["profileId"] == str(profile_id)  # Same profile ID
     assert data["created"] is False  # Should be updated, not created
-

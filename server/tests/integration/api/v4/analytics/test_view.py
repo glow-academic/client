@@ -25,4 +25,3 @@ async def test_get_analytics_view(
 
     assert data is not None
     # Should return analytics view data
-

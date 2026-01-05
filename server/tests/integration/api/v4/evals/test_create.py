@@ -58,4 +58,3 @@ async def test_create_eval_minimal(
     assert data is not None
     assert data["success"] is True
     assert "evalId" in data
-

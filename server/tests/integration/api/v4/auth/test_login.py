@@ -46,4 +46,3 @@ async def test_get_login_data_with_department(
     assert data is not None
     assert "providers" in data
     assert "departments" in data
-

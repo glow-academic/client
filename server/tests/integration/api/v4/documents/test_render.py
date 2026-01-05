@@ -33,7 +33,9 @@ async def test_render_document_template(
             document_active=True,
         ),
     )
-    typed_document = CreateTestDocumentSqlRow.model_validate(document_result.model_dump())
+    typed_document = CreateTestDocumentSqlRow.model_validate(
+        document_result.model_dump()
+    )
     assert typed_document.document_id is not None
     document_id = typed_document.document_id
 
@@ -43,7 +45,9 @@ async def test_render_document_template(
         sql_path="tests/sql/v4/integration/api/documents/test_get_document_by_id_v4_complete.sql",
         params=GetDocumentByIdSqlParams(document_id=document_id),
     )
-    typed_doc_verify = GetDocumentByIdSqlRow.model_validate(doc_verify_result.model_dump())
+    typed_doc_verify = GetDocumentByIdSqlRow.model_validate(
+        doc_verify_result.model_dump()
+    )
     assert typed_doc_verify.document_id == document_id
 
     # v4 routes get profile_id from router dependency
@@ -67,7 +71,10 @@ async def test_render_document_template(
     else:
         data = response.json()
         assert "detail" in data
-        assert "not found" in data["detail"].lower() or "template" in data["detail"].lower()
+        assert (
+            "not found" in data["detail"].lower()
+            or "template" in data["detail"].lower()
+        )
 
 
 async def test_render_document_template_with_args(
@@ -86,7 +93,9 @@ async def test_render_document_template_with_args(
             document_active=True,
         ),
     )
-    typed_document = CreateTestDocumentSqlRow.model_validate(document_result.model_dump())
+    typed_document = CreateTestDocumentSqlRow.model_validate(
+        document_result.model_dump()
+    )
     assert typed_document.document_id is not None
     document_id = typed_document.document_id
 
@@ -136,4 +145,3 @@ async def test_render_document_template_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower() or "template" in data["detail"].lower()
-

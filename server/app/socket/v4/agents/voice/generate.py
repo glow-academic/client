@@ -173,8 +173,16 @@ async def _simulation_voice_generate_impl(
                 sql = load_sql("app/sql/v4/simulations/get_simulation_run_context.sql")
                 context_result = await conn.fetchrow(sql, uuid.UUID(data.chat_id))
                 if context_result:
-                    attempt_id = str(context_result.get("attempt_id")) if context_result.get("attempt_id") else None
-                    simulation_id = str(context_result.get("simulation_id")) if context_result.get("simulation_id") else None
+                    attempt_id = (
+                        str(context_result.get("attempt_id"))
+                        if context_result.get("attempt_id")
+                        else None
+                    )
+                    simulation_id = (
+                        str(context_result.get("simulation_id"))
+                        if context_result.get("simulation_id")
+                        else None
+                    )
         except Exception:
             pass  # Ignore errors when fetching context
         await internal_sio.emit(

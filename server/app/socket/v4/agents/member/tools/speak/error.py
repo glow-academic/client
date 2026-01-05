@@ -50,4 +50,3 @@ register_server_endpoint(
     MemberSpeakToolErrorSqlRow,
     "Error occurred in Member speak tool",
 )
-

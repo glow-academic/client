@@ -25,4 +25,3 @@ async def test_get_create_staff_data(
 
     assert data is not None
     # Should return data needed for create staff UI
-

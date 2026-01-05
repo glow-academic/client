@@ -110,4 +110,3 @@ async def test_patch_parameter_draft_version_mismatch(
     assert response.status_code == 200
     data = response.json()
     assert data["draftExists"] is False  # New draft created due to version mismatch
-

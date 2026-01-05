@@ -28,4 +28,3 @@ async def test_update_settings(
     assert data is not None
     assert "success" in data
     assert data["success"] is True
-

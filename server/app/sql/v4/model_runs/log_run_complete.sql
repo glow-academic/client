@@ -289,11 +289,11 @@ new_system_message AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as system_message_id, created_at, updated_at
 ),
--- Get prompt tool_id for member agent
+-- Get prompt tool_id for prompt agent
 get_prompt_tool_id AS (
     SELECT id as tool_id
     FROM tools
-    WHERE name = 'prompt' AND agent_role = 'member'::agent_role AND active = true
+    WHERE name = 'prompt' AND agent_role = 'prompt'::agent_role AND active = true
     LIMIT 1
 ),
 system_tool_call AS (
@@ -391,11 +391,11 @@ new_developer_messages AS (
     )
     RETURNING id as message_id, created_at, updated_at
 ),
--- Get instruct tool_id for member agent
+-- Get instruct tool_id for prompt agent
 get_instruct_tool_id AS (
     SELECT id as tool_id
     FROM tools
-    WHERE name = 'instruct' AND agent_role = 'member'::agent_role AND active = true
+    WHERE name = 'instruct' AND agent_role = 'prompt'::agent_role AND active = true
     LIMIT 1
 ),
 developer_tool_calls_with_rn AS (

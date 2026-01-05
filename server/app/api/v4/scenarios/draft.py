@@ -127,4 +127,3 @@ async def patch_scenario_draft(
             sql_params=sql_params,
             request=http_request,
         )
-

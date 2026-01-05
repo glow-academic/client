@@ -25,4 +25,3 @@ async def test_get_home_overview(
 
     assert data is not None
     # Should return home overview data
-

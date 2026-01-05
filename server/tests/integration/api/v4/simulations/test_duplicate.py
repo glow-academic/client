@@ -44,7 +44,9 @@ async def test_duplicate_simulation(
             practice_simulation=False,
         ),
     )
-    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(simulation_result.model_dump())
+    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(
+        simulation_result.model_dump()
+    )
     assert typed_simulation.simulation_id is not None
     simulation_id = typed_simulation.simulation_id
 
@@ -82,4 +84,3 @@ async def test_duplicate_simulation_not_found(
     data = response.json()
     assert "detail" in data
     assert "not found" in data["detail"].lower()
-

@@ -63,4 +63,3 @@ async def test_get_profile_by_email_from_create(
     assert data["profileId"] is not None
     assert data["first_name"] == "Lookup"
     assert data["last_name"] == "User"
-

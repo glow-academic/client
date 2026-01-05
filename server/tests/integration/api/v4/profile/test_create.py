@@ -101,4 +101,3 @@ async def test_create_profile_no_emails(
     assert response.status_code == 400
     data = response.json()
     assert "email" in data["detail"].lower()
-

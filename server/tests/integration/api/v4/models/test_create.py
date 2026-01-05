@@ -33,4 +33,3 @@ async def test_create_model(
     assert data["success"] is True
     assert "modelId" in data
     assert data["modelId"] is not None
-

@@ -75,4 +75,3 @@ async def test_patch_auth_draft_update(
     assert data["draftId"] == str(draft_id)
     assert data["newVersion"] == version + 1
     assert data["draftExists"] is True  # Already existed
-

@@ -313,8 +313,12 @@ async def _simulation_text_generate_impl(
                         "sid": sid,
                         "success": False,
                         "message": "No active departments found in system",
-                        "attempt_id": str(result.attempt_id) if result.attempt_id else None,
-                        "simulation_id": str(result.simulation_id) if result.simulation_id else None,
+                        "attempt_id": str(result.attempt_id)
+                        if result.attempt_id
+                        else None,
+                        "simulation_id": str(result.simulation_id)
+                        if result.simulation_id
+                        else None,
                         "operation": "text_generation",
                     },
                 )
@@ -1151,8 +1155,16 @@ Tool Usage Instructions:
                 sql = load_sql("app/sql/v4/simulations/get_simulation_run_context.sql")
                 context_result = await conn.fetchrow(sql, data.chat_id)
                 if context_result:
-                    attempt_id = str(context_result.get("attempt_id")) if context_result.get("attempt_id") else None
-                    simulation_id = str(context_result.get("simulation_id")) if context_result.get("simulation_id") else None
+                    attempt_id = (
+                        str(context_result.get("attempt_id"))
+                        if context_result.get("attempt_id")
+                        else None
+                    )
+                    simulation_id = (
+                        str(context_result.get("simulation_id"))
+                        if context_result.get("simulation_id")
+                        else None
+                    )
         except Exception:
             pass  # Ignore errors when fetching context
 
@@ -1187,8 +1199,16 @@ Tool Usage Instructions:
                 sql = load_sql("app/sql/v4/simulations/get_simulation_run_context.sql")
                 context_result = await conn.fetchrow(sql, data.chat_id)
                 if context_result:
-                    attempt_id = str(context_result.get("attempt_id")) if context_result.get("attempt_id") else None
-                    simulation_id = str(context_result.get("simulation_id")) if context_result.get("simulation_id") else None
+                    attempt_id = (
+                        str(context_result.get("attempt_id"))
+                        if context_result.get("attempt_id")
+                        else None
+                    )
+                    simulation_id = (
+                        str(context_result.get("simulation_id"))
+                        if context_result.get("simulation_id")
+                        else None
+                    )
         except Exception:
             pass  # Ignore errors when fetching context
 

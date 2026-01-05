@@ -26,4 +26,3 @@ async def test_list_activity(
     assert data is not None
     assert "activity" in data
     assert isinstance(data["activity"], list)
-

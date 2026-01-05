@@ -113,4 +113,3 @@ async def test_patch_scenario_draft_version_mismatch(
     assert data is not None
     assert data["draftId"] != str(draft_id)  # New draft ID
     assert data["draftExists"] is False  # Newly created
-

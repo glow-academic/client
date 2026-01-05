@@ -63,4 +63,3 @@ async def test_duplicate_auth_from_list(
     assert data["success"] is True
     assert "authId" in data
     assert data["authId"] != str(auth_id)  # Should be a new ID
-

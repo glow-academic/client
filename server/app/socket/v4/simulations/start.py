@@ -6,14 +6,16 @@ from typing import Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import (CheckNextIncompleteScenarioSqlParams,
-                           CheckNextIncompleteScenarioSqlRow,
-                           StartSimulationAttemptSqlParams,
-                           StartSimulationAttemptSqlRow)
+from app.sql.types import (
+    CheckNextIncompleteScenarioSqlParams,
+    CheckNextIncompleteScenarioSqlRow,
+    StartSimulationAttemptSqlParams,
+    StartSimulationAttemptSqlRow,
+)
+
 # Removed gen_trace_id import - trace_id comes from SQL
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
@@ -446,7 +448,9 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                 await execute_sql_typed(
                     conn,
                     "app/sql/v4/simulations/check_next_incomplete_scenario_complete.sql",
-                    params=CheckNextIncompleteScenarioSqlParams(attempt_id=uuid.UUID(attempt_id)),
+                    params=CheckNextIncompleteScenarioSqlParams(
+                        attempt_id=uuid.UUID(attempt_id)
+                    ),
                 ),
             )
 
@@ -461,7 +465,11 @@ async def _simulation_start_impl(sid: str, data: StartSimulationPayload) -> None
                 return
 
             has_next_scenario = next_scenario_result.has_next_scenario or False
-            next_scenario_id = str(next_scenario_result.next_scenario_id) if next_scenario_result.next_scenario_id else None
+            next_scenario_id = (
+                str(next_scenario_result.next_scenario_id)
+                if next_scenario_result.next_scenario_id
+                else None
+            )
 
             # Emit success event
             await simulation_started(

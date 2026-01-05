@@ -46,7 +46,9 @@ async def test_update_simulation(
             practice_simulation=False,
         ),
     )
-    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(simulation_result.model_dump())
+    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(
+        simulation_result.model_dump()
+    )
     assert typed_simulation.simulation_id is not None
     simulation_id = typed_simulation.simulation_id
 
@@ -59,7 +61,9 @@ async def test_update_simulation(
         sql_path="tests/sql/v4/integration/api/simulations/test_get_or_create_scenario_v4_complete.sql",
         params=None,
     )
-    typed_scenario = GetOrCreateScenarioV4SqlRow.model_validate(scenario_result.model_dump())
+    typed_scenario = GetOrCreateScenarioV4SqlRow.model_validate(
+        scenario_result.model_dump()
+    )
     assert typed_scenario.scenario_id is not None
     scenario_id = typed_scenario.scenario_id
 
@@ -86,14 +90,21 @@ async def test_update_simulation(
     assert data["message"] == "Simulation 'Updated Simulation' updated successfully"
 
     # Verify simulation was updated using SQL file
-    from tests.sql.types import GetSimulationByIdWithTimeLimitV4SqlParams, GetSimulationByIdWithTimeLimitV4SqlRow
+    from tests.sql.types import (
+        GetSimulationByIdWithTimeLimitV4SqlParams,
+        GetSimulationByIdWithTimeLimitV4SqlRow,
+    )
 
     updated_simulation_result = await execute_sql_typed(
         conn=db,
         sql_path="tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql",
-        params=GetSimulationByIdWithTimeLimitV4SqlParams(input_simulation_id=simulation_id),
+        params=GetSimulationByIdWithTimeLimitV4SqlParams(
+            input_simulation_id=simulation_id
+        ),
     )
-    typed_updated_simulation = GetSimulationByIdWithTimeLimitV4SqlRow.model_validate(updated_simulation_result.model_dump())
+    typed_updated_simulation = GetSimulationByIdWithTimeLimitV4SqlRow.model_validate(
+        updated_simulation_result.model_dump()
+    )
     assert typed_updated_simulation.simulation_id is not None
     assert typed_updated_simulation.title == "Updated Simulation"
     assert typed_updated_simulation.description == "Updated Description"

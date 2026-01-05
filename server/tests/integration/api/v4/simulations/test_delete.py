@@ -45,7 +45,9 @@ async def test_delete_simulation(
             practice_simulation=False,
         ),
     )
-    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(simulation_result.model_dump())
+    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(
+        simulation_result.model_dump()
+    )
     assert typed_simulation.simulation_id is not None
     simulation_id = typed_simulation.simulation_id
 
@@ -69,5 +71,7 @@ async def test_delete_simulation(
         sql_path="tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_v4_complete.sql",
         params=GetSimulationByIdV4SqlParams(input_simulation_id=simulation_id),
     )
-    typed_deleted_simulation = GetSimulationByIdV4SqlRow.model_validate(deleted_simulation_result.model_dump())
+    typed_deleted_simulation = GetSimulationByIdV4SqlRow.model_validate(
+        deleted_simulation_result.model_dump()
+    )
     assert typed_deleted_simulation.simulation_id is None

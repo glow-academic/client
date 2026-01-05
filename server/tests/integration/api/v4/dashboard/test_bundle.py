@@ -25,4 +25,3 @@ async def test_get_dashboard_bundle(
 
     assert data is not None
     # Should return dashboard bundle data
-

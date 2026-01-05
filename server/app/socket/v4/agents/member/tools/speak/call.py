@@ -18,14 +18,25 @@ server_router = APIRouter()
 class MemberSpeakToolCallApiRequest(BaseModel):
     """Request for member speak tool call."""
 
+    sid: str
+    chat_id: str
+    run_id: str
+    call_id: str | None = None
+    tool_call_id: str
     message: str | None = None
+    arguments_raw: str
 
 
 class MemberSpeakToolCompleteApiRequest(BaseModel):
     """Response indicating member speak tool completed successfully."""
 
-    success: bool
-    message: str | None = None
+    sid: str
+    chat_id: str
+    run_id: str
+    tool_call_id: str
+    call_id: str | None = None
+    final_message: str
+    arguments_raw: str
 
 
 class MemberSpeakToolErrorSqlRow(BaseModel):
@@ -75,4 +86,3 @@ register_server_endpoint(
     MemberSpeakToolCallApiRequest,
     "Member speak tool handler",
 )
-

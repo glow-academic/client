@@ -26,4 +26,3 @@ async def test_get_profile_new(
     assert data is not None
     # Should return default structure for creating a new profile
     # Exact fields depend on the API response structure
-

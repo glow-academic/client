@@ -75,4 +75,3 @@ register_server_endpoint(
     MemberRegenerateToolCallApiRequest,
     "Member regenerate tool handler",
 )
-

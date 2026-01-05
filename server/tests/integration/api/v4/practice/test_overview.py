@@ -25,4 +25,3 @@ async def test_get_practice_overview(
 
     assert data is not None
     # Should return practice overview data
-

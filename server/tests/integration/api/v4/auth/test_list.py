@@ -46,4 +46,3 @@ async def test_list_auth_empty(
     assert data is not None
     assert "auth" in data
     assert isinstance(data["auth"], list)
-

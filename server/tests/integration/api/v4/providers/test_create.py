@@ -32,4 +32,3 @@ async def test_create_provider(
     assert data["success"] is True
     assert "providerId" in data
     assert data["providerId"] is not None
-

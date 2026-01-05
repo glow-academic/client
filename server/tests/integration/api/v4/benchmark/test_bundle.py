@@ -25,4 +25,3 @@ async def test_get_benchmark_bundle(
 
     assert data is not None
     # Should return benchmark bundle data
-

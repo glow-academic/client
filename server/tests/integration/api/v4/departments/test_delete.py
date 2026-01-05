@@ -106,7 +106,9 @@ async def test_delete_department_in_use(
             practice_simulation=False,
         ),
     )
-    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(simulation_result.model_dump())
+    typed_simulation = CreateTestSimulationWithRubricV4SqlRow.model_validate(
+        simulation_result.model_dump()
+    )
     assert typed_simulation.simulation_id is not None
     simulation_id = typed_simulation.simulation_id
 

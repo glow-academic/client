@@ -74,4 +74,3 @@ register_client_endpoint(
     MemberSpeakEvalStartApiRequest,
     "Execute member speak tool for eval",
 )
-

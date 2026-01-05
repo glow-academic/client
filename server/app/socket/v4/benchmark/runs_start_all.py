@@ -247,4 +247,3 @@ async def benchmark_runs_start_all_error_api(
 ) -> dict[str, bool]:
     """Server-to-client event: Error occurred while starting runs."""
     return {"success": True}
-

@@ -50,4 +50,3 @@ register_server_endpoint(
     MemberRegenerateToolErrorSqlRow,
     "Error occurred in Member regenerate tool",
 )
-

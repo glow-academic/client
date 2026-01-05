@@ -17,6 +17,9 @@ from .progress import (
 from .progress import (
     server_router as progress_server_router,
 )
+from .tool_progress import (
+    server_router as tool_progress_server_router,
+)
 from .tools.conversation import (
     client_router as conversation_client_router,
 )
@@ -36,4 +39,5 @@ server_router.include_router(complete_server_router)
 server_router.include_router(error_server_router)
 server_router.include_router(eval_server_router)
 server_router.include_router(progress_server_router)
+server_router.include_router(tool_progress_server_router)
 server_router.include_router(conversation_server_router)

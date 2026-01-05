@@ -26,4 +26,3 @@ async def test_list_settings(
     assert data is not None
     assert "settings" in data
     assert isinstance(data["settings"], list)
-
