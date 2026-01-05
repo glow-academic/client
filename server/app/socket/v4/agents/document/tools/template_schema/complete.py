@@ -1,4 +1,4 @@
-"""Handler for document_template_schema_complete - finalizes generate_template_schema tool calls."""
+"""Handler for document_template_schema_complete - finalizes generate_schema tool calls."""
 
 import json
 import uuid

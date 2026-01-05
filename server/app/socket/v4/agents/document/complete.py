@@ -67,7 +67,7 @@ async def _document_complete_impl(
                     "arguments_raw": data.arguments_raw or "",
                 },
             )
-        elif data.tool_name == "generate_template_html":
+        elif data.tool_name == "generate_html":
             await internal_sio.emit(
                 "document_template_html_complete",
                 {
@@ -81,7 +81,7 @@ async def _document_complete_impl(
                     "arguments_raw": data.arguments_raw or "",
                 },
             )
-        elif data.tool_name == "generate_template_schema":
+        elif data.tool_name == "generate_schema":
             await internal_sio.emit(
                 "document_template_schema_complete",
                 {

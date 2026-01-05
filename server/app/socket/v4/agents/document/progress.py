@@ -3,12 +3,11 @@
 import uuid
 from typing import Any
 
-from fastapi import APIRouter
-from pydantic import BaseModel
-
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio
+from fastapi import APIRouter
+from pydantic import BaseModel
 
 internal_sio = get_internal_sio()
 
@@ -59,7 +58,7 @@ async def _document_progress_impl(
                     "arguments_raw": data.arguments_raw,
                 },
             )
-        elif data.tool_name == "generate_template_html":
+        elif data.tool_name == "generate_html":
             await internal_sio.emit(
                 "document_template_html_progress",
                 {
@@ -73,7 +72,7 @@ async def _document_progress_impl(
                     "arguments_raw": data.arguments_raw,
                 },
             )
-        elif data.tool_name == "generate_template_schema":
+        elif data.tool_name == "generate_schema":
             await internal_sio.emit(
                 "document_template_schema_progress",
                 {
@@ -104,7 +103,7 @@ async def _document_progress_impl(
                     "arguments_raw": data.arguments_raw,
                 },
             )
-        elif data.tool_name == "generate_template_html":
+        elif data.tool_name == "generate_html":
             await internal_sio.emit(
                 "document_template_html_progress",
                 {
@@ -118,7 +117,7 @@ async def _document_progress_impl(
                     "arguments_raw": data.arguments_raw,
                 },
             )
-        elif data.tool_name == "generate_template_schema":
+        elif data.tool_name == "generate_schema":
             await internal_sio.emit(
                 "document_template_schema_progress",
                 {

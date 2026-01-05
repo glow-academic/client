@@ -1,4 +1,4 @@
-"""Handler for document_template_schema_progress - handles incremental updates for generate_template_schema tool calls."""
+"""Handler for document_template_schema_progress - handles incremental updates for generate_schema tool calls."""
 
 import uuid
 from typing import Any

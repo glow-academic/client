@@ -323,7 +323,7 @@ async def _document_generate_impl(
             document_tools.append(function_tool(create_title))
 
             # Generate template HTML tool
-            html_config = tool_config_map_doc.get("generate_template_html")
+            html_config = tool_config_map_doc.get("generate_html")
             if html_config:
                 html_desc = html_config.get("argument_descriptions", {}).get(
                     "template_html",
@@ -332,7 +332,7 @@ async def _document_generate_impl(
             else:
                 html_desc = "Jinja template HTML content with placeholders like {{ variable_name }}"
 
-            async def generate_template_html(
+            async def generate_html(
                 template_html: str = Field(description=html_desc),
             ) -> str:
                 """Generate the Jinja template HTML for the document."""
@@ -340,10 +340,10 @@ async def _document_generate_impl(
                 document_progress["template_html"] = True
                 return "Generated template HTML successfully"
 
-            document_tools.append(function_tool(generate_template_html))
+            document_tools.append(function_tool(generate_html))
 
             # Generate template schema tool
-            schema_config = tool_config_map_doc.get("generate_template_schema")
+            schema_config = tool_config_map_doc.get("generate_schema")
             if schema_config:
                 schema_desc = schema_config.get("argument_descriptions", {}).get(
                     "schema_json",
@@ -352,7 +352,7 @@ async def _document_generate_impl(
             else:
                 schema_desc = "JSON string in TemplateSchema format describing the template context fields and types. Must have structure: { 'name': string, 'fields': [{ 'name': string, 'type': 'string'|'number'|'boolean'|'array'|'object', 'required': bool (optional), 'item': {...} (optional for arrays), 'fields': [...] (optional for objects) }] }"
 
-            async def generate_template_schema(
+            async def generate_schema(
                 schema_json: str = Field(description=schema_desc),
             ) -> str:
                 """Generate the TemplateSchema JSON for template context."""
@@ -360,7 +360,7 @@ async def _document_generate_impl(
                 document_progress["template_schema"] = True
                 return "Generated template schema successfully"
 
-            document_tools.append(function_tool(generate_template_schema))
+            document_tools.append(function_tool(generate_schema))
 
             # Create tool use behavior to wait for both tools to be called
             def tool_use_behavior(
@@ -452,7 +452,7 @@ async def _document_generate_impl(
                         "role": "user",
                         "content": (
                             "Based on the document context provided above, generate a Jinja2 template HTML document and its corresponding JSON schema. "
-                            "You must call both generate_template_html and generate_template_schema tools. "
+                            "You must call both generate_html and generate_schema tools. "
                             "The template should be a complete HTML document with Jinja2 placeholders that fits the document's purpose and fields. "
                             "The schema should describe all template variables including their types (string, number, boolean, array, object) and whether they are required."
                         ),
@@ -464,7 +464,7 @@ async def _document_generate_impl(
                         "role": "user",
                         "content": (
                             "Generate a Jinja2 template HTML document and its corresponding JSON schema. "
-                            "You must call both generate_template_html and generate_template_schema tools. "
+                            "You must call both generate_html and generate_schema tools. "
                             "The template should be a complete HTML document with Jinja2 placeholders. "
                             "The schema should describe all template variables including their types (string, number, boolean, array, object) and whether they are required."
                         ),
@@ -711,14 +711,14 @@ async def _document_generate_impl(
                                     ):
                                         document_results["title"] = final_args["title"]
                                     elif (
-                                        tool_name == "generate_template_html"
+                                        tool_name == "generate_html"
                                         and "template_html" in final_args
                                     ):
                                         document_results["template_html"] = final_args[
                                             "template_html"
                                         ]
                                     elif (
-                                        tool_name == "generate_template_schema"
+                                        tool_name == "generate_schema"
                                         and "schema_json" in final_args
                                     ):
                                         document_results["template_schema"] = (
@@ -782,7 +782,7 @@ async def _document_generate_impl(
                         document_id=document_id if document_id else None,
                         error_message=(
                             "Document agent did not call both required tools. "
-                            "Expected: generate_template_html and generate_template_schema"
+                            "Expected: generate_html and generate_schema"
                         ),
                     ),
                     sid=sid,

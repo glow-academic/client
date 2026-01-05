@@ -1,4 +1,4 @@
-"""Handler for document_template_html_progress - handles incremental updates for generate_template_html tool calls."""
+"""Handler for document_template_html_progress - handles incremental updates for generate_html tool calls."""
 
 import uuid
 from typing import Any
