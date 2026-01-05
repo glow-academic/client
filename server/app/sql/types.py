@@ -8194,26 +8194,128 @@ class DeleteDocumentApiResponse(BaseModel):
 
 
 
+# Generated from: document_generation_complete
+
+class DocumentGenerationCompleteSqlParams(BaseModel):
+
+    profile_id: UUID
+    run_id: UUID
+    file_path: str
+    file_size: int
+    template_html: str
+    template_schema_json: str
+    document_id: UUID | None = None
+    group_id: UUID | None = None
+    department_id: UUID | None = None
+    document_name: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.run_id,
+            self.file_path,
+            self.file_size,
+            self.template_html,
+            self.template_schema_json,
+            self.document_id,
+            self.group_id,
+            self.department_id,
+            self.document_name,
+        )
+
+class DocumentGenerationCompleteSqlRow(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    result_document_id: UUID | None = None
+    result_template_html: str | None = None
+    template_schema: Any | None = None
+    upload_id: UUID | None = None
+    template_mapping: Any | None = None
+    trace_id: str | None = None
+
+class DocumentGenerationCompleteApiRequest(BaseModel):
+
+    run_id: UUID
+    file_path: str
+    file_size: int
+    template_html: str
+    template_schema_json: str
+    document_id: UUID | None = None
+    group_id: UUID | None = None
+    department_id: UUID | None = None
+    document_name: str | None = None
+
+class DocumentGenerationCompleteApiResponse(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    result_document_id: UUID | None = None
+    result_template_html: str | None = None
+    template_schema: Any | None = None
+    upload_id: UUID | None = None
+    template_mapping: Any | None = None
+    trace_id: str | None = None
+
+
+
+# Generated from: document_generation_error
+
+class DocumentGenerationErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    error_message: str
+    document_id: UUID | None = None
+    group_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.error_message,
+            self.document_id,
+            self.group_id,
+        )
+
+class DocumentGenerationErrorSqlRow(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+class DocumentGenerationErrorApiRequest(BaseModel):
+
+    error_message: str
+    document_id: UUID | None = None
+    group_id: UUID | None = None
+
+class DocumentGenerationErrorApiResponse(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+    trace_id: str | None = None
+
+
+
 # Generated from: document_tool_progress_update
 
 class DocumentToolProgressUpdateSqlParams(BaseModel):
 
     run_id: UUID
     tool_call_id: str
-    call_id: str
-    tool_name: str
-    arguments_delta: str
     progress_type: str
+    call_id: str | None = None
+    tool_name: str | None = None
+    arguments_delta: str | None = None
     document_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.run_id,
             self.tool_call_id,
+            self.progress_type,
             self.call_id,
             self.tool_name,
             self.arguments_delta,
-            self.progress_type,
             self.document_id,
         )
 
@@ -8230,10 +8332,10 @@ class DocumentToolProgressUpdateApiRequest(BaseModel):
 
     run_id: UUID
     tool_call_id: str
-    call_id: str
-    tool_name: str
-    arguments_delta: str
     progress_type: str
+    call_id: str | None = None
+    tool_name: str | None = None
+    arguments_delta: str | None = None
     document_id: UUID | None = None
 
 class DocumentToolProgressUpdateApiResponse(BaseModel):
@@ -8729,6 +8831,33 @@ class GetDocumentTemplatesApiResponse(BaseModel):
     active: bool | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+
+# Generated from: get_document_tool_call_results
+
+class GetDocumentToolCallResultsSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class GetDocumentToolCallResultsSqlRow(BaseModel):
+
+    template_html: str | None = None
+    template_schema_json: str | None = None
+
+class GetDocumentToolCallResultsApiRequest(BaseModel):
+
+    run_id: UUID
+
+class GetDocumentToolCallResultsApiResponse(BaseModel):
+
+    template_html: str | None = None
+    template_schema_json: str | None = None
 
 
 
@@ -12404,61 +12533,6 @@ class LinkSystemDeveloperMessagesToRunApiResponse(BaseModel):
 
     system_message_id: UUID | None = None
     developer_message_id: UUID | None = None
-
-
-
-# Generated from: log_run
-
-class LogRunSqlParams(BaseModel):
-
-    run_id: UUID
-    department_id: UUID
-    input_text_tokens: int
-    input_audio_tokens: int
-    input_image_tokens: int
-    output_text_tokens: int
-    output_audio_tokens: int
-    cached_text_tokens: int
-    cached_audio_tokens: int
-    developer_contents: list[str]
-    assistant_output: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.department_id,
-            self.input_text_tokens,
-            self.input_audio_tokens,
-            self.input_image_tokens,
-            self.output_text_tokens,
-            self.output_audio_tokens,
-            self.cached_text_tokens,
-            self.cached_audio_tokens,
-            self.developer_contents,
-            self.assistant_output,
-        )
-
-class LogRunSqlRow(BaseModel):
-
-    success: int | None = None
-
-class LogRunApiRequest(BaseModel):
-
-    run_id: UUID
-    department_id: UUID
-    input_text_tokens: int
-    input_audio_tokens: int
-    input_image_tokens: int
-    output_text_tokens: int
-    output_audio_tokens: int
-    cached_text_tokens: int
-    cached_audio_tokens: int
-    developer_contents: list[str]
-    assistant_output: str
-
-class LogRunApiResponse(BaseModel):
-
-    success: int | None = None
 
 
 
@@ -26704,6 +26778,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteDocumentApiRequest",
         "DeleteDocumentApiResponse",
     ),
+    "app/sql/v4/documents/document_generation_complete_complete.sql": (
+        "DocumentGenerationCompleteSqlParams",
+        "DocumentGenerationCompleteSqlRow",
+        "DocumentGenerationCompleteApiRequest",
+        "DocumentGenerationCompleteApiResponse",
+    ),
+    "app/sql/v4/documents/document_generation_error_complete.sql": (
+        "DocumentGenerationErrorSqlParams",
+        "DocumentGenerationErrorSqlRow",
+        "DocumentGenerationErrorApiRequest",
+        "DocumentGenerationErrorApiResponse",
+    ),
     "app/sql/v4/documents/document_tool_progress_update_complete.sql": (
         "DocumentToolProgressUpdateSqlParams",
         "DocumentToolProgressUpdateSqlRow",
@@ -26751,6 +26837,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentTemplatesSqlRow",
         "GetDocumentTemplatesApiRequest",
         "GetDocumentTemplatesApiResponse",
+    ),
+    "app/sql/v4/documents/get_document_tool_call_results_complete.sql": (
+        "GetDocumentToolCallResultsSqlParams",
+        "GetDocumentToolCallResultsSqlRow",
+        "GetDocumentToolCallResultsApiRequest",
+        "GetDocumentToolCallResultsApiResponse",
     ),
     "app/sql/v4/documents/get_documents_list_complete.sql": (
         "GetDocumentsListSqlParams",
@@ -27189,12 +27281,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkSystemDeveloperMessagesToRunSqlRow",
         "LinkSystemDeveloperMessagesToRunApiRequest",
         "LinkSystemDeveloperMessagesToRunApiResponse",
-    ),
-    "app/sql/v4/model_runs/log_run_complete.sql": (
-        "LogRunSqlParams",
-        "LogRunSqlRow",
-        "LogRunApiRequest",
-        "LogRunApiResponse",
     ),
     "app/sql/v4/models/create_model_complete.sql": (
         "CreateModelSqlParams",
@@ -29073,6 +29159,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/document_generation_complete_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/document_generation_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/documents/document_tool_progress_update_complete.sql"]
     ) -> SqlString: ...
 
@@ -29109,6 +29205,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/documents/get_document_templates_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/documents/get_document_tool_call_results_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29474,11 +29575,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/model_runs/link_system_developer_messages_to_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/model_runs/log_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

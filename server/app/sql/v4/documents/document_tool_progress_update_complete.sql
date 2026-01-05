@@ -22,10 +22,10 @@ END $$;
 CREATE OR REPLACE FUNCTION socket_document_tool_progress_update_v4(
     run_id uuid,
     tool_call_id text,
-    call_id text,
-    tool_name text,
-    arguments_delta text,
     progress_type text,
+    call_id text DEFAULT NULL,
+    tool_name text DEFAULT NULL,
+    arguments_delta text DEFAULT '',
     document_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
