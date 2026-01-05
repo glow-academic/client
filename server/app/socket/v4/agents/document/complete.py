@@ -53,11 +53,12 @@ async def _document_complete_impl(
         if not tool_type:
             # Fallback: try to get from tool_name (for backward compatibility)
             tool_name = getattr(data, "tool_name", None)
-            if tool_name == "create_title":
+            # create_title tool was dropped
+            if False:  # create_title tool was dropped
                 tool_type = "title"
-            elif tool_name == "generate_html":
+            elif tool_name == "create_html":
                 tool_type = "html"
-            elif tool_name == "generate_schema":
+            elif tool_name == "create_schema":
                 tool_type = "schema"
 
         # Route based on tool_type (stable enum)

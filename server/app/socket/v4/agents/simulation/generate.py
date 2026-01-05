@@ -478,7 +478,7 @@ async def _simulation_text_generate_impl(
                 }
 
                 # Build speak tool inline
-                speak_config = tool_config_map_persona.get("speak")
+                speak_config = tool_config_map_persona.get("create_content")
                 if speak_config:
                     persona_desc = speak_config.get("argument_descriptions", {}).get(
                         "persona", "The name of the persona that should speak"
@@ -865,7 +865,7 @@ Tool Usage Instructions:
                                 tool_call_state["arguments_raw"] += arguments_delta
                                 continue
 
-                            if tool_call_state["name"] != "speak":
+                            if tool_call_state["name"] != "create_content":
                                 continue
 
                             prev_raw = tool_call_state["arguments_raw"]
@@ -959,7 +959,7 @@ Tool Usage Instructions:
                                         tool_call_id
                                     ]
 
-                                    if tool_call_state.get("name") != "speak":
+                                    if tool_call_state.get("name") != "create_content":
                                         continue
 
                                     if tool_call_state.get("completed"):
@@ -1081,7 +1081,7 @@ Tool Usage Instructions:
                                                 )
                                                 or tool_call_id,
                                                 "tool_name": tool_call_state.get(
-                                                    "name", "speak"
+                                                    "name", "create_content"
                                                 ),
                                                 "final_message": final_message,
                                                 "final_persona": tool_call_state.get(

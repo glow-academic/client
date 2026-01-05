@@ -1551,7 +1551,8 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
 
             scenario_tools.append(function_tool(create_statement))
             # 1.5. Title Tool (always included)
-            title_config = tool_config_map.get("create_title")
+            # create_title tool was dropped
+            title_config = None
             if title_config:
                 title_desc = title_config.get("argument_descriptions", {}).get(
                     "title",
@@ -1890,7 +1891,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                                     exec_namespace,
                                     exec_namespace,
                                 )
-                                create_document_func = exec_namespace["create_document"]
+                                create_document_func = exec_namespace["create_template"]
 
                                 scenario_tools.append(
                                     function_tool(create_document_func)
@@ -2218,7 +2219,7 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                 if objectives_enabled:
                     required_tools.append("create_objective")
                 if has_template_documents:
-                    required_tools.append("create_document")
+                    required_tools.append("create_template")
 
                 # Check which tools have been called
                 completed_tools = []
@@ -2261,11 +2262,11 @@ async def _generate_scenario_impl(sid: str, data: GenerateScenarioAIPayload) -> 
                             and "create" in tool_name.lower()
                         ):
                             normalized_name = "create_objective"
-                        elif tool_name == "create_document" or (
+                        elif tool_name == "create_template" or (
                             "create" in tool_name.lower()
                             and "document" in tool_name.lower()
                         ):
-                            normalized_name = "create_document"
+                            normalized_name = "create_template"
                         elif tool_name == "create_image" or (
                             "image" in tool_name.lower()
                             and "create" in tool_name.lower()

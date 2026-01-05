@@ -280,7 +280,7 @@ async def _prompt_generate_impl(
             prompt_tools: list[Any] = []
 
             # Create instruct tool wrapper
-            instruct_config = tool_config_map.get("instruct")
+            instruct_config = tool_config_map.get("create_developer_instruction")
             if instruct_config:
                 content_desc = instruct_config.get("argument_descriptions", {}).get(
                     "content", "Developer instruction content"
@@ -292,11 +292,11 @@ async def _prompt_generate_impl(
                 """Provide developer instructions."""
                 return "Tool call confirmed for instruct"
 
-            if "instruct" in tool_config_map:
+            if "create_developer_instruction" in tool_config_map:
                 prompt_tools.append(function_tool(instruct))
 
             # Create prompt tool wrapper
-            prompt_config = tool_config_map.get("prompt")
+            prompt_config = tool_config_map.get("create_prompt")
             if prompt_config:
                 prompt_content_desc = prompt_config.get(
                     "argument_descriptions", {}
@@ -310,7 +310,7 @@ async def _prompt_generate_impl(
                 """Set system prompt."""
                 return "Tool call confirmed for prompt"
 
-            if "prompt" in tool_config_map:
+            if "create_prompt" in tool_config_map:
                 prompt_tools.append(function_tool(prompt))
 
             # Add debug_info tool if available
@@ -566,7 +566,7 @@ async def _prompt_generate_impl(
                                                 tool_call_state["arguments_raw"]
                                             )
                                             if (
-                                                tool_name in ("instruct", "prompt")
+                                                tool_name in ("create_developer_instruction", "create_prompt")
                                                 and "content" in final_args
                                             ):
                                                 final_content = final_args["content"]

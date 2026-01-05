@@ -1,5 +1,5 @@
 -- Update document HTML tool call progress - creates/updates tool_call and accumulates arguments
--- Handles generate_html tool (tool_type='html', tool_name='generate_html')
+-- Handles create_html tool (tool_type='html', tool_name='create_html')
 -- Uses safe drop/recreate pattern
 
 -- 1) Drop function first

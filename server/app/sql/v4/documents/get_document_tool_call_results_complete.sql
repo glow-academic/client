@@ -52,7 +52,7 @@ WITH html_result AS (
     JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id
     WHERE tcr.run_id = $1
-      AND t.name = 'generate_html'
+      AND t.name = 'create_html'
       AND tc.completed = true
     ORDER BY tc.created_at DESC
     LIMIT 1
@@ -65,7 +65,7 @@ schema_result AS (
     JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id
     WHERE tcr.run_id = $1
-      AND t.name = 'generate_schema'
+      AND t.name = 'create_schema'
       AND tc.completed = true
     ORDER BY tc.created_at DESC
     LIMIT 1

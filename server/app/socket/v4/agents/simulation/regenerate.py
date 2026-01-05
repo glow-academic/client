@@ -272,7 +272,7 @@ async def _simulation_regenerate_impl(
                 }
 
                 # Build speak tool inline
-                speak_config = tool_config_map_persona.get("speak")
+                speak_config = tool_config_map_persona.get("create_content")
                 if speak_config:
                     persona_desc = speak_config.get("argument_descriptions", {}).get(
                         "persona", "The name of the persona that should speak"

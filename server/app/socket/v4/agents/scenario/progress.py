@@ -38,9 +38,8 @@ class ScenarioProgressErrorPayload(BaseModel):
 # Map tool names to event names
 TOOL_EVENT_MAP = {
     "create_statement": "scenario_statement",
-    "create_title": "scenario_title",
     "set_objectives": "scenario_objective",
-    "create_document": "scenario_document",
+    "create_template": "scenario_document",
     "create_video": "scenario_video",
     "create_question": "scenario_question",
     "create_image": "scenario_image",

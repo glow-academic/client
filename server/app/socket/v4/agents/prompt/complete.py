@@ -47,7 +47,7 @@ async def _prompt_complete_impl(
     """Dispatch to tool-specific complete handler."""
     if data.type == "tool_call_complete":
         # Route to appropriate tool handler
-        if data.tool_name == "instruct":
+        if data.tool_name == "create_developer_instruction":
             await internal_sio.emit(
                 "prompt_instruct_complete",
                 {
@@ -60,7 +60,7 @@ async def _prompt_complete_impl(
                     "arguments_raw": data.arguments_raw,
                 },
             )
-        elif data.tool_name == "prompt":
+        elif data.tool_name == "create_prompt":
             await internal_sio.emit(
                 "prompt_prompt_complete",
                 {

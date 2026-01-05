@@ -638,7 +638,7 @@ async def _simulation_grading_start_impl(
             total_standard_groups = len(standard_groups)
 
             # Get base grading tool config from database
-            base_grading_config = tool_config_map_grading.get("create_grade")
+            base_grading_config = tool_config_map_grading.get("create_feedback")
 
             for group in standard_groups:
                 safe_name = create_safe_field_name(group["short_name"])

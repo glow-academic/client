@@ -377,7 +377,7 @@ async def _member_generate_impl(
             member_tools: list[Any] = []
 
             # Create speak tool wrapper
-            speak_config = tool_config_map.get("speak")
+            speak_config = tool_config_map.get("create_content")
             if speak_config:
                 message_desc = speak_config.get("argument_descriptions", {}).get(
                     "message", "The message content to speak"
@@ -389,7 +389,7 @@ async def _member_generate_impl(
                 """Make a message speak (for user or assistant messages)."""
                 return "Tool call confirmed for speak"
 
-            if "speak" in tool_config_map:
+            if "create_content" in tool_config_map:
                 member_tools.append(function_tool(speak))
 
             # Add debug_info tool if available
@@ -607,7 +607,7 @@ async def _member_generate_impl(
 
                             # Extract content based on tool type
                             field_name = (
-                                "message" if tool_name == "speak" else "content"
+                                "message" if tool_name == "create_content" else "content"
                             )
                             (
                                 new_chars,
@@ -696,7 +696,7 @@ async def _member_generate_impl(
                                                 tool_call_state["arguments_raw"]
                                             )
                                             if (
-                                                tool_name == "speak"
+                                                tool_name == "create_content"
                                                 and "message" in final_args
                                             ):
                                                 final_content = final_args["message"]

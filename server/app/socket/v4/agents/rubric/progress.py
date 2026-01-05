@@ -45,7 +45,7 @@ async def _rubric_progress_impl(
     # Route to appropriate tool handler based on tool_name
     if data.type == "tool_call_start":
         # Emit tool-specific start event
-        if data.tool_name == "standard_description":
+        if data.tool_name == "create_standard_description":
             await internal_sio.emit(
                 "rubric_standard_description_progress",
                 {
@@ -59,7 +59,8 @@ async def _rubric_progress_impl(
                     "arguments_raw": data.arguments_raw,
                 },
             )
-        elif data.tool_name == "create_title":
+        # create_title tool was dropped
+        elif False:  # create_title tool was dropped
             await internal_sio.emit(
                 "rubric_title_progress",
                 {
@@ -76,7 +77,7 @@ async def _rubric_progress_impl(
 
     elif data.type == "tool_call_progress":
         # Emit tool-specific progress event
-        if data.tool_name == "standard_description":
+        if data.tool_name == "create_standard_description":
             await internal_sio.emit(
                 "rubric_standard_description_progress",
                 {
@@ -90,7 +91,8 @@ async def _rubric_progress_impl(
                     "arguments_raw": data.arguments_raw,
                 },
             )
-        elif data.tool_name == "create_title":
+        # create_title tool was dropped
+        elif False:  # create_title tool was dropped
             await internal_sio.emit(
                 "rubric_title_progress",
                 {

@@ -48,7 +48,7 @@ async def _rubric_complete_impl(
     """Dispatch to tool-specific complete handler."""
     if data.type == "tool_call_complete":
         # Route to appropriate tool handler
-        if data.tool_name == "standard_description":
+        if data.tool_name == "create_standard_description":
             await internal_sio.emit(
                 "rubric_standard_description_complete",
                 {
@@ -62,7 +62,8 @@ async def _rubric_complete_impl(
                     "arguments_raw": data.arguments_raw or "",
                 },
             )
-        elif data.tool_name == "create_title":
+        # create_title tool was dropped
+        elif False:  # create_title tool was dropped
             await internal_sio.emit(
                 "rubric_title_complete",
                 {

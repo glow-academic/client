@@ -14875,6 +14875,56 @@
         }
       }
     },
+    "/socket/v4/client/agents/grades/tools/analysis": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Client-to-server event: {description}",
+        "operationId": "handle_grade_analysis_call_analysis",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Grade Analysis Call Analysis"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/socket/v4/client/agents/grades/generate": {
       "post": {
         "tags": [
@@ -22583,6 +22633,104 @@
         }
       }
     },
+    "/socket/v4/server/agents/hints/hint_end": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "handle_hint_end_hint_end",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Hint End Hint End"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/server/agents/hints/hint_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "handle_hint_error_hint_error",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Hint Error Hint Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/socket/v4/server/agents/hints/hint_debug_complete": {
       "post": {
         "tags": [
@@ -22909,6 +23057,156 @@
                   },
                   "type": "object",
                   "title": "Response Handle Audio Eval Eval"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/server/agents/grades/tools/analysis_complete": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "handle_grade_analysis_complete_analysis_complete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Grade Analysis Complete Analysis Complete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/server/agents/grades/tools/analysis_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "handle_grade_analysis_error_analysis_error",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Grade Analysis Error Analysis Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/socket/v4/server/agents/grades/tools/analysis_progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "handle_grade_analysis_progress_analysis_progress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Grade Analysis Progress Analysis Progress"
                 }
               }
             }
@@ -28963,7 +29261,7 @@
             ],
             "title": "Parameter Item Ids"
           },
-          "template_upload_id": {
+          "html_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -28973,7 +29271,7 @@
                 "type": "null"
               }
             ],
-            "title": "Template Upload Id"
+            "title": "Html Id"
           },
           "schema_id": {
             "anyOf": [
@@ -77929,17 +78227,6 @@
             ],
             "title": "Description"
           },
-          "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Type"
-          },
           "replaces": {
             "anyOf": [
               {
@@ -77974,7 +78261,6 @@
           "id",
           "name",
           "description",
-          "type",
           "replaces",
           "highlights"
         ],
@@ -95097,7 +95383,7 @@
             ],
             "title": "Document Agent Id"
           },
-          "template_upload_id": {
+          "html_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -95107,7 +95393,7 @@
                 "type": "null"
               }
             ],
-            "title": "Template Upload Id"
+            "title": "Html Id"
           },
           "schema_id": {
             "anyOf": [

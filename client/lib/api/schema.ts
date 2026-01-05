@@ -3960,7 +3960,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["handle_hint_generate_generate"];
+        post: operations["handle_hint_start_generate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3981,6 +3981,26 @@ export interface paths {
          * @description Client-to-server event: {description}
          */
         post: operations["handle_grade_generate_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/client/agents/grades/tools/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Client-to-server event: {description}
+         */
+        post: operations["handle_grade_analysis_call_analysis"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7107,27 +7127,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/hints/generation_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Client-to-server event: {description}
-         */
-        post: operations["handle_hint_generate_generation_progress"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/hint_complete": {
+    "/socket/v4/server/agents/hints/hint_end": {
         parameters: {
             query?: never;
             header?: never;
@@ -7140,7 +7140,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_hint_complete_hint_complete"];
+        post: operations["handle_hint_end_hint_end"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7167,7 +7167,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/hints/hint_progress": {
+    "/socket/v4/server/agents/hints/hint_debug_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7180,34 +7180,14 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_hint_progress_hint_progress"];
+        post: operations["handle_hint_debug_hint_debug_complete"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/agents/hints/eval": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Client-to-server event: {description}
-         */
-        post: operations["handle_hint_eval_eval"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/hint_tool_debug": {
+    "/socket/v4/server/agents/hints/hint_hint_complete": {
         parameters: {
             query?: never;
             header?: never;
@@ -7220,167 +7200,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_hint_debug_call_hint_tool_debug"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/debug_info_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_hint_debug_complete_debug_info_complete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/debug_info_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_hint_debug_error_debug_info_error"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/debug_info_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_hint_debug_progress_debug_info_progress"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/eval": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Client-to-server event: {description}
-         */
-        post: operations["handle_hint_hint_eval_eval"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/hint_tool": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_hint_hint_call_hint_tool"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/hint_hint_complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_hint_hint_complete_hint_hint_complete"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/hint_error": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_hint_hint_error_hint_error"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/agents/hints/tools/hint_hint_progress": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_hint_hint_progress_hint_hint_progress"];
+        post: operations["handle_hint_hint_hint_hint_complete"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7481,6 +7301,66 @@ export interface paths {
          * @description Client-to-server event: {description}
          */
         post: operations["handle_audio_eval_eval"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/grades/tools/analysis_complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_grade_analysis_complete_analysis_complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/grades/tools/analysis_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_grade_analysis_error_analysis_error"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/agents/grades/tools/analysis_progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_grade_analysis_progress_analysis_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9884,8 +9764,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Parameter Item Ids */
             parameter_item_ids?: string[] | null;
-            /** Template Upload Id */
-            template_upload_id?: string | null;
+            /** Html Id */
+            html_id?: string | null;
             /** Schema Id */
             schema_id?: string | null;
         };
@@ -14877,36 +14757,41 @@ export interface components {
             status_options?: components["schemas"]["QListModelsV4StatusOption"][] | null;
         };
         /**
-         * LogRunPayload
-         * @description Request to log run pricing and metrics.
+         * LogRunApiRequest
+         * @description Request to log run pricing and metrics (snake_case).
          */
-        LogRunPayload: {
-            /** Runid */
-            runId: string;
-            /** Operationtype */
-            operationType: string;
-            /** Inputtexttokens */
-            inputTextTokens: number;
-            /** Outputtexttokens */
-            outputTextTokens: number;
-            /** Inputaudiotokens */
-            inputAudioTokens?: number | null;
-            /** Inputimagetokens */
-            inputImageTokens?: number | null;
-            /** Outputaudiotokens */
-            outputAudioTokens?: number | null;
-            /** Cachedtexttokens */
-            cachedTextTokens?: number | null;
-            /** Cachedaudiotokens */
-            cachedAudioTokens?: number | null;
-            /** Systemprompt */
-            systemPrompt?: string | null;
-            /** Inputitems */
-            inputItems?: components["schemas"]["ResponseInputItem"][] | null;
-            /** Assistantoutput */
-            assistantOutput?: string | null;
-            /** Departmentid */
-            departmentId?: string | null;
+        LogRunApiRequest: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Operation Type */
+            operation_type: string;
+            /** Input Text Tokens */
+            input_text_tokens: number;
+            /** Output Text Tokens */
+            output_text_tokens: number;
+            /** Input Audio Tokens */
+            input_audio_tokens?: number | null;
+            /** Input Image Tokens */
+            input_image_tokens?: number | null;
+            /** Output Audio Tokens */
+            output_audio_tokens?: number | null;
+            /** Cached Text Tokens */
+            cached_text_tokens?: number | null;
+            /** Cached Audio Tokens */
+            cached_audio_tokens?: number | null;
+            /** System Prompt */
+            system_prompt?: string | null;
+            /** Input Items */
+            input_items?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Assistant Output */
+            assistant_output?: string | null;
+            /** Department Id */
+            department_id?: string | null;
         };
         /**
          * MemberGenerateErrorPayload
@@ -19559,8 +19444,6 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
-            /** Type */
-            type: string | null;
             /** Replaces */
             replaces: components["schemas"]["QGetSimulationAttemptV4MessageFeedbackReplace"][] | null;
             /** Highlights */
@@ -22403,18 +22286,6 @@ export interface components {
             message: string;
         };
         /**
-         * ResponseInputItem
-         * @description Input item for agent conversation (TResponseInputItem format).
-         */
-        ResponseInputItem: {
-            /** Role */
-            role: string;
-            /** Content */
-            content: string | {
-                [key: string]: unknown;
-            }[];
-        };
-        /**
          * ScenarioGenerationCompletePayload
          * @description Response indicating scenario generation completed successfully.
          */
@@ -23014,8 +22885,8 @@ export interface components {
             classify_agent_id?: string | null;
             /** Document Agent Id */
             document_agent_id?: string | null;
-            /** Template Upload Id */
-            template_upload_id?: string | null;
+            /** Html Id */
+            html_id?: string | null;
             /** Schema Id */
             schema_id?: string | null;
         };
@@ -30293,7 +30164,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LogRunPayload"];
+                "application/json": components["schemas"]["LogRunApiRequest"];
             };
         };
         responses: {
@@ -30809,7 +30680,7 @@ export interface operations {
             };
         };
     };
-    handle_hint_generate_generate: {
+    handle_hint_start_generate: {
         parameters: {
             query?: never;
             header?: never;
@@ -30845,6 +30716,41 @@ export interface operations {
         };
     };
     handle_grade_generate_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_grade_analysis_call_analysis: {
         parameters: {
             query?: never;
             header?: never;
@@ -36339,42 +36245,7 @@ export interface operations {
             };
         };
     };
-    handle_hint_generate_generation_progress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_complete_hint_complete: {
+    handle_hint_end_hint_end: {
         parameters: {
             query?: never;
             header?: never;
@@ -36444,7 +36315,7 @@ export interface operations {
             };
         };
     };
-    handle_hint_progress_hint_progress: {
+    handle_hint_debug_hint_debug_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -36479,322 +36350,7 @@ export interface operations {
             };
         };
     };
-    handle_hint_eval_eval: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_debug_call_hint_tool_debug: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_debug_complete_debug_info_complete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_debug_error_debug_info_error: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_debug_progress_debug_info_progress: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_hint_eval_eval: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_hint_call_hint_tool: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_hint_complete_hint_hint_complete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_hint_error_hint_error: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_hint_hint_progress_hint_hint_progress: {
+    handle_hint_hint_hint_hint_complete: {
         parameters: {
             query?: never;
             header?: never;
@@ -36970,6 +36526,111 @@ export interface operations {
         };
     };
     handle_audio_eval_eval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_grade_analysis_complete_analysis_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_grade_analysis_error_analysis_error: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handle_grade_analysis_progress_analysis_progress: {
         parameters: {
             query?: never;
             header?: never;

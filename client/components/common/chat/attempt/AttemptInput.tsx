@@ -1387,7 +1387,7 @@ export default function AttemptInput({
 
         // Handle speak tool - now handled via transport events (response.function_call_arguments.delta/done)
         // The transport events are forwarded to simulation_voice_assistant_delta/simulation_voice_assistant_done handlers
-        if (toolDef.name === "speak") {
+        if (toolDef.name === "create_content") {
           // eslint-disable-next-line no-console
           console.log(
             "[Voice] speak tool detected - streaming handled via transport events"

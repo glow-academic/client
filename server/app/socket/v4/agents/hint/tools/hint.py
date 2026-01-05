@@ -9,7 +9,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
-from app.sql.types import (HintErrorApiRequest, HintHintCompleteApiRequest,
+from app.sql.types import (HintErrorApiRequest, HintToolCompleteApiRequest,
                            HintToolCompleteSqlParams, HintToolCompleteSqlRow)
 from fastapi import APIRouter
 from utils.sql_helper import execute_sql_typed
@@ -22,7 +22,7 @@ SQL_PATH = "app/sql/v4/agents/hint_tool_complete_complete.sql"
 
 async def _hint_tool_complete_impl(
     sid: str,
-    data: HintHintCompleteApiRequest,
+    data: HintToolCompleteApiRequest,
     profile_id: uuid.UUID,
     group_id: uuid.UUID | None = None,
 ) -> None:
@@ -121,7 +121,7 @@ async def hint_hint_complete_internal(data: dict[str, Any]) -> None:
     """Handle hint_hint_complete event from internal bus."""
     await handle_internal_event(
         data=data,
-        request_type=HintHintCompleteApiRequest,
+        request_type=HintToolCompleteApiRequest,
         handler=_hint_tool_complete_impl,  # type: ignore[arg-type]
         error_event_name="hint_error",
         error_response_type=None,
@@ -131,6 +131,6 @@ async def hint_hint_complete_internal(data: dict[str, Any]) -> None:
 register_server_endpoint(  # type: ignore[arg-type]
     server_router,
     "/hint_hint_complete",
-    HintHintCompleteApiRequest,
+    HintToolCompleteApiRequest,
     "Hint tool completed successfully",
 )

@@ -108,7 +108,7 @@ async def _prompt_prompt_progress_impl(
                         str(run_id_uuid),
                         data.tool_call_id,
                         data.call_id,
-                        "prompt",  # tool_name
+                        "create_prompt",  # tool_name
                         data.token,
                         data.accumulated_content,
                         data.arguments_raw,

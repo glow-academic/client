@@ -108,7 +108,7 @@ async def _prompt_instruct_progress_impl(
                         str(run_id_uuid),
                         data.tool_call_id,
                         data.call_id,
-                        "instruct",  # tool_name
+                        "create_developer_instruction",  # tool_name
                         data.token,
                         data.accumulated_content,
                         data.arguments_raw,

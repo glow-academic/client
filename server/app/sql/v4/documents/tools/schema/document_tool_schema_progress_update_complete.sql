@@ -1,5 +1,5 @@
 -- Update document schema tool call progress - creates/updates tool_call and accumulates arguments
--- Handles generate_schema tool (tool_type='schema', tool_name='generate_schema')
+-- Handles create_schema tool (tool_type='schema', tool_name='create_schema')
 -- Uses safe drop/recreate pattern
 
 -- 1) Drop function first

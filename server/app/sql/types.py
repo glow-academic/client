@@ -3515,6 +3515,59 @@ class UpdateAgentApiResponse(BaseModel):
 
 
 
+# Generated from: create_analysis
+
+class CreateAnalysisSqlParams(BaseModel):
+
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.content,
+        )
+
+class CreateAnalysisSqlRow(BaseModel):
+
+    id: str | None = None
+
+class CreateAnalysisApiRequest(BaseModel):
+
+    content: str
+
+class CreateAnalysisApiResponse(BaseModel):
+
+    id: str | None = None
+
+
+
+# Generated from: link_analysis_to_grade
+
+class LinkAnalysisToGradeSqlParams(BaseModel):
+
+    analysis_id: UUID
+    grade_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.analysis_id,
+            self.grade_id,
+        )
+
+class LinkAnalysisToGradeSqlRow(BaseModel):
+
+    success: bool | None = None
+
+class LinkAnalysisToGradeApiRequest(BaseModel):
+
+    analysis_id: UUID
+    grade_id: UUID
+
+class LinkAnalysisToGradeApiResponse(BaseModel):
+
+    success: bool | None = None
+
+
+
 # Generated from: create_analytics_view_function
 
 class CreateAnalyticsViewFunctionSqlParams(BaseModel):
@@ -27046,6 +27099,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateAgentApiRequest",
         "UpdateAgentApiResponse",
     ),
+    "app/sql/v4/analysis/create_analysis_complete.sql": (
+        "CreateAnalysisSqlParams",
+        "CreateAnalysisSqlRow",
+        "CreateAnalysisApiRequest",
+        "CreateAnalysisApiResponse",
+    ),
+    "app/sql/v4/analysis/link_analysis_to_grade_complete.sql": (
+        "LinkAnalysisToGradeSqlParams",
+        "LinkAnalysisToGradeSqlRow",
+        "LinkAnalysisToGradeApiRequest",
+        "LinkAnalysisToGradeApiResponse",
+    ),
     "app/sql/v4/analytics/create_analytics_view_function_complete.sql": (
         "CreateAnalyticsViewFunctionSqlParams",
         "CreateAnalyticsViewFunctionSqlRow",
@@ -29578,6 +29643,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/agents/update_agent_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/analysis/create_analysis_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/analysis/link_analysis_to_grade_complete.sql"]
     ) -> SqlString: ...
 
     @overload

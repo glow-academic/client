@@ -602,7 +602,7 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                 if objectives_enabled:
                     required_tools.append("objectives")
                 if has_template_documents:
-                    required_tools.append("create_document")
+                    required_tools.append("create_template")
 
                 # Check which tools have been called
                 completed_tools = []
@@ -619,11 +619,11 @@ async def _regenerate_scenario_impl(sid: str, data: RegenerateScenarioPayload) -
                             normalized_name = "title_description"
                         elif "objective" in tool_name.lower():
                             normalized_name = "objectives"
-                        elif "create_document" in tool_name.lower() or (
+                        elif "create_template" in tool_name.lower() or (
                             "create" in tool_name.lower()
                             and "document" in tool_name.lower()
                         ):
-                            normalized_name = "create_document"
+                            normalized_name = "create_template"
                         completed_tools.append(normalized_name)
 
                 # Check if all required tools have been completed

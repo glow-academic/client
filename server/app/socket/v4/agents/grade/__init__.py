@@ -8,6 +8,12 @@ from .eval import server_router as eval_server_router
 from .generate import client_router as generate_client_router
 from .generate import server_router as generate_server_router
 from .progress import server_router as progress_server_router
+from .tools.analysis import (
+    client_router as analysis_client_router,
+)
+from .tools.analysis import (
+    server_router as analysis_server_router,
+)
 from .tools.audio import (
     client_router as audio_client_router,
 )
@@ -43,6 +49,7 @@ client_router = APIRouter(prefix="/grades", tags=["socket-client"])
 server_router = APIRouter(prefix="/grades", tags=["socket-server"])
 
 client_router.include_router(generate_client_router)
+client_router.include_router(analysis_client_router)
 client_router.include_router(audio_client_router)
 client_router.include_router(improvement_client_router)
 client_router.include_router(strength_client_router)
@@ -54,6 +61,7 @@ server_router.include_router(complete_server_router)
 server_router.include_router(error_server_router)
 server_router.include_router(progress_server_router)
 server_router.include_router(eval_server_router)
+server_router.include_router(analysis_server_router)
 server_router.include_router(audio_server_router)
 server_router.include_router(improvement_server_router)
 server_router.include_router(strength_server_router)

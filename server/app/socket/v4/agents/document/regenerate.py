@@ -418,9 +418,9 @@ async def _document_regenerate_impl(
 
             # Map tool_name to tool_type (stable enum mapping)
             TOOL_NAME_TO_TYPE = {
-                "create_title": "title",
-                "generate_html": "html",
-                "generate_schema": "schema",
+                # "create_title": "title",  # Tool was dropped
+                "create_html": "html",
+                "create_schema": "schema",
             }
 
             # Run document regeneration with streaming
@@ -551,8 +551,8 @@ async def _document_regenerate_impl(
 
             # Verify both required tools were called
             if (
-                "generate_html" not in completed_tool_names
-                or "generate_schema" not in completed_tool_names
+                "create_html" not in completed_tool_names
+                or "create_schema" not in completed_tool_names
             ):
                 await emit_to_internal(
                     "document_error",

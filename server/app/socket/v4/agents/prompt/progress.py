@@ -48,7 +48,7 @@ async def _prompt_progress_impl(
     # Route to appropriate tool handler based on tool_name
     if data.type == "tool_call_start":
         # Emit tool-specific start event
-        if data.tool_name == "instruct":
+        if data.tool_name == "create_developer_instruction":
             await internal_sio.emit(
                 "prompt_instruct_progress",
                 {
@@ -61,7 +61,7 @@ async def _prompt_progress_impl(
                     "arguments_raw": data.arguments_raw,
                 },
             )
-        elif data.tool_name == "prompt":
+        elif data.tool_name == "create_prompt":
             await internal_sio.emit(
                 "prompt_prompt_progress",
                 {
@@ -77,7 +77,7 @@ async def _prompt_progress_impl(
 
     elif data.type == "tool_call_progress":
         # Emit tool-specific progress event
-        if data.tool_name == "instruct":
+        if data.tool_name == "create_developer_instruction":
             await internal_sio.emit(
                 "prompt_instruct_progress",
                 {
@@ -93,7 +93,7 @@ async def _prompt_progress_impl(
                     "parent_message_id": data.parent_message_id,
                 },
             )
-        elif data.tool_name == "prompt":
+        elif data.tool_name == "create_prompt":
             await internal_sio.emit(
                 "prompt_prompt_progress",
                 {

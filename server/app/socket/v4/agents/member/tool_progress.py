@@ -48,7 +48,7 @@ async def _member_progress_impl(
     # Route to appropriate tool handler based on tool_name (only speak for member agent)
     if data.type == "tool_call_start":
         # Emit tool-specific start event
-        if data.tool_name == "speak":
+        if data.tool_name == "create_content":
             await internal_sio.emit(
                 "member_speak_progress",
                 {
@@ -64,7 +64,7 @@ async def _member_progress_impl(
 
     elif data.type == "tool_call_progress":
         # Emit tool-specific progress event
-        if data.tool_name == "speak":
+        if data.tool_name == "create_content":
             await internal_sio.emit(
                 "member_speak_progress",
                 {

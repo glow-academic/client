@@ -250,7 +250,8 @@ async def _rubric_generate_impl(
                 )
 
             # Create title tool
-            title_config = tool_config_map_rubric.get("create_title")
+            # create_title tool was dropped
+            title_config = None
             if title_config:
                 title_desc = title_config.get("argument_descriptions", {}).get(
                     "title",

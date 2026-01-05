@@ -26,7 +26,7 @@ def build_tool_from_config(tool_config: dict[str, Any]) -> Tool:
 
     Example:
         >>> tool_config = {
-        ...     "name": "create_title",
+        ...     "name": "create_template",  # create_title was dropped
         ...     "description": "Create a descriptive title for this content item.",
         ...     "arguments": {"title": {"type": "string", "required": True}},
         ...     "argument_descriptions": {"title": "A descriptive title"},
@@ -98,9 +98,9 @@ def _generate_return_message(tool_name: str, tool_description: str) -> str:
         A success message string
     """
     # Convert snake_case to readable format
-    # "create_title" -> "Created title successfully"
-    # "generate_html" -> "Generated template HTML successfully"
-    # "generate_schema" -> "Generated template schema successfully"
+    # "create_title" -> "Created title successfully"  # Tool was dropped
+    # "create_html" -> "Generated template HTML successfully"
+    # "create_schema" -> "Generated template schema successfully"
 
     # Handle common patterns
     if tool_name.startswith("create_"):

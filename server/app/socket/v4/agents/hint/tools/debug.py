@@ -10,15 +10,22 @@ from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio, sio
 from app.sql.types import (HintDebugCompleteApiRequest,
                            HintDebugCompleteApiResponse,
-                           HintDebugCompleteSqlParams, HintDebugCompleteSqlRow,
-                           HintDebugErrorApiResponse)
+                           HintDebugCompleteSqlParams, HintDebugCompleteSqlRow)
 from fastapi import APIRouter
+from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/agents/hint_debug_complete_complete.sql"
+
+
+class HintDebugErrorApiResponse(BaseModel):
+    """Response indicating an error occurred in HintDebug tool."""
+
+    success: bool
+    message: str
 
 
 async def _debug_tool_complete_impl(
