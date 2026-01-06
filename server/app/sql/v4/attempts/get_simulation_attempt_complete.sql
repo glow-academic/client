@@ -672,40 +672,7 @@ scenario_videos_with_questions AS (
     WHERE sv.active = true AND v.active = true
 ),
 -- Note: Quizzes are deprecated - questions are now handled directly through scenarios
-attempt_quizzes_data AS (
-    SELECT 
-        q.id as quiz_id,
-        q.video_id,
-        q.completed as quiz_completed,
-        q.created_at as quiz_created_at,
-        q.updated_at as quiz_updated_at
-    FROM params x
-    JOIN attempt_quizzes aq ON aq.attempt_id = x.attempt_id
-    JOIN quizzes q ON q.id = aq.quiz_id
-),
-quiz_responses_data AS (
-    SELECT 
-        qr.quiz_id,
-        qr.question_id,
-        qr.option_id,
-        qr.completed as response_completed,
-        qr.created_at as response_created_at
-    FROM quiz_responses qr
-    WHERE qr.quiz_id IN (SELECT quiz_id FROM attempt_quizzes_data)
-),
-quiz_responses_grouped AS (
-    SELECT 
-        qr.quiz_id,
-        COALESCE(
-            ARRAY_AGG(
-                (qr.question_id, qr.option_id, qr.response_completed, qr.response_created_at)::types.q_get_simulation_attempt_v4_quiz_response
-                ORDER BY qr.response_created_at
-            ),
-            '{}'::types.q_get_simulation_attempt_v4_quiz_response[]
-        ) as responses
-    FROM quiz_responses_data qr
-    GROUP BY qr.quiz_id
-),
+-- Quiz data has been removed - responses are now linked to chats via chat_responses junction table
 simulation_root_scenarios_list AS (
     SELECT DISTINCT
         ss.scenario_id as root_scenario_id,
@@ -1224,7 +1191,7 @@ grades_data AS (
 message_feedbacks_data AS (
     -- Strengths with highlights
     SELECT 
-        ms.message_id,
+        s.message_id,
         gs.grade_id,
         (s.id, s.name, s.description,
          '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[],
@@ -1236,13 +1203,12 @@ message_feedbacks_data AS (
          )
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
     FROM strengths s
-    JOIN message_strengths ms ON ms.strength_id = s.id
     JOIN grade_strengths gs ON gs.strength_id = s.id
     WHERE gs.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
     UNION ALL
     -- Improvements with replaces
     SELECT 
-        mi2.message_id,
+        i.message_id,
         gi.grade_id,
         (i.id, i.name, i.description,
          COALESCE(
@@ -1254,7 +1220,6 @@ message_feedbacks_data AS (
          '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
     FROM improvements i
-    JOIN message_improvements mi2 ON mi2.improvement_id = i.id
     JOIN grade_improvements gi ON gi.improvement_id = i.id
     WHERE gi.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
 ),

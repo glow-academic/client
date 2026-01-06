@@ -170,17 +170,17 @@ class CreateAgentPromptLinkApiResponse(BaseModel):
 
 class CreateTestProfileSqlParams(BaseModel):
 
-    first_name: str | None = None
-    last_name: str | None = None
-    role: str | None = None
-    email: str | None = None
+    profile_first_name: str
+    profile_last_name: str
+    profile_role: str | None = None
+    profile_active: bool | None = True
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.first_name,
-            self.last_name,
-            self.role,
-            self.email,
+            self.profile_first_name,
+            self.profile_last_name,
+            self.profile_role,
+            self.profile_active,
         )
 
 class CreateTestProfileSqlRow(BaseModel):
@@ -195,10 +195,10 @@ class CreateTestProfileSqlRow(BaseModel):
 
 class CreateTestProfileApiRequest(BaseModel):
 
-    first_name: str | None = None
-    last_name: str | None = None
-    role: str | None = None
-    email: str | None = None
+    profile_first_name: str
+    profile_last_name: str
+    profile_role: str | None = None
+    profile_active: bool | None = True
 
 class CreateTestProfileApiResponse(BaseModel):
 
