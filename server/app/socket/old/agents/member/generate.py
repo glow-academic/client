@@ -21,7 +21,7 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.remove_active_run import remove_active_run
 from app.infra.v4.websocket.store_active_run import store_active_run
 from app.main import get_internal_sio, sio
-from app.socket.v4.agents.simulation.generate import (
+from app.socket.old.agents.simulation.generate import (
     get_simulation_conversation_history,
 )
 from app.sql.types import (

@@ -378,7 +378,7 @@ async def _emit_image_progress(
         )
         return
 
-    from app.socket.v4.agents.scenario.generate import (
+    from app.socket.old.agents.scenario.generate import (
         ScenarioImageGenerationProgressPayload,
         scenario_image_generation_progress,
     )

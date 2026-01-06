@@ -163,7 +163,7 @@ async def _scenario_tool_video_impl(sid: str, data: dict[str, Any]) -> None:
                         str(video_id_uuid),
                         True,  # active
                     )
-        from app.socket.v4.agents.video.generate import (
+        from app.socket.old.agents.video.generate import (
             GenerateVideoPayload,
             _video_generate_impl,
         )

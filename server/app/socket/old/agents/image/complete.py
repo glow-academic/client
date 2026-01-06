@@ -12,7 +12,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_client
 from app.main import get_internal_sio
-from app.socket.v4.agents.scenario.tools.image.call import (
+from app.socket.old.agents.scenario.tools.image.call import (
     ImageToolCompletePayload,
     image_tool_complete,
 )

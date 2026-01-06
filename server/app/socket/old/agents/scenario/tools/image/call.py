@@ -156,7 +156,7 @@ async def _scenario_tool_image_impl(sid: str, data: dict[str, Any]) -> None:
                             del _pending_video_generations[pending_key]
 
                             # Trigger video generation by calling the handler directly
-                            from app.socket.v4.agents.scenario.tools.video.call import (
+                            from app.socket.old.agents.scenario.tools.video.call import (
                                 _scenario_tool_video_impl,
                             )
 

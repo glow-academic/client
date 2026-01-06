@@ -462,7 +462,7 @@ async def _simulation_voice_assistant_delta_impl(
                         tool_call_state["db_tool_call_id"] = uuid.UUID(tool_call_id)
 
                     # Emit token to client (reuse text simulation events)
-                    from app.socket.v4.agents.simulation_text.progress import (
+                    from app.socket.old.agents.simulation.tools.speak.progress import (
                         SimulationMessageTokenPayload,
                         simulation_message_token,
                     )
@@ -634,7 +634,7 @@ async def _simulation_voice_assistant_done_impl(
                     if result_row:
                         message_id = result_row["message_id"]
                         # Emit completion to client
-                        from app.socket.v4.agents.simulation_text.complete import (
+                        from app.socket.old.agents.simulation.tools.speak.complete import (
                             SimulationMessageCompletePayload,
                             SimulationNewMessagePayload,
                             simulation_message_complete,
