@@ -323,6 +323,143 @@ MODALITY_ADAPTERS = {
 - **Image/Video**: Adapter returns result, router persists and emits completion
 - **Text**: Adapter handles everything internally (emits events directly)
 
+## Resource-Specific Client Handlers
+
+### Architecture Pattern
+
+The artifacts system is **server-to-server only** - adapters emit internal events via `internal_sio.emit()` and never interact directly with clients. Resource-specific folders (e.g., `rubric/`, `scenario/`, `document/`) bridge the gap between artifacts and clients.
+
+**Key Principle**: Artifacts = Infrastructure, Resources = Client Communication
+
+### Event Flow
+
+```
+artifacts/adapters/text/openai.py
+  → internal_sio.emit("generate_text_progress", {...})
+  → internal_sio.emit("generate_text_complete", {...})
+  → internal_sio.emit("generate_error", {...})
+
+rubric/progress.py
+  → @internal_sio.on("generate_text_progress")
+  → Filter by resource_type == "rubric"
+  → sio.emit("artifact_generation_progress", {...})
+
+rubric/complete.py
+  → @internal_sio.on("rubric_end")  # From artifacts/end.py
+  → Fetch tool results from DB
+  → Format resource-specifically
+  → sio.emit("artifact_tool_call_complete", {...})
+  → sio.emit("artifact_generation_complete", {...})
+
+rubric/error.py
+  → @internal_sio.on("rubric_error")  # From artifacts/error.py
+  → sio.emit("artifact_generation_error", {...})
+```
+
+### Resource Handler Structure
+
+Each resource folder (e.g., `rubric/`) contains:
+
+- **`progress.py`**: Listens to `generate_text_progress`, filters by `resource_type`, emits `artifact_generation_progress`
+- **`complete.py`**: Listens to `{resource}_end`, fetches tool results from DB, formats them, emits `artifact_tool_call_complete` and `artifact_generation_complete`
+- **`error.py`**: Listens to `{resource}_error`, emits `artifact_generation_error`
+- **`generate.py`**: Entry point (client → server), formats context, routes to `generate_start`
+
+### Unified Client Events
+
+All resource handlers emit unified client events with `resource_type` and `resource_id`:
+
+- **`artifact_generation_progress`**: Progress updates with `type: "start" | "tool_call"`
+- **`artifact_tool_call_complete`**: Tool call completion with tool-specific results
+- **`artifact_generation_complete`**: Run completion
+- **`artifact_generation_error`**: Error events
+
+**Frontend Filtering:**
+```typescript
+socket.on("artifact_generation_progress", (data) => {
+  if (data.resource_type === "rubric" && data.resource_id === rubricId) {
+    // Handle rubric progress
+  }
+});
+```
+
+### Tool Result Fetching Pattern
+
+Resource handlers fetch tool results from database when tool calls complete:
+
+```python
+# In rubric/complete.py
+if data["type"] == "tool_call_complete":
+    if data["tool_name"] == "standard_description":
+        # Fetch from DB using resource-specific SQL function
+        result = await execute_sql_typed(
+            conn,
+            "app/sql/v4/rubric/get_rubric_tool_call_results_complete.sql",
+            params=GetRubricToolCallResultsSqlParams(run_id=uuid.UUID(data["run_id"]))
+        )
+        # Format and emit to client
+        await sio.emit("artifact_tool_call_complete", {
+            "resource_type": "rubric",
+            "tool_name": "standard_description",
+            "descriptions": formatted_descriptions,
+            ...
+        })
+```
+
+### Benefits
+
+1. **Clear Separation**: Artifacts handle infrastructure, resources handle client communication
+2. **Resource-Specific Logic**: Each resource formats its own tool results
+3. **Unified Events**: All resources emit same event names, frontend filters by `resource_type`
+4. **Tool Result Retrieval**: Handlers fetch actual results from DB, not just arguments
+5. **Reduced Abstraction**: Resources own their client communication logic
+
+### Example: Rubric Handler
+
+**`rubric/progress.py`:**
+```python
+@internal_sio.on("generate_text_progress")
+async def handle_rubric_progress(data: dict[str, Any]) -> None:
+    if data.get("resource_type") != "rubric":
+        return
+    await sio.emit("artifact_generation_progress", {
+        "resource_type": "rubric",
+        "resource_id": data.get("resource_id"),
+        "type": "tool_call" if "tool_call" in data.get("progress_type", "") else "start",
+        ...
+    }, room=data.get("sid"))
+```
+
+**`rubric/complete.py`:**
+```python
+@internal_sio.on("rubric_end")
+async def handle_rubric_complete(data: dict[str, Any]) -> None:
+    if data["type"] == "tool_call_complete":
+        # Fetch tool results from DB
+        result = await execute_sql_typed(...)
+        # Format descriptions
+        formatted = format_rubric_descriptions(result.descriptions)
+        # Emit to client
+        await sio.emit("artifact_tool_call_complete", {
+            "resource_type": "rubric",
+            "tool_name": "standard_description",
+            "descriptions": formatted,
+            ...
+        })
+```
+
+**`rubric/error.py`:**
+```python
+@internal_sio.on("rubric_error")
+async def handle_rubric_error(data: dict[str, Any]) -> None:
+    await sio.emit("artifact_generation_error", {
+        "resource_type": "rubric",
+        "resource_id": data.get("resource_id"),
+        "message": data.get("message"),
+        ...
+    }, room=data.get("sid"))
+```
+
 ## Audio Endpoints
 
 ### Unified Audio Start (`audio/start.py`)

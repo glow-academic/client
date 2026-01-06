@@ -19208,6 +19208,31 @@ class GetRubricRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
+# Generated from: get_rubric_tool_call_results
+
+class GetRubricToolCallResultsSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class GetRubricToolCallResultsSqlRow(BaseModel):
+
+    descriptions: Any | None = None
+
+class GetRubricToolCallResultsApiRequest(BaseModel):
+
+    run_id: UUID
+
+class GetRubricToolCallResultsApiResponse(BaseModel):
+
+    descriptions: Any | None = None
+
+
+
 # Generated from: get_rubrics_list
 
 class GetRubricsListSqlParams(BaseModel):
@@ -28636,6 +28661,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricRunContextAndCreateRunApiRequest",
         "GetRubricRunContextAndCreateRunApiResponse",
     ),
+    "app/sql/v4/rubric/get_rubric_tool_call_results_complete.sql": (
+        "GetRubricToolCallResultsSqlParams",
+        "GetRubricToolCallResultsSqlRow",
+        "GetRubricToolCallResultsApiRequest",
+        "GetRubricToolCallResultsApiResponse",
+    ),
     "app/sql/v4/rubric/get_rubrics_list_complete.sql": (
         "GetRubricsListSqlParams",
         "GetRubricsListSqlRow",
@@ -30949,6 +30980,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/rubric/get_rubric_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/rubric/get_rubric_tool_call_results_complete.sql"]
     ) -> SqlString: ...
 
     @overload
