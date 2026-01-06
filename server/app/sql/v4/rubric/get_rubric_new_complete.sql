@@ -122,37 +122,21 @@ user_departments AS (
     JOIN profile_departments pd ON pd.profile_id = x.profile_id
     WHERE pd.active = true
 ),
-default_rubric AS (
-    SELECT r.id
-    FROM rubrics r
-    LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
-    WHERE r.active = true
-    GROUP BY r.id
-    HAVING 
-        COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
-        OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
-    ORDER BY r.created_at DESC
-    LIMIT 1
-),
 rubric_data AS (
     SELECT 
         ''::text as name,
         ''::text as description,
-        r.active,
-        r.points,
-        r.pass_points
-    FROM rubrics r
-    JOIN default_rubric dr ON r.id = dr.id
+        true::boolean as active,
+        0::int as points,
+        0::int as pass_points
+    FROM params x
+    LIMIT 1
 ),
 rubric_departments_data AS (
     SELECT 
-        COALESCE(
-            ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) FILTER (WHERE rd.department_id IS NOT NULL),
-            ARRAY[]::text[]
-        ) as department_ids
-    FROM default_rubric dr
-    LEFT JOIN rubric_departments rd ON rd.rubric_id = dr.id AND rd.active = true
-    GROUP BY dr.id
+        ARRAY[]::text[] as department_ids
+    FROM params x
+    LIMIT 1
 ),
 valid_depts AS (
     SELECT 
@@ -177,28 +161,28 @@ user_departments_for_agents AS (
 ),
 standard_groups_data AS (
     SELECT 
-        sg.id as standard_group_id,
-        sg.name,
-        sg.description,
-        sg.points,
-        sg.pass_points,
-        rsg.position,
-        rsg.active,
-        ARRAY_AGG(s.id ORDER BY s.name) as standard_ids
-    FROM default_rubric dr
-    JOIN rubric_standard_groups rsg ON rsg.rubric_id = dr.id AND rsg.active = true
-    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
-    LEFT JOIN standards s ON s.standard_group_id = sg.id
-    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, rsg.position, rsg.active
+        NULL::uuid as standard_group_id,
+        NULL::text as name,
+        NULL::text as description,
+        NULL::int as points,
+        NULL::int as pass_points,
+        NULL::int as position,
+        NULL::boolean as active,
+        NULL::uuid[] as standard_ids
+    FROM params x
+    WHERE false
 ),
 standard_groups_aggregated AS (
     SELECT 
-        ARRAY_AGG(sg.standard_group_id ORDER BY sg.position, sg.name) as standard_group_ids,
+        COALESCE(
+            ARRAY_AGG(sg.standard_group_id ORDER BY sg.position, sg.name) FILTER (WHERE sg.standard_group_id IS NOT NULL),
+            ARRAY[]::uuid[]
+        ) as standard_group_ids,
         COALESCE(
             ARRAY_AGG(
                 (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]))::types.q_get_rubric_new_v4_standard_group
                 ORDER BY sg.position, sg.name
-            ),
+            ) FILTER (WHERE sg.standard_group_id IS NOT NULL),
             '{}'::types.q_get_rubric_new_v4_standard_group[]
         ) as standard_groups
     FROM standard_groups_data sg
@@ -288,10 +272,26 @@ SELECT
         (SELECT payload->>'description' FROM draft_payload_data),
         rd.description::text
     ) as description,
-    COALESCE(rdd.department_ids, ARRAY[]::text[]) as department_ids,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        rdd.department_ids,
+        ARRAY[]::text[]
+    ) as department_ids,
     COALESCE(vd.dept_ids, ARRAY[]::text[]) as valid_department_ids,
-    rd.points,
-    rd.pass_points,
+    COALESCE(
+        (SELECT (payload->>'points')::int FROM draft_payload_data),
+        rd.points
+    ) as points,
+    COALESCE(
+        (SELECT (payload->>'pass_points')::int FROM draft_payload_data),
+        rd.pass_points
+    ) as pass_points,
     COALESCE(
         (SELECT (payload->>'active')::boolean FROM draft_payload_data),
         rd.active::boolean
@@ -310,8 +310,8 @@ SELECT
     up.actor_name,
     up.user_role,
     pdi.department_id as primary_department_id,
-    COALESCE(sga.standard_group_ids, ARRAY[]::uuid[]) as standard_group_ids,
-    sga.standard_groups,
+    sga.standard_group_ids,
+    COALESCE(sga.standard_groups, '{}'::types.q_get_rubric_new_v4_standard_group[]) as standard_groups,
     sta.standards,
     da.departments,
     aa.agents,
