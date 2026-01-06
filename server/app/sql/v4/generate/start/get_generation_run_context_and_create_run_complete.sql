@@ -33,7 +33,8 @@ RETURNS TABLE (
     run_id text,
     group_id uuid,
     trace_id text,
-    message_ids uuid[]  -- Includes new user message ID (if created) + developer message IDs (if created) + context message IDs
+    message_ids uuid[],  -- Includes new user message ID (if created) + developer message IDs (if created) + context message IDs
+    output_modalities text[]  -- NEW: from model_modalities
 )
 LANGUAGE sql
 VOLATILE
@@ -58,6 +59,17 @@ selected_agent AS (
     WHERE a.id = p.agent_id
       AND a.active = true
     LIMIT 1
+),
+-- Get agent model output modalities
+agent_model_modalities AS (
+    SELECT 
+        array_agg(mm.modality::text ORDER BY mm.modality) as output_modalities
+    FROM agents a
+    JOIN model_modalities mm ON mm.model_id = a.model_id
+    CROSS JOIN params p
+    WHERE a.id = p.agent_id
+      AND mm.is_input = false
+      AND mm.active = true
 ),
 -- Get rate limit for profile
 profile_rate_limit AS (
@@ -365,7 +377,11 @@ SELECT
     cr.run_id::text as run_id,
     gd.group_id,
     gd.trace_id::text as trace_id,
-    COALESCE(fmi.message_ids, ARRAY[]::uuid[]) as message_ids
+    COALESCE(fmi.message_ids, ARRAY[]::uuid[]) as message_ids,
+    COALESCE(
+        (SELECT output_modalities FROM agent_model_modalities),
+        ARRAY[]::text[]
+    ) as output_modalities
 FROM create_run cr
 CROSS JOIN group_data gd
 CROSS JOIN link_group lg

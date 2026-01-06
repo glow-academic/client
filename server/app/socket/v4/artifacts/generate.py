@@ -20,31 +20,29 @@ SQL_PATH = "app/sql/v4/generate/start/get_generation_run_context_and_create_run_
 # Import adapters - modality-first structure
 from app.socket.v4.artifacts.adapters.audio.openai import OpenAIAudioAdapter
 from app.socket.v4.artifacts.adapters.image.openai import OpenAIImageAdapter
+from app.socket.v4.artifacts.adapters.persistence import (persist_image,
+                                                          persist_video)
 from app.socket.v4.artifacts.adapters.text.openai import OpenAITextAdapter
 from app.socket.v4.artifacts.adapters.video.openai import OpenAIVideoAdapter
-from app.socket.v4.artifacts.adapters.persistence import persist_image, persist_video
 
-# Mapping from agent_role to handler type (modality)
-HANDLER_MAPPING = {
-    # Text generation handlers
-    "scenario": "text",
-    "document": "text",
-    "simulation": "text",
-    "grade": "text",
-    "hint": "text",
-    "classify": "text",
-    "member": "text",
-    "prompt": "text",
-    "rubric": "text",
-    "title": "text",
-    "audio": "text",
-    # Image generation
-    "image": "image",
-    # Video generation
-    "video": "video",
-    # Audio generation (ephemeral sessions only)
-    "voice": "audio",
-}
+
+def determine_modality_from_output_modalities(
+    output_modalities: list[str] | None
+) -> str:
+    """Determine handler modality from model's output_modalities.
+    
+    Prefers 'text' if available, otherwise uses first modality.
+    Falls back to 'text' if no modalities provided.
+    """
+    if not output_modalities or len(output_modalities) == 0:
+        return "text"  # Default fallback
+    
+    # Prefer text if available (most common)
+    if "text" in output_modalities:
+        return "text"
+    
+    # Otherwise use first modality
+    return output_modalities[0]
 
 
 async def _generate_artifact_impl(
@@ -55,49 +53,73 @@ async def _generate_artifact_impl(
     """Unified entry point for all artifact generation - routes to adapters."""
     try:
         async with get_db_connection() as conn:
-            # Call SQL to create group + run + rate limit check + user message (if needed)
-            try:
-                # Convert message_ids to UUID array if provided
-                message_ids_uuid = (
-                    [uuid.UUID(mid) for mid in data.get("message_ids", [])]
-                    if data.get("message_ids")
-                    else None
-                )
-
-                params = GetGenerationRunContextAndCreateRunSqlParams(
-                    agent_id=uuid.UUID(data["agent_id"]),
-                    resource_id=uuid.UUID(data["resource_id"]),
-                    resource_type=data["resource_type"],
-                    profile_id=profile_id,
-                    message_ids=message_ids_uuid,
-                    department_id=None,  # Can be NULL, modality handlers will get it
-                    group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
-                    user_instructions=data.get("user_instructions"),
-                    developer_message_contents=data.get("developer_message_contents"),
-                )
-                result = cast(
-                    GetGenerationRunContextAndCreateRunSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH, params=params),
-                )
-            except Exception as e:
-                import asyncpg  # type: ignore
-
-                error_msg = str(e)
-                # Check if it's a rate limit error from SQL
-                if (
-                    isinstance(e, asyncpg.PostgresError)
-                    and "RATE_LIMIT_EXCEEDED" in error_msg
-                ):
-                    user_msg = (
-                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                        if "RATE_LIMIT_EXCEEDED: " in error_msg
-                        else error_msg
+            # Get output_modalities from payload (from generate_start) or query
+            if data.get("run_id") and data.get("output_modalities"):
+                # Use from payload (already created run via generate_start)
+                output_modalities = data.get("output_modalities")
+                modality = determine_modality_from_output_modalities(output_modalities)
+                # Use existing run_id, group_id, trace_id from payload
+                run_id = data["run_id"]
+                group_id = data.get("group_id")
+                trace_id = data.get("trace_id")
+                message_ids = data.get("message_ids", [])
+            else:
+                # Create run via SQL (direct call to generate_artifact)
+                try:
+                    # Convert message_ids to UUID array if provided
+                    message_ids_uuid = (
+                        [uuid.UUID(mid) for mid in data.get("message_ids", [])]
+                        if data.get("message_ids")
+                        else None
                     )
+
+                    params = GetGenerationRunContextAndCreateRunSqlParams(
+                        agent_id=uuid.UUID(data["agent_id"]),
+                        resource_id=uuid.UUID(data["resource_id"]),
+                        resource_type=data["resource_type"],
+                        profile_id=profile_id,
+                        message_ids=message_ids_uuid,
+                        department_id=None,  # Can be NULL, modality handlers will get it
+                        group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
+                        user_instructions=data.get("user_instructions"),
+                        developer_message_contents=data.get("developer_message_contents"),
+                    )
+                    result = cast(
+                        GetGenerationRunContextAndCreateRunSqlRow,
+                        await execute_sql_typed(conn, SQL_PATH, params=params),
+                    )
+                except Exception as e:
+                    import asyncpg  # type: ignore
+
+                    error_msg = str(e)
+                    # Check if it's a rate limit error from SQL
+                    if (
+                        isinstance(e, asyncpg.PostgresError)
+                        and "RATE_LIMIT_EXCEEDED" in error_msg
+                    ):
+                        user_msg = (
+                            error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                            if "RATE_LIMIT_EXCEEDED: " in error_msg
+                            else error_msg
+                        )
+                        await emit_to_internal(
+                            "generate_error",
+                            GenerateErrorApiRequest(
+                                sid=sid,
+                                error_message=user_msg,
+                                resource_id=data.get("resource_id"),
+                                group_id=data.get("group_id"),
+                                resource_type=data.get("resource_type"),
+                            ),
+                            sid=sid,
+                        )
+                        return
+                    # Other errors
                     await emit_to_internal(
                         "generate_error",
                         GenerateErrorApiRequest(
                             sid=sid,
-                            error_message=user_msg,
+                            error_message=f"Failed to start generation: {str(e)}",
                             resource_id=data.get("resource_id"),
                             group_id=data.get("group_id"),
                             resource_type=data.get("resource_type"),
@@ -105,39 +127,27 @@ async def _generate_artifact_impl(
                         sid=sid,
                     )
                     return
-                # Other errors
-                await emit_to_internal(
-                    "generate_error",
-                    GenerateErrorApiRequest(
+
+                if not result:
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Failed to create run",
+                            resource_id=data.get("resource_id"),
+                            group_id=data.get("group_id"),
+                            resource_type=data.get("resource_type"),
+                        ),
                         sid=sid,
-                        error_message=f"Failed to start generation: {str(e)}",
-                        resource_id=data.get("resource_id"),
-                        group_id=data.get("group_id"),
-                        resource_type=data.get("resource_type"),
-                    ),
-                    sid=sid,
-                )
-                return
+                    )
+                    return
 
-            if not result:
-                await emit_to_internal(
-                    "generate_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message="Failed to create run",
-                        resource_id=data.get("resource_id"),
-                        group_id=data.get("group_id"),
-                        resource_type=data.get("resource_type"),
-                    ),
-                    sid=sid,
-                )
-                return
-
-            # Determine handler type (modality) from agent_role
-            modality = HANDLER_MAPPING.get(data.get("resource_type", ""), "text")
-
-            # Determine provider from SQL result
-            provider = getattr(result, "provider", None) or "openai"
+                modality = determine_modality_from_output_modalities(result.output_modalities)
+                run_id = result.run_id
+                group_id = str(result.group_id) if result.group_id else None
+                trace_id = result.trace_id
+                message_ids = [str(mid) for mid in (result.message_ids or [])]
+                provider = getattr(result, "provider", None) or "openai"
 
             # Modality-first adapter mapping
             MODALITY_ADAPTERS = {
@@ -166,13 +176,13 @@ async def _generate_artifact_impl(
             # Build payload for adapter
             adapter_payload = {
                 "sid": sid,
-                "run_id": result.run_id,  # Already created
+                "run_id": run_id,
                 "agent_id": data["agent_id"],
                 "resource_id": data["resource_id"],
                 "resource_type": data["resource_type"],
-                "group_id": str(result.group_id),
-                "trace_id": result.trace_id,
-                "message_ids": [str(mid) for mid in (result.message_ids or [])],
+                "group_id": group_id,
+                "trace_id": trace_id,
+                "message_ids": message_ids,
                 "department_id": data.get("department_id"),
             }
 
@@ -204,22 +214,23 @@ async def _generate_artifact_impl(
             if modality == "audio":
                 if adapter.get_implementation_type() == "webrtc":
                     # Build AgentConfig from result
-                    from app.socket.v4.artifacts.adapters.base import AgentConfig
+                    from app.socket.v4.artifacts.adapters.base import \
+                        AgentConfig
 
                     agent_config = AgentConfig(
-                        agent_id=result.agent_id or "",
-                        agent_name=getattr(result, "agent_name", None),
-                        system_prompt=getattr(result, "system_prompt", None),
-                        temperature=getattr(result, "temperature", None),
-                        reasoning=getattr(result, "reasoning", None),
-                        model_id=getattr(result, "model_id", None),
-                        model_name=getattr(result, "model_name", None),
+                        agent_id=data["agent_id"],
+                        agent_name=None,  # Not available from payload
+                        system_prompt=None,  # Not available from payload
+                        temperature=None,  # Not available from payload
+                        reasoning=None,  # Not available from payload
+                        model_id=None,  # Not available from payload
+                        model_name=None,  # Not available from payload
                         provider=provider,
-                        base_url=getattr(result, "base_url", None),
-                        api_key=getattr(result, "api_key", None),
-                        custom_model=getattr(result, "custom_model", None),
-                        provider_id=getattr(result, "provider_id", None),
-                        provider_name=getattr(result, "provider_name", None),
+                        base_url=None,  # Not available from payload
+                        api_key=None,  # Not available from payload
+                        custom_model=None,  # Not available from payload
+                        provider_id=None,  # Not available from payload
+                        provider_name=None,  # Not available from payload
                     )
 
                     # Initialize session
@@ -228,7 +239,7 @@ async def _generate_artifact_impl(
                         agent_config=agent_config,
                         resource_id=uuid.UUID(data["resource_id"]),
                         resource_type=data["resource_type"],
-                        run_id=uuid.UUID(result.run_id),
+                        run_id=uuid.UUID(run_id),
                     )
 
                     # Emit session config to frontend
@@ -244,7 +255,7 @@ async def _generate_artifact_impl(
                             "instructions": session_config.instructions,
                             "history": session_config.history,
                             "upload_id": data.get("uploadId"),
-                            "run_id": result.run_id,
+                            "run_id": run_id,
                             "message": "Audio generation session started",
                         },
                     )
@@ -269,7 +280,7 @@ async def _generate_artifact_impl(
                         "file_path": file_path,
                         "mime_type": image_result.mime_type,
                         "file_size": image_result.file_size,
-                        "trace_id": result.trace_id,
+                        "trace_id": trace_id,
                     },
                 )
             elif modality == "video":
@@ -288,7 +299,7 @@ async def _generate_artifact_impl(
                         "message": "Video generated successfully",
                         "videoUrl": f"/api/uploads/download/{video_result.upload_id}",
                         "video_id": str(video_id),
-                        "run_id": result.run_id,
+                        "run_id": run_id,
                     },
                 )
 

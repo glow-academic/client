@@ -10338,6 +10338,7 @@ class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
 
 class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
 
@@ -10356,6 +10357,7 @@ class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
 
 
 

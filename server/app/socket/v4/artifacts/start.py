@@ -37,29 +37,6 @@ class GenerateStartApiRequest(BaseModel):
     developer_message_contents: list[str] | None = None  # Optional: pre-rendered developer message content strings
 
 
-# Mapping from agent_role to handler type
-HANDLER_MAPPING = {
-    # Text generation handlers
-    "scenario": "text",
-    "document": "text",
-    "simulation": "text",
-    "grade": "text",
-    "hint": "text",
-    "classify": "text",
-    "member": "text",
-    "prompt": "text",
-    "rubric": "text",
-    "title": "text",
-    "audio": "text",
-    # Image generation
-    "image": "image",
-    # Video generation
-    "video": "video",
-    # Audio generation (ephemeral sessions only)
-    "voice": "audio",
-}
-
-
 async def _generate_start_impl(
     sid: str,
     data: GenerateStartApiRequest,
@@ -147,10 +124,7 @@ async def _generate_start_impl(
                 )
                 return
 
-            # Determine handler type from agent_role
-            handler_type = HANDLER_MAPPING.get(data.resource_type, "text")
-            
-            # Build payload for handlers
+            # Build payload for generate_artifact
             handler_payload = {
                 "sid": sid,
                 "run_id": result.run_id,  # Already created
@@ -160,21 +134,12 @@ async def _generate_start_impl(
                 "group_id": str(result.group_id),
                 "trace_id": result.trace_id,
                 "message_ids": [str(mid) for mid in (result.message_ids or [])],  # Includes user message if created
+                "developer_message_contents": data.developer_message_contents,
+                "output_modalities": result.output_modalities,  # Pass model modalities
             }
             
-            # Route to page handlers for application pages (scenario, rubric, document, agent)
-            # These handle page-specific logic then route to artifacts/generate.py
-            if data.resource_type == "scenario":
-                await internal_sio.emit("scenario_generate", handler_payload)
-            elif data.resource_type == "rubric":
-                await internal_sio.emit("rubric_generate", handler_payload)
-            elif data.resource_type == "document":
-                await internal_sio.emit("document_generate", handler_payload)
-            elif data.resource_type == "prompt":
-                await internal_sio.emit("agent_generate", handler_payload)
-            else:
-                # For other resource types, route directly to artifacts/generate.py
-                await internal_sio.emit("generate_artifact", handler_payload)
+            # Emit to generate_artifact for all resource types
+            await internal_sio.emit("generate_artifact", handler_payload)
                 
     except Exception as e:
         # Emit error to generate_error handler
