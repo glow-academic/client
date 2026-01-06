@@ -95,21 +95,21 @@ user_profile AS (
 ),
 parameter_active_scenario_links AS (
     SELECT 
-        fp.parameter_id,
+        f.parameter_id,
         COUNT(DISTINCT sf.scenario_id) as active_scenario_count
-    FROM parameter_fields fp
-    JOIN scenario_fields sf ON sf.field_id = fp.field_id
-    WHERE fp.active = true AND sf.active = true
-    GROUP BY fp.parameter_id
+    FROM fields f
+    JOIN scenario_fields sf ON sf.field_id = f.id
+    WHERE f.active = true AND sf.active = true AND f.parameter_id IS NOT NULL
+    GROUP BY f.parameter_id
 ),
 parameter_all_scenario_links AS (
     SELECT 
-        fp.parameter_id,
+        f.parameter_id,
         COUNT(DISTINCT sf.scenario_id) as total_scenario_links
-    FROM parameter_fields fp
-    JOIN scenario_fields sf ON sf.field_id = fp.field_id
-    WHERE fp.active = true
-    GROUP BY fp.parameter_id
+    FROM fields f
+    JOIN scenario_fields sf ON sf.field_id = f.id
+    WHERE f.active = true AND f.parameter_id IS NOT NULL
+    GROUP BY f.parameter_id
 ),
 scenario_parameters_data AS (
     SELECT 
@@ -124,26 +124,25 @@ scenario_parameters_data AS (
 ),
 parameter_item_counts AS (
     SELECT 
-        fp.parameter_id,
+        f.parameter_id,
         COUNT(*) as num_items
-    FROM parameter_fields fp
-    WHERE fp.active = true
-    GROUP BY fp.parameter_id
+    FROM fields f
+    WHERE f.active = true AND f.parameter_id IS NOT NULL
+    GROUP BY f.parameter_id
 ),
 parameter_sample_items_data AS (
     SELECT 
-        fp_sub.parameter_id,
-        fp_sub.field_id,
-        fp_sub.name,
-        fp_sub.description
+        f_sub.parameter_id,
+        f_sub.field_id,
+        f_sub.name,
+        f_sub.description
     FROM (
-        SELECT f.id as field_id, fp.parameter_id, f.name, f.description,
-               ROW_NUMBER() OVER (PARTITION BY fp.parameter_id ORDER BY f.name) as rn
-        FROM parameter_fields fp
-        JOIN fields f ON f.id = fp.field_id
-        WHERE fp.active = true
-    ) fp_sub
-    WHERE fp_sub.rn <= 3
+        SELECT f.id as field_id, f.parameter_id, f.name, f.description,
+               ROW_NUMBER() OVER (PARTITION BY f.parameter_id ORDER BY f.name) as rn
+        FROM fields f
+        WHERE f.active = true AND f.parameter_id IS NOT NULL
+    ) f_sub
+    WHERE f_sub.rn <= 3
 ),
 parameter_item_departments_data AS (
     SELECT 
@@ -154,10 +153,10 @@ parameter_item_departments_data AS (
         FROM parameter_departments pd
         WHERE pd.active = true
         UNION
-        SELECT fp.parameter_id, fd.department_id
-        FROM parameter_fields fp
-        JOIN field_departments fd ON fd.field_id = fp.field_id
-        WHERE fp.active = true AND fd.active = true
+        SELECT f.parameter_id, fd.department_id
+        FROM fields f
+        JOIN field_departments fd ON fd.field_id = f.id
+        WHERE f.active = true AND fd.active = true AND f.parameter_id IS NOT NULL
     ) combined
     GROUP BY combined.parameter_id
 ),
@@ -170,20 +169,20 @@ parameter_item_departments_for_filter AS (
         FROM parameter_departments pd
         WHERE pd.active = true
         UNION
-        SELECT fp.parameter_id, fd.department_id
-        FROM parameter_fields fp
-        JOIN field_departments fd ON fd.field_id = fp.field_id
-        WHERE fp.active = true AND fd.active = true
+        SELECT f.parameter_id, fd.department_id
+        FROM fields f
+        JOIN field_departments fd ON fd.field_id = f.id
+        WHERE f.active = true AND fd.active = true AND f.parameter_id IS NOT NULL
     ) combined
 ),
 parameter_documents AS (
     SELECT 
-        fp.parameter_id,
+        f.parameter_id,
         ARRAY_AGG(DISTINCT df.document_id::text ORDER BY df.document_id::text) as document_ids
-    FROM parameter_fields fp
-    JOIN document_fields df ON df.field_id = fp.field_id
-    WHERE fp.active = true AND df.active = true
-    GROUP BY fp.parameter_id
+    FROM fields f
+    JOIN document_fields df ON df.field_id = f.id
+    WHERE f.active = true AND df.active = true AND f.parameter_id IS NOT NULL
+    GROUP BY f.parameter_id
 ),
 filtered_parameters AS (
     SELECT 
@@ -202,8 +201,8 @@ filtered_parameters AS (
         )
         AND NOT EXISTS (
             SELECT 1 FROM field_departments fd2 
-            JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
-            WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true
+            JOIN fields f2 ON f2.id = fd2.field_id 
+            WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true
         )
 ),
 all_department_ids AS (

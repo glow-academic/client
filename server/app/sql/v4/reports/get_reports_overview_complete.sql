@@ -1629,16 +1629,14 @@ filt AS (
                       OR EXISTS (
                           SELECT 1 
                           FROM fields f
-                          JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
                           JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-                          WHERE pf.parameter_id = p.id AND fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
+                          WHERE f.parameter_id = p.id AND fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
                       )
                       OR NOT EXISTS (
                           SELECT 1 
                           FROM fields f
-                          JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
                           JOIN field_departments fd2 ON fd2.field_id = f.id AND fd2.active = true
-                          WHERE pf.parameter_id = p.id
+                          WHERE f.parameter_id = p.id
                       )
                   )
             ),
@@ -1646,15 +1644,14 @@ filt AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
                         (f.id::text, f.name, COALESCE(f.description, ''), 
-                         pf.parameter_id::text, p.name
+                         f.parameter_id::text, p.name
                         )::types.q_reports_overview_v4_field
                         ORDER BY f.name
                     ),
                     '{}'::types.q_reports_overview_v4_field[]
                 ) AS fields_array
                 FROM fields f
-                JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-                JOIN parameters p ON pf.parameter_id = p.id
+                JOIN parameters p ON p.id = f.parameter_id
                 LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
                 WHERE p.active = true
                   AND (

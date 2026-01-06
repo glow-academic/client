@@ -124,22 +124,15 @@ field_connections_fixed AS (
     LEFT JOIN ensure_one_default eod ON eod.conn_order = fce.conn_order
 ),
 link_fields_to_parameter AS (
-    -- Link existing fields to parameter via parameter_fields junction with default and active flags
-    INSERT INTO parameter_fields (parameter_id, field_id, "default", active, created_at, updated_at)
-    SELECT 
-        np.parameter_id,
-        fcf.field_id,
-        fcf.conn_default,
-        fcf.conn_active,
-        NOW(),
-        NOW()
-    FROM new_parameter np
-    CROSS JOIN field_connections_fixed fcf
-    WHERE EXISTS (SELECT 1 FROM fields f WHERE f.id = fcf.field_id AND f.active = true)
-    ON CONFLICT (parameter_id, field_id) DO UPDATE SET
-        active = EXCLUDED.active,
-        "default" = EXCLUDED."default",
+    -- Update fields to link to parameter directly (denormalized - each field has one parameter_id)
+    UPDATE fields
+    SET parameter_id = (SELECT parameter_id FROM new_parameter LIMIT 1),
         updated_at = NOW()
+    FROM field_connections_fixed fcf
+    WHERE fields.id = fcf.field_id 
+      AND fields.active = true
+      AND fcf.conn_active = true
+    RETURNING fields.id
 ),
 link_parameter_departments AS (
     -- Link departments to parameter if provided at parameter level

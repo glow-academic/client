@@ -220,14 +220,13 @@ field_data AS (
         f.id as field_id,
         f.name,
         f.description,
-        pf.parameter_id,
+        f.parameter_id,
         p.name as parameter_name
     FROM fields f
-    JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-    JOIN parameters p ON p.id = pf.parameter_id
+    JOIN parameters p ON p.id = f.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE p.active = true AND f.active = true
-    GROUP BY f.id, f.name, f.description, pf.parameter_id, p.name
+    WHERE p.active = true AND f.active = true AND f.parameter_id IS NOT NULL
+    GROUP BY f.id, f.name, f.description, f.parameter_id, p.name
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
@@ -238,20 +237,19 @@ department_parameter_ids AS (
         COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
     FROM departments d
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
+    LEFT JOIN fields f_pf ON f_pf.parameter_id = p.id AND f_pf.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f_pf.id AND fd.active = true
     WHERE d.id IN (SELECT department_id FROM user_departments)
     AND (fd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                                                 JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
-                                                 WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
+                                                 JOIN fields f2 ON f2.id = fd2.field_id 
+                                                 WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true))
     GROUP BY d.id
 ),
 cross_department_items AS (
     -- Fields with no department restrictions (available to all)
     SELECT DISTINCT f.id
     FROM fields f
-    JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-    JOIN parameters p ON p.id = pf.parameter_id AND p.active = true
+    JOIN parameters p ON p.id = f.parameter_id AND p.active = true
     WHERE NOT EXISTS (
         SELECT 1 FROM field_departments fd 
         WHERE fd.field_id = f.id 
@@ -268,8 +266,7 @@ department_field_ids AS (
         SELECT DISTINCT fd.department_id, f.id
         FROM field_departments fd
         JOIN fields f ON f.id = fd.field_id
-        JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-        JOIN parameters p ON p.id = pf.parameter_id AND p.active = true
+        JOIN parameters p ON p.id = f.parameter_id AND p.active = true
         WHERE fd.active = true
         UNION
         -- Cross-department fields (available to all user departments)
@@ -303,15 +300,15 @@ parameter_data AS (
         CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
         p.video_parameter as video_parameter
     FROM parameters p
-    JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
+    JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter, p.video_parameter
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
-                      WHERE pf2.parameter_id = p.id AND pf2.active = true AND fd2.active = true)
+                      JOIN fields f2 ON f2.id = fd2.field_id 
+                      WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true)
     ORDER BY p.name
 ),
 document_valid_fields AS (
@@ -322,8 +319,7 @@ document_valid_fields AS (
             ARRAY[]::text[]
         ) as valid_field_ids
     FROM document_data dd
-    LEFT JOIN parameter_fields pf ON pf.parameter_id IN (SELECT id FROM parameters WHERE active = true) AND pf.active = true
-    LEFT JOIN fields f ON f.id = pf.field_id AND f.active = true
+    LEFT JOIN fields f ON f.parameter_id IN (SELECT id FROM parameters WHERE active = true) AND f.active = true
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE (
         -- If document has no departments, include only cross-department fields

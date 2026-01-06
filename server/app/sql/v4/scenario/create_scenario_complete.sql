@@ -589,25 +589,24 @@ link_questions AS (
         active = true,
         updated_at = NOW()
 ),
-link_question_times AS (
-    -- Link question times to videos
-    INSERT INTO scenario_question_times (scenario_id, question_id, video_id, time, active, created_at, updated_at)
-    SELECT 
-        ns.id,
-        qt.question_id,
-        qt.video_id,
-        time_val::numeric as time,
-        true,
-        NOW(),
-        NOW()
-    FROM new_scenario ns
-    CROSS JOIN params x
-    CROSS JOIN UNNEST(x.question_timestamps) as qt
-    CROSS JOIN UNNEST(COALESCE(qt.timestamps, ARRAY[]::numeric[])) as time_val
-    WHERE array_length((SELECT question_timestamps FROM params), 1) > 0
-    ON CONFLICT (scenario_id, question_id, video_id, time) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
+update_question_times AS (
+    -- Update question times directly on questions table (use first timestamp if multiple provided)
+    UPDATE questions
+    SET time = COALESCE(
+        (SELECT (timestamps[1])::integer 
+         FROM UNNEST((SELECT question_timestamps FROM params)) as qt
+         WHERE qt.question_id = questions.id
+         AND array_length(qt.timestamps, 1) > 0
+         LIMIT 1),
+        questions.time
+    ),
+    updated_at = NOW()
+    WHERE EXISTS (
+        SELECT 1 
+        FROM UNNEST((SELECT question_timestamps FROM params)) as qt
+        WHERE qt.question_id = questions.id
+        AND array_length(qt.timestamps, 1) > 0
+    )
 ),
 link_image_departments AS (
     INSERT INTO image_departments (image_id, department_id, active, created_at, updated_at)

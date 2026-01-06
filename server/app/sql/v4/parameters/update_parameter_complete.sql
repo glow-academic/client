@@ -108,12 +108,6 @@ update_parameter AS (
     WHERE id = (SELECT parameter_id FROM params)
     RETURNING id as parameter_id
 ),
-delete_existing_field_links AS (
-    -- Soft delete all existing parameter_fields links (set active = false)
-    UPDATE parameter_fields 
-    SET active = false, updated_at = NOW()
-    WHERE parameter_id = (SELECT parameter_id FROM params)
-),
 field_connections_expanded AS (
     -- Expand composite type array field_connections
     SELECT 
@@ -152,22 +146,22 @@ field_connections_fixed AS (
     FROM field_connections_expanded fce
     LEFT JOIN ensure_one_default eod ON eod.conn_order = fce.conn_order
 ),
+delete_existing_field_links AS (
+    -- Clear parameter_id on fields that should be unlinked (those not in field_connections_fixed)
+    UPDATE fields
+    SET parameter_id = NULL, updated_at = NOW()
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND id NOT IN (SELECT field_id FROM field_connections_fixed WHERE conn_active = true)
+),
 link_fields_to_parameter AS (
-    -- Link existing fields to parameter via parameter_fields junction with default and active flags
-    INSERT INTO parameter_fields (parameter_id, field_id, "default", active, created_at, updated_at)
-    SELECT 
-        (SELECT parameter_id FROM params),
-        fcf.field_id,
-        fcf.conn_default,
-        fcf.conn_active,
-        NOW(),
-        NOW()
-    FROM field_connections_fixed fcf
-    WHERE EXISTS (SELECT 1 FROM fields f WHERE f.id = fcf.field_id AND f.active = true)
-    ON CONFLICT (parameter_id, field_id) DO UPDATE SET
-        active = EXCLUDED.active,
-        "default" = EXCLUDED."default",
+    -- Update fields to link to parameter directly (denormalized - each field has one parameter_id)
+    UPDATE fields
+    SET parameter_id = (SELECT parameter_id FROM params),
         updated_at = NOW()
+    FROM field_connections_fixed fcf
+    WHERE fields.id = fcf.field_id 
+      AND fields.active = true
+      AND fcf.conn_active = true
 ),
 delete_existing_parameter_departments AS (
     -- Delete all existing parameter_departments links

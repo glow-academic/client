@@ -59,8 +59,7 @@ SELECT COALESCE(
     '{}'::types.q_get_document_template_context_v4_field[]
 ) as fields
 FROM fields f
-JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-JOIN parameters pa ON pa.id = fp.parameter_id
+JOIN parameters pa ON pa.id = f.parameter_id AND pa.active = true
 WHERE f.id = ANY($1)
   AND pa.active = true
 $$;

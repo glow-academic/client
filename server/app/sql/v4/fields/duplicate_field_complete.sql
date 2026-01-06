@@ -40,9 +40,9 @@ original_field AS (
     JOIN fields f ON f.id = x.field_id
 ),
 original_parameters AS (
-    SELECT fp.parameter_id
+    SELECT f.parameter_id
     FROM params x
-    JOIN parameter_fields fp ON fp.field_id = x.field_id AND fp.active = true
+    JOIN fields f ON f.id = x.field_id AND f.active = true AND f.parameter_id IS NOT NULL
 ),
 original_departments AS (
     SELECT fd.department_id
@@ -52,28 +52,16 @@ original_departments AS (
 new_field AS (
     INSERT INTO fields (
         name,
-        description
+        description,
+        parameter_id
     )
     SELECT 
         orig.name || ' (Copy)',
-        orig.description
+        orig.description,
+        op.parameter_id
     FROM original_field orig
+    LEFT JOIN original_parameters op ON true
     RETURNING id as field_id, name as field_name
-),
-link_parameters AS (
-    -- Link new field to same parameters as original
-    INSERT INTO parameter_fields (field_id, parameter_id, active, created_at, updated_at)
-    SELECT 
-        nf.field_id,
-        op.parameter_id,
-        true,
-        NOW(),
-        NOW()
-    FROM new_field nf
-    CROSS JOIN original_parameters op
-    ON CONFLICT (field_id, parameter_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
 ),
 link_departments AS (
     -- Link new field to same departments as original

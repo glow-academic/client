@@ -272,14 +272,13 @@ parameter_item_data AS (
         f.id as field_id,
         f.name,
         f.description,
-        fp.parameter_id,
+        f.parameter_id,
         p_param.name as parameter_name
     FROM scenarios s
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id AND sf.active = true
     LEFT JOIN fields f ON f.id = sf.field_id
-    LEFT JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    LEFT JOIN parameters p_param ON p_param.id = fp.parameter_id
+    LEFT JOIN parameters p_param ON p_param.id = f.parameter_id
     WHERE s.id = csi.scenario_id
 ),
 -- Get full scenario data with all metadata

@@ -34,12 +34,11 @@ parameter_items_data AS (
         f.id,
         f.name,
         COALESCE(f.description, '') as description,
-        fp.parameter_id,
+        f.parameter_id,
         p.name as parameter_name,
         p.document_parameter
     FROM fields f
-    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    JOIN parameters p ON p.id = fp.parameter_id
+    JOIN parameters p ON p.id = f.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN params p_params
     WHERE p.active = true
@@ -53,7 +52,7 @@ parameter_items_data AS (
           fd.department_id IN (SELECT department_id FROM user_departments)
           OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
       )
-    GROUP BY f.id, f.name, f.description, fp.parameter_id, p.id, p.name, p.document_parameter
+    GROUP BY f.id, f.name, f.description, f.parameter_id, p.id, p.name, p.document_parameter
 )
 SELECT 
     id::text,

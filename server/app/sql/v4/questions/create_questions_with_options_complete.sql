@@ -39,10 +39,12 @@ WITH questions_data AS (
 ),
 create_questions AS (
     -- Create questions (or get existing if they match exactly)
-    INSERT INTO questions (question_text, allow_multiple, active, created_at, updated_at)
+    -- Note: time column is required, default to 0 (will be updated via save_question_timestamps)
+    INSERT INTO questions (question_text, allow_multiple, time, active, created_at, updated_at)
     SELECT DISTINCT
         qd.question_text,
         qd.allow_multiple,
+        0 as time,  -- Default to 0, will be updated via save_question_timestamps if provided
         true,
         NOW(),
         NOW()
@@ -72,7 +74,6 @@ options_data AS (
     SELECT 
         aq.question_id,
         opt->>'option_text' as option_text,
-        opt->>'type' as option_type,
         COALESCE((opt->>'is_correct')::boolean, false) as is_correct
     FROM all_questions aq
     JOIN questions_data qd ON aq.question_text = qd.question_text 
@@ -81,28 +82,25 @@ options_data AS (
     WHERE qd.question_type = 'choice' AND qd.options_json IS NOT NULL
 ),
 create_options AS (
-    -- Create options (reusable across questions)
-    INSERT INTO options (option_text, type, active, created_at, updated_at)
+    -- Create options (reusable across questions, no type column)
+    INSERT INTO options (option_text, active, created_at, updated_at)
     SELECT DISTINCT
         od.option_text,
-        od.option_type::option_type,
         true,
         NOW(),
         NOW()
     FROM options_data od
     WHERE od.option_text IS NOT NULL AND od.option_text != ''
     ON CONFLICT DO NOTHING
-    RETURNING id::uuid as option_id, option_text, type
+    RETURNING id::uuid as option_id, option_text
 ),
 get_existing_options AS (
     -- Get existing options that match
     SELECT 
         o.id as option_id,
-        o.option_text,
-        o.type
+        o.option_text
     FROM options o
-    JOIN options_data od ON o.option_text = od.option_text 
-        AND o.type::text = od.option_type
+    JOIN options_data od ON o.option_text = od.option_text
     WHERE o.active = true
 ),
 all_options AS (
@@ -110,9 +108,9 @@ all_options AS (
     UNION
     SELECT * FROM get_existing_options
 ),
-link_question_options AS (
-    -- Link questions to options via question_options junction table
-    INSERT INTO question_options (question_id, option_id, active, created_at, updated_at)
+create_answers AS (
+    -- Create answers as strong entities (replaces question_answers junction table)
+    INSERT INTO answers (question_id, option_id, active, created_at, updated_at)
     SELECT DISTINCT
         od.question_id,
         ao.option_id,
@@ -120,24 +118,7 @@ link_question_options AS (
         NOW(),
         NOW()
     FROM options_data od
-    JOIN all_options ao ON ao.option_text = od.option_text 
-        AND ao.type::text = od.option_type
-    ON CONFLICT (question_id, option_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-),
-link_question_answers AS (
-    -- Link questions to correct options via question_answers junction table
-    INSERT INTO question_answers (question_id, option_id, active, created_at, updated_at)
-    SELECT DISTINCT
-        od.question_id,
-        ao.option_id,
-        true,
-        NOW(),
-        NOW()
-    FROM options_data od
-    JOIN all_options ao ON ao.option_text = od.option_text 
-        AND ao.type::text = od.option_type
+    JOIN all_options ao ON ao.option_text = od.option_text
     WHERE od.is_correct = true
     ON CONFLICT (question_id, option_id) DO UPDATE SET
         active = true,

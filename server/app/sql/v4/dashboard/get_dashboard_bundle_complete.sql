@@ -1634,16 +1634,14 @@ filt AS (
                       OR EXISTS (
                           SELECT 1 
                           FROM fields f
-                          JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
                           JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-                          WHERE pf.parameter_id = p.id AND fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
+                          WHERE f.parameter_id = p.id AND fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
                       )
                       OR NOT EXISTS (
                           SELECT 1 
                           FROM fields f
-                          JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
                           JOIN field_departments fd2 ON fd2.field_id = f.id AND fd2.active = true
-                          WHERE pf.parameter_id = p.id
+                          WHERE f.parameter_id = p.id
                       )
                   )
             ),
@@ -1651,15 +1649,14 @@ filt AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
                         (f.id::text, f.name, COALESCE(f.description, ''), 
-                         pf.parameter_id::text, p.name
+                         f.parameter_id::text, p.name
                         )::types.q_get_dashboard_bundle_v4_field
                         ORDER BY f.name
                     ),
                     '{}'::types.q_get_dashboard_bundle_v4_field[]
                 ) AS fields_array
                 FROM fields f
-                JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-                JOIN parameters p ON pf.parameter_id = p.id
+                JOIN parameters p ON p.id = f.parameter_id
                 LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
                 WHERE p.active = true
                   AND (
@@ -2563,11 +2560,10 @@ filt AS (
             cat_map AS (
                 SELECT 
                     f.id AS parameter_item_id,
-                    fp.parameter_id,
+                    f.parameter_id,
                     s.id AS scenario_id
                 FROM fields f
-                JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-                JOIN param_ids_categorical p ON p.id = fp.parameter_id
+                JOIN param_ids_categorical p ON p.id = f.parameter_id
                 JOIN scenario_fields sf ON sf.field_id = f.id
                 JOIN scenarios s ON s.id = sf.scenario_id
                 WHERE s.active = TRUE
@@ -2825,8 +2821,7 @@ filt AS (
                 JOIN scen_seen ss ON ss.scenario_id = sc.id
                 JOIN scenario_fields sf ON sf.scenario_id = sc.id
                 JOIN fields f ON f.id = sf.field_id
-                JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-                JOIN parameters p ON p.id = pf.parameter_id
+                JOIN parameters p ON p.id = f.parameter_id
                 JOIN analytics a ON a.scenario_id = sc.id
                 WHERE s.active = TRUE AND sc.active = TRUE
                 GROUP BY s.id, p.id, f.id

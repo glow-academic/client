@@ -94,8 +94,8 @@ filtered_parameters AS (
         p.document_parameter,
         p.persona_parameter
     FROM parameters p
-    JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true
     GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter
     HAVING 
@@ -103,17 +103,16 @@ filtered_parameters AS (
         (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR
          COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(api_get_randomization_data_v4.department_ids)) > 0
          OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
-                      WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
+                      JOIN fields f2 ON f2.id = fd2.field_id 
+                      WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true))
 ),
 parameter_items_data AS (
-    SELECT DISTINCT f.id, f.name, f.description, pf.parameter_id
+    SELECT DISTINCT f.id, f.name, f.description, f.parameter_id
     FROM fields f
-    JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-    JOIN filtered_parameters fp2 ON fp2.id = pf.parameter_id
+    JOIN filtered_parameters fp2 ON fp2.id = f.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE f.active = true
-    GROUP BY f.id, f.name, f.description, pf.parameter_id
+    GROUP BY f.id, f.name, f.description, f.parameter_id
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR

@@ -39,8 +39,8 @@ actor_profile AS (
 usage_check AS (
     SELECT COUNT(DISTINCT sf.scenario_id) as usage_count
     FROM params x
-    JOIN parameter_fields fp ON fp.parameter_id = x.parameter_id AND fp.active = true
-    JOIN scenario_fields sf ON sf.field_id = fp.field_id AND sf.active = true
+    JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
+    JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
 ),
 parameter_info AS (
     SELECT 

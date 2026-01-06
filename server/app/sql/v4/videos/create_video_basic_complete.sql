@@ -34,15 +34,15 @@ WITH tool_call AS (
 insert_video AS (
     INSERT INTO videos (
         name,
+        description,
         length_seconds,
         active,
-        image_enabled,
         completed,
         tool_call_id,
         created_at,
         updated_at
     )
-    SELECT name, length_seconds, TRUE, TRUE, FALSE, tool_call.id, NOW(), NOW()
+    SELECT name, name, length_seconds, TRUE, FALSE, tool_call.id, NOW(), NOW()
     FROM tool_call
     RETURNING id
 )

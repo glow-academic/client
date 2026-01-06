@@ -16,13 +16,14 @@ BEGIN
 END $$;
 
 -- Recreate function
+-- Note: developer_instructions.type column was removed - developer instructions are now linked via agent_developer_instructions only
 CREATE OR REPLACE FUNCTION api_get_developer_instruction_v4(
-    instruction_type developer_instruction_type,
-    agent_role_val text  -- Changed from agent_role enum to text
+    instruction_type text,  -- Changed from developer_instruction_type enum to text (no longer used, kept for compatibility)
+    agent_role_val text
 )
 RETURNS TABLE (
     developer_instruction_id uuid,
-    type developer_instruction_type,
+    type text,  -- Changed from developer_instruction_type enum to text
     template text,
     active boolean,
     schema_id uuid
@@ -32,7 +33,7 @@ STABLE
 AS $$
 SELECT
     di.id as developer_instruction_id,
-    di.type,
+    instruction_type as type,  -- Return the passed parameter since di.type no longer exists
     di.template,
     di.active,
     dis.schema_id
@@ -41,8 +42,7 @@ JOIN agent_developer_instructions adi ON adi.developer_instruction_id = di.id
 JOIN agents a ON a.id = adi.agent_id
 JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = agent_role_val
 LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
-WHERE di.type = instruction_type
-  AND di.active = true
+WHERE di.active = true
 LIMIT 1
 $$;
 

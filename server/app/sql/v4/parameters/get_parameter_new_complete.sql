@@ -139,11 +139,11 @@ user_departments AS (
 ),
 field_departments_for_filter AS (
     SELECT DISTINCT
-        fp.parameter_id,
+        f.parameter_id,
         fd.department_id
-    FROM parameter_fields fp
-    JOIN field_departments fd ON fd.field_id = fp.field_id
-    WHERE fp.active = true AND fd.active = true
+    FROM fields f
+    JOIN field_departments fd ON fd.field_id = f.id
+    WHERE f.active = true AND fd.active = true AND f.parameter_id IS NOT NULL
 ),
 default_parameter AS (
     SELECT p.id
@@ -159,8 +159,8 @@ default_parameter AS (
         )
         AND NOT EXISTS (
             SELECT 1 FROM field_departments fd2 
-            JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
-            WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true
+            JOIN fields f2 ON f2.id = fd2.field_id 
+            WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true
         )
     ORDER BY p.created_at DESC
     LIMIT 1
@@ -178,10 +178,10 @@ parameter_departments_aggregated AS (
         UNION
         -- Field-level departments
         SELECT fd.department_id as dept_id
-        FROM parameter_fields fp
-        JOIN default_parameter dp ON fp.parameter_id = dp.id
-        JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
-        WHERE fp.active = true
+        FROM fields f
+        JOIN default_parameter dp ON f.parameter_id = dp.id
+        JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+        WHERE f.active = true
     ) combined_depts
 ),
 parameter_data AS (
@@ -228,8 +228,7 @@ field_departments_data AS (
         f.id as parameter_item_id,
         COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
     FROM fields f
-    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    JOIN default_parameter dp ON fp.parameter_id = dp.id
+    JOIN default_parameter dp ON f.parameter_id = dp.id AND f.active = true
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     GROUP BY f.id
 ),
@@ -238,15 +237,14 @@ parameter_items_with_usage AS (
         f.id,
         f.name,
         f.description,
-        COALESCE(fp."default", false) as "default",
+        false as "default",  -- Default flag no longer available after denormalization
         COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
         COALESCE(fdd.department_ids, ARRAY[]::text[]) as department_ids
     FROM fields f
-    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    JOIN default_parameter dp ON fp.parameter_id = dp.id
+    JOIN default_parameter dp ON f.parameter_id = dp.id AND f.active = true
     LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
     LEFT JOIN field_departments_data fdd ON fdd.parameter_item_id = f.id
-    GROUP BY f.id, f.name, f.description, fp."default", fdd.department_ids
+    GROUP BY f.id, f.name, f.description, fdd.department_ids
 ),
 -- Valid departments (user's departments)
 valid_depts AS (

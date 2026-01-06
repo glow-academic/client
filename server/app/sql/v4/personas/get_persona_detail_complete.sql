@@ -283,12 +283,11 @@ field_mapping_data AS (
         f.id as field_id,
         f.name,
         COALESCE(f.description, '') as description,
-        pf.parameter_id,
+        f.parameter_id,
         p.name as parameter_name
     FROM parameter_mapping_data pmd
-    JOIN parameter_fields pf ON pf.parameter_id = pmd.parameter_id AND pf.active = true
-    JOIN fields f ON f.id = pf.field_id AND f.active = true
-    JOIN parameters p ON p.id = pf.parameter_id
+    JOIN fields f ON f.parameter_id = pmd.parameter_id AND f.active = true
+    JOIN parameters p ON p.id = f.parameter_id
     WHERE p.active = true
 ),
 valid_parameter_item_ids_data AS (

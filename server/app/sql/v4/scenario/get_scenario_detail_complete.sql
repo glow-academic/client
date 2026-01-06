@@ -140,7 +140,6 @@ CREATE TYPE types.q_get_scenario_detail_v4_scenario_video AS (
     length_seconds integer,
     completed boolean,
     active boolean,
-    image_enabled boolean,
     file_path text,
     mime_type text,
     upload_id uuid
@@ -149,7 +148,6 @@ CREATE TYPE types.q_get_scenario_detail_v4_scenario_video AS (
 CREATE TYPE types.q_get_scenario_detail_v4_question_option AS (
     id uuid,
     option_text text,
-    type text,
     is_correct boolean
 );
 
@@ -476,8 +474,8 @@ scenario_core AS (
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
-    INNER JOIN scenario_department_access_check sdac ON sdac.scenario_id = s.id AND sdac.has_access = true
     WHERE s.id = (SELECT scenario_id FROM params LIMIT 1)
+      AND EXISTS (SELECT 1 FROM scenario_department_access_check sdac WHERE sdac.scenario_id = s.id AND sdac.has_access = true)
 ),
 scenario_simulation_attributes AS (
     SELECT DISTINCT ON (ss.scenario_id)
@@ -505,7 +503,6 @@ scenario_videos_array AS (
         v.length_seconds,
         v.completed,
         v.active,
-        v.image_enabled,
         u.file_path,
         u.mime_type,
         u.id as upload_id,
@@ -544,22 +541,28 @@ question_options_array AS (
         q.id as question_id,
         opt.id,
         opt.option_text,
-        opt.type::text,
         EXISTS(
-            SELECT 1 FROM question_answers qa 
-            WHERE qa.question_id = q.id AND qa.option_id = opt.id AND qa.active = true
+            SELECT 1 FROM answers a 
+            WHERE a.question_id = q.id AND a.option_id = opt.id AND a.active = true
         ) as is_correct
     FROM scenario_questions_array q
-    JOIN question_options qopt ON qopt.question_id = q.id AND qopt.active = true
-    JOIN options opt ON opt.id = qopt.option_id AND opt.active = true
+    JOIN scenario_options so ON so.scenario_id = (SELECT scenario_id FROM params) AND so.active = true
+    JOIN options opt ON opt.id = so.option_id AND opt.active = true
+    WHERE EXISTS (
+        -- Option is linked to this question via answers
+        SELECT 1 FROM answers a2 
+        WHERE a2.question_id = q.id AND a2.option_id = opt.id AND a2.active = true
+    )
 ),
 question_times_array AS (
     SELECT 
-        sqt.question_id,
-        sqt.time
-    FROM scenario_question_times sqt
-    WHERE sqt.scenario_id = (SELECT scenario_id FROM params) 
-    AND sqt.active = true
+        q.id as question_id,
+        q.time
+    FROM scenario_questions sq
+    JOIN questions q ON q.id = sq.question_id
+    WHERE sq.scenario_id = (SELECT scenario_id FROM params) 
+    AND sq.active = true
+    AND q.active = true
 ),
 scenario_images_array AS (
     SELECT 
@@ -612,15 +615,15 @@ all_parameters_data AS (
         COALESCE((
             SELECT ARRAY_AGG(sf2.field_id ORDER BY sf2.field_id)
             FROM scenario_fields sf2
-            JOIN parameter_fields fp2 ON fp2.field_id = sf2.field_id AND fp2.active = true
-            WHERE sf2.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND fp2.parameter_id = p.id::uuid AND sf2.active = true
+            JOIN fields f2 ON f2.id = sf2.field_id AND f2.active = true
+            WHERE sf2.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND f2.parameter_id = p.id::uuid AND sf2.active = true
         ), ARRAY[]::uuid[]) as selected_items,
         COALESCE((
             SELECT ARRAY_AGG(id ORDER BY id)
             FROM (
                 SELECT f3.id
                 FROM fields f3
-                JOIN parameter_fields fp3 ON fp3.field_id = f3.id AND fp3.active = true
+                WHERE f3.active = true AND f3.parameter_id IS NOT NULL
                 LEFT JOIN field_departments fd3 ON fd3.field_id = f3.id AND fd3.active = true
                 CROSS JOIN user_departments ud3
                 WHERE fp3.parameter_id = p.id::uuid
@@ -631,21 +634,21 @@ all_parameters_data AS (
                 UNION
                 SELECT sf2.field_id as id
                 FROM scenario_fields sf2
-                JOIN parameter_fields fp2 ON fp2.field_id = sf2.field_id AND fp2.active = true
-                WHERE sf2.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND fp2.parameter_id = p.id::uuid AND sf2.active = true
+                JOIN fields f2 ON f2.id = sf2.field_id AND f2.active = true
+                WHERE sf2.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND f2.parameter_id = p.id::uuid AND sf2.active = true
             ) combined_items
         ), ARRAY[]::uuid[]) as valid_items
     FROM parameters p
-    JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
     GROUP BY p.id
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
-                      WHERE fp2.parameter_id = p.id AND fd2.active = true)
+                      JOIN fields f2 ON f2.id = fd2.field_id 
+                      WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true)
 ),
 valid_personas_filtered AS (
     SELECT DISTINCT
@@ -672,8 +675,8 @@ valid_personas_filtered AS (
                     EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
-                        JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
-                        JOIN parameters param ON param.id = pfield.parameter_id
+                        JOIN fields f_pfield ON f_pfield.id = pf.field_id
+                        JOIN parameters param ON param.id = f_pfield.parameter_id
                         WHERE pf.persona_id = p.id
                         AND pf.active = true
                         AND pfield.active = true
@@ -693,8 +696,8 @@ valid_personas_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
-                        JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
-                        JOIN parameters param ON param.id = pfield.parameter_id
+                        JOIN fields f_pfield ON f_pfield.id = pf.field_id
+                        JOIN parameters param ON param.id = f_pfield.parameter_id
                         WHERE pf.persona_id = p.id
                         AND pf.active = true
                         AND pfield.active = true
@@ -707,8 +710,8 @@ valid_personas_filtered AS (
                     EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
-                        JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
-                        JOIN parameters param ON param.id = pfield.parameter_id
+                        JOIN fields f_pfield ON f_pfield.id = pf.field_id
+                        JOIN parameters param ON param.id = f_pfield.parameter_id
                         WHERE pf.persona_id = p.id
                         AND pf.active = true
                         AND pfield.active = true
@@ -728,8 +731,8 @@ valid_personas_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
-                        JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
-                        JOIN parameters param ON param.id = pfield.parameter_id
+                        JOIN fields f_pfield ON f_pfield.id = pf.field_id
+                        JOIN parameters param ON param.id = f_pfield.parameter_id
                         WHERE pf.persona_id = p.id
                         AND pf.active = true
                         AND pfield.active = true
@@ -756,7 +759,7 @@ valid_personas_filtered AS (
             OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) = 0
             OR EXISTS (
                 SELECT 1 FROM persona_fields pf_filter
-                JOIN parameter_fields pfield_filter ON pfield_filter.field_id = pf_filter.field_id
+                JOIN fields f_pfield_filter ON f_pfield_filter.id = pf_filter.field_id
                 WHERE pf_filter.persona_id = p.id
                 AND pf_filter.active = true
                 AND pfield_filter.active = true
@@ -837,7 +840,7 @@ persona_data AS (
             OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) = 0
             OR EXISTS (
                 SELECT 1 FROM persona_fields pf_filter
-                JOIN parameter_fields pfield_filter ON pfield_filter.field_id = pf_filter.field_id
+                JOIN fields f_pfield_filter ON f_pfield_filter.id = pf_filter.field_id
                 WHERE pf_filter.persona_id = pdb.id
                 AND pf_filter.active = true
                 AND pfield_filter.active = true
@@ -869,7 +872,7 @@ persona_data AS (
             OR pdb.id = ANY((SELECT filter_persona_ids FROM params LIMIT 1)::uuid[])
         )
 ),
--- Persona parameter relationships: via fields (persona_fields → parameter_fields) and persona_parameter flag
+-- Persona parameter relationships: via fields (persona_fields → fields.parameter_id) and persona_parameter flag
 persona_parameter_relationships AS (
     SELECT DISTINCT
         p.id as persona_id,
@@ -881,9 +884,9 @@ persona_parameter_relationships AS (
     AND (
         EXISTS (
             SELECT 1 FROM persona_fields pf
-            JOIN parameter_fields pfield ON pfield.field_id = pf.field_id
+            JOIN fields f_pfield ON f_pfield.id = pf.field_id
             WHERE pf.persona_id = p.id
-            AND pfield.parameter_id = param.id
+            AND f_pfield.parameter_id = param.id
             AND pf.active = true
             AND pfield.active = true
         )
@@ -954,8 +957,8 @@ valid_documents_filtered AS (
                     EXISTS (
                         SELECT 1 
                         FROM document_fields df
-                        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
-                        JOIN parameters param ON param.id = pfield.parameter_id
+                        JOIN fields f_pfield ON f_pfield.id = df.field_id
+                        JOIN parameters param ON param.id = f_pfield.parameter_id
                         WHERE df.document_id = d.id
                         AND df.active = true
                         AND pfield.active = true
@@ -976,8 +979,8 @@ valid_documents_filtered AS (
                     EXISTS (
                         SELECT 1 
                         FROM document_fields df
-                        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
-                        JOIN parameters param ON param.id = pfield.parameter_id
+                        JOIN fields f_pfield ON f_pfield.id = df.field_id
+                        JOIN parameters param ON param.id = f_pfield.parameter_id
                         WHERE df.document_id = d.id
                         AND df.active = true
                         AND pfield.active = true
@@ -997,8 +1000,8 @@ valid_documents_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM document_fields df
-                        JOIN parameter_fields pfield ON pfield.field_id = df.field_id
-                        JOIN parameters param ON param.id = pfield.parameter_id
+                        JOIN fields f_pfield ON f_pfield.id = df.field_id
+                        JOIN parameters param ON param.id = f_pfield.parameter_id
                         WHERE df.document_id = d.id
                         AND df.active = true
                         AND pfield.active = true
@@ -1025,7 +1028,7 @@ valid_documents_filtered AS (
             OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) = 0
             OR EXISTS (
                 SELECT 1 FROM document_fields df_filter
-                JOIN parameter_fields pfield_filter ON pfield_filter.field_id = df_filter.field_id
+                JOIN fields f_pfield_filter ON f_pfield_filter.id = df_filter.field_id
                 WHERE df_filter.document_id = d.id
                 AND df_filter.active = true
                 AND pfield_filter.active = true
@@ -1098,8 +1101,8 @@ document_data_base AS (
                 EXISTS (
                     SELECT 1 
                     FROM document_fields df
-                    JOIN parameter_fields pfield ON pfield.field_id = df.field_id
-                    JOIN parameters param ON param.id = pfield.parameter_id
+                    JOIN fields f_pfield ON f_pfield.id = df.field_id
+                    JOIN parameters param ON param.id = f_pfield.parameter_id
                     WHERE df.document_id = d3.id
                     AND df.active = true
                     AND pfield.active = true
@@ -1120,8 +1123,8 @@ document_data_base AS (
                 EXISTS (
                     SELECT 1 
                     FROM document_fields df
-                    JOIN parameter_fields pfield ON pfield.field_id = df.field_id
-                    JOIN parameters param ON param.id = pfield.parameter_id
+                    JOIN fields f_pfield ON f_pfield.id = df.field_id
+                    JOIN parameters param ON param.id = f_pfield.parameter_id
                     WHERE df.document_id = d3.id
                     AND df.active = true
                     AND pfield.active = true
@@ -1141,8 +1144,8 @@ document_data_base AS (
                 OR EXISTS (
                     SELECT 1 
                     FROM document_fields df
-                    JOIN parameter_fields pfield ON pfield.field_id = df.field_id
-                    JOIN parameters param ON param.id = pfield.parameter_id
+                    JOIN fields f_pfield ON f_pfield.id = df.field_id
+                    JOIN parameters param ON param.id = f_pfield.parameter_id
                     WHERE df.document_id = d3.id
                     AND df.active = true
                     AND pfield.active = true
@@ -1179,7 +1182,7 @@ document_data AS (
             OR (SELECT array_length(filter_parameter_ids, 1) FROM params LIMIT 1) = 0
             OR EXISTS (
                 SELECT 1 FROM document_fields df_filter
-                JOIN parameter_fields pfield_filter ON pfield_filter.field_id = df_filter.field_id
+                JOIN fields f_pfield_filter ON f_pfield_filter.id = df_filter.field_id
                 WHERE df_filter.document_id = ddb.id
                 AND df_filter.active = true
                 AND pfield_filter.active = true
@@ -1222,9 +1225,9 @@ document_parameter_relationships AS (
     AND (
         EXISTS (
             SELECT 1 FROM document_fields df
-            JOIN parameter_fields pfield ON pfield.field_id = df.field_id
+            JOIN fields f_pfield ON f_pfield.id = df.field_id
             WHERE df.document_id = d.id
-            AND pfield.parameter_id = param.id
+            AND f_pfield.parameter_id = param.id
             AND df.active = true
             AND pfield.active = true
         )
@@ -1374,8 +1377,8 @@ parameter_data_for_mapping AS (
         p.scenario_parameter,
         p.video_parameter
     FROM parameters p
-    JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true
     AND p.scenario_parameter = true
@@ -1383,17 +1386,17 @@ parameter_data_for_mapping AS (
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
-                      WHERE fp2.parameter_id = p.id AND fp2.active = true)
+                      JOIN fields f2 ON f2.id = fd2.field_id 
+                      WHERE f2.parameter_id = p.id AND f2.active = true)
         -- Filter by selected departments
         AND (
             (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) IS NULL
             OR (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) = 0
             OR EXISTS (
-                SELECT 1 FROM parameter_fields pf_dept_filter
-                JOIN field_departments fd_dept_filter ON fd_dept_filter.field_id = pf_dept_filter.field_id
-                WHERE pf_dept_filter.parameter_id = p.id
-                AND pf_dept_filter.active = true
+                SELECT 1 FROM fields f_dept_filter
+                JOIN field_departments fd_dept_filter ON fd_dept_filter.field_id = f_dept_filter.id
+                WHERE f_dept_filter.parameter_id = p.id
+                AND f_dept_filter.active = true
                 AND fd_dept_filter.active = true
                 AND fd_dept_filter.department_id = ANY((SELECT filter_department_ids FROM params LIMIT 1)::uuid[])
             )
@@ -1434,10 +1437,10 @@ all_parameters_array AS (
             (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) IS NULL
             OR (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) = 0
             OR EXISTS (
-                SELECT 1 FROM parameter_fields pf_dept_filter
-                JOIN field_departments fd_dept_filter ON fd_dept_filter.field_id = pf_dept_filter.field_id
-                WHERE pf_dept_filter.parameter_id = apab.id
-                AND pf_dept_filter.active = true
+                SELECT 1 FROM fields f_dept_filter
+                JOIN field_departments fd_dept_filter ON fd_dept_filter.field_id = f_dept_filter.id
+                WHERE f_dept_filter.parameter_id = apab.id
+                AND f_dept_filter.active = true
                 AND fd_dept_filter.active = true
                 AND fd_dept_filter.department_id = ANY((SELECT filter_department_ids FROM params LIMIT 1)::uuid[])
             )
@@ -1472,8 +1475,7 @@ parameter_item_data AS (
         pf.parameter_id,
         p.name as parameter_name
     FROM fields f
-    JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
-    JOIN parameters p ON p.id = pf.parameter_id
+    JOIN parameters p ON p.id = f.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE p.active = true AND f.active = true
@@ -1547,8 +1549,7 @@ scenario_fields_data AS (
         p.name as parameter_name
     FROM scenario_fields sf
     JOIN fields f ON f.id = sf.field_id
-    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    JOIN parameters p ON p.id = fp.parameter_id
+    JOIN parameters p ON p.id = f.parameter_id
     WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND sf.active = true AND p.active = true
 ),
 all_fields_array_base AS (
@@ -1678,12 +1679,12 @@ department_parameter_ids AS (
     FROM departments d
     CROSS JOIN user_departments ud
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN parameter_fields fp ON fp.parameter_id = p.id AND fp.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    LEFT JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE d.id = ANY(ud.dept_ids)
     AND (fd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                                                 JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
-                                                 WHERE fp2.parameter_id = p.id AND fp2.active = true AND fd2.active = true))
+                                                 JOIN fields f2 ON f2.id = fd2.field_id 
+                                                 WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true))
     GROUP BY d.id
 ),
 department_field_ids AS (
@@ -1692,9 +1693,8 @@ department_field_ids AS (
         COALESCE(ARRAY_AGG(f.id ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::uuid[]) as field_ids
     FROM departments d
     CROSS JOIN user_departments ud
-    LEFT JOIN fields f ON true
-    LEFT JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    LEFT JOIN parameters p ON p.id = fp.parameter_id AND p.active = true
+    LEFT JOIN fields f ON f.active = true AND f.parameter_id IS NOT NULL
+    LEFT JOIN parameters p ON p.id = f.parameter_id AND p.active = true
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE d.id = ANY(ud.dept_ids)
     AND p.id IS NOT NULL
@@ -2017,7 +2017,7 @@ SELECT
         FROM scenario_images_array sia
     ), '{}'::types.q_get_scenario_detail_v4_scenario_image[]) as scenario_images,
     COALESCE((
-        SELECT ARRAY_AGG((sva.id, sva.name, sva.length_seconds, sva.completed, sva.active, sva.image_enabled, sva.file_path, sva.mime_type, sva.upload_id)::types.q_get_scenario_detail_v4_scenario_video ORDER BY sva.sort_order, sva.created_at DESC)
+        SELECT ARRAY_AGG((sva.id, sva.name, sva.length_seconds, sva.completed, sva.active, sva.file_path, sva.mime_type, sva.upload_id)::types.q_get_scenario_detail_v4_scenario_video ORDER BY sva.sort_order, sva.created_at DESC)
         FROM scenario_videos_array sva
     ), '{}'::types.q_get_scenario_detail_v4_scenario_video[]) as scenario_videos,
     COALESCE((
@@ -2028,7 +2028,7 @@ SELECT
                 sqa.allow_multiple,
                 sqa.active,
                 COALESCE((
-                    SELECT ARRAY_AGG(ROW(qoa.id, qoa.option_text, qoa.type, qoa.is_correct)::types.q_get_scenario_detail_v4_question_option ORDER BY qoa.id)
+                    SELECT ARRAY_AGG(ROW(qoa.id, qoa.option_text, qoa.is_correct)::types.q_get_scenario_detail_v4_question_option ORDER BY qoa.id)
                     FROM question_options_array qoa
                     WHERE qoa.question_id = sqa.id
                 ), '{}'::types.q_get_scenario_detail_v4_question_option[]),

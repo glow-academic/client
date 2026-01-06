@@ -308,10 +308,9 @@ SELECT
         '{}'::types.q_list_scenarios_v4_objective[]
     ) as objectives,
     COALESCE(
-        (SELECT ARRAY_AGG((f.id::text, f.name, COALESCE(f.description, ''), fp.parameter_id::text, p.name)::types.q_list_scenarios_v4_field)
+         (SELECT ARRAY_AGG((f.id::text, f.name, COALESCE(f.description, ''), f.parameter_id::text, p.name)::types.q_list_scenarios_v4_field)
          FROM fields f
-         JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-         JOIN parameters p ON p.id = fp.parameter_id
+         JOIN parameters p ON p.id = f.parameter_id
          WHERE f.id::text IN (SELECT parameter_item_id FROM all_parameter_item_ids)),
         '{}'::types.q_list_scenarios_v4_field[]
     ) as fields,

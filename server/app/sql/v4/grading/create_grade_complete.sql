@@ -56,9 +56,11 @@ AS $$
 DECLARE
     v_grade_id uuid;
     v_conversation_id uuid;
+    v_time_id uuid;
     v_chat_title text;
     v_final_conversation_name text;
     v_final_conversation_description text;
+    v_end_reason text;
 BEGIN
     -- Get chat title if run is linked to a chat
     SELECT c.title INTO v_chat_title
@@ -70,11 +72,29 @@ BEGIN
     -- Determine conversation name and description
     v_final_conversation_name := COALESCE(conversation_name, v_chat_title, description, 'Conversation');
     v_final_conversation_description := COALESCE(conversation_description, description);
+    v_end_reason := CASE
+        WHEN v_final_conversation_description IS NULL OR v_final_conversation_description = '' THEN v_final_conversation_name
+        WHEN v_final_conversation_name IS NULL OR v_final_conversation_name = '' THEN v_final_conversation_description
+        ELSE v_final_conversation_name || ': ' || v_final_conversation_description
+    END;
     
     -- Create conversation
-    INSERT INTO conversations (name, description, time_taken, created_at, updated_at)
-    VALUES (v_final_conversation_name, v_final_conversation_description, time_taken, NOW(), NOW())
+    INSERT INTO conversations (end_reason, created_at, updated_at)
+    VALUES (v_end_reason, NOW(), NOW())
     RETURNING id INTO v_conversation_id;
+    
+    -- Create time record if time_taken is provided
+    IF time_taken IS NOT NULL AND time_taken > 0 THEN
+        INSERT INTO times (time_taken, active, created_at, updated_at)
+        VALUES (time_taken, TRUE, NOW(), NOW())
+        ON CONFLICT DO NOTHING
+        RETURNING id INTO v_time_id;
+        
+        -- Get existing time if conflict occurred
+        IF v_time_id IS NULL THEN
+            SELECT id INTO v_time_id FROM times WHERE time_taken = time_taken AND active = TRUE LIMIT 1;
+        END IF;
+    END IF;
     
     -- Create grade
     INSERT INTO grades (run_id, rubric_grade_agent_id, description, passed, score, created_at)
@@ -85,6 +105,13 @@ BEGIN
     INSERT INTO grade_conversations (grade_id, conversation_id, created_at, updated_at)
     VALUES (v_grade_id, v_conversation_id, NOW(), NOW())
     ON CONFLICT (grade_id, conversation_id) DO NOTHING;
+    
+    -- Link grade to time if time was created
+    IF v_time_id IS NOT NULL THEN
+        INSERT INTO grade_times (grade_id, time_id, active, created_at, updated_at)
+        VALUES (v_grade_id, v_time_id, TRUE, NOW(), NOW())
+        ON CONFLICT (grade_id, time_id) DO NOTHING;
+    END IF;
     
     -- Return grade id
     RETURN QUERY SELECT v_grade_id::text;

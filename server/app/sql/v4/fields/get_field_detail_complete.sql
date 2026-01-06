@@ -90,12 +90,13 @@ user_profile AS (
 ),
 field_parameters_data AS (
     SELECT 
-        pf.field_id,
-        ARRAY_AGG(pf.parameter_id::text ORDER BY p.name) as parameter_ids
+        f.id as field_id,
+        CASE 
+            WHEN f.parameter_id IS NOT NULL THEN ARRAY[f.parameter_id::text]
+            ELSE ARRAY[]::text[]
+        END as parameter_ids
     FROM params x
-    JOIN parameter_fields pf ON pf.field_id = x.field_id AND pf.active = true
-    JOIN parameters p ON p.id = pf.parameter_id
-    GROUP BY pf.field_id
+    JOIN fields f ON f.id = x.field_id
 ),
 field_conditional_parameters_data AS (
     SELECT 

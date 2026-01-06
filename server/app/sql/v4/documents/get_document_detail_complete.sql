@@ -217,11 +217,11 @@ department_parameter_ids AS (
         COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
     FROM user_departments ud
     LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
+    LEFT JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE (fd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                                                     JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
-                                                     WHERE pf2.parameter_id = p.id AND pf2.active = true AND fd2.active = true))
+                                                     JOIN fields f2 ON f2.id = fd2.field_id 
+                                                     WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true))
     GROUP BY ud.id
 ),
 department_data AS (
@@ -261,12 +261,11 @@ field_data AS (
         f.id as field_id,
         f.name,
         COALESCE(f.description, '') as description,
-        pf.parameter_id,
+        f.parameter_id,
         p.name as parameter_name
     FROM linked_parameters lp
-    JOIN parameter_fields pf ON pf.parameter_id = lp.parameter_id AND pf.active = true
-    JOIN fields f ON f.id = pf.field_id AND f.active = true
-    JOIN parameters p ON p.id = pf.parameter_id
+    JOIN fields f ON f.parameter_id = lp.parameter_id AND f.active = true
+    JOIN parameters p ON p.id = f.parameter_id
     CROSS JOIN document_data dd
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE p.active = true
@@ -330,8 +329,8 @@ valid_field_ids_data AS (
             ARRAY[]::text[]
         ) as valid_field_ids
     FROM document_data dd
-    LEFT JOIN parameter_fields pf ON pf.parameter_id IN (SELECT id FROM parameters WHERE active = true) AND pf.active = true
-    LEFT JOIN fields f ON f.id = pf.field_id AND f.active = true
+    LEFT JOIN fields f_pf ON f_pf.parameter_id IN (SELECT id FROM parameters WHERE active = true) AND f_pf.active = true
+    LEFT JOIN fields f ON f.id = f_pf.id AND f.active = true
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE (
         -- If document has no departments, include only cross-department fields

@@ -169,8 +169,8 @@ BEGIN
     filtered_parameters AS (
         SELECT DISTINCT p.id
         FROM parameters p
-        JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.active = true
-        LEFT JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
+        JOIN fields f ON f.parameter_id = p.id AND f.active = true
+        LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
         WHERE p.active = true
         AND (
             COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
@@ -179,16 +179,16 @@ BEGIN
                 WHERE ud.id = ANY(api_randomize_scenario_v4.department_ids)
                 AND (fd.department_id = ud.id OR NOT EXISTS (
                     SELECT 1 FROM field_departments fd2 
-                    JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
-                    WHERE pf2.parameter_id = p.id AND pf2.active = true AND fd2.active = true
+                    JOIN fields f2 ON f2.id = fd2.field_id 
+                    WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true
                 ))
             )
             OR (COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
                 AND (fd.department_id IN (SELECT id FROM user_departments)
                      OR NOT EXISTS (
                          SELECT 1 FROM field_departments fd2 
-                         JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
-                         WHERE pf2.parameter_id = p.id AND pf2.active = true AND fd2.active = true
+                         JOIN fields f2 ON f2.id = fd2.field_id 
+                         WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true
                      )))
         )
         AND (COALESCE(array_length(api_randomize_scenario_v4.parameter_ids, 1), 0) = 0
@@ -198,9 +198,8 @@ BEGIN
     filtered_fields AS (
         SELECT DISTINCT f.id
         FROM fields f
-        JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
         LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-        WHERE f.active = true
+        WHERE f.active = true AND f.parameter_id IS NOT NULL
         AND (
             COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
             OR EXISTS (
@@ -343,9 +342,9 @@ BEGIN
             SELECT ARRAY_AGG(f.id)
             INTO valid_items_for_param
             FROM fields f
-            JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
             WHERE f.active = true
-              AND pf.parameter_id = param_id
+              AND f.parameter_id IS NOT NULL
+              AND f.parameter_id = param_id
               AND f.id = ANY(valid_field_ids);
             
             IF valid_items_for_param IS NOT NULL AND array_length(valid_items_for_param, 1) > 0 THEN
@@ -426,9 +425,8 @@ BEGIN
         SELECT ARRAY_AGG(f.id)
         INTO valid_items_for_param
         FROM fields f
-        JOIN parameter_fields pf ON pf.field_id = f.id AND pf.active = true
         WHERE f.active = true
-          AND pf.parameter_id = param_id
+          AND f.parameter_id = param_id
           AND f.id = ANY(valid_field_ids);
         
         IF valid_items_for_param IS NOT NULL AND array_length(valid_items_for_param, 1) > 0 THEN

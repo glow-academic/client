@@ -535,16 +535,16 @@ parameter_data AS (
         par.document_parameter,
         par.persona_parameter
     FROM parameters par
-    JOIN parameter_fields fp ON fp.parameter_id = par.id AND fp.active = true
-    LEFT JOIN field_departments fd ON fd.field_id = fp.field_id AND fd.active = true
+    JOIN fields f ON f.parameter_id = par.id AND f.active = true
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE par.active = true
       AND par.simulation_parameter = true
     GROUP BY par.id, par.name, par.description, par.document_parameter, par.persona_parameter
     HAVING 
         (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                  JOIN parameter_fields fp2 ON fp2.field_id = fd2.field_id 
-                  WHERE fp2.parameter_id = par.id AND fp2.active = true))
+                  JOIN fields f2 ON f2.id = fd2.field_id 
+                  WHERE f2.parameter_id = par.id AND f2.active = true))
 ),
 -- Parameters as array
 parameters_array AS (
@@ -558,15 +558,14 @@ parameter_item_data AS (
         f.id,
         f.name,
         COALESCE(f.description, '') as description,
-        fp.parameter_id,
+        f.parameter_id,
         par.name as parameter_name
     FROM fields f
-    JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    JOIN parameters par ON par.id = fp.parameter_id
+    JOIN parameters par ON par.id = f.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE par.active = true
       AND par.simulation_parameter = true
-    GROUP BY f.id, f.name, f.description, fp.parameter_id, par.id, par.name
+    GROUP BY f.id, f.name, f.description, f.parameter_id, par.id, par.name
     HAVING 
         (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 

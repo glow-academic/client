@@ -646,24 +646,16 @@ scenario_videos_with_questions AS (
         COALESCE(
             (SELECT ARRAY_AGG(
                 (q.id, q.question_text, 'choice'::text, q.allow_multiple,
-                 COALESCE(
-                     (SELECT ARRAY_AGG(sqt.time ORDER BY sqt.time)
-                      FROM scenario_question_times sqt
-                      WHERE sqt.scenario_id = sv.scenario_id 
-                        AND sqt.question_id = q.id 
-                        AND sqt.video_id = v.id
-                        AND sqt.active = true),
-                     ARRAY[]::int[]
-                 ),
+                 ARRAY[q.time]::int[],
                  COALESCE(
                      (SELECT ARRAY_AGG(
-                         (o.id, o.option_text, o.type::text, CASE WHEN qa.option_id IS NOT NULL THEN true ELSE false END)::types.q_get_simulation_attempt_v4_option
+                         (o.id, o.option_text, 'discrete'::text, CASE WHEN a.id IS NOT NULL THEN true ELSE false END)::types.q_get_simulation_attempt_v4_option
                          ORDER BY o.id
                      )
-                     FROM question_options qo
-                     JOIN options o ON o.id = qo.option_id AND o.active = true
-                     LEFT JOIN question_answers qa ON qa.question_id = q.id AND qa.option_id = o.id AND qa.active = true
-                     WHERE qo.question_id = q.id AND qo.active = true),
+                     FROM scenario_options so
+                     JOIN options o ON o.id = so.option_id AND o.active = true
+                     LEFT JOIN answers a ON a.question_id = q.id AND a.option_id = o.id AND a.active = true
+                     WHERE so.scenario_id = sv.scenario_id AND so.active = true),
                      '{}'::types.q_get_simulation_attempt_v4_option[]
                  )
                 )::types.q_get_simulation_attempt_v4_question
@@ -850,7 +842,7 @@ previous_chats_with_grades AS (
         sc.created_at,
         scg.score,
         scg.passed,
-        COALESCE(conv.time_taken, 0) as time_taken
+        COALESCE(t.time_taken, 0) as time_taken
     FROM params x
     CROSS JOIN current_attempt_profile cap
     CROSS JOIN simulation_scenarios_list ssl
@@ -889,8 +881,8 @@ previous_chats_with_grades AS (
         JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    LEFT JOIN grade_conversations gc ON gc.grade_id = scg.id
-    LEFT JOIN conversations conv ON conv.id = gc.conversation_id
+    LEFT JOIN grade_times gt ON gt.grade_id = scg.id AND gt.active = TRUE
+    LEFT JOIN times t ON t.id = gt.time_id
     WHERE ap2.profile_id = cap.profile_id
       AND sc.completed = true
       AND COALESCE(
@@ -906,7 +898,7 @@ previous_chats_with_grades AS (
 previous_attempt_time_aggregation AS (
     SELECT 
         ac.attempt_id,
-        COALESCE(SUM(COALESCE(conv.time_taken, 0)), 0)::integer as total_time_taken
+        COALESCE(SUM(COALESCE(t.time_taken, 0)), 0)::integer as total_time_taken
     FROM previous_chats_with_grades pwg
     JOIN attempt_chats ac ON ac.attempt_id = pwg.attempt_id
     JOIN chats sc ON sc.id = ac.chat_id
@@ -918,8 +910,8 @@ previous_attempt_time_aggregation AS (
         JOIN chats c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    LEFT JOIN grade_conversations gc ON gc.grade_id = scg.id
-    LEFT JOIN conversations conv ON conv.id = gc.conversation_id
+    LEFT JOIN grade_times gt ON gt.grade_id = scg.id AND gt.active = TRUE
+    LEFT JOIN times t ON t.id = gt.time_id
     WHERE sc.completed = true
     GROUP BY ac.attempt_id
 ),
@@ -1200,7 +1192,7 @@ messages_with_tree AS (
 grades_data AS (
     SELECT DISTINCT ON (c.id)
         c.id as chat_id,
-        (scg.id, scg.created_at, c.id, rga.rubric_id, scg.description, scg.passed, scg.score, COALESCE(conv.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
+        (scg.id, scg.created_at, c.id, rga.rubric_id, scg.description, scg.passed, scg.score, COALESCE(t.time_taken, 0))::types.q_get_simulation_attempt_v4_grade as grade
     FROM params x
     JOIN chats c ON EXISTS (
         SELECT 1 FROM chat_groups cg2
@@ -1216,8 +1208,8 @@ grades_data AS (
     JOIN runs r ON r.id = gr.run_id
     JOIN grades scg ON scg.run_id = r.id
     LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-    LEFT JOIN grade_conversations gc ON gc.grade_id = scg.id
-    LEFT JOIN conversations conv ON conv.id = gc.conversation_id
+    LEFT JOIN grade_times gt ON gt.grade_id = scg.id AND gt.active = TRUE
+    LEFT JOIN times t ON t.id = gt.time_id
     WHERE EXISTS (
         SELECT 1 FROM runs r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id

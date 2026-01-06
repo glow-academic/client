@@ -289,8 +289,7 @@ template_context_fields_data AS (
         ) as template_context_fields
     FROM params p
     LEFT JOIN fields f ON f.id = ANY(p.field_ids) AND p.field_ids IS NOT NULL AND array_length(p.field_ids, 1) > 0
-    LEFT JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-    LEFT JOIN parameters pa ON pa.id = fp.parameter_id AND pa.active = true
+    LEFT JOIN parameters pa ON pa.id = f.parameter_id AND pa.active = true
     WHERE p.field_ids IS NOT NULL AND array_length(p.field_ids, 1) > 0
     GROUP BY p.field_ids
     UNION ALL

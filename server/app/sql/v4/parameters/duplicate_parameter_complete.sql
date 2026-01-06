@@ -70,8 +70,7 @@ original_fields AS (
         f.name,
         f.description
     FROM params x
-    JOIN parameter_fields fp ON fp.parameter_id = x.parameter_id AND fp.active = true
-    JOIN fields f ON f.id = fp.field_id
+    JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
 ),
 original_field_departments AS (
     SELECT 
@@ -82,15 +81,18 @@ original_field_departments AS (
     GROUP BY of.original_field_id
 ),
 new_fields AS (
-    -- Create all fields (duplicates of original fields)
+    -- Create all fields (duplicates of original fields) linked to new parameter
     INSERT INTO fields (
         name,
-        description
+        description,
+        parameter_id
     )
     SELECT 
         of.name,
-        of.description
+        of.description,
+        np.parameter_id
     FROM original_fields of
+    CROSS JOIN new_parameter np
     RETURNING id as field_id, name as field_name
 ),
 new_fields_with_order AS (
@@ -118,21 +120,7 @@ fields_with_depts AS (
     LEFT JOIN original_field_departments ofd ON ofd.original_field_id = of.original_field_id
     WHERE ofd.department_ids IS NOT NULL AND array_length(ofd.department_ids, 1) > 0
 ),
-link_fields_to_parameter AS (
-    -- Link new fields to new parameter via parameter_fields junction
-    INSERT INTO parameter_fields (field_id, parameter_id, active, created_at, updated_at)
-    SELECT 
-        fwd.field_id,
-        np.parameter_id,
-        true,
-        NOW(),
-        NOW()
-    FROM new_parameter np
-    CROSS JOIN fields_with_depts fwd
-    ON CONFLICT (field_id, parameter_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
-),
+-- Fields are already linked via parameter_id in new_fields CTE above
 link_departments AS (
     -- Link departments to fields if they existed on original (only if dept_ids exist)
     INSERT INTO field_departments (field_id, department_id, active, created_at, updated_at)

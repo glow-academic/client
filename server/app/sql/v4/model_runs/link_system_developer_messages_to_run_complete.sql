@@ -193,7 +193,7 @@ scenario_developer_template AS (
     JOIN agents a ON a.id = ri.agent_id
     JOIN agent_developer_instructions adi ON adi.agent_id = a.id
     JOIN developer_instructions di ON di.id = adi.developer_instruction_id
-    WHERE di.type = 'scenario_statement'::developer_instruction_type
+    WHERE di.active = true
     LIMIT 1
 ),
 scenario_developer_content AS (

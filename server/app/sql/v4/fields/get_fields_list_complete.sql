@@ -74,12 +74,13 @@ user_profile AS (
 ),
 field_parameters_agg AS (
     SELECT 
-        pf.field_id,
-        ARRAY_AGG(pf.parameter_id::text ORDER BY p.name) as parameter_ids
-    FROM parameter_fields pf
-    JOIN parameters p ON p.id = pf.parameter_id
-    WHERE pf.active = true
-    GROUP BY pf.field_id
+        f.id as field_id,
+        CASE 
+            WHEN f.parameter_id IS NOT NULL THEN ARRAY[f.parameter_id::text]
+            ELSE ARRAY[]::text[]
+        END as parameter_ids
+    FROM fields f
+    WHERE f.active = true
 ),
 field_departments_data AS (
     SELECT 

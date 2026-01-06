@@ -38,7 +38,7 @@ field_to_delete AS (
     JOIN fields f ON f.id = x.field_id
 ),
 deleted_field AS (
-    -- Delete field (cascade deletes parameter_fields and field_departments)
+    -- Delete field (cascade deletes field_departments; parameter_id is just a foreign key reference)
     DELETE FROM fields
     WHERE id = (SELECT id FROM field_to_delete)
     RETURNING id, (SELECT name FROM field_to_delete) as name

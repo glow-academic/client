@@ -3630,6 +3630,38 @@ class RefreshAnalyticsApiResponse(BaseModel):
 
 
 
+# Generated from: create_answers
+
+class CreateAnswersSqlParams(BaseModel):
+
+    answers_json: Any
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.answers_json,
+            self.scenario_id,
+        )
+
+class CreateAnswersSqlRow(BaseModel):
+
+    answer_id: UUID | None = None
+    question_id: UUID | None = None
+    option_id: UUID | None = None
+
+class CreateAnswersApiRequest(BaseModel):
+
+    answers_json: Any
+    scenario_id: UUID
+
+class CreateAnswersApiResponse(BaseModel):
+
+    answer_id: UUID | None = None
+    question_id: UUID | None = None
+    option_id: UUID | None = None
+
+
+
 # Generated from: bulk_archive_attempts
 
 class BulkArchiveAttemptsSqlParams(BaseModel):
@@ -13975,6 +14007,36 @@ class InsertObjectiveApiResponse(BaseModel):
 
 
 
+# Generated from: create_options
+
+class CreateOptionsSqlParams(BaseModel):
+
+    options_json: Any
+    scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.options_json,
+            self.scenario_id,
+        )
+
+class CreateOptionsSqlRow(BaseModel):
+
+    option_id: UUID | None = None
+    option_text: str | None = None
+
+class CreateOptionsApiRequest(BaseModel):
+
+    options_json: Any
+    scenario_id: UUID
+
+class CreateOptionsApiResponse(BaseModel):
+
+    option_id: UUID | None = None
+    option_text: str | None = None
+
+
+
 # Generated from: create_parameter
 
 class ICreateParameterV4FieldConnection(BaseModel):
@@ -20147,423 +20209,6 @@ class GetScenarioDepartmentsApiResponse(BaseModel):
 
 
 
-# Generated from: get_scenario_detail
-
-class QGetScenarioDetailV4FieldParamFilter(BaseModel):
-
-    parameter_id: UUID | None
-    show_selected: bool | None
-
-class GetScenarioDetailSqlParams(BaseModel):
-
-    scenario_id: UUID
-    profile_id: UUID
-    use_image: bool | None = None
-    use_objectives: bool | None = None
-    document_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    use_video: bool | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_persona_ids: list[UUID] | None = None
-    filter_document_ids: list[UUID] | None = None
-    filter_parameter_ids: list[UUID] | None = None
-    filter_field_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    document_search: str | None = None
-    parameter_search: str | None = None
-    persona_show_selected: bool | None = None
-    document_show_selected: bool | None = None
-    parameter_show_selected: bool | None = None
-    field_show_selected_by_param: list[QGetScenarioDetailV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert field_show_selected_by_param composite array to tuples for asyncpg
-        field_show_selected_by_param_tuples = [
-            (conn.parameter_id, conn.show_selected)
-            for conn in self.field_show_selected_by_param
-        ]
-        return (
-            self.scenario_id,
-            self.profile_id,
-            self.use_image,
-            self.use_objectives,
-            self.document_ids,
-            self.problem_statement_ids,
-            self.template_document_ids,
-            self.use_video,
-            self.filter_department_ids,
-            self.filter_persona_ids,
-            self.filter_document_ids,
-            self.filter_parameter_ids,
-            self.filter_field_ids,
-            self.persona_search,
-            self.document_search,
-            self.parameter_search,
-            self.persona_show_selected,
-            self.document_show_selected,
-            self.parameter_show_selected,
-            field_show_selected_by_param_tuples,
-            self.draft_id,
-        )
-
-class QGetScenarioDetailV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    roles: list[str] | None
-
-
-
-
-class QGetScenarioDetailV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    persona_ids: list[UUID] | None
-    document_ids: list[UUID] | None
-    parameter_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-
-
-
-
-class QGetScenarioDetailV4Document(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    description: str | None
-    file_path: str | None
-    mime_type: str | None
-    parameter_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-    parent_document_id: UUID | None
-
-
-
-
-class QGetScenarioDetailV4DocumentDetail(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    updated_at: str | None
-    extension: str | None
-    scenario_ids: list[UUID] | None
-    can_edit: bool | None
-    can_delete: bool | None
-    active: bool | None
-    department_ids: list[UUID] | None
-    file_path: str | None
-    mime_type: str | None
-    upload_id: UUID | None
-    field_ids: list[UUID] | None
-    is_template: bool | None
-    parent_document_id: UUID | None
-
-
-
-
-class QGetScenarioDetailV4Field(BaseModel):
-
-    field_id: UUID | None
-    name: str | None
-    description: str | None
-    parameter_id: UUID | None
-    parameter_name: str | None
-    conditional_parameter_ids: list[UUID] | None
-
-
-
-
-class QGetScenarioDetailV4FieldRange(BaseModel):
-
-    parameter_id: UUID | None
-    min_count: int | None
-    max_count: int | None
-
-
-
-
-class QGetScenarioDetailV4Objective(BaseModel):
-
-    objective_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetScenarioDetailV4ObjectiveWithDepartments(BaseModel):
-
-    objective: str | None
-    department_ids: list[UUID] | None
-
-
-
-
-class QGetScenarioDetailV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    document_parameter: bool | None
-    persona_parameter: bool | None
-    scenario_parameter: bool | None
-    video_parameter: bool | None
-
-
-
-
-class QGetScenarioDetailV4ParameterDetail(BaseModel):
-
-    parameter_id: UUID | None
-    field_ids: list[UUID] | None
-    valid_field_ids: list[UUID] | None
-
-
-
-
-class QGetScenarioDetailV4Persona(BaseModel):
-
-    persona_id: UUID | None
-    name: str | None
-    description: str | None
-    color: str | None
-    icon: str | None
-    image_model: bool | None
-    parameter_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-    example: str | None
-
-
-
-
-class QGetScenarioDetailV4ProblemStatement(BaseModel):
-
-    problem_statement_id: UUID | None
-    name: str | None
-    problem_statement: str | None
-    created_at: str | None
-    updated_at: str | None
-
-
-
-
-class QGetScenarioDetailV4QuestionOption(BaseModel):
-
-    id: UUID | None
-    option_text: str | None
-    type: str | None
-    is_correct: bool | None
-
-class QGetScenarioDetailV4Question(BaseModel):
-
-    id: UUID | None
-    question_text: str | None
-    allow_multiple: bool | None
-    active: bool | None
-    options: list[QGetScenarioDetailV4QuestionOption] | None
-    times: list[int] | None
-
-
-
-
-class QGetScenarioDetailV4ScenarioImage(BaseModel):
-
-    upload_id: UUID | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-    active: bool | None
-    created_at: str | None
-    updated_at: str | None
-
-
-
-
-class QGetScenarioDetailV4ScenarioVideo(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    length_seconds: int | None
-    completed: bool | None
-    active: bool | None
-    image_enabled: bool | None
-    file_path: str | None
-    mime_type: str | None
-    upload_id: UUID | None
-
-
-
-
-class QGetScenarioDetailV4Simulation(BaseModel):
-
-    simulation_id: UUID | None
-    name: str | None
-    description: str | None
-    time_limit: int | None
-    department_ids: list[UUID] | None
-
-class GetScenarioDetailSqlRow(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    problem_statement: str | None = None
-    problem_statement_id: str | None = None
-    active: bool | None = None
-    generated: bool | None = None
-    department_ids: list[str] | None = None
-    parent_scenario_id: UUID | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_enabled: bool | None = None
-    persona_ids: list[str] | None = None
-    document_ids: list[str] | None = None
-    objective_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    valid_persona_ids: list[str] | None = None
-    valid_document_ids: list[str] | None = None
-    valid_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-    user_role: str | None = None
-    actor_name: str | None = None
-    parameter_ids: list[str] | None = None
-    valid_parameter_ids: list[str] | None = None
-    valid_field_ids: list[str] | None = None
-    question_ids: list[str] | None = None
-    persona_range_min: int | None = None
-    persona_range_max: int | None = None
-    document_range_min: int | None = None
-    document_range_max: int | None = None
-    parameter_range_min: int | None = None
-    parameter_range_max: int | None = None
-    video_enabled: bool | None = None
-    questions_enabled: bool | None = None
-    problem_statement_enabled: bool | None = None
-    scenario_agent_id: str | None = None
-    image_agent_id: str | None = None
-    video_agent_id: str | None = None
-    valid_agent_ids: list[str] | None = None
-    can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    field_ranges: list[QGetScenarioDetailV4FieldRange] | None = None
-    personas: list[QGetScenarioDetailV4Persona] | None = None
-    documents: list[QGetScenarioDetailV4Document] | None = None
-    parameters: list[QGetScenarioDetailV4Parameter] | None = None
-    fields: list[QGetScenarioDetailV4Field] | None = None
-    departments: list[QGetScenarioDetailV4Department] | None = None
-    agents: list[QGetScenarioDetailV4Agent] | None = None
-    simulations: list[QGetScenarioDetailV4Simulation] | None = None
-    objectives: list[QGetScenarioDetailV4Objective] | None = None
-    problem_statements: list[QGetScenarioDetailV4ProblemStatement] | None = None
-    scenario_images: list[QGetScenarioDetailV4ScenarioImage] | None = None
-    scenario_videos: list[QGetScenarioDetailV4ScenarioVideo] | None = None
-    questions: list[QGetScenarioDetailV4Question] | None = None
-    objectives_history: list[QGetScenarioDetailV4ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioDetailV4DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioDetailV4ParameterDetail] | None = None
-    draft_version: int | None = None
-    draft_field_show_selected: Any | None = None
-    draft_field_ranges: Any | None = None
-    draft_randomize_parameter_items: Any | None = None
-
-class GetScenarioDetailApiRequest(BaseModel):
-
-    scenario_id: UUID
-    use_image: bool | None = None
-    use_objectives: bool | None = None
-    document_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    template_document_ids: list[UUID] | None = None
-    use_video: bool | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_persona_ids: list[UUID] | None = None
-    filter_document_ids: list[UUID] | None = None
-    filter_parameter_ids: list[UUID] | None = None
-    filter_field_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    document_search: str | None = None
-    parameter_search: str | None = None
-    persona_show_selected: bool | None = None
-    document_show_selected: bool | None = None
-    parameter_show_selected: bool | None = None
-    field_show_selected_by_param: list[QGetScenarioDetailV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-
-class GetScenarioDetailApiResponse(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    problem_statement: str | None = None
-    problem_statement_id: str | None = None
-    active: bool | None = None
-    generated: bool | None = None
-    department_ids: list[str] | None = None
-    parent_scenario_id: UUID | None = None
-    hints_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    image_input_enabled: bool | None = None
-    persona_ids: list[str] | None = None
-    document_ids: list[str] | None = None
-    objective_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    valid_persona_ids: list[str] | None = None
-    valid_document_ids: list[str] | None = None
-    valid_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-    user_role: str | None = None
-    actor_name: str | None = None
-    parameter_ids: list[str] | None = None
-    valid_parameter_ids: list[str] | None = None
-    valid_field_ids: list[str] | None = None
-    question_ids: list[str] | None = None
-    persona_range_min: int | None = None
-    persona_range_max: int | None = None
-    document_range_min: int | None = None
-    document_range_max: int | None = None
-    parameter_range_min: int | None = None
-    parameter_range_max: int | None = None
-    video_enabled: bool | None = None
-    questions_enabled: bool | None = None
-    problem_statement_enabled: bool | None = None
-    scenario_agent_id: str | None = None
-    image_agent_id: str | None = None
-    video_agent_id: str | None = None
-    valid_agent_ids: list[str] | None = None
-    can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    field_ranges: list[QGetScenarioDetailV4FieldRange] | None = None
-    personas: list[QGetScenarioDetailV4Persona] | None = None
-    documents: list[QGetScenarioDetailV4Document] | None = None
-    parameters: list[QGetScenarioDetailV4Parameter] | None = None
-    fields: list[QGetScenarioDetailV4Field] | None = None
-    departments: list[QGetScenarioDetailV4Department] | None = None
-    agents: list[QGetScenarioDetailV4Agent] | None = None
-    simulations: list[QGetScenarioDetailV4Simulation] | None = None
-    objectives: list[QGetScenarioDetailV4Objective] | None = None
-    problem_statements: list[QGetScenarioDetailV4ProblemStatement] | None = None
-    scenario_images: list[QGetScenarioDetailV4ScenarioImage] | None = None
-    scenario_videos: list[QGetScenarioDetailV4ScenarioVideo] | None = None
-    questions: list[QGetScenarioDetailV4Question] | None = None
-    objectives_history: list[QGetScenarioDetailV4ObjectiveWithDepartments] | None = None
-    document_details: list[QGetScenarioDetailV4DocumentDetail] | None = None
-    parameters_detail: list[QGetScenarioDetailV4ParameterDetail] | None = None
-    draft_version: int | None = None
-    draft_field_show_selected: Any | None = None
-    draft_field_ranges: Any | None = None
-    draft_randomize_parameter_items: Any | None = None
-
-
-
 # Generated from: get_scenario_ids_for_regeneration
 
 class GetScenarioIdsForRegenerationSqlParams(BaseModel):
@@ -20860,7 +20505,6 @@ class QGetScenarioNewV4ScenarioVideo(BaseModel):
     length_seconds: int | None
     completed: bool | None
     active: bool | None
-    image_enabled: bool | None
     file_path: str | None
     mime_type: str | None
     upload_id: UUID | None
@@ -22003,7 +21647,7 @@ class SaveQuestionTimestampsSqlParams(BaseModel):
 
 class SaveQuestionTimestampsSqlRow(BaseModel):
 
-    inserted_count: int | None = None
+    updated_count: int | None = None
 
 class SaveQuestionTimestampsApiRequest(BaseModel):
 
@@ -22013,7 +21657,7 @@ class SaveQuestionTimestampsApiRequest(BaseModel):
 
 class SaveQuestionTimestampsApiResponse(BaseModel):
 
-    inserted_count: int | None = None
+    updated_count: int | None = None
 
 
 
@@ -27175,6 +26819,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshAnalyticsApiRequest",
         "RefreshAnalyticsApiResponse",
     ),
+    "app/sql/v4/answers/create_answers_complete.sql": (
+        "CreateAnswersSqlParams",
+        "CreateAnswersSqlRow",
+        "CreateAnswersApiRequest",
+        "CreateAnswersApiResponse",
+    ),
     "app/sql/v4/attempts/bulk_archive_attempts_complete.sql": (
         "BulkArchiveAttemptsSqlParams",
         "BulkArchiveAttemptsSqlRow",
@@ -28207,6 +27857,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertObjectiveApiRequest",
         "InsertObjectiveApiResponse",
     ),
+    "app/sql/v4/options/create_options_complete.sql": (
+        "CreateOptionsSqlParams",
+        "CreateOptionsSqlRow",
+        "CreateOptionsApiRequest",
+        "CreateOptionsApiResponse",
+    ),
     "app/sql/v4/parameters/create_parameter_complete.sql": (
         "CreateParameterSqlParams",
         "CreateParameterSqlRow",
@@ -28716,12 +28372,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioDepartmentsSqlRow",
         "GetScenarioDepartmentsApiRequest",
         "GetScenarioDepartmentsApiResponse",
-    ),
-    "app/sql/v4/scenario/get_scenario_detail_complete.sql": (
-        "GetScenarioDetailSqlParams",
-        "GetScenarioDetailSqlRow",
-        "GetScenarioDetailApiRequest",
-        "GetScenarioDetailApiResponse",
     ),
     "app/sql/v4/scenario/get_scenario_ids_for_regeneration_complete.sql": (
         "GetScenarioIdsForRegenerationSqlParams",
@@ -29725,6 +29375,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/answers/create_answers_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/attempts/bulk_archive_attempts_complete.sql"]
     ) -> SqlString: ...
 
@@ -30585,6 +30240,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/options/create_options_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/parameters/create_parameter_complete.sql"]
     ) -> SqlString: ...
 
@@ -31006,11 +30666,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/get_scenario_departments_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/get_scenario_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload

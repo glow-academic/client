@@ -327,8 +327,7 @@ context_data AS (
                 ORDER BY array_position(p.parameter_item_ids, f.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_parameter_item[]
             FROM fields f
-            JOIN parameter_fields fp ON fp.field_id = f.id AND fp.active = true
-            JOIN parameters pa ON pa.id = fp.parameter_id
+            JOIN parameters pa ON pa.id = f.parameter_id AND pa.active = true
             WHERE f.id = ANY(p.parameter_item_ids)
             ),
             ARRAY[]::types.i_get_scenario_run_context_and_create_run_v4_parameter_item[]

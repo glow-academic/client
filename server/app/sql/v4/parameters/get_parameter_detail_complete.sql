@@ -139,20 +139,19 @@ user_profile AS (
 ),
 parameter_active_scenario_links AS (
     SELECT 
-        pf.parameter_id,
+        f.parameter_id,
         COUNT(DISTINCT sf.scenario_id) as active_scenario_count
     FROM params x
-    JOIN parameter_fields pf ON pf.parameter_id = x.parameter_id AND pf.active = true
-    JOIN scenario_fields sf ON sf.field_id = pf.field_id AND sf.active = true
-    GROUP BY pf.parameter_id
+    JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
+    JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
+    GROUP BY f.parameter_id
 ),
 field_departments_data AS (
     SELECT 
         f.id as field_id,
         COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
     FROM params x
-    JOIN parameter_fields pf ON pf.parameter_id = x.parameter_id AND pf.active = true
-    JOIN fields f ON f.id = pf.field_id
+    JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     GROUP BY f.id
 ),
@@ -166,8 +165,8 @@ parameter_departments_aggregated AS (
         UNION
         SELECT fd.department_id as dept_id
         FROM params x
-        JOIN parameter_fields pf ON pf.parameter_id = x.parameter_id AND pf.active = true
-        JOIN field_departments fd ON fd.field_id = pf.field_id AND fd.active = true
+        JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
+        JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     ) combined_depts
 ),
 user_has_parameter_access AS (
@@ -181,9 +180,9 @@ user_has_parameter_access AS (
     ) OR EXISTS(
         SELECT 1 FROM field_departments fd
         JOIN profile_departments pd ON pd.department_id = fd.department_id
-        JOIN parameter_fields pf ON pf.field_id = fd.field_id
-        WHERE pf.parameter_id = (SELECT parameter_id FROM params)
-        AND pf.active = true
+        JOIN fields f ON f.id = fd.field_id
+        WHERE f.parameter_id = (SELECT parameter_id FROM params)
+        AND f.active = true
         AND fd.active = true
         AND pd.profile_id = (SELECT profile_id FROM params)
         AND pd.active = true
@@ -196,9 +195,9 @@ user_has_parameter_access AS (
          WHERE pd.parameter_id = (SELECT parameter_id FROM params)
          AND pd.active = true) = 0
         AND (SELECT COUNT(*) FROM field_departments fd
-             JOIN parameter_fields pf ON pf.field_id = fd.field_id
-             WHERE pf.parameter_id = (SELECT parameter_id FROM params)
-             AND pf.active = true
+             JOIN fields f ON f.id = fd.field_id
+             WHERE f.parameter_id = (SELECT parameter_id FROM params)
+             AND f.active = true
              AND fd.active = true) = 0
     ) as has_access
 ),
@@ -254,27 +253,25 @@ all_fields_with_usage AS (
 ),
 field_connections_data AS (
     SELECT 
-        pf.field_id,
-        pf."default",
-        pf.active as connection_active
+        f.id as field_id,
+        false as "default",  -- Default flag no longer available after denormalization
+        f.active as connection_active
     FROM params x
-    JOIN parameter_fields pf ON pf.parameter_id = x.parameter_id AND pf.active = true
+    JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
 ),
 fields_with_usage AS (
     SELECT 
         f.id,
         f.name,
         f.description,
-        COALESCE(fcd."default", false) as "default",
+        false as "default",  -- Default flag no longer available after denormalization
         COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
         COALESCE(fdd.department_ids, ARRAY[]::text[]) as department_ids
     FROM params x
-    JOIN parameter_fields pf ON pf.parameter_id = x.parameter_id AND pf.active = true
-    JOIN fields f ON f.id = pf.field_id AND f.active = true
-    LEFT JOIN field_connections_data fcd ON fcd.field_id = f.id
+    JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
     LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
     LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
-    GROUP BY f.id, f.name, f.description, fcd."default", fdd.department_ids
+    GROUP BY f.id, f.name, f.description, fdd.department_ids
 ),
 parameter_department_ids AS (
     SELECT 

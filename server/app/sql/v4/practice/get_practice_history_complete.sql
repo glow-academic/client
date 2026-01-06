@@ -323,9 +323,9 @@ history_elapsed_time AS (
             SUM(
                 CASE 
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
-                        (SELECT COALESCE(conv.time_taken, 0) FROM grades scg 
-                         LEFT JOIN grade_conversations gc ON gc.grade_id = scg.id
-                         LEFT JOIN conversations conv ON conv.id = gc.conversation_id
+                        (SELECT COALESCE(t.time_taken, 0) FROM grades scg 
+                         LEFT JOIN grade_times gt ON gt.grade_id = scg.id AND gt.active = TRUE
+                         LEFT JOIN times t ON t.id = gt.time_id
                          JOIN runs r ON r.id = scg.run_id
                          JOIN group_runs gr ON gr.run_id = r.id
                          JOIN grade_groups gg ON gg.group_id = gr.group_id
