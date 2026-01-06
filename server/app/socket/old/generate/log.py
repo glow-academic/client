@@ -4,13 +4,12 @@ import json
 import uuid
 from typing import Any, cast
 
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import UPLOAD_FOLDER, get_internal_sio, sio
 from app.sql.types import LogRunSqlParams, LogRunSqlRow
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
 from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()

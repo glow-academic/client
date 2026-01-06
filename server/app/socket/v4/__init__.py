@@ -13,7 +13,17 @@ See `AGENTS.md` for overall architecture principles.
 
 from fastapi import APIRouter
 
-from . import agents, benchmark, connect, disconnect, generate, simulations
+from . import (
+    agent,
+    artifacts,
+    benchmark,
+    connect,
+    disconnect,
+    document,
+    rubric,
+    scenario,
+    simulations,
+)
 
 # Create main router
 router = APIRouter(prefix="/socket/v4", tags=["socket"])
@@ -25,13 +35,26 @@ server_router = APIRouter(prefix="/server", tags=["socket-server"])
 # Include lifecycle routers
 client_router.include_router(connect.client_router)
 client_router.include_router(disconnect.client_router)
-client_router.include_router(generate.log.client_router)
+client_router.include_router(artifacts.log.client_router)
 
 server_router.include_router(connect.server_router)
 
-# Include agent routers (tools are now included via agent routers)
-client_router.include_router(agents.client_router)
-server_router.include_router(agents.server_router)
+# Include artifacts routers (start, end, error)
+client_router.include_router(artifacts.client_router)
+server_router.include_router(artifacts.server_router)
+
+# Include page routers (scenario, rubric, document, agent)
+client_router.include_router(scenario.client_router)
+server_router.include_router(scenario.server_router)
+
+client_router.include_router(rubric.client_router)
+server_router.include_router(rubric.server_router)
+
+client_router.include_router(document.client_router)
+server_router.include_router(document.server_router)
+
+client_router.include_router(agent.client_router)
+server_router.include_router(agent.server_router)
 
 # Include simulation operation routers
 client_router.include_router(simulations.client_router)

@@ -8,7 +8,7 @@ from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
-from app.socket.v4.generate.error import GenerateErrorApiRequest
+from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from app.sql.types import (GetGenerationRunContextAndCreateRunSqlParams,
                            GetGenerationRunContextAndCreateRunSqlRow)
 from fastapi import APIRouter
@@ -150,9 +150,8 @@ async def _generate_start_impl(
             # Determine handler type from agent_role
             handler_type = HANDLER_MAPPING.get(data.resource_type, "text")
             
-            # Build payload for modality handler
-            # Modality handlers will fetch agent config, tools, etc. using run_id + agent_id
-            modality_payload = {
+            # Build payload for handlers
+            handler_payload = {
                 "sid": sid,
                 "run_id": result.run_id,  # Already created
                 "agent_id": data.agent_id,
@@ -163,19 +162,19 @@ async def _generate_start_impl(
                 "message_ids": [str(mid) for mid in (result.message_ids or [])],  # Includes user message if created
             }
             
-            # Dispatch to appropriate modality handler
-            # Modality handlers will fetch context using run_id
-            if handler_type == "text":
-                await internal_sio.emit("generate_text", modality_payload)
-            elif handler_type == "image":
-                await internal_sio.emit("generate_image", modality_payload)
-            elif handler_type == "video":
-                await internal_sio.emit("generate_video", modality_payload)
-            elif handler_type == "audio":
-                await internal_sio.emit("generate_audio", modality_payload)
+            # Route to page handlers for application pages (scenario, rubric, document, agent)
+            # These handle page-specific logic then route to artifacts/generate.py
+            if data.resource_type == "scenario":
+                await internal_sio.emit("scenario_generate", handler_payload)
+            elif data.resource_type == "rubric":
+                await internal_sio.emit("rubric_generate", handler_payload)
+            elif data.resource_type == "document":
+                await internal_sio.emit("document_generate", handler_payload)
+            elif data.resource_type == "prompt":
+                await internal_sio.emit("agent_generate", handler_payload)
             else:
-                # Fallback to text generation
-                await internal_sio.emit("generate_text", modality_payload)
+                # For other resource types, route directly to artifacts/generate.py
+                await internal_sio.emit("generate_artifact", handler_payload)
                 
     except Exception as e:
         # Emit error to generate_error handler
