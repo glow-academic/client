@@ -649,12 +649,11 @@ scenario_videos_with_questions AS (
                  ARRAY[q.time]::int[],
                  COALESCE(
                      (SELECT ARRAY_AGG(
-                         (o.id, o.option_text, 'discrete'::text, CASE WHEN a.id IS NOT NULL THEN true ELSE false END)::types.q_get_simulation_attempt_v4_option
+                         (o.id, o.option_text, 'discrete'::text, o.is_correct)::types.q_get_simulation_attempt_v4_option
                          ORDER BY o.id
                      )
                      FROM scenario_options so
                      JOIN options o ON o.id = so.option_id AND o.active = true
-                     LEFT JOIN answers a ON a.question_id = q.id AND a.option_id = o.id AND a.active = true
                      WHERE so.scenario_id = sv.scenario_id AND so.active = true),
                      '{}'::types.q_get_simulation_attempt_v4_option[]
                  )

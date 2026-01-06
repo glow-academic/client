@@ -3630,38 +3630,6 @@ class RefreshAnalyticsApiResponse(BaseModel):
 
 
 
-# Generated from: create_answers
-
-class CreateAnswersSqlParams(BaseModel):
-
-    answers_json: Any
-    scenario_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.answers_json,
-            self.scenario_id,
-        )
-
-class CreateAnswersSqlRow(BaseModel):
-
-    answer_id: UUID | None = None
-    question_id: UUID | None = None
-    option_id: UUID | None = None
-
-class CreateAnswersApiRequest(BaseModel):
-
-    answers_json: Any
-    scenario_id: UUID
-
-class CreateAnswersApiResponse(BaseModel):
-
-    answer_id: UUID | None = None
-    question_id: UUID | None = None
-    option_id: UUID | None = None
-
-
-
 # Generated from: bulk_archive_attempts
 
 class BulkArchiveAttemptsSqlParams(BaseModel):
@@ -27234,12 +27202,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RefreshAnalyticsApiRequest",
         "RefreshAnalyticsApiResponse",
     ),
-    "app/sql/v4/answers/create_answers_complete.sql": (
-        "CreateAnswersSqlParams",
-        "CreateAnswersSqlRow",
-        "CreateAnswersApiRequest",
-        "CreateAnswersApiResponse",
-    ),
     "app/sql/v4/attempts/bulk_archive_attempts_complete.sql": (
         "BulkArchiveAttemptsSqlParams",
         "BulkArchiveAttemptsSqlRow",
@@ -29792,11 +29754,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/analytics/refresh_analytics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/answers/create_answers_complete.sql"]
     ) -> SqlString: ...
 
     @overload

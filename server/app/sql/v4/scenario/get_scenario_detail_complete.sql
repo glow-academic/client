@@ -541,18 +541,10 @@ question_options_array AS (
         q.id as question_id,
         opt.id,
         opt.option_text,
-        EXISTS(
-            SELECT 1 FROM answers a 
-            WHERE a.question_id = q.id AND a.option_id = opt.id AND a.active = true
-        ) as is_correct
+        opt.is_correct
     FROM scenario_questions_array q
     JOIN scenario_options so ON so.scenario_id = (SELECT scenario_id FROM params) AND so.active = true
     JOIN options opt ON opt.id = so.option_id AND opt.active = true
-    WHERE EXISTS (
-        -- Option is linked to this question via answers
-        SELECT 1 FROM answers a2 
-        WHERE a2.question_id = q.id AND a2.option_id = opt.id AND a2.active = true
-    )
 ),
 question_times_array AS (
     SELECT 

@@ -82,15 +82,18 @@ options_data AS (
     WHERE qd.question_type = 'choice' AND qd.options_json IS NOT NULL
 ),
 create_options AS (
-    -- Create options (reusable across questions, no type column)
-    INSERT INTO options (option_text, active, created_at, updated_at)
-    SELECT DISTINCT
+    -- Create options with is_correct (reusable across questions)
+    -- If same option_text appears with different is_correct values, prefer true
+    INSERT INTO options (option_text, is_correct, active, created_at, updated_at)
+    SELECT DISTINCT ON (od.option_text)
         od.option_text,
+        BOOL_OR(od.is_correct) as is_correct,  -- If any instance is true, set to true
         true,
         NOW(),
         NOW()
     FROM options_data od
     WHERE od.option_text IS NOT NULL AND od.option_text != ''
+    GROUP BY od.option_text
     ON CONFLICT DO NOTHING
     RETURNING id::uuid as option_id, option_text
 ),
@@ -107,23 +110,9 @@ all_options AS (
     SELECT * FROM create_options
     UNION
     SELECT * FROM get_existing_options
-),
-create_answers AS (
-    -- Create answers as strong entities (replaces question_answers junction table)
-    INSERT INTO answers (question_id, option_id, active, created_at, updated_at)
-    SELECT DISTINCT
-        od.question_id,
-        ao.option_id,
-        true,
-        NOW(),
-        NOW()
-    FROM options_data od
-    JOIN all_options ao ON ao.option_text = od.option_text
-    WHERE od.is_correct = true
-    ON CONFLICT (question_id, option_id) DO UPDATE SET
-        active = true,
-        updated_at = NOW()
 )
+-- Note: Answers are no longer created here. Correctness (is_correct) is now stored
+-- in the options table itself, not in scenario_options or a separate answers table.
 SELECT DISTINCT
     aq.question_id,
     aq.question_text,
