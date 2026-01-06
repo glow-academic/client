@@ -1,1 +1,0 @@
-"""Image agent tools package."""

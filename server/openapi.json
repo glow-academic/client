@@ -15309,6 +15309,59 @@
         ]
       }
     },
+    "/socket/v4/client/simulations/member/progress": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ],
+        "summary": "Endpoint Handler",
+        "description": "Server-to-client event: {description}",
+        "operationId": "handle_simulations_member_progress_member_progress",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BaseModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Handle Simulations Member Progress Member Progress"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-client",
+          "socket-client"
+        ]
+      }
+    },
     "/socket/v4/client/benchmark/enter": {
       "post": {
         "tags": [
@@ -17132,6 +17185,59 @@
                   },
                   "type": "object",
                   "title": "Response Simulation Voice Stop Error Api Socket V4 Server Simulations Voice Stop Error Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ]
+      }
+    },
+    "/socket/v4/server/simulations/member/progress_error": {
+      "post": {
+        "tags": [
+          "socket",
+          "socket-server",
+          "socket-server"
+        ],
+        "summary": "Member Progress Error Api",
+        "description": "Server-to-client event: Error occurred in member progress.",
+        "operationId": "member_progress_error_api_socket_v4_server_simulations_member_progress_error_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberProgressErrorPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "type": "object",
+                  "title": "Response Member Progress Error Api Socket V4 Server Simulations Member Progress Error Post"
                 }
               }
             }
@@ -43576,6 +43682,60 @@
         ],
         "title": "LogRunApiRequest",
         "description": "Request to log run pricing and metrics (snake_case)."
+      },
+      "MemberProgressErrorPayload": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "MemberProgressErrorPayload",
+        "description": "Response indicating an error occurred in member progress."
+      },
+      "MemberProgressPayload": {
+        "properties": {
+          "chat_id": {
+            "type": "string",
+            "title": "Chat Id"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "voice_mode": {
+            "type": "boolean",
+            "title": "Voice Mode",
+            "default": false
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_id",
+          "message"
+        ],
+        "title": "MemberProgressPayload",
+        "description": "Request to upsert user message and run."
       },
       "PatchAgentDraftApiRequest": {
         "properties": {

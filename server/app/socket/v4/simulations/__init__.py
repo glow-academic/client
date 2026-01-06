@@ -50,6 +50,12 @@ from .stop import (
 from .stop import (
     server_router as stop_server_router,
 )
+from .member_progress import (
+    client_router as member_progress_client_router,
+)
+from .member_progress import (
+    server_router as member_progress_server_router,
+)
 
 client_router = APIRouter(prefix="/simulations", tags=["socket-client"])
 server_router = APIRouter(prefix="/simulations", tags=["socket-server"])
@@ -62,6 +68,7 @@ client_router.include_router(end_client_router)
 client_router.include_router(next_client_router)
 client_router.include_router(advance_client_router)
 client_router.include_router(stop_client_router)
+client_router.include_router(member_progress_client_router)
 
 server_router.include_router(enter_server_router)
 server_router.include_router(join_server_router)
@@ -71,3 +78,4 @@ server_router.include_router(end_server_router)
 server_router.include_router(next_server_router)
 server_router.include_router(advance_server_router)
 server_router.include_router(stop_server_router)
+server_router.include_router(member_progress_server_router)

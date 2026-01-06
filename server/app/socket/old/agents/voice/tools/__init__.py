@@ -1,1 +1,0 @@
-"""Voice agent tools package."""

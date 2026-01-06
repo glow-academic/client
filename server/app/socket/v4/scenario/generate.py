@@ -2,7 +2,7 @@
 
 import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import asyncpg  # type: ignore
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
@@ -10,6 +10,16 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
+from app.sql.types import (
+    GetDepartmentsForProfileSqlParams,
+    GetDepartmentsForProfileSqlRow,
+    GetRandomizationRangesSqlParams,
+    GetRandomizationRangesSqlRow,
+    GetScenarioDepartmentsSqlParams,
+    GetScenarioDepartmentsSqlRow,
+    RandomizeScenarioSqlParams,
+    RandomizeScenarioSqlRow,
+)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed, load_sql
@@ -18,11 +28,6 @@ internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
-
-# Import randomization function from old agents
-from app.socket.old.agents.scenario.generate import (
-    _randomize_missing_scenario_values,
-)
 
 
 class GenerateScenarioPayload(BaseModel):
@@ -62,12 +67,13 @@ async def _generate_scenario_impl(
             document_ids = None
 
         async with get_db_connection() as conn:
-            # Step 1: Randomize missing values
+            # Step 1: Randomize missing values using SQL function
             needs_persona = not persona_ids or len(persona_ids) == 0
             needs_documents = not document_ids or len(document_ids) == 0
             needs_fields = not field_ids or len(field_ids) == 0
 
             # Determine which values need randomization based on randomizeType
+            randomize_type = data.randomizeType or "all"
             if data.randomizeType:
                 if data.randomizeType == "persona":
                     needs_persona = True
@@ -85,31 +91,157 @@ async def _generate_scenario_impl(
                     needs_persona = False
                     needs_documents = False
                     needs_fields = True
-                    param_id_str = data.randomizeType.replace("parameter_", "")
-                    try:
-                        parameter_id_to_randomize = (
-                            uuid.UUID(param_id_str) if param_id_str else None
-                        )
-                    except (ValueError, TypeError):
-                        parameter_id_to_randomize = None
                 else:  # "all" or None
-                    parameter_id_to_randomize = None
-            else:
-                parameter_id_to_randomize = None
+                    pass
 
             randomized_selections = None
             if needs_persona or needs_documents or needs_fields:
-                randomized_selections = await _randomize_missing_scenario_values(
-                    conn=conn,
-                    scenario_id=scenario_id_uuid,
+                # Get department IDs (from scenario, then profile, then use provided)
+                department_ids_list: list[uuid.UUID] = []
+                if department_id:
+                    department_ids_list = [department_id]
+                elif scenario_id_uuid:
+                    # Try scenario departments first - fetch all rows
+                    dept_params = GetScenarioDepartmentsSqlParams(
+                        scenario_id=scenario_id_uuid
+                    )
+                    sql_get_depts = load_sql(
+                        "app/sql/v4/scenario/get_scenario_departments_complete.sql"
+                    )
+                    dept_rows = await conn.fetch(sql_get_depts, scenario_id_uuid)
+                    if dept_rows:
+                        department_ids_list = [
+                            uuid.UUID(str(row["department_id"]))
+                            for row in dept_rows
+                            if row.get("department_id")
+                        ]
+                
+                if not department_ids_list and profile_id:
+                    # Fallback to profile departments - fetch all rows
+                    profile_dept_params = GetDepartmentsForProfileSqlParams(
+                        profile_id=profile_id
+                    )
+                    sql_get_profile_depts = load_sql(
+                        "app/sql/v4/profile/get_departments_for_profile_complete.sql"
+                    )
+                    profile_dept_rows = await conn.fetch(
+                        sql_get_profile_depts, profile_id
+                    )
+                    if profile_dept_rows:
+                        department_ids_list = [
+                            uuid.UUID(str(row["id"]))
+                            for row in profile_dept_rows
+                            if row.get("id")
+                        ]
+
+                # Get randomization ranges
+                persona_min = 1
+                persona_max = 3
+                document_min = 0
+                document_max = 3
+                parameter_selection_min = 0
+                parameter_selection_max = 3
+                field_ranges_json: dict[str, dict[str, int]] = {}
+
+                if scenario_id_uuid:
+                    ranges_params = GetRandomizationRangesSqlParams(
+                        scenario_id=scenario_id_uuid
+                    )
+                    ranges_result = cast(
+                        GetRandomizationRangesSqlRow,
+                        await execute_sql_typed(
+                            conn,
+                            "app/sql/v4/scenario/get_randomization_ranges_complete.sql",
+                            params=ranges_params,
+                        ),
+                    )
+                    if ranges_result:
+                        persona_min = ranges_result.persona_min or 1
+                        persona_max = ranges_result.persona_max or 3
+                        document_min = ranges_result.document_min or 0
+                        document_max = ranges_result.document_max or 3
+                        parameter_selection_min = ranges_result.parameter_min or 0
+                        parameter_selection_max = ranges_result.parameter_max or 3
+                        if ranges_result.field_ranges_json:
+                            if isinstance(ranges_result.field_ranges_json, str):
+                                try:
+                                    field_ranges_json = json.loads(
+                                        ranges_result.field_ranges_json
+                                    )
+                                except json.JSONDecodeError:
+                                    field_ranges_json = {}
+                            elif isinstance(ranges_result.field_ranges_json, dict):
+                                field_ranges_json = ranges_result.field_ranges_json
+
+                # Extract parameter_ids from field_ids if needed
+                parameter_ids: list[uuid.UUID] = []
+                if field_ids:
+                    # Get parameter_ids from fields table directly
+                    sql_get_params = """
+                        SELECT DISTINCT parameter_id 
+                        FROM fields 
+                        WHERE id = ANY($1::uuid[]) AND parameter_id IS NOT NULL
+                    """
+                    param_rows = await conn.fetch(sql_get_params, [fid for fid in field_ids])
+                    parameter_ids = [
+                        uuid.UUID(str(row["parameter_id"]))
+                        for row in param_rows
+                        if row.get("parameter_id")
+                    ]
+
+                # Call SQL randomization function
+                # SQL function handles NULL scenario_id, but type system requires UUID
+                # Use dummy UUID if None - SQL function will handle it
+                randomize_params = RandomizeScenarioSqlParams(
+                    scenario_id=scenario_id_uuid if scenario_id_uuid else uuid.UUID(
+                        "00000000-0000-0000-0000-000000000000"
+                    ),
                     profile_id=profile_id,
-                    department_id=department_id,
-                    existing_persona_ids=persona_ids if not needs_persona else None,
-                    existing_document_ids=document_ids if not needs_documents else None,
-                    existing_field_ids=field_ids if not needs_fields else None,
-                    randomize_type=data.randomizeType,
-                    parameter_id_to_randomize=parameter_id_to_randomize,
+                    randomize_type=randomize_type,
+                    department_ids=department_ids_list,
+                    persona_ids=persona_ids or [],
+                    document_ids=document_ids or [],
+                    parameter_ids=parameter_ids,
+                    field_ids=field_ids or [],
+                    persona_min=persona_min,
+                    persona_max=persona_max,
+                    document_min=document_min,
+                    document_max=document_max,
+                    parameter_selection_min=parameter_selection_min,
+                    parameter_selection_max=parameter_selection_max,
+                    field_ranges_json=field_ranges_json,
                 )
+
+                randomize_result = cast(
+                    RandomizeScenarioSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/scenario/randomize_scenario_complete.sql",
+                        params=randomize_params,
+                    ),
+                )
+
+                # Map results back to expected format
+                randomized_selections = {
+                    "persona_ids": (
+                        randomize_result.randomized_persona_ids
+                        if randomize_result.randomized_persona_ids
+                        else None
+                    ),
+                    "document_ids": (
+                        randomize_result.randomized_document_ids
+                        if randomize_result.randomized_document_ids
+                        else None
+                    ),
+                    "field_ids": (
+                        randomize_result.randomized_field_ids
+                        if randomize_result.randomized_field_ids
+                        else None
+                    ),
+                    "department_id": (
+                        department_ids_list[0] if department_ids_list else None
+                    ),
+                }
 
                 # Update values with randomized selections
                 if randomized_selections.get("persona_ids") and needs_persona:

@@ -3847,6 +3847,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/socket/v4/client/simulations/member/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Endpoint Handler
+         * @description Server-to-client event: {description}
+         */
+        post: operations["handle_simulations_member_progress_member_progress"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/socket/v4/client/benchmark/enter": {
         parameters: {
             query?: never;
@@ -4541,6 +4561,26 @@ export interface paths {
          * @description Server-to-client event: Error occurred while stopping voice simulation.
          */
         post: operations["simulation_voice_stop_error_api_socket_v4_server_simulations_voice_stop_error_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/socket/v4/server/simulations/member/progress_error": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Member Progress Error Api
+         * @description Server-to-client event: Error occurred in member progress.
+         */
+        post: operations["member_progress_error_api_socket_v4_server_simulations_member_progress_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10335,6 +10375,33 @@ export interface components {
             assistant_output?: string | null;
             /** Department Id */
             department_id?: string | null;
+        };
+        /**
+         * MemberProgressErrorPayload
+         * @description Response indicating an error occurred in member progress.
+         */
+        MemberProgressErrorPayload: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+        };
+        /**
+         * MemberProgressPayload
+         * @description Request to upsert user message and run.
+         */
+        MemberProgressPayload: {
+            /** Chat Id */
+            chat_id: string;
+            /** Message */
+            message: string;
+            /**
+             * Voice Mode
+             * @default false
+             */
+            voice_mode: boolean;
+            /** Upload Id */
+            upload_id?: string | null;
         };
         /** PatchAgentDraftApiRequest */
         PatchAgentDraftApiRequest: {
@@ -25558,6 +25625,41 @@ export interface operations {
             };
         };
     };
+    handle_simulations_member_progress_member_progress: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BaseModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     benchmark_enter_api_socket_v4_client_benchmark_enter_post: {
         parameters: {
             query?: never;
@@ -26758,6 +26860,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["StopVoiceErrorPayload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    member_progress_error_api_socket_v4_server_simulations_member_progress_error_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemberProgressErrorPayload"];
             };
         };
         responses: {

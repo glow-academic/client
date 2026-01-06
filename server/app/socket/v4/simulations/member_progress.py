@@ -5,19 +5,21 @@ from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_client_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
+from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from app.sql.types import (
     GetMessageCreatedAtSqlParams,
     GetMessageCreatedAtSqlRow,
     MemberProgressUpsertSqlParams,
     MemberProgressUpsertSqlRow,
 )
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
@@ -59,7 +61,7 @@ async def member_progress_error(payload: MemberProgressErrorPayload, room: str) 
 async def _member_progress_impl(
     sid: str, data: MemberProgressPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle member_progress event - upserts user message/run, triggers generate."""
+    """Handle member_progress event - upserts user message/run, triggers generate via artifacts system."""
     try:
         chat_id = data.chat_id
         if not chat_id:
@@ -80,12 +82,13 @@ async def _member_progress_impl(
             return
 
         chat_id_uuid = uuid.UUID(chat_id)
-        # Replaced with get_db_connection()
 
         async with get_db_connection() as conn:
             # Upsert user message and run via SQL
             SQL_PATH_UPSERT = "app/sql/v4/member/member_progress_upsert_complete.sql"
             try:
+                import asyncpg  # type: ignore
+
                 params = MemberProgressUpsertSqlParams(
                     chat_id=chat_id_uuid,
                     message_content=message_str,
@@ -176,34 +179,68 @@ async def _member_progress_impl(
                     event_key="member.progress.message_sent",
                     template="{{ actor.name }} sent message via member agent",
                     context={"chat_id": str(chat_id_uuid), "audio": audio},
-                    endpoint="/socket/v4/member/progress",
+                    endpoint="/socket/v4/simulations/member/progress",
                     error=False,
                 )
             except Exception:
                 pass
-            # Trigger appropriate generate event based on audio flag (voice_mode)
+
+            # Route through artifacts system instead of old handlers
+            # Get agent_id from chat context (SQL will determine text vs voice agent)
+            # Use simulation context SQL to get the appropriate agent_id
+            from app.sql.types import (
+                GetSimulationRunContextSqlParams,
+                GetSimulationRunContextSqlRow,
+            )
+
+            context_params = GetSimulationRunContextSqlParams(chat_id=chat_id_uuid)
+            context_result = cast(
+                GetSimulationRunContextSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/simulations/get_simulation_run_context_complete.sql",
+                    params=context_params,
+                ),
+            )
+
+            if not context_result or not context_result.agent_id:
+                await member_progress_error(
+                    MemberProgressErrorPayload(
+                        success=False,
+                        message="Failed to get simulation agent context",
+                    ),
+                    room=sid,
+                )
+                return
+
+            # Determine agent_id and resource_type based on audio mode
+            # For voice mode, use voice_agent_id and resource_type "voice" (audio adapter)
+            # For text mode, use agent_id and resource_type "simulation" (text adapter)
             if audio:
-                # Voice mode: trigger simulation_voice_generate
-                await internal_sio.emit(
-                    "simulation_voice_generate",
-                    {
-                        "sid": sid,
-                        "chat_id": str(chat_id_uuid),
-                        "run_id": run_id,
-                        "group_id": group_id,
-                    },
+                agent_id = (
+                    context_result.voice_agent_id
+                    if context_result.voice_agent_id
+                    else context_result.agent_id
                 )
+                resource_type = "voice"  # Maps to audio adapter in HANDLER_MAPPING
             else:
-                # Text mode: trigger simulation_text_generate
-                await internal_sio.emit(
-                    "simulation_text_generate",
-                    {
-                        "sid": sid,
-                        "chat_id": str(chat_id_uuid),
-                        "run_id": run_id,
-                        "group_id": group_id,
-                    },
-                )
+                agent_id = context_result.agent_id
+                resource_type = "simulation"  # Maps to text adapter in HANDLER_MAPPING
+
+            # Route through artifacts system
+            await internal_sio.emit(
+                "generate_start",
+                {
+                    "sid": sid,
+                    "agent_id": agent_id,
+                    "resource_id": str(chat_id_uuid),
+                    "resource_type": resource_type,
+                    "group_id": str(group_id) if group_id else None,
+                    "user_instructions": None,
+                    "message_ids": [message_id],
+                    "developer_message_contents": None,
+                },
+            )
     except ValueError as e:
         await member_progress_error(
             MemberProgressErrorPayload(
@@ -232,13 +269,13 @@ async def member_progress(sid: str, data: dict[str, Any]) -> None:
 
 
 # FastAPI endpoint for OpenAPI documentation
-@client_router.post("/progress", response_model=dict[str, bool])
+@client_router.post("/member/progress", response_model=dict[str, bool])
 async def member_progress_api(request: MemberProgressPayload) -> dict[str, bool]:
     """Client-to-server event: Upsert user message and run."""
     return {"success": True}
 
 
-@server_router.post("/progress_error", response_model=dict[str, bool])
+@server_router.post("/member/progress_error", response_model=dict[str, bool])
 async def member_progress_error_api(
     request: MemberProgressErrorPayload,
 ) -> dict[str, bool]:
@@ -248,7 +285,8 @@ async def member_progress_error_api(
 
 register_server_endpoint(
     client_router,
-    "/progress",
+    "/member/progress",
     MemberProgressPayload,
-    "Upsert user message and run, trigger appropriate generate event",
+    "Upsert user message and run, trigger appropriate generate event via artifacts system",
 )
+
