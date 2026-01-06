@@ -1611,6 +1611,7 @@ export default function Rubric({
               isEditMode={isEditMode}
               actions={
                 <Button
+                  type="button"
                   variant="default"
                   size="sm"
                   disabled={isReadonly || !draftState.rubricAgentId}

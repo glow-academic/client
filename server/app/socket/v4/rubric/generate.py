@@ -3,7 +3,8 @@
 import uuid
 from typing import Any
 
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
@@ -19,7 +20,7 @@ server_router = APIRouter()
 class GenerateRubricPayload(BaseModel):
     """Request to generate a rubric."""
 
-    rubric_id: str
+    rubric_id: str | None = None  # Optional for new rubrics
     rubric_agent_id: str
     department_id: str
     standard_groups: list[dict[str, Any]] | None = None
@@ -115,7 +116,23 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
     """Handle rubric_generate event (client-to-server)."""
     try:
         payload = GenerateRubricPayload(**data)
-        profile_id_str = await find_profile_by_socket(sid)
+        try:
+            profile_id_str = await find_profile_by_socket(sid)
+        except Exception as lookup_error:
+            # If profile lookup fails (e.g., Redis recursion), emit error and return
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Profile lookup failed: {str(lookup_error)}. Please reconnect.",
+                    resource_id=data.get("rubric_id"),
+                    group_id=None,
+                    resource_type="rubric",
+                ),
+                sid=sid,
+            )
+            return
+        
         if not profile_id_str:
             await emit_to_internal(
                 "generate_error",

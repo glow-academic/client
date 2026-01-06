@@ -1077,6 +1077,7 @@ export function ContentSection({
             />
           )}
           <Button
+            type="button"
             variant="default"
             size="sm"
             onClick={() => {

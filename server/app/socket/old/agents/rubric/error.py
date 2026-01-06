@@ -30,10 +30,18 @@ async def _rubric_error_impl(
     group_id: uuid.UUID | None = None,
 ) -> None:
     """Internal implementation using typed SQL execution."""
+    # #region agent log
+    import json
+    with open('/Users/ashoksaravanan/Coding/glow/.cursor/debug.log', 'a') as f:
+        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"old/agents/rubric/error.py:35","message":"Creating SQL params","data":{"data_fields":list(data.model_dump().keys()),"group_id":str(group_id) if group_id else None,"profile_id":str(profile_id)},"timestamp":int(__import__('time').time()*1000)})+"\n")
+    # #endregion
     try:
         async with get_db_connection() as conn:
+            # Exclude group_id from data_dump since we pass it explicitly
+            # This avoids KeyError when group_id is None in the validated model
+            data_dump = data.model_dump(exclude={"group_id"})
             params = RubricGenerationErrorSqlParams(
-                **data.model_dump(),
+                **data_dump,
                 profile_id=profile_id,  # From sid lookup
                 group_id=group_id,
             )
@@ -56,16 +64,18 @@ async def _rubric_error_impl(
         )
 
 
-@internal_sio.on("rubric_error")  # type: ignore
-async def rubric_error_internal(data: dict[str, Any]) -> None:
-    """Handle rubric_error event from internal bus (server-to-server)."""
-    await handle_internal_event(
-        data=data,
-        request_type=RubricGenerationErrorApiRequest,
-        handler=_rubric_error_impl,  # type: ignore[arg-type]
-        error_event_name="rubrics_generation_error",
-        error_response_type=RubricGenerationErrorSqlRow,
-    )
+# DISABLED: Old handler replaced by v4/rubric/error.py
+# The v4 handler emits unified artifact_generation_error events
+# @internal_sio.on("rubric_error")  # type: ignore
+# async def rubric_error_internal(data: dict[str, Any]) -> None:
+#     """Handle rubric_error event from internal bus (server-to-server)."""
+#     await handle_internal_event(
+#         data=data,
+#         request_type=RubricGenerationErrorApiRequest,
+#         handler=_rubric_error_impl,  # type: ignore[arg-type]
+#         error_event_name="rubrics_generation_error",
+#         error_response_type=RubricGenerationErrorSqlRow,
+#     )
 
 
 register_server_endpoint(

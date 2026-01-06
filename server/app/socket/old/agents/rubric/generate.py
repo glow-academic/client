@@ -669,17 +669,19 @@ Generate descriptions for ALL combinations of standard groups and standards."""
             pass
 
 
-@sio.event  # type: ignore
-async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
-    """Wrapper that validates payload before calling actual handler"""
-    await handle_client_event(
-        sid=sid,
-        data=data,
-        request_type=GetRubricRunContextAndCreateRunApiRequest,
-        handler=_rubric_generate_impl,  # type: ignore[arg-type]
-        error_event_name="rubrics_generation_error",
-        error_response_type=RubricGenerationErrorSqlRow,
-    )
+# DISABLED: Old handler replaced by v4/rubric/generate.py
+# The v4 handler routes through artifacts system and uses new architecture
+# @sio.event  # type: ignore
+# async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
+#     """Wrapper that validates payload before calling actual handler"""
+#     await handle_client_event(
+#         sid=sid,
+#         data=data,
+#         request_type=GetRubricRunContextAndCreateRunApiRequest,
+#         handler=_rubric_generate_impl,  # type: ignore[arg-type]
+#         error_event_name="rubrics_generation_error",
+#         error_response_type=RubricGenerationErrorSqlRow,
+#     )
 
 
 register_client_endpoint(

@@ -18,7 +18,12 @@ class TestSet_Socket_Owner:
         profile_id = "profile-123"
         socket_id = "socket-123"
         mock_redis = AsyncMock()
-        mock_redis.setex = AsyncMock()
+        mock_pipeline = AsyncMock()
+        mock_redis.pipeline = lambda: mock_pipeline
+        mock_pipeline.__aenter__ = AsyncMock(return_value=mock_pipeline)
+        mock_pipeline.__aexit__ = AsyncMock(return_value=None)
+        mock_pipeline.setex = AsyncMock()
+        mock_pipeline.execute = AsyncMock()
         mock_socket_owner = {}
 
         with (
@@ -33,9 +38,15 @@ class TestSet_Socket_Owner:
         ):
             await set_socket_owner(profile_id, socket_id)
 
-            mock_redis.setex.assert_called_once_with(
+            # Verify both keys are set: forward and reverse mapping
+            assert mock_pipeline.setex.call_count == 2
+            mock_pipeline.setex.assert_any_call(
                 f"socket_owner:{profile_id}", 86400, socket_id
             )
+            mock_pipeline.setex.assert_any_call(
+                f"socket_to_profile:{socket_id}", 86400, profile_id
+            )
+            mock_pipeline.execute.assert_called_once()
             assert profile_id not in mock_socket_owner  # Should not use fallback
 
     @pytest.mark.asyncio

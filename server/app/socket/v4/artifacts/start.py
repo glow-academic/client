@@ -28,7 +28,7 @@ class GenerateStartApiRequest(BaseModel):
 
     sid: str
     agent_id: str
-    resource_id: str
+    resource_id: str | None = None  # Optional: for new resources (e.g., new rubrics)
     resource_type: str  # agent_role from SQL result
     group_id: str | None = None  # Optional: for regeneration
     user_instructions: str | None = None  # Optional: for regeneration (creates user message)

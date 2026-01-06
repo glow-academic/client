@@ -4,10 +4,10 @@ import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
-from pydantic import BaseModel, ValidationError
-
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.typed_emit import emit_to_client
+from pydantic import BaseModel, ValidationError
 
 TRequest = TypeVar("TRequest", bound=BaseModel)
 TResponse = TypeVar("TResponse", bound=BaseModel)
@@ -99,38 +99,189 @@ async def handle_internal_event(
 
     try:
         # Get profile_id from sid (O(1) Redis lookup)
-        profile_id_str = await find_profile_by_socket(sid)
+        # Wrap in try-catch to prevent recursion if lookup fails
+        profile_id_str = None
+        try:
+            profile_id_str = await find_profile_by_socket(sid)
+        except Exception as lookup_error:
+            # If Redis lookup fails (e.g., recursion error), try in-memory fallback
+            # This prevents infinite recursion while still allowing error propagation
+            try:
+                from app.main import get_socket_owner_dict
+                socket_owner = get_socket_owner_dict()
+                # Try in-memory fallback (reverse lookup: find profile_id by socket_id)
+                for profile_id, owner_sid in socket_owner.items():
+                    if owner_sid == sid:
+                        profile_id_str = profile_id
+                        break
+            except Exception:
+                # If even in-memory lookup fails, we can't proceed
+                # But we should still emit an error to the client
+                if error_event_name:
+                    try:
+                        # Emit error directly to client using sid as room (doesn't require profile lookup)
+                        from app.main import sio
+                        if error_event_name == "generate_error":
+                            # For generate_error, emit to internal bus
+                            from app.main import get_internal_sio
+                            internal_sio = get_internal_sio()
+                            await internal_sio.emit(
+                                error_event_name,
+                                {
+                                    "sid": sid,
+                                    "error_message": f"Profile lookup failed: {str(lookup_error)}",
+                                    "resource_id": data.get("resource_id"),
+                                    "group_id": data.get("group_id"),
+                                    "resource_type": data.get("resource_type"),
+                                },
+                            )
+                        else:
+                            # For other errors, emit directly to client
+                            await sio.emit(
+                                error_event_name,
+                                {
+                                    "success": False,
+                                    "message": f"Profile lookup failed: {str(lookup_error)}",
+                                },
+                                room=sid,
+                            )
+                    except Exception:
+                        # If emitting also fails, just return silently to prevent infinite recursion
+                        pass
+                return
+        
         if not profile_id_str:
             if error_event_name and error_response_type:
-                await emit_to_client(
-                    error_event_name,
-                    error_response_type(
-                        success=False,
-                        message="No profile found for socket",
-                    ),
-                    room=sid,
-                )
+                # Special handling for generate_error - emit to internal bus
+                if error_event_name == "generate_error":
+                    try:
+                        from app.main import get_internal_sio
+                        internal_sio = get_internal_sio()
+                        await internal_sio.emit(
+                            error_event_name,
+                            {
+                                "sid": sid,
+                                "error_message": "No profile found for socket",
+                                "resource_id": data.get("resource_id"),
+                                "group_id": data.get("group_id"),
+                                "resource_type": data.get("resource_type"),
+                            },
+                        )
+                    except Exception:
+                        pass
+                else:
+                    try:
+                        await emit_to_client(
+                            error_event_name,
+                            error_response_type(
+                                success=False,
+                                message="No profile found for socket",
+                            ),
+                            room=sid,
+                        )
+                    except Exception:
+                        pass
             return
 
-        profile_id = uuid.UUID(profile_id_str)
+        profile_id_uuid = uuid.UUID(profile_id_str)
 
         # Extract group_id (required for grouping runs)
         group_id_str = data.get("group_id")
-        group_id = uuid.UUID(group_id_str) if group_id_str else None
+        group_id_uuid = uuid.UUID(group_id_str) if group_id_str else None
 
         # Remove sid and group_id before validation (not in ApiRequest)
-        payload_dict = {k: v for k, v in data.items() if k not in ("sid", "group_id")}
+        # EXCEPTION: Some ApiRequest models (like GenerateErrorApiRequest) include sid as a field
+        # Check if the model has 'sid' as a field - if so, keep it
+        model_fields = getattr(request_type, "model_fields", {})
+        fields_to_remove = []
+        if "sid" not in model_fields:
+            fields_to_remove.append("sid")
+        if "group_id" not in model_fields:
+            fields_to_remove.append("group_id")
+        
+        payload_dict = {k: v for k, v in data.items() if k not in fields_to_remove}
         validated = request_type(**payload_dict)
-        await handler(sid, validated, profile_id, group_id)
+        await handler(sid, validated, profile_id_uuid, group_id_uuid)
         return
-    except ValidationError:
+    except ValidationError as e:
         # Socket.IO logs validation errors automatically
+        # Special handling for generate_error - even if error_response_type is None, we should emit
+        if error_event_name == "generate_error":
+            # Prevent infinite recursion: emit directly to resource-specific handler, not generate_error
+            if sid:
+                try:
+                    from app.main import get_internal_sio
+                    from app.socket.v4.artifacts.error import \
+                        AGENT_ERROR_MAPPING
+                    internal_sio = get_internal_sio()
+                    resource_type = data.get("resource_type", "text")
+                    # Map to resource-specific error event (e.g., "rubric_error")
+                    agent_error_event = AGENT_ERROR_MAPPING.get(resource_type, "text_error")
+                    # Emit directly to resource handler, bypassing generate_error to prevent recursion
+                    # Provide user-friendly error message instead of Pydantic validation details
+                    await internal_sio.emit(
+                        agent_error_event,
+                        {
+                            "sid": sid,
+                            "success": False,
+                            "message": "An error occurred while processing your request. Please try again or reconnect.",
+                            "resource_id": data.get("resource_id"),
+                            "group_id": data.get("group_id"),
+                        },
+                    )
+                except Exception:
+                    # If emitting fails, don't recurse - just return silently
+                    pass
+            return  # CRITICAL: Return immediately to prevent recursion
+        
         if error_event_name and error_response_type:
-            await emit_to_client(
-                error_event_name,
-                error_response_type(
-                    success=False,
-                    message="Invalid payload",
-                ),
-                room=sid,
-            )
+            # For other error events (not generate_error), try to emit to client
+            if error_event_name != "generate_error":
+                # For other error events, try to emit to client
+                # But only if the error_response_type has the expected fields
+                try:
+                    await emit_to_client(
+                        error_event_name,
+                        error_response_type(
+                            success=False,
+                            message="Invalid payload",
+                        ),
+                        room=sid,
+                    )
+                except Exception:
+                    # If error_response_type doesn't match, log and skip
+                    pass
+    except Exception as e:
+        # Catch any other exceptions (like recursion errors) and prevent infinite loops
+        # Don't try to emit errors from error handlers - just log and return
+        if error_event_name == "generate_error":
+            # If we're in generate_error handler and hit an exception, don't recurse
+            return
+        # For other handlers, try to emit error but catch exceptions to prevent recursion
+        if error_event_name and error_response_type and sid:
+            try:
+                if error_event_name == "generate_error":
+                    from app.main import get_internal_sio
+                    internal_sio = get_internal_sio()
+                    await internal_sio.emit(
+                        error_event_name,
+                        {
+                            "sid": sid,
+                            "error_message": f"Handler error: {str(e)}",
+                            "resource_id": data.get("resource_id"),
+                            "group_id": data.get("group_id"),
+                            "resource_type": data.get("resource_type"),
+                        },
+                    )
+                else:
+                    await emit_to_client(
+                        error_event_name,
+                        error_response_type(
+                            success=False,
+                            message=f"Handler error: {str(e)}",
+                        ),
+                        room=sid,
+                    )
+            except Exception:
+                # If emitting fails, don't recurse - just return
+                pass
