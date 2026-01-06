@@ -135,11 +135,13 @@ audio_department AS (
 best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
+    INNER JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    INNER JOIN artifacts art ON art.id = aa.artifact_id AND art.name = 'grade'  -- audio maps to grade artifact
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN audio_department ad_dept
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-    AND a.role = 'audio'::agent_role
+    AND aa.role = 'audio'
     AND a.active = true
     AND (
         (ad_dept.department_id IS NOT NULL AND ad.department_id = ad_dept.department_id)

@@ -170,11 +170,12 @@ agent_mapping_data AS (
         a.id as agent_id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[a.role::text] as roles
+        ARRAY[COALESCE(aa.role, '')] as roles
     FROM params x
-    JOIN agents a ON a.active = true AND a.role IN ('simulation'::agent_role, 'voice'::agent_role)
+    JOIN agents a ON a.active = true
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role IN ('simulation', 'voice')
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    GROUP BY a.id, a.name, a.description, a.role
+    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, '')
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)

@@ -37,16 +37,17 @@ AS $$
 WITH params AS (
     SELECT run_id, tool_call_id, call_id, arguments_delta, progress_type, document_id
 ),
--- Get tool_id for title tool (tool_type='title')
--- Check agent_tools junction table for document agent (create_title has agent_role='scenario' but linked via agent_tools)
+-- Get tool_id for title tool (resource='problem_statement' or 'template', artifact='document')
+-- Check agent_tools junction table for document agent via runs
 get_tool_id AS (
     SELECT t.id as tool_id
-    FROM tools t
-    JOIN agent_tools at ON at.tool_id = t.id
-    JOIN agents a ON a.id = at.agent_id
-    WHERE t.tool_type = 'title'::tool_type
-      AND a.role = 'document'::agent_role
-      AND at.active = true
+    FROM params p
+    JOIN runs r ON r.id = p.run_id
+    JOIN agent_tools at ON at.agent_id = r.agent_id
+    JOIN tools t ON t.id = at.tool_id
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id
+    INNER JOIN resources r_res ON r_res.id = rt.resource_id AND (r_res.name = 'problem_statement' OR r_res.name = 'template')
+    WHERE at.active = true
       AND t.active = true
     LIMIT 1
 ),

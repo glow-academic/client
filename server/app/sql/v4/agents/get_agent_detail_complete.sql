@@ -159,14 +159,15 @@ agent_exists_check AS (
 ),
 agent_info AS (
     SELECT 
-        id::text as agent_id,
-        name,
-        description,
-        model_id::text,
-        active,
-        role::text
+        a.id::text as agent_id,
+        a.name,
+        a.description,
+        a.model_id::text,
+        a.active,
+        COALESCE(aa.role, '') as role  -- Derive from artifact_agents
     FROM params x
-    JOIN agents ON agents.id = x.agent_id
+    JOIN agents a ON a.id = x.agent_id
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
 ),
 agent_active_prompt AS (
     SELECT 

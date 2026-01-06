@@ -142,7 +142,7 @@ best_agent AS (
     CROSS JOIN params p
     WHERE a.id = p.document_agent_id
     AND a.active = true
-    AND a.role = 'document'::agent_role
+    AND EXISTS (SELECT 1 FROM artifact_agents aa WHERE aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'document')
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile

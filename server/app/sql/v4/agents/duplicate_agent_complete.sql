@@ -30,14 +30,16 @@ source_agent AS (
         a.name,
         a.description,
         a.model_id,
-        a.role,
+        COALESCE(aa.role, '') as role,  -- Derive from artifact_agents
         ap.prompt_id,
         COALESCE(pr.system_prompt, '') as system_prompt,
         -- Get temperature and reasoning from junction tables
         atl.model_temperature_level_id,
-        arl.model_reasoning_level_id
+        arl.model_reasoning_level_id,
+        aa.artifact_id  -- Need artifact_id for linking
     FROM params x
     JOIN agents a ON a.id = x.agent_id
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts pr ON pr.id = ap.prompt_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
@@ -56,17 +58,31 @@ new_prompt AS (
     RETURNING id as prompt_id
 ),
 new_agent AS (
-    INSERT INTO agents (name, description, model_id, active, role, created_at, updated_at)
+    INSERT INTO agents (name, description, model_id, active, created_at, updated_at)
     SELECT 
         sa.name || ' Copy',
         sa.description,
         sa.model_id,
         false,
-        sa.role,
         NOW(),
         NOW()
     FROM source_agent sa
     RETURNING id::text as agent_id
+),
+copy_artifact_link AS (
+    -- Copy artifact_agents link
+    INSERT INTO artifact_agents (artifact_id, artifact_instance_id, agent_id, role, created_at, updated_at)
+    SELECT 
+        sa.artifact_id,
+        NULL,  -- Agent-level assignment
+        na.agent_id::uuid,
+        sa.role,
+        NOW(),
+        NOW()
+    FROM source_agent sa
+    CROSS JOIN new_agent na
+    WHERE sa.artifact_id IS NOT NULL
+    ON CONFLICT (artifact_id, artifact_instance_id, agent_id, role) DO NOTHING
 ),
 copy_temperature AS (
     INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active, created_at, updated_at)

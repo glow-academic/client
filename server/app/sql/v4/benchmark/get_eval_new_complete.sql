@@ -186,11 +186,12 @@ valid_eval_agents_list AS (
         a.id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[a.role::text] as roles
+        ARRAY[COALESCE(aa.role, '')] as roles
     FROM params x
-    JOIN agents a ON a.active = true AND a.role = 'grade'::agent_role
+    JOIN agents a ON a.active = true
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'grade'
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    GROUP BY a.id, a.name, a.description, a.role
+    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, '')
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -208,15 +209,16 @@ valid_agents_for_eval_list AS (
         a.id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[a.role::text] as roles
+        ARRAY[COALESCE(aa.role, '')] as roles
     FROM params x
     JOIN agents a ON a.active = true
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE 
         (SELECT agent_search FROM params LIMIT 1) IS NULL
         OR LOWER(a.name) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
         OR LOWER(COALESCE(a.description, '')) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
-    GROUP BY a.id, a.name, a.description, a.role
+    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, '')
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -240,9 +242,10 @@ valid_rubrics_data AS (
         r.id,
         r.name,
         COALESCE(r.description, '') as description,
-        CASE WHEN r.agent_role IS NULL THEN NULL ELSE r.agent_role::text END as agent_role
+        CASE WHEN r.artifact_id IS NULL THEN NULL ELSE art.name END as agent_role  -- Derive from artifact_id
     FROM params x
     JOIN rubrics r ON r.active = true
+    LEFT JOIN artifacts art ON art.id = r.artifact_id
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids_for_rubrics udi
     WHERE (

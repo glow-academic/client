@@ -99,11 +99,13 @@ filtered_agents AS (
         a.name,
         a.description,
         a.model_id,
-        a.role,
+        COALESCE(art.name, '') as role,  -- Derive from artifact_agents
         a.updated_at
     FROM agents a
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    LEFT JOIN artifacts art ON art.id = aa.artifact_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    GROUP BY a.id, a.name, a.description, a.model_id, a.role, a.updated_at
+    GROUP BY a.id, a.name, a.description, a.model_id, COALESCE(art.name, ''), a.updated_at
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0

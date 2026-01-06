@@ -22,20 +22,24 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT 
+SELECT DISTINCT ON (t.id)
     t.id,
     t.name,
     t.description,
-    t.tool_type,
-    t.agent_role,
+    COALESCE(r.name, '') as tool_type,  -- Derive from resource name
+    COALESCE(art.name, '') as agent_role,  -- Derive from artifact name via artifact_agents
     t.arguments,
     t.argument_descriptions,
     t.argument_defaults,
     t.active
 FROM agent_tools at
 JOIN tools t ON t.id = at.tool_id
-WHERE at.agent_id = agent_id
+LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+LEFT JOIN resources r ON r.id = rt.resource_id
+LEFT JOIN artifact_agents aa ON aa.agent_id = at.agent_id AND aa.artifact_instance_id IS NULL
+LEFT JOIN artifacts art ON art.id = aa.artifact_id
+WHERE at.agent_id = socket_get_agent_tools_v4.agent_id
   AND at.active = TRUE
   AND t.active = TRUE
-ORDER BY t.tool_type, t.name
+ORDER BY t.id, COALESCE(r.name, ''), t.name
 $$;

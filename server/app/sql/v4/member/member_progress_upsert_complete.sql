@@ -26,9 +26,10 @@ WITH params AS (
 ),
 -- Get member agent (role='member')
 member_agent AS (
-    SELECT id as agent_id
-    FROM agents
-    WHERE role = 'member'::agent_role AND active = true
+    SELECT a.id as agent_id
+    FROM agents a
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    WHERE aa.role = 'member' AND a.active = true
     LIMIT 1
 ),
 -- Get chat context
@@ -144,9 +145,11 @@ link_profile_to_run AS (
 ),
 -- Get speak tool_id for member agent
 get_speak_tool_id AS (
-    SELECT id as tool_id
-    FROM tools
-    WHERE name = 'speak' AND agent_role = 'member'::agent_role AND active = true
+    SELECT t.id as tool_id
+    FROM tools t
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id
+    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'content'
+    WHERE t.name = 'speak' AND t.active = true
     LIMIT 1
 ),
 -- Get latest user message for this run (if exists, for upsert)

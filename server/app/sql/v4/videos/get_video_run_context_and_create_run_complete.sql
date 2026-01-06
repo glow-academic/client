@@ -66,7 +66,8 @@ best_agent AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN video_department vd
-    WHERE a.role = 'video'
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    WHERE aa.role = 'video'
     AND a.active = true
     AND (
         -- Include if agent is linked to the video's department

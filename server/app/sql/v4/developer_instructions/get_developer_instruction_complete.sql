@@ -18,7 +18,7 @@ END $$;
 -- Recreate function
 CREATE OR REPLACE FUNCTION api_get_developer_instruction_v4(
     instruction_type developer_instruction_type,
-    agent_role_val agent_role
+    agent_role_val text  -- Changed from agent_role enum to text
 )
 RETURNS TABLE (
     developer_instruction_id uuid,
@@ -39,9 +39,9 @@ SELECT
 FROM developer_instructions di
 JOIN agent_developer_instructions adi ON adi.developer_instruction_id = di.id
 JOIN agents a ON a.id = adi.agent_id
+JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = agent_role_val
 LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
 WHERE di.type = instruction_type
-  AND a.role = agent_role_val
   AND di.active = true
 LIMIT 1
 $$;

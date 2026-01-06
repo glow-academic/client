@@ -1124,7 +1124,7 @@ resolved_department_for_agents AS (
     ) as department_id
 ),
 expected_agent_role AS (
-    SELECT 'scenario'::agent_role as role
+    SELECT 'scenario'::text as role
 ),
 default_scenario_agent AS (
     SELECT a.id::text as agent_id
@@ -1132,7 +1132,8 @@ default_scenario_agent AS (
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
     CROSS JOIN expected_agent_role ear
-    WHERE a.role = ear.role
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    WHERE aa.role = ear.role
     AND a.active = true
     AND (
         ad.department_id = rdfa.department_id
@@ -1147,7 +1148,8 @@ default_image_agent AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
-    WHERE a.role = 'image'
+    JOIN artifact_agents aa_image ON aa_image.agent_id = a.id AND aa_image.artifact_instance_id IS NULL
+    WHERE aa_image.role = 'image'
     AND a.active = true
     AND (
         ad.department_id = rdfa.department_id
@@ -1162,7 +1164,8 @@ default_video_agent AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
-    WHERE a.role = 'video'
+    JOIN artifact_agents aa_video ON aa_video.agent_id = a.id AND aa_video.artifact_instance_id IS NULL
+    WHERE aa_video.role = 'video'
     AND a.active = true
     AND (
         ad.department_id = rdfa.department_id
@@ -1173,17 +1176,18 @@ default_video_agent AS (
     LIMIT 1
 ),
 agent_filtered AS (
-    SELECT a.id, a.name, a.description, a.role
+    SELECT a.id, a.name, a.description, COALESCE(aa.role, '') as role
     FROM agents a
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN expected_agent_role ear
     WHERE a.active = true 
     AND (
-        a.role = ear.role
-        OR a.role = 'image'
-        OR a.role = 'video'
+        aa.role = ear.role
+        OR aa.role = 'image'
+        OR aa.role = 'video'
     )
-    GROUP BY a.id, a.name, a.description, a.role, ear.role
+    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, ''), ear.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)

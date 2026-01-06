@@ -1784,7 +1784,7 @@ user_departments_for_agents AS (
     WHERE pd.active = true
 ),
 expected_agent_role AS (
-    SELECT 'scenario'::agent_role as role
+    SELECT 'scenario'::text as role
 ),
 scenario_persona_ranges_data AS (
     SELECT 
@@ -1823,17 +1823,18 @@ valid_agents_array AS (
         a.id as agent_id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[a.role::text] as roles
+        ARRAY[COALESCE(aa.role, '')] as roles
     FROM agents a
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN expected_agent_role ear
     WHERE a.active = true 
     AND (
-        a.role = ear.role
-        OR a.role = 'scenario'::agent_role
-        OR a.role = 'image'
+        aa.role = ear.role
+        OR aa.role = 'scenario'
+        OR aa.role = 'image'
     )
-    GROUP BY a.id, a.name, a.description, a.role, ear.role
+    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, ''), ear.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)

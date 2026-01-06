@@ -246,8 +246,9 @@ agent_mapping_data AS (
         a.id as agent_id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[a.role::text] as roles
+        ARRAY[COALESCE(aa.role, '')] as roles
     FROM agents a
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     WHERE a.id IN (SELECT agent_id FROM assigned_agent_ids)
     AND a.active = true
 )

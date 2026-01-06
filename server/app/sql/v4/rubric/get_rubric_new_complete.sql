@@ -244,11 +244,11 @@ valid_agents_data AS (
         a.id as agent_id,
         a.name,
         a.description,
-        ARRAY[a.role::text] as roles
+        ARRAY[COALESCE(aa.role, '')] as roles
     FROM agents a
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'rubric'
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    WHERE a.active = true 
-    AND a.role = 'rubric'
+    WHERE a.active = true
     AND (
         EXISTS (
             SELECT 1 FROM agent_departments ad2 

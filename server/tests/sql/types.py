@@ -166,55 +166,6 @@ class CreateAgentPromptLinkApiResponse(BaseModel):
 
 
 
-# Generated from: create_test_agent
-
-class CreateTestAgentSqlParams(BaseModel):
-
-    model_id: UUID
-    name: str | None = None
-    description: str | None = None
-    role: str | None = None
-    active: bool | None = True
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_id,
-            self.name,
-            self.description,
-            self.role,
-            self.active,
-        )
-
-class CreateTestAgentSqlRow(BaseModel):
-
-    agent_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    model_id: UUID | None = None
-    active: bool | None = None
-    role: str | None = None
-    created_at: str | None = None
-
-class CreateTestAgentApiRequest(BaseModel):
-
-    model_id: UUID
-    name: str | None = None
-    description: str | None = None
-    role: str | None = None
-    active: bool | None = True
-
-class CreateTestAgentApiResponse(BaseModel):
-
-    agent_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    model_id: UUID | None = None
-    active: bool | None = None
-    role: str | None = None
-    created_at: str | None = None
-
-
-
 # Generated from: create_test_profile
 
 class CreateTestProfileSqlParams(BaseModel):
@@ -307,45 +258,6 @@ class GetActiveModelsCountApiRequest(BaseModel):
 class GetActiveModelsCountApiResponse(BaseModel):
 
     count: int | None = None
-
-
-
-# Generated from: get_agent_by_id
-
-class GetAgentByIdSqlParams(BaseModel):
-
-    input_agent_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_agent_id,
-        )
-
-class GetAgentByIdSqlRow(BaseModel):
-
-    agent_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    model_id: UUID | None = None
-    active: bool | None = None
-    role: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-class GetAgentByIdApiRequest(BaseModel):
-
-    input_agent_id: UUID
-
-class GetAgentByIdApiResponse(BaseModel):
-
-    agent_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    model_id: UUID | None = None
-    active: bool | None = None
-    role: str | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
 
 
 
@@ -3566,12 +3478,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateAgentPromptLinkApiRequest",
         "CreateAgentPromptLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql": (
-        "CreateTestAgentSqlParams",
-        "CreateTestAgentSqlRow",
-        "CreateTestAgentApiRequest",
-        "CreateTestAgentApiResponse",
-    ),
     "tests/sql/v4/integration/api/agents/test_create_test_profile_v4_complete.sql": (
         "CreateTestProfileSqlParams",
         "CreateTestProfileSqlRow",
@@ -3589,12 +3495,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetActiveModelsCountSqlRow",
         "GetActiveModelsCountApiRequest",
         "GetActiveModelsCountApiResponse",
-    ),
-    "tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql": (
-        "GetAgentByIdSqlParams",
-        "GetAgentByIdSqlRow",
-        "GetAgentByIdApiRequest",
-        "GetAgentByIdApiResponse",
     ),
     "tests/sql/v4/integration/api/agents/test_get_agent_department_link_v4_complete.sql": (
         "GetAgentDepartmentLinkSqlParams",
@@ -4268,11 +4168,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_create_test_agent_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_create_test_profile_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4284,11 +4179,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_get_active_models_count_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_agent_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

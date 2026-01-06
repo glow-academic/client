@@ -284,7 +284,7 @@ valid_rubrics_data AS (
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
     WHERE r.active = true
-      AND r.agent_role = 'member'::agent_role
+      AND EXISTS (SELECT 1 FROM artifacts art JOIN artifact_agents aa ON aa.artifact_id = art.id WHERE art.name = 'agent' AND aa.role = 'member')
       AND (
           rd.department_id = ANY(udi.ids)
           OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -472,7 +472,7 @@ department_rubric_ids_default AS (
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT r.id ORDER BY r.id) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::uuid[]) as rubric_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN rubrics r ON r.active = true AND r.agent_role = 'member'::agent_role
+    LEFT JOIN rubrics r ON r.active = true AND EXISTS (SELECT 1 FROM artifacts art WHERE art.id = r.artifact_id AND art.name = 'agent')
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     WHERE (rd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true))
     GROUP BY ud.id
@@ -506,20 +506,22 @@ agents_data AS (
         ) as agents,
         ARRAY_AGG(filtered_agents.id ORDER BY filtered_agents.name) as agent_ids
     FROM (
-        SELECT DISTINCT a.id, a.name, a.description, a.role
+        SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
         FROM agents a
+        JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE a.active = true 
-        AND a.role IN ('hint'::agent_role, 'grade'::agent_role, 'audio'::agent_role, 'simulation'::agent_role, 'voice'::agent_role, 'member'::agent_role)
-        GROUP BY a.id, a.name, a.description, a.role
+        AND aa.role IN ('hint', 'grade', 'audio', 'simulation', 'voice', 'member')
+        GROUP BY a.id, a.name, a.description, COALESCE(aa.role, '')
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
             OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
         UNION
         -- Get rubric agents (member role) from rubrics.rubric_agent_id
-        SELECT DISTINCT a.id, a.name, a.description, a.role
+        SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
         FROM rubrics r
-        JOIN agents a ON a.id = r.rubric_agent_id AND a.role = 'member'::agent_role
+        JOIN agents a ON a.id = r.rubric_agent_id
+        JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'member'
         WHERE a.active = true AND r.rubric_agent_id IS NOT NULL
     ) filtered_agents
 ),
@@ -528,8 +530,9 @@ valid_hint_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     WHERE a.active = true 
-    AND a.role = 'hint'::agent_role
+    AND aa.role = 'hint'
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -539,8 +542,9 @@ valid_simulation_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     WHERE a.active = true 
-    AND a.role = 'simulation'::agent_role
+    AND aa.role = 'simulation'
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -550,8 +554,9 @@ valid_voice_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     WHERE a.active = true 
-    AND a.role = 'voice'::agent_role
+    AND aa.role = 'voice'
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -561,8 +566,9 @@ valid_member_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     WHERE a.active = true 
-    AND a.role = 'member'::agent_role
+    AND aa.role = 'member'
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -571,7 +577,8 @@ valid_member_agents AS (
     -- Get rubric agents (member role) from rubrics.rubric_agent_id
     SELECT DISTINCT a.id
     FROM rubrics r
-    JOIN agents a ON a.id = r.rubric_agent_id AND a.role = 'member'::agent_role
+    JOIN agents a ON a.id = r.rubric_agent_id
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'member'
     WHERE a.active = true 
     AND r.active = true
     AND r.rubric_agent_id IS NOT NULL

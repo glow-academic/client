@@ -37,13 +37,14 @@ AS $$
 WITH params AS (
     SELECT run_id, tool_call_id, call_id, arguments_delta, progress_type, document_id
 ),
--- Get tool_id for HTML tool (tool_type='html', agent_role='document')
+-- Get tool_id for HTML tool (resource='html', artifact='document')
 get_tool_id AS (
     SELECT t.id as tool_id
     FROM tools t
-    WHERE t.tool_type = 'html'::tool_type
-      AND t.agent_role = 'document'::agent_role
-      AND t.active = true
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id
+    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'html'
+    INNER JOIN artifacts art ON art.id = r.artifact_id AND art.name = 'document'
+    WHERE t.active = true
     LIMIT 1
 ),
 -- Get or create tool_call

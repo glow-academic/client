@@ -2760,7 +2760,7 @@ class CreateAgentSqlParams(BaseModel):
     description: str
     model_id: UUID
     active: bool
-    role: str
+    artifact_name: str
     profile_id: UUID
     prompt_id: UUID | None = None
     system_prompt: str | None = None
@@ -2775,7 +2775,7 @@ class CreateAgentSqlParams(BaseModel):
             self.description,
             self.model_id,
             self.active,
-            self.role,
+            self.artifact_name,
             self.profile_id,
             self.prompt_id,
             self.system_prompt,
@@ -2796,7 +2796,7 @@ class CreateAgentApiRequest(BaseModel):
     description: str
     model_id: UUID
     active: bool
-    role: str
+    artifact_name: str
     prompt_id: UUID | None = None
     system_prompt: str | None = None
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
@@ -3459,7 +3459,7 @@ class UpdateAgentSqlParams(BaseModel):
     description: str
     model_id: UUID
     active: bool
-    role: str
+    artifact_name: str
     profile_id: UUID
     prompt_id: UUID | None = None
     system_prompt: str | None = None
@@ -3476,7 +3476,7 @@ class UpdateAgentSqlParams(BaseModel):
             self.description,
             self.model_id,
             self.active,
-            self.role,
+            self.artifact_name,
             self.profile_id,
             self.prompt_id,
             self.system_prompt,
@@ -3499,7 +3499,7 @@ class UpdateAgentApiRequest(BaseModel):
     description: str
     model_id: UUID
     active: bool
-    role: str
+    artifact_name: str
     prompt_id: UUID | None = None
     system_prompt: str | None = None
     department_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]

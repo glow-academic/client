@@ -47,11 +47,10 @@ WITH params AS (
 ),
 -- Get tool_id from tool_name
 get_tool_id AS (
-    SELECT id as tool_id
-    FROM tools
-    WHERE name = (SELECT tool_name FROM params LIMIT 1)
-      AND agent_role = 'simulation'::agent_role
-      AND active = true
+    SELECT t.id as tool_id
+    FROM tools t
+    WHERE t.name = (SELECT tool_name FROM params LIMIT 1)
+      AND t.active = true
     LIMIT 1
 ),
 -- Determine message role - simulation agent handles speak (assistant role)

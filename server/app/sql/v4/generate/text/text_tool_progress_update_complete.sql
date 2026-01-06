@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION socket_text_tool_progress_update_v4(
 )
 RETURNS TABLE (
     tool_id uuid,
-    tool_type tool_type,
+    tool_type text,  -- Changed from enum to text, derived from resources
     tool_call_id text,
     persisted_call_id text,
     tool_name text,
@@ -45,12 +45,14 @@ WITH params AS (
 -- Get tool_id AND tool_type from tool_name + agent_tools junction table
 -- Works with any agent (not hardcoded to document)
 get_tool_info AS (
-    SELECT t.id as tool_id, t.tool_type, t.name as tool_name
+    SELECT t.id as tool_id, COALESCE(r.name, '') as tool_type, t.name as tool_name
     FROM params p
     JOIN tools t ON t.name = p.tool_name
     JOIN agent_tools at ON at.tool_id = t.id
-    JOIN runs r ON r.id = p.run_id
-    WHERE at.agent_id = r.agent_id
+    JOIN runs r_run ON r_run.id = p.run_id
+    LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+    LEFT JOIN resources r ON r.id = rt.resource_id
+    WHERE at.agent_id = r_run.agent_id
       AND at.active = true
       AND t.active = true
     LIMIT 1

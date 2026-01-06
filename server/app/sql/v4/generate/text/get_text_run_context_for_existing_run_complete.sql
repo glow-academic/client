@@ -199,14 +199,18 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), t.tool_type, t.agent_role::text, t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
-                ORDER BY t.tool_type, t.name
-            ),
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(r.name, ''), COALESCE(art.name, ''), t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY COALESCE(r.name, ''), t.name
+            ) FILTER (WHERE t.id IS NOT NULL),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
         ) as tools
     FROM selected_agent sa
     LEFT JOIN agent_tools at ON at.agent_id = sa.agent_id AND at.active = true
     LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+    LEFT JOIN resources r ON r.id = rt.resource_id
+    LEFT JOIN artifact_agents aa ON aa.agent_id = sa.agent_id AND aa.artifact_instance_id IS NULL
+    LEFT JOIN artifacts art ON art.id = aa.artifact_id
     GROUP BY sa.agent_id
 ),
 -- Get department name (from agent_departments or profile primary department)
@@ -242,7 +246,7 @@ context_data AS (
         -- Agent data
         a.id::text as agent_id,
         a.name as agent_name,
-        a.role::text as agent_role,
+        COALESCE(art.name, '') as agent_role,  -- Derive from artifact_agents
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -270,6 +274,8 @@ context_data AS (
 
     FROM selected_agent sa
     INNER JOIN agents a ON a.id = sa.agent_id
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    LEFT JOIN artifacts art ON art.id = aa.artifact_id
     CROSS JOIN run_profile rp
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true

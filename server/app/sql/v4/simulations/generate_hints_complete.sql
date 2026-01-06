@@ -117,8 +117,10 @@ profile_info AS (
 best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
+    INNER JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    INNER JOIN artifacts art ON art.id = aa.artifact_id AND art.name = 'message'  -- hint maps to message artifact
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    WHERE a.role = 'hint'::agent_role
+    WHERE aa.role = 'hint'
     AND a.active = true
     AND (
         -- Include if agent is linked to the specified department
@@ -277,14 +279,18 @@ agent_tools_data AS (
         ba.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), t.tool_type, t.agent_role::text, t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
-                ORDER BY t.tool_type, t.name
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(r.name, ''), COALESCE(art.name, ''), t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY COALESCE(r.name, ''), t.name
             ),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
         ) as tools
     FROM best_agent ba
     LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
     LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+    LEFT JOIN resources r ON r.id = rt.resource_id
+    LEFT JOIN artifact_agents aa ON aa.agent_id = ba.agent_id AND aa.artifact_instance_id IS NULL
+    LEFT JOIN artifacts art ON art.id = aa.artifact_id
     GROUP BY ba.agent_id
 ),
 -- Get developer instruction using agent role
@@ -295,6 +301,7 @@ developer_instruction_data AS (
         dis.schema_id as developer_instruction_schema_id
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     LEFT JOIN agent_developer_instructions adi ON adi.agent_id = a.id
     LEFT JOIN developer_instructions di ON di.id = adi.developer_instruction_id AND di.active = true
     LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
@@ -313,7 +320,7 @@ context_data AS (
     SELECT 
         -- Only fields needed for dispatch
         a.id::text as agent_id,
-        a.role::text as agent_role,
+        COALESCE(aa.role, '') as agent_role,  -- Derive from artifact_agents
         ci.id::text as chat_id
     FROM target_message tm
     CROSS JOIN chat_info ci
@@ -322,6 +329,7 @@ context_data AS (
     CROSS JOIN best_agent ba
     CROSS JOIN params p_params
     INNER JOIN agents a ON a.id = ba.agent_id
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     -- NO rate limit check - handled in generate/start.py
     -- NO run creation - handled in generate/start.py
     -- NO tools, developer instructions, etc. - fetched by modality handlers

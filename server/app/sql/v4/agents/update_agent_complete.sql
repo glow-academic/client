@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION api_update_agent_v4(
     description text,
     model_id uuid,
     active boolean,
-    role agent_role,
+    artifact_name text,  -- Artifact name instead of role (e.g., 'scenario', 'message', 'grade')
     profile_id uuid,
     prompt_id uuid DEFAULT NULL,
     system_prompt text DEFAULT NULL,
@@ -31,7 +31,7 @@ WITH params AS (
         description AS description,
         model_id AS model_id,
         active AS active,
-        role AS role,
+        artifact_name AS artifact_name,
         prompt_id AS prompt_id,
         NULLIF(system_prompt, '') AS system_prompt,
         COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
@@ -85,11 +85,33 @@ update_agent AS (
         description = x.description,
         model_id = x.model_id,
         active = x.active,
-        role = x.role,
         updated_at = NOW()
     FROM params x
     WHERE agents.id = x.agent_id
     RETURNING agents.id::text as agent_id
+),
+update_artifact_link AS (
+    -- Update artifact_agents link (delete old, insert new)
+    DELETE FROM artifact_agents
+    USING params x
+    WHERE artifact_agents.agent_id = x.agent_id
+    AND artifact_agents.artifact_instance_id IS NULL
+),
+link_artifact AS (
+    -- Link agent to artifact via artifact_agents
+    INSERT INTO artifact_agents (artifact_id, artifact_instance_id, agent_id, role, created_at, updated_at)
+    SELECT 
+        art.id,
+        NULL,  -- Agent-level assignment (no specific instance)
+        ua.agent_id::uuid,
+        x.artifact_name,  -- Use artifact_name as role
+        NOW(),
+        NOW()
+    FROM update_agent ua
+    CROSS JOIN params x
+    JOIN artifacts art ON art.name = x.artifact_name
+    ON CONFLICT (artifact_id, artifact_instance_id, agent_id, role) DO UPDATE SET
+        updated_at = NOW()
 ),
 new_prompt AS (
     -- Create prompt only if system_prompt provided and prompt_id not provided

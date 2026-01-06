@@ -298,9 +298,10 @@ agent_data AS (
         a.id as agent_id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[a.role::text] as roles
+        ARRAY[COALESCE(aa.role, '')] as roles
     FROM params x
-    JOIN agents a ON a.active = true AND a.role IN ('classify'::agent_role, 'document'::agent_role)
+    JOIN agents a ON a.active = true
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role IN ('classify', 'document')
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN document_data dd
     WHERE (

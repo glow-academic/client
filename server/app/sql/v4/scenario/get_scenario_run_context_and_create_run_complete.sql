@@ -257,7 +257,7 @@ context_data AS (
         -- Agent data (via department_agents junction for 'scenario' role)
         a.id::text as agent_id,
         a.name as agent_name,
-        a.role::text as agent_role,
+        COALESCE(aa.role, '') as agent_role,  -- Derive from artifact_agents
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -360,6 +360,7 @@ context_data AS (
 
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
+    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
     CROSS JOIN params p
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true

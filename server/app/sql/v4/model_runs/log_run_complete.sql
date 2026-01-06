@@ -292,9 +292,12 @@ new_system_message AS (
 ),
 -- Get prompt tool_id for prompt agent
 get_prompt_tool_id AS (
-    SELECT id as tool_id
-    FROM tools
-    WHERE name = 'prompt' AND agent_role = 'prompt'::agent_role AND active = true
+    SELECT t.id as tool_id
+    FROM tools t
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id
+    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'prompt'
+    INNER JOIN artifacts art ON art.id = r.artifact_id AND art.name = 'agent'
+    WHERE t.name = 'prompt' AND t.active = true
     LIMIT 1
 ),
 system_tool_call AS (
@@ -407,9 +410,12 @@ new_developer_messages AS (
 ),
 -- Get instruct tool_id for prompt agent
 get_instruct_tool_id AS (
-    SELECT id as tool_id
-    FROM tools
-    WHERE name = 'instruct' AND agent_role = 'prompt'::agent_role AND active = true
+    SELECT t.id as tool_id
+    FROM tools t
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id
+    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'prompt'
+    INNER JOIN artifacts art ON art.id = r.artifact_id AND art.name = 'agent'
+    WHERE t.name = 'instruct' AND t.active = true
     LIMIT 1
 ),
 developer_calls_with_rn AS (

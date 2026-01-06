@@ -77,8 +77,8 @@ insert_doc AS (
         false,  -- template defaults to false - must be explicitly enabled via update
         NOW(), 
         NOW(),
-        (SELECT id FROM agents WHERE role = 'classify' AND active = true LIMIT 1),
-        (SELECT id FROM agents WHERE role = 'document' AND active = true LIMIT 1)
+        (SELECT a.id FROM agents a JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL WHERE aa.role = 'classify' AND a.active = true LIMIT 1),
+        (SELECT a.id FROM agents a JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL WHERE aa.role = 'document' AND a.active = true LIMIT 1)
     FROM params p
     CROSS JOIN new_document_id ndi
     RETURNING id

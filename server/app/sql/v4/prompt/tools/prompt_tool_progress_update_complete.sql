@@ -46,11 +46,12 @@ WITH params AS (
 ),
 -- Get tool_id from tool_name
 get_tool_id AS (
-    SELECT id as tool_id
-    FROM tools
-    WHERE name = (SELECT tool_name FROM params LIMIT 1)
-      AND agent_role = 'prompt'::agent_role
-      AND active = true
+    SELECT t.id as tool_id
+    FROM tools t
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id
+    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'prompt'
+    WHERE t.name = (SELECT tool_name FROM params LIMIT 1)
+      AND t.active = true
     LIMIT 1
 ),
 -- Determine message role based on tool_name

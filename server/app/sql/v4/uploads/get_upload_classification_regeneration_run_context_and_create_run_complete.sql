@@ -132,7 +132,8 @@ best_agent AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN params p
-    WHERE a.role = 'classify'
+    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    WHERE aa.role = 'classify'
     AND a.active = true
     AND (
         -- Include if agent is linked to the specified department (if provided)
