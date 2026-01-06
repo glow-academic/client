@@ -10,7 +10,6 @@ from agents.items import TResponseInputItem
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.debug.debug_info import DebugContext
 from app.infra.v4.tools.build_tool_from_config import build_tool_from_config
-from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.store_active_run import (remove_active_run,
                                                      store_active_run)
 from app.infra.v4.websocket.typed_emit import emit_to_internal
@@ -23,7 +22,8 @@ from app.sql.types import (GetMessagesByIdsSqlParams, GetMessagesByIdsSqlRow,
                            GetTextRunContextForExistingRunSqlRow)
 from utils.sql_helper import execute_sql_typed
 
-from .tool_call import ToolCallStreamer
+from ..tool_call.openai import OpenAIToolCallAdapter
+from .base import BaseTextAdapter
 
 internal_sio = get_internal_sio()
 
@@ -32,7 +32,7 @@ SQL_PATH_MESSAGES_BY_IDS = "app/sql/v4/messages/get_messages_by_ids_complete.sql
 SQL_PATH_MESSAGES_BY_RUN = "app/sql/v4/messages/get_messages_by_run_id_complete.sql"
 
 
-class OpenAITextAdapter:
+class OpenAITextAdapter(BaseTextAdapter):
     """OpenAI text generation adapter."""
 
     async def generate(
@@ -256,19 +256,17 @@ class OpenAITextAdapter:
             await store_active_run(resource_id_str, result_runner)
 
             try:
-                # Use tool call streamer
-                streamer = ToolCallStreamer(
+                # Use tool call adapter
+                tool_call_adapter = OpenAIToolCallAdapter()
+                completed_tool_names = await tool_call_adapter.stream_tool_calls(
+                    runner=result_runner,
                     sid=sid,
                     resource_id=str(data.get("resource_id")) if data.get("resource_id") else None,
                     resource_type=data.get("resource_type", ""),
                     run_id=model_run_id,
                     group_id=group_id,
-                    internal_sio=internal_sio,
                     tool_name_to_type=tool_name_to_type,
-                )
-
-                completed_tool_names = await streamer.stream(
-                    result_runner, required_tool_names
+                    required_tool_names=required_tool_names,
                 )
 
             except BaseException as stream_error:

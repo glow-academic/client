@@ -17,11 +17,12 @@ internal_sio = get_internal_sio()
 
 SQL_PATH = "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"
 
-from app.socket.v4.artifacts.adapters.openai.audio import OpenAIAudioAdapter
-from app.socket.v4.artifacts.adapters.openai.image import OpenAIImageAdapter
-# Import adapters
-from app.socket.v4.artifacts.adapters.openai.text import OpenAITextAdapter
-from app.socket.v4.artifacts.adapters.openai.video import OpenAIVideoAdapter
+# Import adapters - modality-first structure
+from app.socket.v4.artifacts.adapters.audio.openai import OpenAIAudioAdapter
+from app.socket.v4.artifacts.adapters.image.openai import OpenAIImageAdapter
+from app.socket.v4.artifacts.adapters.text.openai import OpenAITextAdapter
+from app.socket.v4.artifacts.adapters.video.openai import OpenAIVideoAdapter
+from app.socket.v4.artifacts.adapters.persistence import persist_image, persist_video
 
 # Mapping from agent_role to handler type (modality)
 HANDLER_MAPPING = {
@@ -136,9 +137,31 @@ async def _generate_artifact_impl(
             modality = HANDLER_MAPPING.get(data.get("resource_type", ""), "text")
 
             # Determine provider from SQL result
-            # Get provider from agent config - for now, we need to fetch it from the result
-            # The result should include provider info, but if not, default to "openai"
             provider = getattr(result, "provider", None) or "openai"
+
+            # Modality-first adapter mapping
+            MODALITY_ADAPTERS = {
+                "text": {"openai": OpenAITextAdapter, "gemini": None},  # TODO: Add Gemini
+                "image": {"openai": OpenAIImageAdapter, "gemini": None},  # TODO: Add Gemini
+                "video": {"openai": OpenAIVideoAdapter, "gemini": None},  # TODO: Add Gemini
+                "audio": {"openai": OpenAIAudioAdapter, "gemini": None},  # TODO: Add Gemini
+            }
+
+            # Get adapter class
+            adapter_class = MODALITY_ADAPTERS.get(modality, {}).get(provider)
+            if not adapter_class:
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Provider {provider} not yet supported for modality {modality}",
+                        resource_id=data.get("resource_id"),
+                        group_id=data.get("group_id"),
+                        resource_type=data.get("resource_type"),
+                    ),
+                    sid=sid,
+                )
+                return
 
             # Build payload for adapter
             adapter_payload = {
@@ -153,75 +176,120 @@ async def _generate_artifact_impl(
                 "department_id": data.get("department_id"),
             }
 
-            # Route to appropriate adapter based on provider + modality
-            if provider == "openai":
-                if modality == "text":
-                    adapter = OpenAITextAdapter()
-                    await adapter.generate(sid, adapter_payload, profile_id, conn)
-                elif modality == "image":
-                    # Image adapter needs image_id, name, prompt from data
-                    adapter_payload.update({
-                        "image_id": data.get("image_id") or data.get("resource_id"),
-                        "name": data.get("name", "image"),
-                        "prompt": data.get("prompt", ""),
-                    })
-                    adapter = OpenAIImageAdapter()
-                    await adapter.generate(sid, adapter_payload, profile_id, conn)
-                elif modality == "video":
-                    # Video adapter needs videoId, prompt from data
-                    adapter_payload.update({
-                        "videoId": data.get("videoId") or data.get("resource_id"),
-                        "prompt": data.get("prompt", ""),
-                        "imageReferenceId": data.get("imageReferenceId"),
-                    })
-                    adapter = OpenAIVideoAdapter()
-                    await adapter.generate(sid, adapter_payload, profile_id, conn)
-                elif modality == "audio":
-                    # Audio adapter needs uploadId, prompt, agentId from data
-                    adapter_payload.update({
-                        "uploadId": data.get("uploadId"),
-                        "prompt": data.get("prompt", ""),
-                        "agentId": data.get("agent_id"),
-                        "departmentId": data.get("department_id"),
-                    })
-                    adapter = OpenAIAudioAdapter()
-                    await adapter.generate(sid, adapter_payload, profile_id, conn)
-                else:
-                    await emit_to_internal(
-                        "generate_error",
-                        GenerateErrorApiRequest(
-                            sid=sid,
-                            error_message=f"Unsupported modality: {modality}",
-                            resource_id=data.get("resource_id"),
-                            group_id=data.get("group_id"),
-                            resource_type=data.get("resource_type"),
-                        ),
-                        sid=sid,
+            # Special handling for image/video/audio adapters
+            if modality == "image":
+                adapter_payload.update({
+                    "image_id": data.get("image_id") or data.get("resource_id"),
+                    "name": data.get("name", "image"),
+                    "prompt": data.get("prompt", ""),
+                })
+            elif modality == "video":
+                adapter_payload.update({
+                    "videoId": data.get("videoId") or data.get("resource_id"),
+                    "prompt": data.get("prompt", ""),
+                    "imageReferenceId": data.get("imageReferenceId"),
+                })
+            elif modality == "audio":
+                adapter_payload.update({
+                    "uploadId": data.get("uploadId"),
+                    "prompt": data.get("prompt", ""),
+                    "agentId": data.get("agent_id"),
+                    "departmentId": data.get("department_id"),
+                })
+
+            # Instantiate and call adapter
+            adapter: Any = adapter_class()
+
+            # Handle audio special case - returns AudioSessionConfig
+            if modality == "audio":
+                if adapter.get_implementation_type() == "webrtc":
+                    # Build AgentConfig from result
+                    from app.socket.v4.artifacts.adapters.base import AgentConfig
+
+                    agent_config = AgentConfig(
+                        agent_id=result.agent_id or "",
+                        agent_name=getattr(result, "agent_name", None),
+                        system_prompt=getattr(result, "system_prompt", None),
+                        temperature=getattr(result, "temperature", None),
+                        reasoning=getattr(result, "reasoning", None),
+                        model_id=getattr(result, "model_id", None),
+                        model_name=getattr(result, "model_name", None),
+                        provider=provider,
+                        base_url=getattr(result, "base_url", None),
+                        api_key=getattr(result, "api_key", None),
+                        custom_model=getattr(result, "custom_model", None),
+                        provider_id=getattr(result, "provider_id", None),
+                        provider_name=getattr(result, "provider_name", None),
                     )
-            elif provider == "gemini":
-                # TODO: Implement Gemini adapters
-                await emit_to_internal(
-                    "generate_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"Provider {provider} not yet supported",
-                        resource_id=data.get("resource_id"),
-                        group_id=data.get("group_id"),
-                        resource_type=data.get("resource_type"),
-                    ),
-                    sid=sid,
+
+                    # Initialize session
+                    session_config = await adapter.initialize_session(
+                        conn=conn,
+                        agent_config=agent_config,
+                        resource_id=uuid.UUID(data["resource_id"]),
+                        resource_type=data["resource_type"],
+                        run_id=uuid.UUID(result.run_id),
+                    )
+
+                    # Emit session config to frontend
+                    await internal_sio.emit(
+                        "generate_audio_started",
+                        {
+                            "sid": sid,
+                            "success": True,
+                            "ephemeral_key": session_config.ephemeral_key,
+                            "expires_in": session_config.expires_in,
+                            "model": session_config.model,
+                            "tools": session_config.tools,
+                            "instructions": session_config.instructions,
+                            "history": session_config.history,
+                            "upload_id": data.get("uploadId"),
+                            "run_id": result.run_id,
+                            "message": "Audio generation session started",
+                        },
+                    )
+                    return
+
+            # For text, image, video - call generate method
+            if modality == "text":
+                await adapter.generate(sid, adapter_payload, profile_id, conn)
+            elif modality == "image":
+                # Image adapter returns ImageGenerationResult
+                image_result = await adapter.generate(sid, adapter_payload, profile_id, conn)
+                # Persist image
+                image_id = uuid.UUID(adapter_payload["image_id"])
+                image_name = adapter_payload["name"]
+                file_path = await persist_image(conn, image_id, image_result, image_name)
+                # Emit completion event
+                await internal_sio.emit(
+                    "generate_image_complete",
+                    {
+                        "sid": sid,
+                        "image_id": str(image_id),
+                        "file_path": file_path,
+                        "mime_type": image_result.mime_type,
+                        "file_size": image_result.file_size,
+                        "trace_id": result.trace_id,
+                    },
                 )
-            else:
-                await emit_to_internal(
-                    "generate_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"Unknown provider: {provider}",
-                        resource_id=data.get("resource_id"),
-                        group_id=data.get("group_id"),
-                        resource_type=data.get("resource_type"),
-                    ),
-                    sid=sid,
+            elif modality == "video":
+                # Video adapter returns VideoGenerationResult
+                video_result = await adapter.generate(sid, adapter_payload, profile_id, conn)
+                # Persist video
+                video_id = uuid.UUID(adapter_payload["videoId"])
+                run_id_uuid = uuid.UUID(result.run_id)
+                file_path = await persist_video(conn, video_id, video_result, run_id_uuid)
+                # Emit completion event
+                await internal_sio.emit(
+                    "generate_video_complete",
+                    {
+                        "sid": sid,
+                        "success": True,
+                        "message": "Video generated successfully",
+                        "videoUrl": f"/api/uploads/download/{video_result.upload_id}",
+                        "video_id": str(video_id),
+                        "run_id": result.run_id,
+                    },
                 )
 
     except Exception as e:

@@ -1,16 +1,19 @@
 """OpenAI image generation adapter - handles image generation using litellm."""
 
 import base64
-import re
 import uuid
 from typing import Any, cast
 
 import httpx
-from app.main import IMAGE_FOLDER, get_internal_sio
+from app.main import get_internal_sio
 from app.sql.types import (GetImageGenerationContextAndCreateUploadSqlParams,
                            GetImageGenerationContextAndCreateUploadSqlRow)
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed
+
+from ..base import ImageGenerationResult
+from ..persistence import persist_image
+from .base import BaseImageAdapter
 
 internal_sio = get_internal_sio()
 
@@ -30,7 +33,7 @@ except ImportError:
 LITELLM_SUPPORTED_PROVIDERS = {"openai", "anthropic", "google", "stability-ai"}
 
 
-class OpenAIImageAdapter:
+class OpenAIImageAdapter(BaseImageAdapter):
     """OpenAI image generation adapter."""
 
     async def generate(
@@ -39,14 +42,17 @@ class OpenAIImageAdapter:
         data: dict[str, Any],
         profile_id: uuid.UUID | None,
         conn: Any,
-    ) -> None:
-        """Generate image using OpenAI/litellm.
+    ) -> ImageGenerationResult:
+        """Generate image - returns unified result type.
 
         Args:
             sid: Socket ID
             data: Request data containing image_id, name, prompt, agent_id, etc.
             profile_id: Profile ID (optional)
             conn: Database connection
+
+        Returns:
+            ImageGenerationResult with image_bytes, mime_type, file_size
         """
         image_id = data.get("image_id", "")
         name = data.get("name", "")
@@ -76,7 +82,7 @@ class OpenAIImageAdapter:
                         "error_message": f"Failed to initialize image generation: {str(e)}",
                     },
                 )
-                return
+                raise
 
             if not result:
                 await internal_sio.emit(
@@ -87,7 +93,7 @@ class OpenAIImageAdapter:
                         "error_message": f"Agent {agent_id} not found or inactive",
                     },
                 )
-                return
+                raise ValueError(f"Agent {agent_id} not found or inactive")
 
             api_key = result.api_key
             if not api_key:
@@ -99,7 +105,7 @@ class OpenAIImageAdapter:
                         "error_message": f"API key not found for agent {agent_id}",
                     },
                 )
-                return
+                raise ValueError(f"API key not found for agent {agent_id}")
 
             # Decrypt API key
             try:
@@ -113,7 +119,7 @@ class OpenAIImageAdapter:
                         "error_message": f"Failed to decrypt API key: {str(e)}",
                     },
                 )
-                return
+                raise
 
             model_name = result.model_name
             base_url = result.base_url
@@ -133,7 +139,7 @@ class OpenAIImageAdapter:
                             "error_message": "litellm is not available",
                         },
                     )
-                    return
+                    raise ValueError("litellm is not available")
 
                 try:
                     response = await litellm.aimage_generation(
@@ -168,7 +174,9 @@ class OpenAIImageAdapter:
                                 ),
                             },
                         )
-                        return
+                        raise ValueError(
+                            f"No image data returned from litellm for image {image_id}"
+                        )
 
                     # Download image if URL provided
                     if image_url and not image_bytes:
@@ -189,7 +197,7 @@ class OpenAIImageAdapter:
                                     ),
                                 },
                             )
-                            return
+                            raise
 
                 except Exception as e:
                     await internal_sio.emit(
@@ -200,7 +208,7 @@ class OpenAIImageAdapter:
                             "error_message": f"Image generation failed: {str(e)}",
                         },
                     )
-                    return
+                    raise
             else:
                 await internal_sio.emit(
                     "generate_image_error",
@@ -210,7 +218,7 @@ class OpenAIImageAdapter:
                         "error_message": f"Provider {provider} not yet supported",
                     },
                 )
-                return
+                raise ValueError(f"Provider {provider} not yet supported")
 
             if not image_bytes:
                 await internal_sio.emit(
@@ -221,79 +229,23 @@ class OpenAIImageAdapter:
                         "error_message": f"Failed to get image bytes for {image_id}",
                     },
                 )
-                return
+                raise ValueError(f"Failed to get image bytes for {image_id}")
 
-            # Determine file extension and mime type
-            file_ext = ".png"
+            # Determine mime type
             mime_type = "image/png"
             if len(image_bytes) > 0:
                 if image_bytes.startswith(b"\x89PNG"):
-                    file_ext = ".png"
                     mime_type = "image/png"
                 elif image_bytes.startswith(b"\xff\xd8"):
-                    file_ext = ".jpg"
                     mime_type = "image/jpeg"
                 elif image_bytes.startswith(b"GIF"):
-                    file_ext = ".gif"
                     mime_type = "image/gif"
 
-            # Create deduplicated filename from image name
-            safe_name = re.sub(r"[^a-zA-Z0-9_\-\.]", "_", name)
-            safe_name = re.sub(r"_+", "_", safe_name).strip("_")
-            safe_name = safe_name.lower() or "image"
-
-            # Append UUID for deduplication
-            upload_uuid = uuid.uuid4()
-            file_name = f"{safe_name}_{upload_uuid}{file_ext}"
-            file_path = f"image/{file_name}"
-            full_path = IMAGE_FOLDER / file_name
-
-            # Ensure image directory exists
-            IMAGE_FOLDER.mkdir(parents=True, exist_ok=True)
-
-            # Save image bytes to file
-            try:
-                with open(full_path, "wb") as f:
-                    f.write(image_bytes)
-            except Exception as write_error:
-                await internal_sio.emit(
-                    "generate_image_error",
-                    {
-                        "sid": sid,
-                        "image_id": image_id,
-                        "error_message": f"Failed to write image file: {str(write_error)}",
-                    },
-                )
-                return
-
-            file_size = len(image_bytes)
-
-            # Emit async pricing event (non-blocking)
-            await internal_sio.emit(
-                "log_run",
-                {
-                    "run_id": run_id,
-                    "operation_type": "image",
-                    "input_text_tokens": 0,
-                    "output_text_tokens": 0,
-                    "system_prompt": None,
-                    "input_items": None,
-                    "assistant_output": None,
-                    "department_id": str(department_id) if department_id else None,
-                },
-            )
-
-            # Emit completion event to internal bus
-            await internal_sio.emit(
-                "generate_image_complete",
-                {
-                    "sid": sid,
-                    "image_id": image_id,
-                    "file_path": file_path,
-                    "mime_type": mime_type,
-                    "file_size": file_size,
-                    "trace_id": data.get("trace_id"),  # Preserve trace_id for scenario tool completion
-                },
+            # Return unified result type
+            return ImageGenerationResult(
+                image_bytes=image_bytes,
+                mime_type=mime_type,
+                file_size=len(image_bytes),
             )
 
         except Exception as e:
@@ -305,4 +257,5 @@ class OpenAIImageAdapter:
                     "error_message": f"Unexpected error: {str(e)}",
                 },
             )
+            raise
 

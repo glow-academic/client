@@ -7,20 +7,23 @@ from typing import Any, Literal, cast
 import asyncpg  # type: ignore
 from openai import OpenAI
 
-from app.main import VIDEO_FOLDER, get_internal_sio
+from app.main import get_internal_sio
 from app.sql.types import (
     GetVideoRunContextAndCreateRunSqlParams,
     GetVideoRunContextAndCreateRunSqlRow,
 )
 from utils.auth.decrypt_api_key import decrypt_api_key
-from utils.sql_helper import execute_sql_typed, load_sql
+from utils.sql_helper import execute_sql_typed
+
+from ..base import VideoGenerationResult
+from .base import BaseVideoAdapter
 
 internal_sio = get_internal_sio()
 
 SQL_PATH = "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"
 
 
-class OpenAIVideoAdapter:
+class OpenAIVideoAdapter(BaseVideoAdapter):
     """OpenAI video generation adapter."""
 
     async def generate(
@@ -29,14 +32,17 @@ class OpenAIVideoAdapter:
         data: dict[str, Any],
         profile_id: uuid.UUID | None,
         conn: Any,
-    ) -> None:
-        """Generate video using OpenAI Sora API.
+    ) -> VideoGenerationResult:
+        """Generate video - returns unified result type.
 
         Args:
             sid: Socket ID
             data: Request data containing videoId, prompt, imageReferenceId
             profile_id: Profile ID (optional)
             conn: Database connection
+
+        Returns:
+            VideoGenerationResult with video_bytes, mime_type, file_size, upload_id
         """
         try:
             video_id = uuid.UUID(data.get("videoId", ""))
@@ -87,7 +93,7 @@ class OpenAIVideoAdapter:
                             "video_id": str(video_id),
                         },
                     )
-                    return
+                    raise ValueError(user_msg)
                 await internal_sio.emit(
                     "generate_video_error",
                     {
@@ -97,7 +103,7 @@ class OpenAIVideoAdapter:
                         "video_id": str(video_id),
                     },
                 )
-                return
+                raise
 
             if not result:
                 await internal_sio.emit(
@@ -112,7 +118,9 @@ class OpenAIVideoAdapter:
                         "video_id": str(video_id),
                     },
                 )
-                return
+                raise ValueError(
+                    f"No video agent configured for video {data.get('videoId')}"
+                )
 
             # Extract run_id from context (created in same transaction)
             model_run_id = uuid.UUID(result.run_id)
@@ -133,7 +141,7 @@ class OpenAIVideoAdapter:
                         "video_id": str(video_id),
                     },
                 )
-                return
+                raise ValueError(f"API key not found for {agent_name}")
 
             # Extract context data
             encrypted_api_key = result.api_key
@@ -155,7 +163,7 @@ class OpenAIVideoAdapter:
                         "video_id": str(video_id),
                     },
                 )
-                return
+                raise
 
             # Provider-specific video generation logic
             if provider == "openai" and model_name and model_name.startswith("sora"):
@@ -225,82 +233,49 @@ class OpenAIVideoAdapter:
                                     "video_id": str(video_id),
                                 },
                             )
-                            return
+                            raise ValueError("Video generation returned empty content")
 
-                        video_filename = f"{video_id}_{uuid.uuid4()}.mp4"
-                        video_relative_path = f"video/{video_filename}"
-                        VIDEO_FOLDER.mkdir(parents=True, exist_ok=True)
-                        video_path = VIDEO_FOLDER / video_filename
-                        await asyncio.to_thread(video_path.write_bytes, video_content_bytes)
+                        # Create upload record first to get upload_id
+                        from utils.sql_helper import load_sql
 
-                        async with conn.transaction():
-                            # Create upload record
-                            mime_type = "video/mp4"
-                            file_size = len(video_content_bytes)
-                            sql_query = load_sql("app/sql/v4/uploads/insert_upload.sql")
-                            upload_id_str = await conn.fetchval(
-                                sql_query,
-                                video_relative_path,
-                                mime_type,
-                                file_size,
-                            )
+                        mime_type = "video/mp4"
+                        file_size = len(video_content_bytes)
+                        sql_query = load_sql("app/sql/v4/uploads/insert_upload_complete.sql")
+                        from app.sql.types import InsertUploadSqlParams
 
-                            if not upload_id_str:
-                                await internal_sio.emit(
-                                    "generate_video_error",
-                                    {
-                                        "sid": sid,
-                                        "success": False,
-                                        "message": "Failed to create upload record",
-                                        "video_id": str(video_id),
-                                    },
-                                )
-                                return
-                            # Create generation and link to video (with run_id from SQL)
-                            sql_create_generation = load_sql(
-                                "app/sql/v4/videos/create_generation_and_link.sql"
-                            )
-                            await conn.fetchrow(
-                                sql_create_generation,
-                                str(video_id),
-                                video_relative_path,
-                                mime_type,
-                                uuid.UUID(upload_id_str),
-                                True,  # active
-                                str(model_run_id),  # run_id - now created in SQL
-                            )
+                        upload_params = InsertUploadSqlParams(
+                            file_path="",  # Will be set during persistence
+                            mime_type=mime_type,
+                            size=file_size,
+                        )
+                        from app.sql.types import InsertUploadSqlRow
 
-                        # Emit async pricing event (non-blocking)
-                        await internal_sio.emit(
-                            "log_run",
-                            {
-                                "run_id": str(model_run_id),
-                                "operation_type": "video",
-                                "input_text_tokens": 0,
-                                "output_text_tokens": 0,
-                                "system_prompt": result.system_prompt or "",
-                                "input_items": [
-                                    {"role": "user", "content": prompt}
-                                ],
-                                "assistant_output": f"Video generated: {video_filename}",
-                                "department_id": str(department_id)
-                                if department_id
-                                else None,
-                            },
+                        upload_result = cast(
+                            InsertUploadSqlRow,
+                            await execute_sql_typed(conn, sql_query, params=upload_params),
                         )
 
-                        # Emit completion event to internal bus
-                        await internal_sio.emit(
-                            "generate_video_complete",
-                            {
-                                "sid": sid,
-                                "success": True,
-                                "message": "Video generated successfully",
-                                "videoUrl": f"/api/uploads/download/{upload_id_str}",
-                                "videoId": str(video_id),
-                            },
+                        if not upload_result or not upload_result.id:
+                            await internal_sio.emit(
+                                "generate_video_error",
+                                {
+                                    "sid": sid,
+                                    "success": False,
+                                    "message": "Failed to create upload record",
+                                    "video_id": str(video_id),
+                                },
+                            )
+                            raise ValueError("Failed to create upload record")
+
+                        upload_id = uuid.UUID(upload_result.id)
+
+                        # Return unified result type
+                        return VideoGenerationResult(
+                            video_bytes=video_content_bytes,
+                            mime_type=mime_type,
+                            file_size=file_size,
+                            upload_id=upload_id,
                         )
-                        return
 
                     elif video_status.status == "failed":
                         await internal_sio.emit(
@@ -312,7 +287,7 @@ class OpenAIVideoAdapter:
                                 "video_id": str(video_id),
                             },
                         )
-                        return
+                        raise ValueError(f"Video generation failed: {video_status.status}")
 
                     # Wait before next poll
                     await asyncio.sleep(5)
@@ -328,26 +303,28 @@ class OpenAIVideoAdapter:
                         "video_id": str(video_id),
                     },
                 )
+                raise ValueError("Video generation timed out")
             else:
                 await internal_sio.emit(
                     "generate_video_error",
                     {
                         "sid": sid,
                         "success": False,
-                        "message": f"Provider {provider} not yet supported for video generation",
+                        "message": f"Provider {provider} not yet supported",
                         "video_id": str(video_id),
                     },
                 )
+                raise ValueError(f"Provider {provider} not yet supported")
 
         except Exception as e:
-            video_id_str = str(data.get("videoId", "")) if data.get("videoId") else None
             await internal_sio.emit(
                 "generate_video_error",
                 {
                     "sid": sid,
                     "success": False,
-                    "message": str(e),
-                    "video_id": video_id_str,
+                    "message": f"Unexpected error: {str(e)}",
+                    "video_id": str(data.get("videoId", "")),
                 },
             )
+            raise
 

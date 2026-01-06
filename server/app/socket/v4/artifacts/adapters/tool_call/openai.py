@@ -1,78 +1,68 @@
 """OpenAI tool call streaming adapter - handles streaming tool call events."""
 
 import uuid
-from collections.abc import Awaitable, Callable
 from typing import Any
 
-from app.infra.v4.agents.stream_agent_events import (StreamEventCallbacks,
-                                                     stream_agent_events)
+from app.infra.v4.agents.stream_agent_events import (
+    StreamEventCallbacks,
+    stream_agent_events,
+)
+from app.infra.v4.websocket.typed_emit import emit_to_internal
+from app.main import get_internal_sio
+
+from .base import BaseToolCallAdapter
+
+internal_sio = get_internal_sio()
 
 
-class ToolCallStreamer:
+class OpenAIToolCallAdapter(BaseToolCallAdapter):
     """Handles streaming tool calls for OpenAI agents."""
 
-    def __init__(
+    async def stream_tool_calls(
         self,
+        runner: Any,
         sid: str,
         resource_id: str | None,
         resource_type: str,
         run_id: uuid.UUID,
         group_id: uuid.UUID | None,
-        internal_sio: Any,
         tool_name_to_type: dict[str, str],
-    ):
-        """Initialize tool call streamer.
+        required_tool_names: set[str],
+    ) -> set[str]:
+        """Stream tool calls - returns unified result types.
 
         Args:
+            runner: Runner instance from Runner.run_streamed()
             sid: Socket ID
             resource_id: Resource ID (optional)
             resource_type: Resource type (agent_role)
             run_id: Model run ID
             group_id: Group ID (optional)
-            internal_sio: Internal Socket.IO instance for emitting events
             tool_name_to_type: Mapping from tool name to tool type
-        """
-        self.sid = sid
-        self.resource_id = resource_id
-        self.resource_type = resource_type
-        self.run_id = run_id
-        self.group_id = group_id
-        self.internal_sio = internal_sio
-        self.tool_name_to_type = tool_name_to_type
-
-        # Track tool call state
-        self.tool_call_id_to_name: dict[str, str] = {}
-        self.tool_call_id_to_call_id: dict[str, str | None] = {}
-        self.completed_tool_names: set[str] = set()
-
-    async def stream(
-        self,
-        result_runner: Any,
-        required_tool_names: set[str],
-    ) -> set[str]:
-        """Stream tool call events from agent runner.
-
-        Args:
-            result_runner: Runner instance from Runner.run_streamed()
             required_tool_names: Set of required tool names to verify completion
 
         Returns:
             Set of completed tool names
         """
+        # Track tool call state
+        tool_call_id_to_name: dict[str, str] = {}
+        tool_call_id_to_call_id: dict[str, str | None] = {}
+        completed_tool_names: set[str] = set()
+
         # Define callbacks for tool call events
         async def on_start(
             tool_call_id: str, tool_name: str, call_id: str | None
         ) -> None:
-            self.tool_call_id_to_name[tool_call_id] = tool_name
-            self.tool_call_id_to_call_id[tool_call_id] = call_id
-            await self.internal_sio.emit(
+            tool_call_id_to_name[tool_call_id] = tool_name
+            tool_call_id_to_call_id[tool_call_id] = call_id
+            await internal_sio.emit(
                 "generate_text_progress",
                 {
-                    "sid": self.sid,
+                    "sid": sid,
                     "progress_type": "tool_call_start",
-                    "resource_id": self.resource_id,
-                    "resource_type": self.resource_type,
-                    "run_id": str(self.run_id),
+                    "resource_id": resource_id,
+                    "resource_type": resource_type,
+                    "run_id": str(run_id),
                     "tool_call_id": tool_call_id,
                     "call_id": call_id or tool_call_id or "",
                     "tool_name": tool_name or "",
@@ -82,14 +72,14 @@ class ToolCallStreamer:
 
         async def on_progress(tool_call_id: str, arguments_delta: str) -> None:
             # For progress events, call_id and tool_name may be None - SQL will look them up
-            await self.internal_sio.emit(
+            await internal_sio.emit(
                 "generate_text_progress",
                 {
-                    "sid": self.sid,
+                    "sid": sid,
                     "progress_type": "tool_call_progress",
-                    "resource_id": self.resource_id,
-                    "resource_type": self.resource_type,
-                    "run_id": str(self.run_id),
+                    "resource_id": resource_id,
+                    "resource_type": resource_type,
+                    "run_id": str(run_id),
                     "tool_call_id": tool_call_id,
                     "call_id": None,  # SQL will look it up
                     "tool_name": None,  # SQL will look it up
@@ -100,27 +90,27 @@ class ToolCallStreamer:
         async def on_complete(
             tool_call_id: str, final_args: dict[str, Any]
         ) -> None:
-            tool_name = self.tool_call_id_to_name.get(tool_call_id, "")
+            tool_name = tool_call_id_to_name.get(tool_call_id, "")
             if tool_name:
-                self.completed_tool_names.add(tool_name)
+                completed_tool_names.add(tool_name)
 
             # Get call_id from stored mapping
-            call_id = self.tool_call_id_to_call_id.get(tool_call_id)
+            call_id = tool_call_id_to_call_id.get(tool_call_id)
 
             # Map tool_name to tool_type from database result
             tool_type: str | None = (
-                self.tool_name_to_type.get(tool_name) if tool_name else None
+                tool_name_to_type.get(tool_name) if tool_name else None
             )
 
-            await self.internal_sio.emit(
+            await internal_sio.emit(
                 "generate_text_complete",
                 {
-                    "sid": self.sid,
+                    "sid": sid,
                     "type": "tool_call_complete",
-                    "resource_id": self.resource_id,
-                    "resource_type": self.resource_type,
-                    "run_id": str(self.run_id),
-                    "group_id": str(self.group_id) if self.group_id else None,
+                    "resource_id": resource_id,
+                    "resource_type": resource_type,
+                    "run_id": str(run_id),
+                    "group_id": str(group_id) if group_id else None,
                     "tool_call_id": tool_call_id,
                     "call_id": call_id or tool_call_id or "",
                     "tool_name": tool_name or "",
@@ -142,7 +132,7 @@ class ToolCallStreamer:
                 return call_id
             return f"text_{uuid.uuid4().hex[:16]}"
 
-        await stream_agent_events(result_runner, callbacks, tool_call_id_generator)
+        await stream_agent_events(runner, callbacks, tool_call_id_generator)
 
-        return self.completed_tool_names
+        return completed_tool_names
 
