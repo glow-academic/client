@@ -1232,35 +1232,39 @@ grades_data AS (
 message_feedbacks_data AS (
     -- Strengths with highlights
     SELECT 
-        mfs.message_id,
-        mfs.grade_id,
-        (mfs.id, mfs.name, mfs.description,
+        ms.message_id,
+        gs.grade_id,
+        (s.id, s.name, s.description,
          '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[],
          COALESCE(
              (SELECT ARRAY_AGG((mfh.section)::types.q_get_simulation_attempt_v4_message_feedback_highlight ORDER BY mfh.idx)
                         FROM message_feedback_highlight mfh
-                        WHERE mfh.message_feedback_id = mfs.id),
+                        WHERE mfh.message_feedback_id = s.id),
              '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
          )
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
-    FROM message_feedback_strengths mfs
-    WHERE mfs.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
+    FROM strengths s
+    JOIN message_strengths ms ON ms.strength_id = s.id
+    JOIN grade_strengths gs ON gs.strength_id = s.id
+    WHERE gs.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
     UNION ALL
     -- Improvements with replaces
     SELECT 
-        mfi.message_id,
-        mfi.grade_id,
-        (mfi.id, mfi.name, mfi.description,
+        mi2.message_id,
+        gi.grade_id,
+        (i.id, i.name, i.description,
          COALESCE(
              (SELECT ARRAY_AGG((mfr.section, mfr.replace)::types.q_get_simulation_attempt_v4_message_feedback_replace ORDER BY mfr.idx)
                         FROM message_feedback_replace mfr
-                        WHERE mfr.message_feedback_id = mfi.id),
+                        WHERE mfr.message_feedback_id = i.id),
              '{}'::types.q_get_simulation_attempt_v4_message_feedback_replace[]
          ),
          '{}'::types.q_get_simulation_attempt_v4_message_feedback_highlight[]
         )::types.q_get_simulation_attempt_v4_message_feedback as feedback_data
-    FROM message_feedback_improvements mfi
-    WHERE mfi.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
+    FROM improvements i
+    JOIN message_improvements mi2 ON mi2.improvement_id = i.id
+    JOIN grade_improvements gi ON gi.improvement_id = i.id
+    WHERE gi.grade_id IN (SELECT (gd.grade).id FROM grades_data gd)
 ),
 message_feedbacks_grouped AS (
     SELECT 
@@ -1345,18 +1349,19 @@ hints_data AS (
 ),
 feedbacks_grouped AS (
     SELECT 
-        scf.grade_id as grade_id,
+        gf.grade_id as grade_id,
         COALESCE(
             ARRAY_AGG(
-                (scf.id, scf.created_at, scf.standard_id, scf.grade_id, scf.total::float, scf.feedback)::types.q_get_simulation_attempt_v4_feedback
+                (f.id, f.created_at, f.standard_id, gf.grade_id, f.total::float, f.feedback)::types.q_get_simulation_attempt_v4_feedback
             ),
             '{}'::types.q_get_simulation_attempt_v4_feedback[]
         ) as feedbacks
-    FROM feedbacks scf
-    WHERE scf.grade_id IN (
+    FROM feedbacks f
+    JOIN grade_feedbacks gf ON gf.feedback_id = f.id
+    WHERE gf.grade_id IN (
         SELECT (gd.grade).id FROM grades_data gd
     )
-    GROUP BY scf.grade_id
+    GROUP BY gf.grade_id
 ),
 rubric_standard_groups AS (
     SELECT 

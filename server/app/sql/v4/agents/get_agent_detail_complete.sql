@@ -265,7 +265,8 @@ debug_data AS (
         di.content
     FROM params x
     JOIN runs mr ON mr.agent_id = x.agent_id
-    JOIN debug_info di ON di.run_id = mr.id
+    JOIN run_debug_info rdi ON rdi.run_id = mr.id
+    JOIN debug_info di ON di.id = rdi.debug_info_id
     JOIN run_models mrm ON mrm.run_id = mr.id
     WHERE mrm.active = true
     ORDER BY di.created_at DESC

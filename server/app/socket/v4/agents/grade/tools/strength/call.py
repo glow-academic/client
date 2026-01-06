@@ -110,6 +110,10 @@ async def _grading_tool_message_strength_impl(
                 return
 
             # Create message feedback strength record
+            # Generate tool_call_id if not available (required for strengths table)
+            # In practice, this should come from the actual tool call context
+            tool_call_id_uuid = uuid.uuid4()  # TODO: Get from actual tool call context if available
+            
             SQL_CREATE_FEEDBACK_PATH = (
                 "app/sql/v4/grading/create_message_feedback_strength_complete.sql"
             )
@@ -118,6 +122,7 @@ async def _grading_tool_message_strength_impl(
                 message_id=message_id_uuid,
                 name="Strength",
                 description=data.feedback,
+                tool_call_id=tool_call_id_uuid,
             )
             feedback_result = cast(
                 CreateMessageFeedbackStrengthSqlRow,

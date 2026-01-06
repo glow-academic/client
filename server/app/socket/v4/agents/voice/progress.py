@@ -1031,11 +1031,12 @@ async def _simulation_voice_debug_info_impl(
 
             run_id = uuid.UUID(run_row["run_id"])
 
-            # Insert debug info
-            sql_insert_debug_info = load_sql(
-                "app/sql/v4/model_runs/insert_debug_info.sql"
+            # Insert debug info (creates debug_info and links via run_debug_info junction table)
+            await conn.execute(
+                "SELECT * FROM api_insert_debug_info_v4($1::uuid, $2::text)",
+                run_id,
+                content,
             )
-            await conn.execute(sql_insert_debug_info, run_id, content)
     except Exception as e:
         await simulation_voice_debug_info_error(
             VoiceDebugInfoErrorPayload(success=False, message=str(e)), room=sid

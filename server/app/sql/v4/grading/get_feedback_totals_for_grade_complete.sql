@@ -17,6 +17,7 @@ BEGIN
 END $$;
 
 -- 2) Recreate function
+-- Gets feedback totals for a grade via grade_feedbacks junction table
 CREATE OR REPLACE FUNCTION socket_get_feedback_totals_for_grade_v4(
     grade_id_param uuid
 )
@@ -26,7 +27,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT total
-    FROM feedbacks
-    WHERE grade_id = grade_id_param
+    SELECT f.total
+    FROM feedbacks f
+    JOIN grade_feedbacks gf ON gf.feedback_id = f.id
+    WHERE gf.grade_id = grade_id_param
 $$;

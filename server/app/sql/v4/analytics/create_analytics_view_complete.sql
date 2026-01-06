@@ -369,9 +369,8 @@ CREATE INDEX analytics_attempt_created_at_idx
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
   ON grades (run_id, created_at DESC);
 
--- Feedback lookup by grade
-CREATE INDEX IF NOT EXISTS feedbacks_grade_idx
-  ON feedbacks (grade_id);
+-- Feedback lookup by grade (via grade_feedbacks junction table)
+-- Note: grade_id column removed from feedbacks table, use grade_feedbacks junction table instead
 
 -- Standards mapping
 CREATE INDEX IF NOT EXISTS standards_group_idx

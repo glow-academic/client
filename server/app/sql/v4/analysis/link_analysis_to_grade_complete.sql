@@ -27,9 +27,9 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO analysis_grades (analysis_id, grade_id, created_at)
-    VALUES (analysis_id, grade_id, NOW())
-    ON CONFLICT (analysis_id, grade_id) DO NOTHING
+    INSERT INTO grade_analyses (grade_id, analysis_id, created_at)
+    VALUES (grade_id, analysis_id, NOW())
+    ON CONFLICT (grade_id, analysis_id) DO NOTHING
     RETURNING true as success;
 $$;
 

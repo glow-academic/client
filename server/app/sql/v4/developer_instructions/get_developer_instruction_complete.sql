@@ -37,10 +37,11 @@ SELECT
     di.active,
     dis.schema_id
 FROM developer_instructions di
-JOIN agent_role_developer_instruction_types ardit ON ardit.developer_instruction_type = di.type
+JOIN agent_developer_instructions adi ON adi.developer_instruction_id = di.id
+JOIN agents a ON a.id = adi.agent_id
 LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
 WHERE di.type = instruction_type
-  AND ardit.agent_role = agent_role_val
+  AND a.role = agent_role_val
   AND di.active = true
 LIMIT 1
 $$;

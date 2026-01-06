@@ -263,7 +263,8 @@ runs_with_debug AS (
         ) as debug_info
     FROM runs_base mrb
     LEFT JOIN run_costs rc ON rc.run_id = mrb.run_id
-    LEFT JOIN debug_info di ON di.run_id = mrb.run_id
+    LEFT JOIN run_debug_info rdi ON rdi.run_id = mrb.run_id
+    LEFT JOIN debug_info di ON di.id = rdi.debug_info_id
     GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, rc.run_cost
 ),
 model_pricing_aggregated AS (

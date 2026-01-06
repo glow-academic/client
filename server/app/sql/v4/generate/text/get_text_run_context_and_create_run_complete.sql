@@ -292,8 +292,8 @@ developer_instruction_data AS (
         dis.schema_id as developer_instruction_schema_id
     FROM selected_agent sa
     INNER JOIN agents a ON a.id = sa.agent_id
-    LEFT JOIN agent_role_developer_instruction_types ardit ON ardit.agent_role = a.role
-    LEFT JOIN developer_instructions di ON di.type = ardit.developer_instruction_type AND di.active = true
+    LEFT JOIN agent_developer_instructions adi ON adi.agent_id = a.id
+    LEFT JOIN developer_instructions di ON di.id = adi.developer_instruction_id AND di.active = true
     LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
     LIMIT 1
 ),

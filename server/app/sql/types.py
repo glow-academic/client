@@ -10762,6 +10762,7 @@ class CreateMessageFeedbackImprovementSqlParams(BaseModel):
     message_id: UUID
     name: str
     description: str
+    tool_call_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -10769,6 +10770,7 @@ class CreateMessageFeedbackImprovementSqlParams(BaseModel):
             self.message_id,
             self.name,
             self.description,
+            self.tool_call_id,
         )
 
 class CreateMessageFeedbackImprovementSqlRow(BaseModel):
@@ -10781,6 +10783,7 @@ class CreateMessageFeedbackImprovementApiRequest(BaseModel):
     message_id: UUID
     name: str
     description: str
+    tool_call_id: UUID
 
 class CreateMessageFeedbackImprovementApiResponse(BaseModel):
 
@@ -10834,6 +10837,7 @@ class CreateMessageFeedbackStrengthSqlParams(BaseModel):
     message_id: UUID
     name: str
     description: str
+    tool_call_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -10841,6 +10845,7 @@ class CreateMessageFeedbackStrengthSqlParams(BaseModel):
             self.message_id,
             self.name,
             self.description,
+            self.tool_call_id,
         )
 
 class CreateMessageFeedbackStrengthSqlRow(BaseModel):
@@ -10853,6 +10858,7 @@ class CreateMessageFeedbackStrengthApiRequest(BaseModel):
     message_id: UUID
     name: str
     description: str
+    tool_call_id: UUID
 
 class CreateMessageFeedbackStrengthApiResponse(BaseModel):
 
@@ -13223,13 +13229,13 @@ class CreateModelRunApiResponse(BaseModel):
 
 class InsertDebugInfoSqlParams(BaseModel):
 
-    run_id: UUID
-    content: str
+    run_id_param: UUID
+    content_param: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.run_id,
-            self.content,
+            self.run_id_param,
+            self.content_param,
         )
 
 class InsertDebugInfoSqlRow(BaseModel):
@@ -13240,8 +13246,8 @@ class InsertDebugInfoSqlRow(BaseModel):
 
 class InsertDebugInfoApiRequest(BaseModel):
 
-    run_id: UUID
-    content: str
+    run_id_param: UUID
+    content_param: str
 
 class InsertDebugInfoApiResponse(BaseModel):
 

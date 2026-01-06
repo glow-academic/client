@@ -748,7 +748,7 @@ async def _simulation_grading_start_impl(
             # Add message_strength tool if grade_id and message_id_map are available
             if grade_id and message_id_map:
                 message_strength_config = tool_config_map_grading.get(
-                    "create_feedback_strength"
+                    "create_strength"
                 )
                 if message_strength_config:
                     message_num_desc = message_strength_config.get(
@@ -817,7 +817,7 @@ async def _simulation_grading_start_impl(
                 grading_tools.append(function_tool(message_strength))
                 # Add message_improvement tool
                 message_improvement_config = tool_config_map_grading.get(
-                    "create_feedback_improvement"
+                    "create_improvement"
                 )
                 if message_improvement_config:
                     message_num_desc = message_improvement_config.get(
