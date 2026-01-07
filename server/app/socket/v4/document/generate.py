@@ -66,7 +66,13 @@ async def _generate_document_impl(
                 field_ids=None,  # Will be populated from document if needed
             )
 
-            result = await execute_sql_typed(conn, SQL_PATH, params=params)
+            from app.sql.types import GetDocumentRunContextAndCreateRunSqlRow
+            from typing import cast
+
+            result = cast(
+                GetDocumentRunContextAndCreateRunSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
 
             if not result:
                 await emit_to_internal(
@@ -84,7 +90,7 @@ async def _generate_document_impl(
 
             # Extract fields and department from result
             fields_data: list[dict[str, Any]] | None = None
-            if result.template_context_fields:
+            if hasattr(result, "template_context_fields") and result.template_context_fields:
                 fields_data = [
                     {
                         "item_name": field.item_name or "",
@@ -95,26 +101,80 @@ async def _generate_document_impl(
                     for field in result.template_context_fields
                 ]
 
-            department_name: str | None = result.department_name
+            department_name: str | None = (
+                result.department_name if hasattr(result, "department_name") else None
+            )
 
             # Step 1: Format document template context
+            document_name_val = (
+                data.document_name
+                or (result.document_name if hasattr(result, "document_name") else None)
+                or ""
+            )
+            document_description_val = (
+                data.document_description
+                or (
+                    result.document_description
+                    if hasattr(result, "document_description")
+                    else None
+                )
+                or ""
+            )
             context_items = format_document_template_context(
-                document_name=data.document_name or result.document_name or "",
-                document_description=data.document_description
-                or result.document_description
-                or "",
+                document_name=document_name_val,
+                document_description=document_description_val,
                 department_name=department_name,
                 fields=fields_data,
             )
 
-            # Get developer instruction template from SQL result
-            developer_message_content: str | None = (
-                result.developer_instruction_template
+            # Get developer instruction using new renderer with resource-schema-based context
+            from app.infra.v4.developer_instructions.render_developer_instruction import (
+                render_developer_instruction,
             )
-            if developer_message_content:
-                # Render Jinja template (no context variables needed for document)
-                template = Template(developer_message_content)
+
+            # Get agent_id from result (best_agent provides agent_id)
+            agent_id: uuid.UUID | None = None
+            if hasattr(result, "agent_id") and result.agent_id:
+                agent_id = uuid.UUID(result.agent_id)
+            else:
+                # Fallback: get agent_id from document's domain
+                agent_id = await conn.fetchval(
+                    """
+                    SELECT d.agent_id
+                    FROM documents doc
+                    JOIN domains d ON d.id = doc.document_domain_id
+                    WHERE doc.id = $1
+                    LIMIT 1
+                    """,
+                    uuid.UUID(data.document_id),
+                )
+
+            developer_message_content: str | None = None
+            if agent_id:
+                try:
+                    # Use new renderer with resource-schema-based context
+                    # For documents, scenario_id is None (documents are standalone)
+                    developer_message_content = await render_developer_instruction(
+                        conn, agent_id, scenario_id=None
+                    )
+                except Exception as e:
+                    # Log error but continue - developer instruction is optional
+                    import logging
+                    logging.getLogger(__name__).warning(
+                        f"Failed to render developer instruction: {e}"
+                    )
+
+            # Fallback to old method if new renderer returns None
+            if (
+                not developer_message_content
+                and hasattr(result, "developer_instruction_template")
+                and result.developer_instruction_template
+            ):
+                # Render Jinja template (no context variables - old method)
+                template = Template(result.developer_instruction_template)
                 developer_message_content = template.render()
+
+            if developer_message_content:
                 context_items.append(
                     {
                         "role": "developer",
@@ -133,11 +193,32 @@ async def _generate_document_impl(
             ]
             developer_message_contents.extend(user_messages)
 
+            # Get agent_id for generate_start from result
+            if not agent_id:
+                # Get agent_id from result (best_agent provides agent_id)
+                if hasattr(result, "agent_id") and result.agent_id:
+                    agent_id = uuid.UUID(result.agent_id)
+                else:
+                    # Fallback: get agent_id from document's domain
+                    agent_id = await conn.fetchval(
+                        """
+                        SELECT d.agent_id
+                        FROM documents doc
+                        JOIN domains d ON d.id = doc.document_domain_id
+                        WHERE doc.id = $1
+                        LIMIT 1
+                        """,
+                        uuid.UUID(data.document_id),
+                    )
+
+            if not agent_id:
+                raise ValueError("Could not determine agent_id for document generation")
+
             await internal_sio.emit(
                 "generate_start",
                 {
                     "sid": sid,
-                    "agent_id": data.document_agent_id,
+                    "agent_id": str(agent_id),
                     "resource_id": data.document_id,
                     "resource_type": "document",
                     "group_id": None,  # Will be created by generate_start

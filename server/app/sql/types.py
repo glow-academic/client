@@ -8265,6 +8265,40 @@ class GetDeveloperInstructionApiResponse(BaseModel):
 
 
 
+# Generated from: get_developer_instruction_context
+
+class GetDeveloperInstructionContextSqlParams(BaseModel):
+
+    p_agent_id: UUID
+    p_scenario_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.p_agent_id,
+            self.p_scenario_id,
+        )
+
+class GetDeveloperInstructionContextSqlRow(BaseModel):
+
+    parameters: Any | None = None
+    fields: Any | None = None
+    documents: Any | None = None
+    times: Any | None = None
+
+class GetDeveloperInstructionContextApiRequest(BaseModel):
+
+    p_agent_id: UUID
+    p_scenario_id: UUID | None = None
+
+class GetDeveloperInstructionContextApiResponse(BaseModel):
+
+    parameters: Any | None = None
+    fields: Any | None = None
+    documents: Any | None = None
+    times: Any | None = None
+
+
+
 # Generated from: complete_document_creation
 
 class CompleteDocumentCreationSqlParams(BaseModel):
@@ -27595,6 +27629,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDeveloperInstructionApiRequest",
         "GetDeveloperInstructionApiResponse",
     ),
+    "app/sql/v4/developer_instructions/get_developer_instruction_context_complete.sql": (
+        "GetDeveloperInstructionContextSqlParams",
+        "GetDeveloperInstructionContextSqlRow",
+        "GetDeveloperInstructionContextApiRequest",
+        "GetDeveloperInstructionContextApiResponse",
+    ),
     "app/sql/v4/documents/complete_document_creation_complete.sql": (
         "CompleteDocumentCreationSqlParams",
         "CompleteDocumentCreationSqlRow",
@@ -30089,6 +30129,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/developer_instructions/get_developer_instruction_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/developer_instructions/get_developer_instruction_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
