@@ -28,7 +28,7 @@ class GenerateDocumentPayload(BaseModel):
     """Request to generate a document."""
 
     document_id: str
-    document_agent_id: str
+    document_domain_id: str
     document_name: str | None = None
     document_description: str | None = None
     department_id: str | None = None
@@ -46,12 +46,24 @@ async def _generate_document_impl(
                 GetDocumentRunContextAndCreateRunSqlRow,
             )
 
+            # Get department_id from document if not provided
+            if not data.department_id:
+                # Query document to get department_id
+                doc_sql = "SELECT department_id FROM document_departments WHERE document_id = $1 AND active = true LIMIT 1"
+                dept_id = await conn.fetchval(doc_sql, uuid.UUID(data.document_id))
+                if not dept_id:
+                    raise ValueError("Document must have a department")
+                department_id = dept_id
+            else:
+                department_id = uuid.UUID(data.department_id)
+            
             params = GetDocumentRunContextAndCreateRunSqlParams(
                 document_id=uuid.UUID(data.document_id),
                 profile_id=profile_id,
-                agent_id=uuid.UUID(data.document_agent_id),
-                group_id=None,  # NULL for new group
-                department_id=uuid.UUID(data.department_id) if data.department_id else None,
+                department_id=department_id,
+                document_name=data.document_name,
+                document_description=data.document_description,
+                field_ids=None,  # Will be populated from document if needed
             )
 
             result = await execute_sql_typed(conn, SQL_PATH, params=params)

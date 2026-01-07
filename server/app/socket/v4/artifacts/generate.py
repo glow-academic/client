@@ -73,8 +73,21 @@ async def _generate_artifact_impl(
                         else None
                     )
 
+                    # Handle both domain_id (new) and agent_id (legacy) for backward compatibility
+                    domain_id = data.get("domain_id")
+                    agent_id = data.get("agent_id")
+                    if domain_id:
+                        # Look up agent_id from domain_id
+                        domain_lookup_sql = "SELECT agent_id FROM domains WHERE id = $1"
+                        agent_id_from_domain = await conn.fetchval(domain_lookup_sql, uuid.UUID(domain_id))
+                        if not agent_id_from_domain:
+                            raise ValueError(f"Domain not found: {domain_id}")
+                        agent_id = str(agent_id_from_domain)
+                    elif not agent_id:
+                        raise ValueError("Either domain_id or agent_id must be provided")
+                    
                     params = GetGenerationRunContextAndCreateRunSqlParams(
-                        agent_id=uuid.UUID(data["agent_id"]),
+                        agent_id=uuid.UUID(agent_id),
                         resource_id=uuid.UUID(data["resource_id"]),
                         resource_type=data["resource_type"],
                         profile_id=profile_id,

@@ -22,8 +22,8 @@ CREATE OR REPLACE FUNCTION api_insert_scenario_variant_v4(
     active boolean,
     objectives_enabled boolean,
     images_enabled boolean,
-    scenario_agent_id uuid,
-    image_agent_id uuid
+    scenario_domain_id uuid,
+    image_domain_id uuid
 )
 RETURNS TABLE (
     id uuid,
@@ -32,8 +32,8 @@ RETURNS TABLE (
     active boolean,
     objectives_enabled boolean,
     images_enabled boolean,
-    scenario_agent_id uuid,
-    image_agent_id uuid,
+    scenario_domain_id uuid,
+    image_domain_id uuid,
     description text,
     root_scenario_id uuid,
     parent_scenario_id uuid,
@@ -51,11 +51,11 @@ INSERT INTO scenarios (
     active,
     objectives_enabled,
     images_enabled,
-    scenario_agent_id,
-    image_agent_id
+    scenario_domain_id,
+    image_domain_id
 )
-VALUES (api_insert_scenario_variant_v4.name, api_insert_scenario_variant_v4.generated, api_insert_scenario_variant_v4.active, api_insert_scenario_variant_v4.objectives_enabled, api_insert_scenario_variant_v4.images_enabled, api_insert_scenario_variant_v4.scenario_agent_id, api_insert_scenario_variant_v4.image_agent_id)
-RETURNING id, name, generated, active, objectives_enabled, images_enabled, scenario_agent_id, image_agent_id, description, 
+VALUES (api_insert_scenario_variant_v4.name, api_insert_scenario_variant_v4.generated, api_insert_scenario_variant_v4.active, api_insert_scenario_variant_v4.objectives_enabled, api_insert_scenario_variant_v4.images_enabled, api_insert_scenario_variant_v4.scenario_domain_id, api_insert_scenario_variant_v4.image_domain_id)
+RETURNING id, name, generated, active, objectives_enabled, images_enabled, scenario_domain_id, image_domain_id, description, 
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = scenarios.id AND st.parent_id != scenarios.id LIMIT 1) as root_scenario_id,
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = scenarios.id AND st.parent_id != scenarios.id LIMIT 1) as parent_scenario_id,
     created_at, updated_at, NULL::uuid as profile_id,

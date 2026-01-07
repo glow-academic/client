@@ -40,7 +40,7 @@ SELECT
 FROM developer_instructions di
 JOIN agent_developer_instructions adi ON adi.developer_instruction_id = di.id
 JOIN agents a ON a.id = adi.agent_id
-JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = agent_role_val
+JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST(agent_role_val AS artifacts)
 LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
 WHERE di.active = true
 LIMIT 1

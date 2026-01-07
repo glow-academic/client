@@ -65,7 +65,6 @@ BEGIN
             'scenarioIds', jsonb_build_array(),
             'scenarioActiveStates', jsonb_build_object(),
             'scenarioSettings', jsonb_build_object(),
-            'hint_agent_id', NULL,
             'simulation_text_agent_id', NULL,
             'simulation_voice_agent_id', NULL,
             'member_agent_id', NULL

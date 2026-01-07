@@ -28,8 +28,8 @@ WITH params AS (
 member_agent AS (
     SELECT a.id as agent_id
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
-    WHERE aa.role = 'member' AND a.active = true
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('agent' AS artifacts)
+    WHERE a.active = true
     LIMIT 1
 ),
 -- Get chat context
@@ -147,8 +147,7 @@ link_profile_to_run AS (
 get_speak_tool_id AS (
     SELECT t.id as tool_id
     FROM tools t
-    INNER JOIN resource_tools rt ON rt.tool_id = t.id
-    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'content'
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('content' AS resources)
     WHERE t.name = 'speak' AND t.active = true
     LIMIT 1
 ),

@@ -91,9 +91,9 @@ async def create_scenario(
         if len(request.upload_ids or []) != len(request.image_names or []):
             raise ValueError("upload_ids and image_names must have the same length")
 
-        # Validate video_agent_id is provided if video_enabled
-        if request.video_enabled and not request.video_agent_id:
-            raise ValueError("video_agent_id is required when video_enabled is true")
+        # Validate video_domain_id is provided if video_enabled
+        if request.video_enabled and not request.video_domain_id:
+            raise ValueError("video_domain_id is required when video_enabled is true")
 
         # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id

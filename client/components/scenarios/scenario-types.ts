@@ -45,9 +45,9 @@ export type DraftState = {
   documentMax: number | null;
   parameterSelectionMin: number | null;
   parameterSelectionMax: number | null;
-  scenarioAgentId: string | null;
-  imageAgentId: string | null;
-  videoAgentId: string | null;
+  scenarioDomainId: string | null;
+  imageDomainId: string | null;
+  videoDomainId: string | null;
 };
 
 /**

@@ -94,20 +94,17 @@ new_agent AS (
     JOIN assert_permissions ap ON TRUE
     RETURNING id::text as agent_id
 ),
-link_artifact AS (
-    -- Link agent to artifact via artifact_agents
-    INSERT INTO artifact_agents (artifact_id, artifact_instance_id, agent_id, role, created_at, updated_at)
+link_domain AS (
+    -- Link agent to artifact via domains
+    INSERT INTO domains (artifact, agent_id, created_at, updated_at)
     SELECT 
-        art.id,
-        NULL,  -- Agent-level assignment (no specific instance)
+        CAST(x.artifact_name AS artifacts),
         na.agent_id::uuid,
-        x.artifact_name,  -- Use artifact_name as role
         NOW(),
         NOW()
     FROM new_agent na
     CROSS JOIN params x
-    JOIN artifacts art ON art.name = x.artifact_name
-    ON CONFLICT (artifact_id, artifact_instance_id, agent_id, role) DO UPDATE SET
+    ON CONFLICT (artifact, agent_id) DO UPDATE SET
         updated_at = NOW()
 ),
 new_prompt AS (

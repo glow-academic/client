@@ -26,8 +26,8 @@ SELECT DISTINCT ON (t.id)
     t.id,
     t.name,
     t.description,
-    COALESCE(r.name, '') as tool_type,  -- Derive from resource name
-    COALESCE(art.name, '') as agent_role,  -- Derive from artifact name via artifact_agents
+    COALESCE(rt.resource::text, '') as tool_type,  -- Derive from resource enum
+    COALESCE(d.artifact::text, '') as agent_role,  -- Derive from domains
     t.arguments,
     t.argument_descriptions,
     t.argument_defaults,
@@ -35,11 +35,9 @@ SELECT DISTINCT ON (t.id)
 FROM agent_tools at
 JOIN tools t ON t.id = at.tool_id
 LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-LEFT JOIN resources r ON r.id = rt.resource_id
-LEFT JOIN artifact_agents aa ON aa.agent_id = at.agent_id AND aa.artifact_instance_id IS NULL
-LEFT JOIN artifacts art ON art.id = aa.artifact_id
+LEFT JOIN domains d ON d.agent_id = at.agent_id
 WHERE at.agent_id = socket_get_agent_tools_v4.agent_id
   AND at.active = TRUE
   AND t.active = TRUE
-ORDER BY t.id, COALESCE(r.name, ''), t.name
+ORDER BY t.id, COALESCE(rt.resource::text, ''), t.name
 $$;

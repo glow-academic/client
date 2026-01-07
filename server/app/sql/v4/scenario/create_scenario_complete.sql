@@ -66,7 +66,7 @@ CREATE OR REPLACE FUNCTION api_create_scenario_v4(
     parameters types.q_create_scenario_v4_parameter[],
     profile_id uuid,
     description text DEFAULT NULL,
-    video_agent_id uuid DEFAULT NULL,
+    video_domain_id uuid DEFAULT NULL,
     problem_statement_name text DEFAULT NULL,
     problem_statement_versions text[] DEFAULT NULL,
     department_ids text[] DEFAULT NULL,
@@ -97,7 +97,7 @@ WITH raw_params AS (
         video_enabled AS video_enabled,
         questions_enabled AS questions_enabled,
         problem_statement_enabled AS problem_statement_enabled,
-        video_agent_id AS video_agent_id,
+        video_domain_id AS video_domain_id,
         problem_statement AS problem_statement,
         problem_statement_name AS problem_statement_name,
         problem_statement_versions AS problem_statement_versions,
@@ -209,7 +209,7 @@ params AS (
         rp.video_enabled AS video_enabled,
         rp.questions_enabled AS questions_enabled,
         rp.problem_statement_enabled AS problem_statement_enabled,
-        rp.video_agent_id AS video_agent_id,
+        rp.video_domain_id AS video_domain_id,
         rp.problem_statement AS problem_statement,
         COALESCE(rp.problem_statement_name, rp.name) AS problem_statement_name,
         COALESCE(ppsv.problem_statement_versions, ARRAY[]::text[]) AS problem_statement_versions,
@@ -264,7 +264,7 @@ new_scenario AS (
         video_enabled,
         questions_enabled,
         problem_statement_enabled,
-        video_agent_id
+        video_domain_id
     )
     SELECT 
         (SELECT name FROM params), 
@@ -275,7 +275,7 @@ new_scenario AS (
         (SELECT video_enabled FROM params), 
         (SELECT questions_enabled FROM params), 
         (SELECT problem_statement_enabled FROM params), 
-        (SELECT video_agent_id FROM params)
+        (SELECT video_domain_id FROM params)
     RETURNING id
 ),
 link_departments AS (

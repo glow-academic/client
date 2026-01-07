@@ -63,8 +63,7 @@ BEGIN
             'department_ids', jsonb_build_array(),
             'parameter_item_ids', jsonb_build_array(),
             'parameter_ids', jsonb_build_array(),
-            'classify_agent_id', NULL,
-            'document_agent_id', NULL
+            'document_domain_id', NULL
         ) AS d
     ),
     payload AS (

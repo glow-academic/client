@@ -67,7 +67,7 @@ CREATE OR REPLACE FUNCTION api_update_scenario_v4(
     parameters types.q_update_scenario_v4_parameter[],
     profile_id uuid,
     description text DEFAULT NULL,
-    video_agent_id uuid DEFAULT NULL,
+    video_domain_id uuid DEFAULT NULL,
     problem_statement_name text DEFAULT NULL,
     department_ids text[] DEFAULT NULL,
     persona_ids text[] DEFAULT NULL,
@@ -78,8 +78,8 @@ CREATE OR REPLACE FUNCTION api_update_scenario_v4(
     active_video_id text DEFAULT NULL,
     question_ids text[] DEFAULT NULL,
     question_timestamps types.q_update_scenario_v4_question_timestamp[] DEFAULT ARRAY[]::types.q_update_scenario_v4_question_timestamp[],
-    scenario_agent_id uuid DEFAULT NULL,
-    image_agent_id uuid DEFAULT NULL
+    scenario_domain_id uuid DEFAULT NULL,
+    image_domain_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     scenario_exists boolean,
@@ -101,7 +101,7 @@ WITH raw_params AS (
         video_enabled AS video_enabled,
         questions_enabled AS questions_enabled,
         problem_statement_enabled AS problem_statement_enabled,
-        video_agent_id AS video_agent_id,
+        video_domain_id AS video_domain_id,
         problem_statement AS problem_statement,
         problem_statement_name AS problem_statement_name,
         department_ids AS department_ids,
@@ -112,8 +112,8 @@ WITH raw_params AS (
         parameters AS parameters,
         upload_ids AS upload_ids,
         image_names AS image_names,
-        scenario_agent_id AS scenario_agent_id,
-        image_agent_id AS image_agent_id,
+        scenario_domain_id AS scenario_domain_id,
+        image_domain_id AS image_domain_id,
         video_ids AS video_ids,
         active_video_id AS active_video_id,
         question_ids AS question_ids,
@@ -179,7 +179,7 @@ params AS (
         rp.video_enabled AS video_enabled,
         rp.questions_enabled AS questions_enabled,
         rp.problem_statement_enabled AS problem_statement_enabled,
-        rp.video_agent_id AS video_agent_id,
+        rp.video_domain_id AS video_domain_id,
         rp.problem_statement AS problem_statement,
         COALESCE(rp.problem_statement_name, rp.name) AS problem_statement_name,
         COALESCE(rp.department_ids, ARRAY[]::text[]) AS department_ids,
@@ -189,8 +189,8 @@ params AS (
         COALESCE(foi.objective_ids, ARRAY[]::text[]) AS objective_ids,
         COALESCE(pp.parameter_item_ids, ARRAY[]::text[]) AS parameter_item_ids,
         COALESCE(uip.upload_images, ARRAY[]::types.q_update_scenario_v4_upload_image[]) AS upload_images,
-        rp.scenario_agent_id AS scenario_agent_id,
-        rp.image_agent_id AS image_agent_id,
+        rp.scenario_domain_id AS scenario_domain_id,
+        rp.image_domain_id AS image_domain_id,
         COALESCE(pp.parameter_ids, ARRAY[]::text[]) AS parameter_ids,
         COALESCE(rp.video_ids, ARRAY[]::text[]) AS video_ids,
         rp.active_video_id AS active_video_id,
@@ -262,9 +262,9 @@ update_scenario AS (
         video_enabled = (SELECT video_enabled FROM params),
         questions_enabled = (SELECT questions_enabled FROM params),
         problem_statement_enabled = (SELECT problem_statement_enabled FROM params),
-        video_agent_id = COALESCE((SELECT video_agent_id FROM params), video_agent_id),
-        scenario_agent_id = COALESCE((SELECT scenario_agent_id FROM params), scenario_agent_id),
-        image_agent_id = COALESCE((SELECT image_agent_id FROM params), image_agent_id),
+        video_domain_id = COALESCE((SELECT video_domain_id FROM params), video_domain_id),
+        scenario_domain_id = COALESCE((SELECT scenario_domain_id FROM params), scenario_domain_id),
+        image_domain_id = COALESCE((SELECT image_domain_id FROM params), image_domain_id),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM scenario_exists)
     RETURNING id as scenario_id, name

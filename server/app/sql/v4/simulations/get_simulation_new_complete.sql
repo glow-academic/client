@@ -158,7 +158,6 @@ RETURNS TABLE (
     valid_video_ids uuid[],
     active boolean,
     practice_simulation boolean,
-    hint_agent_id uuid,
     simulation_text_agent_id uuid,
     simulation_voice_agent_id uuid,
     member_agent_id uuid,
@@ -284,7 +283,7 @@ valid_rubrics_data AS (
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
     WHERE r.active = true
-      AND EXISTS (SELECT 1 FROM artifacts art JOIN artifact_agents aa ON aa.artifact_id = art.id WHERE art.name = 'agent' AND aa.role = 'member')
+      AND EXISTS (SELECT 1 FROM domains d WHERE d.artifact = CAST('agent' AS artifacts))
       AND (
           rd.department_id = ANY(udi.ids)
           OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -471,7 +470,7 @@ department_rubric_ids_default AS (
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT r.id ORDER BY r.id) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::uuid[]) as rubric_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN rubrics r ON r.active = true AND EXISTS (SELECT 1 FROM artifacts art WHERE art.id = r.artifact_id AND art.name = 'agent')
+    LEFT JOIN rubrics r ON r.active = true AND r.artifact = CAST('agent' AS artifacts)
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     WHERE (rd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true))
     GROUP BY ud.id
@@ -505,23 +504,23 @@ agents_data AS (
         ) as agents,
         ARRAY_AGG(filtered_agents.id ORDER BY filtered_agents.name) as agent_ids
     FROM (
-        SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
+        SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
         FROM agents a
-        JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+        JOIN domains d ON d.agent_id = a.id
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE a.active = true 
-        AND aa.role IN ('hint', 'grade', 'audio', 'simulation', 'voice', 'member')
-        GROUP BY a.id, a.name, a.description, COALESCE(aa.role, '')
+        AND d.artifact IN (CAST('message' AS artifacts), CAST('grade' AS artifacts), CAST('scenario' AS artifacts), CAST('agent' AS artifacts))
+        GROUP BY a.id, a.name, a.description, d.artifact
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
             OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
         UNION
         -- Get rubric agents (member role) from rubrics.rubric_agent_id
-        SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
+        SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
         FROM rubrics r
-        JOIN agents a ON a.id = r.rubric_agent_id
-        JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'member'
-        WHERE a.active = true AND r.rubric_agent_id IS NOT NULL
+        JOIN domains d ON d.id = r.rubric_domain_id
+        JOIN agents a ON a.id = d.agent_id
+        WHERE a.active = true AND r.rubric_domain_id IS NOT NULL AND d.artifact = CAST('agent' AS artifacts)
     ) filtered_agents
 ),
 -- Auto-select default agents when there's only one option for each role
@@ -529,9 +528,8 @@ valid_hint_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
-    WHERE a.active = true 
-    AND aa.role = 'hint'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)
+    WHERE a.active = true
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -541,9 +539,8 @@ valid_simulation_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
-    WHERE a.active = true 
-    AND aa.role = 'simulation'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('scenario' AS artifacts)
+    WHERE a.active = true
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -553,9 +550,8 @@ valid_voice_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
-    WHERE a.active = true 
-    AND aa.role = 'voice'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)
+    WHERE a.active = true
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -565,22 +561,22 @@ valid_member_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
-    WHERE a.active = true 
-    AND aa.role = 'member'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('agent' AS artifacts)
+    WHERE a.active = true
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     UNION
-    -- Get rubric agents (member role) from rubrics.rubric_agent_id
+    -- Get rubric agents (member role) from rubrics.rubric_domain_id
     SELECT DISTINCT a.id
     FROM rubrics r
-    JOIN agents a ON a.id = r.rubric_agent_id
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'member'
+    JOIN domains d ON d.id = r.rubric_domain_id
+    JOIN agents a ON a.id = d.agent_id
     WHERE a.active = true 
     AND r.active = true
-    AND r.rubric_agent_id IS NOT NULL
+    AND r.rubric_domain_id IS NOT NULL
+    AND d.artifact = CAST('agent' AS artifacts)
 ),
 default_hint_agent AS (
     SELECT id FROM valid_hint_agents
@@ -658,11 +654,6 @@ SELECT
         false
     ) as practice_simulation,
     -- Auto-select agents: draft payload -> default from SQL (if only one option) -> NULL
-    COALESCE(
-        (SELECT (payload->>'hint_agent_id')::uuid FROM draft_payload_data),
-        (SELECT id FROM default_hint_agent),
-        NULL::uuid
-    ) as hint_agent_id,
     COALESCE(
         (SELECT (payload->>'simulation_text_agent_id')::uuid FROM draft_payload_data),
         (SELECT id FROM default_simulation_agent),

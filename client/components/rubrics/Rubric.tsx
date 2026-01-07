@@ -276,7 +276,7 @@ export default function Rubric({
     description: string;
     active: boolean;
     departmentIds: string[];
-    rubricAgentId: string | null;
+    rubricDomainId: string | null;
     standardGroups: StandardGroup[];
     standards: Standard[];
     gridCells: GridCell[];
@@ -440,7 +440,7 @@ export default function Rubric({
       description: data?.description || "",
       active: data?.active ?? true,
       departmentIds: data?.department_ids || [],
-      rubricAgentId: data?.rubric_agent_id || null,
+      rubricDomainId: data?.rubric_domain_id || null,
       standardGroups,
       standards,
       gridCells,
@@ -579,23 +579,23 @@ export default function Rubric({
     if (!rubricData) return;
 
     const agents = rubricData.agents || [];
-    const rubricAgentIds =
+    const rubricDomainIds =
       rubricData.valid_agent_ids?.filter((id) => {
         const agent = agents.find((a) => String(a.agent_id) === id);
         return agent?.roles?.includes("rubric");
       }) || [];
 
     // Auto-select first rubric agent if only one option and not already set
-    if (rubricAgentIds.length === 1 && !draftState.rubricAgentId) {
+    if (rubricDomainIds.length === 1 && !draftState.rubricDomainId) {
       setDraftState((prev) => ({
         ...prev,
-        rubricAgentId: rubricAgentIds[0] || null,
+        rubricDomainId: rubricDomainIds[0] || null,
       }));
     }
   }, [
     isEditMode,
     rubricData,
-    draftState.rubricAgentId,
+    draftState.rubricDomainId,
   ]);
 
   // Step status logic (for GenericForm)
@@ -764,7 +764,7 @@ export default function Rubric({
               pass_points: totalPassPoints,
               department_ids: finalDepartmentIds || [],
               standard_groups: allGroups,
-              rubric_agent_id: draftState.rubricAgentId || null,
+              rubric_domain_id: draftState.rubricDomainId || null,
             },
           });
           toast.success("Rubric updated successfully");
@@ -782,7 +782,7 @@ export default function Rubric({
               active: draftState.active,
               points: totalPoints,
               pass_points: totalPassPoints,
-              rubric_agent_id: draftState.rubricAgentId || null,
+              rubric_domain_id: draftState.rubricDomainId || null,
               standard_groups: allGroups,
             },
           });
@@ -1021,7 +1021,7 @@ export default function Rubric({
       return;
     }
 
-    if (!draftState.rubricAgentId) {
+    if (!draftState.rubricDomainId) {
       toast.error("Please select a rubric agent before generating");
       return;
     }
@@ -1167,7 +1167,7 @@ export default function Rubric({
           socket.emit("rubric_generate", {
             department_id: departmentId,
             rubric_id: isEditMode && rubricId ? rubricId : undefined,
-            rubric_agent_id: draftState.rubricAgentId!,
+            rubric_domain_id: draftState.rubricDomainId!,
             standard_groups: draftState.standardGroups.map((g) => ({
               id: g.id,
               name: g.name,
@@ -1436,7 +1436,7 @@ export default function Rubric({
                 {/* Rubric Agent Selection */}
                 {(() => {
                   const agents = rubricData?.agents || [];
-                  const rubricAgentIds =
+                  const rubricDomainIds =
                     rubricData?.valid_agent_ids?.filter((id) => {
                       const agent = agents.find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
                         typeof a === "object" && a !== null && "agent_id" in a && String(a.agent_id) === id
@@ -1444,7 +1444,7 @@ export default function Rubric({
                       return agent?.roles?.includes("rubric");
                     }) || [];
 
-                  const showRubricPicker = rubricAgentIds.length > 0;
+                  const showRubricPicker = rubricDomainIds.length > 0;
 
                   if (!showRubricPicker) {
                     return null;
@@ -1452,8 +1452,8 @@ export default function Rubric({
 
                   return (
                     <div className="space-y-2">
-                      <Label htmlFor="rubricAgentId">Rubric Agent</Label>
-                      {draftState.rubricAgentId !== undefined ? (
+                      <Label htmlFor="rubricDomainId">Rubric Agent</Label>
+                      {draftState.rubricDomainId !== undefined ? (
                         <GenericPicker
                           items={(() => {
                             const mapping: Record<string, { name: string; description: string; roles: string[] }> = {};
@@ -1468,14 +1468,14 @@ export default function Rubric({
                             });
                             return mapping;
                           })()}
-                          itemIds={rubricAgentIds}
+                          itemIds={rubricDomainIds}
                           selectedIds={
-                            draftState.rubricAgentId ? [draftState.rubricAgentId] : []
+                            draftState.rubricDomainId ? [draftState.rubricDomainId] : []
                           }
                           onSelect={(ids) =>
                             setDraftState((prev) => ({
                               ...prev,
-                              rubricAgentId: ids[0] || null,
+                              rubricDomainId: ids[0] || null,
                             }))
                           }
                           getId={(item) => (item as unknown as { id: string }).id}
@@ -1614,7 +1614,7 @@ export default function Rubric({
                   type="button"
                   variant="default"
                   size="sm"
-                  disabled={isReadonly || !draftState.rubricAgentId}
+                  disabled={isReadonly || !draftState.rubricDomainId}
                   onClick={handleGenerateRubric}
                 >
                   <Sparkles className="h-4 w-4 mr-2" />

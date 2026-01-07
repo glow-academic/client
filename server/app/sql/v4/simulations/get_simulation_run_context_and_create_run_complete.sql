@@ -360,7 +360,8 @@ context_data AS (
     LEFT JOIN personas p ON p.id = first_persona.persona_id
 
     -- Text agent joins (use simulation agent instead of persona agent)
-    LEFT JOIN agents a ON a.id = sim.simulation_text_agent_id AND a.active = true
+    LEFT JOIN domains d_text_domain ON d_text_domain.id = sim.simulation_text_domain_id
+    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND a.active = true
     LEFT JOIN models m ON m.id = a.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
@@ -382,7 +383,8 @@ context_data AS (
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
 
     -- Voice agent joins (use simulation agent instead of persona agent)
-    LEFT JOIN agents a_voice ON a_voice.id = sim.simulation_voice_agent_id AND a_voice.active = true
+    LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sim.simulation_voice_domain_id
+    LEFT JOIN agents a_voice ON a_voice.id = d_voice_domain.agent_id AND a_voice.active = true
     LEFT JOIN models m_voice ON m_voice.id = a_voice.model_id
     LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
     LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.id = atl_voice.model_temperature_level_id AND mtl_voice.active = true AND mtl_voice.model_id = m_voice.id

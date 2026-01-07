@@ -294,9 +294,9 @@ new_system_message AS (
 get_prompt_tool_id AS (
     SELECT t.id as tool_id
     FROM tools t
-    INNER JOIN resource_tools rt ON rt.tool_id = t.id
-    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'prompt'
-    INNER JOIN artifacts art ON art.id = r.artifact_id AND art.name = 'agent'
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('prompt' AS resources)
+    INNER JOIN runs r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
+    INNER JOIN domains d ON d.agent_id = r_run.agent_id AND d.artifact = CAST('agent' AS artifacts)
     WHERE t.name = 'prompt' AND t.active = true
     LIMIT 1
 ),
@@ -412,9 +412,9 @@ new_developer_messages AS (
 get_instruct_tool_id AS (
     SELECT t.id as tool_id
     FROM tools t
-    INNER JOIN resource_tools rt ON rt.tool_id = t.id
-    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'prompt'
-    INNER JOIN artifacts art ON art.id = r.artifact_id AND art.name = 'agent'
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('prompt' AS resources)
+    INNER JOIN runs r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
+    INNER JOIN domains d ON d.agent_id = r_run_instruct.agent_id AND d.artifact = CAST('agent' AS artifacts)
     WHERE t.name = 'instruct' AND t.active = true
     LIMIT 1
 ),

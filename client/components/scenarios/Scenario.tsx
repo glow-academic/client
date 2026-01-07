@@ -309,9 +309,9 @@ export default function Scenario({
         documentMax: null,
         parameterSelectionMin: null,
         parameterSelectionMax: null,
-        scenarioAgentId: null,
-        imageAgentId: null,
-        videoAgentId: null,
+        scenarioDomainId: null,
+        imageDomainId: null,
+        videoDomainId: null,
       };
     }
 
@@ -414,11 +414,11 @@ export default function Scenario({
       documentMax: detailData?.document_range_max ?? null,
       parameterSelectionMin: detailData?.parameter_range_min ?? null,
       parameterSelectionMax: detailData?.parameter_range_max ?? null,
-      scenarioAgentId: data.scenario_agent_id || null,
-      imageAgentId: data.image_agent_id || null,
-      videoAgentId:
-        (detailData as ScenarioDetailOut & { video_agent_id?: string })
-          ?.video_agent_id || null,
+      scenarioDomainId: data.scenario_domain_id || null,
+      imageDomainId: data.image_domain_id || null,
+      videoDomainId:
+        (detailData as ScenarioDetailOut & { video_domain_id?: string })
+          ?.video_domain_id || null,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -507,9 +507,9 @@ export default function Scenario({
             documentMax: "document_max",
             parameterSelectionMin: "parameter_selection_min",
             parameterSelectionMax: "parameter_selection_max",
-            scenarioAgentId: "scenario_agent_id",
-            imageAgentId: "image_agent_id",
-            videoAgentId: "video_agent_id",
+            scenarioDomainId: "scenario_domain_id",
+            imageDomainId: "image_domain_id",
+            videoDomainId: "video_domain_id",
           };
           const transformedPatch: Record<string, unknown> = {};
           Object.entries(input.body.patch as Record<string, unknown>).forEach(
@@ -624,14 +624,14 @@ export default function Scenario({
 
   // State for basic info section (agents and active)
   const [basicInfoState, setBasicInfoState] = useState<{
-    scenarioAgentId: string | null;
-    imageAgentId: string | null;
-    videoAgentId: string | null;
+    scenarioDomainId: string | null;
+    imageDomainId: string | null;
+    videoDomainId: string | null;
     active: boolean;
   }>({
-    scenarioAgentId: null,
-    imageAgentId: null,
-    videoAgentId: null,
+    scenarioDomainId: null,
+    imageDomainId: null,
+    videoDomainId: null,
     active: true,
   });
 
@@ -710,9 +710,9 @@ export default function Scenario({
           key === "fieldShowSelected" ||
           key === "fieldRanges" ||
           key === "randomizeParameterItems" ||
-          key === "scenarioAgentId" ||
-          key === "imageAgentId" ||
-          key === "videoAgentId"
+          key === "scenarioDomainId" ||
+          key === "imageDomainId" ||
+          key === "videoDomainId"
         ) {
           draftUpdates[key as keyof DraftState] = value as never;
         }
@@ -1470,8 +1470,8 @@ export default function Scenario({
         );
 
         // Emit the event
-        // scenarioAgentId is required - UI filters and selects appropriate agent for scenario generation
-        if (!basicInfoState.scenarioAgentId) {
+        // scenarioDomainId is required - UI filters and selects appropriate agent for scenario generation
+        if (!basicInfoState.scenarioDomainId) {
           toast.error("Please select a scenario agent before generating");
           reject(new Error("Scenario agent ID is required"));
           return;
@@ -1479,9 +1479,9 @@ export default function Scenario({
 
         socket.emit("generate_scenario", {
           departmentId: body.departmentId,
-          scenarioAgentId: basicInfoState.scenarioAgentId, // Required: selected scenario agent ID
-          imageAgentId: basicInfoState.imageAgentId || undefined, // Optional: selected image agent ID
-          videoAgentId: basicInfoState.videoAgentId || undefined, // Optional: selected video agent ID
+          scenarioDomainId: basicInfoState.scenarioDomainId, // Required: selected scenario agent ID
+          imageDomainId: basicInfoState.imageDomainId || undefined, // Optional: selected image agent ID
+          videoDomainId: basicInfoState.videoDomainId || undefined, // Optional: selected video agent ID
           personaIds: body.personaIds,
           documentIds: body.documentIds,
           fieldIds: body.fieldIds, // Renamed from parameterItemIds
@@ -2740,11 +2740,11 @@ export default function Scenario({
       );
       // Initialize basic info state
       setBasicInfoState({
-        scenarioAgentId: detailData.scenario_agent_id || null,
-        imageAgentId: detailData.image_agent_id || null,
-        videoAgentId:
-          (detailData as ScenarioDetailOut & { video_agent_id?: string })
-            .video_agent_id || null,
+        scenarioDomainId: detailData.scenario_domain_id || null,
+        imageDomainId: detailData.image_domain_id || null,
+        videoDomainId:
+          (detailData as ScenarioDetailOut & { video_domain_id?: string })
+            .video_domain_id || null,
         active: detailData.active ?? true,
       });
       handleInputChange("departmentIds", deptIds);
@@ -2995,11 +2995,11 @@ export default function Scenario({
       }
       // Initialize basic info state
       setBasicInfoState({
-        scenarioAgentId: scenarioData.scenario_agent_id || null,
-        imageAgentId: scenarioData.image_agent_id || null,
-        videoAgentId:
-          (scenarioData as ScenarioDetailOut & { video_agent_id?: string })
-            .video_agent_id || null,
+        scenarioDomainId: scenarioData.scenario_domain_id || null,
+        imageDomainId: scenarioData.image_domain_id || null,
+        videoDomainId:
+          (scenarioData as ScenarioDetailOut & { video_domain_id?: string })
+            .video_domain_id || null,
         active: true, // Default for create mode
       });
       // Initialize draft state from initialFormData and server response
@@ -3280,76 +3280,50 @@ export default function Scenario({
     formDataInitializedRef.current = false;
   }, [scenarioId, isEditMode]);
 
-  // Reset agent selection when flags change to incompatible combination
+  // Note: Domain ID validation removed - domains are already validated by artifact type
+  // No need to check agent roles since domain IDs are already scoped to the correct artifact
+
+  // Auto-select domains when there's only one option (similar to Document.tsx)
+  // Note: This assumes the API returns domain IDs in scenario_domain_id, image_domain_id, video_domain_id fields
+  // If the API still returns agent IDs, this will need to be updated to look up domain IDs from agent IDs
   useEffect(() => {
-    if (!scenarioData || !agentMapping || !basicInfoState.scenarioAgentId)
-      return;
+    if (!scenarioData) return;
 
-    const agent = agentMapping[basicInfoState.scenarioAgentId];
-    const agentRole = agent?.roles?.[0]; // Get first role (should be only one)
-
-    // If current agent doesn't match 'scenario' role, clear selection
-    if (agentRole && agentRole !== "scenario") {
+    // Auto-select scenario domain if only one option and not already set
+    // TODO: Update this when API returns valid_domain_ids instead of valid_agent_ids
+    if (scenarioData.scenario_domain_id && !basicInfoState.scenarioDomainId) {
       setBasicInfoState((prev) => ({
         ...prev,
-        scenarioAgentId: null,
-        videoAgentId: null,
-      }));
-    }
-  }, [scenarioData, agentMapping, basicInfoState.scenarioAgentId]);
-
-  // Auto-select agents when there's only one option (similar to Document.tsx)
-  useEffect(() => {
-    if (!scenarioData || !agentMapping) return;
-
-    const scenarioAgentIds =
-      scenarioData.valid_agent_ids?.filter((id) => {
-        const agent = agentMapping[id];
-        const agentRole = agent?.roles?.[0];
-        // Filter by 'scenario' role only
-        return agentRole === "scenario";
-      }) || [];
-
-    const imageAgentIds =
-      scenarioData.valid_agent_ids?.filter((id) => {
-        const agent = agentMapping[id];
-        return agent?.roles?.includes("image");
-      }) || [];
-
-    // Auto-select first scenario agent if only one option and not already set
-    if (scenarioAgentIds.length === 1 && !basicInfoState.scenarioAgentId) {
-      setBasicInfoState((prev) => ({
-        ...prev,
-        scenarioAgentId: scenarioAgentIds[0] || null,
+        scenarioDomainId: scenarioData.scenario_domain_id || null,
       }));
     }
 
-    // Auto-select first image agent if only one option and not already set
-    if (imageAgentIds.length === 1 && !basicInfoState.imageAgentId) {
+    // Auto-select image domain if only one option and not already set
+    if (scenarioData.image_domain_id && !basicInfoState.imageDomainId) {
       setBasicInfoState((prev) => ({
         ...prev,
-        imageAgentId: imageAgentIds[0] || null,
+        imageDomainId: scenarioData.image_domain_id || null,
       }));
     }
 
-    // Auto-select first video agent if only one option and not already set
-    const videoAgentIds =
-      scenarioData.valid_agent_ids?.filter((id) => {
-        const agent = agentMapping[id];
-        return agent?.roles?.includes("video");
-      }) || [];
-    if (videoAgentIds.length === 1 && !basicInfoState.videoAgentId) {
+    // Auto-select video domain if only one option and not already set
+    if (
+      (scenarioData as ScenarioDetailOut & { video_domain_id?: string })
+        ?.video_domain_id &&
+      !basicInfoState.videoDomainId
+    ) {
       setBasicInfoState((prev) => ({
         ...prev,
-        videoAgentId: videoAgentIds[0] || null,
+        videoDomainId:
+          (scenarioData as ScenarioDetailOut & { video_domain_id?: string })
+            ?.video_domain_id || null,
       }));
     }
   }, [
     scenarioData,
-    agentMapping,
-    basicInfoState.scenarioAgentId,
-    basicInfoState.imageAgentId,
-    basicInfoState.videoAgentId,
+    basicInfoState.scenarioDomainId,
+    basicInfoState.imageDomainId,
+    basicInfoState.videoDomainId,
   ]);
 
   // Store original name and problemStatement for change tracking (from server data)
@@ -3371,20 +3345,20 @@ export default function Scenario({
   const originalBasicInfoState = useMemo(() => {
     if (!isEditMode || !scenarioData) {
       return {
-        scenarioAgentId: null,
-        imageAgentId: null,
-        videoAgentId: null,
+        scenarioDomainId: null,
+        imageDomainId: null,
+        videoDomainId: null,
         active: true,
       };
     }
     // In edit mode, scenarioData is ScenarioDetailOut
     const detailData = scenarioData as ScenarioDetailOut;
     return {
-      scenarioAgentId: detailData.scenario_agent_id || null,
-      imageAgentId: detailData.image_agent_id || null,
-      videoAgentId:
-        (detailData as ScenarioDetailOut & { video_agent_id?: string })
-          .video_agent_id || null,
+      scenarioDomainId: detailData.scenario_domain_id || null,
+      imageDomainId: detailData.image_domain_id || null,
+      videoDomainId:
+        (detailData as ScenarioDetailOut & { video_domain_id?: string })
+          .video_domain_id || null,
       active: detailData.active ?? true,
     };
   }, [isEditMode, scenarioData]);
@@ -3407,10 +3381,10 @@ export default function Scenario({
       name !== originalName ||
       problemStatement !== originalProblemStatement ||
       basicInfoState.active !== originalBasicInfoState.active ||
-      basicInfoState.scenarioAgentId !==
-        originalBasicInfoState.scenarioAgentId ||
-      basicInfoState.imageAgentId !== originalBasicInfoState.imageAgentId ||
-      basicInfoState.videoAgentId !== originalBasicInfoState.videoAgentId ||
+      basicInfoState.scenarioDomainId !==
+        originalBasicInfoState.scenarioDomainId ||
+      basicInfoState.imageDomainId !== originalBasicInfoState.imageDomainId ||
+      basicInfoState.videoDomainId !== originalBasicInfoState.videoDomainId ||
       JSON.stringify(
         (current["departmentIds"] as string[] | undefined)?.sort() || []
       ) !== JSON.stringify((original.departmentIds || []).sort()) ||
@@ -3431,13 +3405,13 @@ export default function Scenario({
     problemStatement,
     originalProblemStatement,
     basicInfoState.active,
-    basicInfoState.scenarioAgentId,
-    basicInfoState.imageAgentId,
-    basicInfoState.videoAgentId,
+    basicInfoState.scenarioDomainId,
+    basicInfoState.imageDomainId,
+    basicInfoState.videoDomainId,
     originalBasicInfoState.active,
-    originalBasicInfoState.scenarioAgentId,
-    originalBasicInfoState.imageAgentId,
-    originalBasicInfoState.videoAgentId,
+    originalBasicInfoState.scenarioDomainId,
+    originalBasicInfoState.imageDomainId,
+    originalBasicInfoState.videoDomainId,
     isEditMode,
     selectedPersonaIds,
     scenarioData,
@@ -3551,9 +3525,9 @@ export default function Scenario({
         resetFields: [
           "name",
           "departmentIds",
-          "scenarioAgentId",
-          "imageAgentId",
-          "videoAgentId",
+          "scenarioDomainId",
+          "imageDomainId",
+          "videoDomainId",
           "active",
         ],
       },
@@ -3638,17 +3612,17 @@ export default function Scenario({
         draftUpdates.parameterIds = scenarioDetail.parameter_ids;
       if (scenarioDetail.active !== undefined)
         draftUpdates.active = scenarioDetail.active ?? true;
-      if (scenarioDetail.scenario_agent_id)
-        draftUpdates.scenarioAgentId = scenarioDetail.scenario_agent_id;
-      if (scenarioDetail.image_agent_id)
-        draftUpdates.imageAgentId = scenarioDetail.image_agent_id;
+      if (scenarioDetail.scenario_domain_id)
+        draftUpdates.scenarioDomainId = scenarioDetail.scenario_domain_id;
+      if (scenarioDetail.image_domain_id)
+        draftUpdates.imageDomainId = scenarioDetail.image_domain_id;
       if (
-        (scenarioDetail as ScenarioDetailOut & { video_agent_id?: string })
-          .video_agent_id
+        (scenarioDetail as ScenarioDetailOut & { video_domain_id?: string })
+          .video_domain_id
       )
-        draftUpdates.videoAgentId =
-          (scenarioDetail as ScenarioDetailOut & { video_agent_id?: string })
-            .video_agent_id || null;
+        draftUpdates.videoDomainId =
+          (scenarioDetail as ScenarioDetailOut & { video_domain_id?: string })
+            .video_domain_id || null;
       if (scenarioDetail.image_input_enabled !== undefined)
         draftUpdates.useImage = scenarioDetail.image_input_enabled ?? false;
       if (
@@ -4325,11 +4299,11 @@ export default function Scenario({
         parameters: Array<{ parameter_id: string; field_ids: string[] }>;
         parameter_item_ids: string[];
         parameter_ids?: string[] | null;
-        scenario_agent_id?: string | null;
-        image_agent_id?: string | null;
+        scenario_domain_id?: string | null;
+        image_domain_id?: string | null;
         video_enabled?: boolean;
         questions_enabled?: boolean;
-        video_agent_id?: string | null;
+        video_domain_id?: string | null;
         video_ids?: string[] | null;
         active_video_id?: string | null;
         question_ids?: string[] | null;
@@ -4365,11 +4339,11 @@ export default function Scenario({
         parameters: parametersArray,
         parameter_item_ids: parameterItemIds,
         parameter_ids: parameterIds.length > 0 ? parameterIds : null,
-        scenario_agent_id: basicInfoState.scenarioAgentId || null,
-        image_agent_id: basicInfoState.imageAgentId || null,
+        scenario_domain_id: basicInfoState.scenarioDomainId || null,
+        image_domain_id: basicInfoState.imageDomainId || null,
         video_enabled: useVideo,
         questions_enabled: useQuestions,
-        video_agent_id: basicInfoState.videoAgentId || null,
+        video_domain_id: basicInfoState.videoDomainId || null,
         video_ids: contentState.selectedVideo
           ? [contentState.selectedVideo.id]
           : null,
@@ -4533,9 +4507,9 @@ export default function Scenario({
               resetFields={[
                 "name",
                 "departmentIds",
-                "scenarioAgentId",
-                "imageAgentId",
-                "videoAgentId",
+                "scenarioDomainId",
+                "imageDomainId",
+                "videoDomainId",
                 "active",
               ]}
               actions={
@@ -4608,18 +4582,18 @@ export default function Scenario({
                     const agent = agentMapping[id];
                     return agent?.roles?.includes("scenario");
                   });
-                  const imageAgentIds = agentIds.filter((id) => {
+                  const imageDomainIds = agentIds.filter((id) => {
                     const agent = agentMapping[id];
                     return agent?.roles?.includes("image");
                   });
-                  const videoAgentIds = agentIds.filter((id) => {
+                  const videoDomainIds = agentIds.filter((id) => {
                     const agent = agentMapping[id];
                     return agent?.roles?.includes("video");
                   });
                   const showScenarioPicker =
                     filteredScenarioAgentIds.length > 0;
-                  const showImagePicker = imageAgentIds.length > 0;
-                  const showVideoPicker = videoAgentIds.length > 0;
+                  const showImagePicker = imageDomainIds.length > 0;
+                  const showVideoPicker = videoDomainIds.length > 0;
 
                   return showScenarioPicker ||
                     showImagePicker ||
@@ -4628,21 +4602,21 @@ export default function Scenario({
                       {/* Scenario Agent Selection */}
                       {showScenarioPicker && (
                         <div className="space-y-2">
-                          <Label htmlFor="scenarioAgentId">
+                          <Label htmlFor="scenarioDomainId">
                             Scenario Agent
                           </Label>
                           <GenericPicker
                             items={agentMapping}
                             itemIds={filteredScenarioAgentIds}
                             selectedIds={
-                              basicInfoState.scenarioAgentId
-                                ? [basicInfoState.scenarioAgentId]
+                              basicInfoState.scenarioDomainId
+                                ? [basicInfoState.scenarioDomainId]
                                 : []
                             }
                             onSelect={(ids) =>
                               setBasicInfoState((prev) => ({
                                 ...prev,
-                                scenarioAgentId: ids[0] || null,
+                                scenarioDomainId: ids[0] || null,
                               }))
                             }
                             getId={(item) =>
@@ -4690,19 +4664,19 @@ export default function Scenario({
                       {/* Image Agent Selection */}
                       {showImagePicker && (
                         <div className="space-y-2">
-                          <Label htmlFor="imageAgentId">Image Agent</Label>
+                          <Label htmlFor="imageDomainId">Image Agent</Label>
                           <GenericPicker
                             items={agentMapping}
-                            itemIds={imageAgentIds}
+                            itemIds={imageDomainIds}
                             selectedIds={
-                              basicInfoState.imageAgentId
-                                ? [basicInfoState.imageAgentId]
+                              basicInfoState.imageDomainId
+                                ? [basicInfoState.imageDomainId]
                                 : []
                             }
                             onSelect={(ids) =>
                               setBasicInfoState((prev) => ({
                                 ...prev,
-                                imageAgentId: ids[0] || null,
+                                imageDomainId: ids[0] || null,
                               }))
                             }
                             getId={(item) =>
@@ -4750,19 +4724,19 @@ export default function Scenario({
                       {/* Video Agent Selection */}
                       {showVideoPicker && (
                         <div className="space-y-2">
-                          <Label htmlFor="videoAgentId">Video Agent</Label>
+                          <Label htmlFor="videoDomainId">Video Agent</Label>
                           <GenericPicker
                             items={agentMapping}
-                            itemIds={videoAgentIds}
+                            itemIds={videoDomainIds}
                             selectedIds={
-                              basicInfoState.videoAgentId
-                                ? [basicInfoState.videoAgentId]
+                              basicInfoState.videoDomainId
+                                ? [basicInfoState.videoDomainId]
                                 : []
                             }
                             onSelect={(ids) =>
                               setBasicInfoState((prev) => ({
                                 ...prev,
-                                videoAgentId: ids[0] || null,
+                                videoDomainId: ids[0] || null,
                               }))
                             }
                             getId={(item) =>
@@ -6090,9 +6064,9 @@ export default function Scenario({
           "useProblemStatement",
           "videoLength",
           "active",
-          "scenarioAgentId",
-          "imageAgentId",
-          "videoAgentId",
+          "scenarioDomainId",
+          "imageDomainId",
+          "videoDomainId",
         ]}
         onSubmit={async () => {
           if (isEditMode) {

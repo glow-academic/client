@@ -21,7 +21,7 @@ class GenerateRubricPayload(BaseModel):
     """Request to generate a rubric."""
 
     rubric_id: str | None = None  # Optional for new rubrics
-    rubric_agent_id: str
+    rubric_domain_id: str
     department_id: str
     standard_groups: list[dict[str, Any]] | None = None
     standards: list[dict[str, Any]] | None = None
@@ -87,7 +87,7 @@ async def _generate_rubric_impl(
             "generate_start",
             {
                 "sid": sid,
-                "agent_id": data.rubric_agent_id,
+                "domain_id": data.rubric_domain_id,
                 "resource_id": data.rubric_id,
                 "resource_type": "rubric",
                 "group_id": None,  # Will be created by generate_start

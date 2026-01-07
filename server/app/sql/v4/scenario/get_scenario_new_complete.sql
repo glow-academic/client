@@ -1127,8 +1127,8 @@ default_scenario_agent AS (
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
     CROSS JOIN expected_agent_role ear
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
-    WHERE aa.role = ear.role
+    JOIN domains d ON d.agent_id = a.id
+    WHERE d.artifact = CAST(ear.role AS artifacts)
     AND a.active = true
     AND (
         ad.department_id = rdfa.department_id
@@ -1143,8 +1143,8 @@ default_image_agent AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
-    JOIN artifact_agents aa_image ON aa_image.agent_id = a.id AND aa_image.artifact_instance_id IS NULL
-    WHERE aa_image.role = 'image'
+    JOIN domains d_image ON d_image.agent_id = a.id AND d_image.artifact = CAST('scenario' AS artifacts)
+    WHERE EXISTS (SELECT 1 FROM domains d2 WHERE d2.agent_id = a.id AND d2.artifact = CAST('scenario' AS artifacts))
     AND a.active = true
     AND (
         ad.department_id = rdfa.department_id
@@ -1159,8 +1159,8 @@ default_video_agent AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
-    JOIN artifact_agents aa_video ON aa_video.agent_id = a.id AND aa_video.artifact_instance_id IS NULL
-    WHERE aa_video.role = 'video'
+    JOIN domains d_video ON d_video.agent_id = a.id AND d_video.artifact = CAST('scenario' AS artifacts)
+    WHERE EXISTS (SELECT 1 FROM domains d2 WHERE d2.agent_id = a.id AND d2.artifact = CAST('scenario' AS artifacts))
     AND a.active = true
     AND (
         ad.department_id = rdfa.department_id
@@ -1171,18 +1171,17 @@ default_video_agent AS (
     LIMIT 1
 ),
 agent_filtered AS (
-    SELECT a.id, a.name, a.description, COALESCE(aa.role, '') as role
+    SELECT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    JOIN domains d ON d.agent_id = a.id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN expected_agent_role ear
     WHERE a.active = true 
     AND (
-        aa.role = ear.role
-        OR aa.role = 'image'
-        OR aa.role = 'video'
+        d.artifact = CAST(ear.role AS artifacts)
+        OR d.artifact = CAST('scenario' AS artifacts)
     )
-    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, ''), ear.role
+    GROUP BY a.id, a.name, a.description, COALESCE(d.artifact::text, ''), ear.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)

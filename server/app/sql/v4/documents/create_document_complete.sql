@@ -66,8 +66,7 @@ insert_doc AS (
         template,
         created_at, 
         updated_at,
-        classify_agent_id,
-        document_agent_id
+        document_domain_id
     )
     SELECT 
         ndi.document_id,
@@ -77,8 +76,7 @@ insert_doc AS (
         false,  -- template defaults to false - must be explicitly enabled via update
         NOW(), 
         NOW(),
-        (SELECT a.id FROM agents a JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL WHERE aa.role = 'classify' AND a.active = true LIMIT 1),
-        (SELECT a.id FROM agents a JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL WHERE aa.role = 'document' AND a.active = true LIMIT 1)
+        (SELECT d.id FROM domains d JOIN agents a ON a.id = d.agent_id WHERE d.artifact = CAST('document' AS artifacts) AND a.active = true LIMIT 1)
     FROM params p
     CROSS JOIN new_document_id ndi
     RETURNING id

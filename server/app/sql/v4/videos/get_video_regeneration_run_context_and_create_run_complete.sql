@@ -128,8 +128,7 @@ best_agent AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN video_department vd
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
-    WHERE aa.role = 'video'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('scenario' AS artifacts)
     AND a.active = true
     AND (
         (vd.department_id IS NOT NULL AND ad.department_id = vd.department_id)

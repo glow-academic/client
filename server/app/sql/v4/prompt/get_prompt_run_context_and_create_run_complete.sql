@@ -250,7 +250,7 @@ group_data AS (
 prompt_agent AS (
     SELECT a.id as agent_id
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'prompt'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('agent' AS artifacts)
     WHERE a.active = true
     ORDER BY a.created_at ASC
     LIMIT 1

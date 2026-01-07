@@ -82,19 +82,21 @@ user_profile AS (
     JOIN profiles ON profiles.id = x.profile_id
 ),
 -- Pre-aggregate simulation usage counts for all models
--- Simulations are linked to models via simulation_text_agent_id/simulation_voice_agent_id -> agents -> model_id
+-- Simulations are linked to models via simulation_text_domain_id/simulation_voice_domain_id -> domains -> agents -> model_id
 simulation_usage AS (
     SELECT 
         a.model_id,
         COUNT(*) as usage_count
     FROM (
-        SELECT sim.simulation_text_agent_id as agent_id
+        SELECT d_text.agent_id
         FROM simulations sim
-        WHERE sim.simulation_text_agent_id IS NOT NULL
+        JOIN domains d_text ON d_text.id = sim.simulation_text_domain_id
+        WHERE sim.simulation_text_domain_id IS NOT NULL
         UNION ALL
-        SELECT sim.simulation_voice_agent_id as agent_id
+        SELECT d_voice.agent_id
         FROM simulations sim
-        WHERE sim.simulation_voice_agent_id IS NOT NULL
+        JOIN domains d_voice ON d_voice.id = sim.simulation_voice_domain_id
+        WHERE sim.simulation_voice_domain_id IS NOT NULL
     ) combined_agents
     JOIN agents a ON a.id = combined_agents.agent_id AND a.active = true
     GROUP BY a.model_id

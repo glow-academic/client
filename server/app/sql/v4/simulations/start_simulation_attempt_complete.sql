@@ -132,8 +132,8 @@ simulation_data AS (
         s.description,
         s.active,
         s.practice_simulation,
-        s.simulation_text_agent_id,
-        s.simulation_voice_agent_id,
+        s.simulation_text_domain_id,
+        s.simulation_voice_domain_id,
         (SELECT rga.rubric_id FROM simulation_scenarios ss 
          JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
          JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
@@ -321,7 +321,8 @@ scenario_full_data_raw AS (
     LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
     LEFT JOIN personas p ON p.id = sp.persona_id
     CROSS JOIN simulation_data sd_agents
-    LEFT JOIN agents a ON a.id = sd_agents.simulation_text_agent_id AND a.active = true
+    LEFT JOIN domains d_text_domain ON d_text_domain.id = sd_agents.simulation_text_domain_id
+    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND a.active = true
     LEFT JOIN models m ON m.id = a.model_id
     -- Join temperature and reasoning from model levels via agent
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true

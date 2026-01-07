@@ -45,13 +45,12 @@ WITH params AS (
 -- Get tool_id AND tool_type from tool_name + agent_tools junction table (for document agent)
 -- This handles create_title which has agent_role='scenario' but is linked via agent_tools
 get_tool_info AS (
-    SELECT t.id as tool_id, COALESCE(r.name, '') as tool_type, t.name as tool_name
+    SELECT t.id as tool_id, COALESCE(rt.resource::text, '') as tool_type, t.name as tool_name
     FROM params p
     JOIN tools t ON t.name = p.tool_name
     JOIN agent_tools at ON at.tool_id = t.id
     JOIN runs r_run ON r_run.id = p.run_id
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN resources r ON r.id = rt.resource_id
     WHERE at.agent_id = r_run.agent_id
       AND at.active = true
       AND t.active = true

@@ -262,8 +262,8 @@ group_data AS (
 member_agent AS (
     SELECT a.id as agent_id
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
-    WHERE aa.role = 'member' AND a.active = true
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('agent' AS artifacts)
+    WHERE a.active = true
     ORDER BY a.created_at ASC
     LIMIT 1
 ),

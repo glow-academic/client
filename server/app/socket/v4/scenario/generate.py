@@ -35,7 +35,7 @@ class GenerateScenarioPayload(BaseModel):
 
     scenarioId: str | None = None
     departmentId: str
-    scenarioAgentId: str
+    scenarioDomainId: str
     personaIds: list[str] | None = None
     documentIds: list[str] | None = None
     fieldIds: list[str] | None = None
@@ -327,14 +327,14 @@ async def _generate_scenario_impl(
                 return
 
             # Step 2: Route to generate_start (which will create run and route back to scenario_generate)
-            scenario_agent_id = uuid.UUID(data.scenarioAgentId)
+            scenario_domain_id = uuid.UUID(data.scenarioDomainId)
             resource_id = str(scenario_id_uuid) if scenario_id_uuid else str(uuid.uuid4())
 
             await internal_sio.emit(
                 "generate_start",
                 {
                     "sid": sid,
-                    "agent_id": str(scenario_agent_id),
+                    "domain_id": str(scenario_domain_id),
                     "resource_id": resource_id,
                     "resource_type": "scenario",
                     "group_id": None,  # Will be created by generate_start

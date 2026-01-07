@@ -42,9 +42,8 @@ get_tool_id AS (
     SELECT t.id as tool_id
     FROM tools t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id
-    INNER JOIN resources r ON r.id = rt.resource_id AND r.name = 'html'
-    INNER JOIN artifacts art ON art.id = r.artifact_id AND art.name = 'document'
-    WHERE t.active = true
+    WHERE rt.resource = 'html'::resources
+      AND t.active = true
     LIMIT 1
 ),
 -- Get or create tool_call

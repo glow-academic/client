@@ -8275,8 +8275,7 @@ class CompleteDocumentCreationSqlParams(BaseModel):
     file_size: int
     child_name: str
     child_description: str
-    classify_agent_id: UUID
-    document_agent_id: UUID
+    document_domain_id: UUID
     scenario_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -8287,8 +8286,7 @@ class CompleteDocumentCreationSqlParams(BaseModel):
             self.file_size,
             self.child_name,
             self.child_description,
-            self.classify_agent_id,
-            self.document_agent_id,
+            self.document_domain_id,
             self.scenario_id,
         )
 
@@ -8305,8 +8303,7 @@ class CompleteDocumentCreationApiRequest(BaseModel):
     file_size: int
     child_name: str
     child_description: str
-    classify_agent_id: UUID
-    document_agent_id: UUID
+    document_domain_id: UUID
     scenario_id: UUID
 
 class CompleteDocumentCreationApiResponse(BaseModel):
@@ -8728,8 +8725,7 @@ class GetDocumentDetailSqlRow(BaseModel):
     fields: list[QGetDocumentDetailV4Field] | None = None
     linked_parameter_ids: list[str] | None = None
     parameters: list[QGetDocumentDetailV4Parameter] | None = None
-    classify_agent_id: UUID | None = None
-    document_agent_id: UUID | None = None
+    document_domain_id: UUID | None = None
     agents: list[QGetDocumentDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
     template: bool | None = None
@@ -8770,8 +8766,7 @@ class GetDocumentDetailApiResponse(BaseModel):
     fields: list[QGetDocumentDetailV4Field] | None = None
     linked_parameter_ids: list[str] | None = None
     parameters: list[QGetDocumentDetailV4Parameter] | None = None
-    classify_agent_id: UUID | None = None
-    document_agent_id: UUID | None = None
+    document_domain_id: UUID | None = None
     agents: list[QGetDocumentDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
     template: bool | None = None
@@ -8792,7 +8787,7 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
 
     department_id: UUID
     profile_id: UUID
-    document_agent_id: UUID
+    document_domain_id: UUID
     group_id: UUID
     document_id: UUID | None = None
     document_name: str | None = None
@@ -8804,7 +8799,7 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
         return (
             self.department_id,
             self.profile_id,
-            self.document_agent_id,
+            self.document_domain_id,
             self.group_id,
             self.document_id,
             self.document_name,
@@ -8842,7 +8837,7 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlRow(BaseModel):
 class GetDocumentRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
     department_id: UUID
-    document_agent_id: UUID
+    document_domain_id: UUID
     group_id: UUID
     document_id: UUID | None = None
     document_name: str | None = None
@@ -9027,8 +9022,7 @@ class GetDocumentTemplateInfoSqlRow(BaseModel):
 
     file_path: str | None = None
     schema_id: UUID | None = None
-    classify_agent_id: str | None = None
-    document_agent_id: str | None = None
+    document_domain_id: str | None = None
     name: str | None = None
     description: str | None = None
 
@@ -9040,8 +9034,7 @@ class GetDocumentTemplateInfoApiResponse(BaseModel):
 
     file_path: str | None = None
     schema_id: UUID | None = None
-    classify_agent_id: str | None = None
-    document_agent_id: str | None = None
+    document_domain_id: str | None = None
     name: str | None = None
     description: str | None = None
 
@@ -9716,8 +9709,7 @@ class UpdateDocumentSqlParams(BaseModel):
     template: bool | None = None
     department_id: UUID | None = None
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    classify_agent_id: UUID | None = None
-    document_agent_id: UUID | None = None
+    document_domain_id: UUID | None = None
     html_id: UUID | None = None
     schema_id: UUID | None = None
 
@@ -9731,8 +9723,7 @@ class UpdateDocumentSqlParams(BaseModel):
             self.template,
             self.department_id,
             self.field_ids,
-            self.classify_agent_id,
-            self.document_agent_id,
+            self.document_domain_id,
             self.html_id,
             self.schema_id,
         )
@@ -9754,8 +9745,7 @@ class UpdateDocumentApiRequest(BaseModel):
     template: bool | None = None
     department_id: UUID | None = None
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    classify_agent_id: UUID | None = None
-    document_agent_id: UUID | None = None
+    document_domain_id: UUID | None = None
     html_id: UUID | None = None
     schema_id: UUID | None = None
 
@@ -18675,7 +18665,7 @@ class CreateRubricSqlParams(BaseModel):
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     standard_groups: list[ICreateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_agent_id: UUID | None = None
+    rubric_domain_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert standard_groups composite array to tuples for asyncpg
@@ -18692,7 +18682,7 @@ class CreateRubricSqlParams(BaseModel):
             self.profile_id,
             self.department_ids,
             standard_groups_tuples,
-            self.rubric_agent_id,
+            self.rubric_domain_id,
         )
 
 class CreateRubricSqlRow(BaseModel):
@@ -18709,7 +18699,7 @@ class CreateRubricApiRequest(BaseModel):
     pass_points: int
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     standard_groups: list[ICreateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_agent_id: UUID | None = None
+    rubric_domain_id: UUID | None = None
 
 class CreateRubricApiResponse(BaseModel):
 
@@ -18851,7 +18841,7 @@ class GetRubricDetailSqlRow(BaseModel):
     pass_points: int | None = None
     active: bool | None = None
     can_edit: bool | None = None
-    rubric_agent_id: UUID | None = None
+    rubric_domain_id: UUID | None = None
     valid_agent_ids: list[str] | None = None
     actor_name: str | None = None
     standard_group_ids: list[UUID] | None = None
@@ -18881,7 +18871,7 @@ class GetRubricDetailApiResponse(BaseModel):
     pass_points: int | None = None
     active: bool | None = None
     can_edit: bool | None = None
-    rubric_agent_id: UUID | None = None
+    rubric_domain_id: UUID | None = None
     valid_agent_ids: list[str] | None = None
     actor_name: str | None = None
     standard_group_ids: list[UUID] | None = None
@@ -19517,7 +19507,7 @@ class UpdateRubricSqlParams(BaseModel):
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     standard_groups: list[IUpdateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_agent_id: UUID | None = None
+    rubric_domain_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert standard_groups composite array to tuples for asyncpg
@@ -19535,7 +19525,7 @@ class UpdateRubricSqlParams(BaseModel):
             self.profile_id,
             self.department_ids,
             standard_groups_tuples,
-            self.rubric_agent_id,
+            self.rubric_domain_id,
         )
 
 class UpdateRubricSqlRow(BaseModel):
@@ -19554,7 +19544,7 @@ class UpdateRubricApiRequest(BaseModel):
     pass_points: int
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     standard_groups: list[IUpdateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_agent_id: UUID | None = None
+    rubric_domain_id: UUID | None = None
 
 class UpdateRubricApiResponse(BaseModel):
 
@@ -19825,7 +19815,7 @@ class CreateScenarioSqlParams(BaseModel):
     parameters: list[QCreateScenarioV4Parameter]
     profile_id: UUID
     description: str | None = None
-    video_agent_id: UUID | None = None
+    video_domain_id: UUID | None = None
     problem_statement_name: str | None = None
     problem_statement_versions: list[str] | None = None
     department_ids: list[str] | None = None
@@ -19864,7 +19854,7 @@ class CreateScenarioSqlParams(BaseModel):
             parameters_tuples,
             self.profile_id,
             self.description,
-            self.video_agent_id,
+            self.video_domain_id,
             self.problem_statement_name,
             self.problem_statement_versions,
             self.department_ids,
@@ -19898,7 +19888,7 @@ class CreateScenarioApiRequest(BaseModel):
     objective_ids: list[str]
     parameters: list[QCreateScenarioV4Parameter]
     description: str | None = None
-    video_agent_id: UUID | None = None
+    video_domain_id: UUID | None = None
     problem_statement_name: str | None = None
     problem_statement_versions: list[str] | None = None
     department_ids: list[str] | None = None
@@ -20500,9 +20490,9 @@ class GetScenarioDetailSqlRow(BaseModel):
     video_enabled: bool | None = None
     questions_enabled: bool | None = None
     problem_statement_enabled: bool | None = None
-    scenario_agent_id: str | None = None
-    image_agent_id: str | None = None
-    video_agent_id: str | None = None
+    scenario_domain_id: str | None = None
+    image_domain_id: str | None = None
+    video_domain_id: str | None = None
     valid_agent_ids: list[str] | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
@@ -20589,9 +20579,9 @@ class GetScenarioDetailApiResponse(BaseModel):
     video_enabled: bool | None = None
     questions_enabled: bool | None = None
     problem_statement_enabled: bool | None = None
-    scenario_agent_id: str | None = None
-    image_agent_id: str | None = None
-    video_agent_id: str | None = None
+    scenario_domain_id: str | None = None
+    image_domain_id: str | None = None
+    video_domain_id: str | None = None
     valid_agent_ids: list[str] | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
@@ -20633,7 +20623,7 @@ class GetScenarioIdsForRegenerationSqlParams(BaseModel):
 class GetScenarioIdsForRegenerationSqlRow(BaseModel):
 
     persona_id: UUID | None = None
-    scenario_agent_id: str | None = None
+    scenario_domain_id: str | None = None
     document_ids: Any | None = None
     parameter_item_ids: Any | None = None
 
@@ -20644,7 +20634,7 @@ class GetScenarioIdsForRegenerationApiRequest(BaseModel):
 class GetScenarioIdsForRegenerationApiResponse(BaseModel):
 
     persona_id: UUID | None = None
-    scenario_agent_id: str | None = None
+    scenario_domain_id: str | None = None
     document_ids: Any | None = None
     parameter_item_ids: Any | None = None
 
@@ -21288,8 +21278,7 @@ class IGetScenarioRunContextAndCreateRunV4DocumentTemplate(BaseModel):
     document_id: str | None
     document_name: str | None
     document_description: str | None
-    classify_agent_id: str | None
-    document_agent_id: str | None
+    document_domain_id: str | None
     schema_id: UUID | None
     html_id: str | None
     template_file_path: str | None
@@ -21807,8 +21796,8 @@ class InsertScenarioVariantSqlParams(BaseModel):
     active: bool
     objectives_enabled: bool
     images_enabled: bool
-    scenario_agent_id: UUID
-    image_agent_id: UUID
+    scenario_domain_id: UUID
+    image_domain_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -21817,8 +21806,8 @@ class InsertScenarioVariantSqlParams(BaseModel):
             self.active,
             self.objectives_enabled,
             self.images_enabled,
-            self.scenario_agent_id,
-            self.image_agent_id,
+            self.scenario_domain_id,
+            self.image_domain_id,
         )
 
 class InsertScenarioVariantSqlRow(BaseModel):
@@ -21829,8 +21818,8 @@ class InsertScenarioVariantSqlRow(BaseModel):
     active: bool | None = None
     objectives_enabled: bool | None = None
     images_enabled: bool | None = None
-    scenario_agent_id: UUID | None = None
-    image_agent_id: UUID | None = None
+    scenario_domain_id: UUID | None = None
+    image_domain_id: UUID | None = None
     description: str | None = None
     root_scenario_id: UUID | None = None
     parent_scenario_id: UUID | None = None
@@ -21846,8 +21835,8 @@ class InsertScenarioVariantApiRequest(BaseModel):
     active: bool
     objectives_enabled: bool
     images_enabled: bool
-    scenario_agent_id: UUID
-    image_agent_id: UUID
+    scenario_domain_id: UUID
+    image_domain_id: UUID
 
 class InsertScenarioVariantApiResponse(BaseModel):
 
@@ -21857,8 +21846,8 @@ class InsertScenarioVariantApiResponse(BaseModel):
     active: bool | None = None
     objectives_enabled: bool | None = None
     images_enabled: bool | None = None
-    scenario_agent_id: UUID | None = None
-    image_agent_id: UUID | None = None
+    scenario_domain_id: UUID | None = None
+    image_domain_id: UUID | None = None
     description: str | None = None
     root_scenario_id: UUID | None = None
     parent_scenario_id: UUID | None = None
@@ -22103,7 +22092,7 @@ class UpdateScenarioSqlParams(BaseModel):
     parameters: list[QUpdateScenarioV4Parameter]
     profile_id: UUID
     description: str | None = None
-    video_agent_id: UUID | None = None
+    video_domain_id: UUID | None = None
     problem_statement_name: str | None = None
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
@@ -22114,8 +22103,8 @@ class UpdateScenarioSqlParams(BaseModel):
     active_video_id: str | None = None
     question_ids: list[str] | None = None
     question_timestamps: list[QUpdateScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_agent_id: UUID | None = None
-    image_agent_id: UUID | None = None
+    scenario_domain_id: UUID | None = None
+    image_domain_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert parameters composite array to tuples for asyncpg
@@ -22143,7 +22132,7 @@ class UpdateScenarioSqlParams(BaseModel):
             parameters_tuples,
             self.profile_id,
             self.description,
-            self.video_agent_id,
+            self.video_domain_id,
             self.problem_statement_name,
             self.department_ids,
             self.persona_ids,
@@ -22154,8 +22143,8 @@ class UpdateScenarioSqlParams(BaseModel):
             self.active_video_id,
             self.question_ids,
             question_timestamps_tuples,
-            self.scenario_agent_id,
-            self.image_agent_id,
+            self.scenario_domain_id,
+            self.image_domain_id,
         )
 
 class UpdateScenarioSqlRow(BaseModel):
@@ -22180,7 +22169,7 @@ class UpdateScenarioApiRequest(BaseModel):
     objective_ids: list[str]
     parameters: list[QUpdateScenarioV4Parameter]
     description: str | None = None
-    video_agent_id: UUID | None = None
+    video_domain_id: UUID | None = None
     problem_statement_name: str | None = None
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
@@ -22191,8 +22180,8 @@ class UpdateScenarioApiRequest(BaseModel):
     active_video_id: str | None = None
     question_ids: list[str] | None = None
     question_timestamps: list[QUpdateScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_agent_id: UUID | None = None
-    image_agent_id: UUID | None = None
+    scenario_domain_id: UUID | None = None
+    image_domain_id: UUID | None = None
 
 class UpdateScenarioApiResponse(BaseModel):
 
@@ -23491,8 +23480,8 @@ class CreateSimulationSqlParams(BaseModel):
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
     scenario_rubric_grade_agents: list[ICreateSimulationV4ScenarioRubricGradeAgent]
-    simulation_text_agent_id: UUID
-    simulation_voice_agent_id: UUID
+    simulation_text_domain_id: UUID
+    simulation_voice_domain_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -23514,8 +23503,8 @@ class CreateSimulationSqlParams(BaseModel):
             self.scenario_audio_enabled,
             self.scenario_text_enabled,
             scenario_rubric_grade_agents_tuples,
-            self.simulation_text_agent_id,
-            self.simulation_voice_agent_id,
+            self.simulation_text_domain_id,
+            self.simulation_voice_domain_id,
             self.profile_id,
         )
 
@@ -23538,8 +23527,8 @@ class CreateSimulationApiRequest(BaseModel):
     scenario_audio_enabled: list[bool]
     scenario_text_enabled: list[bool]
     scenario_rubric_grade_agents: list[ICreateSimulationV4ScenarioRubricGradeAgent]
-    simulation_text_agent_id: UUID
-    simulation_voice_agent_id: UUID
+    simulation_text_domain_id: UUID
+    simulation_voice_domain_id: UUID
 
 class CreateSimulationApiResponse(BaseModel):
 
@@ -24285,9 +24274,8 @@ class GetSimulationDetailSqlRow(BaseModel):
     valid_scenario_ids: list[UUID] | None = None
     active: bool | None = None
     practice_simulation: bool | None = None
-    hint_agent_id: UUID | None = None
-    simulation_text_agent_id: UUID | None = None
-    simulation_voice_agent_id: UUID | None = None
+    simulation_text_domain_id: UUID | None = None
+    simulation_voice_domain_id: UUID | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
@@ -24331,9 +24319,8 @@ class GetSimulationDetailApiResponse(BaseModel):
     valid_scenario_ids: list[UUID] | None = None
     active: bool | None = None
     practice_simulation: bool | None = None
-    hint_agent_id: UUID | None = None
-    simulation_text_agent_id: UUID | None = None
-    simulation_voice_agent_id: UUID | None = None
+    simulation_text_domain_id: UUID | None = None
+    simulation_voice_domain_id: UUID | None = None
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
@@ -24585,7 +24572,6 @@ class GetSimulationNewSqlRow(BaseModel):
     valid_video_ids: list[UUID] | None = None
     active: bool | None = None
     practice_simulation: bool | None = None
-    hint_agent_id: UUID | None = None
     simulation_text_agent_id: UUID | None = None
     simulation_voice_agent_id: UUID | None = None
     member_agent_id: UUID | None = None
@@ -24630,7 +24616,6 @@ class GetSimulationNewApiResponse(BaseModel):
     valid_video_ids: list[UUID] | None = None
     active: bool | None = None
     practice_simulation: bool | None = None
-    hint_agent_id: UUID | None = None
     simulation_text_agent_id: UUID | None = None
     simulation_voice_agent_id: UUID | None = None
     member_agent_id: UUID | None = None
@@ -25452,9 +25437,8 @@ class UpdateSimulationSqlParams(BaseModel):
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
-    hint_agent_id: UUID
-    simulation_text_agent_id: UUID
-    simulation_voice_agent_id: UUID
+    simulation_text_domain_id: UUID
+    simulation_voice_domain_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -25482,9 +25466,8 @@ class UpdateSimulationSqlParams(BaseModel):
             self.video_show_problem_statement,
             self.video_show_objectives,
             self.video_show_image,
-            self.hint_agent_id,
-            self.simulation_text_agent_id,
-            self.simulation_voice_agent_id,
+            self.simulation_text_domain_id,
+            self.simulation_voice_domain_id,
             self.profile_id,
         )
 
@@ -25512,9 +25495,8 @@ class UpdateSimulationApiRequest(BaseModel):
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
-    hint_agent_id: UUID
-    simulation_text_agent_id: UUID
-    simulation_voice_agent_id: UUID
+    simulation_text_domain_id: UUID
+    simulation_voice_domain_id: UUID
 
 class UpdateSimulationApiResponse(BaseModel):
 

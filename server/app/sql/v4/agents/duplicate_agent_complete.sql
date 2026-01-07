@@ -30,16 +30,16 @@ source_agent AS (
         a.name,
         a.description,
         a.model_id,
-        COALESCE(aa.role, '') as role,  -- Derive from artifact_agents
+        COALESCE(d.artifact::text, '') as role,  -- Derive from domains
         ap.prompt_id,
         COALESCE(pr.system_prompt, '') as system_prompt,
         -- Get temperature and reasoning from junction tables
         atl.model_temperature_level_id,
         arl.model_reasoning_level_id,
-        aa.artifact_id  -- Need artifact_id for linking
+        d.artifact  -- Need artifact for linking
     FROM params x
     JOIN agents a ON a.id = x.agent_id
-    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    LEFT JOIN domains d ON d.agent_id = a.id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts pr ON pr.id = ap.prompt_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
@@ -69,20 +69,18 @@ new_agent AS (
     FROM source_agent sa
     RETURNING id::text as agent_id
 ),
-copy_artifact_link AS (
-    -- Copy artifact_agents link
-    INSERT INTO artifact_agents (artifact_id, artifact_instance_id, agent_id, role, created_at, updated_at)
+copy_domain_link AS (
+    -- Copy domains link
+    INSERT INTO domains (artifact, agent_id, created_at, updated_at)
     SELECT 
-        sa.artifact_id,
-        NULL,  -- Agent-level assignment
+        CAST(sa.role AS artifacts),
         na.agent_id::uuid,
-        sa.role,
         NOW(),
         NOW()
     FROM source_agent sa
     CROSS JOIN new_agent na
-    WHERE sa.artifact_id IS NOT NULL
-    ON CONFLICT (artifact_id, artifact_instance_id, agent_id, role) DO NOTHING
+    WHERE sa.role IS NOT NULL AND sa.role != ''
+    ON CONFLICT (artifact, agent_id) DO NOTHING
 ),
 copy_temperature AS (
     INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active, created_at, updated_at)

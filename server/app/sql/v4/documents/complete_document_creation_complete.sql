@@ -1,4 +1,4 @@
-DROP FUNCTION IF EXISTS api_complete_document_creation_v4(uuid, text, text, bigint, text, text, uuid, uuid, uuid);
+DROP FUNCTION IF EXISTS api_complete_document_creation_v4(uuid, text, text, bigint, text, text, uuid, uuid);
 CREATE OR REPLACE FUNCTION api_complete_document_creation_v4(
     parent_document_id uuid,
     file_path text,
@@ -6,8 +6,7 @@ CREATE OR REPLACE FUNCTION api_complete_document_creation_v4(
     file_size bigint,
     child_name text,
     child_description text,
-    classify_agent_id uuid,
-    document_agent_id uuid,
+    document_domain_id uuid,
     scenario_id uuid
 )
 RETURNS TABLE (
@@ -20,9 +19,9 @@ WITH create_child_document AS (
     -- Create child document (not a template)
     INSERT INTO documents (
         id, name, description, active, template, created_at, updated_at,
-        classify_agent_id, document_agent_id
+        document_domain_id
     )
-    VALUES (gen_random_uuid(), api_complete_document_creation_v4.child_name, api_complete_document_creation_v4.child_description, true, false, NOW(), NOW(), api_complete_document_creation_v4.classify_agent_id, api_complete_document_creation_v4.document_agent_id)
+    VALUES (gen_random_uuid(), api_complete_document_creation_v4.child_name, api_complete_document_creation_v4.child_description, true, false, NOW(), NOW(), api_complete_document_creation_v4.document_domain_id)
     RETURNING id
 ),
 create_upload AS (

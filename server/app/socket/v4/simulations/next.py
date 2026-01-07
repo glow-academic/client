@@ -108,8 +108,8 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 active=True,
                 objectives_enabled=parent_scenario_dict.get("objectives_enabled", True),
                 images_enabled=parent_scenario_dict.get("images_enabled", True),
-                scenario_agent_id=parent_scenario_dict.get("scenario_agent_id"),
-                image_agent_id=parent_scenario_dict.get("image_agent_id"),
+                scenario_domain_id=parent_scenario_dict.get("scenario_domain_id"),
+                image_domain_id=parent_scenario_dict.get("image_domain_id"),
             )
             new_scenario_result = cast(
                 InsertScenarioVariantSqlRow,
@@ -198,18 +198,18 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                 )
                 return
 
-            # Get scenario agent ID from parent scenario or simulation
-            scenario_agent_id = parent_scenario_dict.get("scenario_agent_id")
-            if not scenario_agent_id and simulation_id:
+            # Get scenario domain ID from parent scenario or simulation
+            scenario_domain_id = parent_scenario_dict.get("scenario_domain_id")
+            if not scenario_domain_id and simulation_id:
                 sql = load_sql("app/sql/v4/simulations/get_simulation_by_id.sql")
                 simulation_row = await conn.fetchrow(sql, uuid.UUID(simulation_id))
                 if simulation_row:
-                    scenario_agent_id = simulation_row.get("simulation_text_agent_id")
+                    scenario_domain_id = simulation_row.get("simulation_text_domain_id")
 
-            if not scenario_agent_id:
+            if not scenario_domain_id:
                 await simulation_next_error(
                     SimulationNextErrorPayload(
-                        success=False, message="No scenario agent ID found"
+                        success=False, message="No scenario domain ID found"
                     ),
                     room=sid,
                 )
@@ -230,7 +230,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                     {
                         "scenarioId": str(child_scenario_id),
                         "departmentId": str(department_id),
-                        "scenarioAgentId": str(scenario_agent_id),
+                        "scenarioDomainId": str(scenario_domain_id),
                         "objectivesEnabled": needs_objectives,
                         "videoEnabled": needs_video,
                         "imagesEnabled": needs_images,
@@ -250,7 +250,7 @@ async def _simulation_next_impl(sid: str, data: SimulationNextPayload) -> None:
                     {
                         "scenarioId": str(child_scenario_id),
                         "departmentId": str(department_id),
-                        "scenarioAgentId": str(scenario_agent_id),
+                        "scenarioDomainId": str(scenario_domain_id),
                         "objectivesEnabled": False,
                         "videoEnabled": False,
                         "imagesEnabled": False,

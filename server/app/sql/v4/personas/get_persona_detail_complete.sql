@@ -230,11 +230,11 @@ agent_mapping_data AS (
         a.id as agent_id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[COALESCE(aa.role, '')] as roles
+        ARRAY[COALESCE(d.artifact::text, '')] as roles
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    JOIN domains d ON d.agent_id = a.id
     WHERE a.active = true
-    AND aa.role IN ('simulation', 'voice')
+    AND d.artifact IN (CAST('scenario' AS artifacts), CAST('message' AS artifacts))
     AND (
         EXISTS (
             SELECT 1 FROM agent_departments ad 

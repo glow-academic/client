@@ -29,9 +29,9 @@ export interface ScenarioBasicInfoSectionProps {
   departmentIds: string[];
   validDepartmentIds: string[];
   departmentMapping: Record<string, DepartmentMappingItem>;
-  initialScenarioAgentId?: string | null;
-  initialImageAgentId?: string | null;
-  initialVideoAgentId?: string | null;
+  initialScenarioDomainId?: string | null;
+  initialImageDomainId?: string | null;
+  initialVideoDomainId?: string | null;
   validAgentIds: string[];
   agentMapping: Record<string, AgentMappingItem>;
   initialActive?: boolean;
@@ -44,9 +44,9 @@ export interface ScenarioBasicInfoSectionProps {
   onRandomizeAll: () => void;
   onResetAll: () => void;
   onStateChange?: (state: {
-    scenarioAgentId: string | null;
-    imageAgentId: string | null;
-    videoAgentId: string | null;
+    scenarioDomainId: string | null;
+    imageDomainId: string | null;
+    videoDomainId: string | null;
     active: boolean;
   }) => void;
 
@@ -62,9 +62,9 @@ export function ScenarioBasicInfoSection({
   departmentIds,
   validDepartmentIds,
   departmentMapping,
-  initialScenarioAgentId = null,
-  initialImageAgentId = null,
-  initialVideoAgentId = null,
+  initialScenarioDomainId = null,
+  initialImageDomainId = null,
+  initialVideoDomainId = null,
   validAgentIds,
   agentMapping,
   initialActive = true,
@@ -80,36 +80,36 @@ export function ScenarioBasicInfoSection({
   activeLabel = "Active",
   activeDescription = "Inactive scenarios will not be available for other simulations",
 }: ScenarioBasicInfoSectionProps) {
-  // Internal state for agent IDs and active
-  const [scenarioAgentId, setScenarioAgentId] = useState<string | null>(
-    initialScenarioAgentId ?? null
+  // Internal state for domain IDs and active
+  const [scenarioDomainId, setScenarioDomainId] = useState<string | null>(
+    initialScenarioDomainId ?? null
   );
-  const [imageAgentId, setImageAgentId] = useState<string | null>(
-    initialImageAgentId ?? null
+  const [imageDomainId, setImageDomainId] = useState<string | null>(
+    initialImageDomainId ?? null
   );
-  const [videoAgentId, setVideoAgentId] = useState<string | null>(
-    initialVideoAgentId ?? null
+  const [videoDomainId, setVideoDomainId] = useState<string | null>(
+    initialVideoDomainId ?? null
   );
   const [active, setActive] = useState<boolean>(initialActive ?? true);
 
   // Initialize from props when they change (for edit mode)
   useEffect(() => {
-    if (initialScenarioAgentId !== undefined) {
-      setScenarioAgentId(initialScenarioAgentId);
+    if (initialScenarioDomainId !== undefined) {
+      setScenarioDomainId(initialScenarioDomainId);
     }
-  }, [initialScenarioAgentId]);
+  }, [initialScenarioDomainId]);
 
   useEffect(() => {
-    if (initialImageAgentId !== undefined) {
-      setImageAgentId(initialImageAgentId);
+    if (initialImageDomainId !== undefined) {
+      setImageDomainId(initialImageDomainId);
     }
-  }, [initialImageAgentId]);
+  }, [initialImageDomainId]);
 
   useEffect(() => {
-    if (initialVideoAgentId !== undefined) {
-      setVideoAgentId(initialVideoAgentId);
+    if (initialVideoDomainId !== undefined) {
+      setVideoDomainId(initialVideoDomainId);
     }
-  }, [initialVideoAgentId]);
+  }, [initialVideoDomainId]);
 
   useEffect(() => {
     if (initialActive !== undefined) {
@@ -120,12 +120,12 @@ export function ScenarioBasicInfoSection({
   // Notify parent of state changes
   useEffect(() => {
     onStateChange?.({
-      scenarioAgentId,
-      imageAgentId,
-      videoAgentId,
+      scenarioDomainId,
+      imageDomainId,
+      videoDomainId,
       active,
     });
-  }, [scenarioAgentId, imageAgentId, videoAgentId, active, onStateChange]);
+  }, [scenarioDomainId, imageDomainId, videoDomainId, active, onStateChange]);
   // Filter agents by 'scenario' role only
   const filteredScenarioAgentIds =
     validAgentIds?.filter((id) => {
@@ -134,13 +134,13 @@ export function ScenarioBasicInfoSection({
       return agent?.roles?.includes("scenario");
     }) || [];
 
-  const imageAgentIds =
+  const imageDomainIds =
     validAgentIds?.filter((id) => {
       const agent = agentMapping[id];
       return agent?.roles?.includes("image");
     }) || [];
 
-  const videoAgentIds =
+  const videoDomainIds =
     validAgentIds?.filter((id) => {
       const agent = agentMapping[id];
       return agent?.roles?.includes("video");
@@ -150,13 +150,13 @@ export function ScenarioBasicInfoSection({
   // TODO: Revert to only showing when there's more than one option after debugging
   // Only show agent pickers if there's more than one option
   // const showScenarioPicker = filteredScenarioAgentIds.length > 1;
-  // const showImagePicker = imageAgentIds.length > 1;
-  // const showVideoPicker = videoAgentIds.length > 1;
+  // const showImagePicker = imageDomainIds.length > 1;
+  // const showVideoPicker = videoDomainIds.length > 1;
 
   // TEMPORARY: Show sections even with single option to see which agent is selected
   const showScenarioPicker = filteredScenarioAgentIds.length > 0;
-  const showImagePicker = imageAgentIds.length > 0;
-  const showVideoPicker = videoAgentIds.length > 0;
+  const showImagePicker = imageDomainIds.length > 0;
+  const showVideoPicker = videoDomainIds.length > 0;
 
   return (
     <Card className="transition-all">
@@ -251,13 +251,13 @@ export function ScenarioBasicInfoSection({
             {/* Scenario Agent Selection */}
             {showScenarioPicker && (
               <div className="space-y-2">
-                <Label htmlFor="scenarioAgentId">Scenario Agent</Label>
-                {scenarioAgentId !== undefined ? (
+                <Label htmlFor="scenarioDomainId">Scenario Agent</Label>
+                {scenarioDomainId !== undefined ? (
                   <GenericPicker
                     items={agentMapping}
                     itemIds={filteredScenarioAgentIds}
-                    selectedIds={scenarioAgentId ? [scenarioAgentId] : []}
-                    onSelect={(ids) => setScenarioAgentId(ids[0] || null)}
+                    selectedIds={scenarioDomainId ? [scenarioDomainId] : []}
+                    onSelect={(ids) => setScenarioDomainId(ids[0] || null)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
                     getSearchText={(item) =>
@@ -301,13 +301,13 @@ export function ScenarioBasicInfoSection({
             {/* Image Agent Selection */}
             {showImagePicker && (
               <div className="space-y-2">
-                <Label htmlFor="imageAgentId">Image Agent</Label>
-                {imageAgentId !== undefined ? (
+                <Label htmlFor="imageDomainId">Image Agent</Label>
+                {imageDomainId !== undefined ? (
                   <GenericPicker
                     items={agentMapping}
-                    itemIds={imageAgentIds}
-                    selectedIds={imageAgentId ? [imageAgentId] : []}
-                    onSelect={(ids) => setImageAgentId(ids[0] || null)}
+                    itemIds={imageDomainIds}
+                    selectedIds={imageDomainId ? [imageDomainId] : []}
+                    onSelect={(ids) => setImageDomainId(ids[0] || null)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
                     getSearchText={(item) =>
@@ -351,13 +351,13 @@ export function ScenarioBasicInfoSection({
             {/* Video Agent Selection */}
             {showVideoPicker && (
               <div className="space-y-2">
-                <Label htmlFor="videoAgentId">Video Agent</Label>
-                {videoAgentId !== undefined ? (
+                <Label htmlFor="videoDomainId">Video Agent</Label>
+                {videoDomainId !== undefined ? (
                   <GenericPicker
                     items={agentMapping}
-                    itemIds={videoAgentIds}
-                    selectedIds={videoAgentId ? [videoAgentId] : []}
-                    onSelect={(ids) => setVideoAgentId(ids[0] || null)}
+                    itemIds={videoDomainIds}
+                    selectedIds={videoDomainId ? [videoDomainId] : []}
+                    onSelect={(ids) => setVideoDomainId(ids[0] || null)}
                     getId={(item) => (item as unknown as { id: string }).id}
                     getLabel={(item) => item.name || ""}
                     getSearchText={(item) =>

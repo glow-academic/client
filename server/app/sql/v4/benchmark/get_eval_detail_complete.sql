@@ -370,16 +370,16 @@ valid_eval_agents_list AS (
         a.id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[COALESCE(aa.role, '')] as roles
+        ARRAY[COALESCE(d.artifact::text, '')] as roles
     FROM params x
     JOIN agents a ON a.active = true
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'grade'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('grade' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE 
         (SELECT agent_search FROM params LIMIT 1) IS NULL
         OR LOWER(a.name) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
         OR LOWER(COALESCE(a.description, '')) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
-    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, '')
+    GROUP BY a.id, a.name, a.description, d.artifact
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -397,16 +397,16 @@ valid_agents_for_eval_list AS (
         a.id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[COALESCE(aa.role, '')] as roles
+        ARRAY[COALESCE(d.artifact::text, '')] as roles
     FROM params x
     JOIN agents a ON a.active = true
-    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    LEFT JOIN domains d ON d.agent_id = a.id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE 
         (SELECT agent_search FROM params LIMIT 1) IS NULL
         OR LOWER(a.name) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
         OR LOWER(COALESCE(a.description, '')) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
-    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, '')
+    GROUP BY a.id, a.name, a.description, d.artifact
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -430,10 +430,9 @@ valid_rubrics_data AS (
         r.id,
         r.name,
         COALESCE(r.description, '') as description,
-        CASE WHEN r.artifact_id IS NULL THEN NULL ELSE art.name END as agent_role  -- Derive from artifact_id
+        CASE WHEN r.artifact IS NULL THEN NULL ELSE r.artifact::text END as agent_role  -- Derive from artifact enum column
     FROM params x
     JOIN rubrics r ON r.active = true
-    LEFT JOIN artifacts art ON art.id = r.artifact_id
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids_for_rubrics udi
     WHERE (
@@ -445,14 +444,13 @@ valid_rubrics_data AS (
         r2.id,
         r2.name,
         COALESCE(r2.description, '') as description,
-        CASE WHEN r2.artifact_id IS NULL THEN NULL ELSE art2.name END as agent_role  -- Derive from artifact_id
+        CASE WHEN r2.artifact IS NULL THEN NULL ELSE r2.artifact::text END as agent_role  -- Derive from artifact enum column
     FROM params x
     JOIN evals e ON e.id = x.eval_id
     LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id AND e.use_groups = false
     LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id AND e.use_groups = true
     JOIN rubric_grade_agents rga ON rga.id = COALESCE(errga.rubric_grade_agent_id, egga.rubric_grade_agent_id)
     JOIN rubrics r2 ON r2.id = rga.rubric_id
-    LEFT JOIN artifacts art2 ON art2.id = r2.artifact_id
     WHERE r2.active = true
 ),
 rubrics_array AS (

@@ -41,8 +41,8 @@ CREATE OR REPLACE FUNCTION api_create_simulation_v4(
     scenario_audio_enabled boolean[],
     scenario_text_enabled boolean[],
     scenario_rubric_grade_agents types.i_create_simulation_v4_scenario_rubric_grade_agent[],
-    simulation_text_agent_id uuid,
-    simulation_voice_agent_id uuid,
+    simulation_text_domain_id uuid,
+    simulation_voice_domain_id uuid,
     profile_id uuid
 )
 RETURNS TABLE (
@@ -65,8 +65,8 @@ WITH params AS (
         COALESCE(scenario_audio_enabled, ARRAY[]::boolean[]) AS scenario_audio_enabled,
         COALESCE(scenario_text_enabled, ARRAY[]::boolean[]) AS scenario_text_enabled,
         COALESCE(scenario_rubric_grade_agents, ARRAY[]::types.i_create_simulation_v4_scenario_rubric_grade_agent[]) AS scenario_rubric_grade_agents,
-        simulation_text_agent_id AS simulation_text_agent_id,
-        simulation_voice_agent_id AS simulation_voice_agent_id,
+        simulation_text_domain_id AS simulation_text_domain_id,
+        simulation_voice_domain_id AS simulation_voice_domain_id,
         profile_id AS profile_id
 ),
 user_profile AS (
@@ -101,8 +101,8 @@ new_simulation AS (
         description,
         active,
         practice_simulation,
-        simulation_text_agent_id,
-        simulation_voice_agent_id,
+        simulation_text_domain_id,
+        simulation_voice_domain_id,
         created_at,
         updated_at
     )
@@ -111,8 +111,8 @@ new_simulation AS (
         x.description,
         x.active,
         x.practice_simulation,
-        x.simulation_text_agent_id,
-        x.simulation_voice_agent_id,
+        x.simulation_text_domain_id,
+        x.simulation_voice_domain_id,
         NOW(),
         NOW()
     FROM params x

@@ -167,9 +167,8 @@ RETURNS TABLE (
     valid_scenario_ids uuid[],
     active boolean,
     practice_simulation boolean,
-    hint_agent_id uuid,
-    simulation_text_agent_id uuid,
-    simulation_voice_agent_id uuid,
+    simulation_text_domain_id uuid,
+    simulation_voice_domain_id uuid,
     can_edit boolean,
     can_duplicate boolean,
     can_delete boolean,
@@ -287,9 +286,8 @@ simulation_base AS (
         s.description,
         s.active,
         s.practice_simulation,
-        s.hint_agent_id,
-        s.simulation_text_agent_id,
-        s.simulation_voice_agent_id,
+        s.simulation_text_domain_id,
+        s.simulation_voice_domain_id,
         (SELECT rga.rubric_id FROM simulation_scenarios ss 
          JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
          JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
@@ -756,53 +754,52 @@ user_departments_for_agents AS (
     WHERE pd.active = true
 ),
 selected_agents_from_simulation AS (
-    SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
+    SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
     FROM simulation_base sb
-    JOIN agents a ON (
-        (a.id = sb.hint_agent_id)
-        OR (a.id = sb.simulation_text_agent_id)
-        OR (a.id = sb.simulation_voice_agent_id)
-    )
-    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    JOIN domains d_text ON d_text.id = sb.simulation_text_domain_id
+    JOIN agents a_text ON a_text.id = d_text.agent_id
+    JOIN domains d_voice ON d_voice.id = sb.simulation_voice_domain_id
+    JOIN agents a_voice ON a_voice.id = d_voice.agent_id
+    JOIN agents a ON (a.id = a_text.id OR a.id = a_voice.id)
+    LEFT JOIN domains d ON d.agent_id = a.id
     WHERE a.active = true
     AND (
-        (a.id = sb.hint_agent_id AND aa.role = 'hint')
-        OR (a.id = sb.simulation_text_agent_id AND aa.role = 'simulation')
-        OR (a.id = sb.simulation_voice_agent_id AND aa.role = 'voice')
+        (a.id = a_text.id AND d_text.artifact = CAST('scenario' AS artifacts))
+        OR (a.id = a_voice.id AND d_voice.artifact = CAST('message' AS artifacts))
     )
       AND (
-          sb.hint_agent_id IS NOT NULL
-          OR sb.simulation_text_agent_id IS NOT NULL
-          OR sb.simulation_voice_agent_id IS NOT NULL
+          sb.simulation_text_domain_id IS NOT NULL
+          OR sb.simulation_voice_domain_id IS NOT NULL
       )
     UNION
     -- Get grade agents from junction tables
-    SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
+    SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
     FROM simulation_base sb
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     JOIN agents a ON a.id = rga.grade_agent_id
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'grade'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('grade' AS artifacts)
     WHERE a.active = true
     UNION
-    SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
+    SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
     FROM simulation_base sb
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
     JOIN agents a ON a.id = rgav.audio_agent_id
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'audio'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('grade' AS artifacts)
     WHERE a.active = true
     UNION
-    -- Get rubric agents (member role) from rubrics.rubric_agent_id
-    SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
+    -- Get rubric agents (member role) from rubrics.rubric_domain_id
+    SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
     FROM simulation_base sb
     JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = sb.id
     JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     JOIN rubrics r ON r.id = rga.rubric_id
-    JOIN agents a ON a.id = r.rubric_agent_id
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'member'
-    WHERE a.active = true AND r.rubric_agent_id IS NOT NULL
+    JOIN domains d_rubric ON d_rubric.id = r.rubric_domain_id
+    JOIN agents a ON a.id = d_rubric.agent_id
+    JOIN domains d ON d.id = r.rubric_domain_id AND d.artifact = CAST('agent' AS artifacts)
+    WHERE a.active = true AND r.rubric_domain_id IS NOT NULL
 ),
 agents_data AS (
     SELECT 
@@ -812,13 +809,13 @@ agents_data AS (
         ) as agents,
         ARRAY_AGG(filtered_agents.id ORDER BY filtered_agents.name) as agent_ids
     FROM (
-        SELECT DISTINCT a.id, a.name, a.description, COALESCE(aa.role, '') as role
+        SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
         FROM agents a
-        JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+        JOIN domains d ON d.agent_id = a.id
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE a.active = true 
-        AND aa.role IN ('hint', 'grade', 'audio', 'simulation', 'voice', 'member')
-        GROUP BY a.id, a.name, a.description, COALESCE(aa.role, '')
+        AND d.artifact IN (CAST('message' AS artifacts), CAST('grade' AS artifacts), CAST('scenario' AS artifacts), CAST('agent' AS artifacts))
+        GROUP BY a.id, a.name, a.description, d.artifact
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
             OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -831,7 +828,7 @@ agents_data AS (
 valid_hint_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'hint'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true
     GROUP BY a.id
@@ -842,7 +839,7 @@ valid_hint_agents AS (
 valid_simulation_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'simulation'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('scenario' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true
     GROUP BY a.id
@@ -853,7 +850,7 @@ valid_simulation_agents AS (
 valid_voice_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'voice'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE a.active = true
     GROUP BY a.id
@@ -927,25 +924,19 @@ SELECT
         (SELECT (payload->>'practice_simulation')::boolean FROM draft_payload_data),
         sb.practice_simulation
     ) as practice_simulation,
-    -- Auto-select agents: draft payload -> simulation value -> default from SQL (if only one option) -> NULL
+    -- Auto-select domains: draft payload -> simulation value -> default from SQL (if only one option) -> NULL
     COALESCE(
-        (SELECT (payload->>'hint_agent_id')::uuid FROM draft_payload_data),
-        sb.hint_agent_id,
-        (SELECT id FROM default_hint_agent),
-        NULL::uuid
-    ) as hint_agent_id,
-    COALESCE(
-        (SELECT (payload->>'simulation_text_agent_id')::uuid FROM draft_payload_data),
-        sb.simulation_text_agent_id,
+        (SELECT (payload->>'simulation_text_domain_id')::uuid FROM draft_payload_data),
+        sb.simulation_text_domain_id,
         (SELECT id FROM default_simulation_agent),
         NULL::uuid
-    ) as simulation_text_agent_id,
+    ) as simulation_text_domain_id,
     COALESCE(
-        (SELECT (payload->>'simulation_voice_agent_id')::uuid FROM draft_payload_data),
-        sb.simulation_voice_agent_id,
+        (SELECT (payload->>'simulation_voice_domain_id')::uuid FROM draft_payload_data),
+        sb.simulation_voice_domain_id,
         (SELECT id FROM default_voice_agent),
         NULL::uuid
-    ) as simulation_voice_agent_id,
+    ) as simulation_voice_domain_id,
     CASE 
         WHEN COALESCE(sb.department_ids, NULL) IS NULL AND uc.role != 'superadmin' THEN false
         WHEN uc.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true

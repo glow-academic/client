@@ -251,8 +251,8 @@ export default function Document({
     departmentIds: string[];
     parameterItemIds: string[];
     parameterIds: string[];
-    classifyAgentId: string | null;
-    documentAgentId: string | null;
+    : string | null;
+    documentDomainId: string | null;
   };
 
   // Initialize draft state from server data
@@ -265,8 +265,8 @@ export default function Document({
         departmentIds: documentDetail.department_ids || [],
         parameterItemIds: documentDetail.field_ids || [],
         parameterIds: documentDetail.linked_parameter_ids || [],
-        classifyAgentId: documentDetail.classify_agent_id || null,
-        documentAgentId: documentDetail.document_agent_id || null,
+        : documentDetail. || null,
+        documentDomainId: documentDetail.document_domain_id || null,
       };
     }
     return {
@@ -276,8 +276,8 @@ export default function Document({
       departmentIds: [],
       parameterItemIds: [],
       parameterIds: [],
-      classifyAgentId: null,
-      documentAgentId: null,
+      : null,
+      documentDomainId: null,
     };
   }, [isEditMode, documentDetail]);
 
@@ -331,8 +331,8 @@ export default function Document({
             departmentIds: "department_ids",
             parameterItemIds: "parameter_item_ids",
             parameterIds: "parameter_ids",
-            classifyAgentId: "classify_agent_id",
-            documentAgentId: "document_agent_id",
+            : "",
+            documentDomainId: "document_domain_id",
           };
           const transformedPatch: Record<string, unknown> = {};
           Object.entries(input.body.patch as Record<string, unknown>).forEach(
@@ -692,12 +692,12 @@ export default function Document({
   }, [isEditMode, documentDetail]);
 
   // Extract formData properties for dependency arrays
-  const classifyAgentId = useMemo(
-    () => (formData["classifyAgentId"] as string | null) || null,
+  const  = useMemo(
+    () => (formData[""] as string | null) || null,
     [formData]
   );
-  const documentAgentId = useMemo(
-    () => (formData["documentAgentId"] as string | null) || null,
+  const documentDomainId = useMemo(
+    () => (formData["documentDomainId"] as string | null) || null,
     [formData]
   );
   const formDataName = useMemo(
@@ -713,39 +713,39 @@ export default function Document({
   useEffect(() => {
     if (!isEditMode || !documentDetail) return;
 
-    const classifyAgentIds =
+    const s =
       documentDetail.valid_agent_ids?.filter((id) => {
         const agent = agentMapping[id];
         return agent?.roles?.includes("classify");
       }) || [];
 
-    const documentAgentIds =
+    const documentDomainIds =
       documentDetail.valid_agent_ids?.filter((id) => {
         const agent = agentMapping[id];
         return agent?.roles?.includes("document");
       }) || [];
 
     // Auto-select first classify agent if only one option and not already set
-    if (classifyAgentIds.length === 1 && !classifyAgentId) {
+    if (s.length === 1 && !) {
       setFormData((prev) => ({
         ...prev,
-        classifyAgentId: classifyAgentIds[0] || null,
+        : s[0] || null,
       }));
     }
 
     // Auto-select first document agent if only one option and not already set
-    if (documentAgentIds.length === 1 && !documentAgentId) {
+    if (documentDomainIds.length === 1 && !documentDomainId) {
       setFormData((prev) => ({
         ...prev,
-        documentAgentId: documentAgentIds[0] || null,
+        documentDomainId: documentDomainIds[0] || null,
       }));
     }
   }, [
     isEditMode,
     documentDetail,
     agentMapping,
-    classifyAgentId,
-    documentAgentId,
+    ,
+    documentDomainId,
     setFormData,
   ]);
 
@@ -1582,10 +1582,10 @@ export default function Document({
               ? ((formData["departmentIds"] as string[])[0] ?? null)
               : null,
           field_ids: (formData["parameterItemIds"] as string[]) || [],
-          classify_agent_id:
-            (formData["classifyAgentId"] as string | null) ?? null,
-          document_agent_id:
-            (formData["documentAgentId"] as string | null) ?? null,
+          :
+            (formData[""] as string | null) ?? null,
+          document_domain_id:
+            (formData["documentDomainId"] as string | null) ?? null,
           template_upload_id:
             isTemplateDocument && templateUploadId ? templateUploadId : null,
           template_args:
@@ -2339,8 +2339,8 @@ export default function Document({
                 departmentIds: docData.department_ids || [],
                 parameterItemIds: docData.field_ids || [],
                 parameterIds: docData.linked_parameter_ids || [],
-                classifyAgentId: docData.classify_agent_id || null,
-                documentAgentId: docData.document_agent_id || null,
+                : docData. || null,
+                documentDomainId: docData.document_domain_id || null,
               });
               return {
                 name: docData.name || "",
@@ -2349,8 +2349,8 @@ export default function Document({
                 departmentIds: docData.department_ids || [],
                 parameterItemIds: docData.field_ids || [],
                 parameterIds: docData.linked_parameter_ids || [],
-                classifyAgentId: docData.classify_agent_id || null,
-                documentAgentId: docData.document_agent_id || null,
+                : docData. || null,
+                documentDomainId: docData.document_domain_id || null,
               };
             }
             return {};
@@ -2420,21 +2420,21 @@ export default function Document({
                 {/* Agent Selection - Only in edit mode */}
                 {isEditMode &&
                   (() => {
-                    const classifyAgentIds =
+                    const s =
                       documentDetail?.valid_agent_ids?.filter((id) => {
                         const agent = agentMapping[id];
                         return agent?.roles?.includes("classify");
                       }) || [];
 
-                    const documentAgentIds =
+                    const documentDomainIds =
                       documentDetail?.valid_agent_ids?.filter((id) => {
                         const agent = agentMapping[id];
                         return agent?.roles?.includes("document");
                       }) || [];
 
                     // Only show agent pickers if there's more than one option
-                    const showClassifyPicker = classifyAgentIds.length > 1;
-                    const showDocumentPicker = documentAgentIds.length > 1;
+                    const showClassifyPicker = s.length > 1;
+                    const showDocumentPicker = documentDomainIds.length > 1;
 
                     if (!showClassifyPicker && !showDocumentPicker) {
                       return null;
@@ -2445,24 +2445,24 @@ export default function Document({
                         {/* Classify Agent */}
                         {showClassifyPicker && (
                           <div className="space-y-2">
-                            <Label htmlFor="classifyAgentId">
+                            <Label htmlFor="">
                               Classify Agent
                             </Label>
-                            {(formData["classifyAgentId"] as
+                            {(formData[""] as
                               | string
                               | null
                               | undefined) !== undefined ? (
                               <GenericPicker
                                 items={agentMapping}
-                                itemIds={classifyAgentIds}
+                                itemIds={s}
                                 selectedIds={
-                                  formData["classifyAgentId"]
-                                    ? [formData["classifyAgentId"] as string]
+                                  formData[""]
+                                    ? [formData[""] as string]
                                     : []
                                 }
                                 onSelect={(ids) =>
                                   setFormData({
-                                    classifyAgentId: ids[0] || null,
+                                    : ids[0] || null,
                                   })
                                 }
                                 getId={(item) =>
@@ -2513,24 +2513,24 @@ export default function Document({
                         {/* Document Agent */}
                         {showDocumentPicker && (
                           <div className="space-y-2">
-                            <Label htmlFor="documentAgentId">
+                            <Label htmlFor="documentDomainId">
                               Document Agent
                             </Label>
-                            {(formData["documentAgentId"] as
+                            {(formData["documentDomainId"] as
                               | string
                               | null
                               | undefined) !== undefined ? (
                               <GenericPicker
                                 items={agentMapping}
-                                itemIds={documentAgentIds}
+                                itemIds={documentDomainIds}
                                 selectedIds={
-                                  formData["documentAgentId"]
-                                    ? [formData["documentAgentId"] as string]
+                                  formData["documentDomainId"]
+                                    ? [formData["documentDomainId"] as string]
                                     : []
                                 }
                                 onSelect={(ids) =>
                                   setFormData({
-                                    documentAgentId: ids[0] || null,
+                                    documentDomainId: ids[0] || null,
                                   })
                                 }
                                 getId={(item) =>

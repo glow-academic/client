@@ -399,8 +399,9 @@ context_data AS (
     LEFT JOIN personas p ON p.id = first_persona.persona_id
     -- Text agent (use simulation agent - fallback to persona agent if persona_text_agents table exists)
     -- Note: For regeneration, we use simulation agent to match original run context
-    LEFT JOIN agents a ON a.id = sim.simulation_text_agent_id AND a.active = true
-    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'simulation'
+    LEFT JOIN domains d_text_domain ON d_text_domain.id = sim.simulation_text_domain_id
+    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND a.active = true
+    LEFT JOIN domains d ON d.id = sim.simulation_text_domain_id AND d.artifact = CAST('scenario' AS artifacts)
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt.active = true
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
@@ -424,8 +425,9 @@ context_data AS (
     LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
     -- Voice agent (use simulation voice agent - fallback to persona agent if persona_voice_agents table exists)
     -- Note: For regeneration, we use simulation agent to match original run context
-    LEFT JOIN agents a_voice ON a_voice.id = sim.simulation_voice_agent_id AND a_voice.active = true
-    LEFT JOIN artifact_agents aa_voice ON aa_voice.agent_id = a_voice.id AND aa_voice.artifact_instance_id IS NULL AND aa_voice.role = 'voice'
+    LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sim.simulation_voice_domain_id
+    LEFT JOIN agents a_voice ON a_voice.id = d_voice_domain.agent_id AND a_voice.active = true
+    LEFT JOIN domains d_voice ON d_voice.id = sim.simulation_voice_domain_id AND d_voice.artifact = CAST('message' AS artifacts)
     -- Try department-specific voice prompt first, fall back to default voice prompt
     LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id AND adp_prompt_voice.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt_voice.active = true
     LEFT JOIN prompts pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id

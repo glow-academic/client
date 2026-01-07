@@ -80,7 +80,7 @@ RETURNS TABLE (
     pass_points int,
     active boolean,
     can_edit boolean,
-    rubric_agent_id uuid,
+    rubric_domain_id uuid,
     valid_agent_ids text[],
     actor_name text,
     standard_group_ids uuid[],
@@ -123,7 +123,7 @@ rubric_data AS (
         r.active,
         r.points,
         r.pass_points,
-        r.rubric_agent_id
+        r.rubric_domain_id
     FROM rubrics r
     WHERE r.id = (SELECT rubric_id FROM params)
 ),
@@ -247,9 +247,9 @@ valid_agents_data AS (
         a.id as agent_id,
         a.name,
         a.description,
-        ARRAY[COALESCE(aa.role, '')] as roles
+        ARRAY[COALESCE(d.artifact::text, '')] as roles
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role = 'rubric'
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('rubric' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN rubric_data rd
     WHERE a.active = true
@@ -265,7 +265,7 @@ valid_agents_data AS (
             WHERE ad3.agent_id = a.id 
             AND ad3.active = true
         )
-        OR a.id::text = rd.rubric_agent_id::text
+        OR EXISTS (SELECT 1 FROM domains d WHERE d.id = rd.rubric_domain_id AND d.agent_id = a.id)
     )
 ),
 agents_aggregated AS (
@@ -311,9 +311,9 @@ SELECT
     END as can_edit,
     COALESCE(
         (SELECT (payload->>'rubricAgentId')::uuid FROM draft_payload_data),
-        (SELECT (payload->>'rubric_agent_id')::uuid FROM draft_payload_data),
-        rd.rubric_agent_id
-    ) as rubric_agent_id,
+        (SELECT (payload->>'rubric_domain_id')::uuid FROM draft_payload_data),
+        rd.rubric_domain_id
+    ) as rubric_domain_id,
     COALESCE(aa.valid_agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     up.actor_name,
     COALESCE(sga.standard_group_ids, ARRAY[]::uuid[]) as standard_group_ids,

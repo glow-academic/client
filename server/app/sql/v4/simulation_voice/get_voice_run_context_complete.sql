@@ -289,9 +289,9 @@ SELECT
     -- Profile data
     pf.profile_id,
     -- Agent data (text - kept for compatibility)
-    sim.simulation_text_agent_id as agent_id,
+    d_text_domain.agent_id as agent_id,
     -- Voice agent data (preferred for voice mode)
-    sim.simulation_voice_agent_id as voice_agent_id,
+    d_voice_domain.agent_id as voice_agent_id,
     -- Documents data (composite type array)
     COALESCE(dd.documents, ARRAY[]::types.i_get_voice_run_context_v4_document[]) as documents
 FROM params p_params
@@ -300,6 +300,8 @@ JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN scenarios s ON s.id = sc.scenario_id
 INNER JOIN simulations sim ON sim.id = sa.simulation_id
+LEFT JOIN domains d_text_domain ON d_text_domain.id = sim.simulation_text_domain_id
+LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sim.simulation_voice_domain_id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
 LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
 LEFT JOIN chat_groups cg ON cg.chat_id = sc.id

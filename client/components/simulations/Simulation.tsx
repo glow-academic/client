@@ -208,9 +208,9 @@ export default function Simulation({
     active: boolean;
     practiceSimulation: boolean;
     departmentIds: string[];
-    hint_agent_id: string | null;
-    simulation_text_agent_id: string | null;
-    simulation_voice_agent_id: string | null;
+    : string | null;
+    simulation_text_domain_id: string | null;
+    simulation_voice_domain_id: string | null;
     member_agent_id: string | null; // Member agent for rubric grade agents
     scenarioIds: string[]; // Track selected scenario IDs (for ordering)
     scenarioActiveStates: Record<string, boolean>;
@@ -247,9 +247,9 @@ export default function Simulation({
         active: true,
         practiceSimulation: false,
         departmentIds: defaultDepartmentIds,
-        hint_agent_id: null,
-        simulation_text_agent_id: null,
-        simulation_voice_agent_id: null,
+        : null,
+        simulation_text_domain_id: null,
+        simulation_voice_domain_id: null,
         member_agent_id: null,
         scenarioIds: serverScenarioIds,
         scenarioActiveStates: {},
@@ -415,9 +415,9 @@ export default function Simulation({
       departmentIds: data.department_ids || defaultDepartmentIds,
       // Agent IDs are now auto-selected server-side when there's only one option
       // Use server-provided values (which include auto-selected defaults)
-      hint_agent_id: data.hint_agent_id || null,
-      simulation_text_agent_id: data.simulation_text_agent_id || null,
-      simulation_voice_agent_id: data.simulation_voice_agent_id || null,
+      : data. || null,
+      simulation_text_domain_id: data.simulation_text_domain_id || null,
+      simulation_voice_domain_id: data.simulation_voice_domain_id || null,
       member_agent_id: memberAgentId,
       scenarioIds: serverScenarioIds,
       scenarioActiveStates,
@@ -439,18 +439,18 @@ export default function Simulation({
     simulationDetailDefault?.practice_simulation,
     simulationDetailDefault?.department_ids,
     simulationDetailDefault?.scenario_ids,
-    simulationDetailDefault?.hint_agent_id,
-    simulationDetailDefault?.simulation_text_agent_id,
-    simulationDetailDefault?.simulation_voice_agent_id,
+    simulationDetailDefault?.,
+    simulationDetailDefault?.simulation_text_domain_id,
+    simulationDetailDefault?.simulation_voice_domain_id,
     simulationDetail?.name,
     simulationDetail?.description,
     simulationDetail?.active,
     simulationDetail?.practice_simulation,
     simulationDetail?.department_ids,
     simulationDetail?.scenario_ids,
-    simulationDetail?.hint_agent_id,
-    simulationDetail?.simulation_text_agent_id,
-    simulationDetail?.simulation_voice_agent_id,
+    simulationDetail?.,
+    simulationDetail?.simulation_text_domain_id,
+    simulationDetail?.simulation_voice_domain_id,
     // Note: member_agent_id may not be in TypeScript types but is in SQL/draft payload
     // Access via 'in' operator check in the useMemo body instead of dependency array
   ]);
@@ -580,7 +580,7 @@ export default function Simulation({
       ? async (input) => {
           // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case for some fields, camelCase for others)
           // Based on SQL defaults: scenarioIds (camelCase), scenarioActiveStates (camelCase), scenarioSettings (camelCase),
-          // departmentIds (camelCase), practiceSimulation (camelCase), but hint_agent_id (snake_case), etc.
+          // departmentIds (camelCase), practiceSimulation (camelCase), but  (snake_case), etc.
           // Actually, looking at the SQL, it uses camelCase for arrays/objects and snake_case for IDs
           // So we need to check what the actual SQL expects. For now, let's keep camelCase as-is since SQL defaults use camelCase
           // But we should verify this matches what SQL expects
@@ -699,31 +699,31 @@ export default function Simulation({
     // Add selected agents that aren't in the mapping (for backward compatibility)
     // This ensures GenericPicker can display selected agents even if they're not in valid_agent_ids
     if (
-      draftState.simulation_text_agent_id &&
-      !mapped[draftState.simulation_text_agent_id]
+      draftState.simulation_text_domain_id &&
+      !mapped[draftState.simulation_text_domain_id]
     ) {
-      mapped[draftState.simulation_text_agent_id] = {
-        id: draftState.simulation_text_agent_id,
-        name: `Agent ${draftState.simulation_text_agent_id.slice(0, 8)}...`,
+      mapped[draftState.simulation_text_domain_id] = {
+        id: draftState.simulation_text_domain_id,
+        name: `Agent ${draftState.simulation_text_domain_id.slice(0, 8)}...`,
         description: "Selected simulation agent",
         roles: [],
       };
     }
     if (
-      draftState.simulation_voice_agent_id &&
-      !mapped[draftState.simulation_voice_agent_id]
+      draftState.simulation_voice_domain_id &&
+      !mapped[draftState.simulation_voice_domain_id]
     ) {
-      mapped[draftState.simulation_voice_agent_id] = {
-        id: draftState.simulation_voice_agent_id,
-        name: `Agent ${draftState.simulation_voice_agent_id.slice(0, 8)}...`,
+      mapped[draftState.simulation_voice_domain_id] = {
+        id: draftState.simulation_voice_domain_id,
+        name: `Agent ${draftState.simulation_voice_domain_id.slice(0, 8)}...`,
         description: "Selected voice agent",
         roles: [],
       };
     }
-    if (draftState.hint_agent_id && !mapped[draftState.hint_agent_id]) {
-      mapped[draftState.hint_agent_id] = {
-        id: draftState.hint_agent_id,
-        name: `Agent ${draftState.hint_agent_id.slice(0, 8)}...`,
+    if (draftState. && !mapped[draftState.]) {
+      mapped[draftState.] = {
+        id: draftState.,
+        name: `Agent ${draftState..slice(0, 8)}...`,
         description: "Selected hint agent",
         roles: [],
       };
@@ -734,9 +734,9 @@ export default function Simulation({
     isEditMode,
     simulationDetail,
     simulationData?.agents,
-    draftState.simulation_text_agent_id,
-    draftState.simulation_voice_agent_id,
-    draftState.hint_agent_id,
+    draftState.simulation_text_domain_id,
+    draftState.simulation_voice_domain_id,
+    draftState.,
   ]);
 
   // Extract scenario mapping - create dict from scenarios_full array (composite types)
@@ -1197,14 +1197,14 @@ export default function Simulation({
             video_show_problem_statement: [] as boolean[],
             video_show_objectives: [] as boolean[],
             video_show_image: [] as boolean[],
-            hint_agent_id:
-              draftState.hint_agent_id ||
+            :
+              draftState. ||
               "00000000-0000-0000-0000-000000000000",
-            simulation_text_agent_id:
-              draftState.simulation_text_agent_id ||
+            simulation_text_domain_id:
+              draftState.simulation_text_domain_id ||
               "00000000-0000-0000-0000-000000000000",
-            simulation_voice_agent_id:
-              draftState.simulation_voice_agent_id ||
+            simulation_voice_domain_id:
+              draftState.simulation_voice_domain_id ||
               "00000000-0000-0000-0000-000000000000",
           };
 
@@ -1225,11 +1225,11 @@ export default function Simulation({
             scenario_time_limit_seconds,
             scenario_audio_enabled,
             scenario_text_enabled,
-            simulation_text_agent_id:
-              draftState.simulation_text_agent_id ||
+            simulation_text_domain_id:
+              draftState.simulation_text_domain_id ||
               "00000000-0000-0000-0000-000000000000",
-            simulation_voice_agent_id:
-              draftState.simulation_voice_agent_id ||
+            simulation_voice_domain_id:
+              draftState.simulation_voice_domain_id ||
               "00000000-0000-0000-0000-000000000000",
           };
 
@@ -1425,7 +1425,7 @@ export default function Simulation({
                 <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {/* Hint Agent Selection */}
                   <div className="space-y-2">
-                    <Label htmlFor="hint_agent_id">Hint Agent</Label>
+                    <Label htmlFor="">Hint Agent</Label>
                     <GenericPicker
                       items={agentMapping}
                       itemIds={validAgentIds.filter((id) => {
@@ -1433,14 +1433,14 @@ export default function Simulation({
                         return agent?.roles?.includes("hint");
                       })}
                       selectedIds={
-                        draftState.hint_agent_id
-                          ? [draftState.hint_agent_id]
+                        draftState.
+                          ? [draftState.]
                           : []
                       }
                       onSelect={(ids) =>
                         setDraftState((prev) => ({
                           ...prev,
-                          hint_agent_id: ids[0] || null,
+                          : ids[0] || null,
                         }))
                       }
                       getId={(item) => (item as unknown as { id: string }).id}
@@ -1483,7 +1483,7 @@ export default function Simulation({
 
                   {/* Simulation Agent Selection */}
                   <div className="space-y-2">
-                    <Label htmlFor="simulation_text_agent_id">
+                    <Label htmlFor="simulation_text_domain_id">
                       Simulation Agent
                     </Label>
                     <GenericPicker
@@ -1494,28 +1494,28 @@ export default function Simulation({
                           return agent?.roles?.includes("simulation");
                         });
                         if (
-                          draftState.simulation_text_agent_id &&
-                          agentMapping[draftState.simulation_text_agent_id] &&
+                          draftState.simulation_text_domain_id &&
+                          agentMapping[draftState.simulation_text_domain_id] &&
                           !roleFilteredIds.includes(
-                            draftState.simulation_text_agent_id
+                            draftState.simulation_text_domain_id
                           )
                         ) {
                           return [
                             ...roleFilteredIds,
-                            draftState.simulation_text_agent_id,
+                            draftState.simulation_text_domain_id,
                           ];
                         }
                         return roleFilteredIds;
                       })()}
                       selectedIds={(() => {
-                        const agentId = draftState.simulation_text_agent_id;
+                        const agentId = draftState.simulation_text_domain_id;
                         const hasAgent = agentId && agentMapping[agentId];
                         return hasAgent ? [agentId] : [];
                       })()}
                       onSelect={(ids) => {
                         setDraftState((prev) => ({
                           ...prev,
-                          simulation_text_agent_id: ids[0] || null,
+                          simulation_text_domain_id: ids[0] || null,
                         }));
                       }}
                       getId={(item) => (item as unknown as { id: string }).id}
@@ -1558,7 +1558,7 @@ export default function Simulation({
 
                   {/* Voice Agent Selection */}
                   <div className="space-y-2">
-                    <Label htmlFor="simulation_voice_agent_id">
+                    <Label htmlFor="simulation_voice_domain_id">
                       Voice Agent
                     </Label>
                     <GenericPicker
@@ -1569,28 +1569,28 @@ export default function Simulation({
                           return agent?.roles?.includes("voice");
                         });
                         if (
-                          draftState.simulation_voice_agent_id &&
-                          agentMapping[draftState.simulation_voice_agent_id] &&
+                          draftState.simulation_voice_domain_id &&
+                          agentMapping[draftState.simulation_voice_domain_id] &&
                           !roleFilteredIds.includes(
-                            draftState.simulation_voice_agent_id
+                            draftState.simulation_voice_domain_id
                           )
                         ) {
                           return [
                             ...roleFilteredIds,
-                            draftState.simulation_voice_agent_id,
+                            draftState.simulation_voice_domain_id,
                           ];
                         }
                         return roleFilteredIds;
                       })()}
                       selectedIds={(() => {
-                        const agentId = draftState.simulation_voice_agent_id;
+                        const agentId = draftState.simulation_voice_domain_id;
                         const hasAgent = agentId && agentMapping[agentId];
                         return hasAgent ? [agentId] : [];
                       })()}
                       onSelect={(ids) => {
                         setDraftState((prev) => ({
                           ...prev,
-                          simulation_voice_agent_id: ids[0] || null,
+                          simulation_voice_domain_id: ids[0] || null,
                         }));
                       }}
                       getId={(item) => (item as unknown as { id: string }).id}

@@ -259,9 +259,9 @@ RETURNS TABLE (
     video_enabled boolean,
     questions_enabled boolean,
     problem_statement_enabled boolean,
-    scenario_agent_id text,
-    image_agent_id text,
-    video_agent_id text,
+    scenario_domain_id text,
+    image_domain_id text,
+    video_domain_id text,
     valid_agent_ids text[],
     can_edit boolean,
     can_duplicate boolean,
@@ -467,9 +467,9 @@ scenario_core AS (
         s.video_enabled,
         s.questions_enabled,
         s.problem_statement_enabled,
-        s.scenario_agent_id::text,
-        s.image_agent_id::text,
-        s.video_agent_id::text
+        s.scenario_domain_id::text,
+        s.image_domain_id::text,
+        s.video_domain_id::text
     FROM scenarios s
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
@@ -1815,18 +1815,18 @@ valid_agents_array AS (
         a.id as agent_id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[COALESCE(aa.role, '')] as roles
+        ARRAY[COALESCE(d.artifact::text, '')] as roles
     FROM agents a
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    JOIN domains d ON d.agent_id = a.id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN expected_agent_role ear
     WHERE a.active = true 
     AND (
-        aa.role = ear.role
-        OR aa.role = 'scenario'
-        OR aa.role = 'image'
+        d.artifact = CAST(ear.role AS artifacts)
+        OR d.artifact = CAST('scenario' AS artifacts)
+        OR d.artifact = CAST('scenario' AS artifacts)
     )
-    GROUP BY a.id, a.name, a.description, COALESCE(aa.role, ''), ear.role
+    GROUP BY a.id, a.name, a.description, COALESCE(d.artifact::text, ''), ear.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -1944,9 +1944,9 @@ SELECT
     sc.video_enabled,
     sc.questions_enabled,
     sc.problem_statement_enabled,
-    sc.scenario_agent_id,
-    sc.image_agent_id,
-    sc.video_agent_id,
+    sc.scenario_domain_id,
+    sc.image_domain_id,
+    sc.video_domain_id,
     COALESCE((
         SELECT ARRAY_AGG(agent_id::text ORDER BY name)
         FROM valid_agents_array

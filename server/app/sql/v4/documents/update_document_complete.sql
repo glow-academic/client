@@ -27,8 +27,7 @@ CREATE OR REPLACE FUNCTION api_update_document_v4(
     template boolean DEFAULT NULL,
     department_id uuid DEFAULT NULL,
     field_ids text[] DEFAULT ARRAY[]::text[],
-    classify_agent_id uuid DEFAULT NULL,
-    document_agent_id uuid DEFAULT NULL,
+    document_domain_id uuid DEFAULT NULL,
     html_id uuid DEFAULT NULL,
     schema_id uuid DEFAULT NULL
 )
@@ -52,8 +51,7 @@ WITH params AS (
         template AS template,
         department_id AS department_id,
         COALESCE(field_ids, ARRAY[]::text[]) AS field_ids,
-        classify_agent_id AS classify_agent_id,
-        document_agent_id AS document_agent_id,
+        document_domain_id AS document_domain_id,
         html_id AS html_id,
         schema_id AS schema_id
 ),
@@ -71,8 +69,7 @@ update_document AS (
         description = COALESCE((SELECT description FROM params), d.description),
         active = COALESCE((SELECT active FROM params), d.active),
         template = COALESCE((SELECT template FROM params), d.template),
-        classify_agent_id = COALESCE((SELECT classify_agent_id FROM params), d.classify_agent_id),
-        document_agent_id = COALESCE((SELECT document_agent_id FROM params), d.document_agent_id),
+        document_domain_id = COALESCE((SELECT document_domain_id FROM params), d.document_domain_id),
         updated_at = NOW()
     FROM params p
     WHERE d.id = p.document_id

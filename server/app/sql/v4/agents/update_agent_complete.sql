@@ -90,27 +90,23 @@ update_agent AS (
     WHERE agents.id = x.agent_id
     RETURNING agents.id::text as agent_id
 ),
-update_artifact_link AS (
-    -- Update artifact_agents link (delete old, insert new)
-    DELETE FROM artifact_agents
+update_domain_link AS (
+    -- Update domains link (delete old, insert new)
+    DELETE FROM domains
     USING params x
-    WHERE artifact_agents.agent_id = x.agent_id
-    AND artifact_agents.artifact_instance_id IS NULL
+    WHERE domains.agent_id = x.agent_id
 ),
-link_artifact AS (
-    -- Link agent to artifact via artifact_agents
-    INSERT INTO artifact_agents (artifact_id, artifact_instance_id, agent_id, role, created_at, updated_at)
+link_domain AS (
+    -- Link agent to artifact via domains
+    INSERT INTO domains (artifact, agent_id, created_at, updated_at)
     SELECT 
-        art.id,
-        NULL,  -- Agent-level assignment (no specific instance)
+        CAST(x.artifact_name AS artifacts),
         ua.agent_id::uuid,
-        x.artifact_name,  -- Use artifact_name as role
         NOW(),
         NOW()
     FROM update_agent ua
     CROSS JOIN params x
-    JOIN artifacts art ON art.name = x.artifact_name
-    ON CONFLICT (artifact_id, artifact_instance_id, agent_id, role) DO UPDATE SET
+    ON CONFLICT (artifact, agent_id) DO UPDATE SET
         updated_at = NOW()
 ),
 new_prompt AS (

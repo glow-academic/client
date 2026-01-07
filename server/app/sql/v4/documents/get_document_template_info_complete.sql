@@ -22,8 +22,7 @@ CREATE OR REPLACE FUNCTION api_get_document_template_info_v4(
 RETURNS TABLE (
     file_path text,
     schema_id uuid,
-    classify_agent_id text,
-    document_agent_id text,
+    document_domain_id text,
     name text,
     description text
 )
@@ -33,8 +32,7 @@ AS $$
 SELECT 
     u.file_path,
     ds.schema_id,
-    d.classify_agent_id::text,
-    d.document_agent_id::text,
+    d.document_domain_id::text,
     d.name,
     d.description
 FROM documents d

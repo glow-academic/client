@@ -103,8 +103,7 @@ RETURNS TABLE (
     fields types.q_get_document_detail_v4_field[],
     linked_parameter_ids text[],
     parameters types.q_get_document_detail_v4_parameter[],
-    classify_agent_id uuid,
-    document_agent_id uuid,
+    document_domain_id uuid,
     agents types.q_get_document_detail_v4_agent[],
     valid_agent_ids text[],
     template boolean,
@@ -149,8 +148,7 @@ document_data AS (
         d.description,
         d.active,
         d.updated_at,
-        d.classify_agent_id,
-        d.document_agent_id,
+        d.document_domain_id,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
@@ -297,10 +295,10 @@ agent_data AS (
         a.id as agent_id,
         a.name,
         COALESCE(a.description, '') as description,
-        ARRAY[COALESCE(aa.role, '')] as roles
+        ARRAY[COALESCE(d.artifact::text, '')] as roles
     FROM params x
     JOIN agents a ON a.active = true
-    JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL AND aa.role IN ('classify', 'document')
+    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('document' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN document_data dd
     WHERE (
@@ -317,8 +315,7 @@ agent_data AS (
             AND ad3.active = true
         )
         -- Include agents assigned to this document even if they don't pass department filter
-        OR a.id = dd.classify_agent_id
-        OR a.id = dd.document_agent_id
+        OR EXISTS (SELECT 1 FROM domains d2 WHERE d2.id = dd.document_domain_id AND d2.agent_id = a.id)
     )
 ),
 valid_field_ids_data AS (
@@ -445,23 +442,13 @@ SELECT
     COALESCE(
         (SELECT 
             CASE 
-                WHEN payload->>'classify_agent_id' IS NOT NULL AND payload->>'classify_agent_id' != 'null' THEN
-                    (payload->>'classify_agent_id')::uuid
+                WHEN payload->>'document_domain_id' IS NOT NULL AND payload->>'document_domain_id' != 'null' THEN
+                    (payload->>'document_domain_id')::uuid
                 ELSE NULL
             END
         FROM draft_payload_data),
-        dd.classify_agent_id
-    )::uuid as classify_agent_id,
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->>'document_agent_id' IS NOT NULL AND payload->>'document_agent_id' != 'null' THEN
-                    (payload->>'document_agent_id')::uuid
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        dd.document_agent_id
-    )::uuid as document_agent_id,
+        dd.document_domain_id
+    )::uuid as document_domain_id,
     -- Aggregate agents separately
     COALESCE(
         (SELECT ARRAY_AGG(

@@ -46,8 +46,8 @@ get_tool_id AS (
     JOIN agent_tools at ON at.agent_id = r.agent_id
     JOIN tools t ON t.id = at.tool_id
     INNER JOIN resource_tools rt ON rt.tool_id = t.id
-    INNER JOIN resources r_res ON r_res.id = rt.resource_id AND (r_res.name = 'problem_statement' OR r_res.name = 'template')
-    WHERE at.active = true
+    WHERE rt.resource IN ('problem_statement'::resources, 'template'::resources)
+      AND at.active = true
       AND t.active = true
     LIMIT 1
 ),

@@ -72,7 +72,7 @@ CREATE OR REPLACE FUNCTION api_update_rubric_v4(
     profile_id uuid,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     standard_groups types.i_update_rubric_v4_standard_group[] DEFAULT ARRAY[]::types.i_update_rubric_v4_standard_group[],
-    rubric_agent_id uuid DEFAULT NULL
+    rubric_domain_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     rubric_id uuid,
@@ -92,7 +92,7 @@ WITH params AS (
         pass_points AS pass_points,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(standard_groups, ARRAY[]::types.i_update_rubric_v4_standard_group[]) AS standard_groups,
-        rubric_agent_id AS rubric_agent_id,
+        rubric_domain_id AS rubric_domain_id,
         profile_id AS profile_id
 ),
 user_profile AS (
@@ -136,7 +136,7 @@ update_rubric AS (
         active = x.active,
         points = x.points,
         pass_points = x.pass_points,
-        rubric_agent_id = x.rubric_agent_id,
+        rubric_domain_id = x.rubric_domain_id,
         updated_at = NOW()
     FROM params x
     WHERE r.id = x.rubric_id

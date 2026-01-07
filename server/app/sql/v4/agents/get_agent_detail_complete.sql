@@ -164,10 +164,10 @@ agent_info AS (
         a.description,
         a.model_id::text,
         a.active,
-        COALESCE(aa.role, '') as role  -- Derive from artifact_agents
+        COALESCE(d.artifact::text, '') as role  -- Derive from domains
     FROM params x
     JOIN agents a ON a.id = x.agent_id
-    LEFT JOIN artifact_agents aa ON aa.agent_id = a.id AND aa.artifact_instance_id IS NULL
+    LEFT JOIN domains d ON d.agent_id = a.id
 ),
 agent_active_prompt AS (
     SELECT 

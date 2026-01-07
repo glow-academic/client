@@ -47,9 +47,8 @@ CREATE OR REPLACE FUNCTION api_update_simulation_v4(
     video_show_problem_statement boolean[],
     video_show_objectives boolean[],
     video_show_image boolean[],
-    hint_agent_id uuid,
-    simulation_text_agent_id uuid,
-    simulation_voice_agent_id uuid,
+    simulation_text_domain_id uuid,
+    simulation_voice_domain_id uuid,
     profile_id uuid
 )
 RETURNS TABLE (
@@ -77,9 +76,8 @@ WITH params AS (
         COALESCE(video_show_problem_statement, ARRAY[]::boolean[]) AS video_show_problem_statement,
         COALESCE(video_show_objectives, ARRAY[]::boolean[]) AS video_show_objectives,
         COALESCE(video_show_image, ARRAY[]::boolean[]) AS video_show_image,
-        hint_agent_id AS hint_agent_id,
-        simulation_text_agent_id AS simulation_text_agent_id,
-        simulation_voice_agent_id AS simulation_voice_agent_id,
+        simulation_text_domain_id AS simulation_text_domain_id,
+        simulation_voice_domain_id AS simulation_voice_domain_id,
         profile_id AS profile_id
 ),
 user_profile AS (
@@ -127,9 +125,8 @@ update_simulation AS (
         description = x.description,
         active = x.active,
         practice_simulation = x.practice_simulation,
-        hint_agent_id = COALESCE(x.hint_agent_id, simulations.hint_agent_id),
-        simulation_text_agent_id = COALESCE(x.simulation_text_agent_id, simulations.simulation_text_agent_id),
-        simulation_voice_agent_id = x.simulation_voice_agent_id,
+        simulation_text_domain_id = COALESCE(x.simulation_text_domain_id, simulations.simulation_text_domain_id),
+        simulation_voice_domain_id = x.simulation_voice_domain_id,
         updated_at = NOW()
     FROM params x
     JOIN assert_permissions ap ON TRUE
