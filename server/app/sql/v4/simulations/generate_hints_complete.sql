@@ -271,13 +271,79 @@ group_data AS (
             gen_random_uuid()::text
         ) as trace_id
 ),
+-- Build tool arguments from schemas
+tool_schema_data AS (
+    SELECT 
+        t.id as tool_id,
+        ts.schema_id,
+        -- Build arguments JSONB from schema_fields
+        COALESCE(
+            jsonb_object_agg(
+                sf.name,
+                jsonb_build_object(
+                    'type', CASE sf.field_type
+                        WHEN 'string' THEN 'string'
+                        WHEN 'number' THEN 'number'
+                        WHEN 'boolean' THEN 'boolean'
+                        WHEN 'array' THEN 'array'
+                        ELSE 'string'
+                    END,
+                    'required', sf.required
+                )
+                ORDER BY sf.position
+            ) FILTER (WHERE sf.name IS NOT NULL),
+            '{}'::jsonb
+        ) as arguments,
+        -- Build argument_descriptions JSONB from schema_fields.description
+        COALESCE(
+            jsonb_object_agg(
+                sf.name,
+                sf.description
+                ORDER BY sf.position
+            ) FILTER (WHERE sf.name IS NOT NULL AND sf.description != ''),
+            '{}'::jsonb
+        ) as argument_descriptions,
+        -- Build argument_defaults JSONB from schema_fields.default_value
+        COALESCE(
+            jsonb_object_agg(
+                sf.name,
+                CASE 
+                    WHEN sf.default_value = '' THEN NULL
+                    WHEN sf.field_type = 'number' THEN 
+                        CASE 
+                            WHEN sf.default_value ~ '^-?[0-9]+\.?[0-9]*$' THEN to_jsonb(sf.default_value::numeric)
+                            ELSE NULL
+                        END
+                    WHEN sf.field_type = 'boolean' THEN 
+                        CASE 
+                            WHEN LOWER(sf.default_value) IN ('true', '1', 'yes') THEN 'true'::jsonb
+                            WHEN LOWER(sf.default_value) IN ('false', '0', 'no') THEN 'false'::jsonb
+                            ELSE NULL
+                        END
+                    WHEN sf.field_type = 'array' THEN 
+                        CASE 
+                            WHEN sf.default_value ~ '^\[.*\]$' THEN sf.default_value::jsonb
+                            ELSE NULL
+                        END
+                    ELSE sf.default_value::jsonb
+                END
+                ORDER BY sf.position
+            ) FILTER (WHERE sf.name IS NOT NULL AND sf.default_value != ''),
+            '{}'::jsonb
+        ) as argument_defaults
+    FROM tools t
+    LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
+    LEFT JOIN schemas s ON s.id = ts.schema_id
+    LEFT JOIN schema_fields sf ON sf.schema_id = s.id
+    GROUP BY t.id, ts.schema_id
+),
 -- Get agent tools as composite type array
 agent_tools_data AS (
     SELECT 
         ba.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(d.artifact::text, ''), t.arguments, t.argument_descriptions, t.argument_defaults, t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(d.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
             ),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
@@ -287,6 +353,7 @@ agent_tools_data AS (
     LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN domains d ON d.agent_id = ba.agent_id
+    LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     GROUP BY ba.agent_id
 ),
 -- Get developer instruction using agent role
