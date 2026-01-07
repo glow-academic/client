@@ -1,12 +1,16 @@
 """Handler for generation completion events - handles log_run and dispatches to agent end handlers."""
 
+import json
 import uuid
 from typing import Any
 
+from app.infra.v4.tools.render_tool_template import render_tool_template
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.handler_wrapper import handle_internal_event
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio
+from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from fastapi import APIRouter
 from pydantic import BaseModel
 
@@ -67,6 +71,81 @@ async def _generate_end_impl(
 ) -> None:
     """Handle generation completion - emits log_run and dispatches to agent end handlers."""
     try:
+        # For tool_call_complete events, render templates if applicable
+        rendered_values: dict[str, Any] | None = None
+        if data.type == "tool_call_complete" and data.call_id:
+            try:
+                async with get_db_connection() as conn:
+                    # Get tool_id from call_id
+                    tool_call_record = await conn.fetchrow(
+                        """
+                        SELECT tool_id, id as tool_call_id
+                        FROM calls
+                        WHERE call_id = $1
+                        LIMIT 1
+                        """,
+                        data.call_id,
+                    )
+
+                    if tool_call_record and tool_call_record["tool_id"]:
+                        tool_id = tool_call_record["tool_id"]
+                        tool_call_id_uuid = tool_call_record["tool_call_id"]
+
+                        # Get tool arguments from tool_call_arguments
+                        arguments_record = await conn.fetchrow(
+                            """
+                            SELECT arguments_json
+                            FROM tool_call_arguments
+                            WHERE tool_call_id = $1
+                            ORDER BY created_at DESC
+                            LIMIT 1
+                            """,
+                            tool_call_id_uuid,
+                        )
+
+                        if arguments_record and arguments_record["arguments_json"]:
+                            tool_arguments = arguments_record["arguments_json"]
+                            if isinstance(tool_arguments, str):
+                                tool_arguments = json.loads(tool_arguments)
+
+                            # Render templates
+                            rendered_values = await render_tool_template(
+                                conn, tool_id, tool_arguments
+                            )
+
+                            # Store rendered values in tool_call_results if any were rendered
+                            if rendered_values:
+                                # Delete existing result if any, then insert new one
+                                await conn.execute(
+                                    """
+                                    DELETE FROM tool_call_results
+                                    WHERE tool_call_id = $1
+                                    """,
+                                    tool_call_id_uuid,
+                                )
+                                await conn.execute(
+                                    """
+                                    INSERT INTO tool_call_results (
+                                        tool_call_id,
+                                        result_content,
+                                        result_json,
+                                        created_at
+                                    )
+                                    VALUES ($1, $2, $3, NOW())
+                                    """,
+                                    tool_call_id_uuid,
+                                    json.dumps(rendered_values),
+                                    json.dumps(rendered_values),
+                                )
+            except Exception as template_error:
+                # Log error but don't fail the completion flow
+                from utils.logging.db_logger import get_logger
+
+                logger = get_logger(__name__)
+                logger.warning(
+                    f"Failed to render tool templates for call_id {data.call_id}: {str(template_error)}"
+                )
+
         # For run_complete events, emit log_run first
         if data.type == "run_complete":
             # Extract usage data and emit log_run
@@ -94,34 +173,37 @@ async def _generate_end_impl(
         )
         
         # Dispatch to agent-specific end handler
-        await internal_sio.emit(
-            agent_end_event,
-            {
-                "sid": sid,
-                "type": data.type,
-                "resource_id": data.resource_id,
-                "run_id": data.run_id,
-                "group_id": data.group_id,
-                "department_id": data.department_id,
-                "tool_call_id": data.tool_call_id,
-                "call_id": data.call_id,
-                "tool_name": data.tool_name,
-                "tool_type": data.tool_type,
-                "final_content": data.final_content,
-                "arguments_raw": data.arguments_raw,
-            },
-        )
+        emit_payload: dict[str, Any] = {
+            "sid": sid,
+            "type": data.type,
+            "resource_id": data.resource_id,
+            "run_id": data.run_id,
+            "group_id": data.group_id,
+            "department_id": data.department_id,
+            "tool_call_id": data.tool_call_id,
+            "call_id": data.call_id,
+            "tool_name": data.tool_name,
+            "tool_type": data.tool_type,
+            "final_content": data.final_content,
+            "arguments_raw": data.arguments_raw,
+        }
+
+        # Include rendered template values if available
+        if rendered_values is not None:
+            emit_payload["rendered_template_values"] = rendered_values
+
+        await internal_sio.emit(agent_end_event, emit_payload)
     except Exception as e:
         # Emit error to generate_error handler
         await emit_to_internal(
             "generate_error",
-            {
-                "sid": sid,
-                "error_message": f"Failed to handle generation completion: {str(e)}",
-                "resource_id": data.resource_id,
-                "group_id": data.group_id,
-                "resource_type": data.resource_type,
-            },
+            GenerateErrorApiRequest(
+                sid=sid,
+                error_message=f"Failed to handle generation completion: {str(e)}",
+                resource_id=data.resource_id,
+                group_id=data.group_id,
+                resource_type=data.resource_type,
+            ),
             sid=sid,
         )
 
