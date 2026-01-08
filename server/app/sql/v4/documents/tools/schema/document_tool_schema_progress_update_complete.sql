@@ -42,7 +42,7 @@ get_tool_id AS (
     SELECT t.id as tool_id
     FROM tools t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id
-    WHERE rt.resource = 'schema'::resources
+    WHERE rt.resource = 'schemas'::resources
       AND t.active = true
     LIMIT 1
 ),

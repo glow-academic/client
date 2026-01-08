@@ -48,7 +48,7 @@ WITH params AS (
 get_tool_id AS (
     SELECT t.id as tool_id
     FROM tools t
-    INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('prompt' AS resources)
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resources)
     WHERE t.name = (SELECT tool_name FROM params LIMIT 1)
       AND t.active = true
     LIMIT 1
