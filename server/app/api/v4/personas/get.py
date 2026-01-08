@@ -107,8 +107,11 @@ async def get_persona(
                 "actor": {"name": result.actor_name, "id": profile_id}
             }
             # Only add persona to audit context if persona_id was provided (detail mode)
-            if persona_id and result.name:
-                audit_ctx["persona"] = {"name": result.name, "id": str(persona_id)}
+            if persona_id and result.name_resource and result.name_resource.name:
+                audit_ctx["persona"] = {
+                    "name": result.name_resource.name,
+                    "id": str(persona_id),
+                }
             audit_set(http_request, **audit_ctx)
 
         # Conditional validation based on mode
@@ -125,7 +128,7 @@ async def get_persona(
                     status_code=404, detail=f"Persona {persona_id} not found"
                 )
 
-            if not result.name:
+            if not result.name_resource or not result.name_resource.name:
                 # Persona exists but user doesn't have access
                 raise HTTPException(
                     status_code=403,

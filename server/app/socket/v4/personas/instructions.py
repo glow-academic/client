@@ -5,6 +5,7 @@ from typing import Any
 
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
@@ -22,11 +23,53 @@ async def _instructions_generate_impl(
 ) -> None:
     """Handle instructions generation - format context then route to generate_start."""
     try:
-        # Format context for instructions generation
+        # Get resource IDs from context
         context = data.context or {}
-        persona_name_context = context.get("name", "")
-        description_context = context.get("description", "")
-        current_instructions = context.get("instructions", "")
+        name_id_str = context.get("name_id")
+        description_id_str = context.get("description_id")
+        instructions_id_str = context.get("instructions_id")
+
+        # Look up actual values from database using resource IDs
+        persona_name_context = ""
+        description_context = ""
+        current_instructions = ""
+
+        try:
+            async with get_db_connection() as conn:
+                # Fetch name if name_id provided
+                if name_id_str:
+                    name_id = uuid.UUID(name_id_str)
+                    name_result = await conn.fetchval(
+                        "SELECT n.name FROM names n WHERE n.id = $1", name_id
+                    )
+                    if name_result:
+                        persona_name_context = name_result
+
+                # Fetch description if description_id provided
+                if description_id_str:
+                    description_id = uuid.UUID(description_id_str)
+                    description_result = await conn.fetchval(
+                        "SELECT d.description FROM descriptions d WHERE d.id = $1",
+                        description_id,
+                    )
+                    if description_result:
+                        description_context = description_result
+
+                # Fetch instructions if instructions_id provided
+                if instructions_id_str:
+                    instructions_id = uuid.UUID(instructions_id_str)
+                    instructions_result = await conn.fetchval(
+                        "SELECT i.template FROM instructions i WHERE i.id = $1",
+                        instructions_id,
+                    )
+                    if instructions_result:
+                        current_instructions = instructions_result
+        except RuntimeError:
+            # Database pool not initialized - Socket.IO handles logging
+            pass
+        except Exception:
+            # Error fetching resource values - continue with empty strings
+            pass
 
         developer_message_contents = [
             f"""You are generating instructions for a persona. 

@@ -574,12 +574,11 @@ function PersonaNewComponent({
       resource_type: "names",
       persona_id: personaId || null,
       context: {
-        name: (personaData as { name?: string })?.name || "",
-        description:
-          (personaData as { description?: string })?.description || "",
+        name_id: formState.name_id || null,
+        description_id: formState.description_id || null,
       },
     });
-  }, [socket, isConnected, draftId, personaId, personaData]);
+  }, [socket, isConnected, draftId, personaId, formState]);
 
   const handleGenerateDescription = useCallback(async () => {
     if (!socket || !isConnected || !draftId) {
@@ -593,12 +592,11 @@ function PersonaNewComponent({
       resource_type: "descriptions",
       persona_id: personaId || null,
       context: {
-        name: (personaData as { name?: string })?.name || "",
-        description:
-          (personaData as { description?: string })?.description || "",
+        name_id: formState.name_id || null,
+        description_id: formState.description_id || null,
       },
     });
-  }, [socket, isConnected, draftId, personaId, personaData]);
+  }, [socket, isConnected, draftId, personaId, formState]);
 
   const handleGenerateInstructions = useCallback(async () => {
     if (!socket || !isConnected || !draftId) {
@@ -612,14 +610,12 @@ function PersonaNewComponent({
       resource_type: "instructions",
       persona_id: personaId || null,
       context: {
-        name: (personaData as { name?: string })?.name || "",
-        description:
-          (personaData as { description?: string })?.description || "",
-        instructions:
-          (personaData as { instructions?: string })?.instructions || "",
+        name_id: formState.name_id || null,
+        description_id: formState.description_id || null,
+        instructions_id: formState.instructions_id || null,
       },
     });
-  }, [socket, isConnected, draftId, personaId, personaData]);
+  }, [socket, isConnected, draftId, personaId, formState]);
 
   // Merge formState with urlParams for formData (GenericForm expects single formData object)
   const formData = useMemo(() => {
@@ -932,10 +928,15 @@ function PersonaNewComponent({
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
-    if (personaDetail?.name && personaId && isEditMode) {
+    const personaName = (
+      personaDetail as PersonaDetailOut & {
+        name_resource?: { name: string } | null;
+      }
+    )?.name_resource?.name;
+    if (personaName && personaId && isEditMode) {
       setEntityMetadata({
         entityId: personaId,
-        entityName: personaDetail.name,
+        entityName: personaName,
         entityType: "persona",
       });
     }

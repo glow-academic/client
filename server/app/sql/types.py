@@ -15448,16 +15448,6 @@ class GetPersonaSqlParams(BaseModel):
             self.draft_id,
         )
 
-class QGetPersonaV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    roles: list[str] | None
-
-
-
-
 class QGetPersonaV4ColorOption(BaseModel):
 
     id: UUID | None
@@ -15563,23 +15553,12 @@ class QGetPersonaV4NameResource(BaseModel):
     id: UUID | None
     name: str | None
 
-
-
-
-class QGetPersonaV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-
 class GetPersonaSqlRow(BaseModel):
 
     actor_name: str | None = None
     valid_department_ids: list[UUID] | None = None
-    valid_agent_ids: list[UUID] | None = None
-    valid_parameter_ids: list[UUID] | None = None
     valid_parameter_item_ids: list[UUID] | None = None
     departments: list[QGetPersonaV4Department] | None = None
-    agents: list[QGetPersonaV4Agent] | None = None
-    parameters: list[QGetPersonaV4Parameter] | None = None
     fields: list[QGetPersonaV4Field] | None = None
     color_options: list[QGetPersonaV4ColorOption] | None = None
     icon_options: list[QGetPersonaV4IconOption] | None = None
@@ -15589,25 +15568,12 @@ class GetPersonaSqlRow(BaseModel):
     description_suggestions: list[str] | None = None
     instructions_suggestions: list[str] | None = None
     persona_exists: bool | None = None
-    name: str | None = None
-    description: str | None = None
     department_ids: list[UUID] | None = None
-    active: bool | None = None
-    color: str | None = None
-    icon: str | None = None
-    instructions: str | None = None
-    in_use: bool | None = None
-    scenario_count: int | None = None
     can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    linked_parameter_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     examples: list[QGetPersonaV4Example] | None = None
     examples_history: list[QGetPersonaV4ExampleHistoryItem] | None = None
-    user_role: str | None = None
-    primary_department_id: UUID | None = None
     show_departments: bool | None = None
     show_fields: bool | None = None
     name_id: UUID | None = None
@@ -15638,12 +15604,8 @@ class GetPersonaApiResponse(BaseModel):
 
     actor_name: str | None = None
     valid_department_ids: list[UUID] | None = None
-    valid_agent_ids: list[UUID] | None = None
-    valid_parameter_ids: list[UUID] | None = None
     valid_parameter_item_ids: list[UUID] | None = None
     departments: list[QGetPersonaV4Department] | None = None
-    agents: list[QGetPersonaV4Agent] | None = None
-    parameters: list[QGetPersonaV4Parameter] | None = None
     fields: list[QGetPersonaV4Field] | None = None
     color_options: list[QGetPersonaV4ColorOption] | None = None
     icon_options: list[QGetPersonaV4IconOption] | None = None
@@ -15653,25 +15615,12 @@ class GetPersonaApiResponse(BaseModel):
     description_suggestions: list[str] | None = None
     instructions_suggestions: list[str] | None = None
     persona_exists: bool | None = None
-    name: str | None = None
-    description: str | None = None
     department_ids: list[UUID] | None = None
-    active: bool | None = None
-    color: str | None = None
-    icon: str | None = None
-    instructions: str | None = None
-    in_use: bool | None = None
-    scenario_count: int | None = None
     can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    linked_parameter_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
     examples: list[QGetPersonaV4Example] | None = None
     examples_history: list[QGetPersonaV4ExampleHistoryItem] | None = None
-    user_role: str | None = None
-    primary_department_id: UUID | None = None
     show_departments: bool | None = None
     show_fields: bool | None = None
     name_id: UUID | None = None

@@ -5,6 +5,7 @@ from typing import Any
 
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
@@ -22,10 +23,41 @@ async def _descriptions_generate_impl(
 ) -> None:
     """Handle descriptions generation - format context then route to generate_start."""
     try:
-        # Format context for description generation
+        # Get resource IDs from context
         context = data.context or {}
-        persona_name_context = context.get("name", "")
-        current_description = context.get("description", "")
+        name_id_str = context.get("name_id")
+        description_id_str = context.get("description_id")
+
+        # Look up actual values from database using resource IDs
+        persona_name_context = ""
+        current_description = ""
+
+        try:
+            async with get_db_connection() as conn:
+                # Fetch name if name_id provided
+                if name_id_str:
+                    name_id = uuid.UUID(name_id_str)
+                    name_result = await conn.fetchval(
+                        "SELECT n.name FROM names n WHERE n.id = $1", name_id
+                    )
+                    if name_result:
+                        persona_name_context = name_result
+
+                # Fetch description if description_id provided
+                if description_id_str:
+                    description_id = uuid.UUID(description_id_str)
+                    description_result = await conn.fetchval(
+                        "SELECT d.description FROM descriptions d WHERE d.id = $1",
+                        description_id,
+                    )
+                    if description_result:
+                        current_description = description_result
+        except RuntimeError:
+            # Database pool not initialized - Socket.IO handles logging
+            pass
+        except Exception:
+            # Error fetching resource values - continue with empty strings
+            pass
 
         developer_message_contents = [
             f"""You are generating a description for a persona. 
