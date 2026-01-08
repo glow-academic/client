@@ -15458,10 +15458,12 @@ class QGetPersonaV4Agent(BaseModel):
 
 
 
-class QGetPersonaV4Color(BaseModel):
+class QGetPersonaV4ColorOption(BaseModel):
 
-    hex: str | None
+    id: UUID | None
     name: str | None
+    description: str | None
+    hex_code: str | None
 
 
 
@@ -15524,6 +15526,16 @@ class QGetPersonaV4FlagResource(BaseModel):
 
 
 
+class QGetPersonaV4IconOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+
+
+
+
 class QGetPersonaV4IconResource(BaseModel):
 
     id: UUID | None
@@ -15565,9 +15577,13 @@ class GetPersonaSqlRow(BaseModel):
     agents: list[QGetPersonaV4Agent] | None = None
     parameters: list[QGetPersonaV4Parameter] | None = None
     fields: list[QGetPersonaV4Field] | None = None
-    preset_colors: list[QGetPersonaV4Color] | None = None
-    suggested_icons: list[str] | None = None
-    valid_icons: list[str] | None = None
+    color_options: list[QGetPersonaV4ColorOption] | None = None
+    icon_options: list[QGetPersonaV4IconOption] | None = None
+    color_suggestions: list[UUID] | None = None
+    icon_suggestions: list[UUID] | None = None
+    name_suggestions: list[str] | None = None
+    description_suggestions: list[str] | None = None
+    instructions_suggestions: list[str] | None = None
     persona_exists: bool | None = None
     name: str | None = None
     description: str | None = None
@@ -15600,7 +15616,6 @@ class GetPersonaSqlRow(BaseModel):
     icon_resource: QGetPersonaV4IconResource | None = None
     instructions_resource: QGetPersonaV4InstructionsResource | None = None
     flag_resource: QGetPersonaV4FlagResource | None = None
-    preset_colors_resources: list[QGetPersonaV4ColorResource] | None = None
 
 class GetPersonaApiRequest(BaseModel):
 
@@ -15624,9 +15639,13 @@ class GetPersonaApiResponse(BaseModel):
     agents: list[QGetPersonaV4Agent] | None = None
     parameters: list[QGetPersonaV4Parameter] | None = None
     fields: list[QGetPersonaV4Field] | None = None
-    preset_colors: list[QGetPersonaV4Color] | None = None
-    suggested_icons: list[str] | None = None
-    valid_icons: list[str] | None = None
+    color_options: list[QGetPersonaV4ColorOption] | None = None
+    icon_options: list[QGetPersonaV4IconOption] | None = None
+    color_suggestions: list[UUID] | None = None
+    icon_suggestions: list[UUID] | None = None
+    name_suggestions: list[str] | None = None
+    description_suggestions: list[str] | None = None
+    instructions_suggestions: list[str] | None = None
     persona_exists: bool | None = None
     name: str | None = None
     description: str | None = None
@@ -15659,7 +15678,6 @@ class GetPersonaApiResponse(BaseModel):
     icon_resource: QGetPersonaV4IconResource | None = None
     instructions_resource: QGetPersonaV4InstructionsResource | None = None
     flag_resource: QGetPersonaV4FlagResource | None = None
-    preset_colors_resources: list[QGetPersonaV4ColorResource] | None = None
 
 
 

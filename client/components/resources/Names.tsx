@@ -25,6 +25,7 @@ export interface NamesProps {
   disabled?: boolean;
   id?: string;
   "data-testid"?: string;
+  suggestions?: string[];
   createNamesAction?:
     | ((input: {
         body: { name: string };

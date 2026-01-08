@@ -37,6 +37,7 @@ export interface ColorsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
+  colorSuggestions?: string[];
   createColorsAction?:
     | ((input: {
         body: {

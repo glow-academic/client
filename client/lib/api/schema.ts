@@ -508,7 +508,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/personas/detail": {
+    "/api/v4/personas/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -518,17 +518,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Persona Detail
-         * @description Get detailed persona information.
+         * Get Persona
+         * @description Get persona information - handles both new (persona_id = NULL) and detail (persona_id provided).
          */
-        post: operations["get_persona_detail_api_v4_personas_detail_post"];
+        post: operations["get_persona_api_v4_personas_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/personas/new": {
+    "/api/v4/personas/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -538,50 +538,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Persona New
-         * @description Get default persona structure for creation mode.
+         * Save Persona
+         * @description Save persona - handles both create (persona_id = NULL) and update (persona_id provided).
          */
-        post: operations["get_persona_new_api_v4_personas_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/personas/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Persona
-         * @description Create a new persona.
-         */
-        post: operations["create_persona_api_v4_personas_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/personas/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Persona
-         * @description Update an existing persona.
-         */
-        post: operations["update_persona_api_v4_personas_update_post"];
+        post: operations["save_persona_api_v4_personas_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6101,46 +6061,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** CreatePersonaApiRequest */
-        CreatePersonaApiRequest: {
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /**
-             * Color Id
-             * Format: uuid
-             */
-            color_id: string;
-            /**
-             * Icon Id
-             * Format: uuid
-             */
-            icon_id: string;
-            /**
-             * Instructions Id
-             * Format: uuid
-             */
-            instructions_id: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Example Ids */
-            example_ids: string[];
-            /** Field Ids */
-            field_ids: string[];
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-        };
-        /** CreatePersonaApiResponse */
-        CreatePersonaApiResponse: {
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** CreateProfileApiRequest */
         CreateProfileApiRequest: {
             /** First Name */
@@ -8671,13 +8591,10 @@ export interface components {
             /** Document Options */
             document_options?: components["schemas"]["QListParametersV4DocumentOption"][] | null;
         };
-        /** GetPersonaDetailApiRequest */
-        GetPersonaDetailApiRequest: {
-            /**
-             * Persona Id
-             * Format: uuid
-             */
-            persona_id: string;
+        /** GetPersonaApiRequest */
+        GetPersonaApiRequest: {
+            /** Persona Id */
+            persona_id?: string | null;
             /** Color Search */
             color_search?: string | null;
             /** Icon Search */
@@ -8693,8 +8610,32 @@ export interface components {
             /** Draft Id */
             draft_id?: string | null;
         };
-        /** GetPersonaDetailApiResponse */
-        GetPersonaDetailApiResponse: {
+        /** GetPersonaApiResponse */
+        GetPersonaApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Valid Parameter Ids */
+            valid_parameter_ids?: string[] | null;
+            /** Valid Parameter Item Ids */
+            valid_parameter_item_ids?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetPersonaV4Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetPersonaV4Agent"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetPersonaV4Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetPersonaV4Field"][] | null;
+            /** Preset Colors */
+            preset_colors?: components["schemas"]["QGetPersonaV4Color"][] | null;
+            /** Suggested Icons */
+            suggested_icons?: string[] | null;
+            /** Valid Icons */
+            valid_icons?: string[] | null;
             /** Persona Exists */
             persona_exists?: boolean | null;
             /** Name */
@@ -8721,112 +8662,40 @@ export interface components {
             can_duplicate?: boolean | null;
             /** Can Delete */
             can_delete?: boolean | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Valid Parameter Ids */
-            valid_parameter_ids?: string[] | null;
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids?: string[] | null;
             /** Linked Parameter Ids */
             linked_parameter_ids?: string[] | null;
             /** Parameter Field Ids */
             parameter_field_ids?: string[] | null;
             /** Example Ids */
             example_ids?: string[] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetPersonaDetailV4Department"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetPersonaDetailV4Agent"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetPersonaDetailV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetPersonaDetailV4Field"][] | null;
             /** Examples */
-            examples?: components["schemas"]["QGetPersonaDetailV4Example"][] | null;
+            examples?: components["schemas"]["QGetPersonaV4Example"][] | null;
             /** Examples History */
-            examples_history?: components["schemas"]["QGetPersonaDetailV4ExampleHistoryItem"][] | null;
-            /** Preset Colors */
-            preset_colors?: components["schemas"]["QGetPersonaDetailV4Color"][] | null;
-            /** Suggested Icons */
-            suggested_icons?: string[] | null;
-            /** Valid Icons */
-            valid_icons?: string[] | null;
-        };
-        /** GetPersonaNewApiRequest */
-        GetPersonaNewApiRequest: {
-            /** Color Search */
-            color_search?: string | null;
-            /** Icon Search */
-            icon_search?: string | null;
-            /** Color Show Selected */
-            color_show_selected?: boolean | null;
-            /** Icon Show Selected */
-            icon_show_selected?: boolean | null;
-            /** Current Color */
-            current_color?: string | null;
-            /** Current Icon */
-            current_icon?: string | null;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetPersonaNewApiResponse */
-        GetPersonaNewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
+            examples_history?: components["schemas"]["QGetPersonaV4ExampleHistoryItem"][] | null;
             /** User Role */
             user_role?: string | null;
             /** Primary Department Id */
             primary_department_id?: string | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Valid Parameter Ids */
-            valid_parameter_ids?: string[] | null;
-            /** Valid Parameter Item Ids */
-            valid_parameter_item_ids?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetPersonaNewV4Department"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetPersonaNewV4Agent"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetPersonaNewV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetPersonaNewV4Field"][] | null;
-            /** Preset Colors */
-            preset_colors?: components["schemas"]["QGetPersonaNewV4Color"][] | null;
-            /** Suggested Icons */
-            suggested_icons?: string[] | null;
-            /** Valid Icons */
-            valid_icons?: string[] | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Color */
-            color?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /** Instructions */
-            instructions?: string | null;
-            /** In Use */
-            in_use?: boolean | null;
-            /** Scenario Count */
-            scenario_count?: number | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Duplicate */
-            can_duplicate?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Color Id */
+            color_id?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Instructions Id */
+            instructions_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            name_resource?: components["schemas"]["QGetPersonaV4NameResource"] | null;
+            description_resource?: components["schemas"]["QGetPersonaV4DescriptionResource"] | null;
+            color_resource?: components["schemas"]["QGetPersonaV4ColorResource"] | null;
+            icon_resource?: components["schemas"]["QGetPersonaV4IconResource"] | null;
+            instructions_resource?: components["schemas"]["QGetPersonaV4InstructionsResource"] | null;
+            flag_resource?: components["schemas"]["QGetPersonaV4FlagResource"] | null;
+            /** Preset Colors Resources */
+            preset_colors_resources?: components["schemas"]["QGetPersonaV4ColorResource"][] | null;
         };
         /** GetPersonasListApiRequest */
         GetPersonasListApiRequest: Record<string, never>;
@@ -13486,8 +13355,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetPersonaDetailV4Agent */
-        QGetPersonaDetailV4Agent: {
+        /** QGetPersonaV4Agent */
+        QGetPersonaV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -13497,72 +13366,93 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetPersonaDetailV4Color */
-        QGetPersonaDetailV4Color: {
+        /** QGetPersonaV4Color */
+        QGetPersonaV4Color: {
             /** Hex */
             hex: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPersonaDetailV4Department */
-        QGetPersonaDetailV4Department: {
+        /** QGetPersonaV4ColorResource */
+        QGetPersonaV4ColorResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Hex Code */
+            hex_code: string | null;
+        };
+        /** QGetPersonaV4Department */
+        QGetPersonaV4Department: {
             /** Department Id */
             department_id: string | null;
         };
-        /** QGetPersonaDetailV4Example */
-        QGetPersonaDetailV4Example: {
+        /** QGetPersonaV4DescriptionResource */
+        QGetPersonaV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetPersonaV4Example */
+        QGetPersonaV4Example: {
             /** Example */
             example: string | null;
             /** Idx */
             idx: number | null;
         };
-        /** QGetPersonaDetailV4ExampleHistoryItem */
-        QGetPersonaDetailV4ExampleHistoryItem: {
+        /** QGetPersonaV4ExampleHistoryItem */
+        QGetPersonaV4ExampleHistoryItem: {
             /** Example */
             example: string | null;
             /** Department Ids */
             department_ids: string[] | null;
         };
-        /** QGetPersonaDetailV4Field */
-        QGetPersonaDetailV4Field: {
+        /** QGetPersonaV4Field */
+        QGetPersonaV4Field: {
             /** Field Id */
             field_id: string | null;
         };
-        /** QGetPersonaDetailV4Parameter */
-        QGetPersonaDetailV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-        };
-        /** QGetPersonaNewV4Agent */
-        QGetPersonaNewV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
+        /** QGetPersonaV4FlagResource */
+        QGetPersonaV4FlagResource: {
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
-            /** Roles */
-            roles: string[] | null;
+            /** Icon Id */
+            icon_id: string | null;
         };
-        /** QGetPersonaNewV4Color */
-        QGetPersonaNewV4Color: {
-            /** Hex */
-            hex: string | null;
+        /** QGetPersonaV4IconResource */
+        QGetPersonaV4IconResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Value */
+            value: string | null;
+        };
+        /** QGetPersonaV4InstructionsResource */
+        QGetPersonaV4InstructionsResource: {
+            /** Id */
+            id: string | null;
+            /** Template */
+            template: string | null;
+        };
+        /** QGetPersonaV4NameResource */
+        QGetPersonaV4NameResource: {
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
         };
-        /** QGetPersonaNewV4Department */
-        QGetPersonaNewV4Department: {
-            /** Department Id */
-            department_id: string | null;
-        };
-        /** QGetPersonaNewV4Field */
-        QGetPersonaNewV4Field: {
-            /** Field Id */
-            field_id: string | null;
-        };
-        /** QGetPersonaNewV4Parameter */
-        QGetPersonaNewV4Parameter: {
+        /** QGetPersonaV4Parameter */
+        QGetPersonaV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
         };
@@ -18029,6 +17919,48 @@ export interface components {
             /** Version */
             version?: number | null;
         };
+        /** SavePersonaApiRequest */
+        SavePersonaApiRequest: {
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /**
+             * Color Id
+             * Format: uuid
+             */
+            color_id: string;
+            /**
+             * Icon Id
+             * Format: uuid
+             */
+            icon_id: string;
+            /**
+             * Instructions Id
+             * Format: uuid
+             */
+            instructions_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Example Ids */
+            example_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+            /** Input Persona Id */
+            input_persona_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+        };
+        /** SavePersonaApiResponse */
+        SavePersonaApiResponse: {
+            /** Persona Id */
+            persona_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SchemaFieldItemsApiRequest */
         SchemaFieldItemsApiRequest: {
             /**
@@ -18914,51 +18846,6 @@ export interface components {
             parameter_exists?: boolean | null;
             /** Parameter Id */
             parameter_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** UpdatePersonaApiRequest */
-        UpdatePersonaApiRequest: {
-            /**
-             * Input Persona Id
-             * Format: uuid
-             */
-            input_persona_id: string;
-            /**
-             * Name Id
-             * Format: uuid
-             */
-            name_id: string;
-            /**
-             * Color Id
-             * Format: uuid
-             */
-            color_id: string;
-            /**
-             * Icon Id
-             * Format: uuid
-             */
-            icon_id: string;
-            /**
-             * Instructions Id
-             * Format: uuid
-             */
-            instructions_id: string;
-            /** Department Ids */
-            department_ids: string[];
-            /** Example Ids */
-            example_ids: string[];
-            /** Field Ids */
-            field_ids: string[];
-            /** Description Id */
-            description_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-        };
-        /** UpdatePersonaApiResponse */
-        UpdatePersonaApiResponse: {
-            /** Persona Id */
-            persona_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -20223,7 +20110,7 @@ export interface operations {
             };
         };
     };
-    get_persona_detail_api_v4_personas_detail_post: {
+    get_persona_api_v4_personas_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -20235,7 +20122,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetPersonaDetailApiRequest"];
+                "application/json": components["schemas"]["GetPersonaApiRequest"];
             };
         };
         responses: {
@@ -20245,7 +20132,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetPersonaDetailApiResponse"];
+                    "application/json": components["schemas"]["GetPersonaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20259,7 +20146,7 @@ export interface operations {
             };
         };
     };
-    get_persona_new_api_v4_personas_new_post: {
+    save_persona_api_v4_personas_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -20271,7 +20158,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetPersonaNewApiRequest"];
+                "application/json": components["schemas"]["SavePersonaApiRequest"];
             };
         };
         responses: {
@@ -20281,79 +20168,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetPersonaNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_persona_api_v4_personas_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreatePersonaApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreatePersonaApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_persona_api_v4_personas_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdatePersonaApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdatePersonaApiResponse"];
+                    "application/json": components["schemas"]["SavePersonaApiResponse"];
                 };
             };
             /** @description Validation Error */

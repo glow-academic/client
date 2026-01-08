@@ -104,6 +104,20 @@ CREATE TYPE types.q_get_persona_v4_instructions_resource AS (
     template text
 );
 
+CREATE TYPE types.q_get_persona_v4_color_option AS (
+    id uuid,
+    name text,
+    description text,
+    hex_code text
+);
+
+CREATE TYPE types.q_get_persona_v4_icon_option AS (
+    id uuid,
+    name text,
+    description text,
+    value text
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_persona_v4(
     profile_id uuid,
@@ -114,7 +128,8 @@ CREATE OR REPLACE FUNCTION api_get_persona_v4(
     icon_show_selected boolean DEFAULT NULL,
     current_color text DEFAULT NULL,
     current_icon text DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    department_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     -- Common fields (always returned)
@@ -127,9 +142,13 @@ RETURNS TABLE (
     agents types.q_get_persona_v4_agent[],
     parameters types.q_get_persona_v4_parameter[],
     fields types.q_get_persona_v4_field[],
-    preset_colors types.q_get_persona_v4_color[],
-    suggested_icons text[],
-    valid_icons text[],
+    color_options types.q_get_persona_v4_color_option[],
+    icon_options types.q_get_persona_v4_icon_option[],
+    color_suggestions uuid[],
+    icon_suggestions uuid[],
+    name_suggestions text[],
+    description_suggestions text[],
+    instructions_suggestions text[],
     -- Conditional fields (different for new vs detail)
     persona_exists boolean,
     name text,
@@ -165,8 +184,7 @@ RETURNS TABLE (
     color_resource types.q_get_persona_v4_color_resource,
     icon_resource types.q_get_persona_v4_icon_resource,
     instructions_resource types.q_get_persona_v4_instructions_resource,
-    flag_resource types.q_get_persona_v4_flag_resource,
-    preset_colors_resources types.q_get_persona_v4_color_resource[]
+    flag_resource types.q_get_persona_v4_flag_resource
 )
 LANGUAGE sql
 STABLE
@@ -468,88 +486,124 @@ permissions_data AS (
     CROSS JOIN usage_data ud
     CROSS JOIN user_profile up
 ),
--- All preset colors (use detail version which has more colors)
-all_preset_colors AS (
-    SELECT * FROM (VALUES
-        ('#ef4444', 'Red'),
-        ('#f97316', 'Orange'),
-        ('#f59e0b', 'Amber'),
-        ('#eab308', 'Yellow'),
-        ('#84cc16', 'Lime'),
-        ('#22c55e', 'Green'),
-        ('#10b981', 'Emerald'),
-        ('#14b8a6', 'Teal'),
-        ('#06b6d4', 'Cyan'),
-        ('#0ea5e9', 'Sky'),
-        ('#3b82f6', 'Blue'),
-        ('#6366f1', 'Indigo'),
-        ('#8b5cf6', 'Violet'),
-        ('#a855f7', 'Purple'),
-        ('#d946ef', 'Fuchsia'),
-        ('#ec4899', 'Pink'),
-        ('#f43f5e', 'Rose')
-    ) AS t(hex, name)
-),
--- Filtered preset colors based on search and show_selected
-preset_colors_filtered AS (
-    SELECT apc.hex, apc.name
-    FROM all_preset_colors apc
+-- Color options from database
+color_options_data AS (
+    SELECT 
+        c.id,
+        c.name,
+        c.description,
+        c.hex_code
+    FROM colors c
     CROSS JOIN params p
     WHERE 
-        -- Search filter: if color_search provided, match name or hex
+        -- Search filter: if color_search provided, match name or hex_code
         (p.color_search IS NULL OR p.color_search = '' OR
-         LOWER(apc.name) LIKE '%' || LOWER(p.color_search) || '%' OR
-         LOWER(apc.hex) LIKE '%' || LOWER(p.color_search) || '%')
+         LOWER(c.name) LIKE '%' || LOWER(p.color_search) || '%' OR
+         LOWER(c.hex_code) LIKE '%' || LOWER(p.color_search) || '%')
         -- Show selected filter: if enabled and current_color provided, only show current color
         AND (
             NOT p.color_show_selected OR
             p.current_color IS NULL OR
-            UPPER(apc.hex) = UPPER(COALESCE(p.current_color, ''))
+            UPPER(c.hex_code) = UPPER(COALESCE(p.current_color, ''))
         )
+    ORDER BY c.name
 ),
--- All suggested icons (use detail version which has more icons)
-all_suggested_icons AS (
-    SELECT unnest(ARRAY['Brain', 'User', 'Users', 'Sparkles', 'Zap', 'Heart', 'Star', 'MessageSquare', 'Bot', 'GraduationCap']) AS icon_name
-),
--- Filtered suggested icons based on search and show_selected
-suggested_icons_filtered AS (
-    SELECT asi.icon_name
-    FROM all_suggested_icons asi
+-- Icon options from database
+icon_options_data AS (
+    SELECT 
+        i.id,
+        i.name,
+        i.description,
+        i.value
+    FROM icons i
     CROSS JOIN params p
     WHERE 
-        -- Search filter: if icon_search provided, match name
+        -- Search filter: if icon_search provided, match name or value
         (p.icon_search IS NULL OR p.icon_search = '' OR
-         LOWER(asi.icon_name) LIKE '%' || LOWER(p.icon_search) || '%')
+         LOWER(i.name) LIKE '%' || LOWER(p.icon_search) || '%' OR
+         LOWER(i.value) LIKE '%' || LOWER(p.icon_search) || '%')
         -- Show selected filter: if enabled and current_icon provided, only show current icon
         AND (
             NOT p.icon_show_selected OR
             p.current_icon IS NULL OR
-            LOWER(asi.icon_name) = LOWER(COALESCE(p.current_icon, ''))
+            LOWER(i.value) = LOWER(COALESCE(p.current_icon, ''))
         )
+    ORDER BY i.name
 ),
--- All valid icons (use detail version which has more icons)
-all_valid_icons AS (
-    SELECT unnest(ARRAY[
-        'Brain', 'User', 'Users', 'Sparkles', 'Zap', 'Heart', 'Star', 'MessageSquare', 'Bot', 'GraduationCap',
-        'Lightbulb', 'Target', 'Award', 'BookOpen', 'Code', 'Cpu', 'Database', 'FileText', 'Globe',
-        'Mail', 'Mic', 'Monitor', 'Phone', 'Radio', 'Search', 'Settings', 'Shield', 'Video', 'Wifi'
-    ]) AS icon_name
+-- Icon suggestions based on historical usage (most frequently used icons)
+icon_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(icon_id ORDER BY usage_count DESC),
+            ARRAY[]::uuid[]
+        ) as icon_suggestions
+    FROM (
+        SELECT 
+            pi.icon_id,
+            COUNT(*) as usage_count
+        FROM persona_icons pi
+        WHERE pi.icon_id IS NOT NULL
+        GROUP BY pi.icon_id
+        ORDER BY usage_count DESC
+        LIMIT 10
+    ) icon_usage
 ),
--- Filtered valid icons based on search and show_selected
-valid_icons_filtered AS (
-    SELECT avi.icon_name
-    FROM all_valid_icons avi
-    CROSS JOIN params p
-    WHERE 
-        -- Search filter: if icon_search provided, match name
-        (p.icon_search IS NULL OR p.icon_search = '' OR
-         LOWER(avi.icon_name) LIKE '%' || LOWER(p.icon_search) || '%')
-        -- Show selected filter: if enabled and current_icon provided, only show current icon
-        AND (
-            NOT p.icon_show_selected OR
-            p.current_icon IS NULL OR
-            LOWER(avi.icon_name) = LOWER(COALESCE(p.current_icon, ''))
-        )
+-- Name suggestions based on historical usage
+name_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(name_usage.name ORDER BY name_usage.max_created_at DESC),
+            ARRAY[]::text[]
+        ) as name_suggestions
+    FROM (
+        SELECT DISTINCT
+            n.name,
+            MAX(pn.created_at) as max_created_at
+        FROM persona_names pn
+        JOIN names n ON pn.name_id = n.id
+        WHERE n.name IS NOT NULL AND n.name != ''
+        GROUP BY n.name
+        ORDER BY MAX(pn.created_at) DESC
+        LIMIT 20
+    ) name_usage
+),
+-- Description suggestions based on historical usage
+description_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(desc_usage.description ORDER BY desc_usage.max_created_at DESC),
+            ARRAY[]::text[]
+        ) as description_suggestions
+    FROM (
+        SELECT DISTINCT
+            d.description,
+            MAX(pd.created_at) as max_created_at
+        FROM persona_descriptions pd
+        JOIN descriptions d ON pd.description_id = d.id
+        WHERE d.description IS NOT NULL AND d.description != ''
+        GROUP BY d.description
+        ORDER BY MAX(pd.created_at) DESC
+        LIMIT 20
+    ) desc_usage
+),
+-- Instructions suggestions based on historical usage
+instructions_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(inst_usage.template ORDER BY inst_usage.max_created_at DESC),
+            ARRAY[]::text[]
+        ) as instructions_suggestions
+    FROM (
+        SELECT DISTINCT
+            i.template,
+            MAX(pi.created_at) as max_created_at
+        FROM persona_instructions pi
+        JOIN instructions i ON pi.instruction_id = i.id
+        WHERE i.active = true AND i.template IS NOT NULL AND i.template != ''
+        GROUP BY i.template
+        ORDER BY MAX(pi.created_at) DESC
+        LIMIT 20
+    ) inst_usage
 ),
 -- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
 name_resource_data AS (
@@ -631,18 +685,6 @@ flag_resource_data AS (
         (SELECT ROW(f.id, f.name, f.description, f.icon_id)::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
     FROM params
     WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
-),
--- Preset colors as resource array (convert preset_colors_filtered to color_resource array)
-preset_colors_resources_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(
-                ROW(NULL::uuid, pcf.name, 'Color: ' || pcf.hex, pcf.hex)::types.q_get_persona_v4_color_resource
-                ORDER BY pcf.name
-            ) FROM preset_colors_filtered pcf),
-            '{}'::types.q_get_persona_v4_color_resource[]
-        ) as preset_colors_resources
-    FROM params
 )
 SELECT
     -- Common fields
@@ -683,21 +725,44 @@ SELECT
         ) FROM field_mapping_data fmd),
         '{}'::types.q_get_persona_v4_field[]
     ) as fields,
-    -- Filtered preset colors (SQL-side filtering)
+    -- Color options from database
     COALESCE(
-        (SELECT ARRAY_AGG((pcf.hex, pcf.name)::types.q_get_persona_v4_color ORDER BY pcf.name) FROM preset_colors_filtered pcf),
-        '{}'::types.q_get_persona_v4_color[]
-    ) as preset_colors,
-    -- Filtered suggested icons (SQL-side filtering)
+        (SELECT ARRAY_AGG(
+            (cod.id, cod.name, cod.description, cod.hex_code)::types.q_get_persona_v4_color_option
+            ORDER BY cod.name
+        ) FROM color_options_data cod),
+        '{}'::types.q_get_persona_v4_color_option[]
+    ) as color_options,
+    -- Icon options from database
     COALESCE(
-        (SELECT ARRAY_AGG(sif.icon_name ORDER BY sif.icon_name) FROM suggested_icons_filtered sif),
-        '{}'::text[]
-    ) as suggested_icons,
-    -- Filtered valid icons (SQL-side filtering)
+        (SELECT ARRAY_AGG(
+            (iod.id, iod.name, iod.description, iod.value)::types.q_get_persona_v4_icon_option
+            ORDER BY iod.name
+        ) FROM icon_options_data iod),
+        '{}'::types.q_get_persona_v4_icon_option[]
+    ) as icon_options,
+    -- Color suggestions (empty for now, can be populated with AI recommendations later)
+    ARRAY[]::uuid[] as color_suggestions,
+    -- Icon suggestions based on historical usage
     COALESCE(
-        (SELECT ARRAY_AGG(vif.icon_name ORDER BY vif.icon_name) FROM valid_icons_filtered vif),
-        '{}'::text[]
-    ) as valid_icons,
+        (SELECT icon_suggestions FROM icon_suggestions_data),
+        ARRAY[]::uuid[]
+    ) as icon_suggestions,
+    -- Name suggestions based on historical usage
+    COALESCE(
+        (SELECT name_suggestions FROM name_suggestions_data),
+        ARRAY[]::text[]
+    ) as name_suggestions,
+    -- Description suggestions based on historical usage
+    COALESCE(
+        (SELECT description_suggestions FROM description_suggestions_data),
+        ARRAY[]::text[]
+    ) as description_suggestions,
+    -- Instructions suggestions based on historical usage
+    COALESCE(
+        (SELECT instructions_suggestions FROM instructions_suggestions_data),
+        ARRAY[]::text[]
+    ) as instructions_suggestions,
     -- Conditional fields
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
     -- Merge draft payload over existing persona data if draft_id provided, otherwise use defaults for new or existing data
@@ -806,9 +871,7 @@ SELECT
     (SELECT color_res FROM (SELECT crd.draft_color_resource as color_res UNION ALL SELECT crd.persona_color_resource LIMIT 1) sub WHERE color_res IS NOT NULL LIMIT 1) as color_resource,
     (SELECT icon_res FROM (SELECT ird.draft_icon_resource as icon_res UNION ALL SELECT ird.persona_icon_resource LIMIT 1) sub WHERE icon_res IS NOT NULL LIMIT 1) as icon_resource,
     (SELECT inst_res FROM (SELECT instrd.draft_instructions_resource as inst_res UNION ALL SELECT instrd.persona_instructions_resource LIMIT 1) sub WHERE inst_res IS NOT NULL LIMIT 1) as instructions_resource,
-    (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.persona_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,
-    -- Preset colors as resource array
-    (SELECT preset_colors_resources FROM preset_colors_resources_data) as preset_colors_resources
+    (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.persona_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource
 FROM user_profile up
 CROSS JOIN valid_department_ids_data vdid
 CROSS JOIN valid_agent_ids_data vaid
@@ -827,5 +890,8 @@ CROSS JOIN color_resource_data crd
 CROSS JOIN icon_resource_data ird
 CROSS JOIN instructions_resource_data instrd
 CROSS JOIN flag_resource_data frd
-CROSS JOIN preset_colors_resources_data pcrd
+CROSS JOIN icon_suggestions_data isd
+CROSS JOIN name_suggestions_data nsd
+CROSS JOIN description_suggestions_data dsd
+CROSS JOIN instructions_suggestions_data insd
 $$;

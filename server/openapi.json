@@ -1931,15 +1931,15 @@
         }
       }
     },
-    "/api/v4/personas/detail": {
+    "/api/v4/personas/get": {
       "post": {
         "tags": [
           "v4",
           "personas"
         ],
-        "summary": "Get Persona Detail",
-        "description": "Get detailed persona information.",
-        "operationId": "get_persona_detail_api_v4_personas_detail_post",
+        "summary": "Get Persona",
+        "description": "Get persona information - handles both new (persona_id = NULL) and detail (persona_id provided).",
+        "operationId": "get_persona_api_v4_personas_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1979,7 +1979,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetPersonaDetailApiRequest"
+                "$ref": "#/components/schemas/GetPersonaApiRequest"
               }
             }
           }
@@ -1990,7 +1990,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetPersonaDetailApiResponse"
+                  "$ref": "#/components/schemas/GetPersonaApiResponse"
                 }
               }
             }
@@ -2008,15 +2008,15 @@
         }
       }
     },
-    "/api/v4/personas/new": {
+    "/api/v4/personas/save": {
       "post": {
         "tags": [
           "v4",
           "personas"
         ],
-        "summary": "Get Persona New",
-        "description": "Get default persona structure for creation mode.",
-        "operationId": "get_persona_new_api_v4_personas_new_post",
+        "summary": "Save Persona",
+        "description": "Save persona - handles both create (persona_id = NULL) and update (persona_id provided).",
+        "operationId": "save_persona_api_v4_personas_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2056,7 +2056,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetPersonaNewApiRequest"
+                "$ref": "#/components/schemas/SavePersonaApiRequest"
               }
             }
           }
@@ -2067,161 +2067,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetPersonaNewApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v4/personas/create": {
-      "post": {
-        "tags": [
-          "v4",
-          "personas"
-        ],
-        "summary": "Create Persona",
-        "description": "Create a new persona.",
-        "operationId": "create_persona_api_v4_personas_create_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreatePersonaApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreatePersonaApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v4/personas/update": {
-      "post": {
-        "tags": [
-          "v4",
-          "personas"
-        ],
-        "summary": "Update Persona",
-        "description": "Update an existing persona.",
-        "operationId": "update_persona_api_v4_personas_update_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePersonaApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdatePersonaApiResponse"
+                  "$ref": "#/components/schemas/SavePersonaApiResponse"
                 }
               }
             }
@@ -20874,118 +20720,6 @@
         "type": "object",
         "title": "CreateParameterApiResponse"
       },
-      "CreatePersonaApiRequest": {
-        "properties": {
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
-          },
-          "color_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Color Id"
-          },
-          "icon_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Icon Id"
-          },
-          "instructions_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Instructions Id"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "example_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Example Ids"
-          },
-          "field_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Field Ids"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name_id",
-          "color_id",
-          "icon_id",
-          "instructions_id",
-          "department_ids",
-          "example_ids",
-          "field_ids"
-        ],
-        "title": "CreatePersonaApiRequest"
-      },
-      "CreatePersonaApiResponse": {
-        "properties": {
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "CreatePersonaApiResponse"
-      },
       "CreateProfileApiRequest": {
         "properties": {
           "first_name": {
@@ -32428,11 +32162,18 @@
         "type": "object",
         "title": "GetParametersListApiResponse"
       },
-      "GetPersonaDetailApiRequest": {
+      "GetPersonaApiRequest": {
         "properties": {
           "persona_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Persona Id"
           },
           "color_search": {
@@ -32515,13 +32256,179 @@
           }
         },
         "type": "object",
-        "required": [
-          "persona_id"
-        ],
-        "title": "GetPersonaDetailApiRequest"
+        "title": "GetPersonaApiRequest"
       },
-      "GetPersonaDetailApiResponse": {
+      "GetPersonaApiResponse": {
         "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "valid_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Agent Ids"
+          },
+          "valid_parameter_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Ids"
+          },
+          "valid_parameter_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Parameter Item Ids"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaV4Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaV4Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaV4Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaV4Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "preset_colors": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetPersonaV4Color"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset Colors"
+          },
+          "suggested_icons": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Icons"
+          },
+          "valid_icons": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Icons"
+          },
           "persona_exists": {
             "anyOf": [
               {
@@ -32669,66 +32576,6 @@
             ],
             "title": "Can Delete"
           },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "valid_agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Agent Ids"
-          },
-          "valid_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Parameter Ids"
-          },
-          "valid_parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Parameter Item Ids"
-          },
           "linked_parameter_ids": {
             "anyOf": [
               {
@@ -32774,78 +32621,11 @@
             ],
             "title": "Example Ids"
           },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaDetailV4Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "agents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaDetailV4Agent"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaDetailV4Parameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
-          "fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaDetailV4Field"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields"
-          },
           "examples": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetPersonaDetailV4Example"
+                  "$ref": "#/components/schemas/QGetPersonaV4Example"
                 },
                 "type": "array"
               },
@@ -32859,7 +32639,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetPersonaDetailV4ExampleHistoryItem"
+                  "$ref": "#/components/schemas/QGetPersonaV4ExampleHistoryItem"
                 },
                 "type": "array"
               },
@@ -32868,295 +32648,6 @@
               }
             ],
             "title": "Examples History"
-          },
-          "preset_colors": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaDetailV4Color"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Preset Colors"
-          },
-          "suggested_icons": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Suggested Icons"
-          },
-          "valid_icons": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Icons"
-          },
-          "name_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name Id"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "color_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color Id"
-          },
-          "icon_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon Id"
-          },
-          "instructions_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions Id"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          },
-          "name_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetPersonaDetailV4NameResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "description_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetPersonaDetailV4DescriptionResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "color_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetPersonaDetailV4ColorResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "icon_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetPersonaDetailV4IconResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "instructions_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetPersonaDetailV4InstructionsResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "flag_resource": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/QGetPersonaDetailV4FlagResource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "preset_colors_resources": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaDetailV4ColorResource"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Preset Colors Resources"
-          }
-        },
-        "type": "object",
-        "title": "GetPersonaDetailApiResponse"
-      },
-      "GetPersonaNewApiRequest": {
-        "properties": {
-          "color_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color Search"
-          },
-          "icon_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon Search"
-          },
-          "color_show_selected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color Show Selected"
-          },
-          "icon_show_selected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon Show Selected"
-          },
-          "current_color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Color"
-          },
-          "current_icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Icon"
-          },
-          "draft_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Id"
-          }
-        },
-        "type": "object",
-        "title": "GetPersonaNewApiRequest"
-      },
-      "GetPersonaNewApiResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
           },
           "user_role": {
             "anyOf": [
@@ -33181,300 +32672,6 @@
             ],
             "title": "Primary Department Id"
           },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "valid_agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Agent Ids"
-          },
-          "valid_parameter_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Parameter Ids"
-          },
-          "valid_parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Parameter Item Ids"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaNewV4Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "agents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaNewV4Agent"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaNewV4Parameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
-          "fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaNewV4Field"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields"
-          },
-          "preset_colors": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetPersonaNewV4Color"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Preset Colors"
-          },
-          "suggested_icons": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Suggested Icons"
-          },
-          "valid_icons": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Icons"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "instructions": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions"
-          },
-          "in_use": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "In Use"
-          },
-          "scenario_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Count"
-          },
-          "can_edit": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Delete"
-          },
           "name_id": {
             "anyOf": [
               {
@@ -33550,7 +32747,7 @@
           "name_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetPersonaNewV4NameResource"
+                "$ref": "#/components/schemas/QGetPersonaV4NameResource"
               },
               {
                 "type": "null"
@@ -33560,7 +32757,7 @@
           "description_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetPersonaNewV4DescriptionResource"
+                "$ref": "#/components/schemas/QGetPersonaV4DescriptionResource"
               },
               {
                 "type": "null"
@@ -33570,7 +32767,7 @@
           "color_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetPersonaNewV4ColorResource"
+                "$ref": "#/components/schemas/QGetPersonaV4ColorResource"
               },
               {
                 "type": "null"
@@ -33580,7 +32777,7 @@
           "icon_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetPersonaNewV4IconResource"
+                "$ref": "#/components/schemas/QGetPersonaV4IconResource"
               },
               {
                 "type": "null"
@@ -33590,7 +32787,7 @@
           "instructions_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetPersonaNewV4InstructionsResource"
+                "$ref": "#/components/schemas/QGetPersonaV4InstructionsResource"
               },
               {
                 "type": "null"
@@ -33600,7 +32797,7 @@
           "flag_resource": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetPersonaNewV4FlagResource"
+                "$ref": "#/components/schemas/QGetPersonaV4FlagResource"
               },
               {
                 "type": "null"
@@ -33611,7 +32808,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetPersonaNewV4ColorResource"
+                  "$ref": "#/components/schemas/QGetPersonaV4ColorResource"
                 },
                 "type": "array"
               },
@@ -33623,7 +32820,7 @@
           }
         },
         "type": "object",
-        "title": "GetPersonaNewApiResponse"
+        "title": "GetPersonaApiResponse"
       },
       "GetPersonasListApiRequest": {
         "properties": {},
@@ -58289,7 +57486,7 @@
         ],
         "title": "QGetParameterNewV4Persona"
       },
-      "QGetPersonaDetailV4Agent": {
+      "QGetPersonaV4Agent": {
         "properties": {
           "agent_id": {
             "anyOf": [
@@ -58347,9 +57544,9 @@
           "description",
           "roles"
         ],
-        "title": "QGetPersonaDetailV4Agent"
+        "title": "QGetPersonaV4Agent"
       },
-      "QGetPersonaDetailV4Color": {
+      "QGetPersonaV4Color": {
         "properties": {
           "hex": {
             "anyOf": [
@@ -58379,9 +57576,9 @@
           "hex",
           "name"
         ],
-        "title": "QGetPersonaDetailV4Color"
+        "title": "QGetPersonaV4Color"
       },
-      "QGetPersonaDetailV4ColorResource": {
+      "QGetPersonaV4ColorResource": {
         "properties": {
           "id": {
             "anyOf": [
@@ -58436,9 +57633,9 @@
           "description",
           "hex_code"
         ],
-        "title": "QGetPersonaDetailV4ColorResource"
+        "title": "QGetPersonaV4ColorResource"
       },
-      "QGetPersonaDetailV4Department": {
+      "QGetPersonaV4Department": {
         "properties": {
           "department_id": {
             "anyOf": [
@@ -58457,9 +57654,9 @@
         "required": [
           "department_id"
         ],
-        "title": "QGetPersonaDetailV4Department"
+        "title": "QGetPersonaV4Department"
       },
-      "QGetPersonaDetailV4DescriptionResource": {
+      "QGetPersonaV4DescriptionResource": {
         "properties": {
           "id": {
             "anyOf": [
@@ -58490,9 +57687,9 @@
           "id",
           "description"
         ],
-        "title": "QGetPersonaDetailV4DescriptionResource"
+        "title": "QGetPersonaV4DescriptionResource"
       },
-      "QGetPersonaDetailV4Example": {
+      "QGetPersonaV4Example": {
         "properties": {
           "example": {
             "anyOf": [
@@ -58522,9 +57719,9 @@
           "example",
           "idx"
         ],
-        "title": "QGetPersonaDetailV4Example"
+        "title": "QGetPersonaV4Example"
       },
-      "QGetPersonaDetailV4ExampleHistoryItem": {
+      "QGetPersonaV4ExampleHistoryItem": {
         "properties": {
           "example": {
             "anyOf": [
@@ -58557,9 +57754,9 @@
           "example",
           "department_ids"
         ],
-        "title": "QGetPersonaDetailV4ExampleHistoryItem"
+        "title": "QGetPersonaV4ExampleHistoryItem"
       },
-      "QGetPersonaDetailV4Field": {
+      "QGetPersonaV4Field": {
         "properties": {
           "field_id": {
             "anyOf": [
@@ -58578,9 +57775,9 @@
         "required": [
           "field_id"
         ],
-        "title": "QGetPersonaDetailV4Field"
+        "title": "QGetPersonaV4Field"
       },
-      "QGetPersonaDetailV4FlagResource": {
+      "QGetPersonaV4FlagResource": {
         "properties": {
           "id": {
             "anyOf": [
@@ -58636,9 +57833,9 @@
           "description",
           "icon_id"
         ],
-        "title": "QGetPersonaDetailV4FlagResource"
+        "title": "QGetPersonaV4FlagResource"
       },
-      "QGetPersonaDetailV4IconResource": {
+      "QGetPersonaV4IconResource": {
         "properties": {
           "id": {
             "anyOf": [
@@ -58693,9 +57890,9 @@
           "description",
           "value"
         ],
-        "title": "QGetPersonaDetailV4IconResource"
+        "title": "QGetPersonaV4IconResource"
       },
-      "QGetPersonaDetailV4InstructionsResource": {
+      "QGetPersonaV4InstructionsResource": {
         "properties": {
           "id": {
             "anyOf": [
@@ -58726,9 +57923,9 @@
           "id",
           "template"
         ],
-        "title": "QGetPersonaDetailV4InstructionsResource"
+        "title": "QGetPersonaV4InstructionsResource"
       },
-      "QGetPersonaDetailV4NameResource": {
+      "QGetPersonaV4NameResource": {
         "properties": {
           "id": {
             "anyOf": [
@@ -58759,9 +57956,9 @@
           "id",
           "name"
         ],
-        "title": "QGetPersonaDetailV4NameResource"
+        "title": "QGetPersonaV4NameResource"
       },
-      "QGetPersonaDetailV4Parameter": {
+      "QGetPersonaV4Parameter": {
         "properties": {
           "parameter_id": {
             "anyOf": [
@@ -58780,433 +57977,7 @@
         "required": [
           "parameter_id"
         ],
-        "title": "QGetPersonaDetailV4Parameter"
-      },
-      "QGetPersonaNewV4Agent": {
-        "properties": {
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "QGetPersonaNewV4Agent"
-      },
-      "QGetPersonaNewV4Color": {
-        "properties": {
-          "hex": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hex"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "hex",
-          "name"
-        ],
-        "title": "QGetPersonaNewV4Color"
-      },
-      "QGetPersonaNewV4ColorResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "hex_code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hex Code"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "hex_code"
-        ],
-        "title": "QGetPersonaNewV4ColorResource"
-      },
-      "QGetPersonaNewV4Department": {
-        "properties": {
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id"
-        ],
-        "title": "QGetPersonaNewV4Department"
-      },
-      "QGetPersonaNewV4DescriptionResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "description"
-        ],
-        "title": "QGetPersonaNewV4DescriptionResource"
-      },
-      "QGetPersonaNewV4Field": {
-        "properties": {
-          "field_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "field_id"
-        ],
-        "title": "QGetPersonaNewV4Field"
-      },
-      "QGetPersonaNewV4FlagResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "icon_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "icon_id"
-        ],
-        "title": "QGetPersonaNewV4FlagResource"
-      },
-      "QGetPersonaNewV4IconResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "value"
-        ],
-        "title": "QGetPersonaNewV4IconResource"
-      },
-      "QGetPersonaNewV4InstructionsResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "template": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Template"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "template"
-        ],
-        "title": "QGetPersonaNewV4InstructionsResource"
-      },
-      "QGetPersonaNewV4NameResource": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "QGetPersonaNewV4NameResource"
-      },
-      "QGetPersonaNewV4Parameter": {
-        "properties": {
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "parameter_id"
-        ],
-        "title": "QGetPersonaNewV4Parameter"
+        "title": "QGetPersonaV4Parameter"
       },
       "QGetPracticeHistoryV4Attempt": {
         "properties": {
@@ -83887,6 +82658,130 @@
         "type": "object",
         "title": "ResponsesApiResponse"
       },
+      "SavePersonaApiRequest": {
+        "properties": {
+          "name_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Name Id"
+          },
+          "color_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Color Id"
+          },
+          "icon_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Icon Id"
+          },
+          "instructions_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Instructions Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "example_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Example Ids"
+          },
+          "field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Field Ids"
+          },
+          "input_persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Persona Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name_id",
+          "color_id",
+          "icon_id",
+          "instructions_id",
+          "department_ids",
+          "example_ids",
+          "field_ids"
+        ],
+        "title": "SavePersonaApiRequest"
+      },
+      "SavePersonaApiResponse": {
+        "properties": {
+          "persona_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Persona Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "SavePersonaApiResponse"
+      },
       "SchemaFieldItemsApiRequest": {
         "properties": {
           "draft_id": {
@@ -86369,124 +85264,6 @@
         },
         "type": "object",
         "title": "UpdateParameterApiResponse"
-      },
-      "UpdatePersonaApiRequest": {
-        "properties": {
-          "input_persona_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Input Persona Id"
-          },
-          "name_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Name Id"
-          },
-          "color_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Color Id"
-          },
-          "icon_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Icon Id"
-          },
-          "instructions_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Instructions Id"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "example_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Example Ids"
-          },
-          "field_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Field Ids"
-          },
-          "description_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description Id"
-          },
-          "active_flag_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active Flag Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "input_persona_id",
-          "name_id",
-          "color_id",
-          "icon_id",
-          "instructions_id",
-          "department_ids",
-          "example_ids",
-          "field_ids"
-        ],
-        "title": "UpdatePersonaApiRequest"
-      },
-      "UpdatePersonaApiResponse": {
-        "properties": {
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "UpdatePersonaApiResponse"
       },
       "UpdateProfileApiRequest": {
         "properties": {

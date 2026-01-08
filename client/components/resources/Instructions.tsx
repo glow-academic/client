@@ -27,6 +27,7 @@ export interface InstructionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
+  suggestions?: string[];
   createInstructionsAction?:
     | ((input: {
         body: { template: string };

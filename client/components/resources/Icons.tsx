@@ -32,6 +32,7 @@ export interface IconsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
+  iconSuggestions?: string[];
   createIconsAction?:
     | ((input: {
         body: {

@@ -27,8 +27,6 @@ import type {
   CreateDraftInstructionsOut,
   CreateDraftNamesIn,
   CreateDraftNamesOut,
-  PersonaDetailOut,
-  PersonaNewOut,
   SavePersonaIn,
   SavePersonaOut,
 } from "@/app/(main)/create/personas/p/[personaId]/page";
@@ -55,6 +53,9 @@ import {
   useQueryStates,
   type Parser,
 } from "nuqs";
+
+type PersonaDetailOut = OutputOf<"/api/v4/personas/get", "post">;
+type PersonaNewOut = OutputOf<"/api/v4/personas/get", "post">;
 
 export interface PersonaNewProps {
   personaId?: string;
@@ -153,20 +154,22 @@ function PersonaNewComponent({
           return `persona_id:${String(data.persona_id)}`;
         }
         const keyFields: Record<string, unknown> = {};
-        if ("preset_colors" in data) {
-          keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
-            ? data["preset_colors"].length
-            : data["preset_colors"];
+        if ("color_options" in data) {
+          keyFields["color_options"] = Array.isArray(data["color_options"])
+            ? data["color_options"].length
+            : data["color_options"];
         }
-        if ("valid_icons" in data) {
-          keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
-            ? data["valid_icons"].length
-            : data["valid_icons"];
+        if ("icon_options" in data) {
+          keyFields["icon_options"] = Array.isArray(data["icon_options"])
+            ? data["icon_options"].length
+            : data["icon_options"];
         }
-        if ("suggested_icons" in data) {
-          keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
-            ? data["suggested_icons"].length
-            : data["suggested_icons"];
+        if ("icon_suggestions" in data) {
+          keyFields["icon_suggestions"] = Array.isArray(
+            data["icon_suggestions"]
+          )
+            ? data["icon_suggestions"].length
+            : data["icon_suggestions"];
         }
         if ("valid_department_ids" in data) {
           keyFields["valid_department_ids"] = Array.isArray(
@@ -256,20 +259,20 @@ function PersonaNewComponent({
       }
       // For new personas, create stable hash from immutable fields
       const keyFields: Record<string, unknown> = {};
-      if ("preset_colors" in data) {
-        keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
-          ? data["preset_colors"].length
-          : data["preset_colors"];
+      if ("color_options" in data) {
+        keyFields["color_options"] = Array.isArray(data["color_options"])
+          ? data["color_options"].length
+          : data["color_options"];
       }
-      if ("valid_icons" in data) {
-        keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
-          ? data["valid_icons"].length
-          : data["valid_icons"];
+      if ("icon_options" in data) {
+        keyFields["icon_options"] = Array.isArray(data["icon_options"])
+          ? data["icon_options"].length
+          : data["icon_options"];
       }
-      if ("suggested_icons" in data) {
-        keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
-          ? data["suggested_icons"].length
-          : data["suggested_icons"];
+      if ("icon_suggestions" in data) {
+        keyFields["icon_suggestions"] = Array.isArray(data["icon_suggestions"])
+          ? data["icon_suggestions"].length
+          : data["icon_suggestions"];
       }
       if ("valid_department_ids" in data) {
         keyFields["valid_department_ids"] = Array.isArray(
@@ -720,22 +723,22 @@ function PersonaNewComponent({
   const colorSearch = urlParams.colorSearch || "";
   const iconSearch = urlParams.iconSearch || "";
 
-  // Get preset colors from server as resource array, convert to ColorItem format
+  // Get color options from server, convert to ColorItem format
   const presetColorsAll = useMemo(() => {
     const colors =
       (
         personaData as PersonaDetailOut & {
-          preset_colors_resources?: Array<{
-            id: string | null;
+          color_options?: Array<{
+            id: string;
             name: string;
             description: string;
             hex_code: string;
           }>;
         }
-      )?.preset_colors_resources || [];
+      )?.color_options || [];
 
     // Convert resource format to ColorItem format
-    return colors.map((c) => ({
+    return colors.map((c: { hex_code: string; name: string }) => ({
       hex: c.hex_code,
       name: c.name,
     }));
@@ -769,7 +772,7 @@ function PersonaNewComponent({
     const isCustomColor =
       normalizedCurrentColor &&
       !presetColorsAll.some(
-        (c) => c.hex.toUpperCase() === normalizedCurrentColor
+        (c: { hex: string }) => c.hex.toUpperCase() === normalizedCurrentColor
       );
 
     // Build colors list: custom color first (if exists), then preset colors
@@ -790,40 +793,63 @@ function PersonaNewComponent({
     }
     const searchLower = colorSearch.toLowerCase();
     return colors.filter(
-      (color) =>
+      (color: { name: string; hex: string }) =>
         color.name.toLowerCase().includes(searchLower) ||
         color.hex.toLowerCase().includes(searchLower)
     );
   }, [presetColorsAll, colorSearch, personaData]);
 
-  const suggestedIconsAll = useMemo(
+  // Get icon options from server
+  const iconOptions = useMemo(
     () =>
       (
         personaData as PersonaDetailOut & {
-          suggested_icons?: string[];
+          icon_options?: Array<{
+            id: string;
+            name: string;
+            description: string;
+            value: string;
+          }>;
         }
-      )?.suggested_icons || [],
+      )?.icon_options || [],
     [personaData]
   );
 
-  const validIconsAll = useMemo(
+  // Get icon suggestions (IDs) and map to icon names
+  const iconSuggestionsIds = useMemo(
     () =>
       (
         personaData as PersonaDetailOut & {
-          valid_icons?: string[];
+          icon_suggestions?: string[];
         }
-      )?.valid_icons || [],
+      )?.icon_suggestions || [],
     [personaData]
   );
 
-  // Combine suggested icons first, then valid icons
+  // Map icon suggestion IDs to icon names
+  const suggestedIconsAll = useMemo(() => {
+    const iconMap = new Map(
+      iconOptions.map((icon: { id: string; value: string }) => [
+        icon.id,
+        icon.value,
+      ])
+    );
+    return iconSuggestionsIds
+      .map((id: string) => iconMap.get(id))
+      .filter((name): name is string => !!name);
+  }, [iconOptions, iconSuggestionsIds]);
+
+  // All icons from options (suggested first, then others)
   const allIconsAll = useMemo(() => {
     const suggestedSet = new Set(suggestedIconsAll);
-    const otherIcons = validIconsAll.filter(
-      (iconName) => !suggestedSet.has(iconName)
+    const allIconNames = iconOptions.map(
+      (icon: { value: string }) => icon.value
+    );
+    const otherIcons = allIconNames.filter(
+      (iconName: string) => !suggestedSet.has(iconName)
     );
     return [...suggestedIconsAll, ...otherIcons];
-  }, [suggestedIconsAll, validIconsAll]);
+  }, [suggestedIconsAll, iconOptions]);
 
   // Filter icons client-side based on search state from URL
   const allIcons = useMemo(() => {
@@ -831,7 +857,7 @@ function PersonaNewComponent({
       return allIconsAll;
     }
     const searchLower = iconSearch.toLowerCase();
-    return allIconsAll.filter((icon) =>
+    return allIconsAll.filter((icon: string) =>
       icon.toLowerCase().includes(searchLower)
     );
   }, [allIconsAll, iconSearch]);
@@ -886,27 +912,29 @@ function PersonaNewComponent({
       // Filter examples that:
       // 1. Have department_ids that intersect with selected departments
       // 2. Are cross-department (empty department_ids array)
-      rawHistory.forEach((ex) => {
-        // Handle both new format (object with department_ids) and legacy format (string)
-        if (typeof ex === "string") {
-          examples.push(ex); // Legacy format - include all
-        } else if (ex && typeof ex === "object") {
-          const exWithDept = ex as {
-            example: string;
-            department_ids?: string[];
-          };
-          if ("example" in exWithDept) {
-            const exDeptIds = exWithDept.department_ids || [];
-            // Include if cross-department (empty) or intersects with selected departments
-            if (
-              exDeptIds.length === 0 ||
-              exDeptIds.some((deptId) => selectedDeptIds.includes(deptId))
-            ) {
-              examples.push(exWithDept.example);
+      rawHistory.forEach(
+        (ex: { example: string; department_ids?: string[] } | string) => {
+          // Handle both new format (object with department_ids) and legacy format (string)
+          if (typeof ex === "string") {
+            examples.push(ex); // Legacy format - include all
+          } else if (ex && typeof ex === "object") {
+            const exWithDept = ex as {
+              example: string;
+              department_ids?: string[];
+            };
+            if ("example" in exWithDept) {
+              const exDeptIds = exWithDept.department_ids || [];
+              // Include if cross-department (empty) or intersects with selected departments
+              if (
+                exDeptIds.length === 0 ||
+                exDeptIds.some((deptId) => selectedDeptIds.includes(deptId))
+              ) {
+                examples.push(exWithDept.example);
+              }
             }
           }
         }
-      });
+      );
 
       return examples;
     },
@@ -1001,7 +1029,7 @@ function PersonaNewComponent({
       try {
         await savePersonaAction({
           body: {
-            persona_id: isEditMode ? personaId! : null,
+            input_persona_id: isEditMode ? personaId! : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
             color_id: formState.color_id,
@@ -1239,6 +1267,17 @@ function PersonaNewComponent({
                   placeholder="e.g., Enthusiastic Student"
                   required
                   disabled={isReadonly}
+                  {...((
+                    personaData as PersonaDetailOut & {
+                      name_suggestions?: string[];
+                    }
+                  )?.name_suggestions && {
+                    suggestions: (
+                      personaData as PersonaDetailOut & {
+                        name_suggestions?: string[];
+                      }
+                    ).name_suggestions,
+                  })}
                   createNamesAction={
                     createNamesAction as
                       | ((input: {
@@ -1275,6 +1314,17 @@ function PersonaNewComponent({
                   disabled={isReadonly}
                   rows={4}
                   data-testid="input-persona-description"
+                  {...((
+                    personaData as PersonaDetailOut & {
+                      description_suggestions?: string[];
+                    }
+                  )?.description_suggestions && {
+                    suggestions: (
+                      personaData as PersonaDetailOut & {
+                        description_suggestions?: string[];
+                      }
+                    ).description_suggestions,
+                  })}
                   createDescriptionsAction={
                     createDescriptionsAction as
                       | ((input: {
@@ -1483,6 +1533,17 @@ function PersonaNewComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ colorShowSelected: value || null })
                 }
+                {...((
+                  personaData as PersonaDetailOut & {
+                    color_suggestions?: string[];
+                  }
+                )?.color_suggestions && {
+                  colorSuggestions: (
+                    personaData as PersonaDetailOut & {
+                      color_suggestions?: string[];
+                    }
+                  ).color_suggestions,
+                })}
                 createColorsAction={
                   createColorsAction as
                     | ((input: {
@@ -1561,6 +1622,17 @@ function PersonaNewComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ iconShowSelected: value || null })
                 }
+                {...((
+                  personaData as PersonaDetailOut & {
+                    icon_suggestions?: string[];
+                  }
+                )?.icon_suggestions && {
+                  iconSuggestions: (
+                    personaData as PersonaDetailOut & {
+                      icon_suggestions?: string[];
+                    }
+                  ).icon_suggestions,
+                })}
                 createIconsAction={
                   createIconsAction as
                     | ((input: {
@@ -1618,6 +1690,17 @@ function PersonaNewComponent({
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
+                {...((
+                  personaData as PersonaDetailOut & {
+                    instructions_suggestions?: string[];
+                  }
+                )?.instructions_suggestions && {
+                  suggestions: (
+                    personaData as PersonaDetailOut & {
+                      instructions_suggestions?: string[];
+                    }
+                  ).instructions_suggestions,
+                })}
                 createInstructionsAction={
                   createInstructionsAction as
                     | ((input: {
@@ -1648,7 +1731,10 @@ function PersonaNewComponent({
                       }>;
                     }
                   )?.examples?.reduce(
-                    (acc, ex) => {
+                    (
+                      acc: Record<string, string>,
+                      ex: { example: string | null }
+                    ) => {
                       if (ex.example) {
                         // Use example text as both key and value for mapping
                         acc[ex.example] = ex.example;

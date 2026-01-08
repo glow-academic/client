@@ -27,6 +27,7 @@ export interface DescriptionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
+  suggestions?: string[];
   createDescriptionsAction?:
     | ((input: {
         body: { description: string };
