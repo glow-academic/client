@@ -3413,43 +3413,6 @@ class HintToolCompleteApiResponse(BaseModel):
 
 
 
-# Generated from: patch_agent_draft
-
-class PatchAgentDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchAgentDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchAgentDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchAgentDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: update_agent
 
 class UpdateAgentSqlParams(BaseModel):
@@ -4380,43 +4343,6 @@ class LinkChatToAttemptApiResponse(BaseModel):
 
 
 
-# Generated from: patch_attempt_draft
-
-class PatchAttemptDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchAttemptDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchAttemptDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchAttemptDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: update_chat_created_at
 
 class UpdateChatCreatedAtSqlParams(BaseModel):
@@ -4957,43 +4883,6 @@ class GetLoginDataApiResponse(BaseModel):
     show_default_account: bool | None = None
     default_department_id: str | None = None
     realm_name: str | None = None
-
-
-
-# Generated from: patch_auth_draft
-
-class PatchAuthDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchAuthDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchAuthDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchAuthDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -6231,43 +6120,6 @@ class GetRubricGradeAgentForRunOrGroupApiResponse(BaseModel):
 
 
 
-# Generated from: patch_eval_draft
-
-class PatchEvalDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchEvalDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchEvalDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchEvalDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: start_benchmark_attempt
 
 class StartBenchmarkAttemptSqlParams(BaseModel):
@@ -6947,43 +6799,6 @@ class LeaveCohortApiResponse(BaseModel):
 
     cohort_title: str | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: patch_cohort_draft
-
-class PatchCohortDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchCohortDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchCohortDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchCohortDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -8146,43 +7961,6 @@ class GetDepartmentsListApiResponse(BaseModel):
     departments: list[QListDepartmentsV4Department] | None = None
     cohorts: list[QListDepartmentsV4Cohort] | None = None
     profiles: list[QListDepartmentsV4Profile] | None = None
-
-
-
-# Generated from: patch_department_draft
-
-class PatchDepartmentDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchDepartmentDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchDepartmentDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchDepartmentDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -9385,43 +9163,6 @@ class InsertDocumentUploadApiResponse(BaseModel):
 
 
 
-# Generated from: patch_document_draft
-
-class PatchDocumentDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchDocumentDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchDocumentDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchDocumentDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: render_template
 
 class RenderTemplateSqlParams(BaseModel):
@@ -9820,6 +9561,1183 @@ class UpdateDocumentNameApiResponse(BaseModel):
 
     document_id: UUID | None = None
     name: str | None = None
+
+
+
+# Generated from: create_draft_analyses
+
+class CreateDraftAnalysesSqlParams(BaseModel):
+
+    draft_id: UUID
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.content,
+        )
+
+class CreateDraftAnalysesSqlRow(BaseModel):
+
+    analyse_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftAnalysesApiRequest(BaseModel):
+
+    draft_id: UUID
+    content: str
+
+class CreateDraftAnalysesApiResponse(BaseModel):
+
+    analyse_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_colors
+
+class CreateDraftColorsSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    hex_code: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.description,
+            self.hex_code,
+        )
+
+class CreateDraftColorsSqlRow(BaseModel):
+
+    color_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftColorsApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    hex_code: str
+
+class CreateDraftColorsApiResponse(BaseModel):
+
+    color_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_content
+
+class CreateDraftContentSqlParams(BaseModel):
+
+    draft_id: UUID
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.content,
+        )
+
+class CreateDraftContentSqlRow(BaseModel):
+
+    content_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftContentApiRequest(BaseModel):
+
+    draft_id: UUID
+    content: str
+
+class CreateDraftContentApiResponse(BaseModel):
+
+    content_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_conversations
+
+class CreateDraftConversationsSqlParams(BaseModel):
+
+    draft_id: UUID
+    end_reason: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.end_reason,
+        )
+
+class CreateDraftConversationsSqlRow(BaseModel):
+
+    conversation_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftConversationsApiRequest(BaseModel):
+
+    draft_id: UUID
+    end_reason: str
+
+class CreateDraftConversationsApiResponse(BaseModel):
+
+    conversation_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft
+
+class CreateDraftSqlParams(BaseModel):
+
+    artifact: str
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.artifact,
+            self.profile_id,
+        )
+
+class CreateDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftApiRequest(BaseModel):
+
+    artifact: str
+
+class CreateDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_debug_info
+
+class CreateDraftDebugInfoSqlParams(BaseModel):
+
+    draft_id: UUID
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.content,
+        )
+
+class CreateDraftDebugInfoSqlRow(BaseModel):
+
+    debug_info_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftDebugInfoApiRequest(BaseModel):
+
+    draft_id: UUID
+    content: str
+
+class CreateDraftDebugInfoApiResponse(BaseModel):
+
+    debug_info_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_descriptions
+
+class CreateDraftDescriptionsSqlParams(BaseModel):
+
+    draft_id: UUID
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.description,
+        )
+
+class CreateDraftDescriptionsSqlRow(BaseModel):
+
+    description_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftDescriptionsApiRequest(BaseModel):
+
+    draft_id: UUID
+    description: str
+
+class CreateDraftDescriptionsApiResponse(BaseModel):
+
+    description_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_feedbacks
+
+class CreateDraftFeedbacksSqlParams(BaseModel):
+
+    draft_id: UUID
+    total: float
+    feedback: str
+    standard_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.total,
+            self.feedback,
+            self.standard_id,
+        )
+
+class CreateDraftFeedbacksSqlRow(BaseModel):
+
+    feedback_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftFeedbacksApiRequest(BaseModel):
+
+    draft_id: UUID
+    total: float
+    feedback: str
+    standard_id: UUID
+
+class CreateDraftFeedbacksApiResponse(BaseModel):
+
+    feedback_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_flags
+
+class CreateDraftFlagsSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    icon_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.description,
+            self.icon_id,
+        )
+
+class CreateDraftFlagsSqlRow(BaseModel):
+
+    flag_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftFlagsApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    icon_id: UUID
+
+class CreateDraftFlagsApiResponse(BaseModel):
+
+    flag_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: get_draft
+
+class GetDraftSqlParams(BaseModel):
+
+    draft_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+        )
+
+class GetDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    artifact: str | None = None
+    version: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    draft_exists: bool | None = None
+
+class GetDraftApiRequest(BaseModel):
+
+    draft_id: UUID
+
+class GetDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    artifact: str | None = None
+    version: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    draft_exists: bool | None = None
+
+
+
+# Generated from: create_draft_hints
+
+class CreateDraftHintsSqlParams(BaseModel):
+
+    draft_id: UUID
+    hint: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.hint,
+        )
+
+class CreateDraftHintsSqlRow(BaseModel):
+
+    hint_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftHintsApiRequest(BaseModel):
+
+    draft_id: UUID
+    hint: str
+
+class CreateDraftHintsApiResponse(BaseModel):
+
+    hint_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_html
+
+class CreateDraftHtmlSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.description,
+        )
+
+class CreateDraftHtmlSqlRow(BaseModel):
+
+    html_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftHtmlApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+
+class CreateDraftHtmlApiResponse(BaseModel):
+
+    html_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_icons
+
+class CreateDraftIconsSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    value: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.description,
+            self.value,
+        )
+
+class CreateDraftIconsSqlRow(BaseModel):
+
+    icon_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftIconsApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    value: float
+
+class CreateDraftIconsApiResponse(BaseModel):
+
+    icon_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_images
+
+class CreateDraftImagesSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.description,
+        )
+
+class CreateDraftImagesSqlRow(BaseModel):
+
+    image_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftImagesApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+
+class CreateDraftImagesApiResponse(BaseModel):
+
+    image_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_improvements
+
+class CreateDraftImprovementsSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    message_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.description,
+            self.message_id,
+        )
+
+class CreateDraftImprovementsSqlRow(BaseModel):
+
+    improvement_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftImprovementsApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    message_id: UUID
+
+class CreateDraftImprovementsApiResponse(BaseModel):
+
+    improvement_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_instructions
+
+class CreateDraftInstructionsSqlParams(BaseModel):
+
+    draft_id: UUID
+    template: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.template,
+        )
+
+class CreateDraftInstructionsSqlRow(BaseModel):
+
+    instruction_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftInstructionsApiRequest(BaseModel):
+
+    draft_id: UUID
+    template: str
+
+class CreateDraftInstructionsApiResponse(BaseModel):
+
+    instruction_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_names
+
+class CreateDraftNamesSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+        )
+
+class CreateDraftNamesSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftNamesApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+
+class CreateDraftNamesApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_objectives
+
+class CreateDraftObjectivesSqlParams(BaseModel):
+
+    draft_id: UUID
+    objective: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.objective,
+        )
+
+class CreateDraftObjectivesSqlRow(BaseModel):
+
+    objective_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftObjectivesApiRequest(BaseModel):
+
+    draft_id: UUID
+    objective: str
+
+class CreateDraftObjectivesApiResponse(BaseModel):
+
+    objective_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_options
+
+class CreateDraftOptionsSqlParams(BaseModel):
+
+    draft_id: UUID
+    option_text: str
+    is_correct: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.option_text,
+            self.is_correct,
+        )
+
+class CreateDraftOptionsSqlRow(BaseModel):
+
+    option_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftOptionsApiRequest(BaseModel):
+
+    draft_id: UUID
+    option_text: str
+    is_correct: bool
+
+class CreateDraftOptionsApiResponse(BaseModel):
+
+    option_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_points
+
+class CreateDraftPointsSqlParams(BaseModel):
+
+    draft_id: UUID
+    value: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.value,
+        )
+
+class CreateDraftPointsSqlRow(BaseModel):
+
+    point_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftPointsApiRequest(BaseModel):
+
+    draft_id: UUID
+    value: float
+
+class CreateDraftPointsApiResponse(BaseModel):
+
+    point_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_problem_statements
+
+class CreateDraftProblemStatementsSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    problem_statement: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.problem_statement,
+        )
+
+class CreateDraftProblemStatementsSqlRow(BaseModel):
+
+    problem_statement_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftProblemStatementsApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    problem_statement: str
+
+class CreateDraftProblemStatementsApiResponse(BaseModel):
+
+    problem_statement_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_prompts
+
+class CreateDraftPromptsSqlParams(BaseModel):
+
+    draft_id: UUID
+    system_prompt: str
+    name: str
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.system_prompt,
+            self.name,
+            self.description,
+        )
+
+class CreateDraftPromptsSqlRow(BaseModel):
+
+    prompt_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftPromptsApiRequest(BaseModel):
+
+    draft_id: UUID
+    system_prompt: str
+    name: str
+    description: str
+
+class CreateDraftPromptsApiResponse(BaseModel):
+
+    prompt_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_questions
+
+class CreateDraftQuestionsSqlParams(BaseModel):
+
+    draft_id: UUID
+    question_text: str
+    allow_multiple: bool
+    time_value: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.question_text,
+            self.allow_multiple,
+            self.time_value,
+        )
+
+class CreateDraftQuestionsSqlRow(BaseModel):
+
+    question_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftQuestionsApiRequest(BaseModel):
+
+    draft_id: UUID
+    question_text: str
+    allow_multiple: bool
+    time_value: int
+
+class CreateDraftQuestionsApiResponse(BaseModel):
+
+    question_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_responses
+
+class CreateDraftResponsesSqlParams(BaseModel):
+
+    draft_id: UUID
+    option_id: UUID
+    question_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.option_id,
+            self.question_id,
+        )
+
+class CreateDraftResponsesSqlRow(BaseModel):
+
+    response_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftResponsesApiRequest(BaseModel):
+
+    draft_id: UUID
+    option_id: UUID
+    question_id: UUID
+
+class CreateDraftResponsesApiResponse(BaseModel):
+
+    response_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_schema_field_items
+
+class CreateDraftSchemaFieldItemsSqlParams(BaseModel):
+
+    draft_id: UUID
+    schema_field_id: UUID
+    item_schema_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.schema_field_id,
+            self.item_schema_id,
+        )
+
+class CreateDraftSchemaFieldItemsSqlRow(BaseModel):
+
+    schema_field_items_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftSchemaFieldItemsApiRequest(BaseModel):
+
+    draft_id: UUID
+    schema_field_id: UUID
+    item_schema_id: UUID
+
+class CreateDraftSchemaFieldItemsApiResponse(BaseModel):
+
+    schema_field_items_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_schema_fields
+
+class CreateDraftSchemaFieldsSqlParams(BaseModel):
+
+    draft_id: UUID
+    schema_id: UUID
+    name: str
+    field_type: str
+    required: bool
+    position_value: int
+    template: str
+    description: str
+    default_value: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.schema_id,
+            self.name,
+            self.field_type,
+            self.required,
+            self.position_value,
+            self.template,
+            self.description,
+            self.default_value,
+        )
+
+class CreateDraftSchemaFieldsSqlRow(BaseModel):
+
+    schema_field_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftSchemaFieldsApiRequest(BaseModel):
+
+    draft_id: UUID
+    schema_id: UUID
+    name: str
+    field_type: str
+    required: bool
+    position_value: int
+    template: str
+    description: str
+    default_value: str
+
+class CreateDraftSchemaFieldsApiResponse(BaseModel):
+
+    schema_field_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_schemas
+
+class CreateDraftSchemasSqlParams(BaseModel):
+
+    draft_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+        )
+
+class CreateDraftSchemasSqlRow(BaseModel):
+
+    schema_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftSchemasApiRequest(BaseModel):
+
+    draft_id: UUID
+
+class CreateDraftSchemasApiResponse(BaseModel):
+
+    schema_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_standard_groups
+
+class CreateDraftStandardGroupsSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    short_name: str
+    description: str
+    points: float
+    pass_points: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.short_name,
+            self.description,
+            self.points,
+            self.pass_points,
+        )
+
+class CreateDraftStandardGroupsSqlRow(BaseModel):
+
+    standard_group_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftStandardGroupsApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    short_name: str
+    description: str
+    points: float
+    pass_points: float
+
+class CreateDraftStandardGroupsApiResponse(BaseModel):
+
+    standard_group_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_strengths
+
+class CreateDraftStrengthsSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    message_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.description,
+            self.message_id,
+        )
+
+class CreateDraftStrengthsSqlRow(BaseModel):
+
+    strength_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftStrengthsApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    description: str
+    message_id: UUID
+
+class CreateDraftStrengthsApiResponse(BaseModel):
+
+    strength_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_template_array_items
+
+class CreateDraftTemplateArrayItemsSqlParams(BaseModel):
+
+    draft_id: UUID
+    template_id: UUID
+    schema_field_id: UUID
+    item_template_id: UUID
+    position_value: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.template_id,
+            self.schema_field_id,
+            self.item_template_id,
+            self.position_value,
+        )
+
+class CreateDraftTemplateArrayItemsSqlRow(BaseModel):
+
+    template_array_items_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftTemplateArrayItemsApiRequest(BaseModel):
+
+    draft_id: UUID
+    template_id: UUID
+    schema_field_id: UUID
+    item_template_id: UUID
+    position_value: int
+
+class CreateDraftTemplateArrayItemsApiResponse(BaseModel):
+
+    template_array_items_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_template_values
+
+class CreateDraftTemplateValuesSqlParams(BaseModel):
+
+    draft_id: UUID
+    template_id: UUID
+    schema_field_id: UUID
+    string_value: str
+    number_value: str
+    boolean_value: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.template_id,
+            self.schema_field_id,
+            self.string_value,
+            self.number_value,
+            self.boolean_value,
+        )
+
+class CreateDraftTemplateValuesSqlRow(BaseModel):
+
+    template_value_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftTemplateValuesApiRequest(BaseModel):
+
+    draft_id: UUID
+    template_id: UUID
+    schema_field_id: UUID
+    string_value: str
+    number_value: str
+    boolean_value: str
+
+class CreateDraftTemplateValuesApiResponse(BaseModel):
+
+    template_value_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_templates
+
+class CreateDraftTemplatesSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+        )
+
+class CreateDraftTemplatesSqlRow(BaseModel):
+
+    template_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftTemplatesApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+
+class CreateDraftTemplatesApiResponse(BaseModel):
+
+    template_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_thresholds
+
+class CreateDraftThresholdsSqlParams(BaseModel):
+
+    draft_id: UUID
+    value: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.value,
+        )
+
+class CreateDraftThresholdsSqlRow(BaseModel):
+
+    threshold_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftThresholdsApiRequest(BaseModel):
+
+    draft_id: UUID
+    value: float
+
+class CreateDraftThresholdsApiResponse(BaseModel):
+
+    threshold_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_times
+
+class CreateDraftTimesSqlParams(BaseModel):
+
+    draft_id: UUID
+    time_taken: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.time_taken,
+        )
+
+class CreateDraftTimesSqlRow(BaseModel):
+
+    time_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftTimesApiRequest(BaseModel):
+
+    draft_id: UUID
+    time_taken: float
+
+class CreateDraftTimesApiResponse(BaseModel):
+
+    time_id: UUID | None = None
+    version: int | None = None
+
+
+
+# Generated from: create_draft_videos
+
+class CreateDraftVideosSqlParams(BaseModel):
+
+    draft_id: UUID
+    name: str
+    length_seconds: float
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.draft_id,
+            self.name,
+            self.length_seconds,
+            self.description,
+        )
+
+class CreateDraftVideosSqlRow(BaseModel):
+
+    video_id: UUID | None = None
+    version: int | None = None
+
+class CreateDraftVideosApiRequest(BaseModel):
+
+    draft_id: UUID
+    name: str
+    length_seconds: float
+    description: str
+
+class CreateDraftVideosApiResponse(BaseModel):
+
+    video_id: UUID | None = None
+    version: int | None = None
 
 
 
@@ -10241,43 +11159,6 @@ class GetFieldsListApiResponse(BaseModel):
     departments: list[QListFieldsV4Department] | None = None
     parameter_options: list[QListFieldsV4Option] | None = None
     department_options: list[QListFieldsV4Option] | None = None
-
-
-
-# Generated from: patch_field_draft
-
-class PatchFieldDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchFieldDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchFieldDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchFieldDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -12491,43 +13372,6 @@ class GetKeysListApiResponse(BaseModel):
 
 
 
-# Generated from: patch_key_draft
-
-class PatchKeyDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchKeyDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchKeyDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchKeyDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: update_key
 
 class UpdateKeySqlParams(BaseModel):
@@ -13839,43 +14683,6 @@ class ListModelsApiResponse(BaseModel):
 
 
 
-# Generated from: patch_model_draft
-
-class PatchModelDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchModelDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchModelDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchModelDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: update_model
 
 class IUpdateModelV4Pricing(BaseModel):
@@ -14544,43 +15351,6 @@ class GetParametersListApiResponse(BaseModel):
 
 
 
-# Generated from: patch_parameter_draft
-
-class PatchParameterDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchParameterDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchParameterDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchParameterDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: update_parameter
 
 class IUpdateParameterV4FieldConnection(BaseModel):
@@ -15172,43 +15942,6 @@ class GetPersonasListApiResponse(BaseModel):
 
 
 
-# Generated from: patch_persona_draft
-
-class PatchPersonaDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchPersonaDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchPersonaDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchPersonaDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: update_persona
 
 class UpdatePersonaSqlParams(BaseModel):
@@ -15590,43 +16323,6 @@ class GetPracticeOverviewApiResponse(BaseModel):
     draft_persona_ids: Any | None = None
     draft_parameter_item_ids: Any | None = None
     draft_department_ids: Any | None = None
-
-
-
-# Generated from: patch_practice_draft
-
-class PatchPracticeDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchPracticeDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchPracticeDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchPracticeDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -17595,43 +18291,6 @@ class GetProvidersListApiResponse(BaseModel):
 
 
 
-# Generated from: patch_provider_draft
-
-class PatchProviderDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchProviderDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchProviderDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchProviderDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: update_provider
 
 class UpdateProviderSqlParams(BaseModel):
@@ -19352,43 +20011,6 @@ class GetRubricsListApiResponse(BaseModel):
     departments: list[QGetRubricsListV4Department] | None = None
     simulations: list[QGetRubricsListV4Simulation] | None = None
     simulation_options: list[QGetRubricsListV4Simulation] | None = None
-
-
-
-# Generated from: patch_rubric_draft
-
-class PatchRubricDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchRubricDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchRubricDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchRubricDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -21952,43 +22574,6 @@ class LinkVideoToScenarioApiResponse(BaseModel):
 
 
 
-# Generated from: patch_scenario_draft
-
-class PatchScenarioDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchScenarioDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchScenarioDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchScenarioDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: randomize_scenario
 
 class RandomizeScenarioSqlParams(BaseModel):
@@ -22678,43 +23263,6 @@ class GetSettingsListApiResponse(BaseModel):
 
     actor_name: str | None = None
     settings: list[QGetSettingsListV4Setting] | None = None
-
-
-
-# Generated from: patch_settings_draft
-
-class PatchSettingsDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchSettingsDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchSettingsDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchSettingsDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -25249,43 +25797,6 @@ class MarkChatCompletedApiResponse(BaseModel):
 
 
 
-# Generated from: patch_simulation_draft
-
-class PatchSimulationDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchSimulationDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchSimulationDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchSimulationDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-
 # Generated from: simulation_text_stop_run
 
 class SimulationTextStopRunSqlParams(BaseModel):
@@ -26085,43 +26596,6 @@ class GetStaffSearchApiResponse(BaseModel):
     staff: list[QSearchStaffV4Staff] | None = None
     cohorts: list[QSearchStaffV4Cohort] | None = None
     departments: list[QSearchStaffV4Department] | None = None
-
-
-
-# Generated from: patch_staff_draft
-
-class PatchStaffDraftSqlParams(BaseModel):
-
-    profile_id: UUID
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.patch,
-            self.expected_version,
-            self.input_draft_id,
-        )
-
-class PatchStaffDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-class PatchStaffDraftApiRequest(BaseModel):
-
-    patch: str
-    expected_version: int
-    input_draft_id: UUID | None = None
-
-class PatchStaffDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -27207,12 +27681,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "HintToolCompleteApiRequest",
         "HintToolCompleteApiResponse",
     ),
-    "app/sql/v4/agents/patch_agent_draft_complete.sql": (
-        "PatchAgentDraftSqlParams",
-        "PatchAgentDraftSqlRow",
-        "PatchAgentDraftApiRequest",
-        "PatchAgentDraftApiResponse",
-    ),
     "app/sql/v4/agents/update_agent_complete.sql": (
         "UpdateAgentSqlParams",
         "UpdateAgentSqlRow",
@@ -27279,12 +27747,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkChatToAttemptApiRequest",
         "LinkChatToAttemptApiResponse",
     ),
-    "app/sql/v4/attempts/patch_attempt_draft_complete.sql": (
-        "PatchAttemptDraftSqlParams",
-        "PatchAttemptDraftSqlRow",
-        "PatchAttemptDraftApiRequest",
-        "PatchAttemptDraftApiResponse",
-    ),
     "app/sql/v4/attempts/update_chat_created_at_complete.sql": (
         "UpdateChatCreatedAtSqlParams",
         "UpdateChatCreatedAtSqlRow",
@@ -27344,12 +27806,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLoginDataSqlRow",
         "GetLoginDataApiRequest",
         "GetLoginDataApiResponse",
-    ),
-    "app/sql/v4/auth/patch_auth_draft_complete.sql": (
-        "PatchAuthDraftSqlParams",
-        "PatchAuthDraftSqlRow",
-        "PatchAuthDraftApiRequest",
-        "PatchAuthDraftApiResponse",
     ),
     "app/sql/v4/auth/update_auth_complete.sql": (
         "UpdateAuthSqlParams",
@@ -27459,12 +27915,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricGradeAgentForRunOrGroupApiRequest",
         "GetRubricGradeAgentForRunOrGroupApiResponse",
     ),
-    "app/sql/v4/benchmark/patch_eval_draft_complete.sql": (
-        "PatchEvalDraftSqlParams",
-        "PatchEvalDraftSqlRow",
-        "PatchEvalDraftApiRequest",
-        "PatchEvalDraftApiResponse",
-    ),
     "app/sql/v4/benchmark/start_benchmark_attempt_complete.sql": (
         "StartBenchmarkAttemptSqlParams",
         "StartBenchmarkAttemptSqlRow",
@@ -27537,12 +27987,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LeaveCohortApiRequest",
         "LeaveCohortApiResponse",
     ),
-    "app/sql/v4/cohorts/patch_cohort_draft_complete.sql": (
-        "PatchCohortDraftSqlParams",
-        "PatchCohortDraftSqlRow",
-        "PatchCohortDraftApiRequest",
-        "PatchCohortDraftApiResponse",
-    ),
     "app/sql/v4/cohorts/update_cohort_complete.sql": (
         "UpdateCohortSqlParams",
         "UpdateCohortSqlRow",
@@ -27608,12 +28052,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentsListSqlRow",
         "GetDepartmentsListApiRequest",
         "GetDepartmentsListApiResponse",
-    ),
-    "app/sql/v4/departments/patch_department_draft_complete.sql": (
-        "PatchDepartmentDraftSqlParams",
-        "PatchDepartmentDraftSqlRow",
-        "PatchDepartmentDraftApiRequest",
-        "PatchDepartmentDraftApiResponse",
     ),
     "app/sql/v4/departments/update_department_complete.sql": (
         "UpdateDepartmentSqlParams",
@@ -27747,12 +28185,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertDocumentUploadApiRequest",
         "InsertDocumentUploadApiResponse",
     ),
-    "app/sql/v4/documents/patch_document_draft_complete.sql": (
-        "PatchDocumentDraftSqlParams",
-        "PatchDocumentDraftSqlRow",
-        "PatchDocumentDraftApiRequest",
-        "PatchDocumentDraftApiResponse",
-    ),
     "app/sql/v4/documents/render_template_complete.sql": (
         "RenderTemplateSqlParams",
         "RenderTemplateSqlRow",
@@ -27807,6 +28239,216 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentNameApiRequest",
         "UpdateDocumentNameApiResponse",
     ),
+    "app/sql/v4/drafts/analyses_complete.sql": (
+        "CreateDraftAnalysesSqlParams",
+        "CreateDraftAnalysesSqlRow",
+        "CreateDraftAnalysesApiRequest",
+        "CreateDraftAnalysesApiResponse",
+    ),
+    "app/sql/v4/drafts/colors_complete.sql": (
+        "CreateDraftColorsSqlParams",
+        "CreateDraftColorsSqlRow",
+        "CreateDraftColorsApiRequest",
+        "CreateDraftColorsApiResponse",
+    ),
+    "app/sql/v4/drafts/content_complete.sql": (
+        "CreateDraftContentSqlParams",
+        "CreateDraftContentSqlRow",
+        "CreateDraftContentApiRequest",
+        "CreateDraftContentApiResponse",
+    ),
+    "app/sql/v4/drafts/conversations_complete.sql": (
+        "CreateDraftConversationsSqlParams",
+        "CreateDraftConversationsSqlRow",
+        "CreateDraftConversationsApiRequest",
+        "CreateDraftConversationsApiResponse",
+    ),
+    "app/sql/v4/drafts/create_draft_complete.sql": (
+        "CreateDraftSqlParams",
+        "CreateDraftSqlRow",
+        "CreateDraftApiRequest",
+        "CreateDraftApiResponse",
+    ),
+    "app/sql/v4/drafts/debug_info_complete.sql": (
+        "CreateDraftDebugInfoSqlParams",
+        "CreateDraftDebugInfoSqlRow",
+        "CreateDraftDebugInfoApiRequest",
+        "CreateDraftDebugInfoApiResponse",
+    ),
+    "app/sql/v4/drafts/descriptions_complete.sql": (
+        "CreateDraftDescriptionsSqlParams",
+        "CreateDraftDescriptionsSqlRow",
+        "CreateDraftDescriptionsApiRequest",
+        "CreateDraftDescriptionsApiResponse",
+    ),
+    "app/sql/v4/drafts/feedbacks_complete.sql": (
+        "CreateDraftFeedbacksSqlParams",
+        "CreateDraftFeedbacksSqlRow",
+        "CreateDraftFeedbacksApiRequest",
+        "CreateDraftFeedbacksApiResponse",
+    ),
+    "app/sql/v4/drafts/flags_complete.sql": (
+        "CreateDraftFlagsSqlParams",
+        "CreateDraftFlagsSqlRow",
+        "CreateDraftFlagsApiRequest",
+        "CreateDraftFlagsApiResponse",
+    ),
+    "app/sql/v4/drafts/get_draft_complete.sql": (
+        "GetDraftSqlParams",
+        "GetDraftSqlRow",
+        "GetDraftApiRequest",
+        "GetDraftApiResponse",
+    ),
+    "app/sql/v4/drafts/hints_complete.sql": (
+        "CreateDraftHintsSqlParams",
+        "CreateDraftHintsSqlRow",
+        "CreateDraftHintsApiRequest",
+        "CreateDraftHintsApiResponse",
+    ),
+    "app/sql/v4/drafts/html_complete.sql": (
+        "CreateDraftHtmlSqlParams",
+        "CreateDraftHtmlSqlRow",
+        "CreateDraftHtmlApiRequest",
+        "CreateDraftHtmlApiResponse",
+    ),
+    "app/sql/v4/drafts/icons_complete.sql": (
+        "CreateDraftIconsSqlParams",
+        "CreateDraftIconsSqlRow",
+        "CreateDraftIconsApiRequest",
+        "CreateDraftIconsApiResponse",
+    ),
+    "app/sql/v4/drafts/images_complete.sql": (
+        "CreateDraftImagesSqlParams",
+        "CreateDraftImagesSqlRow",
+        "CreateDraftImagesApiRequest",
+        "CreateDraftImagesApiResponse",
+    ),
+    "app/sql/v4/drafts/improvements_complete.sql": (
+        "CreateDraftImprovementsSqlParams",
+        "CreateDraftImprovementsSqlRow",
+        "CreateDraftImprovementsApiRequest",
+        "CreateDraftImprovementsApiResponse",
+    ),
+    "app/sql/v4/drafts/instructions_complete.sql": (
+        "CreateDraftInstructionsSqlParams",
+        "CreateDraftInstructionsSqlRow",
+        "CreateDraftInstructionsApiRequest",
+        "CreateDraftInstructionsApiResponse",
+    ),
+    "app/sql/v4/drafts/names_complete.sql": (
+        "CreateDraftNamesSqlParams",
+        "CreateDraftNamesSqlRow",
+        "CreateDraftNamesApiRequest",
+        "CreateDraftNamesApiResponse",
+    ),
+    "app/sql/v4/drafts/objectives_complete.sql": (
+        "CreateDraftObjectivesSqlParams",
+        "CreateDraftObjectivesSqlRow",
+        "CreateDraftObjectivesApiRequest",
+        "CreateDraftObjectivesApiResponse",
+    ),
+    "app/sql/v4/drafts/options_complete.sql": (
+        "CreateDraftOptionsSqlParams",
+        "CreateDraftOptionsSqlRow",
+        "CreateDraftOptionsApiRequest",
+        "CreateDraftOptionsApiResponse",
+    ),
+    "app/sql/v4/drafts/points_complete.sql": (
+        "CreateDraftPointsSqlParams",
+        "CreateDraftPointsSqlRow",
+        "CreateDraftPointsApiRequest",
+        "CreateDraftPointsApiResponse",
+    ),
+    "app/sql/v4/drafts/problem_statements_complete.sql": (
+        "CreateDraftProblemStatementsSqlParams",
+        "CreateDraftProblemStatementsSqlRow",
+        "CreateDraftProblemStatementsApiRequest",
+        "CreateDraftProblemStatementsApiResponse",
+    ),
+    "app/sql/v4/drafts/prompts_complete.sql": (
+        "CreateDraftPromptsSqlParams",
+        "CreateDraftPromptsSqlRow",
+        "CreateDraftPromptsApiRequest",
+        "CreateDraftPromptsApiResponse",
+    ),
+    "app/sql/v4/drafts/questions_complete.sql": (
+        "CreateDraftQuestionsSqlParams",
+        "CreateDraftQuestionsSqlRow",
+        "CreateDraftQuestionsApiRequest",
+        "CreateDraftQuestionsApiResponse",
+    ),
+    "app/sql/v4/drafts/responses_complete.sql": (
+        "CreateDraftResponsesSqlParams",
+        "CreateDraftResponsesSqlRow",
+        "CreateDraftResponsesApiRequest",
+        "CreateDraftResponsesApiResponse",
+    ),
+    "app/sql/v4/drafts/schema_field_items_complete.sql": (
+        "CreateDraftSchemaFieldItemsSqlParams",
+        "CreateDraftSchemaFieldItemsSqlRow",
+        "CreateDraftSchemaFieldItemsApiRequest",
+        "CreateDraftSchemaFieldItemsApiResponse",
+    ),
+    "app/sql/v4/drafts/schema_fields_complete.sql": (
+        "CreateDraftSchemaFieldsSqlParams",
+        "CreateDraftSchemaFieldsSqlRow",
+        "CreateDraftSchemaFieldsApiRequest",
+        "CreateDraftSchemaFieldsApiResponse",
+    ),
+    "app/sql/v4/drafts/schemas_complete.sql": (
+        "CreateDraftSchemasSqlParams",
+        "CreateDraftSchemasSqlRow",
+        "CreateDraftSchemasApiRequest",
+        "CreateDraftSchemasApiResponse",
+    ),
+    "app/sql/v4/drafts/standard_groups_complete.sql": (
+        "CreateDraftStandardGroupsSqlParams",
+        "CreateDraftStandardGroupsSqlRow",
+        "CreateDraftStandardGroupsApiRequest",
+        "CreateDraftStandardGroupsApiResponse",
+    ),
+    "app/sql/v4/drafts/strengths_complete.sql": (
+        "CreateDraftStrengthsSqlParams",
+        "CreateDraftStrengthsSqlRow",
+        "CreateDraftStrengthsApiRequest",
+        "CreateDraftStrengthsApiResponse",
+    ),
+    "app/sql/v4/drafts/template_array_items_complete.sql": (
+        "CreateDraftTemplateArrayItemsSqlParams",
+        "CreateDraftTemplateArrayItemsSqlRow",
+        "CreateDraftTemplateArrayItemsApiRequest",
+        "CreateDraftTemplateArrayItemsApiResponse",
+    ),
+    "app/sql/v4/drafts/template_values_complete.sql": (
+        "CreateDraftTemplateValuesSqlParams",
+        "CreateDraftTemplateValuesSqlRow",
+        "CreateDraftTemplateValuesApiRequest",
+        "CreateDraftTemplateValuesApiResponse",
+    ),
+    "app/sql/v4/drafts/templates_complete.sql": (
+        "CreateDraftTemplatesSqlParams",
+        "CreateDraftTemplatesSqlRow",
+        "CreateDraftTemplatesApiRequest",
+        "CreateDraftTemplatesApiResponse",
+    ),
+    "app/sql/v4/drafts/thresholds_complete.sql": (
+        "CreateDraftThresholdsSqlParams",
+        "CreateDraftThresholdsSqlRow",
+        "CreateDraftThresholdsApiRequest",
+        "CreateDraftThresholdsApiResponse",
+    ),
+    "app/sql/v4/drafts/times_complete.sql": (
+        "CreateDraftTimesSqlParams",
+        "CreateDraftTimesSqlRow",
+        "CreateDraftTimesApiRequest",
+        "CreateDraftTimesApiResponse",
+    ),
+    "app/sql/v4/drafts/videos_complete.sql": (
+        "CreateDraftVideosSqlParams",
+        "CreateDraftVideosSqlRow",
+        "CreateDraftVideosApiRequest",
+        "CreateDraftVideosApiResponse",
+    ),
     "app/sql/v4/feedback/create_feedback_complete.sql": (
         "CreateFeedbackSqlParams",
         "CreateFeedbackSqlRow",
@@ -27860,12 +28502,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFieldsListSqlRow",
         "GetFieldsListApiRequest",
         "GetFieldsListApiResponse",
-    ),
-    "app/sql/v4/fields/patch_field_draft_complete.sql": (
-        "PatchFieldDraftSqlParams",
-        "PatchFieldDraftSqlRow",
-        "PatchFieldDraftApiRequest",
-        "PatchFieldDraftApiResponse",
     ),
     "app/sql/v4/fields/update_field_complete.sql": (
         "UpdateFieldSqlParams",
@@ -28125,12 +28761,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetKeysListApiRequest",
         "GetKeysListApiResponse",
     ),
-    "app/sql/v4/keys/patch_key_draft_complete.sql": (
-        "PatchKeyDraftSqlParams",
-        "PatchKeyDraftSqlRow",
-        "PatchKeyDraftApiRequest",
-        "PatchKeyDraftApiResponse",
-    ),
     "app/sql/v4/keys/update_key_complete.sql": (
         "UpdateKeySqlParams",
         "UpdateKeySqlRow",
@@ -28263,12 +28893,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ListModelsApiRequest",
         "ListModelsApiResponse",
     ),
-    "app/sql/v4/models/patch_model_draft_complete.sql": (
-        "PatchModelDraftSqlParams",
-        "PatchModelDraftSqlRow",
-        "PatchModelDraftApiRequest",
-        "PatchModelDraftApiResponse",
-    ),
     "app/sql/v4/models/update_model_complete.sql": (
         "UpdateModelSqlParams",
         "UpdateModelSqlRow",
@@ -28323,12 +28947,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParametersListApiRequest",
         "GetParametersListApiResponse",
     ),
-    "app/sql/v4/parameters/patch_parameter_draft_complete.sql": (
-        "PatchParameterDraftSqlParams",
-        "PatchParameterDraftSqlRow",
-        "PatchParameterDraftApiRequest",
-        "PatchParameterDraftApiResponse",
-    ),
     "app/sql/v4/parameters/update_parameter_complete.sql": (
         "UpdateParameterSqlParams",
         "UpdateParameterSqlRow",
@@ -28371,12 +28989,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonasListApiRequest",
         "GetPersonasListApiResponse",
     ),
-    "app/sql/v4/personas/patch_persona_draft_complete.sql": (
-        "PatchPersonaDraftSqlParams",
-        "PatchPersonaDraftSqlRow",
-        "PatchPersonaDraftApiRequest",
-        "PatchPersonaDraftApiResponse",
-    ),
     "app/sql/v4/personas/update_persona_complete.sql": (
         "UpdatePersonaSqlParams",
         "UpdatePersonaSqlRow",
@@ -28400,12 +29012,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPracticeOverviewSqlRow",
         "GetPracticeOverviewApiRequest",
         "GetPracticeOverviewApiResponse",
-    ),
-    "app/sql/v4/practice/patch_practice_draft_complete.sql": (
-        "PatchPracticeDraftSqlParams",
-        "PatchPracticeDraftSqlRow",
-        "PatchPracticeDraftApiRequest",
-        "PatchPracticeDraftApiResponse",
     ),
     "app/sql/v4/pricing/get_pricing_analytics_complete.sql": (
         "GetPricingAnalyticsSqlParams",
@@ -28599,12 +29205,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProvidersListApiRequest",
         "GetProvidersListApiResponse",
     ),
-    "app/sql/v4/providers/patch_provider_draft_complete.sql": (
-        "PatchProviderDraftSqlParams",
-        "PatchProviderDraftSqlRow",
-        "PatchProviderDraftApiRequest",
-        "PatchProviderDraftApiResponse",
-    ),
     "app/sql/v4/providers/update_provider_complete.sql": (
         "UpdateProviderSqlParams",
         "UpdateProviderSqlRow",
@@ -28694,12 +29294,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricsListSqlRow",
         "GetRubricsListApiRequest",
         "GetRubricsListApiResponse",
-    ),
-    "app/sql/v4/rubric/patch_rubric_draft_complete.sql": (
-        "PatchRubricDraftSqlParams",
-        "PatchRubricDraftSqlRow",
-        "PatchRubricDraftApiRequest",
-        "PatchRubricDraftApiResponse",
     ),
     "app/sql/v4/rubric/rubric_generation_complete_complete.sql": (
         "RubricGenerationCompleteSqlParams",
@@ -28923,12 +29517,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkVideoToScenarioApiRequest",
         "LinkVideoToScenarioApiResponse",
     ),
-    "app/sql/v4/scenario/patch_scenario_draft_complete.sql": (
-        "PatchScenarioDraftSqlParams",
-        "PatchScenarioDraftSqlRow",
-        "PatchScenarioDraftApiRequest",
-        "PatchScenarioDraftApiResponse",
-    ),
     "app/sql/v4/scenario/randomize_scenario_complete.sql": (
         "RandomizeScenarioSqlParams",
         "RandomizeScenarioSqlRow",
@@ -29000,12 +29588,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSettingsListSqlRow",
         "GetSettingsListApiRequest",
         "GetSettingsListApiResponse",
-    ),
-    "app/sql/v4/settings/patch_settings_draft_complete.sql": (
-        "PatchSettingsDraftSqlParams",
-        "PatchSettingsDraftSqlRow",
-        "PatchSettingsDraftApiRequest",
-        "PatchSettingsDraftApiResponse",
     ),
     "app/sql/v4/settings/update_settings_complete.sql": (
         "UpdateSettingsSqlParams",
@@ -29235,12 +29817,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkChatCompletedApiRequest",
         "MarkChatCompletedApiResponse",
     ),
-    "app/sql/v4/simulations/patch_simulation_draft_complete.sql": (
-        "PatchSimulationDraftSqlParams",
-        "PatchSimulationDraftSqlRow",
-        "PatchSimulationDraftApiRequest",
-        "PatchSimulationDraftApiResponse",
-    ),
     "app/sql/v4/simulations/simulation_text_stop_run_complete.sql": (
         "SimulationTextStopRunSqlParams",
         "SimulationTextStopRunSqlRow",
@@ -29318,12 +29894,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetStaffSearchSqlRow",
         "GetStaffSearchApiRequest",
         "GetStaffSearchApiResponse",
-    ),
-    "app/sql/v4/staff/patch_staff_draft_complete.sql": (
-        "PatchStaffDraftSqlParams",
-        "PatchStaffDraftSqlRow",
-        "PatchStaffDraftApiRequest",
-        "PatchStaffDraftApiResponse",
     ),
     "app/sql/v4/staff/process_csv_complete.sql": (
         "ProcessCsvSqlParams",
@@ -29781,11 +30351,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/patch_agent_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/agents/update_agent_complete.sql"]
     ) -> SqlString: ...
 
@@ -29841,11 +30406,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/attempts/patch_attempt_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/attempts/update_chat_created_at_complete.sql"]
     ) -> SqlString: ...
 
@@ -29892,11 +30452,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/auth/get_login_data_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/patch_auth_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -29991,11 +30546,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/benchmark/patch_eval_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/start_benchmark_attempt_complete.sql"]
     ) -> SqlString: ...
 
@@ -30056,11 +30606,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/patch_cohort_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/cohorts/update_cohort_complete.sql"]
     ) -> SqlString: ...
 
@@ -30112,11 +30657,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/departments/get_departments_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/patch_department_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -30231,11 +30771,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/patch_document_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/documents/render_template_complete.sql"]
     ) -> SqlString: ...
 
@@ -30281,6 +30816,181 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/analyses_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/colors_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/content_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/conversations_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/create_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/debug_info_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/descriptions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/feedbacks_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/flags_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/get_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/hints_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/html_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/icons_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/images_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/improvements_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/instructions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/names_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/objectives_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/options_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/points_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/problem_statements_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/prompts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/questions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/responses_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/schema_field_items_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/schema_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/schemas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/standard_groups_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/strengths_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/template_array_items_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/template_values_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/templates_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/thresholds_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/times_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/drafts/videos_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/feedback/create_feedback_complete.sql"]
     ) -> SqlString: ...
 
@@ -30322,11 +31032,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/fields/get_fields_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/fields/patch_field_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -30546,11 +31251,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/keys/patch_key_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/keys/update_key_complete.sql"]
     ) -> SqlString: ...
 
@@ -30661,11 +31361,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/models/patch_model_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/models/update_model_complete.sql"]
     ) -> SqlString: ...
 
@@ -30711,11 +31406,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/parameters/patch_parameter_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/parameters/update_parameter_complete.sql"]
     ) -> SqlString: ...
 
@@ -30751,11 +31441,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/patch_persona_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/personas/update_persona_complete.sql"]
     ) -> SqlString: ...
 
@@ -30772,11 +31457,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/practice/get_practice_overview_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/practice/patch_practice_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -30941,11 +31621,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/patch_provider_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/providers/update_provider_complete.sql"]
     ) -> SqlString: ...
 
@@ -31017,11 +31692,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/rubric/get_rubrics_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/rubric/patch_rubric_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -31211,11 +31881,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/patch_scenario_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/randomize_scenario_complete.sql"]
     ) -> SqlString: ...
 
@@ -31272,11 +31937,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/settings/get_settings_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/settings/patch_settings_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -31471,11 +32131,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/patch_simulation_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/simulation_text_stop_run_complete.sql"]
     ) -> SqlString: ...
 
@@ -31537,11 +32192,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/staff/get_staff_search_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/staff/patch_staff_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -128,12 +128,12 @@ WITH params AS (
 ),
 draft_payload_data AS (
     SELECT 
-        d.payload
+        NULL::jsonb as payload
     FROM params x
     JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
-    AND d.resource_type = 'cohorts'::draft_resource_type
+    
     LIMIT 1
 ),
 cohort_exists_check AS (
@@ -358,7 +358,7 @@ current_simulation_ids_from_draft AS (
             THEN ARRAY(
                 SELECT sim_id::uuid
                 FROM draft_payload_data dpd
-                CROSS JOIN jsonb_array_elements_text(dpd.payload->'simulation_ids') AS t(sim_id)
+                CROSS JOIN jsonb_array_elements_text(NULL::jsonb->'simulation_ids') AS t(sim_id)
             )
             ELSE NULL::uuid[]
         END as simulation_ids

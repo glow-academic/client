@@ -201,21 +201,16 @@ WITH params AS (
         COALESCE(filter_scenario_ids, ARRAY[]::uuid[]) AS filter_scenario_ids
 ),
 draft_payload_data AS (
+    -- Draft data is now stored in draft_* junction tables, not in payload
+    -- TODO: Query draft_scenarios junction table to get draft_scenario_ids
     SELECT 
-        d.payload,
+        NULL::jsonb as payload,
         d.version as draft_version,
-        CASE 
-            WHEN d.payload->'scenarioIds' IS NOT NULL AND jsonb_typeof(d.payload->'scenarioIds') = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text(d.payload->'scenarioIds'))::uuid[]
-            WHEN d.payload->'scenario_ids' IS NOT NULL AND jsonb_typeof(d.payload->'scenario_ids') = 'array' THEN
-                ARRAY(SELECT jsonb_array_elements_text(d.payload->'scenario_ids'))::uuid[]
-            ELSE ARRAY[]::uuid[]
-        END as draft_scenario_ids
+        ARRAY[]::uuid[] as draft_scenario_ids
     FROM params x
     JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
-    AND d.resource_type = 'simulations'::draft_resource_type
     LIMIT 1
 ),
 scenario_filter_ids AS (

@@ -64,10 +64,10 @@ WITH params AS (
 draft_payload_data AS (
     SELECT 
         d.version as draft_version,
-        d.payload
+        NULL::jsonb as payload
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
-        AND d.resource_type = 'fields'::draft_resource_type
+        
         AND d.profile_id = x.profile_id
 ),
 user_profile AS (

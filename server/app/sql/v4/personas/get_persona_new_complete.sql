@@ -124,14 +124,13 @@ WITH params AS (
         current_icon AS current_icon,
         draft_id AS draft_id
 ),
+-- Draft data is now stored in draft_* junction tables, not in payload
+-- TODO: Query draft_names, draft_colors, etc. to get draft data
 draft_payload_data AS (
     SELECT 
-        d.payload
+        NULL::jsonb as payload
     FROM params x
-    JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
-    AND d.profile_id = x.profile_id
-    AND d.resource_type = 'personas'::draft_resource_type
     LIMIT 1
 ),
 user_profile AS (

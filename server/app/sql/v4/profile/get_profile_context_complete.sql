@@ -908,10 +908,11 @@ simulation_ids_computed AS (
 ),
 drafts_data AS (
     -- Get all drafts for effective profile
+    -- Draft data is now stored in draft_* junction tables, not in payload
     SELECT 
         d.id,
-        d.resource_type::text as resource_type,
-        d.payload,
+        d.artifact::text as resource_type,
+        NULL::jsonb as payload,
         d.version,
         d.updated_at
     FROM drafts d

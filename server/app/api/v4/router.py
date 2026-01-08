@@ -30,6 +30,7 @@ from app.api.v4.auth import router as auth_router
 from app.api.v4.benchmark import router as benchmark_router
 from app.api.v4.cohorts import router as cohorts_router
 from app.api.v4.dashboard import router as dashboard_router
+from app.api.v4.drafts import router as drafts_router
 
 # ============================================================================
 # Batch C: Secondary Resources (Complete CRUD)
@@ -96,6 +97,7 @@ router.include_router(auth_router)
 router.include_router(departments_router)
 router.include_router(cohorts_router)
 router.include_router(documents_router)
+router.include_router(drafts_router)
 router.include_router(evals_router)
 router.include_router(rubrics_router)
 router.include_router(settings_router)

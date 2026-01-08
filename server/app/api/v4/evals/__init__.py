@@ -48,8 +48,6 @@ except ImportError:
     pass
 
 try:
-    from app.api.v4.evals.draft import router as draft_router
 
-    router.include_router(draft_router)
 except ImportError:
     pass

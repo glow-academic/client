@@ -76,13 +76,13 @@ WITH params AS (
 ),
 draft_payload_data AS (
     SELECT 
-        d.payload,
+        NULL::jsonb as payload,
         d.version as draft_version
     FROM params x
     JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     AND d.profile_id = x.profile_id
-    AND d.resource_type = 'keys'::draft_resource_type
+    
     LIMIT 1
 ),
 actor_profile AS (
