@@ -311,7 +311,7 @@ departments_data AS (
     SELECT DISTINCT
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM departments d
     WHERE (d.id = (SELECT department_id FROM params) OR EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id))
     AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -399,7 +399,7 @@ SELECT
     ) as title,
     COALESCE(
         (SELECT payload->>'description' FROM draft_payload_data),
-        (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)::text
+        (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)::text
     ) as description,
     COALESCE(
         (SELECT (payload->>'active')::boolean FROM draft_payload_data),
@@ -484,7 +484,7 @@ LEFT JOIN departments_data dd ON uda.has_access = true
 LEFT JOIN department_models dm ON uda.has_access = true
 LEFT JOIN keys_data kd ON uda.has_access = true
 LEFT JOIN model_key_associations mka ON uda.has_access = true
-GROUP BY dec.department_exists, d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE), up.role, uda.has_access, 
+GROUP BY dec.department_exists, d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE), up.role, uda.has_access, 
          du.total_usage, dsc.staff_count, dps.total_price_spent, dcs.settings_id, up.actor_name
 LIMIT 1
 $$;

@@ -89,7 +89,7 @@ profile_dept AS (
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
     WHERE ac.chat_id = chat_id 
       AND ap.active = true 
-      AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
+      AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
     LIMIT 1
 ),
 any_active_dept AS (

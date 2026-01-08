@@ -20,6 +20,7 @@ from . import (
     connect,
     disconnect,
     document,
+    personas,
     rubric,
     scenario,
     simulations,
@@ -55,6 +56,10 @@ server_router.include_router(document.server_router)
 
 client_router.include_router(agent.client_router)
 server_router.include_router(agent.server_router)
+
+# Include persona operation routers
+client_router.include_router(personas.client_router)
+server_router.include_router(personas.server_router)
 
 # Include simulation operation routers
 client_router.include_router(simulations.client_router)

@@ -1,0 +1,1841 @@
+/**
+ * PersonaNew.tsx
+ * New implementation using modular resource components
+ * Used to create and manage personas - supports both creation and editing
+ * @AshokSaravanan222 & @siladiea
+ * 01/08/2026
+ */
+"use client";
+
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useProfile } from "@/contexts/profile-context";
+
+import type {
+  CreateDraftColorsIn,
+  CreateDraftColorsOut,
+  CreateDraftDescriptionsIn,
+  CreateDraftDescriptionsOut,
+  CreateDraftIconsIn,
+  CreateDraftIconsOut,
+  CreateDraftInstructionsIn,
+  CreateDraftInstructionsOut,
+  CreateDraftNamesIn,
+  CreateDraftNamesOut,
+  CreatePersonaIn,
+  CreatePersonaOut,
+  PersonaDetailOut,
+  PersonaNewOut,
+  UpdatePersonaIn,
+  UpdatePersonaOut,
+} from "@/app/(main)/create/personas/p/[personaId]/page";
+import {
+  GenericForm,
+  type StepStatus,
+} from "@/components/common/forms/GenericForm";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { ReorderableList } from "@/components/common/forms/ReorderableList";
+import { StepCard } from "@/components/common/forms/StepCard";
+import { ParameterSelector } from "@/components/parameters/ParameterSelector";
+import { Colors } from "@/components/resources/Colors";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Flags } from "@/components/resources/Flags";
+import { Icons } from "@/components/resources/Icons";
+import { Instructions } from "@/components/resources/Instructions";
+import { Names } from "@/components/resources/Names";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpers";
+import {
+  parseAsBoolean,
+  parseAsString,
+  useQueryStates,
+  type Parser,
+} from "nuqs";
+
+export interface PersonaNewProps {
+  personaId?: string;
+  mode?: "create" | "edit";
+  // Server-provided data (for server-side rendering)
+  personaDetail?: PersonaDetailOut;
+  personaDetailDefault?: PersonaNewOut;
+  // Server actions (replaces useMutation)
+  createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
+  updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
+  // Resource-specific draft actions
+  createDraftNamesAction?: (
+    input: CreateDraftNamesIn
+  ) => Promise<CreateDraftNamesOut>;
+  createDraftDescriptionsAction?: (
+    input: CreateDraftDescriptionsIn
+  ) => Promise<CreateDraftDescriptionsOut>;
+  createDraftInstructionsAction?: (
+    input: CreateDraftInstructionsIn
+  ) => Promise<CreateDraftInstructionsOut>;
+  createDraftColorsAction?: (
+    input: CreateDraftColorsIn
+  ) => Promise<CreateDraftColorsOut>;
+  createDraftIconsAction?: (
+    input: CreateDraftIconsIn
+  ) => Promise<CreateDraftIconsOut>;
+}
+
+function PersonaNewComponent({
+  personaId,
+  mode = personaId ? "edit" : "create",
+  personaDetail: serverPersonaDetail,
+  personaDetailDefault: serverPersonaDetailDefault,
+  createPersonaAction,
+  updatePersonaAction,
+  createDraftNamesAction,
+  createDraftDescriptionsAction,
+  createDraftInstructionsAction,
+  createDraftColorsAction,
+  createDraftIconsAction,
+}: PersonaNewProps) {
+  const router = useRouter();
+  const isEditMode = mode === "edit" && !!personaId;
+  const {
+    effectiveProfile,
+    selectedDraftId,
+    setSelectedDraftId,
+    socket,
+    isConnected,
+  } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+
+  const isSuperadmin = effectiveProfile?.role === "superadmin";
+
+  // Generation state for AI workflows
+  const [isGeneratingName, setIsGeneratingName] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [isGeneratingInstructions, setIsGeneratingInstructions] =
+    useState(false);
+
+  // Stabilize server props to prevent unnecessary re-renders from object reference changes
+  // Generate stable ID from server props content (same logic as in GenericForm)
+  const stabilizeServerProp = React.useCallback(
+    (
+      data: typeof serverPersonaDetail | typeof serverPersonaDetailDefault
+    ): string | null => {
+      if (!data) return null;
+      if (typeof data === "object" && data !== null) {
+        if ("persona_id" in data && data.persona_id) {
+          return `persona_id:${String(data.persona_id)}`;
+        }
+        const keyFields: Record<string, unknown> = {};
+        if ("preset_colors" in data) {
+          keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
+            ? data["preset_colors"].length
+            : data["preset_colors"];
+        }
+        if ("valid_icons" in data) {
+          keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
+            ? data["valid_icons"].length
+            : data["valid_icons"];
+        }
+        if ("suggested_icons" in data) {
+          keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
+            ? data["suggested_icons"].length
+            : data["suggested_icons"];
+        }
+        if ("valid_department_ids" in data) {
+          keyFields["valid_department_ids"] = Array.isArray(
+            data["valid_department_ids"]
+          )
+            ? data["valid_department_ids"].sort().join(",")
+            : data["valid_department_ids"];
+        }
+        const sortedKeys = Object.keys(keyFields).sort();
+        const hash = sortedKeys
+          .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+          .join("|");
+        return `new:${hash.length}:${hash.slice(0, 100)}`;
+      }
+      return String(data);
+    },
+    []
+  );
+
+  const personaDetailId = React.useMemo(
+    () => stabilizeServerProp(serverPersonaDetail),
+    [serverPersonaDetail, stabilizeServerProp]
+  );
+  const personaDetailDefaultId = React.useMemo(
+    () => stabilizeServerProp(serverPersonaDetailDefault),
+    [serverPersonaDetailDefault, stabilizeServerProp]
+  );
+
+  // Use refs to track latest server props (for effect access) and stable props (for render)
+  const latestServerPersonaDetailRef = React.useRef(serverPersonaDetail);
+  const latestServerPersonaDetailDefaultRef = React.useRef(
+    serverPersonaDetailDefault
+  );
+
+  // Update latest refs on every render (no effect needed - just sync)
+  latestServerPersonaDetailRef.current = serverPersonaDetail;
+  latestServerPersonaDetailDefaultRef.current = serverPersonaDetailDefault;
+
+  // Use refs to track stable server props - only update when ID changes
+  const stablePersonaDetailRef = React.useRef<{
+    data: typeof serverPersonaDetail;
+    id: string | null;
+  }>({
+    data: serverPersonaDetail,
+    id: personaDetailId,
+  });
+  const stablePersonaDetailDefaultRef = React.useRef<{
+    data: typeof serverPersonaDetailDefault;
+    id: string | null;
+  }>({
+    data: serverPersonaDetailDefault,
+    id: personaDetailDefaultId,
+  });
+
+  React.useEffect(() => {
+    // Only update when ID actually changes, use latest ref for data
+    if (stablePersonaDetailRef.current.id !== personaDetailId) {
+      stablePersonaDetailRef.current = {
+        data: latestServerPersonaDetailRef.current,
+        id: personaDetailId,
+      };
+    }
+  }, [personaDetailId]); // Only depend on ID, not object reference
+
+  React.useEffect(() => {
+    // Only update when ID actually changes, use latest ref for data
+    if (stablePersonaDetailDefaultRef.current.id !== personaDetailDefaultId) {
+      stablePersonaDetailDefaultRef.current = {
+        data: latestServerPersonaDetailDefaultRef.current,
+        id: personaDetailDefaultId,
+      };
+    }
+  }, [personaDetailDefaultId]); // Only depend on ID, not object reference
+
+  // Use stable references
+  const personaDetail = stablePersonaDetailRef.current.data;
+  const personaDetailDefault = stablePersonaDetailDefaultRef.current.data;
+
+  // Use edit detail when editing, default detail when creating
+  // Stabilize based on content ID, not object reference, to prevent unnecessary re-renders
+  const personaDataId = React.useMemo(() => {
+    const data = isEditMode ? personaDetail : personaDetailDefault;
+    if (!data) return null;
+    if (typeof data === "object" && data !== null) {
+      if ("persona_id" in data && data.persona_id) {
+        return `persona_id:${String(data.persona_id)}`;
+      }
+      // For new personas, create stable hash from immutable fields
+      const keyFields: Record<string, unknown> = {};
+      if ("preset_colors" in data) {
+        keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
+          ? data["preset_colors"].length
+          : data["preset_colors"];
+      }
+      if ("valid_icons" in data) {
+        keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
+          ? data["valid_icons"].length
+          : data["valid_icons"];
+      }
+      if ("suggested_icons" in data) {
+        keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
+          ? data["suggested_icons"].length
+          : data["suggested_icons"];
+      }
+      if ("valid_department_ids" in data) {
+        keyFields["valid_department_ids"] = Array.isArray(
+          data["valid_department_ids"]
+        )
+          ? data["valid_department_ids"].sort().join(",")
+          : data["valid_department_ids"];
+      }
+      const sortedKeys = Object.keys(keyFields).sort();
+      const hash = sortedKeys
+        .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+        .join("|");
+      return `new:${hash.length}:${hash.slice(0, 100)}`;
+    }
+    return String(data);
+  }, [isEditMode, personaDetail, personaDetailDefault]);
+
+  // Use ref to track stable personaData - only update when ID changes
+  const stablePersonaDataRef = React.useRef<{
+    data: typeof personaDetail | typeof personaDetailDefault;
+    id: string | null;
+  }>({
+    data: isEditMode ? personaDetail : personaDetailDefault,
+    id: personaDataId,
+  });
+
+  React.useEffect(() => {
+    if (stablePersonaDataRef.current.id !== personaDataId) {
+      stablePersonaDataRef.current = {
+        data: isEditMode ? personaDetail : personaDetailDefault,
+        id: personaDataId,
+      };
+    }
+  }, [isEditMode, personaDetail, personaDetailDefault, personaDataId]);
+
+  const personaData = stablePersonaDataRef.current.data;
+
+  // Convert departments array to department_mapping Record (for GenericPicker)
+  const departmentMapping = useMemo(() => {
+    // Check if department_mapping already exists (edit mode)
+    if (
+      personaData &&
+      "department_mapping" in personaData &&
+      (
+        personaData as PersonaDetailOut & {
+          department_mapping?: Record<string, unknown>;
+        }
+      ).department_mapping
+    ) {
+      return (
+        (
+          personaData as PersonaDetailOut & {
+            department_mapping?: Record<
+              string,
+              { id: string; name: string; description?: string }
+            >;
+          }
+        ).department_mapping || {}
+      );
+    }
+    // Convert departments array to mapping (new mode)
+    if (
+      personaData &&
+      "departments" in personaData &&
+      Array.isArray(
+        (
+          personaData as PersonaNewOut & {
+            departments?: Array<{
+              department_id: string;
+              name: string;
+              description?: string;
+            }>;
+          }
+        ).departments
+      )
+    ) {
+      const departments =
+        (
+          personaData as PersonaNewOut & {
+            departments?: Array<{
+              department_id: string;
+              name: string;
+              description?: string;
+            }>;
+          }
+        ).departments || [];
+      const mapping: Record<
+        string,
+        { id: string; name: string; description?: string }
+      > = {};
+      departments.forEach((dept) => {
+        if (dept.department_id) {
+          mapping[dept.department_id] = {
+            id: dept.department_id,
+            name: dept.name || "",
+            ...(dept.description ? { description: dept.description } : {}),
+          };
+        }
+      });
+      return mapping;
+    }
+    return {};
+  }, [personaData]);
+
+  // Inline parsers for URL-backed state (navigation/search params only - form fields moved to local state)
+  const personaSearchParamsClient = {
+    // Draft ID (URL-backed, updated when draft is created)
+    draftId: parseAsString,
+    // Search params (URL-backed, updated via debounced callback in StepCard)
+    colorSearch: parseAsString,
+    iconSearch: parseAsString,
+    // Filter params (URL-backed)
+    colorShowSelected: parseAsBoolean,
+    iconShowSelected: parseAsBoolean,
+  } as const;
+
+  // URL-backed state using nuqs (only navigation/search params)
+  const [urlParams, setUrlParams] = useQueryStates(personaSearchParamsClient, {
+    history: "replace",
+    shallow: true, // Use shallow routing to prevent server component re-renders
+  });
+
+  // Get draftId from URL (managed by nuqs via urlParams)
+  const urlDraftId = urlParams.draftId || null;
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (urlDraftId !== selectedDraftId) {
+      setSelectedDraftId(urlDraftId);
+    }
+  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+
+  const draftId = urlDraftId;
+
+  // Local form state (not in URL) - initialized from server data or draft payload
+  // Resource components handle their own draft saving, this is just for form submission
+  const getInitialFormState = useCallback(() => {
+    const data = isEditMode ? personaDetail : personaDetailDefault;
+    if (!data) {
+      return {
+        name: "",
+        description: "",
+        instructions: "",
+        color: "",
+        icon: "",
+        active: true,
+        departmentIds: [] as string[],
+        parameterIds: [] as string[],
+        parameterFieldIds: [] as string[],
+        examples: [] as string[],
+      };
+    }
+    return {
+      name: data.name || "",
+      description: data.description || "",
+      instructions: data.instructions || "",
+      color: data.color || "",
+      icon: data.icon || "",
+      active: data.active ?? true,
+      departmentIds: data.department_ids || [],
+      parameterIds: [] as string[],
+      parameterFieldIds: [] as string[],
+      examples: [] as string[],
+    };
+  }, [isEditMode, personaDetail, personaDetailDefault]);
+
+  const [formState, setFormState] = useState(getInitialFormState);
+
+  // Update form state when server data changes
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      // Only update if content actually changed
+      if (
+        prev.name !== newState.name ||
+        prev.description !== newState.description ||
+        prev.instructions !== newState.instructions ||
+        prev.color !== newState.color ||
+        prev.icon !== newState.icon ||
+        prev.active !== newState.active ||
+        JSON.stringify(prev.departmentIds) !==
+          JSON.stringify(newState.departmentIds)
+      ) {
+        return newState;
+      }
+      return prev;
+    });
+  }, [getInitialFormState]);
+
+  // WebSocket handlers for AI generation
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    const handleNamesComplete = (data: {
+      success: boolean;
+      name?: string;
+      message?: string;
+    }) => {
+      setIsGeneratingName(false);
+      if (data.success && data.name) {
+        setFormState((prev) => ({ ...prev, name: data.name! }));
+        toast.success(data.message || "Name generated successfully");
+      } else {
+        toast.error(data.message || "Failed to generate name");
+      }
+    };
+
+    const handleDescriptionsComplete = (data: {
+      success: boolean;
+      description?: string;
+      message?: string;
+    }) => {
+      setIsGeneratingDescription(false);
+      if (data.success && data.description) {
+        setFormState((prev) => ({
+          ...prev,
+          description: data.description!,
+        }));
+        toast.success(data.message || "Description generated successfully");
+      } else {
+        toast.error(data.message || "Failed to generate description");
+      }
+    };
+
+    const handleInstructionsComplete = (data: {
+      success: boolean;
+      instructions?: string;
+      message?: string;
+    }) => {
+      setIsGeneratingInstructions(false);
+      if (data.success && data.instructions) {
+        setFormState((prev) => ({
+          ...prev,
+          instructions: data.instructions!,
+        }));
+        toast.success(data.message || "Instructions generated successfully");
+      } else {
+        toast.error(data.message || "Failed to generate instructions");
+      }
+    };
+
+    const handleGenerationError = (data: {
+      success: boolean;
+      message?: string;
+      resource_type?: string;
+    }) => {
+      if (data.resource_type === "names") {
+        setIsGeneratingName(false);
+      } else if (data.resource_type === "descriptions") {
+        setIsGeneratingDescription(false);
+      } else if (data.resource_type === "instructions") {
+        setIsGeneratingInstructions(false);
+      }
+      toast.error(data.message || "Generation failed");
+    };
+
+    socket.on("personas_names_generation_complete", handleNamesComplete);
+    socket.on(
+      "personas_descriptions_generation_complete",
+      handleDescriptionsComplete
+    );
+    socket.on(
+      "personas_instructions_generation_complete",
+      handleInstructionsComplete
+    );
+    socket.on("personas_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("personas_names_generation_complete", handleNamesComplete);
+      socket.off(
+        "personas_descriptions_generation_complete",
+        handleDescriptionsComplete
+      );
+      socket.off(
+        "personas_instructions_generation_complete",
+        handleInstructionsComplete
+      );
+      socket.off("personas_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected]);
+
+  // Generation handlers
+  const handleGenerateName = useCallback(async () => {
+    if (!socket || !isConnected || !draftId) {
+      toast.error("WebSocket not connected or draft not available");
+      return;
+    }
+
+    setIsGeneratingName(true);
+    socket.emit("persona_generate", {
+      draft_id: draftId,
+      resource_type: "names",
+      persona_id: personaId || null,
+      context: {
+        name: formState.name,
+        description: formState.description,
+      },
+    });
+  }, [
+    socket,
+    isConnected,
+    draftId,
+    personaId,
+    formState.name,
+    formState.description,
+  ]);
+
+  const handleGenerateDescription = useCallback(async () => {
+    if (!socket || !isConnected || !draftId) {
+      toast.error("WebSocket not connected or draft not available");
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    socket.emit("persona_generate", {
+      draft_id: draftId,
+      resource_type: "descriptions",
+      persona_id: personaId || null,
+      context: {
+        name: formState.name,
+        description: formState.description,
+      },
+    });
+  }, [
+    socket,
+    isConnected,
+    draftId,
+    personaId,
+    formState.name,
+    formState.description,
+  ]);
+
+  const handleGenerateInstructions = useCallback(async () => {
+    if (!socket || !isConnected || !draftId) {
+      toast.error("WebSocket not connected or draft not available");
+      return;
+    }
+
+    setIsGeneratingInstructions(true);
+    socket.emit("persona_generate", {
+      draft_id: draftId,
+      resource_type: "instructions",
+      persona_id: personaId || null,
+      context: {
+        name: formState.name,
+        description: formState.description,
+        instructions: formState.instructions,
+      },
+    });
+  }, [
+    socket,
+    isConnected,
+    draftId,
+    personaId,
+    formState.name,
+    formState.description,
+    formState.instructions,
+  ]);
+
+  // Merge formState with urlParams for formData (GenericForm expects single formData object)
+  const formData = useMemo(() => {
+    return {
+      ...formState,
+      colorSearch: urlParams.colorSearch || null,
+      iconSearch: urlParams.iconSearch || null,
+      colorShowSelected: urlParams.colorShowSelected || null,
+      iconShowSelected: urlParams.iconShowSelected || null,
+    } as Record<string, unknown>;
+  }, [formState, urlParams]);
+
+  // Wrapper for setFormData that updates formState for form fields, urlParams for navigation
+  const setFormData = useCallback(
+    (
+      updates:
+        | Partial<Record<string, unknown>>
+        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
+    ) => {
+      // Handle function form
+      const resolvedUpdates =
+        typeof updates === "function" ? updates(formData) : updates;
+
+      const formUpdates: Partial<typeof formState> = {};
+      const urlUpdates: Partial<Record<string, unknown>> = {};
+
+      Object.entries(resolvedUpdates).forEach(([key, value]) => {
+        if (
+          key === "name" ||
+          key === "description" ||
+          key === "instructions" ||
+          key === "color" ||
+          key === "icon" ||
+          key === "active" ||
+          key === "departmentIds" ||
+          key === "parameterIds" ||
+          key === "parameterFieldIds" ||
+          key === "examples"
+        ) {
+          formUpdates[key as keyof typeof formState] = value as never;
+        } else if (
+          key === "colorSearch" ||
+          key === "iconSearch" ||
+          key === "colorShowSelected" ||
+          key === "iconShowSelected"
+        ) {
+          urlUpdates[key] = value;
+        }
+      });
+
+      if (Object.keys(formUpdates).length > 0) {
+        setFormState((prev) => ({ ...prev, ...formUpdates }));
+      }
+      if (Object.keys(urlUpdates).length > 0) {
+        // Check if URL params actually changed before updating
+        const hasChanges = Object.keys(urlUpdates).some((key) => {
+          const newValue = urlUpdates[key];
+          const currentValue = urlParams[key as keyof typeof urlParams];
+          return newValue !== currentValue;
+        });
+
+        if (hasChanges) {
+          setUrlParams(urlUpdates as Parameters<typeof setUrlParams>[0]);
+        }
+      }
+    },
+    [formData, setUrlParams, urlParams]
+  );
+
+  // Get preset colors and valid icons from server (all colors/icons, filtered client-side)
+  // Server returns colors as list of objects: [{hex: "#ef4444", name: "Red"}, ...]
+  const presetColorsAll = useMemo(() => {
+    const colors =
+      (
+        personaData as PersonaDetailOut & {
+          preset_colors?: Array<{ hex: string; name: string }> | string[];
+        }
+      )?.preset_colors || [];
+
+    // Handle both old format (string[]) and new format (Array<{hex, name}>)
+    if (colors.length > 0 && typeof colors[0] === "string") {
+      // Old format - convert to new format (shouldn't happen after migration)
+      return (colors as string[]).map((hex) => ({ hex, name: hex }));
+    }
+    return colors as Array<{ hex: string; name: string }>;
+  }, [personaData]);
+
+  // Extract specific form values to avoid re-renders when formData object reference changes
+  const colorValue = formState.color;
+  const colorSearch = urlParams.colorSearch || "";
+  const iconSearch = urlParams.iconSearch || "";
+
+  // Filter colors client-side based on search state from URL
+  // Also include custom colors that aren't in the preset list
+  const presetColors = useMemo(() => {
+    // Get current color from form data or default
+    const currentColor =
+      colorValue !== undefined
+        ? colorValue
+        : (personaData as { color?: string })?.color || null;
+
+    // Normalize current color for comparison
+    const normalizedCurrentColor = currentColor
+      ? currentColor.toUpperCase().startsWith("#")
+        ? currentColor.toUpperCase()
+        : `#${currentColor.toUpperCase()}`
+      : null;
+
+    // Check if current color is custom (not in preset list)
+    const isCustomColor =
+      normalizedCurrentColor &&
+      !presetColorsAll.some(
+        (c) => c.hex.toUpperCase() === normalizedCurrentColor
+      );
+
+    // Build colors list: custom color first (if exists), then preset colors
+    let colors = [...presetColorsAll];
+    if (isCustomColor && normalizedCurrentColor) {
+      colors = [
+        {
+          hex: normalizedCurrentColor,
+          name: normalizedCurrentColor, // Will use getColorName helper in Colors component
+        },
+        ...presetColorsAll,
+      ];
+    }
+
+    // Filter by search term if present (from URL-backed state)
+    if (!colorSearch.trim()) {
+      return colors;
+    }
+    const searchLower = colorSearch.toLowerCase();
+    return colors.filter(
+      (color) =>
+        color.name.toLowerCase().includes(searchLower) ||
+        color.hex.toLowerCase().includes(searchLower)
+    );
+  }, [presetColorsAll, colorValue, colorSearch, personaData]);
+
+  const suggestedIconsAll = useMemo(
+    () =>
+      (
+        personaData as PersonaDetailOut & {
+          suggested_icons?: string[];
+        }
+      )?.suggested_icons || [],
+    [personaData]
+  );
+
+  const validIconsAll = useMemo(
+    () =>
+      (
+        personaData as PersonaDetailOut & {
+          valid_icons?: string[];
+        }
+      )?.valid_icons || [],
+    [personaData]
+  );
+
+  // Combine suggested icons first, then valid icons
+  const allIconsAll = useMemo(() => {
+    const suggestedSet = new Set(suggestedIconsAll);
+    const otherIcons = validIconsAll.filter(
+      (iconName) => !suggestedSet.has(iconName)
+    );
+    return [...suggestedIconsAll, ...otherIcons];
+  }, [suggestedIconsAll, validIconsAll]);
+
+  // Filter icons client-side based on search state from URL
+  const allIcons = useMemo(() => {
+    if (!iconSearch.trim()) {
+      return allIconsAll;
+    }
+    const searchLower = iconSearch.toLowerCase();
+    return allIconsAll.filter((icon) =>
+      icon.toLowerCase().includes(searchLower)
+    );
+  }, [allIconsAll, iconSearch]);
+
+  // Readonly logic using v2 permission flags
+  const isReadonly = useMemo(() => {
+    if (!isEditMode || !personaData) return false;
+    if ("can_edit" in personaData) {
+      return !(personaData as PersonaDetailOut).can_edit;
+    }
+    return false;
+  }, [isEditMode, personaData]);
+
+  // Extract examples from example_mapping or convert from examples array
+  const exampleMapping = useMemo(() => {
+    // Check if example_mapping already exists (backward compatibility)
+    if (
+      personaData &&
+      "example_mapping" in personaData &&
+      (
+        personaData as PersonaDetailOut & {
+          example_mapping?: Record<string, { name: string }>;
+        }
+      ).example_mapping
+    ) {
+      return (
+        (
+          personaData as PersonaDetailOut & {
+            example_mapping?: Record<string, { name: string }>;
+          }
+        ).example_mapping || {}
+      );
+    }
+    // Convert examples array to mapping (current pattern)
+    if (
+      personaData &&
+      "examples" in personaData &&
+      Array.isArray(
+        (
+          personaData as PersonaDetailOut & {
+            examples?: Array<{
+              example_id: string | null;
+              name: string | null;
+              description?: string | null;
+            }>;
+          }
+        ).examples
+      )
+    ) {
+      const examples =
+        (
+          personaData as PersonaDetailOut & {
+            examples?: Array<{
+              example_id: string | null;
+              name: string | null;
+              description?: string | null;
+            }>;
+          }
+        ).examples || [];
+      const mapping: Record<string, { name: string }> = {};
+      examples.forEach((ex) => {
+        if (ex.example_id) {
+          // Convert UUID to string for mapping key
+          mapping[String(ex.example_id)] = {
+            name: ex.name || "",
+          };
+        }
+      });
+      return mapping;
+    }
+    return {};
+  }, [personaData]);
+
+  // Extract examples from example_ids and example_mapping
+  const getExamplesFromMapping = useCallback(
+    (
+      exampleIds: string[],
+      mapping: Record<string, { name: string }>
+    ): string[] => {
+      return exampleIds.map((id) => mapping[id]?.name || "");
+    },
+    []
+  );
+
+  // Helper to filter examples_history based on selected departments
+  const getExamplesHistory = useCallback(
+    (departmentIds: string[] | null | undefined) => {
+      if (!personaData || !("examples_history" in personaData)) return [];
+      const rawHistory =
+        (
+          personaData as PersonaDetailOut & {
+            examples_history?: Array<{
+              example: string;
+              department_ids?: string[];
+            }>;
+          }
+        )?.examples_history || [];
+      const selectedDeptIds = departmentIds || [];
+
+      // Convert to array of strings for autocomplete
+      const examples: string[] = [];
+
+      // If no departments selected, return all examples
+      if (selectedDeptIds.length === 0) {
+        rawHistory.forEach((ex) => {
+          if (typeof ex === "string") {
+            examples.push(ex);
+          } else if (ex && typeof ex === "object") {
+            const exWithDept = ex as {
+              example: string;
+              department_ids?: string[];
+            };
+            if ("example" in exWithDept) {
+              examples.push(exWithDept.example);
+            }
+          }
+        });
+        return examples;
+      }
+
+      // Filter examples that:
+      // 1. Have department_ids that intersect with selected departments
+      // 2. Are cross-department (empty department_ids array)
+      rawHistory.forEach((ex) => {
+        // Handle both new format (object with department_ids) and legacy format (string)
+        if (typeof ex === "string") {
+          examples.push(ex); // Legacy format - include all
+        } else if (ex && typeof ex === "object") {
+          const exWithDept = ex as {
+            example: string;
+            department_ids?: string[];
+          };
+          if ("example" in exWithDept) {
+            const exDeptIds = exWithDept.department_ids || [];
+            // Include if cross-department (empty) or intersects with selected departments
+            if (
+              exDeptIds.length === 0 ||
+              exDeptIds.some((deptId) => selectedDeptIds.includes(deptId))
+            ) {
+              examples.push(exWithDept.example);
+            }
+          }
+        }
+      });
+
+      return examples;
+    },
+    [personaData]
+  );
+
+  // Form initialization function for GenericForm
+  const initializeForm = useCallback(
+    (serverData: unknown, editMode: boolean) => {
+      if (
+        !editMode ||
+        !serverData ||
+        typeof serverData !== "object" ||
+        !("department_ids" in serverData)
+      ) {
+        return {};
+      }
+
+      const personaDetail = serverData as PersonaDetailOut;
+      const deptIds = personaDetail.department_ids || [];
+      const exampleIdsRaw =
+        (
+          personaDetail as PersonaDetailOut & {
+            example_ids?: Array<string | { toString(): string }>;
+          }
+        )?.example_ids || [];
+      // Convert example_ids to strings for mapping lookup (UUIDs may come as objects or strings)
+      const exampleIds = exampleIdsRaw.map((id) => String(id));
+      const examples = getExamplesFromMapping(exampleIds, exampleMapping);
+
+      // Update formState directly (form fields are now in local state, not URL)
+      const formUpdates: Partial<typeof formState> = {};
+
+      if (personaDetail.name) formUpdates.name = personaDetail.name;
+      if (personaDetail.description)
+        formUpdates.description = personaDetail.description;
+      if (personaDetail.instructions)
+        formUpdates.instructions = personaDetail.instructions;
+      if (personaDetail.color) formUpdates.color = personaDetail.color;
+      if (personaDetail.icon) formUpdates.icon = personaDetail.icon;
+      if (personaDetail.active !== undefined)
+        formUpdates.active = personaDetail.active ?? true;
+      if (deptIds.length > 0) formUpdates.departmentIds = deptIds;
+      if (
+        (
+          personaDetail as PersonaDetailOut & {
+            linked_parameter_ids?: string[];
+          }
+        )?.linked_parameter_ids &&
+        (
+          personaDetail as PersonaDetailOut & {
+            linked_parameter_ids?: string[];
+          }
+        ).linked_parameter_ids!.length > 0
+      ) {
+        formUpdates.parameterIds = (
+          personaDetail as PersonaDetailOut & {
+            linked_parameter_ids?: string[];
+          }
+        ).linked_parameter_ids!;
+      }
+      if (
+        (personaDetail as PersonaDetailOut & { parameter_field_ids?: string[] })
+          ?.parameter_field_ids &&
+        (
+          personaDetail as PersonaDetailOut & {
+            parameter_field_ids?: string[];
+          }
+        ).parameter_field_ids!.length > 0
+      ) {
+        formUpdates.parameterFieldIds = (
+          personaDetail as PersonaDetailOut & {
+            parameter_field_ids?: string[];
+          }
+        ).parameter_field_ids!;
+      }
+      if (examples.length > 0) formUpdates.examples = examples;
+
+      // Apply updates to formState
+      if (Object.keys(formUpdates).length > 0) {
+        setFormState((prev) => ({ ...prev, ...formUpdates }));
+      }
+
+      // Return empty object for GenericForm compatibility (form fields are handled via formState)
+      return {};
+    },
+    [exampleMapping, getExamplesFromMapping]
+  );
+
+  // Set breadcrumb context when persona data is loaded
+  useEffect(() => {
+    if (personaDetail?.name && personaId && isEditMode) {
+      setEntityMetadata({
+        entityId: personaId,
+        entityName: personaDetail.name,
+        entityType: "persona",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    personaDetail,
+    personaId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
+
+  // Submit handler for GenericForm (uses formState, not formData parameter)
+  const handleSubmit = useCallback(
+    async (_formData: Record<string, unknown>) => {
+      if (!formState.name) {
+        toast.error("Persona name is required");
+        throw new Error("Persona name is required");
+      }
+
+      if (!formState.description) {
+        toast.error("Persona description is required");
+        throw new Error("Persona description is required");
+      }
+
+      if (!formState.instructions) {
+        toast.error("Instructions are required");
+        throw new Error("Instructions are required");
+      }
+
+      // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
+      const finalDepartmentIds =
+        transformDepartmentIdsForSubmit(
+          formState.departmentIds || [],
+          isSuperadmin,
+          (
+            personaData as PersonaDetailOut & {
+              valid_department_ids?: string[];
+            }
+          )?.valid_department_ids || []
+        ) ?? [];
+
+      // Ensure profileId exists - required for API calls
+      if (!effectiveProfile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        throw new Error("Profile not loaded");
+      }
+
+      if (isEditMode) {
+        if (!updatePersonaAction) {
+          toast.error("Update action not available");
+          throw new Error("Update action not available");
+        }
+        try {
+          await updatePersonaAction({
+            body: {
+              persona_id: personaId!,
+              name: formState.name,
+              description: formState.description || "",
+              instructions: formState.instructions || "",
+              color: formState.color || "#000000",
+              icon: formState.icon || "Zap",
+              active: formState.active ?? true,
+              department_ids: finalDepartmentIds,
+              example_ids: [],
+            },
+          });
+          toast.success("Persona updated successfully!");
+          router.push("/create/personas");
+        } catch (error) {
+          toast.error(
+            `Failed to update persona: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+          throw error;
+        }
+      } else {
+        if (!createPersonaAction) {
+          toast.error("Create action not available");
+          throw new Error("Create action not available");
+        }
+        try {
+          await createPersonaAction({
+            body: {
+              name: formState.name,
+              description: formState.description || "",
+              instructions: formState.instructions || "",
+              color: formState.color || "#000000",
+              icon: formState.icon || "Zap",
+              active: formState.active ?? true,
+              department_ids: finalDepartmentIds,
+              example_ids: (formState.examples || []).filter((ex: string) =>
+                ex.trim()
+              ),
+            },
+          });
+          toast.success("Persona created successfully!");
+          router.push("/create/personas");
+        } catch (error) {
+          toast.error(
+            `Failed to create persona: ${error instanceof Error ? error.message : "Unknown error"}`
+          );
+          throw error;
+        }
+      }
+    },
+    [
+      formState,
+      isEditMode,
+      personaId,
+      isSuperadmin,
+      personaData,
+      effectiveProfile?.id,
+      updatePersonaAction,
+      createPersonaAction,
+      router,
+    ]
+  );
+
+  // Step status logic (for GenericForm)
+  const getStepStatus = useCallback(
+    (stepId: string, formData: Record<string, unknown>): StepStatus => {
+      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
+      const hasDescription = !!(
+        formData["description"] as string | null | undefined
+      )?.trim();
+      const hasColor = !!(
+        formData["color"] as string | null | undefined
+      )?.trim();
+      const hasIcon = !!(formData["icon"] as string | null | undefined)?.trim();
+      const hasInstructions = !!(
+        formData["instructions"] as string | null | undefined
+      )?.trim();
+
+      switch (stepId) {
+        case "basic":
+          return hasName && hasDescription ? "completed" : "active";
+        case "color":
+          if (!hasName || !hasDescription) return "pending";
+          return hasColor ? "completed" : "active";
+        case "icon":
+          if (!hasName || !hasDescription) return "pending";
+          return hasIcon ? "completed" : "active";
+        case "content":
+          if (!hasName || !hasDescription) return "pending";
+          return hasInstructions ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    []
+  );
+
+  // Steps configuration for GenericForm
+  const steps = useMemo(
+    () => [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description:
+          "Set the persona name, description, departments, and active status.",
+        resetFields: [
+          "name",
+          "description",
+          "departmentIds",
+          "parameterFieldIds",
+          "active",
+        ],
+      },
+      {
+        id: "color",
+        title: "Color",
+        description: "Select a color for the persona.",
+        resetFields: ["color", "colorSearch", "colorShowSelected"],
+      },
+      {
+        id: "icon",
+        title: "Icon",
+        description: "Select an icon for the persona.",
+        resetFields: ["icon", "iconSearch", "iconShowSelected"],
+      },
+      {
+        id: "content",
+        title: "Personality",
+        description:
+          "Define instructions and example messages for the persona.",
+        resetFields: ["instructions", "examples"],
+      },
+    ],
+    []
+  );
+
+  // Memoize formFieldKeys to prevent re-initialization loops
+  const formFieldKeys = useMemo(
+    () => [
+      "name",
+      "description",
+      "color",
+      "icon",
+      "instructions",
+      "active",
+      "departmentIds",
+      "parameterIds",
+      "parameterFieldIds",
+      "examples",
+    ],
+    []
+  );
+
+  // Memoize resetSuccessMessage to prevent GenericForm re-renders
+  const resetSuccessMessage = useCallback((stepId: string) => {
+    switch (stepId) {
+      case "basic":
+        return "Basic information reset";
+      case "color":
+        return "Color reset";
+      case "icon":
+        return "Icon reset";
+      case "content":
+        return "Content reset";
+      default:
+        return "Reset";
+    }
+  }, []);
+
+  // Memoize submitButton to prevent GenericForm re-renders
+  const submitButton = useMemo(
+    () => ({
+      backUrl: "/create/personas",
+      backLabel: "Back",
+      createLabel: "Create Persona",
+      updateLabel: "Update Persona",
+    }),
+    []
+  );
+
+  // Create stable filter onChange callbacks using memoized setFormData
+  const createColorFilterOnChange = useCallback(
+    (value: boolean) => {
+      setFormData({ colorShowSelected: value || null });
+    },
+    [setFormData]
+  );
+
+  const createIconFilterOnChange = useCallback(
+    (value: boolean) => {
+      setFormData({ iconShowSelected: value || null });
+    },
+    [setFormData]
+  );
+
+  // Memoize renderStep to prevent GenericForm re-renders
+  const renderStep = useCallback(
+    ({
+      stepId,
+      stepStatus,
+      stepTitle,
+      stepDescription,
+      stepNumber,
+      formData: stepFormData,
+      setFormData: setStepFormData,
+      onReset,
+    }: {
+      stepId: string;
+      stepTitle: string;
+      stepDescription: string;
+      stepNumber: number;
+      stepStatus: StepStatus;
+      isOptional: boolean;
+      formData: Record<string, unknown>;
+      setFormData: (updates: Partial<Record<string, unknown>>) => void;
+      filters?: Array<{
+        key: string;
+        label: string;
+        value: boolean;
+        onChange: (value: boolean) => void;
+      }>;
+      onReset?: () => void;
+    }) => {
+      switch (stepId) {
+        case "basic":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              editableTitle={{
+                value:
+                  (stepFormData["name"] as string | null | undefined) ?? "",
+                onChange: (value) => setStepFormData({ name: value || null }),
+                placeholder: "e.g., Enthusiastic Student",
+                defaultName: "New Persona",
+                required: true,
+              }}
+              resetFields={[
+                "name",
+                "description",
+                "departmentIds",
+                "parameterFieldIds",
+                "active",
+              ]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <div className="space-y-4">
+                {/* Name field - using Names resource component */}
+                <Names
+                  value={
+                    (stepFormData["name"] as string | null | undefined) || ""
+                  }
+                  onChange={(value) => setStepFormData({ name: value || null })}
+                  draftId={draftId}
+                  onGenerate={handleGenerateName}
+                  isGenerating={isGeneratingName}
+                  label="Name"
+                  placeholder="e.g., Enthusiastic Student"
+                  required
+                  disabled={isReadonly}
+                  createDraftNamesAction={createDraftNamesAction}
+                />
+
+                {/* Description field - using Descriptions resource component */}
+                <Descriptions
+                  value={
+                    (stepFormData["description"] as
+                      | string
+                      | null
+                      | undefined) || ""
+                  }
+                  onChange={(value) =>
+                    setStepFormData({ description: value || null })
+                  }
+                  draftId={draftId}
+                  onGenerate={handleGenerateDescription}
+                  isGenerating={isGeneratingDescription}
+                  label="Description"
+                  placeholder="Detailed behavior description and personality traits"
+                  required
+                  disabled={isReadonly}
+                  rows={4}
+                  data-testid="input-persona-description"
+                  createDraftDescriptionsAction={createDraftDescriptionsAction}
+                />
+
+                {/* Department Selection */}
+                {personaData?.valid_department_ids &&
+                personaData.valid_department_ids.length > 1 ? (
+                  <div className="space-y-2">
+                    <GenericPicker
+                      items={departmentMapping}
+                      itemIds={
+                        (
+                          personaData as PersonaDetailOut & {
+                            valid_department_ids?: string[];
+                          }
+                        )?.valid_department_ids || []
+                      }
+                      selectedIds={
+                        (stepFormData["departmentIds"] as
+                          | string[]
+                          | null
+                          | undefined) || []
+                      }
+                      onSelect={(ids) =>
+                        setStepFormData({
+                          departmentIds: ids.length > 0 ? ids : null,
+                        })
+                      }
+                      getId={(dept) => (dept as { id: string }).id}
+                      getLabel={(dept) => (dept as { name: string }).name || ""}
+                      getSearchText={(dept) =>
+                        `${(dept as { name: string }).name} ${(dept as { description?: string }).description || ""}`
+                      }
+                      placeholder="All Departments"
+                      disabled={isReadonly}
+                      multiSelect={true}
+                      hideSelectedChips={true}
+                      buttonClassName="w-full"
+                    />
+                  </div>
+                ) : null}
+
+                {/* Required Parameters */}
+                {personaData &&
+                "linked_parameter_ids" in personaData &&
+                (
+                  personaData as PersonaDetailOut & {
+                    linked_parameter_ids?: string[];
+                  }
+                ).linked_parameter_ids &&
+                (
+                  personaData as PersonaDetailOut & {
+                    linked_parameter_ids?: string[];
+                  }
+                ).linked_parameter_ids!.length > 0 ? (
+                  <div className="space-y-4">
+                    <ParameterSelector
+                      parameterMapping={
+                        (
+                          personaData as PersonaDetailOut & {
+                            parameter_mapping?: Record<
+                              string,
+                              {
+                                name: string;
+                                description: string;
+                                numerical: boolean;
+                                document_parameter: boolean;
+                                persona_parameter: boolean;
+                              }
+                            >;
+                          }
+                        ).parameter_mapping || {}
+                      }
+                      fieldMapping={
+                        (
+                          personaData as PersonaDetailOut & {
+                            field_mapping?: Record<
+                              string,
+                              {
+                                name: string;
+                                description: string;
+                                parameter_id: string;
+                                parameter_name: string;
+                                value: string;
+                              }
+                            >;
+                          }
+                        ).field_mapping || {}
+                      }
+                      validParameterItemIds={
+                        (
+                          personaData as PersonaDetailOut & {
+                            valid_parameter_item_ids?: string[];
+                          }
+                        ).valid_parameter_item_ids || []
+                      }
+                      selectedParameterItemIds={
+                        (stepFormData["parameterFieldIds"] as
+                          | string[]
+                          | null
+                          | undefined) || []
+                      }
+                      onParameterItemIdsChange={(ids) =>
+                        setStepFormData({
+                          parameterFieldIds: ids.length > 0 ? ids : null,
+                        })
+                      }
+                      disabled={isReadonly}
+                    />
+                  </div>
+                ) : null}
+
+                {/* Active Switch - using Flags resource component */}
+                <Flags
+                  value={
+                    (stepFormData["active"] as boolean | null | undefined) ??
+                    (personaData as { active?: boolean })?.active ??
+                    true
+                  }
+                  onChange={(checked) => setStepFormData({ active: checked })}
+                  draftId={draftId}
+                  label="Active"
+                  disabled={isReadonly}
+                  helpText="Inactive personas will not be available for scenarios"
+                />
+              </div>
+            </StepCard>
+          );
+
+        case "color": {
+          // Use URL param if present, otherwise use API default
+          // Check if explicitly set (even if null) vs undefined (not set yet)
+          const colorValue = stepFormData["color"] as string | null | undefined;
+          const currentColorRaw =
+            colorValue !== undefined
+              ? colorValue
+              : (personaData as { color?: string })?.color || "";
+
+          const colorShowSelected =
+            (stepFormData["colorShowSelected"] as boolean | null | undefined) ??
+            false;
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={
+                (stepFormData["colorSearch"] as string | null | undefined) || ""
+              }
+              onSearchChange={(term: string) =>
+                setStepFormData({ colorSearch: term || null })
+              }
+              searchPlaceholder="Search colors..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: colorShowSelected,
+                  onChange: createColorFilterOnChange,
+                },
+              ]}
+              resetFields={["color", "colorSearch", "colorShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              {/* Color picker - using Colors resource component */}
+              <Colors
+                value={currentColorRaw || ""}
+                onChange={(value) => setStepFormData({ color: value || null })}
+                draftId={draftId}
+                presetColors={presetColors}
+                disabled={isReadonly}
+                searchTerm={colorSearch}
+                onSearchChange={(term) =>
+                  setStepFormData({ colorSearch: term || null })
+                }
+                showSelectedFilter={colorShowSelected}
+                onShowSelectedChange={(value) =>
+                  setStepFormData({ colorShowSelected: value || null })
+                }
+                createDraftColorsAction={createDraftColorsAction}
+              />
+            </StepCard>
+          );
+        }
+
+        case "icon": {
+          // Use URL param if present, otherwise use API default
+          // Check if explicitly set (even if null) vs undefined (not set yet)
+          const iconValue = stepFormData["icon"] as string | null | undefined;
+          const currentIcon =
+            iconValue !== undefined
+              ? iconValue
+              : (personaData as { icon?: string })?.icon || "";
+
+          const iconShowSelected =
+            (stepFormData["iconShowSelected"] as boolean | null | undefined) ??
+            false;
+
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              searchTerm={
+                (stepFormData["iconSearch"] as string | null | undefined) || ""
+              }
+              onSearchChange={(term: string) =>
+                setStepFormData({ iconSearch: term || null })
+              }
+              searchPlaceholder="Search icons..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: iconShowSelected,
+                  onChange: createIconFilterOnChange,
+                },
+              ]}
+              resetFields={["icon", "iconSearch", "iconShowSelected"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              {/* Icon picker - using Icons resource component */}
+              <Icons
+                value={currentIcon || ""}
+                onChange={(value) => setStepFormData({ icon: value || null })}
+                draftId={draftId}
+                allIcons={allIcons}
+                suggestedIcons={suggestedIconsAll}
+                disabled={isReadonly}
+                searchTerm={iconSearch}
+                onSearchChange={(term) =>
+                  setStepFormData({ iconSearch: term || null })
+                }
+                showSelectedFilter={iconShowSelected}
+                onShowSelectedChange={(value) =>
+                  setStepFormData({ iconShowSelected: value || null })
+                }
+                createDraftIconsAction={createDraftIconsAction}
+              />
+            </StepCard>
+          );
+        }
+
+        case "content":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={isReadonly}
+              isEditMode={isEditMode}
+              resetFields={["instructions", "examples"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              {/* Instructions - using Instructions resource component */}
+              <Instructions
+                value={
+                  (stepFormData["instructions"] as string | null | undefined) ||
+                  ""
+                }
+                onChange={(value) =>
+                  setStepFormData({ instructions: value || null })
+                }
+                draftId={draftId}
+                onGenerate={handleGenerateInstructions}
+                isGenerating={isGeneratingInstructions}
+                label="Instructions"
+                placeholder="Instructions that define how the persona should behave and respond."
+                required
+                disabled={isReadonly}
+                rows={8}
+                helpText="Define the persona's behavior, communication style, and response patterns"
+                data-testid="input-instructions"
+                createDraftInstructionsAction={createDraftInstructionsAction}
+              />
+
+              {/* Examples Section */}
+              <div className="space-y-2 pt-2">
+                <ReorderableList
+                  items={
+                    (stepFormData["examples"] as string[] | null | undefined) &&
+                    (stepFormData["examples"] as string[]).length > 0
+                      ? (stepFormData["examples"] as string[])
+                      : [""]
+                  }
+                  onItemsChange={(items) => {
+                    // Save items as-is (including empty strings for editing)
+                    // This allows ReorderableList to work properly when adding new items
+                    // Empty strings will be filtered when submitting the form
+                    if (items.length === 0) {
+                      setStepFormData({ examples: null });
+                    } else {
+                      setStepFormData({ examples: items });
+                    }
+                  }}
+                  suggestions={getExamplesHistory(
+                    stepFormData["departmentIds"] as string[] | null | undefined
+                  )}
+                  maxItems={10}
+                  addButtonLabel="Add example"
+                  disabled={isReadonly}
+                  itemPlaceholder="Message"
+                />
+              </div>
+            </StepCard>
+          );
+
+        default:
+          return null;
+      }
+    },
+    [
+      personaData,
+      departmentMapping,
+      isReadonly,
+      isEditMode,
+      presetColors,
+      allIcons,
+      suggestedIconsAll,
+      getExamplesHistory,
+      createColorFilterOnChange,
+      createIconFilterOnChange,
+      draftId,
+      handleGenerateName,
+      handleGenerateDescription,
+      handleGenerateInstructions,
+      isGeneratingName,
+      isGeneratingDescription,
+      isGeneratingInstructions,
+      colorSearch,
+      iconSearch,
+      createDraftNamesAction,
+      createDraftDescriptionsAction,
+      createDraftInstructionsAction,
+      createDraftColorsAction,
+      createDraftIconsAction,
+    ]
+  );
+
+  return (
+    <TooltipProvider>
+      <div
+        className="w-full p-6 space-y-8"
+        data-page={`persona-${isEditMode ? "edit" : "new"}`}
+      >
+        {isReadonly && (
+          <div className="bg-muted border border-border rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-muted-foreground"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-foreground">
+                  Persona is read-only
+                </h3>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  <p>
+                    {(personaData as PersonaDetailOut)?.department_ids
+                      ?.length === 0
+                      ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
+                      : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <GenericForm
+          nuqsParsers={
+            personaSearchParamsClient as Record<string, Parser<unknown>>
+          }
+          steps={steps}
+          getStepStatus={getStepStatus}
+          formData={formData}
+          setFormData={setFormData}
+          serverData={personaData}
+          initializeForm={initializeForm}
+          formFieldKeys={formFieldKeys}
+          resetSuccessMessage={resetSuccessMessage}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={isReadonly}
+          isEditMode={isEditMode}
+          renderStep={renderStep}
+        />
+      </div>
+    </TooltipProvider>
+  );
+}
+
+// Helper function to generate stable ID from server prop (same logic as inside component)
+function getStableServerPropId(
+  data: PersonaDetailOut | PersonaNewOut | undefined
+): string | null {
+  if (!data) return null;
+  if (typeof data === "object" && data !== null) {
+    if ("persona_id" in data && data.persona_id) {
+      return `persona_id:${String(data.persona_id)}`;
+    }
+    const keyFields: Record<string, unknown> = {};
+    if ("preset_colors" in data) {
+      keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
+        ? data["preset_colors"].length
+        : data["preset_colors"];
+    }
+    if ("valid_icons" in data) {
+      keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
+        ? data["valid_icons"].length
+        : data["valid_icons"];
+    }
+    if ("suggested_icons" in data) {
+      keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
+        ? data["suggested_icons"].length
+        : data["suggested_icons"];
+    }
+    if ("valid_department_ids" in data) {
+      keyFields["valid_department_ids"] = Array.isArray(
+        data["valid_department_ids"]
+      )
+        ? data["valid_department_ids"].sort().join(",")
+        : data["valid_department_ids"];
+    }
+    const sortedKeys = Object.keys(keyFields).sort();
+    const hash = sortedKeys
+      .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
+      .join("|");
+    return `new:${hash.length}:${hash.slice(0, 100)}`;
+  }
+  return String(data);
+}
+
+// Memoize component to prevent re-renders when only prop references change (content is same)
+export default React.memo(PersonaNewComponent, (prevProps, nextProps) => {
+  const prevDetailId = getStableServerPropId(prevProps.personaDetail);
+  const nextDetailId = getStableServerPropId(nextProps.personaDetail);
+  const prevDefaultId = getStableServerPropId(prevProps.personaDetailDefault);
+  const nextDefaultId = getStableServerPropId(nextProps.personaDetailDefault);
+
+  // Compare primitive props (exclude server actions - they may be new references but functionally equivalent)
+  if (
+    prevProps.personaId !== nextProps.personaId ||
+    prevProps.mode !== nextProps.mode
+  ) {
+    return false; // Props changed, re-render
+  }
+
+  // Compare server props by content ID, not reference
+  if (prevDetailId !== nextDetailId) {
+    return false; // Content changed, re-render
+  }
+
+  if (prevDefaultId !== nextDefaultId) {
+    return false; // Content changed, re-render
+  }
+
+  // All props are equivalent (same content), skip re-render
+  return true;
+});

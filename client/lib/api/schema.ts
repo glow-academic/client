@@ -348,26 +348,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/scenarios/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Scenario Draft
-         * @description Patch scenario draft (creates if not exists).
-         */
-        patch: operations["patch_scenario_draft_api_v4_scenarios_draft_patch"];
-        trace?: never;
-    };
     "/api/v4/simulations/list": {
         parameters: {
             query?: never;
@@ -506,26 +486,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/simulations/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Simulation Draft
-         * @description Patch simulation draft (creates if not exists).
-         */
-        patch: operations["patch_simulation_draft_api_v4_simulations_draft_patch"];
         trace?: never;
     };
     "/api/v4/personas/list": {
@@ -668,26 +628,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/personas/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Persona Draft
-         * @description Patch persona draft (creates if not exists).
-         */
-        patch: operations["patch_persona_draft_api_v4_personas_draft_patch"];
-        trace?: never;
-    };
     "/api/v4/auth/list": {
         parameters: {
             query?: never;
@@ -826,26 +766,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/auth/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Auth Draft
-         * @description Patch auth draft (creates if not exists).
-         */
-        patch: operations["patch_auth_draft_api_v4_auth_draft_patch"];
         trace?: never;
     };
     "/api/v4/auth/login": {
@@ -1006,26 +926,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/departments/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Department Draft
-         * @description Patch department draft (creates if not exists).
-         */
-        patch: operations["patch_department_draft_api_v4_departments_draft_patch"];
         trace?: never;
     };
     "/api/v4/cohorts/list": {
@@ -1208,26 +1108,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Cohort Draft
-         * @description Patch cohort draft (creates if not exists).
-         */
-        patch: operations["patch_cohort_draft_api_v4_cohorts_draft_patch"];
-        trace?: never;
-    };
     "/api/v4/documents/list": {
         parameters: {
             query?: never;
@@ -1368,7 +1248,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/draft": {
+    "/api/v4/drafts/": {
         parameters: {
             query?: never;
             header?: never;
@@ -1377,15 +1257,695 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /**
+         * Create Draft
+         * @description Create a new draft.
+         */
+        post: operations["create_draft_api_v4_drafts__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Draft
+         * @description Get draft metadata.
+         */
+        get: operations["get_draft_api_v4_drafts__draft_id__get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/names": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
         /**
-         * Patch Document Draft
-         * @description Patch document draft (creates if not exists).
+         * Create Draft Names
+         * @description Create/update names resource and link to draft (always INSERT).
          */
-        patch: operations["patch_document_draft_api_v4_documents_draft_patch"];
+        post: operations["create_draft_names_api_v4_drafts_names_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/colors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Colors
+         * @description Create/update colors resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_colors_api_v4_drafts_colors_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Flags
+         * @description Create/update flags resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_flags_api_v4_drafts_flags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/descriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Descriptions
+         * @description Create/update descriptions resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_descriptions_api_v4_drafts_descriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Icons
+         * @description Create/update icons resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_icons_api_v4_drafts_icons_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Points
+         * @description Create/update points resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_points_api_v4_drafts_points_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/thresholds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Thresholds
+         * @description Create/update thresholds resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_thresholds_api_v4_drafts_thresholds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Content
+         * @description Create/update content resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_content_api_v4_drafts_content_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Html
+         * @description Create/update html resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_html_api_v4_drafts_html_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Hints
+         * @description Create/update hints resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_hints_api_v4_drafts_hints_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Images
+         * @description Create/update images resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_images_api_v4_drafts_images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Videos
+         * @description Create/update videos resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_videos_api_v4_drafts_videos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/objectives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Objectives
+         * @description Create/update objectives resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_objectives_api_v4_drafts_objectives_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Options
+         * @description Create/update options resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_options_api_v4_drafts_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/problem_statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Problem Statements
+         * @description Create/update problem_statements resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_problem_statements_api_v4_drafts_problem_statements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Prompts
+         * @description Create/update prompts resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_prompts_api_v4_drafts_prompts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Questions
+         * @description Create/update questions resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_questions_api_v4_drafts_questions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Responses
+         * @description Create/update responses resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_responses_api_v4_drafts_responses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/analyses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Analyses
+         * @description Create/update analyses resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_analyses_api_v4_drafts_analyses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/instructions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Instructions
+         * @description Create/update instructions resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_instructions_api_v4_drafts_instructions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/improvements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Improvements
+         * @description Create/update improvements resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_improvements_api_v4_drafts_improvements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/strengths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Strengths
+         * @description Create/update strengths resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_strengths_api_v4_drafts_strengths_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/feedbacks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Feedbacks
+         * @description Create/update feedbacks resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_feedbacks_api_v4_drafts_feedbacks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Conversations
+         * @description Create/update conversations resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_conversations_api_v4_drafts_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/debug_info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Debug Info
+         * @description Create/update debug_info resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_debug_info_api_v4_drafts_debug_info_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/schemas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Schemas
+         * @description Create/update schemas resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_schemas_api_v4_drafts_schemas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/schema_fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Schema Fields
+         * @description Create/update schema_fields resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_schema_fields_api_v4_drafts_schema_fields_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/schema_field_items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Schema Field Items
+         * @description Create/update schema_field_items resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_schema_field_items_api_v4_drafts_schema_field_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Templates
+         * @description Create/update templates resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_templates_api_v4_drafts_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/template_array_items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Template Array Items
+         * @description Create/update template_array_items resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_template_array_items_api_v4_drafts_template_array_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/template_values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Template Values
+         * @description Create/update template_values resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_template_values_api_v4_drafts_template_values_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/standard_groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Standard Groups
+         * @description Create/update standard_groups resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_standard_groups_api_v4_drafts_standard_groups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/drafts/times": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Draft Times
+         * @description Create/update times resource and link to draft (always INSERT).
+         */
+        post: operations["create_draft_times_api_v4_drafts_times_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v4/evals/create": {
@@ -1506,26 +2066,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/evals/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Eval Draft
-         * @description Patch eval draft (creates if not exists).
-         */
-        patch: operations["patch_eval_draft_api_v4_evals_draft_patch"];
         trace?: never;
     };
     "/api/v4/rubrics/list": {
@@ -1668,26 +2208,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/rubrics/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Rubric Draft
-         * @description Patch rubric draft (creates if not exists).
-         */
-        patch: operations["patch_rubric_draft_api_v4_rubrics_draft_patch"];
-        trace?: never;
-    };
     "/api/v4/settings/list": {
         parameters: {
             query?: never;
@@ -1746,26 +2266,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/settings/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Settings Draft
-         * @description Patch settings draft (creates if not exists).
-         */
-        patch: operations["patch_settings_draft_api_v4_settings_draft_patch"];
         trace?: never;
     };
     "/api/v4/analytics/refresh": {
@@ -2128,26 +2628,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Agent Draft
-         * @description Patch agent draft (creates if not exists).
-         */
-        patch: operations["patch_agent_draft_api_v4_agents_draft_patch"];
-        trace?: never;
-    };
     "/api/v4/keys/list": {
         parameters: {
             query?: never;
@@ -2286,26 +2766,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/keys/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Key Draft
-         * @description Patch key draft (creates if not exists).
-         */
-        patch: operations["patch_key_draft_api_v4_keys_draft_patch"];
         trace?: never;
     };
     "/api/v4/models/list": {
@@ -2448,26 +2908,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Model Draft
-         * @description Patch model draft (creates if not exists).
-         */
-        patch: operations["patch_model_draft_api_v4_models_draft_patch"];
-        trace?: never;
-    };
     "/api/v4/providers/list": {
         parameters: {
             query?: never;
@@ -2586,26 +3026,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/providers/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Provider Draft
-         * @description Patch provider draft (creates if not exists).
-         */
-        patch: operations["patch_provider_draft_api_v4_providers_draft_patch"];
         trace?: never;
     };
     "/api/v4/parameters/list": {
@@ -2748,26 +3168,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/parameters/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Parameter Draft
-         * @description Patch parameter draft (creates if not exists).
-         */
-        patch: operations["patch_parameter_draft_api_v4_parameters_draft_patch"];
-        trace?: never;
-    };
     "/api/v4/fields/list": {
         parameters: {
             query?: never;
@@ -2908,26 +3308,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/fields/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Field Draft
-         * @description Patch field draft (creates if not exists).
-         */
-        patch: operations["patch_field_draft_api_v4_fields_draft_patch"];
-        trace?: never;
-    };
     "/api/v4/feedback/create": {
         parameters: {
             query?: never;
@@ -3026,26 +3406,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/attempts/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Attempt Draft
-         * @description Patch attempt draft (creates if not exists).
-         */
-        patch: operations["patch_attempt_draft_api_v4_attempts_draft_patch"];
         trace?: never;
     };
     "/api/v4/attempts/simulation": {
@@ -3166,26 +3526,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/staff/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Staff Draft
-         * @description Patch staff draft (creates if not exists).
-         */
-        patch: operations["patch_staff_draft_api_v4_staff_draft_patch"];
         trace?: never;
     };
     "/api/v4/staff/search": {
@@ -3433,26 +3773,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v4/practice/draft": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Practice Draft
-         * @description Patch practice draft (creates if not exists).
-         */
-        patch: operations["patch_practice_draft_api_v4_practice_draft_patch"];
         trace?: never;
     };
     "/api/v4/pricing/analytics": {
@@ -5514,6 +5834,703 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** CreateDraftAnalysesApiRequest */
+        CreateDraftAnalysesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Content */
+            content: string;
+        };
+        /** CreateDraftAnalysesApiResponse */
+        CreateDraftAnalysesApiResponse: {
+            /** Analyse Id */
+            analyse_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftApiRequest */
+        CreateDraftApiRequest: {
+            /** Artifact */
+            artifact: string;
+        };
+        /** CreateDraftApiResponse */
+        CreateDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftColorsApiRequest */
+        CreateDraftColorsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Hex Code */
+            hex_code: string;
+        };
+        /** CreateDraftColorsApiResponse */
+        CreateDraftColorsApiResponse: {
+            /** Color Id */
+            color_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftContentApiRequest */
+        CreateDraftContentApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Content */
+            content: string;
+        };
+        /** CreateDraftContentApiResponse */
+        CreateDraftContentApiResponse: {
+            /** Content Id */
+            content_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftConversationsApiRequest */
+        CreateDraftConversationsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** End Reason */
+            end_reason: string;
+        };
+        /** CreateDraftConversationsApiResponse */
+        CreateDraftConversationsApiResponse: {
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftDebugInfoApiRequest */
+        CreateDraftDebugInfoApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Content */
+            content: string;
+        };
+        /** CreateDraftDebugInfoApiResponse */
+        CreateDraftDebugInfoApiResponse: {
+            /** Debug Info Id */
+            debug_info_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftDescriptionsApiRequest */
+        CreateDraftDescriptionsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Description */
+            description: string;
+        };
+        /** CreateDraftDescriptionsApiResponse */
+        CreateDraftDescriptionsApiResponse: {
+            /** Description Id */
+            description_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftFeedbacksApiRequest */
+        CreateDraftFeedbacksApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Total */
+            total: number;
+            /** Feedback */
+            feedback: string;
+            /**
+             * Standard Id
+             * Format: uuid
+             */
+            standard_id: string;
+        };
+        /** CreateDraftFeedbacksApiResponse */
+        CreateDraftFeedbacksApiResponse: {
+            /** Feedback Id */
+            feedback_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftFlagsApiRequest */
+        CreateDraftFlagsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon Id
+             * Format: uuid
+             */
+            icon_id: string;
+        };
+        /** CreateDraftFlagsApiResponse */
+        CreateDraftFlagsApiResponse: {
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftHintsApiRequest */
+        CreateDraftHintsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Hint */
+            hint: string;
+        };
+        /** CreateDraftHintsApiResponse */
+        CreateDraftHintsApiResponse: {
+            /** Hint Id */
+            hint_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftHtmlApiRequest */
+        CreateDraftHtmlApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** CreateDraftHtmlApiResponse */
+        CreateDraftHtmlApiResponse: {
+            /** Html Id */
+            html_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftIconsApiRequest */
+        CreateDraftIconsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Value */
+            value: number;
+        };
+        /** CreateDraftIconsApiResponse */
+        CreateDraftIconsApiResponse: {
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftImagesApiRequest */
+        CreateDraftImagesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** CreateDraftImagesApiResponse */
+        CreateDraftImagesApiResponse: {
+            /** Image Id */
+            image_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftImprovementsApiRequest */
+        CreateDraftImprovementsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateDraftImprovementsApiResponse */
+        CreateDraftImprovementsApiResponse: {
+            /** Improvement Id */
+            improvement_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftInstructionsApiRequest */
+        CreateDraftInstructionsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Template */
+            template: string;
+        };
+        /** CreateDraftInstructionsApiResponse */
+        CreateDraftInstructionsApiResponse: {
+            /** Instruction Id */
+            instruction_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftNamesApiRequest */
+        CreateDraftNamesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+        };
+        /** CreateDraftNamesApiResponse */
+        CreateDraftNamesApiResponse: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftObjectivesApiRequest */
+        CreateDraftObjectivesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Objective */
+            objective: string;
+        };
+        /** CreateDraftObjectivesApiResponse */
+        CreateDraftObjectivesApiResponse: {
+            /** Objective Id */
+            objective_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftOptionsApiRequest */
+        CreateDraftOptionsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Option Text */
+            option_text: string;
+            /** Is Correct */
+            is_correct: boolean;
+        };
+        /** CreateDraftOptionsApiResponse */
+        CreateDraftOptionsApiResponse: {
+            /** Option Id */
+            option_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftPointsApiRequest */
+        CreateDraftPointsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Value */
+            value: number;
+        };
+        /** CreateDraftPointsApiResponse */
+        CreateDraftPointsApiResponse: {
+            /** Point Id */
+            point_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftProblemStatementsApiRequest */
+        CreateDraftProblemStatementsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Problem Statement */
+            problem_statement: string;
+        };
+        /** CreateDraftProblemStatementsApiResponse */
+        CreateDraftProblemStatementsApiResponse: {
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftPromptsApiRequest */
+        CreateDraftPromptsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** CreateDraftPromptsApiResponse */
+        CreateDraftPromptsApiResponse: {
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftQuestionsApiRequest */
+        CreateDraftQuestionsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Question Text */
+            question_text: string;
+            /** Allow Multiple */
+            allow_multiple: boolean;
+            /** Time Value */
+            time_value: number;
+        };
+        /** CreateDraftQuestionsApiResponse */
+        CreateDraftQuestionsApiResponse: {
+            /** Question Id */
+            question_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftResponsesApiRequest */
+        CreateDraftResponsesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Option Id
+             * Format: uuid
+             */
+            option_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+        };
+        /** CreateDraftResponsesApiResponse */
+        CreateDraftResponsesApiResponse: {
+            /** Response Id */
+            response_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftSchemaFieldItemsApiRequest */
+        CreateDraftSchemaFieldItemsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Schema Field Id
+             * Format: uuid
+             */
+            schema_field_id: string;
+            /**
+             * Item Schema Id
+             * Format: uuid
+             */
+            item_schema_id: string;
+        };
+        /** CreateDraftSchemaFieldItemsApiResponse */
+        CreateDraftSchemaFieldItemsApiResponse: {
+            /** Schema Field Items Id */
+            schema_field_items_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftSchemaFieldsApiRequest */
+        CreateDraftSchemaFieldsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Schema Id
+             * Format: uuid
+             */
+            schema_id: string;
+            /** Name */
+            name: string;
+            /** Field Type */
+            field_type: string;
+            /** Required */
+            required: boolean;
+            /** Position Value */
+            position_value: number;
+            /** Template */
+            template: string;
+            /** Description */
+            description: string;
+            /** Default Value */
+            default_value: string;
+        };
+        /** CreateDraftSchemaFieldsApiResponse */
+        CreateDraftSchemaFieldsApiResponse: {
+            /** Schema Field Id */
+            schema_field_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftSchemasApiRequest */
+        CreateDraftSchemasApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+        };
+        /** CreateDraftSchemasApiResponse */
+        CreateDraftSchemasApiResponse: {
+            /** Schema Id */
+            schema_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftStandardGroupsApiRequest */
+        CreateDraftStandardGroupsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Short Name */
+            short_name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Pass Points */
+            pass_points: number;
+        };
+        /** CreateDraftStandardGroupsApiResponse */
+        CreateDraftStandardGroupsApiResponse: {
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftStrengthsApiRequest */
+        CreateDraftStrengthsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** CreateDraftStrengthsApiResponse */
+        CreateDraftStrengthsApiResponse: {
+            /** Strength Id */
+            strength_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftTemplateArrayItemsApiRequest */
+        CreateDraftTemplateArrayItemsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /**
+             * Schema Field Id
+             * Format: uuid
+             */
+            schema_field_id: string;
+            /**
+             * Item Template Id
+             * Format: uuid
+             */
+            item_template_id: string;
+            /** Position Value */
+            position_value: number;
+        };
+        /** CreateDraftTemplateArrayItemsApiResponse */
+        CreateDraftTemplateArrayItemsApiResponse: {
+            /** Template Array Items Id */
+            template_array_items_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftTemplateValuesApiRequest */
+        CreateDraftTemplateValuesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /**
+             * Schema Field Id
+             * Format: uuid
+             */
+            schema_field_id: string;
+            /** String Value */
+            string_value: string;
+            /** Number Value */
+            number_value: string;
+            /** Boolean Value */
+            boolean_value: string;
+        };
+        /** CreateDraftTemplateValuesApiResponse */
+        CreateDraftTemplateValuesApiResponse: {
+            /** Template Value Id */
+            template_value_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftTemplatesApiRequest */
+        CreateDraftTemplatesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+        };
+        /** CreateDraftTemplatesApiResponse */
+        CreateDraftTemplatesApiResponse: {
+            /** Template Id */
+            template_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftThresholdsApiRequest */
+        CreateDraftThresholdsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Value */
+            value: number;
+        };
+        /** CreateDraftThresholdsApiResponse */
+        CreateDraftThresholdsApiResponse: {
+            /** Threshold Id */
+            threshold_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftTimesApiRequest */
+        CreateDraftTimesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Time Taken */
+            time_taken: number;
+        };
+        /** CreateDraftTimesApiResponse */
+        CreateDraftTimesApiResponse: {
+            /** Time Id */
+            time_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** CreateDraftVideosApiRequest */
+        CreateDraftVideosApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Description */
+            description: string;
+        };
+        /** CreateDraftVideosApiResponse */
+        CreateDraftVideosApiResponse: {
+            /** Video Id */
+            video_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** CreateEvalApiRequest */
         CreateEvalApiRequest: {
             /** Name */
@@ -5813,8 +6830,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Standard Groups */
             standard_groups?: components["schemas"]["ICreateRubricV4StandardGroup"][] | null;
-            /** Rubric Agent Id */
-            rubric_agent_id?: string | null;
+            /** Rubric Domain Id */
+            rubric_domain_id?: string | null;
         };
         /** CreateRubricApiResponse */
         CreateRubricApiResponse: {
@@ -5849,8 +6866,8 @@ export interface components {
             parameters: components["schemas"]["QCreateScenarioV4Parameter"][];
             /** Description */
             description?: string | null;
-            /** Video Agent Id */
-            video_agent_id?: string | null;
+            /** Video Domain Id */
+            video_domain_id?: string | null;
             /** Problem Statement Name */
             problem_statement_name?: string | null;
             /** Problem Statement Versions */
@@ -5910,15 +6927,15 @@ export interface components {
             /** Scenario Rubric Grade Agents */
             scenario_rubric_grade_agents: components["schemas"]["ICreateSimulationV4ScenarioRubricGradeAgent"][];
             /**
-             * Simulation Text Agent Id
+             * Simulation Text Domain Id
              * Format: uuid
              */
-            simulation_text_agent_id: string;
+            simulation_text_domain_id: string;
             /**
-             * Simulation Voice Agent Id
+             * Simulation Voice Domain Id
              * Format: uuid
              */
-            simulation_voice_agent_id: string;
+            simulation_voice_domain_id: string;
         };
         /** CreateSimulationApiResponse */
         CreateSimulationApiResponse: {
@@ -7300,6 +8317,21 @@ export interface components {
             valid_department_ids?: string[] | null;
             /** Document Type Options */
             document_type_options?: string[] | null;
+        };
+        /** GetDraftApiResponse */
+        GetDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Artifact */
+            artifact?: string | null;
+            /** Version */
+            version?: number | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
         };
         /** GetEvalAttemptApiRequest */
         GetEvalAttemptApiRequest: {
@@ -9111,8 +10143,8 @@ export interface components {
             active?: boolean | null;
             /** Can Edit */
             can_edit?: boolean | null;
-            /** Rubric Agent Id */
-            rubric_agent_id?: string | null;
+            /** Rubric Domain Id */
+            rubric_domain_id?: string | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
             /** Actor Name */
@@ -9269,8 +10301,6 @@ export interface components {
             problem_statement_id?: string | null;
             /** Active */
             active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Parent Scenario Id */
@@ -9327,12 +10357,12 @@ export interface components {
             questions_enabled?: boolean | null;
             /** Problem Statement Enabled */
             problem_statement_enabled?: boolean | null;
-            /** Scenario Agent Id */
-            scenario_agent_id?: string | null;
-            /** Image Agent Id */
-            image_agent_id?: string | null;
-            /** Video Agent Id */
-            video_agent_id?: string | null;
+            /** Scenario Domain Id */
+            scenario_domain_id?: string | null;
+            /** Image Domain Id */
+            image_domain_id?: string | null;
+            /** Video Domain Id */
+            video_domain_id?: string | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
             /** Can Edit */
@@ -9746,12 +10776,10 @@ export interface components {
             active?: boolean | null;
             /** Practice Simulation */
             practice_simulation?: boolean | null;
-            /** Hint Agent Id */
-            hint_agent_id?: string | null;
-            /** Simulation Text Agent Id */
-            simulation_text_agent_id?: string | null;
-            /** Simulation Voice Agent Id */
-            simulation_voice_agent_id?: string | null;
+            /** Simulation Text Domain Id */
+            simulation_text_domain_id?: string | null;
+            /** Simulation Voice Domain Id */
+            simulation_voice_domain_id?: string | null;
             /** Can Edit */
             can_edit?: boolean | null;
             /** Can Duplicate */
@@ -9824,8 +10852,6 @@ export interface components {
             active?: boolean | null;
             /** Practice Simulation */
             practice_simulation?: boolean | null;
-            /** Hint Agent Id */
-            hint_agent_id?: string | null;
             /** Simulation Text Agent Id */
             simulation_text_agent_id?: string | null;
             /** Simulation Voice Agent Id */
@@ -10402,386 +11428,6 @@ export interface components {
             voice_mode: boolean;
             /** Upload Id */
             upload_id?: string | null;
-        };
-        /** PatchAgentDraftApiRequest */
-        PatchAgentDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchAgentDraftApiResponse */
-        PatchAgentDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchAttemptDraftApiRequest */
-        PatchAttemptDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchAttemptDraftApiResponse */
-        PatchAttemptDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchAuthDraftApiRequest */
-        PatchAuthDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchAuthDraftApiResponse */
-        PatchAuthDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchCohortDraftApiRequest */
-        PatchCohortDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchCohortDraftApiResponse */
-        PatchCohortDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchDepartmentDraftApiRequest */
-        PatchDepartmentDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchDepartmentDraftApiResponse */
-        PatchDepartmentDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchDocumentDraftApiRequest */
-        PatchDocumentDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchDocumentDraftApiResponse */
-        PatchDocumentDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchEvalDraftApiRequest */
-        PatchEvalDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchEvalDraftApiResponse */
-        PatchEvalDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchFieldDraftApiRequest */
-        PatchFieldDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchFieldDraftApiResponse */
-        PatchFieldDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchKeyDraftApiRequest */
-        PatchKeyDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchKeyDraftApiResponse */
-        PatchKeyDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchModelDraftApiRequest */
-        PatchModelDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchModelDraftApiResponse */
-        PatchModelDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchParameterDraftApiRequest */
-        PatchParameterDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchParameterDraftApiResponse */
-        PatchParameterDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchPersonaDraftApiRequest */
-        PatchPersonaDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchPersonaDraftApiResponse */
-        PatchPersonaDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchPracticeDraftApiRequest */
-        PatchPracticeDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchPracticeDraftApiResponse */
-        PatchPracticeDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchProviderDraftApiRequest */
-        PatchProviderDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchProviderDraftApiResponse */
-        PatchProviderDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchRubricDraftApiRequest */
-        PatchRubricDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchRubricDraftApiResponse */
-        PatchRubricDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchScenarioDraftApiRequest */
-        PatchScenarioDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchScenarioDraftApiResponse */
-        PatchScenarioDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchSettingsDraftApiRequest */
-        PatchSettingsDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchSettingsDraftApiResponse */
-        PatchSettingsDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchSimulationDraftApiRequest */
-        PatchSimulationDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchSimulationDraftApiResponse */
-        PatchSimulationDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
-        };
-        /** PatchStaffDraftApiRequest */
-        PatchStaffDraftApiRequest: {
-            /** Patch */
-            patch: {
-                [key: string]: unknown;
-            };
-            /** Expected Version */
-            expected_version: number;
-            /** Input Draft Id */
-            input_draft_id?: string | null;
-        };
-        /** PatchStaffDraftApiResponse */
-        PatchStaffDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** New Version */
-            new_version?: number | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
         };
         /** ProcessCsvApiRequest */
         ProcessCsvApiRequest: {
@@ -18117,10 +18763,8 @@ export interface components {
             department_id?: string | null;
             /** Field Ids */
             field_ids?: string[] | null;
-            /** Classify Agent Id */
-            classify_agent_id?: string | null;
-            /** Document Agent Id */
-            document_agent_id?: string | null;
+            /** Document Domain Id */
+            document_domain_id?: string | null;
             /** Html Id */
             html_id?: string | null;
             /** Schema Id */
@@ -18440,8 +19084,8 @@ export interface components {
             department_ids?: string[] | null;
             /** Standard Groups */
             standard_groups?: components["schemas"]["IUpdateRubricV4StandardGroup"][] | null;
-            /** Rubric Agent Id */
-            rubric_agent_id?: string | null;
+            /** Rubric Domain Id */
+            rubric_domain_id?: string | null;
         };
         /** UpdateRubricApiResponse */
         UpdateRubricApiResponse: {
@@ -18483,8 +19127,8 @@ export interface components {
             parameters: components["schemas"]["QUpdateScenarioV4Parameter"][];
             /** Description */
             description?: string | null;
-            /** Video Agent Id */
-            video_agent_id?: string | null;
+            /** Video Domain Id */
+            video_domain_id?: string | null;
             /** Problem Statement Name */
             problem_statement_name?: string | null;
             /** Department Ids */
@@ -18505,10 +19149,10 @@ export interface components {
             question_ids?: string[] | null;
             /** Question Timestamps */
             question_timestamps?: components["schemas"]["QUpdateScenarioV4QuestionTimestamp"][] | null;
-            /** Scenario Agent Id */
-            scenario_agent_id?: string | null;
-            /** Image Agent Id */
-            image_agent_id?: string | null;
+            /** Scenario Domain Id */
+            scenario_domain_id?: string | null;
+            /** Image Domain Id */
+            image_domain_id?: string | null;
         };
         /** UpdateScenarioApiResponse */
         UpdateScenarioApiResponse: {
@@ -18631,20 +19275,15 @@ export interface components {
             /** Video Show Image */
             video_show_image: boolean[];
             /**
-             * Hint Agent Id
+             * Simulation Text Agent Domain Id
              * Format: uuid
              */
-            hint_agent_id: string;
+            simulation_text_agent_domain_id: string;
             /**
-             * Simulation Text Agent Id
+             * Simulation Voice Agent Domain Id
              * Format: uuid
              */
-            simulation_text_agent_id: string;
-            /**
-             * Simulation Voice Agent Id
-             * Format: uuid
-             */
-            simulation_voice_agent_id: string;
+            simulation_voice_agent_domain_id: string;
         };
         /** UpdateSimulationApiResponse */
         UpdateSimulationApiResponse: {
@@ -19302,42 +19941,6 @@ export interface operations {
             };
         };
     };
-    patch_scenario_draft_api_v4_scenarios_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchScenarioDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchScenarioDraftApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_simulations_list_api_v4_simulations_list_post: {
         parameters: {
             query?: never;
@@ -19577,42 +20180,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteSimulationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_simulation_draft_api_v4_simulations_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchSimulationDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchSimulationDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -19878,42 +20445,6 @@ export interface operations {
             };
         };
     };
-    patch_persona_draft_api_v4_personas_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchPersonaDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchPersonaDraftApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_auth_list_api_v4_auth_list_post: {
         parameters: {
             query?: never;
@@ -20153,42 +20684,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteAuthApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_auth_draft_api_v4_auth_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchAuthDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchAuthDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20477,42 +20972,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteDepartmentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_department_draft_api_v4_departments_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchDepartmentDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchDepartmentDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20850,42 +21309,6 @@ export interface operations {
             };
         };
     };
-    patch_cohort_draft_api_v4_cohorts_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchCohortDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchCohortDraftApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_documents_list_api_v4_documents_list_post: {
         parameters: {
             query?: never;
@@ -21142,7 +21565,7 @@ export interface operations {
             };
         };
     };
-    patch_document_draft_api_v4_documents_draft_patch: {
+    create_draft_api_v4_drafts__post: {
         parameters: {
             query?: never;
             header?: {
@@ -21154,7 +21577,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PatchDocumentDraftApiRequest"];
+                "application/json": components["schemas"]["CreateDraftApiRequest"];
             };
         };
         responses: {
@@ -21164,7 +21587,1229 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PatchDocumentDraftApiResponse"];
+                    "application/json": components["schemas"]["CreateDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_draft_api_v4_drafts__draft_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path: {
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_names_api_v4_drafts_names_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftNamesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftNamesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_colors_api_v4_drafts_colors_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftColorsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftColorsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_flags_api_v4_drafts_flags_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftFlagsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftFlagsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_descriptions_api_v4_drafts_descriptions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftDescriptionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftDescriptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_icons_api_v4_drafts_icons_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftIconsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftIconsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_points_api_v4_drafts_points_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftPointsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftPointsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_thresholds_api_v4_drafts_thresholds_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftThresholdsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftThresholdsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_content_api_v4_drafts_content_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftContentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftContentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_html_api_v4_drafts_html_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftHtmlApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftHtmlApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_hints_api_v4_drafts_hints_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftHintsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftHintsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_images_api_v4_drafts_images_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftImagesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftImagesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_videos_api_v4_drafts_videos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftVideosApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftVideosApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_objectives_api_v4_drafts_objectives_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftObjectivesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftObjectivesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_options_api_v4_drafts_options_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftOptionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftOptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_problem_statements_api_v4_drafts_problem_statements_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftProblemStatementsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftProblemStatementsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_prompts_api_v4_drafts_prompts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftPromptsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftPromptsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_questions_api_v4_drafts_questions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftQuestionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftQuestionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_responses_api_v4_drafts_responses_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftResponsesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftResponsesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_analyses_api_v4_drafts_analyses_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftAnalysesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftAnalysesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_instructions_api_v4_drafts_instructions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftInstructionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftInstructionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_improvements_api_v4_drafts_improvements_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftImprovementsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftImprovementsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_strengths_api_v4_drafts_strengths_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftStrengthsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftStrengthsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_feedbacks_api_v4_drafts_feedbacks_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftFeedbacksApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftFeedbacksApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_conversations_api_v4_drafts_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftConversationsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftConversationsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_debug_info_api_v4_drafts_debug_info_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftDebugInfoApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftDebugInfoApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_schemas_api_v4_drafts_schemas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftSchemasApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftSchemasApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_schema_fields_api_v4_drafts_schema_fields_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftSchemaFieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftSchemaFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_schema_field_items_api_v4_drafts_schema_field_items_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftSchemaFieldItemsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftSchemaFieldItemsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_templates_api_v4_drafts_templates_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftTemplatesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftTemplatesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_template_array_items_api_v4_drafts_template_array_items_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftTemplateArrayItemsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftTemplateArrayItemsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_template_values_api_v4_drafts_template_values_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftTemplateValuesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftTemplateValuesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_standard_groups_api_v4_drafts_standard_groups_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftStandardGroupsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftStandardGroupsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_draft_times_api_v4_drafts_times_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDraftTimesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateDraftTimesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21381,42 +23026,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateEvalApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_eval_draft_api_v4_evals_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchEvalDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchEvalDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21682,42 +23291,6 @@ export interface operations {
             };
         };
     };
-    patch_rubric_draft_api_v4_rubrics_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchRubricDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchRubricDraftApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_settings_api_v4_settings_list_post: {
         parameters: {
             query?: never;
@@ -21813,42 +23386,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateSettingsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_settings_draft_api_v4_settings_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchSettingsDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchSettingsDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22510,42 +24047,6 @@ export interface operations {
             };
         };
     };
-    patch_agent_draft_api_v4_agents_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchAgentDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchAgentDraftApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_keys_list_api_v4_keys_list_post: {
         parameters: {
             query?: never;
@@ -22785,42 +24286,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetKeyForDecryptApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_key_draft_api_v4_keys_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchKeyDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchKeyDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23086,42 +24551,6 @@ export interface operations {
             };
         };
     };
-    patch_model_draft_api_v4_models_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchModelDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchModelDraftApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_providers_list_api_v4_providers_list_post: {
         parameters: {
             query?: never;
@@ -23325,42 +24754,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteProviderApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_provider_draft_api_v4_providers_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchProviderDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchProviderDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -23626,42 +25019,6 @@ export interface operations {
             };
         };
     };
-    patch_parameter_draft_api_v4_parameters_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchParameterDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchParameterDraftApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_fields_list_api_v4_fields_list_post: {
         parameters: {
             query?: never;
@@ -23914,42 +25271,6 @@ export interface operations {
             };
         };
     };
-    patch_field_draft_api_v4_fields_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchFieldDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchFieldDraftApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_feedback_api_v4_feedback_create_post: {
         parameters: {
             query?: never;
@@ -24117,42 +25438,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BulkArchiveAttemptsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_attempt_draft_api_v4_attempts_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchAttemptDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchAttemptDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24369,42 +25654,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetStaffNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_staff_draft_api_v4_staff_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchStaffDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchStaffDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24837,42 +26086,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetPracticeHistoryApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_practice_draft_api_v4_practice_draft_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchPracticeDraftApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PatchPracticeDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

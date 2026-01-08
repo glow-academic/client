@@ -107,7 +107,7 @@ BEGIN
         JOIN profile_departments pd ON pd.department_id = d.id
         WHERE pd.profile_id = api_randomize_scenario_v4.profile_id 
           AND pd.active = true 
-          AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
+          AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
     ),
     -- Get valid persona IDs (filtered by departments if provided)
     filtered_personas AS (

@@ -46,8 +46,3 @@ try:
     router.include_router(update_router)
 except ImportError:
     pass
-
-try:
-
-except ImportError:
-    pass
