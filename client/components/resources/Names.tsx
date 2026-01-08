@@ -2,7 +2,7 @@
  * Names.tsx
  * Resource component for name input fields
  * Full UI component with Label + Input + optional AI generate button
- * Handles its own draft saving via resource-specific draft endpoint
+ * Creates resources independently and reports resource IDs to parent
  */
 
 "use client";
@@ -14,9 +14,10 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface NamesProps {
-  value: string;
-  onChange: (value: string) => void;
-  draftId: string | null;
+  value: string; // Initial display value (from server data)
+  resourceId: string | null; // Current resource_id (for form state)
+  onChange: (value: string) => void; // Update display value (for UI only)
+  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
@@ -25,17 +26,18 @@ export interface NamesProps {
   disabled?: boolean;
   id?: string;
   "data-testid"?: string;
-  createDraftNamesAction?:
+  createNamesAction?:
     | ((input: {
-        body: { draft_id: string; name: string };
-      }) => Promise<{ name_id?: string | null; version?: number | null }>)
+        body: { name: string };
+      }) => Promise<{ name_id?: string | null }>)
     | undefined;
 }
 
 export function Names({
   value,
+  resourceId,
   onChange,
-  draftId,
+  onResourceIdChange,
   onGenerate,
   isGenerating = false,
   label = "Name",
@@ -44,7 +46,7 @@ export function Names({
   disabled = false,
   id = "name",
   "data-testid": dataTestId,
-  createDraftNamesAction,
+  createNamesAction,
 }: NamesProps) {
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,7 +61,7 @@ export function Names({
     }
   }, [value, internalValue]);
 
-  // Debounced autosave
+  // Debounced resource creation
   useEffect(() => {
     // Skip on initial mount
     if (isInitialMountRef.current) {
@@ -73,8 +75,8 @@ export function Names({
       return;
     }
 
-    // Skip if no draftId or no action
-    if (!draftId || !createDraftNamesAction) {
+    // Skip if no action
+    if (!createNamesAction) {
       return;
     }
 
@@ -86,16 +88,22 @@ export function Names({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        await createDraftNamesAction({
-          body: {
-            draft_id: draftId,
-            name: internalValue,
-          },
-        });
+        if (internalValue.trim()) {
+          const result = await createNamesAction({
+            body: {
+              name: internalValue,
+            },
+          });
+          if (result.name_id) {
+            onResourceIdChange(result.name_id);
+          }
+        } else {
+          // Clear resource ID if value is empty
+          onResourceIdChange(null);
+        }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
-        // Silently fail - draft saving is best effort
-        void error;
+        console.error("Failed to create name resource:", error);
       }
     }, 1000);
 
@@ -104,12 +112,12 @@ export function Names({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, draftId, createDraftNamesAction]);
+  }, [internalValue, createNamesAction, onResourceIdChange]);
 
   const handleChange = useCallback(
     (newValue: string) => {
       setInternalValue(newValue);
-      onChange(newValue);
+      onChange(newValue); // Update display value immediately for UI
     },
     [onChange]
   );
@@ -127,7 +135,7 @@ export function Names({
             variant="outline"
             size="sm"
             onClick={onGenerate}
-            disabled={disabled || isGenerating || !draftId}
+            disabled={disabled || isGenerating}
           >
             {isGenerating ? (
               <>

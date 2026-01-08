@@ -14,9 +14,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { cn } from "@/lib/utils";
 
 export interface IconsProps {
-  value: string;
-  onChange: (value: string) => void;
-  draftId: string | null;
+  value: string; // Initial display value (icon name from server data)
+  resourceId: string | null; // Current resource_id (for form state)
+  onChange: (value: string) => void; // Update display value (for UI only)
+  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
   allIcons: string[];
   suggestedIcons?: string[];
   label?: string;
@@ -27,22 +28,22 @@ export interface IconsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
-  createDraftIconsAction?:
+  createIconsAction?:
     | ((input: {
         body: {
-          draft_id: string;
           name: string;
           description: string;
           value: number;
         };
-      }) => Promise<{ icon_id?: string | null; version?: number | null }>)
+      }) => Promise<{ icon_id?: string | null }>)
     | undefined;
 }
 
 export function Icons({
   value,
+  resourceId,
   onChange,
-  draftId,
+  onResourceIdChange,
   allIcons,
   suggestedIcons = [],
   label = "Icon",
@@ -53,7 +54,7 @@ export function Icons({
   searchPlaceholder = "Search icons...",
   showSelectedFilter = false,
   onShowSelectedChange,
-  createDraftIconsAction,
+  createIconsAction,
 }: IconsProps) {
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -87,7 +88,7 @@ export function Icons({
     return filteredIcons.filter((icon) => icon === internalValue);
   }, [filteredIcons, showSelectedFilter, internalValue]);
 
-  // Debounced autosave
+  // Debounced resource creation
   useEffect(() => {
     // Skip on initial mount
     if (isInitialMountRef.current) {
@@ -101,8 +102,12 @@ export function Icons({
       return;
     }
 
-    // Skip if no draftId, no action, or empty value
-    if (!draftId || !createDraftIconsAction || !internalValue) {
+    // Skip if no action or empty value
+    if (!createIconsAction || !internalValue) {
+      if (!internalValue) {
+        // Clear resource ID if value is empty
+        onResourceIdChange(null);
+      }
       return;
     }
 
@@ -116,17 +121,19 @@ export function Icons({
       try {
         // Find index of icon for value (or use 0)
         const iconIndex = allIcons.indexOf(internalValue);
-        await createDraftIconsAction({
+        const result = await createIconsAction({
           body: {
-            draft_id: draftId,
             name: internalValue,
             description: `Icon: ${internalValue}`,
             value: iconIndex >= 0 ? iconIndex : 0,
           },
         });
+        if (result.icon_id) {
+          onResourceIdChange(result.icon_id);
+        }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
-        console.error("Failed to save draft icon:", error);
+        console.error("Failed to create icon resource:", error);
       }
     }, 1000);
 
@@ -135,12 +142,12 @@ export function Icons({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, draftId, createDraftIconsAction, allIcons]);
+  }, [internalValue, createIconsAction, allIcons, onResourceIdChange]);
 
   const handleChange = useCallback(
     (newValue: string) => {
       setInternalValue(newValue);
-      onChange(newValue);
+      onChange(newValue); // Update display value immediately for UI
     },
     [onChange]
   );

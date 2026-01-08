@@ -628,6 +628,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/personas/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Persona Draft
+         * @description Patch persona draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_persona_draft_api_v4_personas_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/auth/list": {
         parameters: {
             query?: never;
@@ -1322,6 +1342,26 @@ export interface paths {
          * @description Create descriptions resource (always INSERT).
          */
         post: operations["create_description_api_v4_resources_descriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Example
+         * @description Create examples resource (always INSERT).
+         */
+        post: operations["create_example_api_v4_resources_examples_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6063,24 +6103,36 @@ export interface components {
         };
         /** CreatePersonaApiRequest */
         CreatePersonaApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Instructions */
-            instructions: string;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /**
+             * Color Id
+             * Format: uuid
+             */
+            color_id: string;
+            /**
+             * Icon Id
+             * Format: uuid
+             */
+            icon_id: string;
+            /**
+             * Instructions Id
+             * Format: uuid
+             */
+            instructions_id: string;
             /** Department Ids */
             department_ids: string[];
             /** Example Ids */
             example_ids: string[];
             /** Field Ids */
             field_ids: string[];
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
         };
         /** CreatePersonaApiResponse */
         CreatePersonaApiResponse: {
@@ -6935,6 +6987,16 @@ export interface components {
             previous_chat_map?: {
                 [key: string]: string | null;
             } | null;
+        };
+        /** ExamplesApiRequest */
+        ExamplesApiRequest: {
+            /** Example */
+            example: string;
+        };
+        /** ExamplesApiResponse */
+        ExamplesApiResponse: {
+            /** Example Id */
+            example_id?: string | null;
         };
         /**
          * ExportRequest
@@ -11002,6 +11064,43 @@ export interface components {
             option_id?: string | null;
             /** Version */
             version?: number | null;
+        };
+        /** PatchPersonaDraftApiRequest */
+        PatchPersonaDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Color Id */
+            color_id?: string | null;
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Instructions Id */
+            instructions_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Example Ids */
+            example_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchPersonaDraftApiResponse */
+        PatchPersonaDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
         };
         /** PointsApiRequest */
         PointsApiRequest: {
@@ -18821,28 +18920,40 @@ export interface components {
         /** UpdatePersonaApiRequest */
         UpdatePersonaApiRequest: {
             /**
-             * Persona Id
+             * Input Persona Id
              * Format: uuid
              */
-            persona_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Color */
-            color: string;
-            /** Icon */
-            icon: string;
-            /** Instructions */
-            instructions: string;
+            input_persona_id: string;
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /**
+             * Color Id
+             * Format: uuid
+             */
+            color_id: string;
+            /**
+             * Icon Id
+             * Format: uuid
+             */
+            icon_id: string;
+            /**
+             * Instructions Id
+             * Format: uuid
+             */
+            instructions_id: string;
             /** Department Ids */
             department_ids: string[];
             /** Example Ids */
             example_ids: string[];
             /** Field Ids */
             field_ids: string[];
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
         };
         /** UpdatePersonaApiResponse */
         UpdatePersonaApiResponse: {
@@ -20328,6 +20439,42 @@ export interface operations {
             };
         };
     };
+    patch_persona_draft_api_v4_personas_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchPersonaDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchPersonaDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auth_list_api_v4_auth_list_post: {
         parameters: {
             query?: never;
@@ -21579,6 +21726,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DescriptionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_example_api_v4_resources_examples_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExamplesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExamplesApiResponse"];
                 };
             };
             /** @description Validation Error */

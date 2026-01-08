@@ -2517,6 +2517,87 @@
         ]
       }
     },
+    "/api/v4/personas/draft": {
+      "patch": {
+        "tags": [
+          "v4",
+          "personas"
+        ],
+        "summary": "Patch Persona Draft",
+        "description": "Patch persona draft - accepts resource IDs and creates/updates draft.",
+        "operationId": "patch_persona_draft_api_v4_personas_draft_patch",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchPersonaDraftApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatchPersonaDraftApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "personas"
+        ]
+      }
+    },
     "/api/v4/auth/list": {
       "post": {
         "tags": [
@@ -5333,6 +5414,87 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DescriptionsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/examples": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Example",
+        "description": "Create examples resource (always INSERT).",
+        "operationId": "create_example_api_v4_resources_examples_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExamplesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExamplesApiResponse"
                 }
               }
             }
@@ -21819,60 +21981,81 @@
       },
       "CreatePersonaApiRequest": {
         "properties": {
-          "name": {
+          "name_id": {
             "type": "string",
-            "title": "Name"
+            "format": "uuid",
+            "title": "Name Id"
           },
-          "description": {
+          "color_id": {
             "type": "string",
-            "title": "Description"
+            "format": "uuid",
+            "title": "Color Id"
           },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "color": {
+          "icon_id": {
             "type": "string",
-            "title": "Color"
+            "format": "uuid",
+            "title": "Icon Id"
           },
-          "icon": {
+          "instructions_id": {
             "type": "string",
-            "title": "Icon"
-          },
-          "instructions": {
-            "type": "string",
-            "title": "Instructions"
+            "format": "uuid",
+            "title": "Instructions Id"
           },
           "department_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
             "title": "Department Ids"
           },
           "example_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
             "title": "Example Ids"
           },
           "field_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
             "title": "Field Ids"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
           }
         },
         "type": "object",
         "required": [
-          "name",
-          "description",
-          "active",
-          "color",
-          "icon",
-          "instructions",
+          "name_id",
+          "color_id",
+          "icon_id",
+          "instructions_id",
           "department_ids",
           "example_ids",
           "field_ids"
@@ -24818,6 +25001,37 @@
         ],
         "title": "EndSimulationPayload",
         "description": "Request to end simulation chat."
+      },
+      "ExamplesApiRequest": {
+        "properties": {
+          "example": {
+            "type": "string",
+            "title": "Example"
+          }
+        },
+        "type": "object",
+        "required": [
+          "example"
+        ],
+        "title": "ExamplesApiRequest"
+      },
+      "ExamplesApiResponse": {
+        "properties": {
+          "example_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Id"
+          }
+        },
+        "type": "object",
+        "title": "ExamplesApiResponse"
       },
       "ExportRequest": {
         "properties": {
@@ -45727,6 +45941,193 @@
         },
         "type": "object",
         "title": "OptionsApiResponse"
+      },
+      "PatchPersonaDraftApiRequest": {
+        "properties": {
+          "input_draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Draft Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "color_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Id"
+          },
+          "icon_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Id"
+          },
+          "instructions_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "field_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Ids"
+          },
+          "example_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Ids"
+          },
+          "expected_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Version",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "PatchPersonaDraftApiRequest"
+      },
+      "PatchPersonaDraftApiResponse": {
+        "properties": {
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "new_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Version"
+          },
+          "draft_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Exists"
+          }
+        },
+        "type": "object",
+        "title": "PatchPersonaDraftApiResponse"
       },
       "PointsApiRequest": {
         "properties": {
@@ -86242,66 +86643,87 @@
       },
       "UpdatePersonaApiRequest": {
         "properties": {
-          "persona_id": {
+          "input_persona_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Persona Id"
+            "title": "Input Persona Id"
           },
-          "name": {
+          "name_id": {
             "type": "string",
-            "title": "Name"
+            "format": "uuid",
+            "title": "Name Id"
           },
-          "description": {
+          "color_id": {
             "type": "string",
-            "title": "Description"
+            "format": "uuid",
+            "title": "Color Id"
           },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "color": {
+          "icon_id": {
             "type": "string",
-            "title": "Color"
+            "format": "uuid",
+            "title": "Icon Id"
           },
-          "icon": {
+          "instructions_id": {
             "type": "string",
-            "title": "Icon"
-          },
-          "instructions": {
-            "type": "string",
-            "title": "Instructions"
+            "format": "uuid",
+            "title": "Instructions Id"
           },
           "department_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
             "title": "Department Ids"
           },
           "example_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
             "title": "Example Ids"
           },
           "field_ids": {
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             },
             "type": "array",
             "title": "Field Ids"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
           }
         },
         "type": "object",
         "required": [
-          "persona_id",
-          "name",
-          "description",
-          "active",
-          "color",
-          "icon",
-          "instructions",
+          "input_persona_id",
+          "name_id",
+          "color_id",
+          "icon_id",
+          "instructions_id",
           "department_ids",
           "example_ids",
           "field_ids"

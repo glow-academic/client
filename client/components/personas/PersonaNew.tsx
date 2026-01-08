@@ -41,7 +41,10 @@ import { ReorderableList } from "@/components/common/forms/ReorderableList";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Colors } from "@/components/resources/Colors";
+import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
+import { Examples } from "@/components/resources/Examples";
+import { Fields } from "@/components/resources/Fields";
 import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
@@ -64,22 +67,47 @@ export interface PersonaNewProps {
   // Server actions (replaces useMutation)
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
-  // Resource-specific draft actions
-  createDraftNamesAction?: (
-    input: CreateDraftNamesIn
-  ) => Promise<CreateDraftNamesOut>;
-  createDraftDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createDraftInstructionsAction?: (
-    input: CreateDraftInstructionsIn
-  ) => Promise<CreateDraftInstructionsOut>;
-  createDraftColorsAction?: (
-    input: CreateDraftColorsIn
-  ) => Promise<CreateDraftColorsOut>;
-  createDraftIconsAction?: (
-    input: CreateDraftIconsIn
-  ) => Promise<CreateDraftIconsOut>;
+  patchPersonaDraftAction?: (input: {
+    body: {
+      input_draft_id: string | null;
+      name_id: string | null;
+      description_id: string | null;
+      color_id: string | null;
+      icon_id: string | null;
+      instructions_id: string | null;
+      active_flag_id: string | null;
+      department_ids: string[];
+      field_ids: string[];
+      example_ids: string[];
+      expected_version: number;
+    };
+  }) => Promise<{
+    draft_id: string;
+    new_version: number;
+    draft_exists: boolean;
+  }>;
+  // Resource creation actions
+  createNamesAction?: (input: {
+    body: { name: string };
+  }) => Promise<{ name_id?: string | null }>;
+  createDescriptionsAction?: (input: {
+    body: { description: string };
+  }) => Promise<{ description_id?: string | null }>;
+  createColorsAction?: (input: {
+    body: { name: string; description: string; hex_code: string };
+  }) => Promise<{ color_id?: string | null }>;
+  createIconsAction?: (input: {
+    body: { name: string; description: string; value: number };
+  }) => Promise<{ icon_id?: string | null }>;
+  createInstructionsAction?: (input: {
+    body: { template: string };
+  }) => Promise<{ instruction_id?: string | null }>;
+  createFlagsAction?: (input: {
+    body: { name: string; description: string; icon_id: string };
+  }) => Promise<{ flag_id?: string | null }>;
+  createExamplesAction?: (input: {
+    body: { example: string };
+  }) => Promise<{ example_id?: string | null }>;
 }
 
 function PersonaNewComponent({
@@ -89,11 +117,14 @@ function PersonaNewComponent({
   personaDetailDefault: serverPersonaDetailDefault,
   createPersonaAction,
   updatePersonaAction,
-  createDraftNamesAction,
-  createDraftDescriptionsAction,
-  createDraftInstructionsAction,
-  createDraftColorsAction,
-  createDraftIconsAction,
+  patchPersonaDraftAction,
+  createNamesAction,
+  createDescriptionsAction,
+  createColorsAction,
+  createIconsAction,
+  createInstructionsAction,
+  createFlagsAction,
+  createExamplesAction,
 }: PersonaNewProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!personaId;
@@ -377,35 +408,35 @@ function PersonaNewComponent({
 
   const draftId = urlDraftId;
 
-  // Local form state (not in URL) - initialized from server data or draft payload
-  // Resource components handle their own draft saving, this is just for form submission
+  // Local form state (not in URL) - stores only resource IDs
+  // Display values are managed inside resource components
   const getInitialFormState = useCallback(() => {
     const data = isEditMode ? personaDetail : personaDetailDefault;
     if (!data) {
       return {
-        name: "",
-        description: "",
-        instructions: "",
-        color: "",
-        icon: "",
-        active: true,
-        departmentIds: [] as string[],
-        parameterIds: [] as string[],
-        parameterFieldIds: [] as string[],
-        examples: [] as string[],
+        name_id: null as string | null,
+        description_id: null as string | null,
+        color_id: null as string | null,
+        icon_id: null as string | null,
+        instructions_id: null as string | null,
+        active_flag_id: null as string | null,
+        department_ids: [] as string[],
+        field_ids: [] as string[],
+        example_ids: [] as string[],
       };
     }
+    // Extract resource IDs from server data
+    // Note: Server data may have display values, but we only store IDs here
     return {
-      name: data.name || "",
-      description: data.description || "",
-      instructions: data.instructions || "",
-      color: data.color || "",
-      icon: data.icon || "",
-      active: data.active ?? true,
-      departmentIds: data.department_ids || [],
-      parameterIds: [] as string[],
-      parameterFieldIds: [] as string[],
-      examples: [] as string[],
+      name_id: (data as PersonaDetailOut & { name_id?: string | null })?.name_id || null,
+      description_id: (data as PersonaDetailOut & { description_id?: string | null })?.description_id || null,
+      color_id: (data as PersonaDetailOut & { color_id?: string | null })?.color_id || null,
+      icon_id: (data as PersonaDetailOut & { icon_id?: string | null })?.icon_id || null,
+      instructions_id: (data as PersonaDetailOut & { instructions_id?: string | null })?.instructions_id || null,
+      active_flag_id: (data as PersonaDetailOut & { active_flag_id?: string | null })?.active_flag_id || null,
+      department_ids: data.department_ids || [],
+      field_ids: (data as PersonaDetailOut & { field_ids?: string[] })?.field_ids || [],
+      example_ids: (data as PersonaDetailOut & { example_ids?: string[] })?.example_ids || [],
     };
   }, [isEditMode, personaDetail, personaDetailDefault]);
 
@@ -415,22 +446,90 @@ function PersonaNewComponent({
   useEffect(() => {
     const newState = getInitialFormState();
     setFormState((prev) => {
-      // Only update if content actually changed
+      // Only update if resource IDs actually changed
       if (
-        prev.name !== newState.name ||
-        prev.description !== newState.description ||
-        prev.instructions !== newState.instructions ||
-        prev.color !== newState.color ||
-        prev.icon !== newState.icon ||
-        prev.active !== newState.active ||
-        JSON.stringify(prev.departmentIds) !==
-          JSON.stringify(newState.departmentIds)
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.color_id !== newState.color_id ||
+        prev.icon_id !== newState.icon_id ||
+        prev.instructions_id !== newState.instructions_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.field_ids) !==
+          JSON.stringify(newState.field_ids) ||
+        JSON.stringify(prev.example_ids) !==
+          JSON.stringify(newState.example_ids)
       ) {
         return newState;
       }
       return prev;
     });
   }, [getInitialFormState]);
+
+  // Draft version tracking for optimistic concurrency control
+  const [lastSavedVersion, setLastSavedVersion] = useState(0);
+
+  // Draft change listener - watches resource IDs and patches draft
+  useEffect(() => {
+    const hasResourceIds =
+      formState.name_id ||
+      formState.description_id ||
+      formState.color_id ||
+      formState.icon_id ||
+      formState.instructions_id ||
+      formState.active_flag_id ||
+      formState.department_ids.length > 0 ||
+      formState.field_ids.length > 0 ||
+      formState.example_ids.length > 0;
+
+    if (!hasResourceIds || !patchPersonaDraftAction) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const result = await patchPersonaDraftAction({
+          body: {
+            input_draft_id: draftId || null,
+            name_id: formState.name_id,
+            description_id: formState.description_id,
+            color_id: formState.color_id,
+            icon_id: formState.icon_id,
+            instructions_id: formState.instructions_id,
+            active_flag_id: formState.active_flag_id,
+            department_ids: formState.department_ids,
+            field_ids: formState.field_ids,
+            example_ids: formState.example_ids,
+            expected_version: lastSavedVersion,
+          },
+        });
+        if (!draftId && result.draft_id) {
+          // Update URL when draft is created
+          setUrlParams({ draftId: result.draft_id });
+        }
+        setLastSavedVersion(result.new_version);
+      } catch (error) {
+        console.error("Failed to save draft:", error);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [
+    formState.name_id,
+    formState.description_id,
+    formState.color_id,
+    formState.icon_id,
+    formState.instructions_id,
+    formState.active_flag_id,
+    formState.department_ids,
+    formState.field_ids,
+    formState.example_ids,
+    draftId,
+    lastSavedVersion,
+    patchPersonaDraftAction,
+    setUrlParams,
+  ]);
 
   // WebSocket handlers for AI generation
   useEffect(() => {
@@ -1030,17 +1129,23 @@ function PersonaNewComponent({
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (!formState.name) {
+      // Validate required resource IDs
+      if (!formState.name_id) {
         toast.error("Persona name is required");
         throw new Error("Persona name is required");
       }
 
-      if (!formState.description) {
-        toast.error("Persona description is required");
-        throw new Error("Persona description is required");
+      if (!formState.color_id) {
+        toast.error("Persona color is required");
+        throw new Error("Persona color is required");
       }
 
-      if (!formState.instructions) {
+      if (!formState.icon_id) {
+        toast.error("Persona icon is required");
+        throw new Error("Persona icon is required");
+      }
+
+      if (!formState.instructions_id) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
       }
@@ -1048,7 +1153,7 @@ function PersonaNewComponent({
       // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
       const finalDepartmentIds =
         transformDepartmentIdsForSubmit(
-          formState.departmentIds || [],
+          formState.department_ids || [],
           isSuperadmin,
           (
             personaData as PersonaDetailOut & {
@@ -1072,14 +1177,15 @@ function PersonaNewComponent({
           await updatePersonaAction({
             body: {
               persona_id: personaId!,
-              name: formState.name,
-              description: formState.description || "",
-              instructions: formState.instructions || "",
-              color: formState.color || "#000000",
-              icon: formState.icon || "Zap",
-              active: formState.active ?? true,
+              name_id: formState.name_id,
+              description_id: formState.description_id || null,
+              color_id: formState.color_id,
+              icon_id: formState.icon_id,
+              instructions_id: formState.instructions_id,
+              active_flag_id: formState.active_flag_id || null,
               department_ids: finalDepartmentIds,
-              example_ids: [],
+              field_ids: formState.field_ids || [],
+              example_ids: formState.example_ids || [],
             },
           });
           toast.success("Persona updated successfully!");
@@ -1098,16 +1204,15 @@ function PersonaNewComponent({
         try {
           await createPersonaAction({
             body: {
-              name: formState.name,
-              description: formState.description || "",
-              instructions: formState.instructions || "",
-              color: formState.color || "#000000",
-              icon: formState.icon || "Zap",
-              active: formState.active ?? true,
+              name_id: formState.name_id,
+              description_id: formState.description_id || null,
+              color_id: formState.color_id,
+              icon_id: formState.icon_id,
+              instructions_id: formState.instructions_id,
+              active_flag_id: formState.active_flag_id || null,
               department_ids: finalDepartmentIds,
-              example_ids: (formState.examples || []).filter((ex: string) =>
-                ex.trim()
-              ),
+              field_ids: formState.field_ids || [],
+              example_ids: formState.example_ids || [],
             },
           });
           toast.success("Persona created successfully!");
@@ -1325,78 +1430,63 @@ function PersonaNewComponent({
                 {/* Name field - using Names resource component */}
                 <Names
                   value={
-                    (stepFormData["name"] as string | null | undefined) || ""
+                    (personaData as { name?: string })?.name || ""
                   }
-                  onChange={(value) => setStepFormData({ name: value || null })}
-                  draftId={draftId}
+                  resourceId={formState.name_id}
+                  onChange={() => {
+                    // Display value managed internally by component
+                  }}
+                  onResourceIdChange={(resourceId) =>
+                    setFormState((prev) => ({ ...prev, name_id: resourceId }))
+                  }
                   onGenerate={handleGenerateName}
                   isGenerating={isGeneratingName}
                   label="Name"
                   placeholder="e.g., Enthusiastic Student"
                   required
                   disabled={isReadonly}
-                  createDraftNamesAction={createDraftNamesAction}
+                  createNamesAction={createNamesAction}
                 />
 
                 {/* Description field - using Descriptions resource component */}
                 <Descriptions
                   value={
-                    (stepFormData["description"] as
-                      | string
-                      | null
-                      | undefined) || ""
+                    (personaData as { description?: string })?.description || ""
                   }
-                  onChange={(value) =>
-                    setStepFormData({ description: value || null })
+                  resourceId={formState.description_id}
+                  onChange={() => {
+                    // Display value managed internally by component
+                  }}
+                  onResourceIdChange={(resourceId) =>
+                    setFormState((prev) => ({ ...prev, description_id: resourceId }))
                   }
-                  draftId={draftId}
                   onGenerate={handleGenerateDescription}
                   isGenerating={isGeneratingDescription}
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
-                  required
+                  required={false}
                   disabled={isReadonly}
                   rows={4}
                   data-testid="input-persona-description"
-                  createDraftDescriptionsAction={createDraftDescriptionsAction}
+                  createDescriptionsAction={createDescriptionsAction}
                 />
 
                 {/* Department Selection */}
                 {personaData?.valid_department_ids &&
                 personaData.valid_department_ids.length > 1 ? (
-                  <div className="space-y-2">
-                    <GenericPicker
-                      items={departmentMapping}
-                      itemIds={
-                        (
-                          personaData as PersonaDetailOut & {
-                            valid_department_ids?: string[];
-                          }
-                        )?.valid_department_ids || []
-                      }
-                      selectedIds={
-                        (stepFormData["departmentIds"] as
-                          | string[]
-                          | null
-                          | undefined) || []
-                      }
-                      onSelect={(ids) =>
-                        setStepFormData({
-                          departmentIds: ids.length > 0 ? ids : null,
-                        })
-                      }
-                      getId={(dept) => (dept as { id: string }).id}
-                      getLabel={(dept) => (dept as { name: string }).name || ""}
-                      getSearchText={(dept) =>
-                        `${(dept as { name: string }).name} ${(dept as { description?: string }).description || ""}`
-                      }
-                      placeholder="All Departments"
-                      disabled={isReadonly}
-                      multiSelect={true}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                    />
-                  </div>
+                  <Departments
+                    departmentIds={formState.department_ids}
+                    onChange={(ids) =>
+                      setFormState((prev) => ({ ...prev, department_ids: ids }))
+                    }
+                    validDepartmentIds={
+                      (personaData as PersonaDetailOut & {
+                        valid_department_ids?: string[];
+                      })?.valid_department_ids || []
+                    }
+                    departmentMapping={departmentMapping}
+                    disabled={isReadonly}
+                  />
                 ) : null}
 
                 {/* Required Parameters */}
@@ -1472,15 +1562,22 @@ function PersonaNewComponent({
                 {/* Active Switch - using Flags resource component */}
                 <Flags
                   value={
-                    (stepFormData["active"] as boolean | null | undefined) ??
+                    (formState.active_flag_id !== null) ??
                     (personaData as { active?: boolean })?.active ??
                     true
                   }
-                  onChange={(checked) => setStepFormData({ active: checked })}
-                  draftId={draftId}
+                  resourceId={formState.active_flag_id}
+                  onChange={(checked) => {
+                    // Display value managed internally by component
+                  }}
+                  onResourceIdChange={(resourceId) =>
+                    setFormState((prev) => ({ ...prev, active_flag_id: resourceId }))
+                  }
                   label="Active"
                   disabled={isReadonly}
                   helpText="Inactive personas will not be available for scenarios"
+                  iconId={formState.icon_id || undefined}
+                  createFlagsAction={createFlagsAction}
                 />
               </div>
             </StepCard>
@@ -1529,9 +1626,14 @@ function PersonaNewComponent({
             >
               {/* Color picker - using Colors resource component */}
               <Colors
-                value={currentColorRaw || ""}
-                onChange={(value) => setStepFormData({ color: value || null })}
-                draftId={draftId}
+                value={(personaData as { color?: string })?.color || ""}
+                resourceId={formState.color_id}
+                onChange={() => {
+                  // Display value managed internally by component
+                }}
+                onResourceIdChange={(resourceId) =>
+                  setFormState((prev) => ({ ...prev, color_id: resourceId }))
+                }
                 presetColors={presetColors}
                 disabled={isReadonly}
                 searchTerm={colorSearch}
@@ -1542,7 +1644,7 @@ function PersonaNewComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ colorShowSelected: value || null })
                 }
-                createDraftColorsAction={createDraftColorsAction}
+                createColorsAction={createColorsAction}
               />
             </StepCard>
           );
@@ -1591,9 +1693,14 @@ function PersonaNewComponent({
             >
               {/* Icon picker - using Icons resource component */}
               <Icons
-                value={currentIcon || ""}
-                onChange={(value) => setStepFormData({ icon: value || null })}
-                draftId={draftId}
+                value={(personaData as { icon?: string })?.icon || ""}
+                resourceId={formState.icon_id}
+                onChange={() => {
+                  // Display value managed internally by component
+                }}
+                onResourceIdChange={(resourceId) =>
+                  setFormState((prev) => ({ ...prev, icon_id: resourceId }))
+                }
                 allIcons={allIcons}
                 suggestedIcons={suggestedIconsAll}
                 disabled={isReadonly}
@@ -1605,7 +1712,7 @@ function PersonaNewComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ iconShowSelected: value || null })
                 }
-                createDraftIconsAction={createDraftIconsAction}
+                createIconsAction={createIconsAction}
               />
             </StepCard>
           );
@@ -1627,13 +1734,15 @@ function PersonaNewComponent({
               {/* Instructions - using Instructions resource component */}
               <Instructions
                 value={
-                  (stepFormData["instructions"] as string | null | undefined) ||
-                  ""
+                  (personaData as { instructions?: string })?.instructions || ""
                 }
-                onChange={(value) =>
-                  setStepFormData({ instructions: value || null })
+                resourceId={formState.instructions_id}
+                onChange={() => {
+                  // Display value managed internally by component
+                }}
+                onResourceIdChange={(resourceId) =>
+                  setFormState((prev) => ({ ...prev, instructions_id: resourceId }))
                 }
-                draftId={draftId}
                 onGenerate={handleGenerateInstructions}
                 isGenerating={isGeneratingInstructions}
                 label="Instructions"
@@ -1643,37 +1752,35 @@ function PersonaNewComponent({
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
-                createDraftInstructionsAction={createDraftInstructionsAction}
+                createInstructionsAction={createInstructionsAction}
               />
 
               {/* Examples Section */}
-              <div className="space-y-2 pt-2">
-                <ReorderableList
-                  items={
-                    (stepFormData["examples"] as string[] | null | undefined) &&
-                    (stepFormData["examples"] as string[]).length > 0
-                      ? (stepFormData["examples"] as string[])
-                      : [""]
-                  }
-                  onItemsChange={(items) => {
-                    // Save items as-is (including empty strings for editing)
-                    // This allows ReorderableList to work properly when adding new items
-                    // Empty strings will be filtered when submitting the form
-                    if (items.length === 0) {
-                      setStepFormData({ examples: null });
-                    } else {
-                      setStepFormData({ examples: items });
-                    }
-                  }}
-                  suggestions={getExamplesHistory(
-                    stepFormData["departmentIds"] as string[] | null | undefined
-                  )}
-                  maxItems={10}
-                  addButtonLabel="Add example"
-                  disabled={isReadonly}
-                  itemPlaceholder="Message"
-                />
-              </div>
+              <Examples
+                exampleIds={formState.example_ids}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, example_ids: ids }))
+                }
+                suggestions={getExamplesHistory(formState.department_ids)}
+                maxItems={10}
+                addButtonLabel="Add example"
+                disabled={isReadonly}
+                itemPlaceholder="Message"
+                createExamplesAction={createExamplesAction}
+                exampleMapping={
+                  (personaData as PersonaDetailOut & {
+                    examples?: Array<{ example_id: string; example: string }>;
+                  })?.examples?.reduce(
+                    (acc, ex) => {
+                      if (ex.example_id && ex.example) {
+                        acc[ex.example_id] = ex.example;
+                      }
+                      return acc;
+                    },
+                    {} as Record<string, string>
+                  ) || {}
+                }
+              />
             </StepCard>
           );
 
@@ -1692,7 +1799,6 @@ function PersonaNewComponent({
       getExamplesHistory,
       createColorFilterOnChange,
       createIconFilterOnChange,
-      draftId,
       handleGenerateName,
       handleGenerateDescription,
       handleGenerateInstructions,
@@ -1701,11 +1807,14 @@ function PersonaNewComponent({
       isGeneratingInstructions,
       colorSearch,
       iconSearch,
-      createDraftNamesAction,
-      createDraftDescriptionsAction,
-      createDraftInstructionsAction,
-      createDraftColorsAction,
-      createDraftIconsAction,
+      formState,
+      createNamesAction,
+      createDescriptionsAction,
+      createColorsAction,
+      createIconsAction,
+      createInstructionsAction,
+      createFlagsAction,
+      createExamplesAction,
     ]
   );
 

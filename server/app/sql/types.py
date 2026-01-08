@@ -9690,35 +9690,6 @@ class ConversationsApiResponse(BaseModel):
 
 
 
-# Generated from: create_draft
-
-class CreateDraftSqlParams(BaseModel):
-
-    artifact: str
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.artifact,
-            self.profile_id,
-        )
-
-class CreateDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    version: int | None = None
-
-class CreateDraftApiRequest(BaseModel):
-
-    artifact: str
-
-class CreateDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    version: int | None = None
-
-
-
 # Generated from: debug_info
 
 class DebugInfoSqlParams(BaseModel):
@@ -9848,41 +9819,6 @@ class FlagsApiResponse(BaseModel):
 
     flag_id: UUID | None = None
     version: int | None = None
-
-
-
-# Generated from: get_draft
-
-class GetDraftSqlParams(BaseModel):
-
-    draft_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-        )
-
-class GetDraftSqlRow(BaseModel):
-
-    draft_id: UUID | None = None
-    artifact: str | None = None
-    version: int | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    draft_exists: bool | None = None
-
-class GetDraftApiRequest(BaseModel):
-
-    draft_id: UUID
-
-class GetDraftApiResponse(BaseModel):
-
-    draft_id: UUID | None = None
-    artifact: str | None = None
-    version: int | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    draft_exists: bool | None = None
 
 
 
@@ -15425,29 +15361,29 @@ class UpdateParameterApiResponse(BaseModel):
 
 class CreatePersonaSqlParams(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    department_ids: list[str]
+    name_id: UUID
+    color_id: UUID
+    icon_id: UUID
+    instructions_id: UUID
+    department_ids: list[UUID]
     profile_id: UUID
-    example_ids: list[str]
-    field_ids: list[str]
+    example_ids: list[UUID]
+    field_ids: list[UUID]
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.name,
-            self.description,
-            self.active,
-            self.color,
-            self.icon,
-            self.instructions,
+            self.name_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
             self.department_ids,
             self.profile_id,
             self.example_ids,
             self.field_ids,
+            self.description_id,
+            self.active_flag_id,
         )
 
 class CreatePersonaSqlRow(BaseModel):
@@ -15457,15 +15393,15 @@ class CreatePersonaSqlRow(BaseModel):
 
 class CreatePersonaApiRequest(BaseModel):
 
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    department_ids: list[str]
-    example_ids: list[str]
-    field_ids: list[str]
+    name_id: UUID
+    color_id: UUID
+    icon_id: UUID
+    instructions_id: UUID
+    department_ids: list[UUID]
+    example_ids: list[UUID]
+    field_ids: list[UUID]
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
 
 class CreatePersonaApiResponse(BaseModel):
 
@@ -15916,35 +15852,96 @@ class GetPersonasListApiResponse(BaseModel):
 
 
 
+# Generated from: patch_persona_draft
+
+class PatchPersonaDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.field_ids,
+            self.example_ids,
+            self.expected_version,
+        )
+
+class PatchPersonaDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchPersonaDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchPersonaDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: update_persona
 
 class UpdatePersonaSqlParams(BaseModel):
 
-    persona_id: UUID
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    department_ids: list[str]
+    input_persona_id: UUID
+    name_id: UUID
+    color_id: UUID
+    icon_id: UUID
+    instructions_id: UUID
+    department_ids: list[UUID]
     profile_id: UUID
-    example_ids: list[str]
-    field_ids: list[str]
+    example_ids: list[UUID]
+    field_ids: list[UUID]
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.persona_id,
-            self.name,
-            self.description,
-            self.active,
-            self.color,
-            self.icon,
-            self.instructions,
+            self.input_persona_id,
+            self.name_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
             self.department_ids,
             self.profile_id,
             self.example_ids,
             self.field_ids,
+            self.description_id,
+            self.active_flag_id,
         )
 
 class UpdatePersonaSqlRow(BaseModel):
@@ -15954,16 +15951,16 @@ class UpdatePersonaSqlRow(BaseModel):
 
 class UpdatePersonaApiRequest(BaseModel):
 
-    persona_id: UUID
-    name: str
-    description: str
-    active: bool
-    color: str
-    icon: str
-    instructions: str
-    department_ids: list[str]
-    example_ids: list[str]
-    field_ids: list[str]
+    input_persona_id: UUID
+    name_id: UUID
+    color_id: UUID
+    icon_id: UUID
+    instructions_id: UUID
+    department_ids: list[UUID]
+    example_ids: list[UUID]
+    field_ids: list[UUID]
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
 
 class UpdatePersonaApiResponse(BaseModel):
 
@@ -19322,6 +19319,31 @@ class GetReportsOverviewApiResponse(BaseModel):
 
 
 # Generated from: descriptions
+
+
+# Generated from: examples
+
+class ExamplesSqlParams(BaseModel):
+
+    example: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.example,
+        )
+
+class ExamplesSqlRow(BaseModel):
+
+    example_id: UUID | None = None
+
+class ExamplesApiRequest(BaseModel):
+
+    example: str
+
+class ExamplesApiResponse(BaseModel):
+
+    example_id: UUID | None = None
+
 
 
 # Generated from: feedbacks
@@ -28339,12 +28361,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ConversationsApiRequest",
         "ConversationsApiResponse",
     ),
-    "app/sql/v4/drafts/create_draft_complete.sql": (
-        "CreateDraftSqlParams",
-        "CreateDraftSqlRow",
-        "CreateDraftApiRequest",
-        "CreateDraftApiResponse",
-    ),
     "app/sql/v4/drafts/debug_info_complete.sql": (
         "DebugInfoSqlParams",
         "DebugInfoSqlRow",
@@ -28368,12 +28384,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "FlagsSqlRow",
         "FlagsApiRequest",
         "FlagsApiResponse",
-    ),
-    "app/sql/v4/drafts/get_draft_complete.sql": (
-        "GetDraftSqlParams",
-        "GetDraftSqlRow",
-        "GetDraftApiRequest",
-        "GetDraftApiResponse",
     ),
     "app/sql/v4/drafts/hints_complete.sql": (
         "HintsSqlParams",
@@ -29065,6 +29075,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonasListApiRequest",
         "GetPersonasListApiResponse",
     ),
+    "app/sql/v4/personas/patch_persona_draft_complete.sql": (
+        "PatchPersonaDraftSqlParams",
+        "PatchPersonaDraftSqlRow",
+        "PatchPersonaDraftApiRequest",
+        "PatchPersonaDraftApiResponse",
+    ),
     "app/sql/v4/personas/update_persona_complete.sql": (
         "UpdatePersonaSqlParams",
         "UpdatePersonaSqlRow",
@@ -29352,6 +29368,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DescriptionsSqlRow",
         "DescriptionsApiRequest",
         "DescriptionsApiResponse",
+    ),
+    "app/sql/v4/resources/examples_complete.sql": (
+        "ExamplesSqlParams",
+        "ExamplesSqlRow",
+        "ExamplesApiRequest",
+        "ExamplesApiResponse",
     ),
     "app/sql/v4/resources/feedbacks_complete.sql": (
         "FeedbacksSqlParams",
@@ -31110,11 +31132,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/create_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/drafts/debug_info_complete.sql"]
     ) -> SqlString: ...
 
@@ -31131,11 +31148,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/drafts/flags_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/get_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -31715,6 +31727,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/patch_persona_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/personas/update_persona_complete.sql"]
     ) -> SqlString: ...
 
@@ -31951,6 +31968,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/descriptions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/examples_complete.sql"]
     ) -> SqlString: ...
 
     @overload

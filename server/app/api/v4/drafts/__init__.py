@@ -4,12 +4,10 @@ from app.api.v4.drafts.analyses import router as analyses_router
 from app.api.v4.drafts.colors import router as colors_router
 from app.api.v4.drafts.content import router as content_router
 from app.api.v4.drafts.conversations import router as conversations_router
-from app.api.v4.drafts.create import router as create_router
 from app.api.v4.drafts.debug_info import router as debug_info_router
 from app.api.v4.drafts.descriptions import router as descriptions_router
 from app.api.v4.drafts.feedbacks import router as feedbacks_router
 from app.api.v4.drafts.flags import router as flags_router
-from app.api.v4.drafts.get import router as get_router
 from app.api.v4.drafts.hints import router as hints_router
 from app.api.v4.drafts.html import router as html_router
 from app.api.v4.drafts.icons import router as icons_router
@@ -43,8 +41,6 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/drafts", tags=["drafts"])
 
 # Include endpoint routers
-router.include_router(create_router)
-router.include_router(get_router)
 router.include_router(names_router)
 router.include_router(colors_router)
 router.include_router(flags_router)

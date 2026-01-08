@@ -17,37 +17,68 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_create_persona_v4(
-    name text,
-    description text,
-    active boolean,
-    color text,
-    icon text,
-    instructions text,
-    department_ids text[],
+    name_id uuid,
+    color_id uuid,
+    icon_id uuid,
+    instructions_id uuid,
+    department_ids uuid[],
     profile_id uuid,
-    example_ids text[],
-    field_ids text[]
+    example_ids uuid[],
+    field_ids uuid[],
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     persona_id uuid,
     actor_name text
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 VOLATILE
 AS $$
-WITH params AS (
-    SELECT
-        name AS name,
-        COALESCE(NULLIF(description, ''), '') AS description,
-        active AS active,
-        color AS color,
-        icon AS icon,
-        COALESCE(NULLIF(instructions, ''), '') AS instructions,
-        COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
-        profile_id AS profile_id,
-        COALESCE(example_ids, ARRAY[]::text[]) AS example_ids,
-        COALESCE(field_ids, ARRAY[]::text[]) AS field_ids
-),
+DECLARE
+    v_persona_id uuid;
+    v_actor_name text;
+BEGIN
+    -- Validate required resource IDs exist
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    END IF;
+    
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    END IF;
+    
+    IF color_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM colors WHERE id = color_id) THEN
+        RAISE EXCEPTION 'Color resource not found: %', color_id;
+    END IF;
+    
+    IF icon_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM icons WHERE id = icon_id) THEN
+        RAISE EXCEPTION 'Icon resource not found: %', icon_id;
+    END IF;
+    
+    IF instructions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM instructions WHERE id = instructions_id) THEN
+        RAISE EXCEPTION 'Instructions resource not found: %', instructions_id;
+    END IF;
+    
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    END IF;
+    
+    -- Continue with persona creation using SQL
+    RETURN QUERY
+    WITH params AS (
+        SELECT
+            name_id AS name_id,
+            description_id AS description_id,
+            color_id AS color_id,
+            icon_id AS icon_id,
+            instructions_id AS instructions_id,
+            active_flag_id AS active_flag_id,
+            COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
+            profile_id AS profile_id,
+            COALESCE(example_ids, ARRAY[]::uuid[]) AS example_ids,
+            COALESCE(field_ids, ARRAY[]::uuid[]) AS field_ids
+    ),
 user_profile AS (
     SELECT 
         p.role,
@@ -59,7 +90,7 @@ validate_create_permissions AS (
     -- Validate department permissions for create operation
     SELECT validate_department_create_permissions(
         up.role::text,
-        x.department_ids
+        x.department_ids::text[]
     ) as validation_passed
     FROM params x
     CROSS JOIN user_profile up
@@ -71,42 +102,6 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
--- Insert name into names table and get ID
-name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
-    SELECT name, NOW(), NOW()
-    FROM params
-    WHERE name IS NOT NULL AND name != ''
-    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-    RETURNING id as name_id
-),
--- Insert description into descriptions table and get ID
-description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
-    SELECT description, NOW(), NOW()
-    FROM params
-    WHERE description IS NOT NULL AND description != ''
-    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
-    RETURNING id as description_id
-),
--- Insert color into colors table and get ID
-color_resource AS (
-    INSERT INTO colors (name, description, hex_code, created_at, updated_at)
-    SELECT 'persona_color', 'Persona color', color, NOW(), NOW()
-    FROM params
-    WHERE color IS NOT NULL AND color != ''
-    ON CONFLICT (hex_code) DO UPDATE SET updated_at = NOW()
-    RETURNING id as color_id
-),
--- Insert icon into icons table and get ID
-icon_resource AS (
-    INSERT INTO icons (name, description, value, created_at, updated_at)
-    SELECT 'persona_icon', 'Persona icon', icon, NOW(), NOW()
-    FROM params
-    WHERE icon IS NOT NULL AND icon != ''
-    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
-    RETURNING id as icon_id
-),
 new_persona AS (
     -- Create persona (without name/description/active/color/icon/instructions columns)
     INSERT INTO personas (created_at, updated_at)
@@ -114,37 +109,17 @@ new_persona AS (
     FROM params x
     RETURNING id
 ),
--- Create instruction and link to persona if instructions provided
-new_instruction AS (
-    INSERT INTO instructions (template, active, created_at, updated_at)
-    SELECT x.instructions, true, NOW(), NOW()
-    FROM params x
-    WHERE x.instructions IS NOT NULL AND x.instructions != ''
-    RETURNING id as instruction_id
-),
-link_persona_instruction AS (
-    INSERT INTO persona_instructions (persona_id, instruction_id, created_at, updated_at)
-    SELECT 
-        np.id,
-        ni.instruction_id,
-        NOW(),
-        NOW()
-    FROM new_persona np
-    CROSS JOIN params x
-    CROSS JOIN new_instruction ni
-    WHERE x.instructions IS NOT NULL AND x.instructions != ''
-    ON CONFLICT (persona_id, instruction_id) DO UPDATE SET updated_at = NOW()
-),
 -- Link persona to name
 link_persona_name AS (
     INSERT INTO persona_names (persona_id, name_id, created_at, updated_at)
     SELECT 
         np.id,
-        nr.name_id,
+        x.name_id,
         NOW(),
         NOW()
     FROM new_persona np
-    CROSS JOIN name_resource nr
+    CROSS JOIN params x
+    WHERE x.name_id IS NOT NULL
     ON CONFLICT (persona_id, name_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link persona to description
@@ -152,11 +127,12 @@ link_persona_description AS (
     INSERT INTO persona_descriptions (persona_id, description_id, created_at, updated_at)
     SELECT 
         np.id,
-        dr.description_id,
+        x.description_id,
         NOW(),
         NOW()
     FROM new_persona np
-    CROSS JOIN description_resource dr
+    CROSS JOIN params x
+    WHERE x.description_id IS NOT NULL
     ON CONFLICT (persona_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link persona to color
@@ -164,11 +140,12 @@ link_persona_color AS (
     INSERT INTO persona_colors (persona_id, color_id, created_at, updated_at)
     SELECT 
         np.id,
-        cr.color_id,
+        x.color_id,
         NOW(),
         NOW()
     FROM new_persona np
-    CROSS JOIN color_resource cr
+    CROSS JOIN params x
+    WHERE x.color_id IS NOT NULL
     ON CONFLICT (persona_id, color_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link persona to icon
@@ -176,21 +153,35 @@ link_persona_icon AS (
     INSERT INTO persona_icons (persona_id, icon_id, created_at, updated_at)
     SELECT 
         np.id,
-        ir.icon_id,
+        x.icon_id,
         NOW(),
         NOW()
     FROM new_persona np
-    CROSS JOIN icon_resource ir
+    CROSS JOIN params x
+    WHERE x.icon_id IS NOT NULL
     ON CONFLICT (persona_id, icon_id) DO UPDATE SET updated_at = NOW()
 ),
--- Link persona active flag
+-- Link persona to instructions
+link_persona_instruction AS (
+    INSERT INTO persona_instructions (persona_id, instruction_id, created_at, updated_at)
+    SELECT 
+        np.id,
+        x.instructions_id,
+        NOW(),
+        NOW()
+    FROM new_persona np
+    CROSS JOIN params x
+    WHERE x.instructions_id IS NOT NULL
+    ON CONFLICT (persona_id, instruction_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link persona active flag (use active_flag_id if provided, otherwise use 'active' flag with value=false)
 link_persona_active_flag AS (
     INSERT INTO persona_flags (persona_id, flag_id, type, value, created_at, updated_at)
     SELECT 
         np.id,
-        f.id,
+        COALESCE(x.active_flag_id, f.id),
         'active'::type_persona_flags,
-        x.active,
+        CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
         NOW(),
         NOW()
     FROM new_persona np
@@ -198,7 +189,8 @@ link_persona_active_flag AS (
     CROSS JOIN flags f
     WHERE f.name = 'active'
     ON CONFLICT (persona_id, flag_id, type) DO UPDATE SET 
-        value = EXCLUDED.value,
+        flag_id = COALESCE(x.active_flag_id, f.id),
+        value = CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
         updated_at = NOW()
 ),
 link_departments AS (
@@ -206,7 +198,7 @@ link_departments AS (
     INSERT INTO persona_departments (persona_id, department_id, active, created_at, updated_at)
     SELECT 
         np.id,
-        dept_id::uuid,
+        dept_id,
         true,
         NOW(),
         NOW()
@@ -223,7 +215,7 @@ link_fields AS (
     INSERT INTO persona_fields (persona_id, field_id, active, created_at, updated_at)
     SELECT 
         np.id,
-        field_id::uuid,
+        field_id,
         true,
         NOW(),
         NOW()
@@ -236,55 +228,34 @@ link_fields AS (
         updated_at = NOW()
 ),
 examples_with_index AS (
-    -- Prepare examples with their index (skip composite IDs - filtered in Python)
+    -- Prepare examples with their index (example_ids are now UUIDs)
     SELECT 
-        ex_text,
+        ex_id,
         ROW_NUMBER() OVER () - 1 as idx
     FROM params x
-    CROSS JOIN UNNEST(x.example_ids) as ex_text
+    CROSS JOIN UNNEST(x.example_ids) as ex_id
     WHERE COALESCE(array_length(x.example_ids, 1), 0) > 0
 ),
-existing_examples AS (
-    -- Find existing examples by text
-    SELECT id as example_id, example
-    FROM examples
-    WHERE example = ANY(SELECT ex_text FROM examples_with_index)
-),
-new_examples AS (
-    -- Create new examples that don't exist yet
-    INSERT INTO examples (example, created_at, updated_at)
-    SELECT DISTINCT
-        ewi.ex_text,
-        NOW(),
-        NOW()
-    FROM examples_with_index ewi
-    WHERE NOT EXISTS (
-        SELECT 1 FROM existing_examples ee WHERE ee.example = ewi.ex_text
-    )
-    RETURNING id as example_id, example
-),
-all_examples AS (
-    -- Combine existing and new examples
-    SELECT example_id, example FROM existing_examples
-    UNION ALL
-    SELECT example_id, example FROM new_examples
-),
 link_examples AS (
-    -- Link examples to persona via junction table
+    -- Link examples to persona via junction table (using provided UUIDs)
     INSERT INTO persona_examples (persona_id, example_id, idx, active, created_at)
     SELECT 
         np.id,
-        ae.example_id,
+        ewi.ex_id,
         ewi.idx,
         true,
         NOW()
     FROM new_persona np
     CROSS JOIN examples_with_index ewi
-    JOIN all_examples ae ON ae.example = ewi.ex_text
+    ON CONFLICT (persona_id, example_id) DO UPDATE SET
+        idx = EXCLUDED.idx,
+        active = true,
+        created_at = EXCLUDED.created_at
 )
 SELECT 
     np.id as persona_id,
     ap.actor_name
 FROM new_persona np
-CROSS JOIN actor_profile ap
+CROSS JOIN actor_profile ap;
+END;
 $$;

@@ -20,9 +20,10 @@ export interface ColorItem {
 }
 
 export interface ColorsProps {
-  value: string;
-  onChange: (value: string) => void;
-  draftId: string | null;
+  value: string; // Initial display value (hex code from server data)
+  resourceId: string | null; // Current resource_id (for form state)
+  onChange: (value: string) => void; // Update display value (for UI only)
+  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
   presetColors: ColorItem[];
   label?: string;
   disabled?: boolean;
@@ -32,22 +33,22 @@ export interface ColorsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
-  createDraftColorsAction?:
+  createColorsAction?:
     | ((input: {
         body: {
-          draft_id: string;
           name: string;
           description: string;
           hex_code: string;
         };
-      }) => Promise<{ color_id?: string | null; version?: number | null }>)
+      }) => Promise<{ color_id?: string | null }>)
     | undefined;
 }
 
 export function Colors({
   value,
+  resourceId,
   onChange,
-  draftId,
+  onResourceIdChange,
   presetColors,
   label = "Color",
   disabled = false,
@@ -57,7 +58,7 @@ export function Colors({
   searchPlaceholder = "Search colors...",
   showSelectedFilter = false,
   onShowSelectedChange,
-  createDraftColorsAction,
+  createColorsAction,
 }: ColorsProps) {
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -80,7 +81,7 @@ export function Colors({
       : `#${internalValue.toLowerCase()}`;
   }, [internalValue]);
 
-  // Debounced autosave
+  // Debounced resource creation
   useEffect(() => {
     // Skip on initial mount
     if (isInitialMountRef.current) {
@@ -94,8 +95,12 @@ export function Colors({
       return;
     }
 
-    // Skip if no draftId, no action, or empty value
-    if (!draftId || !createDraftColorsAction || !internalValue) {
+    // Skip if no action or empty value
+    if (!createColorsAction || !internalValue) {
+      if (!internalValue) {
+        // Clear resource ID if value is empty
+        onResourceIdChange(null);
+      }
       return;
     }
 
@@ -109,17 +114,19 @@ export function Colors({
       try {
         const hexCode = currentColor;
         const colorName = getColorName(hexCode);
-        await createDraftColorsAction({
+        const result = await createColorsAction({
           body: {
-            draft_id: draftId,
             name: colorName,
             description: `Color: ${hexCode}`,
             hex_code: hexCode,
           },
         });
+        if (result.color_id) {
+          onResourceIdChange(result.color_id);
+        }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
-        console.error("Failed to save draft color:", error);
+        console.error("Failed to create color resource:", error);
       }
     }, 1000);
 
@@ -128,12 +135,12 @@ export function Colors({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, currentColor, draftId, createDraftColorsAction]);
+  }, [internalValue, currentColor, createColorsAction, onResourceIdChange]);
 
   const handleChange = useCallback(
     (newValue: string) => {
       setInternalValue(newValue);
-      onChange(newValue);
+      onChange(newValue); // Update display value immediately for UI
     },
     [onChange]
   );

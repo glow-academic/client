@@ -2,7 +2,7 @@
  * Descriptions.tsx
  * Resource component for description textarea fields
  * Full UI component with Label + Textarea + optional AI generate button
- * Handles its own draft saving via resource-specific draft endpoint
+ * Creates resources independently and reports resource IDs to parent
  */
 
 "use client";
@@ -14,9 +14,10 @@ import { Loader2, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface DescriptionsProps {
-  value: string;
-  onChange: (value: string) => void;
-  draftId: string | null;
+  value: string; // Initial display value (from server data)
+  resourceId: string | null; // Current resource_id (for form state)
+  onChange: (value: string) => void; // Update display value (for UI only)
+  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
@@ -27,17 +28,18 @@ export interface DescriptionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  createDraftDescriptionsAction?:
+  createDescriptionsAction?:
     | ((input: {
-        body: { draft_id: string; description: string };
-      }) => Promise<{ description_id?: string | null; version?: number | null }>)
+        body: { description: string };
+      }) => Promise<{ description_id?: string | null }>)
     | undefined;
 }
 
 export function Descriptions({
   value,
+  resourceId,
   onChange,
-  draftId,
+  onResourceIdChange,
   onGenerate,
   isGenerating = false,
   label = "Description",
@@ -48,7 +50,7 @@ export function Descriptions({
   id = "description",
   "data-testid": dataTestId,
   helpText,
-  createDraftDescriptionsAction,
+  createDescriptionsAction,
 }: DescriptionsProps) {
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -61,9 +63,9 @@ export function Descriptions({
       setInternalValue(value);
       lastSavedValueRef.current = value;
     }
-  }, [value]);
+  }, [value, internalValue]);
 
-  // Debounced autosave
+  // Debounced resource creation
   useEffect(() => {
     // Skip on initial mount
     if (isInitialMountRef.current) {
@@ -77,8 +79,8 @@ export function Descriptions({
       return;
     }
 
-    // Skip if no draftId or no action
-    if (!draftId || !createDraftDescriptionsAction) {
+    // Skip if no action
+    if (!createDescriptionsAction) {
       return;
     }
 
@@ -90,15 +92,22 @@ export function Descriptions({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        await createDraftDescriptionsAction({
-          body: {
-            draft_id: draftId,
-            description: internalValue,
-          },
-        });
+        if (internalValue.trim()) {
+          const result = await createDescriptionsAction({
+            body: {
+              description: internalValue,
+            },
+          });
+          if (result.description_id) {
+            onResourceIdChange(result.description_id);
+          }
+        } else {
+          // Clear resource ID if value is empty
+          onResourceIdChange(null);
+        }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
-        console.error("Failed to save draft description:", error);
+        console.error("Failed to create description resource:", error);
       }
     }, 1000);
 
@@ -107,12 +116,12 @@ export function Descriptions({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, draftId, createDraftDescriptionsAction]);
+  }, [internalValue, createDescriptionsAction, onResourceIdChange]);
 
   const handleChange = useCallback(
     (newValue: string) => {
       setInternalValue(newValue);
-      onChange(newValue);
+      onChange(newValue); // Update display value immediately for UI
     },
     [onChange]
   );
@@ -130,7 +139,7 @@ export function Descriptions({
             variant="outline"
             size="sm"
             onClick={onGenerate}
-            disabled={disabled || isGenerating || !draftId}
+            disabled={disabled || isGenerating}
           >
             {isGenerating ? (
               <>

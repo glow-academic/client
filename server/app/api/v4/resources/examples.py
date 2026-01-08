@@ -1,4 +1,4 @@
-"""Draft create endpoint - v4 API following DHH principles."""
+"""examples endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
@@ -6,38 +6,41 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (CreateDraftApiRequest, CreateDraftApiResponse,
-                           CreateDraftSqlParams, CreateDraftSqlRow,
-                           load_sql_query)
+from app.sql.types import (
+    ExamplesApiRequest,
+    ExamplesApiResponse,
+    ExamplesSqlParams,
+    ExamplesSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/drafts/create_draft_complete.sql"
-
+SQL_PATH = "app/sql/v4/resources/examples_complete.sql"
 
 router = APIRouter()
 
 
 @router.post(
-    "/",
-    response_model=CreateDraftApiResponse,
+    "/examples",
+    response_model=ExamplesApiResponse,
     dependencies=[
         audit_activity(
-            "draft.created",
-            "{{ actor.name }} created draft",
+            "examples.created",
+            "{{ actor.name }} created examples",
         )
     ],
 )
-async def create_draft(
-    request: CreateDraftApiRequest,
+async def create_example(
+    request: ExamplesApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreateDraftApiResponse:
-    """Create a new draft."""
-    tags = ["drafts"]
+) -> ExamplesApiResponse:
+    """Create examples resource (always INSERT)."""
+    tags = ["resources", "examples"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -52,13 +55,14 @@ async def create_draft(
             )
 
         async with conn.transaction():
-            # Convert API request to SQL params (add profile_id from header)
-            params = CreateDraftSqlParams(**request.model_dump(), profile_id=profile_id)
+            # Convert API request to SQL params (use double star pattern)
+            # Frontend sends snake_case (example) - auto-generated types match SQL function signature
+            params = ExamplesSqlParams(**request.model_dump())
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
-                CreateDraftSqlRow,
+                ExamplesSqlRow,
                 await execute_sql_typed(
                     conn,
                     SQL_PATH,
@@ -66,18 +70,18 @@ async def create_draft(
                 ),
             )
 
-            if not result or not result.draft_id:
-                raise ValueError("Failed to create draft")
+            if not result or not result.example_id:
+                raise ValueError("Failed to create examples")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                draft={"id": str(result.draft_id)},
+                examples={"id": str(result.example_id)},
             )
 
         # Convert SQL result to API response (auto-generated types)
-        api_response = CreateDraftApiResponse.model_validate(result.model_dump())
+        api_response = ExamplesApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
@@ -92,7 +96,7 @@ async def create_draft(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_draft",
+            operation="create_example",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

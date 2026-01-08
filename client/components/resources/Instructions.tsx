@@ -2,7 +2,7 @@
  * Instructions.tsx
  * Resource component for instructions textarea fields
  * Full UI component with Label + Textarea + optional AI generate button
- * Handles its own draft saving via resource-specific draft endpoint
+ * Creates resources independently and reports resource IDs to parent
  */
 
 "use client";
@@ -14,9 +14,10 @@ import { Loader2, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface InstructionsProps {
-  value: string;
-  onChange: (value: string) => void;
-  draftId: string | null;
+  value: string; // Initial display value (from server data)
+  resourceId: string | null; // Current resource_id (for form state)
+  onChange: (value: string) => void; // Update display value (for UI only)
+  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
@@ -27,17 +28,18 @@ export interface InstructionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  createDraftInstructionsAction?:
+  createInstructionsAction?:
     | ((input: {
-        body: { draft_id: string; template: string };
-      }) => Promise<{ instruction_id?: string | null; version?: number | null }>)
+        body: { template: string };
+      }) => Promise<{ instruction_id?: string | null }>)
     | undefined;
 }
 
 export function Instructions({
   value,
+  resourceId,
   onChange,
-  draftId,
+  onResourceIdChange,
   onGenerate,
   isGenerating = false,
   label = "Instructions",
@@ -48,7 +50,7 @@ export function Instructions({
   id = "instructions",
   "data-testid": dataTestId,
   helpText,
-  createDraftInstructionsAction,
+  createInstructionsAction,
 }: InstructionsProps) {
   const [internalValue, setInternalValue] = useState(value);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -61,9 +63,9 @@ export function Instructions({
       setInternalValue(value);
       lastSavedValueRef.current = value;
     }
-  }, [value]);
+  }, [value, internalValue]);
 
-  // Debounced autosave
+  // Debounced resource creation
   useEffect(() => {
     // Skip on initial mount
     if (isInitialMountRef.current) {
@@ -77,8 +79,8 @@ export function Instructions({
       return;
     }
 
-    // Skip if no draftId or no action
-    if (!draftId || !createDraftInstructionsAction) {
+    // Skip if no action
+    if (!createInstructionsAction) {
       return;
     }
 
@@ -90,15 +92,22 @@ export function Instructions({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        await createDraftInstructionsAction({
-          body: {
-            draft_id: draftId,
-            template: internalValue,
-          },
-        });
+        if (internalValue.trim()) {
+          const result = await createInstructionsAction({
+            body: {
+              template: internalValue,
+            },
+          });
+          if (result.instruction_id) {
+            onResourceIdChange(result.instruction_id);
+          }
+        } else {
+          // Clear resource ID if value is empty
+          onResourceIdChange(null);
+        }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
-        console.error("Failed to save draft instructions:", error);
+        console.error("Failed to create instructions resource:", error);
       }
     }, 1000);
 
@@ -107,12 +116,12 @@ export function Instructions({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, draftId, createDraftInstructionsAction]);
+  }, [internalValue, createInstructionsAction, onResourceIdChange]);
 
   const handleChange = useCallback(
     (newValue: string) => {
       setInternalValue(newValue);
-      onChange(newValue);
+      onChange(newValue); // Update display value immediately for UI
     },
     [onChange]
   );
@@ -130,7 +139,7 @@ export function Instructions({
             variant="outline"
             size="sm"
             onClick={onGenerate}
-            disabled={disabled || isGenerating || !draftId}
+            disabled={disabled || isGenerating}
           >
             {isGenerating ? (
               <>
