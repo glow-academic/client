@@ -152,15 +152,15 @@ function PersonaNewComponent({
           return `persona_id:${String(data.persona_id)}`;
         }
         const keyFields: Record<string, unknown> = {};
-        if ("color_options" in data) {
-          keyFields["color_options"] = Array.isArray(data["color_options"])
-            ? data["color_options"].length
-            : data["color_options"];
+        if ("colors" in data) {
+          keyFields["colors"] = Array.isArray(data["colors"])
+            ? data["colors"].length
+            : data["colors"];
         }
-        if ("icon_options" in data) {
-          keyFields["icon_options"] = Array.isArray(data["icon_options"])
-            ? data["icon_options"].length
-            : data["icon_options"];
+        if ("icons" in data) {
+          keyFields["icons"] = Array.isArray(data["icons"])
+            ? data["icons"].length
+            : data["icons"];
         }
         if ("icon_suggestions" in data) {
           keyFields["icon_suggestions"] = Array.isArray(
@@ -168,13 +168,6 @@ function PersonaNewComponent({
           )
             ? data["icon_suggestions"].length
             : data["icon_suggestions"];
-        }
-        if ("valid_department_ids" in data) {
-          keyFields["valid_department_ids"] = Array.isArray(
-            data["valid_department_ids"]
-          )
-            ? data["valid_department_ids"].sort().join(",")
-            : data["valid_department_ids"];
         }
         const sortedKeys = Object.keys(keyFields).sort();
         const hash = sortedKeys
@@ -257,15 +250,15 @@ function PersonaNewComponent({
       }
       // For new personas, create stable hash from immutable fields
       const keyFields: Record<string, unknown> = {};
-      if ("color_options" in data) {
-        keyFields["color_options"] = Array.isArray(data["color_options"])
-          ? data["color_options"].length
-          : data["color_options"];
+      if ("colors" in data) {
+        keyFields["colors"] = Array.isArray(data["colors"])
+          ? data["colors"].length
+          : data["colors"];
       }
-      if ("icon_options" in data) {
-        keyFields["icon_options"] = Array.isArray(data["icon_options"])
-          ? data["icon_options"].length
-          : data["icon_options"];
+      if ("icons" in data) {
+        keyFields["icons"] = Array.isArray(data["icons"])
+          ? data["icons"].length
+          : data["icons"];
       }
       if ("icon_suggestions" in data) {
         keyFields["icon_suggestions"] = Array.isArray(data["icon_suggestions"])
@@ -693,14 +686,14 @@ function PersonaNewComponent({
     const colors =
       (
         personaData as PersonaDetailOut & {
-          color_options?: Array<{
+          colors?: Array<{
             id: string;
             name: string;
             description: string;
             hex_code: string;
           }>;
         }
-      )?.color_options || [];
+      )?.colors || [];
 
     // Convert resource format to ColorItem format
     return colors.map((c: { hex_code: string; name: string }) => ({
@@ -769,14 +762,14 @@ function PersonaNewComponent({
     () =>
       (
         personaData as PersonaDetailOut & {
-          icon_options?: Array<{
+          icons?: Array<{
             id: string;
             name: string;
             description: string;
             value: string;
           }>;
         }
-      )?.icon_options || [],
+      )?.icons || [],
     [personaData]
   );
 
@@ -838,19 +831,19 @@ function PersonaNewComponent({
 
   // Examples component manages its own mapping via exampleMapping prop
 
-  // Helper to filter examples_history based on selected departments
+  // Helper to filter example_suggestions based on selected departments
   const getExamplesHistory = useCallback(
     (departmentIds: string[] | null | undefined) => {
-      if (!personaData || !("examples_history" in personaData)) return [];
+      if (!personaData || !("example_suggestions" in personaData)) return [];
       const rawHistory =
         (
           personaData as PersonaDetailOut & {
-            examples_history?: Array<{
+            example_suggestions?: Array<{
               example: string;
               department_ids?: string[];
             }>;
           }
-        )?.examples_history || [];
+        )?.example_suggestions || [];
       const selectedDeptIds = departmentIds || [];
 
       // Convert to array of strings for autocomplete
@@ -974,15 +967,16 @@ function PersonaNewComponent({
       }
 
       // Transform department IDs for submit (database handles superadmin logic)
+      // Derive valid_department_ids from departments array
+      const validDepartmentIds =
+        personaData?.departments
+          ?.map((d) => d.department_id)
+          .filter((id): id is string => id !== null) || [];
       const finalDepartmentIds =
         transformDepartmentIdsForSubmit(
           formState.department_ids || [],
           false, // Always false - database handles superadmin logic via show_departments flag
-          (
-            personaData as PersonaDetailOut & {
-              valid_department_ids?: string[];
-            }
-          )?.valid_department_ids || []
+          validDepartmentIds
         ) ?? [];
 
       // Ensure profileId exists - required for API calls

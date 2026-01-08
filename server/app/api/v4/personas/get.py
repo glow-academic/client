@@ -116,8 +116,11 @@ async def get_persona(
 
         # Conditional validation based on mode
         if persona_id is None:
-            # New mode: check for valid departments
-            if not result.valid_department_ids:
+            # New mode: check for valid departments (derive from departments array)
+            valid_department_ids = [
+                d.department_id for d in result.departments if d.department_id
+            ]
+            if not valid_department_ids:
                 raise HTTPException(
                     status_code=400, detail="No accessible departments found for user"
                 )
