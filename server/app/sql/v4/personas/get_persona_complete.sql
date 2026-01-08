@@ -128,8 +128,7 @@ CREATE OR REPLACE FUNCTION api_get_persona_v4(
     icon_show_selected boolean DEFAULT NULL,
     current_color text DEFAULT NULL,
     current_icon text DEFAULT NULL,
-    draft_id uuid DEFAULT NULL,
-    department_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     -- Common fields (always returned)
