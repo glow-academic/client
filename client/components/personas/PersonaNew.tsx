@@ -35,11 +35,11 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { ParameterSelector } from "@/components/parameters/ParameterSelector";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Examples } from "@/components/resources/Examples";
+import { Fields } from "@/components/resources/Fields";
 import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
@@ -133,8 +133,6 @@ function PersonaNewComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
 
   // Generation state for AI workflows
   const [isGeneratingName, setIsGeneratingName] = useState(false);
@@ -309,34 +307,6 @@ function PersonaNewComponent({
   }, [isEditMode, personaDetail, personaDetailDefault, personaDataId]);
 
   const personaData = stablePersonaDataRef.current.data;
-
-  // Convert departments array to department_mapping Record (for GenericPicker)
-  const departmentMapping = useMemo(() => {
-    // Check if department_mapping already exists (edit mode)
-    if (
-      personaData &&
-      "department_mapping" in personaData &&
-      (
-        personaData as PersonaDetailOut & {
-          department_mapping?: Record<string, unknown>;
-        }
-      ).department_mapping
-    ) {
-      return (
-        (
-          personaData as PersonaDetailOut & {
-            department_mapping?: Record<
-              string,
-              { id: string; name: string; description?: string }
-            >;
-          }
-        ).department_mapping || {}
-      );
-    }
-    // Note: departments array only contains IDs, not full data
-    // Use department_mapping if available, otherwise return empty mapping
-    return {};
-  }, [personaData]);
 
   // Inline parsers for URL-backed state (navigation/search params only - form fields moved to local state)
   const personaSearchParamsClient = {
@@ -685,8 +655,7 @@ function PersonaNewComponent({
           key === "icon" ||
           key === "active" ||
           key === "departmentIds" ||
-          key === "parameterIds" ||
-          key === "parameterFieldIds" ||
+          key === "field_ids" ||
           key === "examples"
         ) {
           formUpdates[key as keyof typeof formState] = value as never;
@@ -1003,11 +972,11 @@ function PersonaNewComponent({
         throw new Error("Instructions are required");
       }
 
-      // Transform department IDs for submit (non-superadmin: empty -> all valid departments)
+      // Transform department IDs for submit (database handles superadmin logic)
       const finalDepartmentIds =
         transformDepartmentIdsForSubmit(
           formState.department_ids || [],
-          isSuperadmin,
+          false, // Always false - database handles superadmin logic via show_departments flag
           (
             personaData as PersonaDetailOut & {
               valid_department_ids?: string[];
@@ -1056,7 +1025,6 @@ function PersonaNewComponent({
       formState,
       isEditMode,
       personaId,
-      isSuperadmin,
       personaData,
       effectiveProfile?.id,
       savePersonaAction,
@@ -1105,7 +1073,7 @@ function PersonaNewComponent({
           "name",
           "description",
           "departmentIds",
-          "parameterFieldIds",
+          "field_ids",
           "active",
         ],
       },
@@ -1142,8 +1110,7 @@ function PersonaNewComponent({
       "instructions",
       "active",
       "departmentIds",
-      "parameterIds",
-      "parameterFieldIds",
+      "field_ids",
       "examples",
     ],
     []
@@ -1241,7 +1208,7 @@ function PersonaNewComponent({
                 "name",
                 "description",
                 "departmentIds",
-                "parameterFieldIds",
+                "field_ids",
                 "active",
               ]}
               {...(onReset ? { onReset } : {})}
@@ -1335,93 +1302,56 @@ function PersonaNewComponent({
                 />
 
                 {/* Department Selection */}
-                {personaData?.valid_department_ids &&
-                personaData.valid_department_ids.length > 1 ? (
+                {personaData &&
+                (
+                  personaData as PersonaDetailOut & {
+                    show_departments?: boolean;
+                  }
+                )?.show_departments ? (
                   <Departments
                     departmentIds={formState.department_ids}
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, department_ids: ids }))
                     }
-                    validDepartmentIds={
+                    departments={
                       (
                         personaData as PersonaDetailOut & {
-                          valid_department_ids?: string[];
+                          departments?: Array<{
+                            department_id: string;
+                            name: string;
+                            description?: string;
+                          }>;
                         }
-                      )?.valid_department_ids || []
+                      )?.departments || []
                     }
-                    departmentMapping={departmentMapping}
                     disabled={isReadonly}
                   />
                 ) : null}
 
-                {/* Required Parameters */}
+                {/* Fields Selection */}
                 {personaData &&
-                "linked_parameter_ids" in personaData &&
-                (
-                  personaData as PersonaDetailOut & {
-                    linked_parameter_ids?: string[];
-                  }
-                ).linked_parameter_ids &&
-                (
-                  personaData as PersonaDetailOut & {
-                    linked_parameter_ids?: string[];
-                  }
-                ).linked_parameter_ids!.length > 0 ? (
-                  <div className="space-y-4">
-                    <ParameterSelector
-                      parameterMapping={
-                        (
-                          personaData as PersonaDetailOut & {
-                            parameter_mapping?: Record<
-                              string,
-                              {
-                                name: string;
-                                description: string;
-                                numerical: boolean;
-                                document_parameter: boolean;
-                                persona_parameter: boolean;
-                              }
-                            >;
-                          }
-                        ).parameter_mapping || {}
-                      }
-                      fieldMapping={
-                        (
-                          personaData as PersonaDetailOut & {
-                            field_mapping?: Record<
-                              string,
-                              {
-                                name: string;
-                                description: string;
-                                parameter_id: string;
-                                parameter_name: string;
-                                value: string;
-                              }
-                            >;
-                          }
-                        ).field_mapping || {}
-                      }
-                      validParameterItemIds={
-                        (
-                          personaData as PersonaDetailOut & {
-                            valid_parameter_item_ids?: string[];
-                          }
-                        ).valid_parameter_item_ids || []
-                      }
-                      selectedParameterItemIds={
-                        (stepFormData["parameterFieldIds"] as
-                          | string[]
-                          | null
-                          | undefined) || []
-                      }
-                      onParameterItemIdsChange={(ids) =>
-                        setStepFormData({
-                          parameterFieldIds: ids.length > 0 ? ids : null,
-                        })
-                      }
-                      disabled={isReadonly}
-                    />
-                  </div>
+                (personaData as PersonaDetailOut & { show_fields?: boolean })
+                  ?.show_fields ? (
+                  <Fields
+                    fieldIds={formState.field_ids}
+                    onChange={(ids) =>
+                      setFormState((prev) => ({ ...prev, field_ids: ids }))
+                    }
+                    fields={
+                      (
+                        personaData as PersonaDetailOut & {
+                          fields?: Array<{
+                            field_id: string;
+                            name: string;
+                            description?: string;
+                          }>;
+                        }
+                      )?.fields || []
+                    }
+                    label="Fields"
+                    disabled={isReadonly}
+                    description="Select fields for this persona"
+                  />
                 ) : null}
 
                 {/* Active Switch - using Flags resource component */}
@@ -1754,7 +1684,6 @@ function PersonaNewComponent({
     },
     [
       personaData,
-      departmentMapping,
       isReadonly,
       isEditMode,
       presetColors,

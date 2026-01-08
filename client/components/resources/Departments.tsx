@@ -14,13 +14,13 @@ import { useCallback, useMemo } from "react";
 export interface DepartmentItem {
   id: string;
   name: string;
+  description?: string;
 }
 
 export interface DepartmentsProps {
   departmentIds: string[]; // Current department resource IDs from form state
   onChange: (ids: string[]) => void; // Update department_ids in form state
-  validDepartmentIds: string[]; // Valid department IDs user can select
-  departmentMapping: Record<string, DepartmentItem>; // Mapping of department_id -> {id, name}
+  departments: Array<{ department_id: string; name: string; description?: string }>; // Array from SQL (database already filtered)
   label?: string;
   disabled?: boolean;
   id?: string;
@@ -31,20 +31,21 @@ export interface DepartmentsProps {
 export function Departments({
   departmentIds,
   onChange,
-  validDepartmentIds,
-  departmentMapping,
+  departments, // Direct array from SQL, no mapping needed
   label = "Departments",
   disabled = false,
   id = "departments",
   placeholder = "Select departments...",
   description,
 }: DepartmentsProps) {
-  // Convert departmentMapping to array format for GenericPicker
+  // Convert departments array to DepartmentItem format for GenericPicker
   const departmentItems = useMemo(() => {
-    return Object.values(departmentMapping).filter((dept) =>
-      validDepartmentIds.includes(dept.id)
-    );
-  }, [departmentMapping, validDepartmentIds]);
+    return departments.map((d) => ({
+      id: d.department_id,
+      name: d.name,
+      description: d.description,
+    }));
+  }, [departments]);
 
   const handleSelect = useCallback(
     (ids: string[]) => {
@@ -67,7 +68,7 @@ export function Departments({
       )}
       <GenericPicker<DepartmentItem>
         items={departmentItems}
-        itemIds={validDepartmentIds}
+        itemIds={departments.map((d) => d.department_id)} // All department IDs from array
         selectedIds={departmentIds}
         onSelect={handleSelect}
         multiSelect={true}

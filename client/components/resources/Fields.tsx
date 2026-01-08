@@ -20,8 +20,7 @@ export interface FieldItem {
 export interface FieldsProps {
   fieldIds: string[]; // Current field resource IDs from form state
   onChange: (ids: string[]) => void; // Update field_ids in form state
-  validFieldIds: string[]; // Valid field IDs user can select
-  fieldMapping: Record<string, FieldItem>; // Mapping of field_id -> {id, name, description}
+  fields: Array<{ field_id: string; name: string; description?: string }>; // Array from SQL (database already filtered)
   label?: string;
   disabled?: boolean;
   id?: string;
@@ -32,20 +31,21 @@ export interface FieldsProps {
 export function Fields({
   fieldIds,
   onChange,
-  validFieldIds,
-  fieldMapping,
+  fields, // Direct array from SQL, no mapping needed
   label = "Fields",
   disabled = false,
   id = "fields",
   placeholder = "Select fields...",
   description,
 }: FieldsProps) {
-  // Convert fieldMapping to array format for GenericPicker
+  // Convert fields array to FieldItem format for GenericPicker
   const fieldItems = useMemo(() => {
-    return Object.values(fieldMapping).filter((field) =>
-      validFieldIds.includes(field.id)
-    );
-  }, [fieldMapping, validFieldIds]);
+    return fields.map((f) => ({
+      id: f.field_id,
+      name: f.name,
+      description: f.description,
+    }));
+  }, [fields]);
 
   const handleSelect = useCallback(
     (ids: string[]) => {
@@ -68,7 +68,7 @@ export function Fields({
       )}
       <GenericPicker<FieldItem>
         items={fieldItems}
-        itemIds={validFieldIds}
+        itemIds={fields.map((f) => f.field_id)} // All field IDs from array
         selectedIds={fieldIds}
         onSelect={handleSelect}
         multiSelect={true}

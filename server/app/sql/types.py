@@ -15481,6 +15481,8 @@ class QGetPersonaV4ColorResource(BaseModel):
 class QGetPersonaV4Department(BaseModel):
 
     department_id: UUID | None
+    name: str | None
+    description: str | None
 
 
 
@@ -15512,6 +15514,8 @@ class QGetPersonaV4ExampleHistoryItem(BaseModel):
 class QGetPersonaV4Field(BaseModel):
 
     field_id: UUID | None
+    name: str | None
+    description: str | None
 
 
 
@@ -15604,6 +15608,8 @@ class GetPersonaSqlRow(BaseModel):
     examples_history: list[QGetPersonaV4ExampleHistoryItem] | None = None
     user_role: str | None = None
     primary_department_id: UUID | None = None
+    show_departments: bool | None = None
+    show_fields: bool | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
     color_id: UUID | None = None
@@ -15666,6 +15672,8 @@ class GetPersonaApiResponse(BaseModel):
     examples_history: list[QGetPersonaV4ExampleHistoryItem] | None = None
     user_role: str | None = None
     primary_department_id: UUID | None = None
+    show_departments: bool | None = None
+    show_fields: bool | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
     color_id: UUID | None = None

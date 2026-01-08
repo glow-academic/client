@@ -35,7 +35,9 @@ END $$;
 
 -- 3) Recreate types
 CREATE TYPE types.q_get_persona_v4_department AS (
-    department_id uuid
+    department_id uuid,
+    name text,
+    description text
 );
 
 CREATE TYPE types.q_get_persona_v4_agent AS (
@@ -50,7 +52,9 @@ CREATE TYPE types.q_get_persona_v4_parameter AS (
 );
 
 CREATE TYPE types.q_get_persona_v4_field AS (
-    field_id uuid
+    field_id uuid,
+    name text,
+    description text
 );
 
 CREATE TYPE types.q_get_persona_v4_example AS (
@@ -171,6 +175,9 @@ RETURNS TABLE (
     -- New-only fields (NULL for detail)
     user_role text,
     primary_department_id uuid,
+    -- UI flags (always returned)
+    show_departments boolean,
+    show_fields boolean,
     -- Resource fields (always returned)
     name_id uuid,
     description_id uuid,
@@ -366,6 +373,20 @@ field_mapping_data AS (
 valid_parameter_item_ids_data AS (
     SELECT ARRAY_AGG(field_id ORDER BY name) as valid_parameter_item_ids
     FROM field_mapping_data
+),
+ui_flags AS (
+    SELECT 
+        CASE 
+            WHEN up.role = 'superadmin'::profile_role THEN false
+            WHEN (SELECT COUNT(*) FROM department_mapping_data) > 1 THEN true
+            ELSE false
+        END as show_departments,
+        CASE 
+            WHEN (SELECT COUNT(*) FROM field_mapping_data) > 0 THEN true
+            ELSE false
+        END as show_fields
+    FROM params x
+    CROSS JOIN user_profile up
 ),
 -- Conditional: Parameter field IDs only for detail
 parameter_field_ids_data AS (
@@ -692,10 +713,10 @@ SELECT
     COALESCE(vaid.valid_agent_ids, ARRAY[]::uuid[]) as valid_agent_ids,
     COALESCE(vpid.valid_parameter_ids, ARRAY[]::uuid[]) as valid_parameter_ids,
     COALESCE(vpiid.valid_parameter_item_ids, ARRAY[]::uuid[]) as valid_parameter_item_ids,
-    -- Aggregate departments separately (only IDs)
+    -- Aggregate departments separately (full data)
     COALESCE(
         (SELECT ARRAY_AGG(
-            ROW(dmd.department_id)::types.q_get_persona_v4_department
+            (dmd.department_id, dmd.name, dmd.description)::types.q_get_persona_v4_department
             ORDER BY dmd.name
         ) FROM department_mapping_data dmd),
         '{}'::types.q_get_persona_v4_department[]
@@ -716,10 +737,10 @@ SELECT
         ) FROM parameter_mapping_data pmd),
         '{}'::types.q_get_persona_v4_parameter[]
     ) as parameters,
-    -- Aggregate fields separately (only IDs)
+    -- Aggregate fields separately (full data)
     COALESCE(
         (SELECT ARRAY_AGG(
-            ROW(fmd.field_id)::types.q_get_persona_v4_field
+            (fmd.field_id, fmd.name, fmd.description)::types.q_get_persona_v4_field
             ORDER BY fmd.name
         ) FROM field_mapping_data fmd),
         '{}'::types.q_get_persona_v4_field[]
@@ -848,15 +869,15 @@ SELECT
         )
     END as examples,
     COALESCE((SELECT examples_history FROM examples_history_data), '{}'::types.q_get_persona_v4_example_history_item[]) as examples_history,
-    -- New-only fields (NULL for detail)
-    CASE 
-        WHEN (SELECT persona_id FROM params) IS NULL THEN up.role::text
-        ELSE NULL::text
-    END as user_role,
+    -- User role (return for both modes)
+    up.role::text as user_role,
     CASE 
         WHEN (SELECT persona_id FROM params) IS NULL THEN (SELECT department_id FROM primary_department_id_data)
         ELSE NULL::uuid
     END as primary_department_id,
+    -- UI flags
+    uf.show_departments,
+    uf.show_fields,
     -- Resource IDs for form state
     (SELECT name_id FROM name_resource_data) as name_id,
     (SELECT description_id FROM description_resource_data) as description_id,
@@ -893,4 +914,5 @@ CROSS JOIN icon_suggestions_data isd
 CROSS JOIN name_suggestions_data nsd
 CROSS JOIN description_suggestions_data dsd
 CROSS JOIN instructions_suggestions_data insd
+CROSS JOIN ui_flags uf
 $$;
