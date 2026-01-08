@@ -1,4 +1,4 @@
--- Get persona detail with agents, departments, and access control
+-- Unified get persona function - handles both new (persona_id = NULL) and detail (persona_id provided)
 -- Converted to function with composite types
 -- 1) Drop function first (breaks dependency on types)
 -- Drop all versions of the function using DO block to handle signature variations
@@ -9,10 +9,10 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'api_get_persona_detail_v4'
+        WHERE proname = 'api_get_persona_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_get_persona_detail_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_get_persona_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
@@ -26,7 +26,7 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'q_get_persona_detail_v4_%'
+        WHERE typname LIKE 'q_get_persona_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -34,80 +34,80 @@ BEGIN
 END $$;
 
 -- 3) Recreate types
-CREATE TYPE types.q_get_persona_detail_v4_department AS (
+CREATE TYPE types.q_get_persona_v4_department AS (
     department_id uuid
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_agent AS (
+CREATE TYPE types.q_get_persona_v4_agent AS (
     agent_id uuid,
     name text,
     description text,
     roles text[]
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_parameter AS (
+CREATE TYPE types.q_get_persona_v4_parameter AS (
     parameter_id uuid
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_field AS (
+CREATE TYPE types.q_get_persona_v4_field AS (
     field_id uuid
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_example AS (
+CREATE TYPE types.q_get_persona_v4_example AS (
     example text,
     idx integer
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_example_history_item AS (
+CREATE TYPE types.q_get_persona_v4_example_history_item AS (
     example text,
     department_ids text[]
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_color AS (
+CREATE TYPE types.q_get_persona_v4_color AS (
     hex text,
     name text
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_name_resource AS (
+CREATE TYPE types.q_get_persona_v4_name_resource AS (
     id uuid,
     name text
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_color_resource AS (
+CREATE TYPE types.q_get_persona_v4_color_resource AS (
     id uuid,
     name text,
     description text,
     hex_code text
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_flag_resource AS (
+CREATE TYPE types.q_get_persona_v4_flag_resource AS (
     id uuid,
     name text,
     description text,
     icon_id uuid
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_icon_resource AS (
+CREATE TYPE types.q_get_persona_v4_icon_resource AS (
     id uuid,
     name text,
     description text,
     value text
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_description_resource AS (
+CREATE TYPE types.q_get_persona_v4_description_resource AS (
     id uuid,
     description text
 );
 
-CREATE TYPE types.q_get_persona_detail_v4_instructions_resource AS (
+CREATE TYPE types.q_get_persona_v4_instructions_resource AS (
     id uuid,
     template text
 );
 
 -- 4) Recreate function
-CREATE OR REPLACE FUNCTION api_get_persona_detail_v4(
-    persona_id uuid,
+CREATE OR REPLACE FUNCTION api_get_persona_v4(
     profile_id uuid,
+    persona_id uuid DEFAULT NULL,
     color_search text DEFAULT NULL,
     icon_search text DEFAULT NULL,
     color_show_selected boolean DEFAULT NULL,
@@ -117,6 +117,20 @@ CREATE OR REPLACE FUNCTION api_get_persona_detail_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
+    -- Common fields (always returned)
+    actor_name text,
+    valid_department_ids uuid[],
+    valid_agent_ids uuid[],
+    valid_parameter_ids uuid[],
+    valid_parameter_item_ids uuid[],
+    departments types.q_get_persona_v4_department[],
+    agents types.q_get_persona_v4_agent[],
+    parameters types.q_get_persona_v4_parameter[],
+    fields types.q_get_persona_v4_field[],
+    preset_colors types.q_get_persona_v4_color[],
+    suggested_icons text[],
+    valid_icons text[],
+    -- Conditional fields (different for new vs detail)
     persona_exists boolean,
     name text,
     description text,
@@ -130,39 +144,29 @@ RETURNS TABLE (
     can_edit boolean,
     can_duplicate boolean,
     can_delete boolean,
-    valid_department_ids uuid[],
-    valid_agent_ids uuid[],
-    valid_parameter_ids uuid[],
-    valid_parameter_item_ids uuid[],
+    -- Detail-only fields (NULL for new)
     linked_parameter_ids uuid[],
     parameter_field_ids uuid[],
     example_ids uuid[],
-    actor_name text,
-    departments types.q_get_persona_detail_v4_department[],
-    agents types.q_get_persona_detail_v4_agent[],
-    parameters types.q_get_persona_detail_v4_parameter[],
-    fields types.q_get_persona_detail_v4_field[],
-    examples types.q_get_persona_detail_v4_example[],
-    examples_history types.q_get_persona_detail_v4_example_history_item[],
-    preset_colors types.q_get_persona_detail_v4_color[],
-    suggested_icons text[],
-    valid_icons text[],
-    -- Resource IDs for form state
+    examples types.q_get_persona_v4_example[],
+    examples_history types.q_get_persona_v4_example_history_item[],
+    -- New-only fields (NULL for detail)
+    user_role text,
+    primary_department_id uuid,
+    -- Resource fields (always returned)
     name_id uuid,
     description_id uuid,
     color_id uuid,
     icon_id uuid,
     instructions_id uuid,
     active_flag_id uuid,
-    -- Resource composite types
-    name_resource types.q_get_persona_detail_v4_name_resource,
-    description_resource types.q_get_persona_detail_v4_description_resource,
-    color_resource types.q_get_persona_detail_v4_color_resource,
-    icon_resource types.q_get_persona_detail_v4_icon_resource,
-    instructions_resource types.q_get_persona_detail_v4_instructions_resource,
-    flag_resource types.q_get_persona_detail_v4_flag_resource,
-    -- Preset colors as resource array
-    preset_colors_resources types.q_get_persona_detail_v4_color_resource[]
+    name_resource types.q_get_persona_v4_name_resource,
+    description_resource types.q_get_persona_v4_description_resource,
+    color_resource types.q_get_persona_v4_color_resource,
+    icon_resource types.q_get_persona_v4_icon_resource,
+    instructions_resource types.q_get_persona_v4_instructions_resource,
+    flag_resource types.q_get_persona_v4_flag_resource,
+    preset_colors_resources types.q_get_persona_v4_color_resource[]
 )
 LANGUAGE sql
 STABLE
@@ -179,19 +183,21 @@ WITH params AS (
         current_icon AS current_icon,
         draft_id AS draft_id
 ),
+-- Conditional: Only check persona existence if persona_id provided
+persona_exists_check AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN NULL::boolean
+            ELSE EXISTS(SELECT 1 FROM personas WHERE id = (SELECT persona_id FROM params))::boolean
+        END as persona_exists
+),
 -- Draft data is now stored in draft_* junction tables, not in payload
--- TODO: Query draft_names, draft_colors, etc. to get draft data
 draft_payload_data AS (
     SELECT 
         NULL::jsonb as payload
     FROM params x
     WHERE x.draft_id IS NOT NULL
     LIMIT 1
-),
-persona_exists_check AS (
-    SELECT EXISTS(
-        SELECT 1 FROM personas WHERE id = (SELECT persona_id FROM params)
-    )::boolean as persona_exists
 ),
 user_profile AS (
     SELECT 
@@ -201,16 +207,18 @@ user_profile AS (
     JOIN profiles p ON p.id = x.profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT DISTINCT pd.department_id
     FROM params x
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
+-- Conditional: Get persona data only if persona_id provided
 persona_departments_data AS (
     SELECT 
         pd.persona_id,
         ARRAY_AGG(pd.department_id ORDER BY pd.created_at) as department_ids
-    FROM persona_departments pd
-    WHERE pd.persona_id = (SELECT persona_id FROM params) AND pd.active = true
+    FROM params x
+    JOIN persona_departments pd ON pd.persona_id = x.persona_id AND pd.active = true
+    WHERE x.persona_id IS NOT NULL
     GROUP BY pd.persona_id
 ),
 persona_department_access_check AS (
@@ -234,11 +242,12 @@ persona_department_access_check AS (
     FROM params x
     JOIN personas p ON p.id = x.persona_id
     CROSS JOIN user_profile up
+    WHERE x.persona_id IS NOT NULL
 ),
 persona_data AS (
     SELECT 
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
+        (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE) as active,
         (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
         (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
@@ -248,6 +257,7 @@ persona_data AS (
     JOIN personas p ON p.id = x.persona_id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     INNER JOIN persona_department_access_check pdac ON pdac.persona_id = p.id AND pdac.has_access = true
+    WHERE x.persona_id IS NOT NULL
 ),
 department_mapping_data AS (
     SELECT 
@@ -262,39 +272,42 @@ valid_department_ids_data AS (
     SELECT ARRAY_AGG(department_id ORDER BY name) as valid_department_ids
     FROM department_mapping_data
 ),
+primary_department_id_data AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.is_primary = TRUE
+    LIMIT 1
+),
 agent_mapping_data AS (
     SELECT 
         a.id as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
         ARRAY[COALESCE(da.artifact::text, '')] as roles
-    FROM agents a
+    FROM params x
+    JOIN agents a ON EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     JOIN agent_domains adom ON adom.agent_id = a.id
-    JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
-    AND da.artifact IN (CAST('scenario' AS artifacts), CAST('message' AS artifacts))
-    AND (
-        EXISTS (
-            SELECT 1 FROM agent_departments ad 
-            WHERE ad.agent_id = a.id 
-            AND ad.active = true 
-            AND ad.department_id IN (SELECT department_id FROM user_departments)
-        )
-        OR NOT EXISTS (
-            SELECT 1 FROM agent_departments ad2 
-            WHERE ad2.agent_id = a.id 
-            AND ad2.active = true
-        )
-    )
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact IN (CAST('scenario' AS artifacts), CAST('message' AS artifacts))
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), da.artifact
+    HAVING 
+        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
+        OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
 ),
 valid_agent_ids_data AS (
-    SELECT ARRAY_AGG(agent_id) as valid_agent_ids
+    SELECT ARRAY_AGG(agent_id ORDER BY name) as valid_agent_ids
     FROM agent_mapping_data
 ),
+-- Conditional: Usage data only for detail
 usage_data AS (
-    SELECT COUNT(*) as usage_count
+    SELECT 
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN 0::bigint
+            ELSE COUNT(*)::bigint
+        END as usage_count
     FROM params x
-    JOIN scenario_personas sp ON sp.persona_id = x.persona_id AND sp.active = true
+    LEFT JOIN scenario_personas sp ON sp.persona_id = x.persona_id AND sp.active = true
+    WHERE x.persona_id IS NOT NULL
 ),
 parameter_mapping_data AS (
     SELECT 
@@ -315,7 +328,11 @@ valid_parameter_ids_data AS (
     FROM parameter_mapping_data
 ),
 linked_parameter_ids_data AS (
-    SELECT ARRAY[]::uuid[] as linked_parameter_ids
+    SELECT 
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE ARRAY[]::uuid[]
+        END as linked_parameter_ids
 ),
 field_mapping_data AS (
     SELECT 
@@ -333,18 +350,28 @@ valid_parameter_item_ids_data AS (
     SELECT ARRAY_AGG(field_id ORDER BY name) as valid_parameter_item_ids
     FROM field_mapping_data
 ),
+-- Conditional: Parameter field IDs only for detail
 parameter_field_ids_data AS (
     SELECT 
-        ARRAY_AGG(pf.field_id ORDER BY pf.created_at) as parameter_field_ids
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE ARRAY_AGG(pf.field_id ORDER BY pf.created_at)
+        END as parameter_field_ids
     FROM params x
-    JOIN persona_fields pf ON pf.persona_id = x.persona_id AND pf.active = true
+    LEFT JOIN persona_fields pf ON pf.persona_id = x.persona_id AND pf.active = true
+    WHERE x.persona_id IS NOT NULL
 ),
+-- Conditional: Examples only for detail
 persona_examples_data AS (
     SELECT 
-        ARRAY_AGG(e.id ORDER BY pe.idx) as example_ids
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE ARRAY_AGG(e.id ORDER BY pe.idx)
+        END as example_ids
     FROM params x
-    JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
-    JOIN examples e ON e.id = pe.example_id
+    LEFT JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
+    LEFT JOIN examples e ON e.id = pe.example_id
+    WHERE x.persona_id IS NOT NULL
 ),
 example_mapping_data AS (
     SELECT 
@@ -353,6 +380,7 @@ example_mapping_data AS (
     FROM params x
     JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
     JOIN examples e ON e.id = pe.example_id
+    WHERE x.persona_id IS NOT NULL
     ORDER BY pe.idx
 ),
 accessible_personas AS (
@@ -361,11 +389,12 @@ accessible_personas AS (
     JOIN personas p ON true
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
     CROSS JOIN user_profile up
-    WHERE (
+    WHERE x.persona_id IS NOT NULL
+      AND (
         up.role = 'superadmin'::profile_role
         OR pd.department_id IN (SELECT department_id FROM user_departments)
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
-    )
+      )
 ),
 examples_with_departments AS (
     SELECT 
@@ -384,16 +413,20 @@ examples_with_departments AS (
     GROUP BY e.example
 ),
 examples_history_data AS (
-    SELECT COALESCE(
-        (
-            SELECT ARRAY_AGG(
-                (example, department_ids)::types.q_get_persona_detail_v4_example_history_item
-                ORDER BY example
+    SELECT 
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN '{}'::types.q_get_persona_v4_example_history_item[]
+            ELSE COALESCE(
+                (
+                    SELECT ARRAY_AGG(
+                        (example, department_ids)::types.q_get_persona_v4_example_history_item
+                        ORDER BY example
+                    )
+                    FROM examples_with_departments
+                ),
+                '{}'::types.q_get_persona_v4_example_history_item[]
             )
-            FROM examples_with_departments
-        ),
-        '{}'::types.q_get_persona_detail_v4_example_history_item[]
-    ) as examples_history
+        END as examples_history
 ),
 permissions_data AS (
     SELECT 
@@ -401,23 +434,41 @@ permissions_data AS (
         ud.usage_count,
         up.role as user_role,
         CASE 
-            WHEN pd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN ud.usage_count > 0 THEN false
-            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
-            ELSE false
+            WHEN (SELECT persona_id FROM params) IS NULL THEN
+                -- New mode permissions
+                CASE 
+                    WHEN up.role = 'superadmin' THEN true
+                    WHEN (SELECT department_id FROM primary_department_id_data) IS NOT NULL THEN true
+                    ELSE false
+                END
+            ELSE
+                -- Detail mode permissions
+                CASE 
+                    WHEN pd.department_ids IS NULL AND up.role != 'superadmin' THEN false
+                    WHEN ud.usage_count > 0 THEN false
+                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                    ELSE false
+                END
         END as can_edit,
-        true as can_duplicate,
         CASE 
-            WHEN pd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-            WHEN ud.usage_count > 0 THEN false
-            WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
-            ELSE false
+            WHEN (SELECT persona_id FROM params) IS NULL THEN false
+            ELSE true
+        END as can_duplicate,
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN false
+            ELSE CASE 
+                WHEN pd.department_ids IS NULL AND up.role != 'superadmin' THEN false
+                WHEN ud.usage_count > 0 THEN false
+                WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                ELSE false
+            END
         END as can_delete
-    FROM persona_data pd
+    FROM params x
+    LEFT JOIN persona_data pd ON true
     CROSS JOIN usage_data ud
     CROSS JOIN user_profile up
 ),
--- All preset colors (hardcoded - matches detail.py)
+-- All preset colors (use detail version which has more colors)
 all_preset_colors AS (
     SELECT * FROM (VALUES
         ('#ef4444', 'Red'),
@@ -456,7 +507,7 @@ preset_colors_filtered AS (
             UPPER(apc.hex) = UPPER(COALESCE(p.current_color, ''))
         )
 ),
--- All suggested icons (hardcoded - matches detail.py)
+-- All suggested icons (use detail version which has more icons)
 all_suggested_icons AS (
     SELECT unnest(ARRAY['Brain', 'User', 'Users', 'Sparkles', 'Zap', 'Heart', 'Star', 'MessageSquare', 'Bot', 'GraduationCap']) AS icon_name
 ),
@@ -476,7 +527,7 @@ suggested_icons_filtered AS (
             LOWER(asi.icon_name) = LOWER(COALESCE(p.current_icon, ''))
         )
 ),
--- All valid icons (hardcoded - matches detail.py)
+-- All valid icons (use detail version which has more icons)
 all_valid_icons AS (
     SELECT unnest(ARRAY[
         'Brain', 'User', 'Users', 'Sparkles', 'Zap', 'Heart', 'Star', 'MessageSquare', 'Bot', 'GraduationCap',
@@ -508,7 +559,7 @@ name_resource_data AS (
             (SELECT pn.name_id FROM persona_names pn WHERE pn.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as name_id,
         (
-            SELECT ROW(n.id, n.name)::types.q_get_persona_detail_v4_name_resource 
+            SELECT ROW(n.id, n.name)::types.q_get_persona_v4_name_resource 
             FROM (
                 SELECT n.id, n.name, 1 as priority
                 FROM draft_names dn 
@@ -524,6 +575,7 @@ name_resource_data AS (
             LIMIT 1
         ) as name_resource
     FROM params
+    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 description_resource_data AS (
     SELECT 
@@ -531,9 +583,10 @@ description_resource_data AS (
             (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pd.description_id FROM persona_descriptions pd WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description)::types.q_get_persona_detail_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
-        (SELECT ROW(d.id, d.description)::types.q_get_persona_detail_v4_description_resource FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_description_resource
+        (SELECT ROW(d.id, d.description)::types.q_get_persona_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description)::types.q_get_persona_v4_description_resource FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_description_resource
     FROM params
+    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 color_resource_data AS (
     SELECT 
@@ -541,9 +594,10 @@ color_resource_data AS (
             (SELECT dc.colors_id FROM draft_colors dc WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pc.color_id FROM persona_colors pc WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as color_id,
-        (SELECT ROW(c.id, c.name, c.description, c.hex_code)::types.q_get_persona_detail_v4_color_resource FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_color_resource,
-        (SELECT ROW(c.id, c.name, c.description, c.hex_code)::types.q_get_persona_detail_v4_color_resource FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_color_resource
+        (SELECT ROW(c.id, c.name, c.description, c.hex_code)::types.q_get_persona_v4_color_resource FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_color_resource,
+        (SELECT ROW(c.id, c.name, c.description, c.hex_code)::types.q_get_persona_v4_color_resource FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_color_resource
     FROM params
+    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 icon_resource_data AS (
     SELECT 
@@ -551,9 +605,10 @@ icon_resource_data AS (
             (SELECT di.icons_id FROM draft_icons di WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pi.icon_id FROM persona_icons pi WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as icon_id,
-        (SELECT ROW(i.id, i.name, i.description, i.value)::types.q_get_persona_detail_v4_icon_resource FROM draft_icons di JOIN icons i ON di.icons_id = i.id WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_icon_resource,
-        (SELECT ROW(i.id, i.name, i.description, i.value)::types.q_get_persona_detail_v4_icon_resource FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_icon_resource
+        (SELECT ROW(i.id, i.name, i.description, i.value)::types.q_get_persona_v4_icon_resource FROM draft_icons di JOIN icons i ON di.icons_id = i.id WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_icon_resource,
+        (SELECT ROW(i.id, i.name, i.description, i.value)::types.q_get_persona_v4_icon_resource FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_icon_resource
     FROM params
+    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 instructions_resource_data AS (
     SELECT 
@@ -561,9 +616,10 @@ instructions_resource_data AS (
             (SELECT dinst.instructions_id FROM draft_instructions dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pinst.instruction_id FROM persona_instructions pinst WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as instructions_id,
-        (SELECT ROW(inst.id, inst.template)::types.q_get_persona_detail_v4_instructions_resource FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_instructions_resource,
-        (SELECT ROW(inst.id, inst.template)::types.q_get_persona_detail_v4_instructions_resource FROM persona_instructions pinst JOIN instructions inst ON pinst.instruction_id = inst.id WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_instructions_resource
+        (SELECT ROW(inst.id, inst.template)::types.q_get_persona_v4_instructions_resource FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_instructions_resource,
+        (SELECT ROW(inst.id, inst.template)::types.q_get_persona_v4_instructions_resource FROM persona_instructions pinst JOIN instructions inst ON pinst.instruction_id = inst.id WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_instructions_resource
     FROM params
+    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 flag_resource_data AS (
     SELECT 
@@ -571,117 +627,66 @@ flag_resource_data AS (
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pf.flag_id FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id)::types.q_get_persona_detail_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id)::types.q_get_persona_detail_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id)::types.q_get_persona_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id)::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
     FROM params
+    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 -- Preset colors as resource array (convert preset_colors_filtered to color_resource array)
 preset_colors_resources_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(
-                ROW(NULL::uuid, pcf.name, 'Color: ' || pcf.hex, pcf.hex)::types.q_get_persona_detail_v4_color_resource
+                ROW(NULL::uuid, pcf.name, 'Color: ' || pcf.hex, pcf.hex)::types.q_get_persona_v4_color_resource
                 ORDER BY pcf.name
             ) FROM preset_colors_filtered pcf),
-            '{}'::types.q_get_persona_detail_v4_color_resource[]
+            '{}'::types.q_get_persona_v4_color_resource[]
         ) as preset_colors_resources
     FROM params
 )
 SELECT
-    (SELECT persona_exists FROM persona_exists_check) as persona_exists,
-    -- Merge draft payload over existing persona data if draft_id provided
-    COALESCE(
-        (SELECT payload->>'name' FROM draft_payload_data),
-        pd.name
-    ) as name,
-    COALESCE(
-        (SELECT payload->>'description' FROM draft_payload_data),
-        pd.description
-    ) as description,
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
-                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        pd.department_ids
-    ) as department_ids,
-    COALESCE(
-        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-        pd.active
-    ) as active,
-    COALESCE(
-        (SELECT payload->>'color' FROM draft_payload_data),
-        pd.color
-    ) as color,
-    COALESCE(
-        (SELECT payload->>'icon' FROM draft_payload_data),
-        pd.icon
-    ) as icon,
-    COALESCE(
-        (SELECT payload->>'instructions' FROM draft_payload_data),
-        pd.instructions
-    ) as instructions,
-    CASE WHEN COALESCE(ud.usage_count, 0) > 0 THEN true ELSE false END as in_use,
-    COALESCE(ud.usage_count, 0) as scenario_count,
-    perm.can_edit,
-    perm.can_duplicate,
-    perm.can_delete,
+    -- Common fields
+    up.actor_name::text as actor_name,
     COALESCE(vdid.valid_department_ids, ARRAY[]::uuid[]) as valid_department_ids,
     COALESCE(vaid.valid_agent_ids, ARRAY[]::uuid[]) as valid_agent_ids,
     COALESCE(vpid.valid_parameter_ids, ARRAY[]::uuid[]) as valid_parameter_ids,
     COALESCE(vpiid.valid_parameter_item_ids, ARRAY[]::uuid[]) as valid_parameter_item_ids,
-    COALESCE(lpid.linked_parameter_ids, ARRAY[]::uuid[]) as linked_parameter_ids,
-    COALESCE(pfid.parameter_field_ids, ARRAY[]::uuid[]) as parameter_field_ids,
-    COALESCE(ped.example_ids, ARRAY[]::uuid[]) as example_ids,
-    up.actor_name::text as actor_name,
     -- Aggregate departments separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            ROW(dmd.department_id)::types.q_get_persona_detail_v4_department
+            ROW(dmd.department_id)::types.q_get_persona_v4_department
             ORDER BY dmd.name
         ) FROM department_mapping_data dmd),
-        '{}'::types.q_get_persona_detail_v4_department[]
+        '{}'::types.q_get_persona_v4_department[]
     ) as departments,
     -- Aggregate agents separately
     COALESCE(
         (SELECT ARRAY_AGG(
-            (amd.agent_id, amd.name, amd.description, amd.roles)::types.q_get_persona_detail_v4_agent
+            (amd.agent_id, amd.name, amd.description, amd.roles)::types.q_get_persona_v4_agent
             ORDER BY amd.name
         ) FROM agent_mapping_data amd),
-        '{}'::types.q_get_persona_detail_v4_agent[]
+        '{}'::types.q_get_persona_v4_agent[]
     ) as agents,
     -- Aggregate parameters separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            ROW(pmd.parameter_id)::types.q_get_persona_detail_v4_parameter
+            ROW(pmd.parameter_id)::types.q_get_persona_v4_parameter
             ORDER BY pmd.name
         ) FROM parameter_mapping_data pmd),
-        '{}'::types.q_get_persona_detail_v4_parameter[]
+        '{}'::types.q_get_persona_v4_parameter[]
     ) as parameters,
     -- Aggregate fields separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            ROW(fmd.field_id)::types.q_get_persona_detail_v4_field
+            ROW(fmd.field_id)::types.q_get_persona_v4_field
             ORDER BY fmd.name
         ) FROM field_mapping_data fmd),
-        '{}'::types.q_get_persona_detail_v4_field[]
+        '{}'::types.q_get_persona_v4_field[]
     ) as fields,
-    -- Aggregate examples separately (example text and idx)
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (emd.example, emd.idx)::types.q_get_persona_detail_v4_example
-            ORDER BY emd.idx
-        ) FROM example_mapping_data emd),
-        '{}'::types.q_get_persona_detail_v4_example[]
-    ) as examples,
-    COALESCE((SELECT examples_history FROM examples_history_data), '{}'::types.q_get_persona_detail_v4_example_history_item[]) as examples_history,
     -- Filtered preset colors (SQL-side filtering)
     COALESCE(
-        (SELECT ARRAY_AGG((pcf.hex, pcf.name)::types.q_get_persona_detail_v4_color ORDER BY pcf.name) FROM preset_colors_filtered pcf),
-        '{}'::types.q_get_persona_detail_v4_color[]
+        (SELECT ARRAY_AGG((pcf.hex, pcf.name)::types.q_get_persona_v4_color ORDER BY pcf.name) FROM preset_colors_filtered pcf),
+        '{}'::types.q_get_persona_v4_color[]
     ) as preset_colors,
     -- Filtered suggested icons (SQL-side filtering)
     COALESCE(
@@ -693,6 +698,101 @@ SELECT
         (SELECT ARRAY_AGG(vif.icon_name ORDER BY vif.icon_name) FROM valid_icons_filtered vif),
         '{}'::text[]
     ) as valid_icons,
+    -- Conditional fields
+    (SELECT persona_exists FROM persona_exists_check) as persona_exists,
+    -- Merge draft payload over existing persona data if draft_id provided, otherwise use defaults for new or existing data
+    COALESCE(
+        (SELECT payload->>'name' FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ''::text
+            ELSE pd.name
+        END
+    ) as name,
+    COALESCE(
+        (SELECT payload->>'description' FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ''::text
+            ELSE pd.description
+        END
+    ) as description,
+    COALESCE(
+        (SELECT 
+            CASE 
+                WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                    ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
+                ELSE NULL
+            END
+        FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN
+                CASE 
+                    WHEN up.role = 'superadmin' THEN NULL::uuid[]
+                    ELSE COALESCE(ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
+                END
+            ELSE pd.department_ids
+        END
+    ) as department_ids,
+    COALESCE(
+        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN true::boolean
+            ELSE pd.active
+        END
+    ) as active,
+    COALESCE(
+        (SELECT payload->>'color' FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN NULL::text
+            ELSE pd.color
+        END
+    ) as color,
+    COALESCE(
+        (SELECT payload->>'icon' FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN NULL::text
+            ELSE pd.icon
+        END
+    ) as icon,
+    COALESCE(
+        (SELECT payload->>'instructions' FROM draft_payload_data),
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN ''::text
+            ELSE pd.instructions
+        END
+    ) as instructions,
+    CASE 
+        WHEN (SELECT persona_id FROM params) IS NULL THEN false
+        ELSE CASE WHEN COALESCE(ud.usage_count, 0) > 0 THEN true ELSE false END
+    END as in_use,
+    COALESCE(ud.usage_count, 0) as scenario_count,
+    perm.can_edit,
+    perm.can_duplicate,
+    perm.can_delete,
+    -- Detail-only fields (NULL for new)
+    COALESCE(lpid.linked_parameter_ids, ARRAY[]::uuid[]) as linked_parameter_ids,
+    COALESCE(pfid.parameter_field_ids, ARRAY[]::uuid[]) as parameter_field_ids,
+    COALESCE(ped.example_ids, ARRAY[]::uuid[]) as example_ids,
+    -- Aggregate examples separately (example text and idx) - only for detail
+    CASE 
+        WHEN (SELECT persona_id FROM params) IS NULL THEN '{}'::types.q_get_persona_v4_example[]
+        ELSE COALESCE(
+            (SELECT ARRAY_AGG(
+                (emd.example, emd.idx)::types.q_get_persona_v4_example
+                ORDER BY emd.idx
+            ) FROM example_mapping_data emd),
+            '{}'::types.q_get_persona_v4_example[]
+        )
+    END as examples,
+    COALESCE((SELECT examples_history FROM examples_history_data), '{}'::types.q_get_persona_v4_example_history_item[]) as examples_history,
+    -- New-only fields (NULL for detail)
+    CASE 
+        WHEN (SELECT persona_id FROM params) IS NULL THEN up.role::text
+        ELSE NULL::text
+    END as user_role,
+    CASE 
+        WHEN (SELECT persona_id FROM params) IS NULL THEN (SELECT department_id FROM primary_department_id_data)
+        ELSE NULL::uuid
+    END as primary_department_id,
     -- Resource IDs for form state
     (SELECT name_id FROM name_resource_data) as name_id,
     (SELECT description_id FROM description_resource_data) as description_id,
@@ -709,10 +809,7 @@ SELECT
     (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.persona_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,
     -- Preset colors as resource array
     (SELECT preset_colors_resources FROM preset_colors_resources_data) as preset_colors_resources
-FROM persona_data pd
-CROSS JOIN usage_data ud
-CROSS JOIN user_profile up
-CROSS JOIN permissions_data perm
+FROM user_profile up
 CROSS JOIN valid_department_ids_data vdid
 CROSS JOIN valid_agent_ids_data vaid
 CROSS JOIN valid_parameter_ids_data vpid
@@ -721,6 +818,9 @@ CROSS JOIN linked_parameter_ids_data lpid
 CROSS JOIN parameter_field_ids_data pfid
 CROSS JOIN persona_examples_data ped
 CROSS JOIN examples_history_data ehd
+CROSS JOIN permissions_data perm
+CROSS JOIN usage_data ud
+LEFT JOIN persona_data pd ON true
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN color_resource_data crd

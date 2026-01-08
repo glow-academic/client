@@ -5,17 +5,17 @@
  * 06/08/2025
  */
 
-import Persona from "@/components/personas/Persona";
+import PersonaNew from "@/components/personas/PersonaNew";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonaNewIn = InputOf<"/api/v4/personas/new", "post">;
-type PersonaNewOut = OutputOf<"/api/v4/personas/new", "post">;
-type CreatePersonaIn = InputOf<"/api/v4/personas/create", "post">;
-type CreatePersonaOut = OutputOf<"/api/v4/personas/create", "post">;
+type GetPersonaIn = InputOf<"/api/v4/personas/get", "post">;
+type GetPersonaOut = OutputOf<"/api/v4/personas/get", "post">;
+type SavePersonaIn = InputOf<"/api/v4/personas/save", "post">;
+type SavePersonaOut = OutputOf<"/api/v4/personas/save", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/drafts/names", "post">;
@@ -35,9 +35,9 @@ type CreateDraftFlagsOut = OutputOf<"/api/v4/drafts/flags", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getPersonaDefault = async (
-  input: PersonaNewIn
-): Promise<PersonaNewOut> => {
-  return api.post("/personas/new", input, {
+  input: GetPersonaIn
+): Promise<GetPersonaOut> => {
+  return api.post("/personas/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -46,13 +46,13 @@ const getPersonaDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createPersona(
-  input: CreatePersonaIn
-): Promise<CreatePersonaOut> {
+async function savePersona(
+  input: SavePersonaIn
+): Promise<SavePersonaOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/create", input);
+  return api.post("/personas/save", input);
 }
 
 async function patchPersonaDraft(
@@ -155,8 +155,9 @@ export default async function NewPersonaPage({
 
   // Fetch default persona detail server-side with filter params and draft_id
   // Note: OpenAPI schema needs regeneration to include new filter params
-  const input: PersonaNewIn = {
+  const input: GetPersonaIn = {
     body: {
+      persona_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
       color_search: q.colorSearch ?? null,
       icon_search: q.iconSearch ?? null,
@@ -164,7 +165,7 @@ export default async function NewPersonaPage({
       icon_show_selected: q.iconShowSelected ?? null,
       current_color: q.color ?? null,
       current_icon: q.icon ?? null,
-    } as PersonaNewIn["body"],
+    } as GetPersonaIn["body"],
   };
   const personaDetailDefault = await getPersonaDefault(input);
 
@@ -174,17 +175,18 @@ export default async function NewPersonaPage({
       data-page="persona-new"
       aria-label="Create new persona page"
     >
-      <Persona
+      <PersonaNew
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         mode="create"
         personaDetailDefault={personaDetailDefault}
-        createPersonaAction={createPersona}
-        createDraftNamesAction={createDraftNames}
-        createDraftDescriptionsAction={createDraftDescriptions}
-        createDraftInstructionsAction={createDraftInstructions}
-        createDraftColorsAction={createDraftColors}
-        createDraftIconsAction={createDraftIcons}
-        createDraftFlagsAction={createDraftFlags}
+        savePersonaAction={savePersona}
+        patchPersonaDraftAction={patchPersonaDraft}
+        createNamesAction={createDraftNames}
+        createDescriptionsAction={createDraftDescriptions}
+        createInstructionsAction={createDraftInstructions}
+        createColorsAction={createDraftColors}
+        createIconsAction={createDraftIcons}
+        createFlagsAction={createDraftFlags}
       />
     </div>
   );
@@ -192,8 +194,8 @@ export default async function NewPersonaPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreatePersonaIn,
-  CreatePersonaOut,
+  SavePersonaIn,
+  SavePersonaOut,
   CreateDraftNamesIn,
   CreateDraftNamesOut,
   CreateDraftDescriptionsIn,
@@ -208,6 +210,6 @@ export type {
   CreateDraftFlagsOut,
   PatchPersonaDraftIn,
   PatchPersonaDraftOut,
-  PersonaNewIn,
-  PersonaNewOut,
+  GetPersonaIn,
+  GetPersonaOut,
 };

@@ -15357,59 +15357,6 @@ class UpdateParameterApiResponse(BaseModel):
 
 
 
-# Generated from: create_persona
-
-class CreatePersonaSqlParams(BaseModel):
-
-    name_id: UUID
-    color_id: UUID
-    icon_id: UUID
-    instructions_id: UUID
-    department_ids: list[UUID]
-    profile_id: UUID
-    example_ids: list[UUID]
-    field_ids: list[UUID]
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name_id,
-            self.color_id,
-            self.icon_id,
-            self.instructions_id,
-            self.department_ids,
-            self.profile_id,
-            self.example_ids,
-            self.field_ids,
-            self.description_id,
-            self.active_flag_id,
-        )
-
-class CreatePersonaSqlRow(BaseModel):
-
-    persona_id: UUID | None = None
-    actor_name: str | None = None
-
-class CreatePersonaApiRequest(BaseModel):
-
-    name_id: UUID
-    color_id: UUID
-    icon_id: UUID
-    instructions_id: UUID
-    department_ids: list[UUID]
-    example_ids: list[UUID]
-    field_ids: list[UUID]
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-
-class CreatePersonaApiResponse(BaseModel):
-
-    persona_id: UUID | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: delete_persona
 
 class DeletePersonaSqlParams(BaseModel):
@@ -15474,12 +15421,12 @@ class DuplicatePersonaApiResponse(BaseModel):
 
 
 
-# Generated from: get_persona_detail
+# Generated from: get_persona
 
-class GetPersonaDetailSqlParams(BaseModel):
+class GetPersonaSqlParams(BaseModel):
 
-    persona_id: UUID
     profile_id: UUID
+    persona_id: UUID | None = None
     color_search: str | None = None
     icon_search: str | None = None
     color_show_selected: bool | None = None
@@ -15490,8 +15437,8 @@ class GetPersonaDetailSqlParams(BaseModel):
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.persona_id,
             self.profile_id,
+            self.persona_id,
             self.color_search,
             self.icon_search,
             self.color_show_selected,
@@ -15501,7 +15448,7 @@ class GetPersonaDetailSqlParams(BaseModel):
             self.draft_id,
         )
 
-class QGetPersonaDetailV4Agent(BaseModel):
+class QGetPersonaV4Agent(BaseModel):
 
     agent_id: UUID | None
     name: str | None
@@ -15511,7 +15458,7 @@ class QGetPersonaDetailV4Agent(BaseModel):
 
 
 
-class QGetPersonaDetailV4Color(BaseModel):
+class QGetPersonaV4Color(BaseModel):
 
     hex: str | None
     name: str | None
@@ -15519,7 +15466,7 @@ class QGetPersonaDetailV4Color(BaseModel):
 
 
 
-class QGetPersonaDetailV4ColorResource(BaseModel):
+class QGetPersonaV4ColorResource(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -15529,14 +15476,14 @@ class QGetPersonaDetailV4ColorResource(BaseModel):
 
 
 
-class QGetPersonaDetailV4Department(BaseModel):
+class QGetPersonaV4Department(BaseModel):
 
     department_id: UUID | None
 
 
 
 
-class QGetPersonaDetailV4DescriptionResource(BaseModel):
+class QGetPersonaV4DescriptionResource(BaseModel):
 
     id: UUID | None
     description: str | None
@@ -15544,7 +15491,7 @@ class QGetPersonaDetailV4DescriptionResource(BaseModel):
 
 
 
-class QGetPersonaDetailV4Example(BaseModel):
+class QGetPersonaV4Example(BaseModel):
 
     example: str | None
     idx: int | None
@@ -15552,7 +15499,7 @@ class QGetPersonaDetailV4Example(BaseModel):
 
 
 
-class QGetPersonaDetailV4ExampleHistoryItem(BaseModel):
+class QGetPersonaV4ExampleHistoryItem(BaseModel):
 
     example: str | None
     department_ids: list[str] | None
@@ -15560,14 +15507,14 @@ class QGetPersonaDetailV4ExampleHistoryItem(BaseModel):
 
 
 
-class QGetPersonaDetailV4Field(BaseModel):
+class QGetPersonaV4Field(BaseModel):
 
     field_id: UUID | None
 
 
 
 
-class QGetPersonaDetailV4FlagResource(BaseModel):
+class QGetPersonaV4FlagResource(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -15577,7 +15524,7 @@ class QGetPersonaDetailV4FlagResource(BaseModel):
 
 
 
-class QGetPersonaDetailV4IconResource(BaseModel):
+class QGetPersonaV4IconResource(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -15587,7 +15534,7 @@ class QGetPersonaDetailV4IconResource(BaseModel):
 
 
 
-class QGetPersonaDetailV4InstructionsResource(BaseModel):
+class QGetPersonaV4InstructionsResource(BaseModel):
 
     id: UUID | None
     template: str | None
@@ -15595,7 +15542,7 @@ class QGetPersonaDetailV4InstructionsResource(BaseModel):
 
 
 
-class QGetPersonaDetailV4NameResource(BaseModel):
+class QGetPersonaV4NameResource(BaseModel):
 
     id: UUID | None
     name: str | None
@@ -15603,12 +15550,24 @@ class QGetPersonaDetailV4NameResource(BaseModel):
 
 
 
-class QGetPersonaDetailV4Parameter(BaseModel):
+class QGetPersonaV4Parameter(BaseModel):
 
     parameter_id: UUID | None
 
-class GetPersonaDetailSqlRow(BaseModel):
+class GetPersonaSqlRow(BaseModel):
 
+    actor_name: str | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    valid_parameter_ids: list[UUID] | None = None
+    valid_parameter_item_ids: list[UUID] | None = None
+    departments: list[QGetPersonaV4Department] | None = None
+    agents: list[QGetPersonaV4Agent] | None = None
+    parameters: list[QGetPersonaV4Parameter] | None = None
+    fields: list[QGetPersonaV4Field] | None = None
+    preset_colors: list[QGetPersonaV4Color] | None = None
+    suggested_icons: list[str] | None = None
+    valid_icons: list[str] | None = None
     persona_exists: bool | None = None
     name: str | None = None
     description: str | None = None
@@ -15622,40 +15581,30 @@ class GetPersonaDetailSqlRow(BaseModel):
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
-    valid_department_ids: list[UUID] | None = None
-    valid_agent_ids: list[UUID] | None = None
-    valid_parameter_ids: list[UUID] | None = None
-    valid_parameter_item_ids: list[UUID] | None = None
     linked_parameter_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
-    actor_name: str | None = None
-    departments: list[QGetPersonaDetailV4Department] | None = None
-    agents: list[QGetPersonaDetailV4Agent] | None = None
-    parameters: list[QGetPersonaDetailV4Parameter] | None = None
-    fields: list[QGetPersonaDetailV4Field] | None = None
-    examples: list[QGetPersonaDetailV4Example] | None = None
-    examples_history: list[QGetPersonaDetailV4ExampleHistoryItem] | None = None
-    preset_colors: list[QGetPersonaDetailV4Color] | None = None
-    suggested_icons: list[str] | None = None
-    valid_icons: list[str] | None = None
+    examples: list[QGetPersonaV4Example] | None = None
+    examples_history: list[QGetPersonaV4ExampleHistoryItem] | None = None
+    user_role: str | None = None
+    primary_department_id: UUID | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
     color_id: UUID | None = None
     icon_id: UUID | None = None
     instructions_id: UUID | None = None
     active_flag_id: UUID | None = None
-    name_resource: QGetPersonaDetailV4NameResource | None = None
-    description_resource: QGetPersonaDetailV4DescriptionResource | None = None
-    color_resource: QGetPersonaDetailV4ColorResource | None = None
-    icon_resource: QGetPersonaDetailV4IconResource | None = None
-    instructions_resource: QGetPersonaDetailV4InstructionsResource | None = None
-    flag_resource: QGetPersonaDetailV4FlagResource | None = None
-    preset_colors_resources: list[QGetPersonaDetailV4ColorResource] | None = None
+    name_resource: QGetPersonaV4NameResource | None = None
+    description_resource: QGetPersonaV4DescriptionResource | None = None
+    color_resource: QGetPersonaV4ColorResource | None = None
+    icon_resource: QGetPersonaV4IconResource | None = None
+    instructions_resource: QGetPersonaV4InstructionsResource | None = None
+    flag_resource: QGetPersonaV4FlagResource | None = None
+    preset_colors_resources: list[QGetPersonaV4ColorResource] | None = None
 
-class GetPersonaDetailApiRequest(BaseModel):
+class GetPersonaApiRequest(BaseModel):
 
-    persona_id: UUID
+    persona_id: UUID | None = None
     color_search: str | None = None
     icon_search: str | None = None
     color_show_selected: bool | None = None
@@ -15664,8 +15613,20 @@ class GetPersonaDetailApiRequest(BaseModel):
     current_icon: str | None = None
     draft_id: UUID | None = None
 
-class GetPersonaDetailApiResponse(BaseModel):
+class GetPersonaApiResponse(BaseModel):
 
+    actor_name: str | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    valid_parameter_ids: list[UUID] | None = None
+    valid_parameter_item_ids: list[UUID] | None = None
+    departments: list[QGetPersonaV4Department] | None = None
+    agents: list[QGetPersonaV4Agent] | None = None
+    parameters: list[QGetPersonaV4Parameter] | None = None
+    fields: list[QGetPersonaV4Field] | None = None
+    preset_colors: list[QGetPersonaV4Color] | None = None
+    suggested_icons: list[str] | None = None
+    valid_icons: list[str] | None = None
     persona_exists: bool | None = None
     name: str | None = None
     description: str | None = None
@@ -15679,247 +15640,26 @@ class GetPersonaDetailApiResponse(BaseModel):
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
-    valid_department_ids: list[UUID] | None = None
-    valid_agent_ids: list[UUID] | None = None
-    valid_parameter_ids: list[UUID] | None = None
-    valid_parameter_item_ids: list[UUID] | None = None
     linked_parameter_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
-    actor_name: str | None = None
-    departments: list[QGetPersonaDetailV4Department] | None = None
-    agents: list[QGetPersonaDetailV4Agent] | None = None
-    parameters: list[QGetPersonaDetailV4Parameter] | None = None
-    fields: list[QGetPersonaDetailV4Field] | None = None
-    examples: list[QGetPersonaDetailV4Example] | None = None
-    examples_history: list[QGetPersonaDetailV4ExampleHistoryItem] | None = None
-    preset_colors: list[QGetPersonaDetailV4Color] | None = None
-    suggested_icons: list[str] | None = None
-    valid_icons: list[str] | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    name_resource: QGetPersonaDetailV4NameResource | None = None
-    description_resource: QGetPersonaDetailV4DescriptionResource | None = None
-    color_resource: QGetPersonaDetailV4ColorResource | None = None
-    icon_resource: QGetPersonaDetailV4IconResource | None = None
-    instructions_resource: QGetPersonaDetailV4InstructionsResource | None = None
-    flag_resource: QGetPersonaDetailV4FlagResource | None = None
-    preset_colors_resources: list[QGetPersonaDetailV4ColorResource] | None = None
-
-
-
-# Generated from: get_persona_new
-
-class GetPersonaNewSqlParams(BaseModel):
-
-    profile_id: UUID
-    color_search: str | None = None
-    icon_search: str | None = None
-    color_show_selected: bool | None = None
-    icon_show_selected: bool | None = None
-    current_color: str | None = None
-    current_icon: str | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.color_search,
-            self.icon_search,
-            self.color_show_selected,
-            self.icon_show_selected,
-            self.current_color,
-            self.current_icon,
-            self.draft_id,
-        )
-
-class QGetPersonaNewV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    roles: list[str] | None
-
-
-
-
-class QGetPersonaNewV4Color(BaseModel):
-
-    hex: str | None
-    name: str | None
-
-
-
-
-class QGetPersonaNewV4ColorResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    hex_code: str | None
-
-
-
-
-class QGetPersonaNewV4Department(BaseModel):
-
-    department_id: UUID | None
-
-
-
-
-class QGetPersonaNewV4DescriptionResource(BaseModel):
-
-    id: UUID | None
-    description: str | None
-
-
-
-
-class QGetPersonaNewV4Field(BaseModel):
-
-    field_id: UUID | None
-
-
-
-
-class QGetPersonaNewV4FlagResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    icon_id: UUID | None
-
-
-
-
-class QGetPersonaNewV4IconResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    value: str | None
-
-
-
-
-class QGetPersonaNewV4InstructionsResource(BaseModel):
-
-    id: UUID | None
-    template: str | None
-
-
-
-
-class QGetPersonaNewV4NameResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-
-
-
-
-class QGetPersonaNewV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-
-class GetPersonaNewSqlRow(BaseModel):
-
-    actor_name: str | None = None
+    examples: list[QGetPersonaV4Example] | None = None
+    examples_history: list[QGetPersonaV4ExampleHistoryItem] | None = None
     user_role: str | None = None
     primary_department_id: UUID | None = None
-    valid_department_ids: list[UUID] | None = None
-    valid_agent_ids: list[UUID] | None = None
-    valid_parameter_ids: list[UUID] | None = None
-    valid_parameter_item_ids: list[UUID] | None = None
-    departments: list[QGetPersonaNewV4Department] | None = None
-    agents: list[QGetPersonaNewV4Agent] | None = None
-    parameters: list[QGetPersonaNewV4Parameter] | None = None
-    fields: list[QGetPersonaNewV4Field] | None = None
-    preset_colors: list[QGetPersonaNewV4Color] | None = None
-    suggested_icons: list[str] | None = None
-    valid_icons: list[str] | None = None
-    name: str | None = None
-    description: str | None = None
-    department_ids: list[UUID] | None = None
-    active: bool | None = None
-    color: str | None = None
-    icon: str | None = None
-    instructions: str | None = None
-    in_use: bool | None = None
-    scenario_count: int | None = None
-    can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
     name_id: UUID | None = None
     description_id: UUID | None = None
     color_id: UUID | None = None
     icon_id: UUID | None = None
     instructions_id: UUID | None = None
     active_flag_id: UUID | None = None
-    name_resource: QGetPersonaNewV4NameResource | None = None
-    description_resource: QGetPersonaNewV4DescriptionResource | None = None
-    color_resource: QGetPersonaNewV4ColorResource | None = None
-    icon_resource: QGetPersonaNewV4IconResource | None = None
-    instructions_resource: QGetPersonaNewV4InstructionsResource | None = None
-    flag_resource: QGetPersonaNewV4FlagResource | None = None
-    preset_colors_resources: list[QGetPersonaNewV4ColorResource] | None = None
-
-class GetPersonaNewApiRequest(BaseModel):
-
-    color_search: str | None = None
-    icon_search: str | None = None
-    color_show_selected: bool | None = None
-    icon_show_selected: bool | None = None
-    current_color: str | None = None
-    current_icon: str | None = None
-    draft_id: UUID | None = None
-
-class GetPersonaNewApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    user_role: str | None = None
-    primary_department_id: UUID | None = None
-    valid_department_ids: list[UUID] | None = None
-    valid_agent_ids: list[UUID] | None = None
-    valid_parameter_ids: list[UUID] | None = None
-    valid_parameter_item_ids: list[UUID] | None = None
-    departments: list[QGetPersonaNewV4Department] | None = None
-    agents: list[QGetPersonaNewV4Agent] | None = None
-    parameters: list[QGetPersonaNewV4Parameter] | None = None
-    fields: list[QGetPersonaNewV4Field] | None = None
-    preset_colors: list[QGetPersonaNewV4Color] | None = None
-    suggested_icons: list[str] | None = None
-    valid_icons: list[str] | None = None
-    name: str | None = None
-    description: str | None = None
-    department_ids: list[UUID] | None = None
-    active: bool | None = None
-    color: str | None = None
-    icon: str | None = None
-    instructions: str | None = None
-    in_use: bool | None = None
-    scenario_count: int | None = None
-    can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    name_resource: QGetPersonaNewV4NameResource | None = None
-    description_resource: QGetPersonaNewV4DescriptionResource | None = None
-    color_resource: QGetPersonaNewV4ColorResource | None = None
-    icon_resource: QGetPersonaNewV4IconResource | None = None
-    instructions_resource: QGetPersonaNewV4InstructionsResource | None = None
-    flag_resource: QGetPersonaNewV4FlagResource | None = None
-    preset_colors_resources: list[QGetPersonaNewV4ColorResource] | None = None
+    name_resource: QGetPersonaV4NameResource | None = None
+    description_resource: QGetPersonaV4DescriptionResource | None = None
+    color_resource: QGetPersonaV4ColorResource | None = None
+    icon_resource: QGetPersonaV4IconResource | None = None
+    instructions_resource: QGetPersonaV4InstructionsResource | None = None
+    flag_resource: QGetPersonaV4FlagResource | None = None
+    preset_colors_resources: list[QGetPersonaV4ColorResource] | None = None
 
 
 
@@ -16073,11 +15813,10 @@ class PatchPersonaDraftApiResponse(BaseModel):
 
 
 
-# Generated from: update_persona
+# Generated from: save_persona
 
-class UpdatePersonaSqlParams(BaseModel):
+class SavePersonaSqlParams(BaseModel):
 
-    input_persona_id: UUID
     name_id: UUID
     color_id: UUID
     icon_id: UUID
@@ -16086,12 +15825,12 @@ class UpdatePersonaSqlParams(BaseModel):
     profile_id: UUID
     example_ids: list[UUID]
     field_ids: list[UUID]
+    input_persona_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.input_persona_id,
             self.name_id,
             self.color_id,
             self.icon_id,
@@ -16100,18 +15839,18 @@ class UpdatePersonaSqlParams(BaseModel):
             self.profile_id,
             self.example_ids,
             self.field_ids,
+            self.input_persona_id,
             self.description_id,
             self.active_flag_id,
         )
 
-class UpdatePersonaSqlRow(BaseModel):
+class SavePersonaSqlRow(BaseModel):
 
     persona_id: UUID | None = None
     actor_name: str | None = None
 
-class UpdatePersonaApiRequest(BaseModel):
+class SavePersonaApiRequest(BaseModel):
 
-    input_persona_id: UUID
     name_id: UUID
     color_id: UUID
     icon_id: UUID
@@ -16119,10 +15858,11 @@ class UpdatePersonaApiRequest(BaseModel):
     department_ids: list[UUID]
     example_ids: list[UUID]
     field_ids: list[UUID]
+    input_persona_id: UUID | None = None
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
 
-class UpdatePersonaApiResponse(BaseModel):
+class SavePersonaApiResponse(BaseModel):
 
     persona_id: UUID | None = None
     actor_name: str | None = None
@@ -29199,12 +28939,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateParameterApiRequest",
         "UpdateParameterApiResponse",
     ),
-    "app/sql/v4/personas/create_persona_complete.sql": (
-        "CreatePersonaSqlParams",
-        "CreatePersonaSqlRow",
-        "CreatePersonaApiRequest",
-        "CreatePersonaApiResponse",
-    ),
     "app/sql/v4/personas/delete_persona_complete.sql": (
         "DeletePersonaSqlParams",
         "DeletePersonaSqlRow",
@@ -29217,17 +28951,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicatePersonaApiRequest",
         "DuplicatePersonaApiResponse",
     ),
-    "app/sql/v4/personas/get_persona_detail_complete.sql": (
-        "GetPersonaDetailSqlParams",
-        "GetPersonaDetailSqlRow",
-        "GetPersonaDetailApiRequest",
-        "GetPersonaDetailApiResponse",
-    ),
-    "app/sql/v4/personas/get_persona_new_complete.sql": (
-        "GetPersonaNewSqlParams",
-        "GetPersonaNewSqlRow",
-        "GetPersonaNewApiRequest",
-        "GetPersonaNewApiResponse",
+    "app/sql/v4/personas/get_persona_complete.sql": (
+        "GetPersonaSqlParams",
+        "GetPersonaSqlRow",
+        "GetPersonaApiRequest",
+        "GetPersonaApiResponse",
     ),
     "app/sql/v4/personas/get_personas_list_complete.sql": (
         "GetPersonasListSqlParams",
@@ -29241,11 +28969,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PatchPersonaDraftApiRequest",
         "PatchPersonaDraftApiResponse",
     ),
-    "app/sql/v4/personas/update_persona_complete.sql": (
-        "UpdatePersonaSqlParams",
-        "UpdatePersonaSqlRow",
-        "UpdatePersonaApiRequest",
-        "UpdatePersonaApiResponse",
+    "app/sql/v4/personas/save_persona_complete.sql": (
+        "SavePersonaSqlParams",
+        "SavePersonaSqlRow",
+        "SavePersonaApiRequest",
+        "SavePersonaApiResponse",
     ),
     "app/sql/v4/practice/find_practice_simulation_with_persona_complete.sql": (
         "FindPracticeSimulationWithPersonaSqlParams",
@@ -31857,11 +31585,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/create_persona_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/personas/delete_persona_complete.sql"]
     ) -> SqlString: ...
 
@@ -31872,12 +31595,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_persona_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_persona_new_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/get_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -31892,7 +31610,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/update_persona_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/save_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload

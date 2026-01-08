@@ -1,51 +1,50 @@
-"""Persona detail endpoint - v4 API following DHH principles."""
+"""Persona get endpoint - v4 API following DHH principles.
+Unified endpoint that handles both new (persona_id = NULL) and detail (persona_id provided).
+"""
 
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (GetPersonaApiRequest, GetPersonaApiResponse,
+                           GetPersonaSqlParams, GetPersonaSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
 from utils.cache.set_cached import set_cached
 from utils.sql_helper import execute_sql_typed
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (
-    GetPersonaDetailApiRequest,
-    GetPersonaDetailApiResponse,
-    GetPersonaDetailSqlParams,
-    GetPersonaDetailSqlRow,
-    load_sql_query,
-)
-
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/personas/get_persona_detail_complete.sql"
+SQL_PATH = "app/sql/v4/personas/get_persona_complete.sql"
 
 
 router = APIRouter()
 
 
 @router.post(
-    "/detail",
-    response_model=GetPersonaDetailApiResponse,
+    "/get",
+    response_model=GetPersonaApiResponse,
     dependencies=[
         audit_activity(
-            "persona.viewed", "{{ actor.name }} viewed persona '{{ persona.name }}'"
+            "persona.get",
+            "{{ actor.name }} {% if persona %}viewed{% else %}opened new{% endif %} persona{% if persona %} '{{ persona.name }}'{% endif %}"
         )
     ],
 )
-async def get_persona_detail(
-    request: GetPersonaDetailApiRequest,
+async def get_persona(
+    request: GetPersonaApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> GetPersonaDetailApiResponse:
-    """Get detailed persona information."""
+) -> GetPersonaApiResponse:
+    """Get persona information - handles both new (persona_id = NULL) and detail (persona_id provided)."""
     tags = ["personas"]  # From router tags
 
     # Generate cache key from path and parsed body
+    # Use mode='json' to serialize UUIDs to strings for JSON compatibility
     body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
@@ -54,7 +53,7 @@ async def get_persona_detail(
     if cached:
         response.headers["X-Cache-Tags"] = ",".join(tags)
         response.headers["X-Cache-Hit"] = "1"
-        return GetPersonaDetailApiResponse.model_validate(cached["data"])
+        return GetPersonaApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -76,10 +75,11 @@ async def get_persona_detail(
         current_color = request.current_color
         current_icon = request.current_icon
         draft_id = request.draft_id
+        persona_id = request.persona_id  # Can be NULL for new mode
 
         # Convert API request to SQL params (add profile_id from header)
-        params = GetPersonaDetailSqlParams(
-            persona_id=request.persona_id,
+        params = GetPersonaSqlParams(
+            persona_id=persona_id,
             profile_id=profile_id,
             color_search=color_search,
             icon_search=icon_search,
@@ -91,9 +91,9 @@ async def get_persona_detail(
         )
         sql_params = params.to_tuple()
 
-        # Execute SQL with typed helper (single row result)
+        # Execute SQL with typed helper
         result = cast(
-            GetPersonaDetailSqlRow,
+            GetPersonaSqlRow,
             await execute_sql_typed(
                 conn,
                 SQL_PATH,
@@ -101,33 +101,42 @@ async def get_persona_detail(
             ),
         )
 
-        # Check if persona exists and has access using SQL result
-        if not result.persona_exists:
-            raise HTTPException(
-                status_code=404, detail=f"Persona {request.persona_id} not found"
-            )
-
-        if not result.name:
-            # Persona exists but user doesn't have access
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have access to this persona. It may be restricted to other departments.",
-            )
-
-        # Set audit context with data from SQL query
+        # Set audit context
         if result.actor_name:
-            audit_set(
-                http_request,
-                actor={"name": result.actor_name, "id": profile_id},
-                persona={"name": result.name, "id": str(request.persona_id)},
-            )
+            audit_ctx = {
+                "actor": {"name": result.actor_name, "id": profile_id}
+            }
+            # Only add persona to audit context if persona_id was provided (detail mode)
+            if persona_id and result.name:
+                audit_ctx["persona"] = {"name": result.name, "id": str(persona_id)}
+            audit_set(http_request, **audit_ctx)
+
+        # Conditional validation based on mode
+        if persona_id is None:
+            # New mode: check for valid departments
+            if not result.valid_department_ids:
+                raise HTTPException(
+                    status_code=400, detail="No accessible departments found for user"
+                )
+        else:
+            # Detail mode: check if persona exists and has access
+            if result.persona_exists is False:
+                raise HTTPException(
+                    status_code=404, detail=f"Persona {persona_id} not found"
+                )
+
+            if not result.name:
+                # Persona exists but user doesn't have access
+                raise HTTPException(
+                    status_code=403,
+                    detail="You don't have access to this persona. It may be restricted to other departments.",
+                )
 
         # Convert SQL result to API response
-        # Note: preset_colors, suggested_icons, valid_icons now come from SQL (filtered server-side)
-        response_data = GetPersonaDetailApiResponse.model_validate(
+        response_data = GetPersonaApiResponse.model_validate(
             {
                 **result.model_dump(),
-                "debug_info": [],  # Empty for now
+                "debug_info": [],  # Empty for now (only used in detail mode)
             }
         )
 
@@ -150,7 +159,7 @@ async def get_persona_detail(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="get_persona_detail",
+            operation="get_persona",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

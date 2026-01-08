@@ -6,21 +6,17 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import Persona from "@/components/personas/Persona";
+import PersonaNew from "@/components/personas/PersonaNew";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonaDetailIn = InputOf<"/api/v4/personas/detail", "post">;
-type PersonaDetailOut = OutputOf<"/api/v4/personas/detail", "post">;
-type PersonaNewIn = InputOf<"/api/v4/personas/new", "post">;
-type PersonaNewOut = OutputOf<"/api/v4/personas/new", "post">;
-type CreatePersonaIn = InputOf<"/api/v4/personas/create", "post">;
-type CreatePersonaOut = OutputOf<"/api/v4/personas/create", "post">;
-type UpdatePersonaIn = InputOf<"/api/v4/personas/update", "post">;
-type UpdatePersonaOut = OutputOf<"/api/v4/personas/update", "post">;
+type GetPersonaIn = InputOf<"/api/v4/personas/get", "post">;
+type GetPersonaOut = OutputOf<"/api/v4/personas/get", "post">;
+type SavePersonaIn = InputOf<"/api/v4/personas/save", "post">;
+type SavePersonaOut = OutputOf<"/api/v4/personas/save", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/drafts/names", "post">;
@@ -40,9 +36,9 @@ type CreateDraftFlagsOut = OutputOf<"/api/v4/drafts/flags", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getPersona = async (
-  input: PersonaDetailIn
-): Promise<PersonaDetailOut> => {
-  return api.post("/personas/detail", input, {
+  input: GetPersonaIn
+): Promise<GetPersonaOut> => {
+  return api.post("/personas/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -58,12 +54,12 @@ export async function generateMetadata(
   const { personaId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const input: PersonaDetailIn = {
+    const input: GetPersonaIn = {
       body: {
         persona_id: personaId,
         color_search: null,
         icon_search: null,
-      } as PersonaDetailIn["body"],
+      } as GetPersonaIn["body"],
     };
     const persona = await getPersona(input);
     return {
@@ -82,22 +78,13 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createPersona(
-  input: CreatePersonaIn
-): Promise<CreatePersonaOut> {
+async function savePersona(
+  input: SavePersonaIn
+): Promise<SavePersonaOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/create", input);
-}
-
-async function updatePersona(
-  input: UpdatePersonaIn
-): Promise<UpdatePersonaOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/personas/update", input);
+  return api.post("/personas/save", input);
 }
 
 async function patchPersonaDraft(
@@ -196,7 +183,7 @@ export default async function PersonaEditPage({
   // Fetch persona detail (always fresh - source of truth) with filter params
   // Note: OpenAPI schema may need regeneration to include new filter params
   try {
-    const input: PersonaDetailIn = {
+    const input: GetPersonaIn = {
       body: {
         persona_id: personaId,
         draft_id: q.draftId ?? null,
@@ -206,7 +193,7 @@ export default async function PersonaEditPage({
         icon_show_selected: q.iconShowSelected ?? null,
         current_color: q.color ?? null,
         current_icon: q.icon ?? null,
-      } as PersonaDetailIn["body"],
+      } as GetPersonaIn["body"],
     };
     const personaDetail = await getPersona(input);
 
@@ -216,18 +203,18 @@ export default async function PersonaEditPage({
         data-page="persona-edit"
         data-persona-id={personaId}
       >
-        <Persona
+        <PersonaNew
           personaId={personaId}
           mode="edit"
           personaDetail={personaDetail}
-          createPersonaAction={createPersona}
-          updatePersonaAction={updatePersona}
-          createDraftNamesAction={createDraftNames}
-          createDraftDescriptionsAction={createDraftDescriptions}
-          createDraftInstructionsAction={createDraftInstructions}
-          createDraftColorsAction={createDraftColors}
-          createDraftIconsAction={createDraftIcons}
-          createDraftFlagsAction={createDraftFlags}
+          savePersonaAction={savePersona}
+          patchPersonaDraftAction={patchPersonaDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createInstructionsAction={createDraftInstructions}
+          createColorsAction={createDraftColors}
+          createIconsAction={createDraftIcons}
+          createFlagsAction={createDraftFlags}
         />
       </div>
     );
@@ -254,8 +241,8 @@ export default async function PersonaEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreatePersonaIn,
-  CreatePersonaOut,
+  SavePersonaIn,
+  SavePersonaOut,
   CreateDraftNamesIn,
   CreateDraftNamesOut,
   CreateDraftDescriptionsIn,
@@ -268,12 +255,8 @@ export type {
   CreateDraftIconsOut,
   CreateDraftFlagsIn,
   CreateDraftFlagsOut,
-  PersonaDetailIn,
-  PersonaDetailOut,
-  PersonaNewIn,
-  PersonaNewOut,
+  GetPersonaIn,
+  GetPersonaOut,
   PatchPersonaDraftIn,
   PatchPersonaDraftOut,
-  UpdatePersonaIn,
-  UpdatePersonaOut,
 };

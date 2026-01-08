@@ -1,4 +1,6 @@
-"""Persona create endpoint - v4 API following DHH principles."""
+"""Persona save endpoint - v4 API following DHH principles.
+Unified endpoint that handles both create (persona_id = NULL) and update (persona_id provided).
+"""
 
 from typing import Annotated, Any, cast
 
@@ -11,36 +13,37 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    CreatePersonaApiRequest,
-    CreatePersonaApiResponse,
-    CreatePersonaSqlParams,
-    CreatePersonaSqlRow,
+    SavePersonaApiRequest,
+    SavePersonaApiResponse,
+    SavePersonaSqlParams,
+    SavePersonaSqlRow,
     load_sql_query,
 )
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/personas/create_persona_complete.sql"
+SQL_PATH = "app/sql/v4/personas/save_persona_complete.sql"
 
 
 router = APIRouter()
 
 
 @router.post(
-    "/create",
-    response_model=CreatePersonaApiResponse,
+    "/save",
+    response_model=SavePersonaApiResponse,
     dependencies=[
         audit_activity(
-            "persona.created", "{{ actor.name }} created persona '{{ persona.name }}'"
+            "persona.saved",
+            "{{ actor.name }} {% if persona %}updated{% else %}created{% endif %} persona{% if persona %} '{{ persona.name }}'{% endif %}"
         )
     ],
 )
-async def create_persona(
-    request: CreatePersonaApiRequest,
+async def save_persona(
+    request: SavePersonaApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> CreatePersonaApiResponse:
-    """Create a new persona."""
+) -> SavePersonaApiResponse:
+    """Save persona - handles both create (persona_id = NULL) and update (persona_id provided)."""
     tags = ["personas"]  # From router tags
 
     sql_query = load_sql_query(SQL_PATH)
@@ -57,14 +60,17 @@ async def create_persona(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = CreatePersonaSqlParams(
-                **request.model_dump(), profile_id=profile_id
+            # Map persona_id from API request to input_persona_id for SQL function
+            params = SavePersonaSqlParams(
+                input_persona_id=request.persona_id,  # Can be NULL for create
+                **{k: v for k, v in request.model_dump().items() if k != "persona_id"},
+                profile_id=profile_id,
             )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
-                CreatePersonaSqlRow,
+                SavePersonaSqlRow,
                 await execute_sql_typed(
                     conn,
                     SQL_PATH,
@@ -73,22 +79,35 @@ async def create_persona(
             )
 
             if not result or not result.persona_id:
-                raise ValueError("Failed to create persona")
+                if request.persona_id:
+                    raise ValueError(f"Persona not found: {request.persona_id}")
+                else:
+                    raise ValueError("Failed to create persona")
 
             # Set audit context with data from SQL query
             if result.actor_name:
-                audit_set(
-                    http_request,
-                    actor={"name": result.actor_name, "id": profile_id},
-                    persona={"name": request.name, "id": str(result.persona_id)},
-                )
+                audit_ctx = {
+                    "actor": {"name": result.actor_name, "id": profile_id}
+                }
+                # Only add persona to audit context if persona_id was provided (update mode)
+                # For create mode, we don't have the name yet, so we'll use the request name if available
+                if request.persona_id:
+                    # Update mode: use request name (from request body)
+                    # Note: In update mode, request should have name field
+                    audit_ctx["persona"] = {
+                        "name": getattr(request, "name", "Persona"),
+                        "id": str(result.persona_id),
+                    }
+                audit_set(http_request, **audit_ctx)
 
         # Convert SQL result to API response
-        api_response = CreatePersonaApiResponse.model_validate(
+        api_response = SavePersonaApiResponse.model_validate(
             {
                 "success": True,
                 "personaId": str(result.persona_id),
-                "message": f"Persona '{request.name}' created successfully",
+                "message": (
+                    f"Persona '{getattr(request, 'name', '')}' {'updated' if request.persona_id else 'created'} successfully"
+                ),
             }
         )
 
@@ -105,7 +124,7 @@ async def create_persona(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_persona",
+            operation="save_persona",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,

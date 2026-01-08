@@ -27,12 +27,10 @@ import type {
   CreateDraftInstructionsOut,
   CreateDraftNamesIn,
   CreateDraftNamesOut,
-  CreatePersonaIn,
-  CreatePersonaOut,
   PersonaDetailOut,
   PersonaNewOut,
-  UpdatePersonaIn,
-  UpdatePersonaOut,
+  SavePersonaIn,
+  SavePersonaOut,
 } from "@/app/(main)/create/personas/p/[personaId]/page";
 import {
   GenericForm,
@@ -65,8 +63,7 @@ export interface PersonaNewProps {
   personaDetail?: PersonaDetailOut;
   personaDetailDefault?: PersonaNewOut;
   // Server actions (replaces useMutation)
-  createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
-  updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
+  savePersonaAction?: (input: SavePersonaIn) => Promise<SavePersonaOut>;
   patchPersonaDraftAction?: (input: {
     body: {
       input_draft_id: string | null;
@@ -115,8 +112,7 @@ function PersonaNewComponent({
   mode = personaId ? "edit" : "create",
   personaDetail: serverPersonaDetail,
   personaDetailDefault: serverPersonaDetailDefault,
-  createPersonaAction,
-  updatePersonaAction,
+  savePersonaAction,
   patchPersonaDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -997,61 +993,35 @@ function PersonaNewComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (isEditMode) {
-        if (!updatePersonaAction) {
-          toast.error("Update action not available");
-          throw new Error("Update action not available");
-        }
-        try {
-          await updatePersonaAction({
-            body: {
-              input_persona_id: personaId!,
-              name_id: formState.name_id,
-              description_id: formState.description_id || null,
-              color_id: formState.color_id,
-              icon_id: formState.icon_id,
-              instructions_id: formState.instructions_id,
-              active_flag_id: formState.active_flag_id || null,
-              department_ids: finalDepartmentIds,
-              field_ids: formState.field_ids || [],
-              example_ids: formState.example_ids || [],
-            },
-          });
-          toast.success("Persona updated successfully!");
-          router.push("/create/personas");
-        } catch (error) {
-          toast.error(
-            `Failed to update persona: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
-      } else {
-        if (!createPersonaAction) {
-          toast.error("Create action not available");
-          throw new Error("Create action not available");
-        }
-        try {
-          await createPersonaAction({
-            body: {
-              name_id: formState.name_id,
-              description_id: formState.description_id || null,
-              color_id: formState.color_id,
-              icon_id: formState.icon_id,
-              instructions_id: formState.instructions_id,
-              active_flag_id: formState.active_flag_id || null,
-              department_ids: finalDepartmentIds,
-              field_ids: formState.field_ids || [],
-              example_ids: formState.example_ids || [],
-            },
-          });
-          toast.success("Persona created successfully!");
-          router.push("/create/personas");
-        } catch (error) {
-          toast.error(
-            `Failed to create persona: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
+      if (!savePersonaAction) {
+        toast.error("Save action not available");
+        throw new Error("Save action not available");
+      }
+
+      try {
+        await savePersonaAction({
+          body: {
+            persona_id: isEditMode ? personaId! : null,
+            name_id: formState.name_id,
+            description_id: formState.description_id || null,
+            color_id: formState.color_id,
+            icon_id: formState.icon_id,
+            instructions_id: formState.instructions_id,
+            active_flag_id: formState.active_flag_id || null,
+            department_ids: finalDepartmentIds,
+            field_ids: formState.field_ids || [],
+            example_ids: formState.example_ids || [],
+          },
+        });
+        toast.success(
+          `Persona ${isEditMode ? "updated" : "created"} successfully!`
+        );
+        router.push("/create/personas");
+      } catch (error) {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} persona: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        throw error;
       }
     },
     [
@@ -1061,8 +1031,7 @@ function PersonaNewComponent({
       isSuperadmin,
       personaData,
       effectiveProfile?.id,
-      updatePersonaAction,
-      createPersonaAction,
+      savePersonaAction,
       router,
     ]
   );
