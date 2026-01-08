@@ -76,21 +76,45 @@ description_resource AS (
     RETURNING id as description_id
 ),
 insert_doc AS (
-    -- Create document (without name/description/active/template columns)
+    -- Create document (without name/description/active/template/document_domain_id columns)
     INSERT INTO documents (
         id, 
         created_at, 
-        updated_at,
-        document_domain_id
+        updated_at
     )
     SELECT 
         ndi.document_id,
         NOW(), 
-        NOW(),
-        (SELECT d.id FROM domains d JOIN agents a ON a.id = d.agent_id WHERE d.artifact = CAST('document' AS artifacts) AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) LIMIT 1)
+        NOW()
     FROM params p
     CROSS JOIN new_document_id ndi
     RETURNING id
+),
+-- Link document to agent domain if default document agent exists
+link_document_agent_domain AS (
+    INSERT INTO document_agent_domains (document_id, agent_domain_id, created_at, updated_at)
+    SELECT 
+        id.id,
+        dd.domain_id,
+        NOW(),
+        NOW()
+    FROM insert_doc id
+    CROSS JOIN (
+        SELECT adom.domain_id
+        FROM agent_domains adom
+        JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = 'document'::artifacts
+        JOIN agents a ON a.id = adom.agent_id
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+            AND fl.name = 'active' 
+            AND af.type = 'active'::type_agent_flags 
+            AND af.value = true
+        )
+        LIMIT 1
+    ) dd
+    ON CONFLICT (document_id, agent_domain_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link document to name
 link_document_name AS (

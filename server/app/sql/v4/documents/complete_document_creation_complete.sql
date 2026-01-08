@@ -32,12 +32,24 @@ description_resource AS (
     RETURNING id as description_id
 ),
 create_child_document AS (
-    -- Create child document (without name/description/active/template columns)
+    -- Create child document (without name/description/active/template/document_domain_id columns)
     INSERT INTO documents (
-        id, created_at, updated_at, document_domain_id
+        id, created_at, updated_at
     )
-    VALUES (gen_random_uuid(), NOW(), NOW(), api_complete_document_creation_v4.document_domain_id)
+    VALUES (gen_random_uuid(), NOW(), NOW())
     RETURNING id as document_id
+),
+-- Link document to agent domain if provided
+link_child_document_agent_domain AS (
+    INSERT INTO document_agent_domains (document_id, agent_domain_id, created_at, updated_at)
+    SELECT 
+        ccd.document_id,
+        api_complete_document_creation_v4.document_domain_id,
+        NOW(),
+        NOW()
+    FROM create_child_document ccd
+    WHERE api_complete_document_creation_v4.document_domain_id IS NOT NULL
+    ON CONFLICT (document_id, agent_domain_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link document to name
 link_document_name AS (

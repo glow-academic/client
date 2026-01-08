@@ -96,7 +96,7 @@ SELECT DISTINCT ON (t.id)
     t.name,
     t.description,
     COALESCE(rt.resource::text, '') as tool_type,  -- Derive from resource enum
-    COALESCE(d.artifact::text, '') as agent_role,  -- Derive from domains
+    COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
     COALESCE(tsd.arguments, '{}'::jsonb) as arguments,
     COALESCE(tsd.argument_descriptions, '{}'::jsonb) as argument_descriptions,
     COALESCE(tsd.argument_defaults, '{}'::jsonb) as argument_defaults,
@@ -104,7 +104,8 @@ SELECT DISTINCT ON (t.id)
 FROM agent_tools at
 JOIN tools t ON t.id = at.tool_id
 LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-LEFT JOIN domains d ON d.agent_id = at.agent_id
+LEFT JOIN agent_domains adom ON adom.agent_id = at.agent_id
+LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
 LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
 WHERE at.agent_id = socket_get_agent_tools_v4.agent_id
   AND at.active = TRUE

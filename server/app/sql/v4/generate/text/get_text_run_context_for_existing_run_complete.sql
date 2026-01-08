@@ -265,7 +265,7 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(d.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(da.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
             ) FILTER (WHERE t.id IS NOT NULL),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
@@ -275,7 +275,8 @@ agent_tools_data AS (
     LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN domains d ON d.agent_id = sa.agent_id
+    LEFT JOIN agent_domains adom ON adom.agent_id = sa.agent_id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     GROUP BY sa.agent_id
 ),
 -- Get department name (from agent_departments or profile primary department)
@@ -311,7 +312,7 @@ context_data AS (
         -- Agent data
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        COALESCE(d.artifact::text, '') as agent_role,  -- Derive from domains
+        COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -339,7 +340,8 @@ context_data AS (
 
     FROM selected_agent sa
     INNER JOIN agents a ON a.id = sa.agent_id
-    LEFT JOIN domains d ON d.agent_id = a.id
+    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     CROSS JOIN run_profile rp
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true

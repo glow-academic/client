@@ -25469,8 +25469,8 @@ class UpdateSimulationSqlParams(BaseModel):
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
-    simulation_text_domain_id: UUID
-    simulation_voice_domain_id: UUID
+    simulation_text_agent_domain_id: UUID
+    simulation_voice_agent_domain_id: UUID
     profile_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -25498,8 +25498,8 @@ class UpdateSimulationSqlParams(BaseModel):
             self.video_show_problem_statement,
             self.video_show_objectives,
             self.video_show_image,
-            self.simulation_text_domain_id,
-            self.simulation_voice_domain_id,
+            self.simulation_text_agent_domain_id,
+            self.simulation_voice_agent_domain_id,
             self.profile_id,
         )
 
@@ -25527,8 +25527,8 @@ class UpdateSimulationApiRequest(BaseModel):
     video_show_problem_statement: list[bool]
     video_show_objectives: list[bool]
     video_show_image: list[bool]
-    simulation_text_domain_id: UUID
-    simulation_voice_domain_id: UUID
+    simulation_text_agent_domain_id: UUID
+    simulation_voice_agent_domain_id: UUID
 
 class UpdateSimulationApiResponse(BaseModel):
 

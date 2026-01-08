@@ -26,9 +26,27 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_persona AS (
-        INSERT INTO personas(instructions)
-        VALUES (test_create_test_persona_v4.instructions)
-        RETURNING id, instructions, created_at
+        INSERT INTO personas(created_at, updated_at)
+        VALUES (NOW(), NOW())
+        RETURNING id, created_at
+    ),
+    new_instruction AS (
+        INSERT INTO instructions(template, active, created_at, updated_at)
+        SELECT 
+            COALESCE(test_create_test_persona_v4.instructions, ''),
+            true,
+            NOW(),
+            NOW()
+        WHERE test_create_test_persona_v4.instructions IS NOT NULL
+        RETURNING id
+    ),
+    persona_instruction_link AS (
+        INSERT INTO persona_instructions(persona_id, instruction_id, created_at, updated_at)
+        SELECT np.id, ni.id, NOW(), NOW()
+        FROM new_persona np
+        CROSS JOIN new_instruction ni
+        WHERE ni.id IS NOT NULL
+        RETURNING persona_id
     ),
     name_resource AS (
         INSERT INTO names(name)
@@ -90,7 +108,7 @@ AS $$
         (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = np.id LIMIT 1) as color,
         (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = np.id LIMIT 1) as icon,
         EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE) as active,
-        np.instructions,
+        (SELECT i.template FROM persona_instructions pi JOIN instructions i ON pi.instruction_id = i.id WHERE pi.persona_id = np.id LIMIT 1) as instructions,
         np.created_at
     FROM new_persona np;
 $$;

@@ -340,7 +340,7 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(d.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(da.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
             ) FILTER (WHERE t.id IS NOT NULL),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
@@ -349,7 +349,8 @@ agent_tools_data AS (
     LEFT JOIN agent_tools at ON at.agent_id = sa.agent_id AND at.active = true
     LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN domains d ON d.agent_id = sa.agent_id
+    LEFT JOIN agent_domains adom ON adom.agent_id = sa.agent_id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     GROUP BY sa.agent_id
 ),
@@ -357,13 +358,13 @@ agent_tools_data AS (
 developer_instruction_data AS (
     SELECT 
         sa.agent_id,
-        di.template as developer_instruction_template,
-        dis.schema_id as developer_instruction_schema_id
+        i.template as developer_instruction_template,
+        ins.schema_id as developer_instruction_schema_id
     FROM selected_agent sa
     INNER JOIN agents a ON a.id = sa.agent_id
-    LEFT JOIN agent_developer_instructions adi ON adi.agent_id = a.id
-    LEFT JOIN developer_instructions di ON di.id = adi.developer_instruction_id AND di.active = true
-    LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
+    LEFT JOIN agent_instructions ai ON ai.agent_id = a.id
+    LEFT JOIN instructions i ON i.id = ai.instruction_id AND i.active = true
+    LEFT JOIN instruction_schemas ins ON ins.instruction_id = i.id
     LIMIT 1
 ),
 -- Get department name
@@ -380,7 +381,7 @@ context_data AS (
         -- Agent data
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        COALESCE(d.artifact::text, '') as agent_role,  -- Derive from domains
+        COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -412,7 +413,8 @@ context_data AS (
 
     FROM selected_agent sa
     INNER JOIN agents a ON a.id = sa.agent_id
-    LEFT JOIN domains d ON d.agent_id = a.id
+    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     CROSS JOIN params p
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true

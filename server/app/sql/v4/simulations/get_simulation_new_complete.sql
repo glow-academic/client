@@ -283,7 +283,7 @@ valid_rubrics_data AS (
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
     WHERE EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
-      AND EXISTS (SELECT 1 FROM domains d WHERE d.artifact = CAST('agent' AS artifacts))
+      AND EXISTS (SELECT 1 FROM domain_artifacts da WHERE da.artifact = CAST('agent' AS artifacts))
       AND (
           rd.department_id = ANY(udi.ids)
           OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -471,7 +471,7 @@ department_rubric_ids_default AS (
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT r.id ORDER BY r.id) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::uuid[]) as rubric_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN rubrics r ON EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true) AND r.artifact = CAST('agent' AS artifacts)
+    LEFT JOIN rubrics r ON EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true) AND EXISTS (SELECT 1 FROM rubric_artifacts ra WHERE ra.rubric_id = r.id AND ra.artifact = CAST('agent' AS artifacts))
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     WHERE (rd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true))
     GROUP BY ud.id
@@ -505,23 +505,26 @@ agents_data AS (
         ) as agents,
         ARRAY_AGG(filtered_agents.id ORDER BY filtered_agents.name) as agent_ids
     FROM (
-        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(d.artifact::text, '') as role
+        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
         FROM agents a
-        JOIN domains d ON d.agent_id = a.id
+        JOIN agent_domains adom ON adom.agent_id = a.id
+        JOIN domain_artifacts da ON da.domain_id = adom.domain_id
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) 
-        AND d.artifact IN (CAST('message' AS artifacts), CAST('grade' AS artifacts), CAST('scenario' AS artifacts), CAST('agent' AS artifacts))
-        GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), d.artifact
+        AND da.artifact IN (CAST('message' AS artifacts), CAST('grade' AS artifacts), CAST('scenario' AS artifacts), CAST('agent' AS artifacts))
+        GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), da.artifact
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
             OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
         UNION
-        -- Get rubric agents (member role) from rubrics.rubric_agent_id
-        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(d.artifact::text, '') as role
+        -- Get rubric agents (member role) from rubric_domains
+        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
         FROM rubrics r
-        JOIN domains d ON d.id = r.rubric_domain_id
-        JOIN agents a ON a.id = d.agent_id
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) AND r.rubric_domain_id IS NOT NULL AND d.artifact = CAST('agent' AS artifacts)
+        JOIN rubric_domains rd_link ON rd_link.rubric_id = r.id
+        JOIN agent_domains adom ON adom.domain_id = rd_link.domain_id
+        JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
+        JOIN agents a ON a.id = adom.agent_id
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     ) filtered_agents
 ),
 -- Auto-select default agents when there's only one option for each role
@@ -529,7 +532,8 @@ valid_hint_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
@@ -540,7 +544,8 @@ valid_simulation_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('scenario' AS artifacts)
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('scenario' AS artifacts)
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
@@ -551,7 +556,8 @@ valid_voice_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
@@ -562,22 +568,23 @@ valid_member_agents AS (
     SELECT DISTINCT a.id
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('agent' AS artifacts)
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     UNION
-    -- Get rubric agents (member role) from rubrics.rubric_domain_id
+    -- Get rubric agents (member role) from rubric_domains
     SELECT DISTINCT a.id
     FROM rubrics r
-    JOIN domains d ON d.id = r.rubric_domain_id
-    JOIN agents a ON a.id = d.agent_id
+    JOIN rubric_domains rd_link ON rd_link.rubric_id = r.id
+    JOIN agent_domains adom ON adom.domain_id = rd_link.domain_id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
+    JOIN agents a ON a.id = adom.agent_id
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) 
     AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
-    AND r.rubric_domain_id IS NOT NULL
-    AND d.artifact = CAST('agent' AS artifacts)
 ),
 default_hint_agent AS (
     SELECT id FROM valid_hint_agents

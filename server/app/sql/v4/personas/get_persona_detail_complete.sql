@@ -205,7 +205,7 @@ persona_data AS (
         EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE) as active,
         (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
         (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
-        p.instructions,
+        (SELECT i.template FROM persona_instructions pi JOIN instructions i ON pi.instruction_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as instructions,
         COALESCE(pdd.department_ids, NULL) as department_ids
     FROM params x
     JOIN personas p ON p.id = x.persona_id
@@ -230,11 +230,12 @@ agent_mapping_data AS (
         a.id as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
-        ARRAY[COALESCE(d.artifact::text, '')] as roles
+        ARRAY[COALESCE(da.artifact::text, '')] as roles
     FROM agents a
-    JOIN domains d ON d.agent_id = a.id
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
-    AND d.artifact IN (CAST('scenario' AS artifacts), CAST('message' AS artifacts))
+    AND da.artifact IN (CAST('scenario' AS artifacts), CAST('message' AS artifacts))
     AND (
         EXISTS (
             SELECT 1 FROM agent_departments ad 

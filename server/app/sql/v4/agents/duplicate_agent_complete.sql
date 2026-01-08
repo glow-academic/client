@@ -30,16 +30,17 @@ source_agent AS (
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1),
         (SELECT m.id FROM agent_models am JOIN models m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
-        COALESCE(d.artifact::text, '') as role,  -- Derive from domains
+        COALESCE(da.artifact::text, '') as role,  -- Derive from domain_artifacts via agent_domains
         ap.prompt_id,
         COALESCE(pr.system_prompt, '') as system_prompt,
         -- Get temperature and reasoning from junction tables
         atl.model_temperature_level_id,
         arl.model_reasoning_level_id,
-        d.artifact  -- Need artifact for linking
+        da.artifact  -- Need artifact for linking
     FROM params x
     JOIN agents a ON a.id = x.agent_id
-    LEFT JOIN domains d ON d.agent_id = a.id
+    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
     LEFT JOIN prompts pr ON pr.id = ap.prompt_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
@@ -138,18 +139,44 @@ link_agent_active_flag AS (
         value = false,
         updated_at = NOW()
 ),
-copy_domain_link AS (
-    -- Copy domains link
-    INSERT INTO domains (artifact, agent_id, created_at, updated_at)
+-- Create domain for duplicated agent
+create_domain_for_duplicate AS (
+    INSERT INTO domains (created_at, updated_at)
+    SELECT NOW(), NOW()
+    FROM source_agent sa
+    CROSS JOIN new_agent na
+    WHERE sa.role IS NOT NULL AND sa.role != ''
+    RETURNING id as domain_id
+),
+copy_domain_artifact AS (
+    -- Link domain to artifact via domain_artifacts
+    INSERT INTO domain_artifacts (domain_id, artifact, created_at, updated_at)
     SELECT 
+        cdfd.domain_id,
         CAST(sa.role AS artifacts),
-        na.agent_id::uuid,
         NOW(),
         NOW()
     FROM source_agent sa
     CROSS JOIN new_agent na
+    CROSS JOIN create_domain_for_duplicate cdfd
     WHERE sa.role IS NOT NULL AND sa.role != ''
-    ON CONFLICT (artifact, agent_id) DO NOTHING
+    ON CONFLICT (domain_id, artifact) DO UPDATE SET
+        updated_at = NOW()
+),
+copy_domain_link AS (
+    -- Link agent to domain via agent_domains
+    INSERT INTO agent_domains (agent_id, domain_id, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        cdfd.domain_id,
+        NOW(),
+        NOW()
+    FROM source_agent sa
+    CROSS JOIN new_agent na
+    CROSS JOIN create_domain_for_duplicate cdfd
+    WHERE sa.role IS NOT NULL AND sa.role != ''
+    ON CONFLICT (agent_id, domain_id) DO UPDATE SET
+        updated_at = NOW()
 ),
 copy_temperature AS (
     INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active, created_at, updated_at)

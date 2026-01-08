@@ -132,7 +132,8 @@ best_agent AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN params p
-    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('document' AS artifacts)
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('document' AS artifacts)
     AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         -- Include if agent is linked to the specified department (if provided)

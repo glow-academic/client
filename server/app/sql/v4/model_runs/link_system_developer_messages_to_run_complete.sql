@@ -70,14 +70,16 @@ WITH run_info AS (
 persona_system_prompt AS (
     SELECT 
         CASE 
-            WHEN p.instructions IS NOT NULL AND p.instructions != '' THEN
-                COALESCE(pr_dept.system_prompt, pr_default.system_prompt) || E'\n\n' || p.instructions
+            WHEN pi_inst.template IS NOT NULL AND pi_inst.template != '' THEN
+                COALESCE(pr_dept.system_prompt, pr_default.system_prompt) || E'\n\n' || pi_inst.template
             ELSE
                 COALESCE(pr_dept.system_prompt, pr_default.system_prompt)
         END as system_prompt
     FROM run_info ri
     JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true
     JOIN personas p ON p.id = rp.persona_id
+    LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
+    LEFT JOIN instructions pi_inst ON pi_inst.id = pi.instruction_id
     JOIN agents a ON a.id = ri.agent_id
     LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
         AND adp.department_id = ri.department_id
@@ -186,19 +188,19 @@ link_system AS (
     RETURNING message_id as system_message_id
 ),
 -- Get scenario developer message (for simulation runs with chat_id)
--- Use developer_instructions table for scenario_statement type
+-- Use instructions table for scenario_statement type
 scenario_developer_template AS (
-    SELECT di.template
+    SELECT i.template
     FROM run_info ri
     JOIN agents a ON a.id = ri.agent_id
-    JOIN agent_developer_instructions adi ON adi.agent_id = a.id
-    JOIN developer_instructions di ON di.id = adi.developer_instruction_id
-    WHERE di.active = true
+    JOIN agent_instructions ai ON ai.agent_id = a.id
+    JOIN instructions i ON i.id = ai.instruction_id
+    WHERE i.active = true
     LIMIT 1
 ),
 scenario_developer_content AS (
     SELECT DISTINCT
-        -- Use template from developer_instructions if available, otherwise fallback to hardcoded
+        -- Use template from instructions if available, otherwise fallback to hardcoded
         COALESCE(
             REPLACE(sdt.template, '{{ problem_statement }}', ps.problem_statement),
             'The following is the scenario for the chat: ' || ps.problem_statement

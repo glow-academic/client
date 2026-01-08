@@ -92,16 +92,40 @@ new_icon_resource AS (
 ),
 new_persona AS (
     INSERT INTO personas (
-        instructions,
         created_at,
         updated_at
     )
     SELECT 
-        '',
         NOW(),
         NOW()
     FROM original_persona op
     RETURNING id
+),
+-- Copy instruction if original persona has one
+copy_persona_instruction AS (
+    INSERT INTO instructions (template, active, created_at, updated_at)
+    SELECT 
+        COALESCE(pi_orig.template, ''),
+        true,
+        NOW(),
+        NOW()
+    FROM new_persona np
+    CROSS JOIN original_persona op
+    LEFT JOIN persona_instructions pi_orig_link ON pi_orig_link.persona_id = op.id
+    LEFT JOIN instructions pi_orig ON pi_orig.id = pi_orig_link.instruction_id
+    WHERE pi_orig.template IS NOT NULL AND pi_orig.template != ''
+    RETURNING id as instruction_id
+),
+link_persona_instruction AS (
+    INSERT INTO persona_instructions (persona_id, instruction_id, created_at, updated_at)
+    SELECT 
+        np.id,
+        cpi.instruction_id,
+        NOW(),
+        NOW()
+    FROM new_persona np
+    CROSS JOIN copy_persona_instruction cpi
+    ON CONFLICT (persona_id, instruction_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link persona to name
 link_persona_name AS (

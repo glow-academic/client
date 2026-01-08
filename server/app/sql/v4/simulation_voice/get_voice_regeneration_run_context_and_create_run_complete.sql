@@ -342,22 +342,22 @@ context_data AS (
          LIMIT 1) as persona_name,
         -- Voice agent/model data (preferred for voice mode)
         -- Get voice agent from simulation
-        d_voice_domain.agent_id as voice_agent_id,
+        adom_voice.agent_id as voice_agent_id,
         -- Get voice model/provider from voice agent
         (SELECT m_voice.id FROM agents a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models m_voice ON m_voice.id = am_voice.model_id
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
          LIMIT 1) as voice_model_id,
         (SELECT m_voice.value FROM agents a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models m_voice ON m_voice.id = am_voice.model_id
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
          LIMIT 1) as voice_model_name,
         (SELECT CASE WHEN me_voice.base_url IS NOT NULL AND me_voice.base_url != '' THEN m_voice.value ELSE NULL END
@@ -365,35 +365,35 @@ context_data AS (
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN model_endpoints me_voice ON me_voice.model_id = m_voice.id AND me_voice.active = true
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_custom_model,
         (SELECT p_voice.id FROM agents a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models m_voice ON m_voice.id = am_voice.model_id
          JOIN model_providers mp_voice ON mp_voice.model_id = m_voice.id
          JOIN providers p_voice ON p_voice.id = mp_voice.provider_id
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_provider_id,
         (SELECT p_voice.value::text FROM agents a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models m_voice ON m_voice.id = am_voice.model_id
          JOIN model_providers mp_voice ON mp_voice.model_id = m_voice.id
          JOIN providers p_voice ON p_voice.id = mp_voice.provider_id
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_provider,
         (SELECT me_voice.base_url FROM agents a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN model_endpoints me_voice ON me_voice.model_id = m_voice.id AND me_voice.active = true
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_base_url,
         -- Voice API keys (via settings system)
         (SELECT k_voice.key FROM agents a_voice 
@@ -407,9 +407,9 @@ context_data AS (
              AND spk_voice.active = true
          LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id 
              AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k_voice.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = true)
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_api_key,
         -- Voice prompt/temperature/reasoning (from agent)
         (SELECT COALESCE(pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, '')
@@ -420,9 +420,9 @@ context_data AS (
          LEFT JOIN prompts pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
          LEFT JOIN agent_prompts ap_voice_default ON ap_voice_default.agent_id = a_voice.id AND ap_voice_default.active = true
          LEFT JOIN prompts pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_system_prompt,
         (SELECT COALESCE(mtl_voice.temperature, 0.0)
          FROM agents a_voice
@@ -431,9 +431,9 @@ context_data AS (
          LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
          LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.id = atl_voice.model_temperature_level_id 
              AND mtl_voice.active = true AND mtl_voice.model_id = m_voice.id
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_temperature,
         (SELECT mrl_voice.reasoning_level
          FROM agents a_voice
@@ -442,9 +442,9 @@ context_data AS (
          LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
          LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.id = arl_voice.model_reasoning_level_id 
              AND mrl_voice.active = true AND mrl_voice.model_id = m_voice.id
-         LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-         LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-         WHERE a_voice.id = d_voice_domain.agent_id 
+         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+         WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_reasoning,
         -- Text agent/model data (for compatibility - not used in voice mode)
         NULL::text as system_prompt,
@@ -472,8 +472,8 @@ context_data AS (
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios s ON s.id = sc.scenario_id
     INNER JOIN simulations sim ON sim.id = sa.simulation_id
-    LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-    LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
+    LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+    LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     CROSS JOIN group_data g

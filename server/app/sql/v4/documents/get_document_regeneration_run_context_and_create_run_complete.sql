@@ -139,9 +139,10 @@ best_agent AS (
     -- Use the provided document_domain_id directly (UI handles filtering and selection)
     SELECT a.id as agent_id
     FROM agents a
-    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('document' AS artifacts)
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('document' AS artifacts)
     CROSS JOIN params p
-    WHERE d.id = p.document_domain_id
+    WHERE adom.domain_id = p.document_domain_id
     AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
 ),
 profile_rate_limit AS (

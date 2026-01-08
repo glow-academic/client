@@ -469,9 +469,9 @@ scenario_core AS (
         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'video_enabled' AND sf.type = 'video_enabled'::type_scenario_flags AND sf.value = TRUE) as video_enabled,
         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'questions_enabled' AND sf.type = 'questions_enabled'::type_scenario_flags AND sf.value = TRUE) as questions_enabled,
         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'problem_statement_enabled' AND sf.type = 'problem_statement_enabled'::type_scenario_flags AND sf.value = TRUE) as problem_statement_enabled,
-        (SELECT sd.domain_id FROM scenario_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'default'::type_scenario_domains LIMIT 1)::text as scenario_domain_id,
-        (SELECT sd.domain_id FROM scenario_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'image'::type_scenario_domains LIMIT 1)::text as image_domain_id,
-        (SELECT sd.domain_id FROM scenario_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'video'::type_scenario_domains LIMIT 1)::text as video_domain_id
+        (SELECT sd.agent_domain_id FROM scenario_agent_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'default'::type_scenario_domains LIMIT 1)::text as scenario_domain_id,
+        (SELECT sd.agent_domain_id FROM scenario_agent_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'image'::type_scenario_domains LIMIT 1)::text as image_domain_id,
+        (SELECT sd.agent_domain_id FROM scenario_agent_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'video'::type_scenario_domains LIMIT 1)::text as video_domain_id
     FROM scenarios s
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
@@ -1817,18 +1817,19 @@ valid_agents_array AS (
         a.id as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
-        ARRAY[COALESCE(d.artifact::text, '')] as roles
+        ARRAY[COALESCE(da.artifact::text, '')] as roles
     FROM agents a
-    JOIN domains d ON d.agent_id = a.id
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN expected_agent_role ear
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) 
     AND (
-        d.artifact = CAST(ear.role AS artifacts)
-        OR d.artifact = CAST('scenario' AS artifacts)
-        OR d.artifact = CAST('scenario' AS artifacts)
+        da.artifact = CAST(ear.role AS artifacts)
+        OR da.artifact = CAST('scenario' AS artifacts)
+        OR da.artifact = CAST('scenario' AS artifacts)
     )
-    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(d.artifact::text, ''), ear.role
+    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, ''), ear.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)

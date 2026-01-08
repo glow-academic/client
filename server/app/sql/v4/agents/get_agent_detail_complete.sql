@@ -171,10 +171,11 @@ agent_info AS (
               AND af.type = 'active'::type_agent_flags
               AND af.value = TRUE
         ) AS active,
-        COALESCE(d.artifact::text, '') as role  -- Derive from domains
+        COALESCE(da.artifact::text, '') as role  -- Derive from domain_artifacts via agent_domains
     FROM params x
     JOIN agents a ON a.id = x.agent_id
-    LEFT JOIN domains d ON d.agent_id = a.id
+    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
 ),
 agent_active_prompt AS (
     SELECT 

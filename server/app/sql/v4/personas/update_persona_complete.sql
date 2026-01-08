@@ -122,14 +122,59 @@ icon_resource AS (
     RETURNING id as icon_id
 ),
 update_persona AS (
-    -- Update persona (without name/description/active/color/icon columns)
+    -- Update persona (without name/description/active/color/icon/instructions columns)
     UPDATE personas
     SET 
-        instructions = x.instructions,
         updated_at = NOW()
     FROM params x
     WHERE id = x.persona_id
     RETURNING id
+),
+-- Update instruction if provided
+update_or_create_instruction AS (
+    -- Delete existing instruction links
+    DELETE FROM persona_instructions
+    WHERE persona_id = (SELECT persona_id FROM params)
+      AND (SELECT instructions FROM params) IS NOT NULL
+),
+create_or_update_instruction AS (
+    INSERT INTO instructions (template, active, created_at, updated_at)
+    SELECT 
+        x.instructions,
+        true,
+        NOW(),
+        NOW()
+    FROM params x
+    WHERE x.instructions IS NOT NULL AND x.instructions != ''
+    ON CONFLICT DO NOTHING
+    RETURNING id as instruction_id
+),
+get_existing_instruction AS (
+    SELECT id as instruction_id
+    FROM instructions
+    WHERE template = (SELECT instructions FROM params)
+    LIMIT 1
+),
+target_instruction AS (
+    SELECT COALESCE(
+        (SELECT instruction_id FROM create_or_update_instruction LIMIT 1),
+        (SELECT instruction_id FROM get_existing_instruction LIMIT 1)
+    ) as instruction_id
+    FROM params
+    WHERE instructions IS NOT NULL AND instructions != ''
+    LIMIT 1
+),
+link_persona_instruction AS (
+    INSERT INTO persona_instructions (persona_id, instruction_id, created_at, updated_at)
+    SELECT 
+        up.id,
+        ti.instruction_id,
+        NOW(),
+        NOW()
+    FROM update_persona up
+    CROSS JOIN target_instruction ti
+    WHERE ti.instruction_id IS NOT NULL
+    ON CONFLICT (persona_id, instruction_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Remove old name links
 remove_old_name AS (

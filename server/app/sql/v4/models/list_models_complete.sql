@@ -92,17 +92,17 @@ simulation_usage AS (
         am.model_id,
         COUNT(*) as usage_count
     FROM (
-        SELECT d_text.agent_id
+        SELECT adom_text.agent_id
         FROM simulations sim
-        LEFT JOIN simulation_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
-        LEFT JOIN domains d_text ON d_text.id = sd_text.domain_id
-        WHERE sd_text.domain_id IS NOT NULL
+        LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
+        LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
+        WHERE sd_text.agent_domain_id IS NOT NULL
         UNION ALL
-        SELECT d_voice.agent_id
+        SELECT adom_voice.agent_id
         FROM simulations sim
-        LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-        LEFT JOIN domains d_voice ON d_voice.id = sd_voice.domain_id
-        WHERE sd_voice.domain_id IS NOT NULL
+        LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+        LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+        WHERE sd_voice.agent_domain_id IS NOT NULL
     ) combined_agents
     JOIN agents a ON a.id = combined_agents.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     JOIN agent_models am ON am.agent_id = a.id

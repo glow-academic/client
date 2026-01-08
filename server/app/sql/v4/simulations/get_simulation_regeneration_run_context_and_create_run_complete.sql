@@ -399,10 +399,11 @@ context_data AS (
     LEFT JOIN personas p ON p.id = first_persona.persona_id
     -- Text agent (use simulation agent - fallback to persona agent if persona_text_agents table exists)
     -- Note: For regeneration, we use simulation agent to match original run context
-    LEFT JOIN simulation_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
-    LEFT JOIN domains d_text_domain ON d_text_domain.id = sd_text.domain_id
-    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
-    LEFT JOIN domains d ON d.id = sd_text.domain_id AND d.artifact = CAST('scenario' AS artifacts)
+    LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
+    LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
+    LEFT JOIN agents a ON a.id = adom_text.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    LEFT JOIN agent_domains adom ON adom.domain_id = sd_text.agent_domain_id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('scenario' AS artifacts)
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt.active = true
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
@@ -428,11 +429,11 @@ context_data AS (
     LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     -- Voice agent (use simulation voice agent - fallback to persona agent if persona_voice_agents table exists)
     -- Note: For regeneration, we use simulation agent to match original run context
-    LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-    LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-    LEFT JOIN agents a_voice ON a_voice.id = d_voice_domain.agent_id 
+    LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+    LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+    LEFT JOIN domain_artifacts da_voice ON da_voice.domain_id = adom_voice.domain_id AND da_voice.artifact = CAST('message' AS artifacts)
+    LEFT JOIN agents a_voice ON a_voice.id = adom_voice.agent_id 
         AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
-    LEFT JOIN domains d_voice ON d_voice.id = sd_voice.domain_id AND d_voice.artifact = CAST('message' AS artifacts)
     -- Try department-specific voice prompt first, fall back to default voice prompt
     LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id AND adp_prompt_voice.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt_voice.active = true
     LEFT JOIN prompts pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id

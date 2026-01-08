@@ -256,7 +256,7 @@ context_data AS (
         -- Agent data (via department_agents junction for 'scenario' role)
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        COALESCE(d.artifact::text, '') as agent_role,  -- Derive from domains
+        COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -303,7 +303,7 @@ context_data AS (
         -- Includes all parent document info needed for child creation
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), d.document_domain_id::text, ds.schema_id, dh.html_id::text, u.file_path)::types.i_get_scenario_run_context_and_create_run_v4_document_template
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), (SELECT dad.agent_domain_id::text FROM document_agent_domains dad WHERE dad.document_id = d.id LIMIT 1), ds.schema_id, dh.html_id::text, u.file_path)::types.i_get_scenario_run_context_and_create_run_v4_document_template
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document_template[]
             FROM documents d
@@ -359,7 +359,8 @@ context_data AS (
 
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
-    LEFT JOIN domains d ON d.agent_id = a.id
+    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     CROSS JOIN params p
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true

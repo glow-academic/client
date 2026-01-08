@@ -99,12 +99,13 @@ filtered_agents AS (
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
         (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
         (SELECT m.id FROM agent_models am JOIN models m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
-        COALESCE(d.artifact::text, '') as role,  -- Derive from domains
+        COALESCE(da.artifact::text, '') as role,  -- Derive from domain_artifacts via agent_domains
         a.updated_at
     FROM agents a
-    LEFT JOIN domains d ON d.agent_id = a.id
+    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    GROUP BY a.id, d.artifact, a.updated_at
+    GROUP BY a.id, da.artifact, a.updated_at
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0

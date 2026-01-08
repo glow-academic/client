@@ -28,7 +28,8 @@ WITH params AS (
 member_agent AS (
     SELECT a.id as agent_id
     FROM agents a
-    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('agent' AS artifacts)
+    JOIN agent_domains adom ON adom.agent_id = a.id
+    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
     WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     LIMIT 1
 ),
@@ -311,14 +312,16 @@ run_info AS (
 persona_system_prompt AS (
     SELECT 
         CASE 
-            WHEN p.instructions IS NOT NULL AND p.instructions != '' THEN
-                COALESCE(pr_dept.system_prompt, pr_default.system_prompt) || E'\n\n' || p.instructions
+            WHEN pi_inst.template IS NOT NULL AND pi_inst.template != '' THEN
+                COALESCE(pr_dept.system_prompt, pr_default.system_prompt) || E'\n\n' || pi_inst.template
             ELSE
                 COALESCE(pr_dept.system_prompt, pr_default.system_prompt)
         END as system_prompt
     FROM run_info ri
     JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true
     JOIN personas p ON p.id = rp.persona_id
+    LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
+    LEFT JOIN instructions pi_inst ON pi_inst.id = pi.instruction_id
     JOIN runs r ON r.id = ri.run_id
     JOIN agents a ON a.id = r.agent_id
     LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 

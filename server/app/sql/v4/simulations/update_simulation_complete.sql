@@ -47,8 +47,8 @@ CREATE OR REPLACE FUNCTION api_update_simulation_v4(
     video_show_problem_statement boolean[],
     video_show_objectives boolean[],
     video_show_image boolean[],
-    simulation_text_domain_id uuid,
-    simulation_voice_domain_id uuid,
+    simulation_text_agent_domain_id uuid,
+    simulation_voice_agent_domain_id uuid,
     profile_id uuid
 )
 RETURNS TABLE (
@@ -76,8 +76,8 @@ WITH params AS (
         COALESCE(video_show_problem_statement, ARRAY[]::boolean[]) AS video_show_problem_statement,
         COALESCE(video_show_objectives, ARRAY[]::boolean[]) AS video_show_objectives,
         COALESCE(video_show_image, ARRAY[]::boolean[]) AS video_show_image,
-        simulation_text_domain_id AS simulation_text_domain_id,
-        simulation_voice_domain_id AS simulation_voice_domain_id,
+        simulation_text_agent_domain_id AS simulation_text_agent_domain_id,
+        simulation_voice_agent_domain_id AS simulation_voice_agent_domain_id,
         profile_id AS profile_id
 ),
 user_profile AS (
@@ -217,39 +217,39 @@ link_simulation_practice_flag AS (
 ),
 -- Update simulation text domain
 update_simulation_text_domain AS (
-    DELETE FROM simulation_domains 
+    DELETE FROM simulation_agent_domains 
     WHERE simulation_id IN (SELECT simulation_id FROM update_simulation)
       AND type = 'text'::type_simulation_domains
 ),
 link_simulation_text_domain AS (
-    INSERT INTO simulation_domains (simulation_id, domain_id, type, created_at, updated_at)
+    INSERT INTO simulation_agent_domains (simulation_id, agent_domain_id, type, created_at, updated_at)
     SELECT 
         us.simulation_id,
-        COALESCE(x.simulation_text_domain_id, (SELECT domain_id FROM simulation_domains sd WHERE sd.simulation_id = us.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)),
+        COALESCE(x.simulation_text_agent_domain_id, (SELECT agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = us.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)),
         'text'::type_simulation_domains,
         NOW(),
         NOW()
     FROM update_simulation us
     CROSS JOIN params x
-    WHERE COALESCE(x.simulation_text_domain_id, (SELECT domain_id FROM simulation_domains sd WHERE sd.simulation_id = us.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)) IS NOT NULL
+    WHERE COALESCE(x.simulation_text_agent_domain_id, (SELECT agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = us.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)) IS NOT NULL
 ),
 -- Update simulation voice domain
 update_simulation_voice_domain AS (
-    DELETE FROM simulation_domains 
+    DELETE FROM simulation_agent_domains 
     WHERE simulation_id IN (SELECT simulation_id FROM update_simulation)
       AND type = 'voice'::type_simulation_domains
 ),
 link_simulation_voice_domain AS (
-    INSERT INTO simulation_domains (simulation_id, domain_id, type, created_at, updated_at)
+    INSERT INTO simulation_agent_domains (simulation_id, agent_domain_id, type, created_at, updated_at)
     SELECT 
         us.simulation_id,
-        x.simulation_voice_domain_id,
+        x.simulation_voice_agent_domain_id,
         'voice'::type_simulation_domains,
         NOW(),
         NOW()
     FROM update_simulation us
     CROSS JOIN params x
-    WHERE x.simulation_voice_domain_id IS NOT NULL
+    WHERE x.simulation_voice_agent_domain_id IS NOT NULL
 ),
 replace_time_limits AS (
     DELETE FROM scenario_time_limits 

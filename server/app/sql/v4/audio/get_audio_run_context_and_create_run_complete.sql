@@ -73,12 +73,13 @@ audio_department AS (
 best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
-    INNER JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('grade' AS artifacts)  -- audio maps to grade artifact
+    INNER JOIN agent_domains adom ON adom.agent_id = a.id
+    INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('grade' AS artifacts)  -- audio maps to grade artifact
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN audio_department ad_dept
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-    AND d.artifact = CAST('grade' AS artifacts)
+    AND da.artifact = CAST('grade' AS artifacts)
     AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         -- Include if agent is linked to the department

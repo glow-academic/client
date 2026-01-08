@@ -32,17 +32,18 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT
-    di.id as developer_instruction_id,
-    instruction_type as type,  -- Return the passed parameter since di.type no longer exists
-    di.template,
-    di.active,
-    dis.schema_id
-FROM developer_instructions di
-JOIN agent_developer_instructions adi ON adi.developer_instruction_id = di.id
-JOIN agents a ON a.id = adi.agent_id
-JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST(agent_role_val AS artifacts)
-LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
-WHERE di.active = true
+    i.id as developer_instruction_id,
+    instruction_type as type,  -- Return the passed parameter since i.type no longer exists
+    i.template,
+    i.active,
+    ins.schema_id
+FROM instructions i
+JOIN agent_instructions ai ON ai.instruction_id = i.id
+JOIN agents a ON a.id = ai.agent_id
+JOIN agent_domains adom ON adom.agent_id = a.id
+JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST(agent_role_val AS artifacts)
+LEFT JOIN instruction_schemas ins ON ins.instruction_id = i.id
+WHERE i.active = true
 LIMIT 1
 $$;
 

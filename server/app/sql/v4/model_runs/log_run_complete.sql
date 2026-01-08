@@ -228,14 +228,16 @@ upsert_cached_audio_usage AS (
 persona_system_prompt AS (
     SELECT 
         CASE 
-            WHEN p.instructions IS NOT NULL AND p.instructions != '' THEN
-                COALESCE(pr_dept.system_prompt, pr_default.system_prompt) || E'\n\n' || p.instructions
+            WHEN pi_inst.template IS NOT NULL AND pi_inst.template != '' THEN
+                COALESCE(pr_dept.system_prompt, pr_default.system_prompt) || E'\n\n' || pi_inst.template
             ELSE
                 COALESCE(pr_dept.system_prompt, pr_default.system_prompt)
         END as system_prompt
     FROM run_info ri
     JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true
     JOIN personas p ON p.id = rp.persona_id
+    LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
+    LEFT JOIN instructions pi_inst ON pi_inst.id = pi.instruction_id
     JOIN agents a ON a.id = ri.agent_id
     LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
         AND adp.department_id = ri.department_id
@@ -296,7 +298,8 @@ get_prompt_tool_id AS (
     FROM tools t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('prompt' AS resources)
     INNER JOIN runs r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
-    INNER JOIN domains d ON d.agent_id = r_run.agent_id AND d.artifact = CAST('agent' AS artifacts)
+    INNER JOIN agent_domains adom ON adom.agent_id = r_run.agent_id
+    INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
     WHERE t.name = 'prompt' AND t.active = true
     LIMIT 1
 ),
@@ -414,7 +417,8 @@ get_instruct_tool_id AS (
     FROM tools t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('prompt' AS resources)
     INNER JOIN runs r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
-    INNER JOIN domains d ON d.agent_id = r_run_instruct.agent_id AND d.artifact = CAST('agent' AS artifacts)
+    INNER JOIN agent_domains adom ON adom.agent_id = r_run_instruct.agent_id
+    INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
     WHERE t.name = 'instruct' AND t.active = true
     LIMIT 1
 ),

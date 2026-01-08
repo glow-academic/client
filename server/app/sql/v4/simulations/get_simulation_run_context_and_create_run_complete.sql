@@ -360,9 +360,9 @@ context_data AS (
     LEFT JOIN personas p ON p.id = first_persona.persona_id
 
     -- Text agent joins (use simulation agent instead of persona agent)
-    LEFT JOIN simulation_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
-    LEFT JOIN domains d_text_domain ON d_text_domain.id = sd_text.domain_id
-    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
+    LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
+    LEFT JOIN agents a ON a.id = adom_text.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     LEFT JOIN agent_models am ON am.agent_id = a.id
     LEFT JOIN models m ON m.id = am.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
@@ -386,9 +386,9 @@ context_data AS (
     LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 
     -- Voice agent joins (use simulation agent instead of persona agent)
-    LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-    LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
-    LEFT JOIN agents a_voice ON a_voice.id = d_voice_domain.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
+    LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+    LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
+    LEFT JOIN agents a_voice ON a_voice.id = adom_voice.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
     LEFT JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
     LEFT JOIN models m_voice ON m_voice.id = am_voice.model_id
     LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true

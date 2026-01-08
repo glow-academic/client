@@ -188,19 +188,61 @@ update_domain_link AS (
     -- Update domains link (delete old, insert new)
     DELETE FROM domains
     USING params x
-    WHERE domains.agent_id = x.agent_id
+    WHERE EXISTS (
+        SELECT 1 FROM agent_domains adom 
+        WHERE adom.agent_id = x.agent_id 
+        AND adom.domain_id = domains.id
+    )
 ),
-link_domain AS (
-    -- Link agent to artifact via domains
-    INSERT INTO domains (artifact, agent_id, created_at, updated_at)
+-- Get or create domain for this agent
+get_or_create_domain AS (
+    -- Try to get existing domain linked to agent
+    SELECT adom.domain_id
+    FROM update_agent ua
+    CROSS JOIN params x
+    LEFT JOIN agent_domains adom ON adom.agent_id = ua.agent_id::uuid
+    LIMIT 1
+),
+create_domain_if_needed AS (
+    -- Create domain if agent doesn't have one
+    INSERT INTO domains (created_at, updated_at)
+    SELECT NOW(), NOW()
+    FROM update_agent ua
+    WHERE NOT EXISTS (SELECT 1 FROM get_or_create_domain WHERE domain_id IS NOT NULL)
+    RETURNING id as domain_id
+),
+target_domain AS (
+    SELECT COALESCE(
+        (SELECT domain_id FROM get_or_create_domain WHERE domain_id IS NOT NULL LIMIT 1),
+        (SELECT domain_id FROM create_domain_if_needed LIMIT 1)
+    ) as domain_id
+    FROM update_agent ua
+    LIMIT 1
+),
+link_domain_artifact AS (
+    -- Link domain to artifact via domain_artifacts
+    INSERT INTO domain_artifacts (domain_id, artifact, created_at, updated_at)
     SELECT 
+        td.domain_id,
         CAST(x.artifact_name AS artifacts),
+        NOW(),
+        NOW()
+    FROM target_domain td
+    CROSS JOIN params x
+    ON CONFLICT (domain_id, artifact) DO UPDATE SET
+        updated_at = NOW()
+),
+link_agent_domain AS (
+    -- Link agent to domain via agent_domains
+    INSERT INTO agent_domains (agent_id, domain_id, created_at, updated_at)
+    SELECT 
         ua.agent_id::uuid,
+        td.domain_id,
         NOW(),
         NOW()
     FROM update_agent ua
-    CROSS JOIN params x
-    ON CONFLICT (artifact, agent_id) DO UPDATE SET
+    CROSS JOIN target_domain td
+    ON CONFLICT (agent_id, domain_id) DO UPDATE SET
         updated_at = NOW()
 ),
 new_prompt AS (

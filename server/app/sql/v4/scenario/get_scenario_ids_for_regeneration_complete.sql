@@ -31,7 +31,7 @@ STABLE
 AS $$
 SELECT 
     (SELECT rp.persona_id FROM scenario_personas rp WHERE rp.scenario_id = s.id AND rp.active = true LIMIT 1) as persona_id,
-    (SELECT sd.domain_id::text FROM scenario_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'default'::type_scenario_domains LIMIT 1) as scenario_domain_id,
+    (SELECT sd.agent_domain_id::text FROM scenario_agent_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'default'::type_scenario_domains LIMIT 1) as scenario_domain_id,
     COALESCE(
         json_agg(DISTINCT sd.document_id::text) FILTER (WHERE sd.document_id IS NOT NULL),
         '[]'::json

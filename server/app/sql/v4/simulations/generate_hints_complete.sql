@@ -117,7 +117,8 @@ profile_info AS (
 best_agent AS (
     SELECT a.id as agent_id
     FROM agents a
-    INNER JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)  -- hint maps to message artifact
+    INNER JOIN agent_domains adom ON adom.agent_id = a.id
+    INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)  -- hint maps to message artifact
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
@@ -343,7 +344,7 @@ agent_tools_data AS (
         ba.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(d.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(da.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
             ),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
@@ -352,7 +353,8 @@ agent_tools_data AS (
     LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
     LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN domains d ON d.agent_id = ba.agent_id
+    LEFT JOIN agent_domains adom ON adom.agent_id = ba.agent_id
+    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     GROUP BY ba.agent_id
 ),
@@ -360,14 +362,15 @@ agent_tools_data AS (
 developer_instruction_data AS (
     SELECT 
         ba.agent_id,
-        di.template as developer_instruction_template,
-        dis.schema_id as developer_instruction_schema_id
+        i.template as developer_instruction_template,
+        ins.schema_id as developer_instruction_schema_id
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
-    LEFT JOIN domains d_dev ON d_dev.agent_id = a.id
-    LEFT JOIN agent_developer_instructions adi ON adi.agent_id = a.id
-    LEFT JOIN developer_instructions di ON di.id = adi.developer_instruction_id AND di.active = true
-    LEFT JOIN developer_instruction_schemas dis ON dis.developer_instruction_id = di.id
+    LEFT JOIN agent_domains adom_dev ON adom_dev.agent_id = a.id
+    LEFT JOIN domain_artifacts da_dev ON da_dev.domain_id = adom_dev.domain_id
+    LEFT JOIN agent_instructions ai ON ai.agent_id = a.id
+    LEFT JOIN instructions i ON i.id = ai.instruction_id AND i.active = true
+    LEFT JOIN instruction_schemas ins ON ins.instruction_id = i.id
     LIMIT 1
 ),
 -- Get department name
@@ -383,7 +386,7 @@ context_data AS (
     SELECT 
         -- Only fields needed for dispatch
         a.id::text as agent_id,
-        COALESCE(d_ctx.artifact::text, '') as agent_role,  -- Derive from domains
+        COALESCE(da_ctx.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         ci.id::text as chat_id
     FROM target_message tm
     CROSS JOIN chat_info ci
@@ -392,7 +395,8 @@ context_data AS (
     CROSS JOIN best_agent ba
     CROSS JOIN params p_params
     INNER JOIN agents a ON a.id = ba.agent_id
-    LEFT JOIN domains d_ctx ON d_ctx.agent_id = a.id
+    LEFT JOIN agent_domains adom_ctx ON adom_ctx.agent_id = a.id
+    LEFT JOIN domain_artifacts da_ctx ON da_ctx.domain_id = adom_ctx.domain_id
     -- NO rate limit check - handled in generate/start.py
     -- NO run creation - handled in generate/start.py
     -- NO tools, developer instructions, etc. - fetched by modality handlers

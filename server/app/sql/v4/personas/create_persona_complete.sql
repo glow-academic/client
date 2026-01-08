@@ -106,11 +106,32 @@ icon_resource AS (
     RETURNING id as icon_id
 ),
 new_persona AS (
-    -- Create persona (without name/description/active/color/icon columns)
-    INSERT INTO personas (instructions, created_at, updated_at)
-    SELECT x.instructions, NOW(), NOW()
+    -- Create persona (without name/description/active/color/icon/instructions columns)
+    INSERT INTO personas (created_at, updated_at)
+    SELECT NOW(), NOW()
     FROM params x
     RETURNING id
+),
+-- Create instruction and link to persona if instructions provided
+new_instruction AS (
+    INSERT INTO instructions (template, active, created_at, updated_at)
+    SELECT x.instructions, true, NOW(), NOW()
+    FROM params x
+    WHERE x.instructions IS NOT NULL AND x.instructions != ''
+    RETURNING id as instruction_id
+),
+link_persona_instruction AS (
+    INSERT INTO persona_instructions (persona_id, instruction_id, created_at, updated_at)
+    SELECT 
+        np.id,
+        ni.instruction_id,
+        NOW(),
+        NOW()
+    FROM new_persona np
+    CROSS JOIN params x
+    CROSS JOIN new_instruction ni
+    WHERE x.instructions IS NOT NULL AND x.instructions != ''
+    ON CONFLICT (persona_id, instruction_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link persona to name
 link_persona_name AS (

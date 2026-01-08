@@ -122,7 +122,7 @@ new_simulation AS (
 ),
 -- Link simulation text domain
 link_simulation_text_domain AS (
-    INSERT INTO simulation_domains (simulation_id, domain_id, type, created_at, updated_at)
+    INSERT INTO simulation_agent_domains (simulation_id, agent_domain_id, type, created_at, updated_at)
     SELECT 
         ns.simulation_id,
         x.simulation_text_domain_id,
@@ -132,11 +132,11 @@ link_simulation_text_domain AS (
     FROM new_simulation ns
     CROSS JOIN params x
     WHERE x.simulation_text_domain_id IS NOT NULL
-    ON CONFLICT (simulation_id, domain_id, type) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (simulation_id, agent_domain_id, type) DO UPDATE SET updated_at = NOW()
 ),
 -- Link simulation voice domain
 link_simulation_voice_domain AS (
-    INSERT INTO simulation_domains (simulation_id, domain_id, type, created_at, updated_at)
+    INSERT INTO simulation_agent_domains (simulation_id, agent_domain_id, type, created_at, updated_at)
     SELECT 
         ns.simulation_id,
         x.simulation_voice_domain_id,
@@ -146,7 +146,7 @@ link_simulation_voice_domain AS (
     FROM new_simulation ns
     CROSS JOIN params x
     WHERE x.simulation_voice_domain_id IS NOT NULL
-    ON CONFLICT (simulation_id, domain_id, type) DO UPDATE SET updated_at = NOW()
+    ON CONFLICT (simulation_id, agent_domain_id, type) DO UPDATE SET updated_at = NOW()
 ),
 -- Link simulation to name (title)
 link_simulation_name AS (

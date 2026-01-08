@@ -291,9 +291,9 @@ SELECT
     -- Profile data
     pf.profile_id,
     -- Agent data (text - kept for compatibility)
-    d_text_domain.agent_id as agent_id,
+    adom_text.agent_id as agent_id,
     -- Voice agent data (preferred for voice mode)
-    d_voice_domain.agent_id as voice_agent_id,
+    adom_voice.agent_id as voice_agent_id,
     -- Documents data (composite type array)
     COALESCE(dd.documents, ARRAY[]::types.i_get_voice_run_context_v4_document[]) as documents
 FROM params p_params
@@ -302,10 +302,10 @@ JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN scenarios s ON s.id = sc.scenario_id
 INNER JOIN simulations sim ON sim.id = sa.simulation_id
-LEFT JOIN simulation_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
-LEFT JOIN domains d_text_domain ON d_text_domain.id = sd_text.domain_id
-LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
+LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
+LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
+LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
 LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
 LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
