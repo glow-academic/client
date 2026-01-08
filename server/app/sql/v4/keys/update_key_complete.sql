@@ -48,7 +48,7 @@ WITH params AS (
 user_profile AS (
     SELECT
         p.role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -83,17 +83,95 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
+-- Insert/update name in names table
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name, NOW(), NOW()
+    FROM params
+    WHERE name IS NOT NULL AND name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert/update description in descriptions table
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 update_key AS (
+    -- Update key (without name/description/active columns)
     UPDATE keys
     SET 
-        name = x.name,
         key = x.key,
-        description = x.description,
-        active = x.active,
         updated_at = NOW()
     FROM params x
     WHERE keys.id = x.key_id
-    RETURNING keys.id as key_id, keys.key, keys.name as key_name
+    RETURNING keys.id as key_id, keys.key, (SELECT name FROM params) as key_name
+),
+-- Remove old name links
+remove_old_name AS (
+    DELETE FROM key_names
+    WHERE key_id = (SELECT key_id FROM params)
+      AND name_id NOT IN (SELECT name_id FROM name_resource)
+),
+-- Link key to new name
+link_key_name AS (
+    INSERT INTO key_names (key_id, name_id, created_at, updated_at)
+    SELECT 
+        uk.key_id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM update_key uk
+    CROSS JOIN name_resource nr
+    ON CONFLICT (key_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old description links
+remove_old_description AS (
+    DELETE FROM key_descriptions
+    WHERE key_id = (SELECT key_id FROM params)
+      AND description_id NOT IN (SELECT description_id FROM description_resource)
+),
+-- Link key to new description
+link_key_description AS (
+    INSERT INTO key_descriptions (key_id, description_id, created_at, updated_at)
+    SELECT 
+        uk.key_id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM update_key uk
+    CROSS JOIN description_resource dr
+    ON CONFLICT (key_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Update key active flag
+update_key_active_flag AS (
+    UPDATE key_flags SET
+        value = (SELECT active FROM params),
+        updated_at = NOW()
+    WHERE key_id = (SELECT key_id FROM params)
+      AND type = 'active'::type_key_flags
+),
+insert_key_active_flag AS (
+    INSERT INTO key_flags (key_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        uk.key_id,
+        f.id,
+        'active'::type_key_flags,
+        x.active,
+        NOW(),
+        NOW()
+    FROM update_key uk
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND NOT EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = uk.key_id AND kf.type = 'active'::type_key_flags)
+    ON CONFLICT (key_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
 ),
 replace_departments AS (
     -- NOTE: department_keys table was removed in migration 74

@@ -85,7 +85,7 @@ profiles_expanded AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.current_profile_id
 ),
@@ -146,30 +146,96 @@ profile_upsert_with_idx AS (
     LEFT JOIN existing_profiles ep ON ep.profile_idx = pe.profile_idx
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pe.profile_idx AND rv.can_assign = true)
 ),
+-- Insert all unique first_names into names table
+first_names_resources AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT DISTINCT pwi.first_name, NOW(), NOW()
+    FROM profile_upsert_with_idx pwi
+    WHERE pwi.first_name IS NOT NULL AND pwi.first_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name
+),
+-- Insert all unique last_names into names table
+last_names_resources AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT DISTINCT pwi.last_name, NOW(), NOW()
+    FROM profile_upsert_with_idx pwi
+    WHERE pwi.last_name IS NOT NULL AND pwi.last_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name
+),
 profile_upsert AS (
-    -- Insert or update profiles (only if role validation passes)
+    -- Insert or update profiles without first_name, last_name, active columns
     INSERT INTO profiles (
-        id, first_name, last_name, role, active, updated_at
+        id, role, updated_at
     )
     SELECT
         pwi.profile_id,
-        pwi.first_name,
-        pwi.last_name,
         pwi.role::profile_role,
-        pwi.active,
         NOW()
     FROM profile_upsert_with_idx pwi
     ON CONFLICT (id) DO UPDATE SET
-        first_name = EXCLUDED.first_name,
-        last_name = EXCLUDED.last_name,
         role = CASE 
             WHEN EXISTS (SELECT 1 FROM role_validation rv JOIN profile_upsert_with_idx pwi2 ON pwi2.profile_idx = rv.profile_idx WHERE pwi2.profile_id = profiles.id AND rv.can_assign = true) 
             THEN EXCLUDED.role::profile_role
             ELSE profiles.role::profile_role
         END,
-        active = EXCLUDED.active,
         updated_at = NOW()
     RETURNING id
+),
+-- Delete old profile_names links
+delete_old_names AS (
+    DELETE FROM profile_names
+    WHERE profile_id IN (SELECT id FROM profile_upsert)
+      AND type IN ('first'::type_profile_names, 'last'::type_profile_names)
+),
+-- Link profiles to first_names
+link_profile_first_names AS (
+    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    SELECT 
+        pu.id,
+        fnr.name_id,
+        'first'::type_profile_names,
+        NOW(),
+        NOW()
+    FROM profile_upsert pu
+    JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
+    JOIN first_names_resources fnr ON fnr.name = pwi.first_name
+    WHERE pwi.first_name IS NOT NULL AND pwi.first_name != ''
+    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+),
+-- Link profiles to last_names
+link_profile_last_names AS (
+    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    SELECT 
+        pu.id,
+        lnr.name_id,
+        'last'::type_profile_names,
+        NOW(),
+        NOW()
+    FROM profile_upsert pu
+    JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
+    JOIN last_names_resources lnr ON lnr.name = pwi.last_name
+    WHERE pwi.last_name IS NOT NULL AND pwi.last_name != ''
+    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+),
+-- Link profile active flags
+link_profile_active_flags AS (
+    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        pu.id,
+        f.id,
+        'active'::type_profile_flags,
+        pwi.active,
+        NOW(),
+        NOW()
+    FROM profile_upsert pu
+    JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
 ),
 profile_upsert_with_created AS (
     -- Join back to get created status

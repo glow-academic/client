@@ -96,20 +96,20 @@ key_exists_check AS (
 actor_profile AS (
     SELECT 
         p.id as profile_id,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 key_data AS (
     SELECT 
         k.id as key_id,
-        k.name,
+        (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
         CASE 
             WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
             ELSE '****'
         END as key_masked,
-        k.description,
-        k.active,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         k.created_at,
         k.updated_at
     FROM params x
@@ -121,45 +121,47 @@ key_departments_data AS (
         ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
     FROM params x
     JOIN setting_provider_keys spk ON spk.key_id = x.key_id AND spk.active = true
-    JOIN settings s ON s.id = spk.settings_id AND s.active = true
+    JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
 ),
 -- Get model_ids via setting_provider_keys -> providers -> models
 key_models_data AS (
     SELECT 
-        ARRAY_AGG(m.id::text ORDER BY m.name) as model_ids
+        ARRAY_AGG(m.id::text ORDER BY (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)) as model_ids
     FROM params x
     JOIN setting_provider_keys spk ON spk.key_id = x.key_id AND spk.active = true
     JOIN providers p ON p.id = spk.provider_id
-    JOIN models m ON m.provider_id = p.id AND m.active = true
+    JOIN model_providers mp ON mp.provider_id = p.id
+    JOIN models m ON m.id = mp.model_id AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
 ),
 valid_depts AS (
     SELECT 
-        ARRAY_AGG(d.id::text ORDER BY d.title) as dept_ids
+        ARRAY_AGG(d.id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as dept_ids
     FROM params x
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
-    JOIN departments d ON d.id = pd.department_id AND d.active = true
+    JOIN departments d ON d.id = pd.department_id AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
 ),
 departments_data AS (
     SELECT DISTINCT
         d.id as department_id,
-        d.title as name,
-        COALESCE(d.description, '') as description
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description
     FROM params x
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
-    JOIN departments d ON d.id = pd.department_id AND d.active = true
+    JOIN departments d ON d.id = pd.department_id AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
 ),
 models_data AS (
     SELECT DISTINCT
         m.id as model_id,
-        m.name,
-        COALESCE(m.description, '') as description,
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description,
         p.value as provider,
-        m.active
+        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
     FROM params x
     JOIN setting_provider_keys spk ON spk.key_id = x.key_id AND spk.active = true
     JOIN providers p ON p.id = spk.provider_id
-    JOIN models m ON m.provider_id = p.id AND m.active = true
+    JOIN model_providers mp ON mp.provider_id = p.id
+    JOIN models m ON m.id = mp.model_id AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
 ),
 profile_data AS (
     SELECT role as user_role 
@@ -171,7 +173,7 @@ user_has_key_access AS (
     SELECT EXISTS(
         SELECT 1 FROM params x
         JOIN setting_provider_keys spk ON spk.key_id = x.key_id AND spk.active = true
-        JOIN settings s ON s.id = spk.settings_id AND s.active = true
+        JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
         JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
         JOIN profile_departments pd ON pd.department_id = ds.department_id AND pd.active = true
         WHERE pd.profile_id = x.profile_id
@@ -184,7 +186,7 @@ user_has_key_access AS (
         NOT EXISTS (
             SELECT 1 FROM params x
             JOIN setting_provider_keys spk ON spk.key_id = x.key_id AND spk.active = true
-            JOIN settings s ON s.id = spk.settings_id AND s.active = true
+            JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
         )
     ) as has_access

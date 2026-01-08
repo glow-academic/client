@@ -128,12 +128,12 @@ attempt_profile_link AS (
 simulation_data AS (
     SELECT 
         s.id,
-        s.title,
-        s.description,
-        s.active,
-        s.practice_simulation,
-        s.simulation_text_domain_id,
-        s.simulation_voice_domain_id,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
+        (SELECT sd.domain_id FROM simulation_domains sd WHERE sd.simulation_id = s.id AND sd.type = 'text'::type_simulation_domains LIMIT 1) as simulation_text_domain_id,
+        (SELECT sd.domain_id FROM simulation_domains sd WHERE sd.simulation_id = s.id AND sd.type = 'voice'::type_simulation_domains LIMIT 1) as simulation_voice_domain_id,
         (SELECT rga.rubric_id FROM simulation_scenarios ss 
          JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
          JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
@@ -187,7 +187,7 @@ profile_dept AS (
     -- Get first department from profile's accessible departments
     SELECT d.id as department_id
     FROM params p
-    JOIN departments d ON d.active = true
+    JOIN departments d ON EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id
     WHERE pd.profile_id = p.profile_id 
       AND pd.active = true
@@ -195,9 +195,9 @@ profile_dept AS (
 ),
 any_active_dept AS (
     -- Get any active department as last resort
-    SELECT id as department_id
-    FROM departments
-    WHERE active = true
+    SELECT d.id as department_id
+    FROM departments d
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
     LIMIT 1
 ),
 resolved_dept AS (
@@ -213,7 +213,7 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM settings s
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -235,7 +235,7 @@ dept_specific_settings AS (
     FROM settings s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE s.active = true 
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -246,7 +246,7 @@ active_settings AS (
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM settings WHERE active = true LIMIT 1)
+            (SELECT id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 -- Document data for composite type aggregation
@@ -254,7 +254,7 @@ document_data AS (
     SELECT 
         s.id as scenario_id,
         d.id as document_id,
-        d.name,
+        (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         u.file_path,
         u.mime_type
     FROM scenarios s
@@ -270,15 +270,15 @@ parameter_item_data AS (
     SELECT 
         s.id as scenario_id,
         f.id as field_id,
-        f.name,
-        f.description,
-        f.parameter_id,
-        p_param.name as parameter_name
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p_param.id LIMIT 1) as parameter_name
     FROM scenarios s
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id AND sf.active = true
     LEFT JOIN fields f ON f.id = sf.field_id
-    LEFT JOIN parameters p_param ON p_param.id = f.parameter_id
+    LEFT JOIN parameters p_param ON p_param.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     WHERE s.id = csi.scenario_id
 ),
 -- Get full scenario data with all metadata
@@ -287,22 +287,22 @@ parameter_item_data AS (
 scenario_full_data_raw AS (
     SELECT 
         s.id as scenario_id,
-        s.name as scenario_name,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as scenario_name,
         ps.problem_statement,
-        s.active,
-        s.generated,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
+        false as generated,
         false as default_scenario,
         -- Persona data
         p.id as persona_id,
-        p.name as persona_name,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
         COALESCE(
             COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
             ''
         ) as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
-        p.color as persona_color,
-        p.icon as persona_icon,
+        (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as persona_color,
+        (SELECT i.name FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as persona_icon,
         -- Model data
         m.id as model_id,
         m.value as model_name,
@@ -322,8 +322,9 @@ scenario_full_data_raw AS (
     LEFT JOIN personas p ON p.id = sp.persona_id
     CROSS JOIN simulation_data sd_agents
     LEFT JOIN domains d_text_domain ON d_text_domain.id = sd_agents.simulation_text_domain_id
-    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND a.active = true
-    LEFT JOIN models m ON m.id = a.model_id
+    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    LEFT JOIN agent_models am ON am.agent_id = a.id
+    LEFT JOIN models m ON m.id = am.model_id
     -- Join temperature and reasoning from model levels via agent
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
@@ -340,16 +341,17 @@ scenario_full_data_raw AS (
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN providers p_prov ON p_prov.id = m.provider_id
+    LEFT JOIN model_providers mp_prov ON mp_prov.model_id = m.id
+    LEFT JOIN providers p_prov ON p_prov.id = mp_prov.provider_id
     CROSS JOIN active_settings act_s
     LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     WHERE s.id = csi.scenario_id
-    GROUP BY s.id, s.name, ps.problem_statement, s.active, 
-             s.generated, p.id, p.name, pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 
-             COALESCE(mtl.temperature, 0.0), mrl.reasoning_level, p.color, p.icon, m.id, m.value, p_prov.value,
+    GROUP BY s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE), 
+             CASE WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true ELSE false END, p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 
+             COALESCE(mtl.temperature, 0.0), mrl.reasoning_level, (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), (SELECT i.name FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), m.id, m.value, p_prov.value,
              k.key, me.base_url, act_s.settings_id
 ),
 -- Select only ONE row per scenario (deterministic: pick first model by ID)

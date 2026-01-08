@@ -39,47 +39,119 @@ model_exists_check AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 source_model AS (
     SELECT 
-        m.name,
-        m.description,
-        m.active,
-        m.provider_id,
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE),
+        (SELECT mp.provider_id FROM model_providers mp WHERE mp.model_id = m.id LIMIT 1) as provider_id,
         m.value
     FROM params x
     JOIN models m ON m.id = x.model_id
 ),
+-- Insert name into names table
+new_name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name || ' Copy', NOW(), NOW()
+    FROM source_model
+    WHERE name IS NOT NULL
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name
+),
+-- Insert description into descriptions table
+new_description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description || ' Copy', NOW(), NOW()
+    FROM source_model
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id, description
+),
 duplicated_model AS (
     INSERT INTO models (
-        provider_id,
-        name,
-        description,
-        active,
         value
     )
     SELECT 
-        sm.provider_id,
-        sm.name,
-        sm.description || ' Copy',
-        sm.active,
         sm.value
     FROM source_model sm
     CROSS JOIN model_exists_check mec
     WHERE mec.model_exists = true
     RETURNING id
+),
+-- Link model to name
+link_model_name AS (
+    INSERT INTO model_names (model_id, name_id, created_at, updated_at)
+    SELECT 
+        dm.id,
+        nnr.name_id,
+        NOW(),
+        NOW()
+    FROM duplicated_model dm
+    CROSS JOIN new_name_resource nnr
+    ON CONFLICT (model_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link model to description
+link_model_description AS (
+    INSERT INTO model_descriptions (model_id, description_id, created_at, updated_at)
+    SELECT 
+        dm.id,
+        ndr.description_id,
+        NOW(),
+        NOW()
+    FROM duplicated_model dm
+    CROSS JOIN new_description_resource ndr
+    ON CONFLICT (model_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link model to provider
+link_model_provider AS (
+    INSERT INTO model_providers (model_id, provider_id, created_at, updated_at)
+    SELECT 
+        dm.id,
+        sm.provider_id,
+        NOW(),
+        NOW()
+    FROM duplicated_model dm
+    CROSS JOIN source_model sm
+    WHERE sm.provider_id IS NOT NULL
+    ON CONFLICT (model_id, provider_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link model active flag (set to false for duplicate)
+link_model_active_flag AS (
+    INSERT INTO model_flags (model_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        dm.id,
+        f.id,
+        'active'::type_model_flags,
+        FALSE,
+        NOW(),
+        NOW()
+    FROM duplicated_model dm
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (model_id, flag_id, type) DO UPDATE SET 
+        value = FALSE,
+        updated_at = NOW()
+),
+model_with_name AS (
+    -- Get model with name for return
+    SELECT 
+        dm.id,
+        nnr.name
+    FROM duplicated_model dm
+    LEFT JOIN new_name_resource nnr ON true
 )
 SELECT 
     mec.model_exists::boolean as model_exists,
-    dm.id as model_id,
+    mwn.id as model_id,
     sm.name::text as original_name,
     ap.actor_name::text as actor_name
 FROM model_exists_check mec
 CROSS JOIN source_model sm
-CROSS JOIN duplicated_model dm
+CROSS JOIN model_with_name mwn
 CROSS JOIN actor_profile ap
 WHERE mec.model_exists = true
 LIMIT 1

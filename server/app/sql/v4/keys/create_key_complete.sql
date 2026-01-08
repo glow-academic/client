@@ -45,7 +45,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -67,15 +67,72 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
+-- Insert name into names table and get ID
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name, NOW(), NOW()
+    FROM params
+    WHERE name IS NOT NULL AND name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert description into descriptions table and get ID
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 new_key AS (
-    INSERT INTO keys (
-        name,
-        key,
-        description,
-        active
-    )
-    SELECT name, key, description, active FROM params
+    -- Create key (without name/description/active columns)
+    INSERT INTO keys (key, created_at, updated_at)
+    SELECT key, NOW(), NOW()
+    FROM params
     RETURNING id as key_id, key
+),
+-- Link key to name
+link_key_name AS (
+    INSERT INTO key_names (key_id, name_id, created_at, updated_at)
+    SELECT 
+        nk.key_id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM new_key nk
+    CROSS JOIN name_resource nr
+    ON CONFLICT (key_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link key to description
+link_key_description AS (
+    INSERT INTO key_descriptions (key_id, description_id, created_at, updated_at)
+    SELECT 
+        nk.key_id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM new_key nk
+    CROSS JOIN description_resource dr
+    ON CONFLICT (key_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link key active flag
+link_key_active_flag AS (
+    INSERT INTO key_flags (key_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        nk.key_id,
+        f.id,
+        'active'::type_key_flags,
+        x.active,
+        NOW(),
+        NOW()
+    FROM new_key nk
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (key_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
 ),
 link_departments AS (
     -- NOTE: department_keys table was removed in migration 74

@@ -60,7 +60,7 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.current_profile_id
 ),
@@ -75,19 +75,90 @@ email_check AS (
     SELECT EXISTS(SELECT 1 FROM profile_emails WHERE email = (SELECT email FROM primary_email) AND active = true) as email_exists
     FROM primary_email
 ),
+-- Insert first_name into names table
+first_name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT first_name, NOW(), NOW()
+    FROM params
+    WHERE first_name IS NOT NULL AND first_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as first_name_id, name
+),
+-- Insert last_name into names table
+last_name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT last_name, NOW(), NOW()
+    FROM params
+    WHERE last_name IS NOT NULL AND last_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as last_name_id, name
+),
 profile_insert AS (
-    -- Insert profile (only if email doesn't exist)
+    -- Insert profile without first_name, last_name, active columns
     INSERT INTO profiles (
-        id, first_name, last_name, role, active
+        id, role
     )
     SELECT 
         (SELECT profile_id FROM params),
-        (SELECT first_name FROM params),
-        (SELECT last_name FROM params),
-        (SELECT role FROM params)::profile_role,
-        (SELECT active FROM params)
+        (SELECT role FROM params)::profile_role
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
-    RETURNING id, first_name, last_name
+    RETURNING id
+),
+-- Link profile to first_name
+link_profile_first_name AS (
+    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    SELECT 
+        pi.id,
+        fnr.first_name_id,
+        'first'::type_profile_names,
+        NOW(),
+        NOW()
+    FROM profile_insert pi
+    CROSS JOIN first_name_resource fnr
+    WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
+    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+),
+-- Link profile to last_name
+link_profile_last_name AS (
+    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    SELECT 
+        pi.id,
+        lnr.last_name_id,
+        'last'::type_profile_names,
+        NOW(),
+        NOW()
+    FROM profile_insert pi
+    CROSS JOIN last_name_resource lnr
+    WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
+    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+),
+-- Link profile active flag
+link_profile_active_flag AS (
+    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        pi.id,
+        f.id,
+        'active'::type_profile_flags,
+        (SELECT active FROM params),
+        NOW(),
+        NOW()
+    FROM profile_insert pi
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
+    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+        value = (SELECT active FROM params),
+        updated_at = NOW()
+),
+profile_with_names AS (
+    -- Get profile with names for return
+    SELECT 
+        pi.id,
+        fnr.name as first_name,
+        lnr.name as last_name
+    FROM profile_insert pi
+    LEFT JOIN first_name_resource fnr ON true
+    LEFT JOIN last_name_resource lnr ON true
 ),
 all_emails_data AS (
     -- Prepare all emails with primary flag based on index
@@ -138,13 +209,13 @@ department_insert AS (
 )
 -- Return profile info and email check result (always returns a row)
 SELECT 
-    pi.id as profile_id,
-    pi.first_name,
-    pi.last_name,
+    pwn.id as profile_id,
+    pwn.first_name,
+    pwn.last_name,
     COALESCE(ec.email_exists, false) as email_exists,
     ap.actor_name
 FROM email_check ec
 CROSS JOIN actor_profile ap
-LEFT JOIN profile_insert pi ON true
+LEFT JOIN profile_with_names pwn ON true
 LIMIT 1
 $$;

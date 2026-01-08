@@ -46,9 +46,34 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
+WITH get_or_create_name AS (
+    -- Get or create name in names table
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT socket_update_rubric_name_v4.name, NOW(), NOW()
+    WHERE socket_update_rubric_name_v4.name IS NOT NULL AND socket_update_rubric_name_v4.name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name as name_value
+),
+update_rubric_name AS (
+    -- Update rubric name (delete old, insert new)
+    DELETE FROM rubric_names
+    WHERE rubric_id = socket_update_rubric_name_v4.rubric_id
+    RETURNING rubric_id
+),
+link_rubric_name AS (
+    -- Link new name to rubric
+    INSERT INTO rubric_names (rubric_id, name_id, created_at, updated_at)
+    SELECT socket_update_rubric_name_v4.rubric_id, gocn.name_id, NOW(), NOW()
+    FROM get_or_create_name gocn
+    WHERE gocn.name_id IS NOT NULL
+),
+update_rubric AS (
     UPDATE rubrics
-    SET name = socket_update_rubric_name_v4.name,
-        updated_at = NOW()
+    SET updated_at = NOW()
     WHERE id = socket_update_rubric_name_v4.rubric_id
-    RETURNING id as rubric_id, name
+    RETURNING id as rubric_id
+)
+SELECT ur.rubric_id, COALESCE(gocn.name_value, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = ur.rubric_id LIMIT 1)) as name
+FROM update_rubric ur
+LEFT JOIN get_or_create_name gocn ON true
 $$;

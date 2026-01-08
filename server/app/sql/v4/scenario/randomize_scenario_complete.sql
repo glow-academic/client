@@ -107,14 +107,14 @@ BEGIN
         JOIN profile_departments pd ON pd.department_id = d.id
         WHERE pd.profile_id = api_randomize_scenario_v4.profile_id 
           AND pd.active = true 
-          AND d.active = true
+          AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     ),
     -- Get valid persona IDs (filtered by departments if provided)
     filtered_personas AS (
         SELECT DISTINCT p.id
         FROM personas p
         LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-        WHERE p.active = true
+        WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
         AND (
             -- If department_ids provided, filter by them
             (COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0 
@@ -144,7 +144,7 @@ BEGIN
         FROM documents d
         INNER JOIN document_uploads du ON du.document_id = d.id AND du.active = true
         LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
-        WHERE d.active = true
+        WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
         AND (
             COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
             OR EXISTS (
@@ -169,9 +169,9 @@ BEGIN
     filtered_parameters AS (
         SELECT DISTINCT p.id
         FROM parameters p
-        JOIN fields f ON f.parameter_id = p.id AND f.active = true
+        JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
         LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-        WHERE p.active = true
+        WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
         AND (
             COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
             OR EXISTS (
@@ -199,7 +199,7 @@ BEGIN
         SELECT DISTINCT f.id
         FROM fields f
         LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-        WHERE f.active = true AND f.parameter_id IS NOT NULL
+        WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
         AND (
             COALESCE(array_length(api_randomize_scenario_v4.department_ids, 1), 0) = 0
             OR EXISTS (
@@ -342,9 +342,9 @@ BEGIN
             SELECT ARRAY_AGG(f.id)
             INTO valid_items_for_param
             FROM fields f
-            WHERE f.active = true
-              AND f.parameter_id IS NOT NULL
-              AND f.parameter_id = param_id
+            WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+              AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
+              AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = param_id
               AND f.id = ANY(valid_field_ids);
             
             IF valid_items_for_param IS NOT NULL AND array_length(valid_items_for_param, 1) > 0 THEN
@@ -425,8 +425,8 @@ BEGIN
         SELECT ARRAY_AGG(f.id)
         INTO valid_items_for_param
         FROM fields f
-        WHERE f.active = true
-          AND f.parameter_id = param_id
+        WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+          AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = param_id
           AND f.id = ANY(valid_field_ids);
         
         IF valid_items_for_param IS NOT NULL AND array_length(valid_items_for_param, 1) > 0 THEN

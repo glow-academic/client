@@ -61,7 +61,7 @@ parameter_exists_check AS (
 user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -94,19 +94,222 @@ actor_profile AS (
         up.actor_name
     FROM user_profile up
 ),
+-- Insert/update name in names table
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name, NOW(), NOW()
+    FROM params
+    WHERE name IS NOT NULL AND name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert/update description in descriptions table
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 update_parameter AS (
+    -- Update parameter (without name/description/active/parameter type columns)
     UPDATE parameters SET
-        name = (SELECT name FROM params),
-        description = (SELECT description FROM params),
-        active = (SELECT active FROM params),
-        simulation_parameter = (SELECT simulation_parameter FROM params),
-        document_parameter = (SELECT document_parameter FROM params),
-        persona_parameter = (SELECT persona_parameter FROM params),
-        scenario_parameter = (SELECT scenario_parameter FROM params),
-        video_parameter = (SELECT video_parameter FROM params),
         updated_at = NOW()
     WHERE id = (SELECT parameter_id FROM params)
     RETURNING id as parameter_id
+),
+-- Remove old name links
+remove_old_name AS (
+    DELETE FROM parameter_names
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND name_id NOT IN (SELECT name_id FROM name_resource)
+),
+-- Link parameter to new name
+link_parameter_name AS (
+    INSERT INTO parameter_names (parameter_id, name_id, created_at, updated_at)
+    SELECT 
+        up.parameter_id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM update_parameter up
+    CROSS JOIN name_resource nr
+    ON CONFLICT (parameter_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old description links
+remove_old_description AS (
+    DELETE FROM parameter_descriptions
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND description_id NOT IN (SELECT description_id FROM description_resource)
+),
+-- Link parameter to new description
+link_parameter_description AS (
+    INSERT INTO parameter_descriptions (parameter_id, description_id, created_at, updated_at)
+    SELECT 
+        up.parameter_id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM update_parameter up
+    CROSS JOIN description_resource dr
+    ON CONFLICT (parameter_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Update parameter active flag
+update_parameter_active_flag AS (
+    UPDATE parameter_flags SET
+        value = (SELECT active FROM params),
+        updated_at = NOW()
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND type = 'active'::type_parameter_flags
+),
+insert_parameter_active_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        up.parameter_id,
+        f.id,
+        'active'::type_parameter_flags,
+        x.active,
+        NOW(),
+        NOW()
+    FROM update_parameter up
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = up.parameter_id AND pf.type = 'active'::type_parameter_flags)
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+-- Update parameter simulation_parameter flag
+update_parameter_simulation_flag AS (
+    UPDATE parameter_flags SET
+        value = (SELECT simulation_parameter FROM params),
+        updated_at = NOW()
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND type = 'simulation_parameter'::type_parameter_flags
+),
+insert_parameter_simulation_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        up.parameter_id,
+        f.id,
+        'simulation_parameter'::type_parameter_flags,
+        x.simulation_parameter,
+        NOW(),
+        NOW()
+    FROM update_parameter up
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'simulation_parameter'
+      AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = up.parameter_id AND pf.type = 'simulation_parameter'::type_parameter_flags)
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+-- Update parameter document_parameter flag
+update_parameter_document_flag AS (
+    UPDATE parameter_flags SET
+        value = (SELECT document_parameter FROM params),
+        updated_at = NOW()
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND type = 'document_parameter'::type_parameter_flags
+),
+insert_parameter_document_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        up.parameter_id,
+        f.id,
+        'document_parameter'::type_parameter_flags,
+        x.document_parameter,
+        NOW(),
+        NOW()
+    FROM update_parameter up
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'document_parameter'
+      AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = up.parameter_id AND pf.type = 'document_parameter'::type_parameter_flags)
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+-- Update parameter persona_parameter flag
+update_parameter_persona_flag AS (
+    UPDATE parameter_flags SET
+        value = (SELECT persona_parameter FROM params),
+        updated_at = NOW()
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND type = 'persona_parameter'::type_parameter_flags
+),
+insert_parameter_persona_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        up.parameter_id,
+        f.id,
+        'persona_parameter'::type_parameter_flags,
+        x.persona_parameter,
+        NOW(),
+        NOW()
+    FROM update_parameter up
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'persona_parameter'
+      AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = up.parameter_id AND pf.type = 'persona_parameter'::type_parameter_flags)
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+-- Update parameter scenario_parameter flag
+update_parameter_scenario_flag AS (
+    UPDATE parameter_flags SET
+        value = (SELECT scenario_parameter FROM params),
+        updated_at = NOW()
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND type = 'scenario_parameter'::type_parameter_flags
+),
+insert_parameter_scenario_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        up.parameter_id,
+        f.id,
+        'scenario_parameter'::type_parameter_flags,
+        x.scenario_parameter,
+        NOW(),
+        NOW()
+    FROM update_parameter up
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'scenario_parameter'
+      AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = up.parameter_id AND pf.type = 'scenario_parameter'::type_parameter_flags)
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+-- Update parameter video_parameter flag
+update_parameter_video_flag AS (
+    UPDATE parameter_flags SET
+        value = (SELECT video_parameter FROM params),
+        updated_at = NOW()
+    WHERE parameter_id = (SELECT parameter_id FROM params)
+      AND type = 'video_parameter'::type_parameter_flags
+),
+insert_parameter_video_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        up.parameter_id,
+        f.id,
+        'video_parameter'::type_parameter_flags,
+        x.video_parameter,
+        NOW(),
+        NOW()
+    FROM update_parameter up
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'video_parameter'
+      AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = up.parameter_id AND pf.type = 'video_parameter'::type_parameter_flags)
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
 ),
 field_connections_expanded AS (
     -- Expand composite type array field_connections
@@ -147,21 +350,23 @@ field_connections_fixed AS (
     LEFT JOIN ensure_one_default eod ON eod.conn_order = fce.conn_order
 ),
 delete_existing_field_links AS (
-    -- Clear parameter_id on fields that should be unlinked (those not in field_connections_fixed)
-    UPDATE fields
-    SET parameter_id = NULL, updated_at = NOW()
+    -- Delete parameter_fields links for fields that should be unlinked (those not in field_connections_fixed)
+    DELETE FROM parameter_fields
     WHERE parameter_id = (SELECT parameter_id FROM params)
-      AND id NOT IN (SELECT field_id FROM field_connections_fixed WHERE conn_active = true)
+      AND field_id NOT IN (SELECT field_id FROM field_connections_fixed WHERE conn_active = true)
 ),
 link_fields_to_parameter AS (
-    -- Update fields to link to parameter directly (denormalized - each field has one parameter_id)
-    UPDATE fields
-    SET parameter_id = (SELECT parameter_id FROM params),
-        updated_at = NOW()
+    -- Link fields to parameter via parameter_fields junction table
+    INSERT INTO parameter_fields (parameter_id, field_id, created_at, updated_at)
+    SELECT 
+        (SELECT parameter_id FROM params),
+        fcf.field_id,
+        NOW(),
+        NOW()
     FROM field_connections_fixed fcf
-    WHERE fields.id = fcf.field_id 
-      AND fields.active = true
+    WHERE EXISTS (SELECT 1 FROM field_flags fieldsf JOIN flags fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'active' AND fieldsf.type = 'active'::type_field_flags AND fieldsf.value = true)
       AND fcf.conn_active = true
+    ON CONFLICT (parameter_id, field_id) DO UPDATE SET updated_at = NOW()
 ),
 delete_existing_parameter_departments AS (
     -- Delete all existing parameter_departments links

@@ -12,6 +12,6 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT COUNT(*) as count
-    FROM models
-    WHERE active = true;
+    FROM models m
+    WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE);
 $$;

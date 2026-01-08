@@ -18,11 +18,11 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT 
-        id as department_id,
-        title,
-        description,
-        created_at,
-        updated_at
-    FROM departments
-    WHERE id = test_get_department_by_id_v4.input_department_id;
+        d.id as department_id,
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title,
+        (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) as description,
+        d.created_at,
+        d.updated_at
+    FROM departments d
+    WHERE d.id = test_get_department_by_id_v4.input_department_id;
 $$;

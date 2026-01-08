@@ -32,19 +32,19 @@ parameter_exists_check AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params) as profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 usage_check AS (
     SELECT COUNT(DISTINCT sf.scenario_id) as usage_count
     FROM params x
-    JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
 ),
 parameter_info AS (
     SELECT 
-        p.name,
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
         COALESCE(uc.usage_count, 0) as usage_count
     FROM params x
     JOIN parameters p ON p.id = x.parameter_id
@@ -55,7 +55,7 @@ delete_parameter AS (
     DELETE FROM parameters
     WHERE id = (SELECT parameter_id FROM params)
         AND (SELECT usage_count FROM usage_check) = 0
-    RETURNING name
+    RETURNING id
 )
 SELECT 
     (SELECT parameter_exists FROM parameter_exists_check)::boolean as parameter_exists,
@@ -65,5 +65,5 @@ SELECT
 FROM parameter_exists_check pec
 CROSS JOIN actor_profile ap
 LEFT JOIN parameter_info pi ON pec.parameter_exists = true
-LEFT JOIN delete_parameter dp ON dp.name = pi.name AND pec.parameter_exists = true
+LEFT JOIN delete_parameter dp ON dp.id = (SELECT parameter_id FROM params) AND pec.parameter_exists = true
 $$;

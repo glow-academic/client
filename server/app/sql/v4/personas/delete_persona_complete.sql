@@ -35,7 +35,7 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -45,7 +45,9 @@ usage_check AS (
     JOIN scenario_personas sp ON sp.persona_id = x.persona_id AND sp.active = true
 ),
 persona_info AS (
-    SELECT name FROM params x
+    SELECT 
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name
+    FROM params x
     JOIN personas p ON p.id = x.persona_id
 ),
 delete_result AS (

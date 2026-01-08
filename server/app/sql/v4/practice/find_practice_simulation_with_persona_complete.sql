@@ -34,15 +34,15 @@ AS $$
 WITH practice_simulations AS (
     SELECT DISTINCT
         sim.id as simulation_id,
-        sim.title as simulation_title,
+        (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) as simulation_title,
         ss.scenario_id,
         ss.position as position_val
     FROM simulations sim
     JOIN simulation_scenarios ss ON ss.simulation_id = sim.id AND ss.active = true
-    JOIN scenarios s ON s.id = ss.scenario_id AND s.active = true
+    JOIN scenarios s ON s.id = ss.scenario_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
-    WHERE sim.active = true
-      AND sim.practice_simulation = true
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
+      AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
       AND sp.persona_id = api_find_practice_simulation_with_persona_v4.persona_id
 ),
 filtered_by_department AS (
@@ -91,7 +91,7 @@ scenario_with_name AS (
         fbd.simulation_title,
         fbd.scenario_id,
         fbd.position_val,
-        s.name as scenario_name
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as scenario_name
     FROM filtered_by_department fbd
     JOIN scenarios s ON s.id = fbd.scenario_id
 )

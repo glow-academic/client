@@ -98,7 +98,7 @@ WITH params AS (
 user_profile AS (
     SELECT
         p.role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -129,18 +129,129 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
+get_or_create_name AS (
+    -- Get or create name in names table
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT x.name, NOW(), NOW()
+    FROM params x
+    WHERE x.name IS NOT NULL AND x.name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name as name_value
+),
+get_or_create_description AS (
+    -- Get or create description in descriptions table
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT x.description, NOW(), NOW()
+    FROM params x
+    WHERE x.description IS NOT NULL AND x.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+get_active_flag AS (
+    -- Get the active flag ID
+    SELECT id as flag_id
+    FROM flags
+    WHERE name = 'active'
+    LIMIT 1
+),
+get_or_create_points AS (
+    -- Get or create points in points table
+    INSERT INTO points (value, created_at, updated_at)
+    SELECT DISTINCT x.points, NOW(), NOW()
+    FROM params x
+    WHERE x.points IS NOT NULL
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as point_id, value as point_value
+),
+get_or_create_pass_points AS (
+    -- Get or create pass_points in points table
+    INSERT INTO points (value, created_at, updated_at)
+    SELECT DISTINCT x.pass_points, NOW(), NOW()
+    FROM params x
+    WHERE x.pass_points IS NOT NULL
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as pass_point_id, value as pass_point_value
+),
 update_rubric AS (
     UPDATE rubrics r SET
-        name = x.name,
-        description = x.description,
-        active = x.active,
-        points = x.points,
-        pass_points = x.pass_points,
         rubric_domain_id = x.rubric_domain_id,
         updated_at = NOW()
     FROM params x
     WHERE r.id = x.rubric_id
-    RETURNING r.id as rubric_id, r.name as rubric_name
+    RETURNING r.id as rubric_id
+),
+update_rubric_name AS (
+    -- Update rubric name (delete old, insert new)
+    DELETE FROM rubric_names
+    WHERE rubric_id = (SELECT rubric_id FROM update_rubric LIMIT 1)
+    RETURNING rubric_id
+),
+link_rubric_name AS (
+    -- Link new name to rubric
+    INSERT INTO rubric_names (rubric_id, name_id, created_at, updated_at)
+    SELECT ur.rubric_id, gocn.name_id, NOW(), NOW()
+    FROM update_rubric ur
+    CROSS JOIN get_or_create_name gocn
+    WHERE gocn.name_id IS NOT NULL
+),
+update_rubric_description AS (
+    -- Update rubric description (delete old, insert new if provided)
+    DELETE FROM rubric_descriptions
+    WHERE rubric_id = (SELECT rubric_id FROM update_rubric LIMIT 1)
+    RETURNING rubric_id
+),
+link_rubric_description AS (
+    -- Link new description to rubric (if provided)
+    INSERT INTO rubric_descriptions (rubric_id, description_id, created_at, updated_at)
+    SELECT ur.rubric_id, gocd.description_id, NOW(), NOW()
+    FROM update_rubric ur
+    CROSS JOIN get_or_create_description gocd
+    WHERE gocd.description_id IS NOT NULL
+),
+update_rubric_active_flag AS (
+    -- Update active flag
+    INSERT INTO rubric_flags (rubric_id, flag_id, type, value, created_at, updated_at)
+    SELECT ur.rubric_id, gaf.flag_id, 'active'::type_rubric_flags, p.active, NOW(), NOW()
+    FROM update_rubric ur
+    CROSS JOIN get_active_flag gaf
+    CROSS JOIN params p
+    ON CONFLICT (rubric_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+),
+update_rubric_points AS (
+    -- Update points (delete old, insert new)
+    DELETE FROM rubric_points
+    WHERE rubric_id = (SELECT rubric_id FROM update_rubric LIMIT 1) AND type = 'total'::type_rubric_points
+    RETURNING rubric_id
+),
+link_rubric_points AS (
+    -- Link new points to rubric
+    INSERT INTO rubric_points (rubric_id, point_id, type, created_at, updated_at)
+    SELECT ur.rubric_id, gocp.point_id, 'total'::type_rubric_points, NOW(), NOW()
+    FROM update_rubric ur
+    CROSS JOIN get_or_create_points gocp
+    WHERE gocp.point_id IS NOT NULL
+    ON CONFLICT (rubric_id, point_id, type) DO UPDATE SET updated_at = NOW()
+),
+update_rubric_pass_points AS (
+    -- Update pass_points (delete old, insert new)
+    DELETE FROM rubric_points
+    WHERE rubric_id = (SELECT rubric_id FROM update_rubric LIMIT 1) AND type = 'pass'::type_rubric_points
+    RETURNING rubric_id
+),
+link_rubric_pass_points AS (
+    -- Link new pass_points to rubric
+    INSERT INTO rubric_points (rubric_id, point_id, type, created_at, updated_at)
+    SELECT ur.rubric_id, gocpp.pass_point_id, 'pass'::type_rubric_points, NOW(), NOW()
+    FROM update_rubric ur
+    CROSS JOIN get_or_create_pass_points gocpp
+    WHERE gocpp.pass_point_id IS NOT NULL
+    ON CONFLICT (rubric_id, point_id, type) DO UPDATE SET updated_at = NOW()
+),
+rubric_with_name AS (
+    -- Get rubric_id and name for RETURNING clause
+    SELECT ur.rubric_id, COALESCE(gocn.name_value, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = ur.rubric_id LIMIT 1)) as rubric_name
+    FROM update_rubric ur
+    LEFT JOIN get_or_create_name gocn ON true
 ),
 replace_departments AS (
     UPDATE rubric_departments 
@@ -284,7 +395,7 @@ new_standards AS (
     FROM standards_unnested
     RETURNING id
 )
-SELECT ur.rubric_id, ur.rubric_name, ap.actor_name
-FROM update_rubric ur
+SELECT rwn.rubric_id, rwn.rubric_name, ap.actor_name::text as actor_name
+FROM rubric_with_name rwn
 CROSS JOIN actor_profile ap
 $$;

@@ -132,7 +132,11 @@ WITH params AS (
 -- Get actor name from profile
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
 ),
@@ -157,8 +161,8 @@ history_attempts AS (
         sa.archived AS is_archived,
         sa.infinite_mode,
         ap.profile_id,
-        sim.title AS simulation_name,
-        sim.practice_simulation,
+        (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AS practice_simulation,
         COALESCE(sdd.department_ids, NULL) as department_ids
     FROM simulation_attempts sa
     JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
@@ -180,11 +184,11 @@ history_attempts AS (
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (
-        (cardinality((SELECT simulation_filters FROM params)::text[]) = 0) AND sim.practice_simulation = FALSE
+        (cardinality((SELECT simulation_filters FROM params)::text[]) = 0) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
         OR
         (cardinality((SELECT simulation_filters FROM params)::text[]) > 0 AND (
-          ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND sim.practice_simulation = FALSE) OR
-          ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND sim.practice_simulation = TRUE) OR
+          ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
+          ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
           ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND sa.archived = TRUE)
         ))
       )
@@ -199,10 +203,10 @@ history_attempt_cohorts AS (
     SELECT
         ha.attempt_id,
         COALESCE(ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::uuid[]) AS cohort_ids,
-        COALESCE(ARRAY_AGG(DISTINCT c.title) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::text[]) AS cohort_names
+        COALESCE(ARRAY_AGG(DISTINCT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::text[]) AS cohort_names
     FROM history_attempts ha
     LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
-    LEFT JOIN cohorts c ON c.id = cp.cohort_id AND c.active = TRUE
+    LEFT JOIN cohorts c ON c.id = cp.cohort_id AND EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE)
     LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
     WHERE (
         -- If no cohort filter, include all attempts
@@ -228,36 +232,36 @@ history_attempts_filtered AS (
 profile_options_cte AS (
     SELECT 
         haf.profile_id,
-        p.first_name || ' ' || p.last_name AS profile_name,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') AS profile_name,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
     JOIN profiles p ON p.id = haf.profile_id
-    GROUP BY haf.profile_id, p.first_name, p.last_name
+    GROUP BY haf.profile_id, p.id
     ORDER BY profile_name
 ),
 -- Get all unique simulation options from filtered attempts (before history-specific filters)
 simulation_options_cte AS (
     SELECT 
         haf.simulation_id,
-        s.title AS simulation_name,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_name,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
     JOIN simulations s ON s.id = haf.simulation_id
-    GROUP BY haf.simulation_id, s.title
+    GROUP BY haf.simulation_id, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
     ORDER BY simulation_name
 ),
 -- Get all unique scenario options from filtered attempts (before history-specific filters)
 scenario_options_cte AS (
     SELECT 
         sc.scenario_id,
-        s.name AS scenario_title,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) AS scenario_title,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
     JOIN attempt_chats ac ON ac.attempt_id = haf.attempt_id
     JOIN chats sc ON sc.id = ac.chat_id
     JOIN scenarios s ON s.id = sc.scenario_id
     WHERE sc.scenario_id IS NOT NULL
-    GROUP BY sc.scenario_id, s.name
+    GROUP BY sc.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
     ORDER BY scenario_title
 ),
 -- Apply additional filters (profileIds, simulationIds, scenarioIds, infiniteMode)
@@ -336,11 +340,13 @@ sim_first_scenario_rubric AS (
     SELECT DISTINCT ON (ss.simulation_id)
         ss.simulation_id,
         rga.rubric_id,
-        r.points
+        p_total.value AS points
     FROM simulation_scenarios ss
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
     LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     LEFT JOIN rubrics r ON r.id = rga.rubric_id
+    LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::type_rubric_points
+    LEFT JOIN points p_total ON p_total.id = rp_total.point_id
     WHERE ss.active = true
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM history_attempts_final)
     ORDER BY ss.simulation_id, ss.position
@@ -350,8 +356,8 @@ history_grade_rollup AS (
     SELECT
         ac.attempt_id,
         COUNT(*) FILTER (WHERE hcg.score IS NOT NULL) AS completed_with_grade,
-        SUM(CASE WHEN hcg.score IS NOT NULL AND COALESCE(r.points, r_fallback_scenario.points, r_fallback_first.points, 0) > 0
-            THEN (hcg.score / COALESCE(r.points, r_fallback_scenario.points, r_fallback_first.points, 1)::numeric * 100.0)
+        SUM(CASE WHEN hcg.score IS NOT NULL AND COALESCE(p_r.value, p_fallback_scenario.value, p_fallback_first.value, 0) > 0
+            THEN (hcg.score / COALESCE(p_r.value, p_fallback_scenario.value, p_fallback_first.value, 1)::numeric * 100.0)
             ELSE 0 END) AS sum_grade_percent
     FROM attempt_chats ac
     JOIN chats sc ON sc.id = ac.chat_id
@@ -363,12 +369,18 @@ history_grade_rollup AS (
       AND hcg.rubric_id IS NULL
     LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = ssrga_fallback_scenario.rubric_grade_agent_id
     LEFT JOIN rubrics r ON r.id = hcg.rubric_id
+    LEFT JOIN rubric_points rp_r ON rp_r.rubric_id = r.id AND rp_r.type = 'total'::type_rubric_points
+    LEFT JOIN points p_r ON p_r.id = rp_r.point_id
     LEFT JOIN rubrics r_fallback_scenario ON r_fallback_scenario.id = rga_fallback_scenario.rubric_id
+    LEFT JOIN rubric_points rp_fallback_scenario ON rp_fallback_scenario.rubric_id = r_fallback_scenario.id AND rp_fallback_scenario.type = 'total'::type_rubric_points
+    LEFT JOIN points p_fallback_scenario ON p_fallback_scenario.id = rp_fallback_scenario.point_id
     LEFT JOIN sim_first_scenario_rubric sfsr ON sfsr.simulation_id = sa.simulation_id
       AND hcg.chat_id IS NOT NULL
       AND hcg.rubric_id IS NULL
-      AND r_fallback_scenario.points IS NULL
+      AND p_fallback_scenario.value IS NULL
     LEFT JOIN rubrics r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
+    LEFT JOIN rubric_points rp_fallback_first ON rp_fallback_first.rubric_id = r_fallback_first.id AND rp_fallback_first.type = 'total'::type_rubric_points
+    LEFT JOIN points p_fallback_first ON p_fallback_first.id = rp_fallback_first.point_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY ac.attempt_id
 ),
@@ -509,12 +521,16 @@ simulation_rubrics AS (
     SELECT DISTINCT ON (ss.simulation_id)
         ss.simulation_id,
         r.id AS rubric_id,
-        r.points AS rubric_points,
-        r.pass_points AS rubric_pass_points
+        p_total.value AS rubric_points,
+        p_pass.value AS rubric_pass_points
     FROM simulation_scenarios ss
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
     LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
     LEFT JOIN rubrics r ON r.id = rga.rubric_id
+    LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::type_rubric_points
+    LEFT JOIN points p_total ON p_total.id = rp_total.point_id
+    LEFT JOIN rubric_points rp_pass ON rp_pass.rubric_id = r.id AND rp_pass.type = 'pass'::type_rubric_points
+    LEFT JOIN points p_pass ON p_pass.id = rp_pass.point_id
     WHERE ss.active = true
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM attempt_rollup)
     ORDER BY ss.simulation_id, ss.position
@@ -530,7 +546,7 @@ attempt_joined AS (
             WHEN sr.rubric_points IS NULL OR sr.rubric_points = 0 THEN NULL
             ELSE ROUND((sr.rubric_pass_points::numeric / sr.rubric_points::numeric) * 100.0)::int
         END AS pass_pct,
-        (p.first_name || ' ' || p.last_name) AS profile_name,
+        (COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) AS profile_name,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -636,7 +652,9 @@ final_rows_with_search AS (
              SELECT 1
              FROM unnest(fr.persona_ids_distinct) AS pid
              JOIN personas per ON per.id = pid
-             WHERE LOWER(per.name) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
+             JOIN persona_names pn ON pn.persona_id = per.id
+             JOIN names n ON n.id = pn.name_id
+             WHERE LOWER(n.name) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
          ))
 ),
 persona_labels AS (
@@ -646,9 +664,13 @@ persona_labels AS (
         COALESCE(ARRAY_AGG(per.color ORDER BY per.name) FILTER (WHERE per.color IS NOT NULL), ARRAY[]::text[]) AS persona_colors
     FROM final_rows_with_search fr
     LEFT JOIN LATERAL (
-        SELECT DISTINCT per.name, per.color
+        SELECT DISTINCT n.name AS name, c.hex_code AS color
         FROM unnest(fr.persona_ids_distinct) AS pid
         JOIN personas per ON per.id = pid
+        LEFT JOIN persona_names pn ON pn.persona_id = per.id
+        LEFT JOIN names n ON n.id = pn.name_id
+        LEFT JOIN persona_colors pc ON pc.persona_id = per.id
+        LEFT JOIN colors c ON c.id = pc.color_id
     ) per ON TRUE
     GROUP BY fr.attempt_id
 ),
@@ -658,7 +680,7 @@ scenario_names AS (
         COALESCE(sn.names, ARRAY[]::text[]) AS names
     FROM final_rows_with_search fr
     LEFT JOIN LATERAL (
-        SELECT ARRAY_AGG(s.name ORDER BY s.name) AS names
+        SELECT ARRAY_AGG((SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) ORDER BY (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)) AS names
         FROM unnest(fr.scenario_ids_assigned) sid
         JOIN scenarios s ON s.id = sid
     ) sn ON TRUE

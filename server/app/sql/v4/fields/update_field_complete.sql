@@ -39,7 +39,7 @@ field_exists_check AS (
 user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -66,14 +66,92 @@ validate_update_permissions AS (
     CROSS JOIN object_current_departments ocd
     CROSS JOIN user_departments ud
 ),
+-- Insert/update name in names table
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name, NOW(), NOW()
+    FROM params
+    WHERE name IS NOT NULL AND name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert/update description in descriptions table
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 update_field AS (
+    -- Update field (without name/description/active columns)
     UPDATE fields SET
-        name = (SELECT name FROM params),
-        description = (SELECT description FROM params),
-        active = (SELECT active FROM params),
         updated_at = NOW()
     WHERE id = (SELECT field_id FROM params)
     RETURNING id as field_id, (SELECT name FROM params) as field_name
+),
+-- Remove old name links
+remove_old_name AS (
+    DELETE FROM field_names
+    WHERE field_id = (SELECT field_id FROM params)
+      AND name_id NOT IN (SELECT name_id FROM name_resource)
+),
+-- Link field to new name
+link_field_name AS (
+    INSERT INTO field_names (field_id, name_id, created_at, updated_at)
+    SELECT 
+        uf.field_id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM update_field uf
+    CROSS JOIN name_resource nr
+    ON CONFLICT (field_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old description links
+remove_old_description AS (
+    DELETE FROM field_descriptions
+    WHERE field_id = (SELECT field_id FROM params)
+      AND description_id NOT IN (SELECT description_id FROM description_resource)
+),
+-- Link field to new description
+link_field_description AS (
+    INSERT INTO field_descriptions (field_id, description_id, created_at, updated_at)
+    SELECT 
+        uf.field_id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM update_field uf
+    CROSS JOIN description_resource dr
+    ON CONFLICT (field_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Update field active flag
+update_field_active_flag AS (
+    UPDATE field_flags SET
+        value = (SELECT active FROM params),
+        updated_at = NOW()
+    WHERE field_id = (SELECT field_id FROM params)
+      AND type = 'active'::type_field_flags
+),
+insert_field_active_flag AS (
+    INSERT INTO field_flags (field_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        uf.field_id,
+        f.id,
+        'active'::type_field_flags,
+        x.active,
+        NOW(),
+        NOW()
+    FROM update_field uf
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND NOT EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = uf.field_id AND ff.type = 'active'::type_field_flags)
+    ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
 ),
 delete_existing_conditional_parameters AS (
     -- Delete all existing conditional parameter links (soft delete)

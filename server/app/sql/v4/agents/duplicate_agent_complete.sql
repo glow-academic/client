@@ -20,16 +20,16 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 source_agent AS (
     SELECT 
         a.id as source_id,
-        a.name,
-        a.description,
-        a.model_id,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1),
+        (SELECT m.id FROM agent_models am JOIN models m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
         COALESCE(d.artifact::text, '') as role,  -- Derive from domains
         ap.prompt_id,
         COALESCE(pr.system_prompt, '') as system_prompt,
@@ -57,17 +57,86 @@ new_prompt AS (
     LEFT JOIN prompts pr ON pr.id = sa.prompt_id
     RETURNING id as prompt_id
 ),
+-- Insert name into names table and get ID
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT sa.name || ' Copy', NOW(), NOW()
+    FROM source_agent sa
+    WHERE sa.name IS NOT NULL AND sa.name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert description into descriptions table and get ID
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT sa.description, NOW(), NOW()
+    FROM source_agent sa
+    WHERE sa.description IS NOT NULL AND sa.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 new_agent AS (
-    INSERT INTO agents (name, description, model_id, active, created_at, updated_at)
+    -- Create agent (without name/description/model_id/active columns)
+    INSERT INTO agents (created_at, updated_at)
     SELECT 
-        sa.name || ' Copy',
-        sa.description,
-        sa.model_id,
-        false,
         NOW(),
         NOW()
     FROM source_agent sa
     RETURNING id::text as agent_id
+),
+-- Link agent to name
+link_agent_name AS (
+    INSERT INTO agent_names (agent_id, name_id, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM new_agent na
+    CROSS JOIN name_resource nr
+    ON CONFLICT (agent_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link agent to description
+link_agent_description AS (
+    INSERT INTO agent_descriptions (agent_id, description_id, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM new_agent na
+    CROSS JOIN description_resource dr
+    ON CONFLICT (agent_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link agent to model
+link_agent_model AS (
+    INSERT INTO agent_models (agent_id, model_id, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        sa.model_id,
+        NOW(),
+        NOW()
+    FROM new_agent na
+    CROSS JOIN source_agent sa
+    WHERE sa.model_id IS NOT NULL
+    ON CONFLICT (agent_id, model_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link agent active flag (defaults to false)
+link_agent_active_flag AS (
+    INSERT INTO agent_flags (agent_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        f.id,
+        'active'::type_agent_flags,
+        false,
+        NOW(),
+        NOW()
+    FROM new_agent na
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
+        value = false,
+        updated_at = NOW()
 ),
 copy_domain_link AS (
     -- Copy domains link

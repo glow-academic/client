@@ -205,7 +205,7 @@ params AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -246,28 +246,115 @@ scenario_exists_check AS (
 ),
 scenario_exists AS (
     -- Get scenario info if exists
-    SELECT id, name
+    SELECT id
     FROM scenarios
     WHERE id = (SELECT scenario_id FROM params)
 ),
+get_or_create_name AS (
+    -- Get or create name in names table
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT (SELECT name FROM params), NOW(), NOW()
+    WHERE (SELECT name FROM params) IS NOT NULL AND (SELECT name FROM params) != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name as name_value
+),
+get_or_create_description AS (
+    -- Get or create description in descriptions table
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT (SELECT description FROM params), NOW(), NOW()
+    WHERE (SELECT description FROM params) IS NOT NULL AND (SELECT description FROM params) != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+get_flag_ids AS (
+    -- Get flag IDs for all scenario flags
+    SELECT 
+        (SELECT id FROM flags WHERE name = 'active' LIMIT 1) as active_flag_id,
+        (SELECT id FROM flags WHERE name = 'objectives_enabled' LIMIT 1) as objectives_enabled_flag_id,
+        (SELECT id FROM flags WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id,
+        (SELECT id FROM flags WHERE name = 'video_enabled' LIMIT 1) as video_enabled_flag_id,
+        (SELECT id FROM flags WHERE name = 'questions_enabled' LIMIT 1) as questions_enabled_flag_id,
+        (SELECT id FROM flags WHERE name = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled_flag_id
+),
 update_scenario AS (
-    -- Update scenario basic fields
+    -- Update scenario basic fields (only updated_at)
     UPDATE scenarios
     SET 
-        name = (SELECT name FROM params),
-        description = (SELECT description FROM params),
-        active = (SELECT active FROM params),
-        objectives_enabled = (SELECT objectives_enabled FROM params),
-        images_enabled = (SELECT images_enabled FROM params),
-        video_enabled = (SELECT video_enabled FROM params),
-        questions_enabled = (SELECT questions_enabled FROM params),
-        problem_statement_enabled = (SELECT problem_statement_enabled FROM params),
-        video_domain_id = COALESCE((SELECT video_domain_id FROM params), video_domain_id),
-        scenario_domain_id = COALESCE((SELECT scenario_domain_id FROM params), scenario_domain_id),
-        image_domain_id = COALESCE((SELECT image_domain_id FROM params), image_domain_id),
         updated_at = NOW()
     WHERE id IN (SELECT id FROM scenario_exists)
-    RETURNING id as scenario_id, name
+    RETURNING id as scenario_id
+),
+update_name_link AS (
+    -- Delete old name link and insert new one
+    DELETE FROM scenario_names
+    WHERE scenario_id = (SELECT scenario_id FROM params)
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+),
+link_new_name AS (
+    INSERT INTO scenario_names (scenario_id, name_id, created_at, updated_at)
+    SELECT p.scenario_id, gocn.name_id, NOW(), NOW()
+    FROM params p
+    CROSS JOIN get_or_create_name gocn
+    WHERE gocn.name_id IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+),
+update_description_link AS (
+    -- Delete old description link and insert new one
+    DELETE FROM scenario_descriptions
+    WHERE scenario_id = (SELECT scenario_id FROM params)
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+),
+link_new_description AS (
+    INSERT INTO scenario_descriptions (scenario_id, description_id, created_at, updated_at)
+    SELECT p.scenario_id, gocd.description_id, NOW(), NOW()
+    FROM params p
+    CROSS JOIN get_or_create_description gocd
+    WHERE gocd.description_id IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+),
+update_flags AS (
+    -- Update scenario flags (delete old and insert new)
+    DELETE FROM scenario_flags
+    WHERE scenario_id = (SELECT scenario_id FROM params)
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+),
+link_flags AS (
+    INSERT INTO scenario_flags (scenario_id, flag_id, type, value, created_at, updated_at)
+    SELECT p.scenario_id, gfi.active_flag_id, 'active'::type_scenario_flags, p.active, NOW(), NOW()
+    FROM params p
+    CROSS JOIN get_flag_ids gfi
+    WHERE p.active IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+    UNION ALL
+    SELECT p.scenario_id, gfi.objectives_enabled_flag_id, 'objectives_enabled'::type_scenario_flags, p.objectives_enabled, NOW(), NOW()
+    FROM params p
+    CROSS JOIN get_flag_ids gfi
+    WHERE p.objectives_enabled IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+    UNION ALL
+    SELECT p.scenario_id, gfi.images_enabled_flag_id, 'images_enabled'::type_scenario_flags, p.images_enabled, NOW(), NOW()
+    FROM params p
+    CROSS JOIN get_flag_ids gfi
+    WHERE p.images_enabled IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+    UNION ALL
+    SELECT p.scenario_id, gfi.video_enabled_flag_id, 'video_enabled'::type_scenario_flags, p.video_enabled, NOW(), NOW()
+    FROM params p
+    CROSS JOIN get_flag_ids gfi
+    WHERE p.video_enabled IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+    UNION ALL
+    SELECT p.scenario_id, gfi.questions_enabled_flag_id, 'questions_enabled'::type_scenario_flags, p.questions_enabled, NOW(), NOW()
+    FROM params p
+    CROSS JOIN get_flag_ids gfi
+    WHERE p.questions_enabled IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_exists)
+    UNION ALL
+    SELECT p.scenario_id, gfi.problem_statement_enabled_flag_id, 'problem_statement_enabled'::type_scenario_flags, p.problem_statement_enabled, NOW(), NOW()
+    FROM params p
+    CROSS JOIN get_flag_ids gfi
+    WHERE p.problem_statement_enabled IS NOT NULL
+      AND EXISTS (SELECT 1 FROM scenario_exists)
 ),
 deactivate_problem_statements AS (
     -- Deactivate all existing problem statement links (preserve history)
@@ -706,9 +793,10 @@ upsert_field_ranges AS (
 SELECT 
     sec.scenario_exists::boolean as scenario_exists,
     us.scenario_id::uuid as scenario_id,
-    us.name::text as name,
+    COALESCE(gocn.name_value, '')::text as name,
     ap.actor_name::text as actor_name
 FROM scenario_exists_check sec
 LEFT JOIN update_scenario us ON sec.scenario_exists = true
+LEFT JOIN get_or_create_name gocn ON gocn.name_id IS NOT NULL
 CROSS JOIN actor_profile ap
 $$;

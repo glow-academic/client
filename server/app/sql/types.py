@@ -20495,7 +20495,6 @@ class GetScenarioDetailSqlRow(BaseModel):
     problem_statement: str | None = None
     problem_statement_id: str | None = None
     active: bool | None = None
-    generated: bool | None = None
     department_ids: list[str] | None = None
     parent_scenario_id: UUID | None = None
     hints_enabled: bool | None = None
@@ -20584,7 +20583,6 @@ class GetScenarioDetailApiResponse(BaseModel):
     problem_statement: str | None = None
     problem_statement_id: str | None = None
     active: bool | None = None
-    generated: bool | None = None
     department_ids: list[str] | None = None
     parent_scenario_id: UUID | None = None
     hints_enabled: bool | None = None

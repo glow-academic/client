@@ -20,13 +20,47 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO documents(name, description, active, created_at, updated_at)
-    VALUES (
-        document_name,
-        document_description,
-        document_active,
-        NOW(),
-        NOW()
+    WITH new_document AS (
+        INSERT INTO documents DEFAULT VALUES
+        RETURNING id, created_at, updated_at
+    ),
+    name_resource AS (
+        INSERT INTO names(name)
+        VALUES (document_name)
+        RETURNING id
+    ),
+    description_resource AS (
+        INSERT INTO descriptions(description)
+        VALUES (COALESCE(document_description, 'Test document description'))
+        RETURNING id
+    ),
+    active_flag AS (
+        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+    ),
+    document_name_link AS (
+        INSERT INTO document_names(document_id, name_id)
+        SELECT nd.id, nr.id
+        FROM new_document nd, name_resource nr
+        RETURNING document_id
+    ),
+    document_description_link AS (
+        INSERT INTO document_descriptions(document_id, description_id)
+        SELECT nd.id, dr.id
+        FROM new_document nd, description_resource dr
+        RETURNING document_id
+    ),
+    document_flag_link AS (
+        INSERT INTO document_flags(document_id, flag_id, type, value)
+        SELECT nd.id, af.id, 'active'::type_document_flags, COALESCE(document_active, true)
+        FROM new_document nd, active_flag af
+        RETURNING document_id
     )
-    RETURNING id AS document_id, name, description, active, created_at, updated_at;
+    SELECT 
+        nd.id AS document_id,
+        (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = nd.id LIMIT 1) AS name,
+        (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = nd.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = nd.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE) AS active,
+        nd.created_at,
+        nd.updated_at
+    FROM new_document nd;
 $$;

@@ -34,9 +34,13 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profiles p ON p.id = x.profile_id
 ),
 role_param AS (
     -- Use role to help PostgreSQL infer type (even if NULL)
@@ -92,7 +96,6 @@ profile_update AS (
     UPDATE profiles p
     SET 
         role = COALESCE((SELECT CAST(rp.role_value AS profile_role) FROM role_param rp WHERE rp.role_value IS NOT NULL LIMIT 1), p.role),
-        active = COALESCE((SELECT active FROM params), p.active),
         updated_at = NOW()
     WHERE p.id IN (SELECT id FROM validated_profiles)
     RETURNING p.id

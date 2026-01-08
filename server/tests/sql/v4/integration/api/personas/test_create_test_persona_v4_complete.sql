@@ -25,21 +25,72 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO personas(
-        name,
-        description,
-        color,
-        icon,
-        active,
-        instructions
+    WITH new_persona AS (
+        INSERT INTO personas(instructions)
+        VALUES (test_create_test_persona_v4.instructions)
+        RETURNING id, instructions, created_at
+    ),
+    name_resource AS (
+        INSERT INTO names(name)
+        VALUES (COALESCE(test_create_test_persona_v4.persona_name, 'Test Persona'))
+        RETURNING id
+    ),
+    description_resource AS (
+        INSERT INTO descriptions(description)
+        VALUES (COALESCE(test_create_test_persona_v4.description, 'Test Description'))
+        RETURNING id
+    ),
+    color_resource AS (
+        INSERT INTO colors(name, description, hex_code)
+        VALUES ('Test Color', 'Test Color Description', COALESCE(test_create_test_persona_v4.color, '#000000'))
+        RETURNING id
+    ),
+    icon_resource AS (
+        INSERT INTO icons(name, description, value)
+        VALUES ('Test Icon', 'Test Icon Description', COALESCE(test_create_test_persona_v4.icon, 'user'))
+        RETURNING id
+    ),
+    active_flag AS (
+        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+    ),
+    persona_name_link AS (
+        INSERT INTO persona_names(persona_id, name_id)
+        SELECT np.id, nr.id
+        FROM new_persona np, name_resource nr
+        RETURNING persona_id
+    ),
+    persona_description_link AS (
+        INSERT INTO persona_descriptions(persona_id, description_id)
+        SELECT np.id, dr.id
+        FROM new_persona np, description_resource dr
+        RETURNING persona_id
+    ),
+    persona_color_link AS (
+        INSERT INTO persona_colors(persona_id, color_id)
+        SELECT np.id, cr.id
+        FROM new_persona np, color_resource cr
+        RETURNING persona_id
+    ),
+    persona_icon_link AS (
+        INSERT INTO persona_icons(persona_id, icon_id)
+        SELECT np.id, ir.id
+        FROM new_persona np, icon_resource ir
+        RETURNING persona_id
+    ),
+    persona_flag_link AS (
+        INSERT INTO persona_flags(persona_id, flag_id, type, value)
+        SELECT np.id, af.id, 'active'::type_persona_flags, COALESCE(test_create_test_persona_v4.active, true)
+        FROM new_persona np, active_flag af
+        RETURNING persona_id
     )
-    VALUES (
-        COALESCE(test_create_test_persona_v4.persona_name, 'Test Persona'),
-        COALESCE(test_create_test_persona_v4.description, 'Test Description'),
-        COALESCE(test_create_test_persona_v4.color, '#000000'),
-        COALESCE(test_create_test_persona_v4.icon, 'user'),
-        COALESCE(test_create_test_persona_v4.active, true),
-        test_create_test_persona_v4.instructions
-    )
-    RETURNING id, name, description, color, icon, active, instructions, created_at;
+    SELECT 
+        np.id as persona_id,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = np.id LIMIT 1) as name,
+        (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = np.id LIMIT 1) as description,
+        (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = np.id LIMIT 1) as color,
+        (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = np.id LIMIT 1) as icon,
+        EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE) as active,
+        np.instructions,
+        np.created_at
+    FROM new_persona np;
 $$;

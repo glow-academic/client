@@ -129,18 +129,28 @@ WITH params AS (
 -- Get colors from active settings (defaults if no settings found)
 settings_colors AS (
     SELECT 
-        COALESCE(primary_color, '#171717') AS primary_color,
-        COALESCE(accent, '#f5f5f5') AS accent
-    FROM settings
-    WHERE active = true
+        COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::type_setting_colors LIMIT 1), '#171717') AS primary_color,
+        COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::type_setting_colors LIMIT 1), '#f5f5f5') AS accent
+    FROM settings s
+    WHERE EXISTS (
+        SELECT 1 FROM setting_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.setting_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND sf.type = 'active'::type_setting_flags
+          AND sf.value = TRUE
+    )
     LIMIT 1
 ),
 -- Get actor name from profile
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
 ),
 filt AS (
     SELECT * FROM analytics a 
@@ -169,7 +179,14 @@ filt AS (
       AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (
           SELECT DISTINCT s.id
           FROM simulations s
-          WHERE s.active = TRUE
+          WHERE EXISTS (
+            SELECT 1 FROM simulation_flags sf
+            JOIN flags f ON sf.flag_id = f.id
+            WHERE sf.simulation_id = s.id
+              AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+              AND sf.type = 'active'::type_simulation_flags
+              AND sf.value = TRUE
+          )
             AND (
                 EXISTS (
                     SELECT 1 
@@ -179,7 +196,7 @@ filt AS (
                       AND cs.active = TRUE
                 )
                 OR
-                (s.practice_simulation = TRUE 
+                (EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
                  AND NOT EXISTS (
                      SELECT 1 
                      FROM cohort_simulations cs2 
@@ -193,8 +210,8 @@ filt AS (
 profile_stats AS (
     SELECT
         f.profile_id,
-        p.first_name,
-        p.last_name,
+        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id AND pn.type = 'first'::type_profile_names LIMIT 1) AS first_name,
+        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id AND pn.type = 'last'::type_profile_names LIMIT 1) AS last_name,
         COUNT(DISTINCT f.attempt_id)::int AS total_attempts,
         MAX(f.grade_percent) FILTER (WHERE f.grade_percent IS NOT NULL) AS highest_score,
         AVG(f.num_messages_total) FILTER (WHERE f.num_messages_total IS NOT NULL) AS avg_messages,
@@ -202,8 +219,7 @@ profile_stats AS (
         ARRAY_AGG(DISTINCT f.simulation_id) FILTER (WHERE f.simulation_id IS NOT NULL) AS simulation_ids,
         ARRAY_AGG(DISTINCT f.scenario_id) FILTER (WHERE f.scenario_id IS NOT NULL) AS scenario_ids
     FROM filt f
-    JOIN profiles p ON f.profile_id = p.id
-    GROUP BY f.profile_id, p.first_name, p.last_name
+    GROUP BY f.profile_id
 ),
 -- Persona response times per profile
 persona_times AS (
@@ -297,8 +313,8 @@ all_simulation_ids AS (
 simulation_data AS (
     SELECT 
         s.id as simulation_id,
-        s.title as name,
-        COALESCE(s.description, '') as description,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -314,7 +330,14 @@ simulation_data AS (
         ) as department_ids
     FROM all_simulation_ids asi
     LEFT JOIN simulations s ON s.id = asi.simulation_id
-    WHERE s.active = true
+    WHERE EXISTS (
+        SELECT 1 FROM simulation_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.simulation_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND sf.type = 'active'::type_simulation_flags
+          AND sf.value = TRUE
+    )
 ),
 -- Get all unique scenario IDs for mapping
 all_scenario_ids AS (
@@ -325,7 +348,7 @@ all_scenario_ids AS (
 scenario_data AS (
     SELECT 
         sc.id as scenario_id,
-        sc.name as name,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1) as name,
         COALESCE(
             (SELECT ps.problem_statement 
              FROM scenario_problem_statements sps 
@@ -337,7 +360,7 @@ scenario_data AS (
         ) as description
     FROM all_scenario_ids asci
     LEFT JOIN scenarios sc ON sc.id = asci.scenario_id
-    WHERE sc.active = true
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = sc.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
 ),
 -- Get top 25% of profiles by highest score
 ranked_stats AS (

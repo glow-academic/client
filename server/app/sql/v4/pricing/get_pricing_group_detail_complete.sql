@@ -142,7 +142,7 @@ resolve_profile_id AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     LEFT JOIN profiles p ON p.id = x.profile_id
     WHERE x.profile_id IS NOT NULL
@@ -178,7 +178,7 @@ runs_departments AS (
     FROM runs_metadata rm
     LEFT JOIN agents a ON a.id = rm.agent_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    LEFT JOIN departments d ON d.id = ad.department_id AND d.active = true
+    LEFT JOIN departments d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     WHERE d.id IS NOT NULL
 ),
 -- Check department access
@@ -594,19 +594,19 @@ SELECT
     END as runs,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (m.id, m.name, COALESCE(m.description, ''))::types.q_get_pricing_group_detail_v4_model
+            DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_model
         ) FILTER (WHERE m.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_model[]
     ) as models,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (a.id, a.name)::types.q_get_pricing_group_detail_v4_agent
+            DISTINCT (a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_group_detail_v4_agent
         ) FILTER (WHERE a.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_agent[]
     ) as agents,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (p.id, p.first_name || ' ' || p.last_name)::types.q_get_pricing_group_detail_v4_profile
+            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_profile
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_profile[]
     ) as profiles

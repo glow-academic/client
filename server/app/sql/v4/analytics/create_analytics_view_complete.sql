@@ -71,22 +71,54 @@ latest_grade AS (
 ),
 -- only ACTIVE simulations
 active_sims AS (
-  SELECT * FROM simulations WHERE active = TRUE
+  SELECT s.* FROM simulations s
+  WHERE EXISTS (
+    SELECT 1 FROM simulation_flags sf
+    JOIN flags f ON sf.flag_id = f.id
+    WHERE sf.simulation_id = s.id
+      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+      AND sf.type = 'active'::type_simulation_flags
+      AND sf.value = TRUE
+  )
 ),
 -- only ACTIVE scenarios
 active_scenarios AS (
-  SELECT * FROM scenarios WHERE active = TRUE
+  SELECT s.* FROM scenarios s
+  WHERE EXISTS (
+    SELECT 1 FROM scenario_flags sf
+    JOIN flags f ON sf.flag_id = f.id
+    WHERE sf.scenario_id = s.id
+      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+      AND sf.type = 'active'::type_scenario_flags
+      AND sf.value = TRUE
+  )
 ),
 -- expand cohorts; we'll filter active where needed
 cohorts_expanded AS (
-  SELECT c.id, c.active FROM cohorts c
+  SELECT c.id, 
+    EXISTS (
+      SELECT 1 FROM cohort_flags cf
+      JOIN flags f ON cf.flag_id = f.id
+      WHERE cf.cohort_id = c.id
+        AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+        AND cf.type = 'active'::type_cohort_flags
+        AND cf.value = TRUE
+    ) AS active
+  FROM cohorts c
 ),
 -- sims -> active cohorts using junction table
 cohorts_by_sim AS (
   SELECT s.id AS simulation_id,
          ARRAY(SELECT DISTINCT c.id FROM cohorts c
                JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
-               WHERE c.active = TRUE) AS cohort_ids
+               WHERE EXISTS (
+                 SELECT 1 FROM cohort_flags cf
+                 JOIN flags f ON cf.flag_id = f.id
+                 WHERE cf.cohort_id = c.id
+                   AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+                   AND cf.type = 'active'::type_cohort_flags
+                   AND cf.value = TRUE
+               )) AS cohort_ids
   FROM active_sims s
 ),
 -- profile ∩ simulation ∩ active cohort (for true cohort-mode semantics)
@@ -97,7 +129,14 @@ profile_cohorts_for_sim AS (
            FROM cohorts c
            JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
            JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
-           WHERE c.active = TRUE
+           WHERE EXISTS (
+             SELECT 1 FROM cohort_flags cf
+             JOIN flags f ON cf.flag_id = f.id
+             WHERE cf.cohort_id = c.id
+               AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+               AND cf.type = 'active'::type_cohort_flags
+               AND cf.value = TRUE
+           )
          ) AS profile_cohort_ids
   FROM simulation_attempts sa
   LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
@@ -232,29 +271,46 @@ SELECT
   rm.leaf_scenario_id           AS leaf_scenario_id,
 
   sfp.persona_id                AS persona_id,
-  p.color                       AS persona_color,
+  (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) AS persona_color,
 
-  sim.practice_simulation       AS is_practice,
+  EXISTS (
+    SELECT 1 FROM simulation_flags sf
+    JOIN flags f ON sf.flag_id = f.id
+    WHERE sf.simulation_id = sim.id
+      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+      AND sf.type = 'practice'::type_simulation_flags
+      AND sf.value = TRUE
+  ) AS is_practice,
   sa.archived                   AS is_archived,
-  (NOT sim.practice_simulation AND NOT sa.archived) AS is_general,
+  (NOT EXISTS (
+    SELECT 1 FROM simulation_flags sf
+    JOIN flags f ON sf.flag_id = f.id
+    WHERE sf.simulation_id = sim.id
+      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+      AND sf.type = 'practice'::type_simulation_flags
+      AND sf.value = TRUE
+  ) AND NOT sa.archived) AS is_general,
   pr.role                       AS profile_role,
   cbs.cohort_ids                AS cohort_ids,
   sc.created_at                 AS chat_created_at,
   -- chat_completed_at removed (use grade_created_at or time_taken_seconds as source of truth)
 
-  CASE
-    WHEN lg.score IS NULL OR r.points IS NULL OR r.points = 0 THEN NULL
-    ELSE (lg.score / r.points::numeric) * 100.0
-  END                           AS grade_percent,
-  CASE
-    WHEN lg.score IS NULL OR r.points IS NULL OR r.pass_points IS NULL THEN NULL
-    ELSE (lg.score >= r.pass_points::numeric)
-  END                           AS passed,
   lg.time_taken_seconds         AS time_taken_seconds,
 
   lg.rubric_id                  AS rubric_id,
-  r.points                      AS rubric_points,
-  r.pass_points                 AS rubric_pass_points,
+  (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS rubric_points,
+  (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS rubric_pass_points,
+  CASE
+    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL 
+         OR (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) = 0 THEN NULL
+    ELSE (lg.score / (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1)::numeric) * 100.0
+  END                           AS grade_percent,
+  CASE
+    WHEN lg.score IS NULL 
+         OR (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL 
+         OR (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) IS NULL THEN NULL
+    ELSE (lg.score >= (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric)
+  END                           AS passed,
 
   (sc.completed OR lg.simulation_chat_id IS NOT NULL)
                                AS completed,
@@ -439,11 +495,11 @@ CREATE INDEX analytics_is_practice_is_archived_is_general_idx
   ON analytics (is_practice, is_archived, is_general);
 
 -- Common joins
-CREATE INDEX IF NOT EXISTS simulations_id_active_idx
-  ON simulations (id, active);
+CREATE INDEX IF NOT EXISTS simulations_id_idx
+  ON simulations (id);
 
 CREATE INDEX IF NOT EXISTS rubrics_id_idx ON rubrics (id);
-CREATE INDEX IF NOT EXISTS scenarios_id_active_idx ON scenarios (id, active);
+CREATE INDEX IF NOT EXISTS scenarios_id_idx ON scenarios (id);
 CREATE INDEX IF NOT EXISTS personas_id_idx ON personas (id);
 
 -- Junction table indexes for analytics performance

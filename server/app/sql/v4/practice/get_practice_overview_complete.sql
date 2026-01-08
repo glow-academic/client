@@ -179,8 +179,8 @@ resolve_profile_id AS (
 sim_meta AS (
     SELECT
         s.id AS simulation_id,
-        s.title AS simulation_title,
-        s.description AS simulation_description,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_title,
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1) AS simulation_description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -195,18 +195,31 @@ sim_meta AS (
          ORDER BY ss.position 
          LIMIT 1) as rubric_id,
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
-        r.points AS rubric_points,
-        r.pass_points AS rubric_pass_points,
+        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS rubric_points,
+        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS rubric_pass_points,
         s.updated_at
     FROM simulations s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
     LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
-    LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
-    WHERE s.active = TRUE
-      AND s.practice_simulation = TRUE
-    GROUP BY s.id, s.title, s.description, r.points, r.pass_points, s.updated_at, rga_rubric.rubric_id
+    WHERE EXISTS (
+        SELECT 1 FROM simulation_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.simulation_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND sf.type = 'active'::type_simulation_flags
+          AND sf.value = TRUE
+    )
+      AND EXISTS (
+        SELECT 1 FROM simulation_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.simulation_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+          AND sf.type = 'practice'::type_simulation_flags
+          AND sf.value = TRUE
+      )
+    GROUP BY s.id, s.updated_at, rga_rubric.rubric_id
     HAVING 
         (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
@@ -215,8 +228,8 @@ sim_meta AS (
 sim_persona_meta AS (
     SELECT
         sm.simulation_id,
-        (ARRAY_AGG(p.color ORDER BY cnt DESC, COALESCE(p.color, '') DESC))[1] AS color,
-        (ARRAY_AGG(p.icon ORDER BY cnt DESC, COALESCE(p.icon, '') DESC))[1] AS icon
+        (ARRAY_AGG((SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) ORDER BY cnt DESC, COALESCE((SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), '') DESC))[1] AS color,
+        (ARRAY_AGG((SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) ORDER BY cnt DESC, COALESCE((SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), '') DESC))[1] AS icon
     FROM (
         SELECT
             s.id AS simulation_id,
@@ -227,7 +240,14 @@ sim_persona_meta AS (
         LEFT JOIN scenarios sc ON sc.id = ss_link.scenario_id
         LEFT JOIN scenario_personas sp ON sp.scenario_id = sc.id AND sp.active = TRUE
         LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
-        WHERE s.practice_simulation = TRUE
+        WHERE EXISTS (
+            SELECT 1 FROM simulation_flags sf
+            JOIN flags f ON sf.flag_id = f.id
+            WHERE sf.simulation_id = s.id
+              AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+              AND sf.type = 'practice'::type_simulation_flags
+              AND sf.value = TRUE
+        )
         GROUP BY s.id, sp.persona_id
         HAVING 
             (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(sd.simulation_id) FILTER (WHERE sd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
@@ -278,22 +298,35 @@ activity_by_profile_sim AS (
 sim_pass_pct AS (
     SELECT DISTINCT ON (s.id)
            s.id AS simulation_id,
-           CASE WHEN r.points > 0
-                THEN (r.pass_points::numeric / r.points::numeric) * 100.0
+           CASE WHEN (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1) > 0
+                THEN ((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1)::numeric) * 100.0
                 ELSE 70 END AS pass_pct
     FROM simulations s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
     LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
-    LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
-    WHERE s.practice_simulation = TRUE
-      AND s.active = TRUE
+    WHERE EXISTS (
+        SELECT 1 FROM simulation_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.simulation_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+          AND sf.type = 'practice'::type_simulation_flags
+          AND sf.value = TRUE
+    )
+      AND EXISTS (
+        SELECT 1 FROM simulation_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.simulation_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND sf.type = 'active'::type_simulation_flags
+          AND sf.value = TRUE
+      )
       AND (
           (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR sd.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
           OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true))
       )
-    ORDER BY s.id, s.title, s.description
+    ORDER BY s.id
 ),
 -- 8) Standard groups/standards for rubrics
 all_rubric_ids AS (
@@ -424,8 +457,8 @@ items_rows AS (
 simulation_data AS (
     SELECT
         sim.id,
-        sim.title,
-        sim.description,
+        (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1),
+        (SELECT d.description FROM simulation_descriptions simd JOIN descriptions d ON simd.description_id = d.id WHERE simd.simulation_id = sim.id LIMIT 1),
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -443,9 +476,9 @@ simulation_data AS (
         WHERE sd.active = true
         GROUP BY sd.simulation_id
     ) sdd ON sdd.simulation_id = sim.id
-    WHERE sim.active = true
-      AND sim.practice_simulation = true
-    GROUP BY sim.id, sim.title, sim.description, sdd.department_ids
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
+      AND EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'practice' AND simf.type = 'practice'::type_simulation_flags AND simf.value = true)
+    GROUP BY sim.id, (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1), (SELECT d.description FROM simulation_descriptions simd JOIN descriptions d ON simd.description_id = d.id WHERE simd.simulation_id = sim.id LIMIT 1), sdd.department_ids
     HAVING 
         (cardinality((SELECT department_ids FROM params)) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && (SELECT department_ids FROM params)::text[])
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = sim.id AND sd2.active = true))
@@ -453,21 +486,28 @@ simulation_data AS (
 -- Simulations as array
 simulations_array AS (
     SELECT 
-        (sim.id, sim.title, COALESCE(sim.description, ''), sim.time_limit, COALESCE(sim.department_ids, ARRAY[]::text[]))::types.q_get_practice_overview_v4_simulation AS simulation
+        (sim.id, (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1), COALESCE((SELECT d.description FROM simulation_descriptions simd JOIN descriptions d ON simd.description_id = d.id WHERE simd.simulation_id = sim.id LIMIT 1), ''), sim.time_limit, COALESCE(sim.department_ids, ARRAY[]::text[]))::types.q_get_practice_overview_v4_simulation AS simulation
     FROM simulation_data sim
 ),
 -- Persona data
 persona_data AS (
     SELECT
         p.id,
-        p.name,
-        COALESCE(p.description, '') as description,
-        p.color,
-        p.icon
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) AS name,
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
+        (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) AS color,
+        (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) AS icon
     FROM personas p
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-    WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.color, p.icon
+    WHERE EXISTS (
+        SELECT 1 FROM persona_flags pf
+        JOIN flags f ON pf.flag_id = f.id
+        WHERE pf.persona_id = p.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND pf.type = 'active'::type_persona_flags
+          AND pf.value = TRUE
+    )
+    GROUP BY p.id
     HAVING 
         (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(pd.persona_id) FILTER (WHERE pd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
@@ -483,8 +523,8 @@ practice_scenario_ids AS (
     SELECT DISTINCT ss.scenario_id
     FROM simulation_scenarios ss
     JOIN simulations sim ON sim.id = ss.simulation_id
-    WHERE sim.active = true
-      AND sim.practice_simulation = true
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
+      AND EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'practice' AND simf.type = 'practice'::type_simulation_flags AND simf.value = true)
 ),
 -- Scenario persona IDs
 scenario_persona_ids AS (
@@ -499,7 +539,7 @@ scenario_persona_ids AS (
 scenario_data AS (
     SELECT
         s.id,
-        s.name,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         COALESCE(
             (SELECT ps.problem_statement 
              FROM scenario_problem_statements sps
@@ -514,8 +554,8 @@ scenario_data AS (
     JOIN practice_scenario_ids psi ON psi.scenario_id = s.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN scenario_persona_ids spi ON spi.scenario_id = s.id
-    WHERE s.active = true
-    GROUP BY s.id, s.name, spi.persona_ids
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    GROUP BY s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), spi.persona_ids
     HAVING 
         (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(sd.scenario_id) FILTER (WHERE sd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
@@ -523,28 +563,28 @@ scenario_data AS (
 -- Scenarios as array
 scenarios_array AS (
     SELECT 
-        (s.id, s.name, s.description, s.persona_ids)::types.q_get_practice_overview_v4_scenario AS scenario
+        (s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), s.persona_ids)::types.q_get_practice_overview_v4_scenario AS scenario
     FROM scenario_data s
 ),
 -- Parameter data
 parameter_data AS (
     SELECT
         par.id,
-        par.name,
-        COALESCE(par.description, '') as description,
-        par.document_parameter,
-        par.persona_parameter
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = par.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = par.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = par.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = par.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter
     FROM parameters par
-    JOIN fields f ON f.parameter_id = par.id AND f.active = true
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = par.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE par.active = true
-      AND par.simulation_parameter = true
-    GROUP BY par.id, par.name, par.description, par.document_parameter, par.persona_parameter
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = par.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
+      AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = par.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags AND pf.value = TRUE)
+    GROUP BY par.id, (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = par.id LIMIT 1), (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = par.id LIMIT 1), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = par.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = par.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE)
     HAVING 
         (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                   JOIN fields f2 ON f2.id = fd2.field_id 
-                  WHERE f2.parameter_id = par.id AND f2.active = true))
+                  WHERE EXISTS (SELECT 1 FROM parameter_fields pf2 WHERE pf2.field_id = f2.id AND pf2.parameter_id = par.id) AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = f2.id AND fl2.name = 'active' AND ff2.type = 'active'::type_field_flags AND ff2.value = true)))
 ),
 -- Parameters as array
 parameters_array AS (
@@ -556,16 +596,16 @@ parameters_array AS (
 parameter_item_data AS (
     SELECT
         f.id,
-        f.name,
-        COALESCE(f.description, '') as description,
-        f.parameter_id,
-        par.name as parameter_name
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = par.id LIMIT 1) as parameter_name
     FROM fields f
-    JOIN parameters par ON par.id = f.parameter_id
+    JOIN parameters par ON par.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE par.active = true
-      AND par.simulation_parameter = true
-    GROUP BY f.id, f.name, f.description, f.parameter_id, par.id, par.name
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = par.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
+      AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = par.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags AND pf.value = TRUE)
+    GROUP BY f.id, (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1), par.id, (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = par.id LIMIT 1)
     HAVING 
         (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])) > 0)
         OR (cardinality((SELECT department_ids FROM params)) = 0 OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
@@ -581,10 +621,10 @@ fields_array AS (
 department_data AS (
     SELECT
         d.id,
-        d.title as name,
-        COALESCE(d.description, '') as description
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM departments d
-    WHERE d.active = true
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 -- Departments as array
 departments_array AS (
@@ -600,9 +640,12 @@ valid_department_ids_data AS (
 -- User profile for actor_name
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = rpi.resolved_profile_id AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = rpi.resolved_profile_id AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            'System'
+        ) as actor_name
     FROM resolve_profile_id rpi
-    JOIN profiles ON profiles.id = rpi.resolved_profile_id
 ),
 -- Aggregate items
 items_agg AS (

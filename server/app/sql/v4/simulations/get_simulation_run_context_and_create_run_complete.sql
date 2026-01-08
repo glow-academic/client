@@ -123,14 +123,14 @@ profile_dept AS (
     CROSS JOIN params p
     WHERE ac.chat_id = p.chat_id 
       AND ap.active = true 
-      AND d.active = true
+      AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     LIMIT 1
 ),
 any_active_dept AS (
     -- Get any active department as last resort
-    SELECT id as department_id
-    FROM departments
-    WHERE active = true
+    SELECT d.id as department_id
+    FROM departments d
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
     LIMIT 1
 ),
 resolved_dept AS (
@@ -182,7 +182,7 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM settings s
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -204,7 +204,7 @@ dept_specific_settings AS (
     FROM settings s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE s.active = true 
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -213,7 +213,7 @@ settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
     JOIN keys k ON k.id = spk.key_id
-    WHERE spk.active = true AND k.active = true
+    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
@@ -222,7 +222,7 @@ dept_specific_settings_with_keys AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE s.active = true AND sd.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
@@ -230,7 +230,7 @@ default_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM settings s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -247,7 +247,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),  -- Any with keys
             (SELECT settings_id FROM dept_specific_settings),  -- Original fallback (no keys available)
             (SELECT settings_id FROM default_settings),  -- Original fallback (no keys available)
-            (SELECT id FROM settings WHERE active = true LIMIT 1)  -- Last resort
+            (SELECT id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)  -- Last resort
         ) as settings_id
 ),
 create_group_if_needed AS (
@@ -289,7 +289,7 @@ context_data AS (
         
         -- Persona data (via scenario_personas junction - first persona for orchestrator)
         p.id::text as persona_id,
-        p.name as persona_name,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
         
         -- Text agent/model data (backward compatibility - existing fields)
         COALESCE(
@@ -325,7 +325,7 @@ context_data AS (
         a_voice.id::text as voice_agent_id,
         
         -- Scenario settings (flags moved from scenarios to simulation_scenarios)
-        COALESCE(s.images_enabled, false) as image_input_enabled,
+        COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), false) as image_input_enabled,
         COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
         
         -- Profile data (via attempt_profiles junction)
@@ -351,18 +351,20 @@ context_data AS (
         SELECT DISTINCT ON (sp.scenario_id) 
             sp.scenario_id,
             sp.persona_id,
-            p.name as persona_name
+            (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name
         FROM scenario_personas sp
         JOIN personas p ON p.id = sp.persona_id
-        WHERE sp.active = true AND p.active = true
-        ORDER BY sp.scenario_id, p.name
+        WHERE sp.active = true AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+        ORDER BY sp.scenario_id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
     ) first_persona ON first_persona.scenario_id = s.id
     LEFT JOIN personas p ON p.id = first_persona.persona_id
 
     -- Text agent joins (use simulation agent instead of persona agent)
-    LEFT JOIN domains d_text_domain ON d_text_domain.id = sim.simulation_text_domain_id
-    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND a.active = true
-    LEFT JOIN models m ON m.id = a.model_id
+    LEFT JOIN simulation_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
+    LEFT JOIN domains d_text_domain ON d_text_domain.id = sd_text.domain_id
+    LEFT JOIN agents a ON a.id = d_text_domain.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    LEFT JOIN agent_models am ON am.agent_id = a.id
+    LEFT JOIN models m ON m.id = am.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
@@ -375,17 +377,20 @@ context_data AS (
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN providers p_prov ON p_prov.id = m.provider_id
+    LEFT JOIN model_providers mp_prov ON mp_prov.model_id = m.id
+    LEFT JOIN providers p_prov ON p_prov.id = mp_prov.provider_id
     CROSS JOIN active_settings act_s
     LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 
     -- Voice agent joins (use simulation agent instead of persona agent)
-    LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sim.simulation_voice_domain_id
-    LEFT JOIN agents a_voice ON a_voice.id = d_voice_domain.agent_id AND a_voice.active = true
-    LEFT JOIN models m_voice ON m_voice.id = a_voice.model_id
+    LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+    LEFT JOIN domains d_voice_domain ON d_voice_domain.id = sd_voice.domain_id
+    LEFT JOIN agents a_voice ON a_voice.id = d_voice_domain.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
+    LEFT JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
+    LEFT JOIN models m_voice ON m_voice.id = am_voice.model_id
     LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
     LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.id = atl_voice.model_temperature_level_id AND mtl_voice.active = true AND mtl_voice.model_id = m_voice.id
     LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
@@ -398,12 +403,13 @@ context_data AS (
     LEFT JOIN prompts pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
     LEFT JOIN model_endpoints me_voice ON me_voice.model_id = m_voice.id AND me_voice.active = true
     -- Get voice keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN providers p_voice ON p_voice.id = m_voice.provider_id
+    LEFT JOIN model_providers mp_voice_prov ON mp_voice_prov.model_id = m_voice.id
+    LEFT JOIN providers p_voice ON p_voice.id = mp_voice_prov.provider_id
     CROSS JOIN active_settings act_s_voice
     LEFT JOIN setting_provider_keys spk_voice ON spk_voice.provider_id = p_voice.id 
         AND spk_voice.settings_id = act_s_voice.settings_id 
         AND spk_voice.active = true
-    LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id AND k_voice.active = true
+    LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k_voice.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
@@ -416,7 +422,7 @@ context_data AS (
              sa.id, sa.simulation_id,
              s.id, ps.problem_statement,
              first_persona.persona_id, first_persona.persona_name,
-             p.id, p.name, 
+             p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), 
              -- Text agent fields
              pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
              m.id, m.value, p_prov.value, k.key, me.base_url, a.id, act_s.settings_id,
@@ -424,7 +430,7 @@ context_data AS (
              pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(mtl_voice.temperature, 0.0), mrl_voice.reasoning_level,
              m_voice.id, m_voice.value, p_voice.value, k_voice.key, me_voice.base_url, a_voice.id, act_s_voice.settings_id,
              -- Other fields
-             s.images_enabled, ss.copy_paste_allowed,
+             EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), ss.copy_paste_allowed,
              ap.profile_id,
              prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 ),
@@ -433,7 +439,7 @@ documents_data AS (
     SELECT 
         sc.id as chat_id,
         ARRAY_AGG(
-            (d.id::text, d.name, u.file_path, u.mime_type)::types.q_get_simulation_run_context_and_create_run_v4_document
+            (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), u.file_path, u.mime_type)::types.q_get_simulation_run_context_and_create_run_v4_document
             ORDER BY d.id
         ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true) as documents
     FROM chats sc

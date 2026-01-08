@@ -121,7 +121,7 @@ BEGIN
                 sa.archived AS is_archived,
                 sa.infinite_mode,
                 ap.profile_id,
-                sim.title AS simulation_name,
+                (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
                 sim.practice_simulation,
                 COALESCE(sdd.department_ids, NULL) as department_ids
             FROM simulation_attempts sa
@@ -226,7 +226,7 @@ BEGIN
             LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
             WHERE 
                 (search IS NULL OR search = '' OR
-                 LOWER(p.first_name || ' ' || p.last_name) LIKE '%' || LOWER(search) || '%' OR
+                 LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) LIKE '%' || LOWER(search) || '%' OR
                  LOWER(haf.simulation_name) LIKE '%' || LOWER(search) || '%' OR
                  EXISTS (
                      SELECT 1

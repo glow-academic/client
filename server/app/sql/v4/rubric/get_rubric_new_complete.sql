@@ -112,7 +112,7 @@ draft_payload_data AS (
 user_profile AS (
     SELECT 
         role as user_role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -140,11 +140,11 @@ rubric_departments_data AS (
 ),
 valid_depts AS (
     SELECT 
-        array_agg(d.id::text ORDER BY d.title) as dept_ids
+        array_agg(d.id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as dept_ids
     FROM departments d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = x.profile_id AND d.active = true
+    WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
 ),
 primary_department_id AS (
     SELECT department_id
@@ -189,10 +189,10 @@ standard_groups_aggregated AS (
 ),
 standards_distinct AS (
     SELECT DISTINCT ON (s.id)
-        s.id, s.name, COALESCE(s.description, '') as description, s.points
+        s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description, s.points
     FROM standards s
     WHERE s.standard_group_id IN (SELECT standard_group_id FROM standard_groups_data)
-    ORDER BY s.id, s.name
+    ORDER BY s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),
 standards_aggregated AS (
     SELECT 
@@ -207,10 +207,10 @@ standards_aggregated AS (
 ),
 departments_distinct AS (
     SELECT DISTINCT ON (d.id)
-        d.id, d.title, COALESCE(d.description, '') as description
+        d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title, COALESCE((SELECT d_desc.description FROM department_descriptions dd JOIN descriptions d_desc ON d_desc.id = dd.description_id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
-    ORDER BY d.id, d.title
+    ORDER BY d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)
 ),
 departments_aggregated AS (
     SELECT 
@@ -226,13 +226,13 @@ departments_aggregated AS (
 valid_agents_data AS (
     SELECT 
         a.id as agent_id,
-        a.name,
-        a.description,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1),
         ARRAY[COALESCE(d.artifact::text, '')] as roles
     FROM agents a
     JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('rubric' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    WHERE a.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         EXISTS (
             SELECT 1 FROM agent_departments ad2 
@@ -250,13 +250,13 @@ valid_agents_data AS (
 agents_aggregated AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(a.agent_id::text ORDER BY a.name),
+            ARRAY_AGG(a.agent_id::text ORDER BY (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.agent_id LIMIT 1)),
             ARRAY[]::text[]
         ) as valid_agent_ids,
         COALESCE(
             ARRAY_AGG(
-                (a.agent_id, a.name, COALESCE(a.description, ''), a.roles)::types.q_get_rubric_new_v4_agent
-                ORDER BY a.name
+                (a.agent_id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.agent_id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.agent_id LIMIT 1), ''), a.roles)::types.q_get_rubric_new_v4_agent
+                ORDER BY (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.agent_id LIMIT 1)
             ),
             '{}'::types.q_get_rubric_new_v4_agent[]
         ) as agents

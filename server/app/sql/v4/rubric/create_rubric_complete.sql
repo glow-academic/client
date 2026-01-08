@@ -93,7 +93,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -114,24 +114,104 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
+get_or_create_name AS (
+    -- Get or create name in names table
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT x.name, NOW(), NOW()
+    FROM params x
+    WHERE x.name IS NOT NULL AND x.name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name as name_value
+),
+get_or_create_description AS (
+    -- Get or create description in descriptions table
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT x.description, NOW(), NOW()
+    FROM params x
+    WHERE x.description IS NOT NULL AND x.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+get_active_flag AS (
+    -- Get the active flag ID
+    SELECT id as flag_id
+    FROM flags
+    WHERE name = 'active'
+    LIMIT 1
+),
 new_rubric AS (
     INSERT INTO rubrics (
-        name,
-        description,
-        active,
-        points,
-        pass_points,
-        rubric_domain_id
+        rubric_domain_id,
+        created_at,
+        updated_at
     )
     SELECT 
-        x.name,
-        x.description,
-        x.active,
-        x.points,
-        x.pass_points,
-        x.rubric_domain_id
+        x.rubric_domain_id,
+        NOW(),
+        NOW()
     FROM params x
     RETURNING id as rubric_id
+),
+link_name AS (
+    -- Link name to rubric
+    INSERT INTO rubric_names (rubric_id, name_id, created_at, updated_at)
+    SELECT nr.rubric_id, gocn.name_id, NOW(), NOW()
+    FROM new_rubric nr
+    CROSS JOIN get_or_create_name gocn
+    WHERE gocn.name_id IS NOT NULL
+),
+link_description AS (
+    -- Link description to rubric (if provided)
+    INSERT INTO rubric_descriptions (rubric_id, description_id, created_at, updated_at)
+    SELECT nr.rubric_id, gocd.description_id, NOW(), NOW()
+    FROM new_rubric nr
+    CROSS JOIN get_or_create_description gocd
+    WHERE gocd.description_id IS NOT NULL
+),
+link_active_flag AS (
+    -- Link active flag to rubric
+    INSERT INTO rubric_flags (rubric_id, flag_id, type, value, created_at, updated_at)
+    SELECT nr.rubric_id, gaf.flag_id, 'active'::type_rubric_flags, p.active, NOW(), NOW()
+    FROM new_rubric nr
+    CROSS JOIN get_active_flag gaf
+    CROSS JOIN params p
+    WHERE p.active IS NOT NULL
+),
+get_or_create_points AS (
+    -- Get or create points in points table
+    INSERT INTO points (value, created_at, updated_at)
+    SELECT DISTINCT p.points, NOW(), NOW()
+    FROM params p
+    WHERE p.points IS NOT NULL
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as point_id, value as point_value
+),
+get_or_create_pass_points AS (
+    -- Get or create pass_points in points table
+    INSERT INTO points (value, created_at, updated_at)
+    SELECT DISTINCT p.pass_points, NOW(), NOW()
+    FROM params p
+    WHERE p.pass_points IS NOT NULL
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as pass_point_id, value as pass_point_value
+),
+link_points AS (
+    -- Link points to rubric
+    INSERT INTO rubric_points (rubric_id, point_id, type, created_at, updated_at)
+    SELECT nr.rubric_id, gocp.point_id, 'total'::type_rubric_points, NOW(), NOW()
+    FROM new_rubric nr
+    CROSS JOIN get_or_create_points gocp
+    WHERE gocp.point_id IS NOT NULL
+    ON CONFLICT (rubric_id, point_id, type) DO UPDATE SET updated_at = NOW()
+),
+link_pass_points AS (
+    -- Link pass_points to rubric
+    INSERT INTO rubric_points (rubric_id, point_id, type, created_at, updated_at)
+    SELECT nr.rubric_id, gocpp.pass_point_id, 'pass'::type_rubric_points, NOW(), NOW()
+    FROM new_rubric nr
+    CROSS JOIN get_or_create_pass_points gocpp
+    WHERE gocpp.pass_point_id IS NOT NULL
+    ON CONFLICT (rubric_id, point_id, type) DO UPDATE SET updated_at = NOW()
 ),
 link_departments AS (
     INSERT INTO rubric_departments (rubric_id, department_id, active, created_at, updated_at)

@@ -15,14 +15,87 @@ RETURNS TABLE (
 )
 LANGUAGE sql
 AS $$
-WITH create_child_document AS (
-    -- Create child document (not a template)
+WITH -- Insert name into names table and get ID
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT api_complete_document_creation_v4.child_name, NOW(), NOW()
+    WHERE api_complete_document_creation_v4.child_name IS NOT NULL AND api_complete_document_creation_v4.child_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert description into descriptions table and get ID
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT api_complete_document_creation_v4.child_description, NOW(), NOW()
+    WHERE api_complete_document_creation_v4.child_description IS NOT NULL AND api_complete_document_creation_v4.child_description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+create_child_document AS (
+    -- Create child document (without name/description/active/template columns)
     INSERT INTO documents (
-        id, name, description, active, template, created_at, updated_at,
-        document_domain_id
+        id, created_at, updated_at, document_domain_id
     )
-    VALUES (gen_random_uuid(), api_complete_document_creation_v4.child_name, api_complete_document_creation_v4.child_description, true, false, NOW(), NOW(), api_complete_document_creation_v4.document_domain_id)
-    RETURNING id
+    VALUES (gen_random_uuid(), NOW(), NOW(), api_complete_document_creation_v4.document_domain_id)
+    RETURNING id as document_id
+),
+-- Link document to name
+link_document_name AS (
+    INSERT INTO document_names (document_id, name_id, created_at, updated_at)
+    SELECT 
+        ccd.document_id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM create_child_document ccd
+    CROSS JOIN name_resource nr
+    ON CONFLICT (document_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link document to description
+link_document_description AS (
+    INSERT INTO document_descriptions (document_id, description_id, created_at, updated_at)
+    SELECT 
+        ccd.document_id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM create_child_document ccd
+    CROSS JOIN description_resource dr
+    ON CONFLICT (document_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link document active flag
+link_document_active_flag AS (
+    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        ccd.document_id,
+        f.id,
+        'active'::type_document_flags,
+        true,
+        NOW(),
+        NOW()
+    FROM create_child_document ccd
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
+        value = true,
+        updated_at = NOW()
+),
+-- Link document template flag (defaults to false)
+link_document_template_flag AS (
+    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        ccd.document_id,
+        f.id,
+        'template'::type_document_flags,
+        false,
+        NOW(),
+        NOW()
+    FROM create_child_document ccd
+    CROSS JOIN flags f
+    WHERE f.name = 'template'
+    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
+        value = false,
+        updated_at = NOW()
 ),
 create_upload AS (
     -- Create upload record
@@ -33,7 +106,7 @@ create_upload AS (
 link_document_upload AS (
     -- Link document to upload (regular upload, not template upload)
     INSERT INTO document_uploads (document_id, upload_id, active, created_at, updated_at)
-    SELECT ccd.id, cu.id, true, NOW(), NOW()
+    SELECT ccd.document_id, cu.id, true, NOW(), NOW()
     FROM create_child_document ccd
     CROSS JOIN create_upload cu
     ON CONFLICT (document_id, upload_id) DO UPDATE SET
@@ -44,7 +117,7 @@ link_document_upload AS (
 link_document_tree AS (
     -- Link parent→child in document_tree
     INSERT INTO document_tree (parent_id, child_id, active, created_at, updated_at)
-    SELECT api_complete_document_creation_v4.parent_document_id, ccd.id, true, NOW(), NOW()
+    SELECT api_complete_document_creation_v4.parent_document_id, ccd.document_id, true, NOW(), NOW()
     FROM create_child_document ccd
     ON CONFLICT (parent_id, child_id) DO UPDATE SET
         active = true,
@@ -55,7 +128,7 @@ copy_document_departments AS (
     -- Copy document_departments from parent to child (for department filtering)
     INSERT INTO document_departments (document_id, department_id, active, created_at, updated_at)
     SELECT 
-        ccd.id,
+        ccd.document_id,
         dd.department_id,
         dd.active,
         NOW(),
@@ -74,7 +147,7 @@ copy_document_departments AS (
 link_scenario AS (
     -- Optionally link to scenario if scenario_id provided
     INSERT INTO scenario_documents (scenario_id, document_id, active, created_at, updated_at)
-    SELECT api_complete_document_creation_v4.scenario_id, ccd.id, true, NOW(), NOW()
+    SELECT api_complete_document_creation_v4.scenario_id, ccd.document_id, true, NOW(), NOW()
     FROM create_child_document ccd
     WHERE api_complete_document_creation_v4.scenario_id IS NOT NULL
     ON CONFLICT (scenario_id, document_id) DO UPDATE SET
@@ -83,11 +156,11 @@ link_scenario AS (
     RETURNING document_id
 )
 SELECT 
-    ccd.id::text as child_document_id,
+    ccd.document_id::text as child_document_id,
     cu.id::text as upload_id
 FROM create_child_document ccd
 CROSS JOIN create_upload cu
 CROSS JOIN link_document_upload ldu
 CROSS JOIN link_document_tree ldt
-LEFT JOIN link_scenario ls ON ls.document_id = ccd.id
+LEFT JOIN link_scenario ls ON ls.document_id = ccd.document_id
 $$;

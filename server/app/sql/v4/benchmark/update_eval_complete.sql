@@ -53,9 +53,9 @@ WITH params AS (
 user_profile AS (
     SELECT
         role,
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profiles p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
@@ -77,17 +77,112 @@ validate_update_permissions AS (
     CROSS JOIN object_current_departments ocd
     CROSS JOIN user_departments ud
 ),
+get_or_create_name AS (
+    -- Get or create name in names table
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT p.name, NOW(), NOW()
+    FROM params p
+    WHERE p.name IS NOT NULL AND p.name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name as name_value
+),
+get_or_create_description AS (
+    -- Get or create description in descriptions table
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT p.description, NOW(), NOW()
+    FROM params p
+    WHERE p.description IS NOT NULL AND p.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+get_active_flag AS (
+    -- Get the active flag ID
+    SELECT id as flag_id
+    FROM flags
+    WHERE name = 'active'
+    LIMIT 1
+),
+get_dynamic_flag AS (
+    -- Get the dynamic flag ID
+    SELECT id as flag_id
+    FROM flags
+    WHERE name = 'dynamic'
+    LIMIT 1
+),
+get_groups_flag AS (
+    -- Get the groups flag ID
+    SELECT id as flag_id
+    FROM flags
+    WHERE name = 'groups'
+    LIMIT 1
+),
 update_eval AS (
     UPDATE evals SET
-        name = p.name,
-        description = p.description,
-        use_groups = COALESCE(p.use_groups, evals.use_groups),
-        active = COALESCE(p.active, evals.active),
-        dynamic = COALESCE(p.dynamic, evals.dynamic),
         updated_at = NOW()
     FROM params p
     WHERE evals.id = p.eval_id
-    RETURNING evals.id as eval_id, evals.name as eval_name
+    RETURNING evals.id as eval_id
+),
+update_eval_groups_flag AS (
+    -- Update groups flag
+    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
+    SELECT ue.eval_id, ggf.flag_id, 'groups'::type_eval_flags, COALESCE(p.use_groups, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = ue.eval_id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    FROM update_eval ue
+    CROSS JOIN get_groups_flag ggf
+    CROSS JOIN params p
+    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+),
+update_eval_name AS (
+    -- Update eval name (delete old, insert new)
+    DELETE FROM eval_names
+    WHERE eval_id = (SELECT eval_id FROM update_eval LIMIT 1)
+    RETURNING eval_id
+),
+link_eval_name AS (
+    -- Link new name to eval
+    INSERT INTO eval_names (eval_id, name_id, created_at, updated_at)
+    SELECT ue.eval_id, gocn.name_id, NOW(), NOW()
+    FROM update_eval ue
+    CROSS JOIN get_or_create_name gocn
+    WHERE gocn.name_id IS NOT NULL
+),
+update_eval_description AS (
+    -- Update eval description (delete old, insert new if provided)
+    DELETE FROM eval_descriptions
+    WHERE eval_id = (SELECT eval_id FROM update_eval LIMIT 1)
+    RETURNING eval_id
+),
+link_eval_description AS (
+    -- Link new description to eval (if provided)
+    INSERT INTO eval_descriptions (eval_id, description_id, created_at, updated_at)
+    SELECT ue.eval_id, gocd.description_id, NOW(), NOW()
+    FROM update_eval ue
+    CROSS JOIN get_or_create_description gocd
+    WHERE gocd.description_id IS NOT NULL
+),
+update_eval_active_flag AS (
+    -- Update active flag
+    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
+    SELECT ue.eval_id, gaf.flag_id, 'active'::type_eval_flags, COALESCE(p.active, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = ue.eval_id AND fl.name = 'active' AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    FROM update_eval ue
+    CROSS JOIN get_active_flag gaf
+    CROSS JOIN params p
+    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+),
+update_eval_dynamic_flag AS (
+    -- Update dynamic flag
+    INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
+    SELECT ue.eval_id, gdf.flag_id, 'dynamic'::type_eval_flags, COALESCE(p.dynamic, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = ue.eval_id AND fl.name = 'dynamic' AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    FROM update_eval ue
+    CROSS JOIN get_dynamic_flag gdf
+    CROSS JOIN params p
+    ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+),
+eval_with_name AS (
+    -- Get eval_id and name for RETURNING clause
+    SELECT ue.eval_id, COALESCE(gocn.name_value, (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = ue.eval_id LIMIT 1)) as eval_name
+    FROM update_eval ue
+    LEFT JOIN get_or_create_name gocn ON true
 ),
 remove_existing_agent_links AS (
     DELETE FROM eval_agents
@@ -149,7 +244,7 @@ add_new_links AS (
     ON CONFLICT (eval_id, run_id) DO UPDATE SET
         updated_at = NOW()
 )
-SELECT ue.eval_id, ue.eval_name, up.actor_name::text as actor_name
-FROM update_eval ue
+SELECT ewn.eval_id, ewn.eval_name, up.actor_name::text as actor_name
+FROM eval_with_name ewn
 CROSS JOIN user_profile up
 $$;

@@ -83,7 +83,7 @@ user_departments AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
 ),
@@ -164,7 +164,10 @@ department_cohorts_data AS (
 department_profiles_data AS (
     SELECT 
         pd.department_id,
-        ARRAY_AGG(pd.profile_id ORDER BY p.last_name, p.first_name) as profile_ids
+        ARRAY_AGG(pd.profile_id ORDER BY 
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1)
+        ) as profile_ids
     FROM profile_departments pd
     JOIN profiles p ON p.id = pd.profile_id
     WHERE pd.department_id IN (SELECT department_id FROM user_departments) AND pd.active = true
@@ -234,7 +237,10 @@ filtered_profile_ids AS (
 department_profiles_filtered_data AS (
     SELECT 
         pd.department_id,
-        ARRAY_AGG(pd.profile_id ORDER BY p.last_name, p.first_name) FILTER (WHERE pd.profile_id IN (SELECT profile_id FROM filtered_profile_ids)) as profile_ids,
+        ARRAY_AGG(pd.profile_id ORDER BY 
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1)
+        ) FILTER (WHERE pd.profile_id IN (SELECT profile_id FROM filtered_profile_ids)) as profile_ids,
         COUNT(DISTINCT pd.profile_id) FILTER (WHERE pd.profile_id IN (SELECT profile_id FROM filtered_profile_ids)) as staff_count
     FROM profile_departments pd
     JOIN profiles p ON p.id = pd.profile_id
@@ -244,9 +250,9 @@ department_profiles_filtered_data AS (
 departments_data AS (
     SELECT 
         d.id,
-        d.title,
-        d.description,
-        d.active,
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title,
+        COALESCE((SELECT d2.description FROM department_descriptions dd2 JOIN descriptions d2 ON dd2.description_id = d2.id WHERE dd2.department_id = d.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE) as active,
         d.updated_at,
         COALESCE(dps.total_price_spent, 0) as total_price_spent,
         COALESCE(dpf.staff_count, 0) as staff_count,
@@ -280,15 +286,15 @@ departments_data AS (
 cohorts_data AS (
     SELECT DISTINCT
         c.id as cohort_id,
-        c.title as name,
-        COALESCE(c.description, '') as description
+        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
     FROM cohorts c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 profiles_data AS (
     SELECT DISTINCT
         p.id as profile_id,
-        COALESCE(p.first_name || ' ' || p.last_name, '') as name,
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), '') as name,
         COALESCE((SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1), '') as description
     FROM profiles p
     WHERE p.id IN (SELECT profile_id FROM filtered_profile_ids)

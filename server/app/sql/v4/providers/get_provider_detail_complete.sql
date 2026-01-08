@@ -83,17 +83,17 @@ provider_exists_check AS (
 ),
 actor_profile AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 provider_data AS (
     SELECT 
         p.id as provider_id,
-        p.name,
-        p.description,
+        (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1),
+        (SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = p.id LIMIT 1) as description,
         p.value,
-        p.active,
+        EXISTS (SELECT 1 FROM provider_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.provider_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_provider_flags AND pf.value = TRUE) as active,
         p.created_at,
         p.updated_at,
         COALESCE(pe.base_url, '') as base_url
@@ -110,7 +110,7 @@ check_usage AS (
     -- Check if provider is used by models
     SELECT EXISTS(
         SELECT 1 FROM models m 
-        WHERE m.provider_id = (SELECT provider_id FROM params) AND m.active = true
+        WHERE EXISTS (SELECT 1 FROM model_providers mp WHERE mp.provider_id = (SELECT provider_id FROM params) AND mp.model_id = m.id) AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
     ) as is_used
 )
 SELECT 

@@ -150,21 +150,22 @@ resolve_profile_id AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params)::uuid as profile_id,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM profiles p
     WHERE p.id = (SELECT profile_id FROM params)::uuid
 ),
 model_data AS (
     SELECT 
-        m.name,
-        m.description,
-        m.active,
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active,
         m.value,
         p.value as provider,
         p.id as provider_id,
-        p.name as provider_name
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as provider_name
     FROM models m
-    JOIN providers p ON p.id = m.provider_id
+    LEFT JOIN model_providers mp ON mp.model_id = m.id
+    LEFT JOIN providers p ON p.id = mp.provider_id
     WHERE m.id = (SELECT model_id FROM params)
 ),
 -- Determine if model is an image model (has 'image' output modality)
@@ -201,60 +202,62 @@ user_departments AS (
     WHERE pd.active = true
 ),
 user_departments_data AS (
-    SELECT DISTINCT d.id, d.title as name, d.description
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
     FROM departments d
     JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE d.active = true
+    WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     AND pd.profile_id = rpi.resolved_profile_id
     AND pd.active = true
 ),
 providers_data AS (
     SELECT 
         p.id as provider_id,
-        p.name,
-        COALESCE(p.description, '') as description
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
     FROM providers p
-    WHERE p.active = true
-    ORDER BY p.name
+    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+    ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
 ),
 model_all_keys AS (
     -- Get keys via settings system: settings -> provider -> key
     -- For each department that has this model, get keys from their settings
     SELECT DISTINCT
         spk.key_id,
-        k.name,
+        (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
         k.key,
-        k.description,
-        k.active,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         ARRAY_AGG(DISTINCT ds.department_id) FILTER (WHERE ds.department_id IS NOT NULL) as department_ids
     FROM models m
-    JOIN providers p ON p.id = m.provider_id
+    LEFT JOIN model_providers mp ON mp.model_id = m.id
+    LEFT JOIN providers p ON p.id = mp.provider_id
     JOIN setting_provider_keys spk ON spk.provider_id = p.id AND spk.active = true
-    JOIN keys k ON k.id = spk.key_id AND k.active = true
-    JOIN settings s ON s.id = spk.settings_id AND s.active = true
+    JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND ds.active = true
-    GROUP BY spk.key_id, k.name, k.key, k.description, k.active
+    GROUP BY spk.key_id, (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1), k.key, COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''), EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
     
     UNION ALL
     
     -- General keys (keys without department links that user has access to)
     SELECT DISTINCT
         k.id as key_id,
-        k.name,
+        (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
         k.key,
-        k.description,
-        k.active,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
         NULL::uuid[] as department_ids
     FROM keys k
     CROSS JOIN resolve_profile_id rpi
-    WHERE k.active = true
+    WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND NOT EXISTS (
         -- Exclude keys already included via setting_provider_keys for this model's provider
         SELECT 1 FROM models m2
-        JOIN providers p2 ON p2.id = m2.provider_id
+        JOIN model_providers mp2 ON mp2.model_id = m2.id
+        JOIN providers p2 ON p2.id = mp2.provider_id
         JOIN setting_provider_keys spk2 ON spk2.provider_id = p2.id AND spk2.key_id = k.id AND spk2.active = true
         WHERE m2.id = (SELECT model_id FROM params)
     )
@@ -268,7 +271,7 @@ model_all_keys AS (
         -- Include keys with settings links that match user's departments
         EXISTS (
             SELECT 1 FROM setting_provider_keys spk4
-            JOIN settings s4 ON s4.id = spk4.settings_id AND s4.active = true
+            JOIN settings s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s4.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
             JOIN department_settings ds4 ON ds4.settings_id = s4.id AND ds4.active = true
             JOIN user_departments ud ON ud.department_id = ds4.department_id
             WHERE spk4.key_id = k.id AND spk4.active = true

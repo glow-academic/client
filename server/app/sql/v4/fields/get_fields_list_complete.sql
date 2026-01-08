@@ -68,7 +68,11 @@ user_departments AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -76,11 +80,11 @@ field_parameters_agg AS (
     SELECT 
         f.id as field_id,
         CASE 
-            WHEN f.parameter_id IS NOT NULL THEN ARRAY[f.parameter_id::text]
+            WHEN (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL THEN ARRAY[(SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)::text]
             ELSE ARRAY[]::text[]
         END as parameter_ids
     FROM fields f
-    WHERE f.active = true
+    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
 ),
 field_departments_data AS (
     SELECT 
@@ -93,7 +97,7 @@ field_departments_data AS (
 field_conditional_parameters_agg AS (
     SELECT 
         fcp.field_id,
-        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY p.name) as conditional_parameter_ids
+        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)) as conditional_parameter_ids
     FROM field_conditional_parameters fcp
     JOIN parameters p ON p.id = fcp.conditional_parameter_id
     WHERE fcp.active = true
@@ -102,9 +106,9 @@ field_conditional_parameters_agg AS (
 fields_data AS (
     SELECT 
         f.id as field_id,
-        f.name,
-        f.description,
-        f.active,
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
+        EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = TRUE) as active,
         f.created_at,
         f.updated_at,
         COALESCE(fdd.department_ids, NULL) as department_ids,
@@ -122,7 +126,7 @@ fields_data AS (
         END as can_delete,
         true as can_duplicate
     FROM params x
-    JOIN fields f ON f.active = true
+    JOIN fields f ON EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
     LEFT JOIN field_parameters_agg fpa ON fpa.field_id = f.id
     LEFT JOIN field_conditional_parameters_agg fcpa ON fcpa.field_id = f.id
@@ -139,7 +143,7 @@ fields_data AS (
             AND fd.active = true
         )
     )
-    GROUP BY f.id, f.name, f.description, f.active, f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, up.role
+    GROUP BY f.id, (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, up.role
 ),
 assigned_parameter_ids AS (
     SELECT DISTINCT unnest(parameter_ids)::text as parameter_id
@@ -158,8 +162,8 @@ all_parameter_ids AS (
 parameter_data AS (
     SELECT 
         p.id as parameter_id,
-        p.name,
-        COALESCE(p.description, '') as description
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description
     FROM all_parameter_ids api
     JOIN parameters p ON p.id = api.parameter_id
 ),
@@ -186,8 +190,8 @@ all_department_ids AS (
 department_data AS (
     SELECT 
         d.id as department_id,
-        d.title as name,
-        COALESCE(d.description, '') as description
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d_desc.description FROM department_descriptions dd JOIN descriptions d_desc ON dd.description_id = d_desc.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM all_department_ids adi
     JOIN departments d ON d.id = adi.department_id
 ),

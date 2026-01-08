@@ -163,10 +163,10 @@ document_departments_data AS (
 document_data AS (
     SELECT 
         d.id as document_id,
-        d.name,
+        (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         d.updated_at,
         du.upload_id,
-        d.active,
+        EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
         CASE 
             WHEN u.file_path IS NOT NULL THEN SUBSTRING(u.file_path FROM '\\.([^\\.]+)$')
             ELSE NULL
@@ -185,7 +185,7 @@ document_data AS (
     LEFT JOIN document_fields_cte dfc ON dfc.document_id = d.id
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     LEFT JOIN document_all_scenario_links dasl_all ON dasl_all.document_id = d.id
-    GROUP BY d.id, d.name, d.updated_at, du.upload_id, u.file_path, d.active, 
+    GROUP BY d.id, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), d.updated_at, du.upload_id, u.file_path, EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE), 
              ddd.department_ids, ds.scenario_ids, dfc.field_ids, dasl.active_scenario_count, dasl_all.total_scenario_links
     HAVING 
         COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -194,7 +194,7 @@ document_data AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -205,9 +205,9 @@ all_scenario_ids AS (
 scenario_data AS (
     SELECT 
         s.id as scenario_id,
-        s.name,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
-        s.active
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active
     FROM all_scenario_ids asi
     LEFT JOIN scenarios s ON s.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
@@ -216,17 +216,18 @@ scenario_data AS (
     WHERE s.id IS NOT NULL AND st.parent_id IS NOT NULL
 ),
 field_data AS (
-    SELECT DISTINCT
+    SELECT
         f.id as field_id,
-        f.name,
-        f.description,
-        f.parameter_id,
-        p.name as parameter_name
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1) as parameter_name
     FROM fields f
-    JOIN parameters p ON p.id = f.parameter_id
+    LEFT JOIN parameter_fields pf_link ON pf_link.field_id = f.id
+    LEFT JOIN parameters p ON p.id = pf_link.parameter_id
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE p.active = true AND f.active = true AND f.parameter_id IS NOT NULL
-    GROUP BY f.id, f.name, f.description, f.parameter_id, p.name
+    WHERE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'active' AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE) AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = TRUE) AND pf_link.parameter_id IS NOT NULL
+    GROUP BY f.id, (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1), (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1)
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 WHERE fd2.field_id = f.id AND fd2.active = true)
@@ -236,20 +237,21 @@ department_parameter_ids AS (
         d.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::text[]) as parameter_ids
     FROM departments d
-    LEFT JOIN parameters p ON p.active = true
-    LEFT JOIN fields f_pf ON f_pf.parameter_id = p.id AND f_pf.active = true
+    LEFT JOIN parameters p ON EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'active' AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
+    LEFT JOIN parameter_fields pf_link ON pf_link.parameter_id = p.id
+    LEFT JOIN fields f_pf ON f_pf.id = pf_link.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f_pf.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = TRUE)
     LEFT JOIN field_departments fd ON fd.field_id = f_pf.id AND fd.active = true
     WHERE d.id IN (SELECT department_id FROM user_departments)
     AND (fd.department_id = d.id OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                                                 JOIN fields f2 ON f2.id = fd2.field_id 
-                                                 WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true))
+                                                 JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id 
+                                                 WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags fl ON ff2.flag_id = fl.id WHERE ff2.field_id = pf2.field_id AND fl.name = 'active' AND ff2.type = 'active'::type_field_flags AND ff2.value = TRUE) AND fd2.active = true))
     GROUP BY d.id
 ),
 cross_department_items AS (
     -- Fields with no department restrictions (available to all)
     SELECT DISTINCT f.id
     FROM fields f
-    JOIN parameters p ON p.id = f.parameter_id AND p.active = true
+    JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     WHERE NOT EXISTS (
         SELECT 1 FROM field_departments fd 
         WHERE fd.field_id = f.id 
@@ -266,7 +268,7 @@ department_field_ids AS (
         SELECT DISTINCT fd.department_id, f.id
         FROM field_departments fd
         JOIN fields f ON f.id = fd.field_id
-        JOIN parameters p ON p.id = f.parameter_id AND p.active = true
+        JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
         WHERE fd.active = true
         UNION
         -- Cross-department fields (available to all user departments)
@@ -281,8 +283,8 @@ department_field_ids AS (
 department_data AS (
     SELECT 
         d.id as department_id,
-        d.title as name,
-        COALESCE(d.description, '') as description,
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description,
         COALESCE(dparami.parameter_ids, ARRAY[]::text[]) as parameter_ids,
         COALESCE(dparamitems.field_ids, ARRAY[]::text[]) as field_ids
     FROM departments d
@@ -293,23 +295,23 @@ department_data AS (
 parameter_data AS (
     SELECT DISTINCT 
         p.id as parameter_id,
-        p.name,
-        COALESCE(p.description, '') as description,
-        p.document_parameter,
-        p.persona_parameter,
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'document_parameter' AND paf.type = 'document_parameter'::type_parameter_flags AND paf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'persona_parameter' AND paf.type = 'persona_parameter'::type_parameter_flags AND paf.value = TRUE) as persona_parameter,
         CASE WHEN EXISTS (SELECT 1 FROM scenario_parameters sp WHERE sp.parameter_id = p.id AND sp.active = true) THEN true ELSE false END as scenario_parameter,
-        p.video_parameter as video_parameter
+        EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'video_parameter' AND paf.type = 'video_parameter'::type_parameter_flags AND paf.value = TRUE) as video_parameter
     FROM parameters p
-    JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter, p.video_parameter
+    WHERE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'active' AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
+    GROUP BY p.id, (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1)
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN fields f2 ON f2.id = fd2.field_id 
-                      WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true)
-    ORDER BY p.name
+                      JOIN parameter_fields pf2 ON pf2.field_id = fd2.field_id
+                      WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags fl ON ff2.flag_id = fl.id WHERE ff2.field_id = pf2.field_id AND fl.name = 'active' AND ff2.type = 'active'::type_field_flags AND ff2.value = TRUE) AND fd2.active = true)
+    ORDER BY (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
 ),
 document_valid_fields AS (
     SELECT 
@@ -319,7 +321,7 @@ document_valid_fields AS (
             ARRAY[]::text[]
         ) as valid_field_ids
     FROM document_data dd
-    LEFT JOIN fields f ON f.parameter_id IN (SELECT id FROM parameters WHERE active = true) AND f.active = true
+    LEFT JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IN (SELECT p.id FROM parameters p WHERE EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = p.id AND fl.name = 'active' AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)) AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE (
         -- If document has no departments, include only cross-department fields

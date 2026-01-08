@@ -209,9 +209,9 @@ user_departments AS (
 user_profile AS (
     SELECT 
         role,
-        first_name || ' ' || last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profiles p ON p.id = x.profile_id
 ),
 primary_department_id AS (
     SELECT department_id
@@ -229,12 +229,12 @@ user_department_ids AS (
     FROM departments d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = x.profile_id AND d.active = true
+    WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
 ),
 valid_scenarios_list AS (
     SELECT DISTINCT
         s.id,
-        s.name,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description
     FROM scenarios s
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
@@ -242,7 +242,7 @@ valid_scenarios_list AS (
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     CROSS JOIN user_department_ids udi
     JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
       AND (
           sd.department_id = ANY(udi.ids)
           OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
@@ -277,12 +277,12 @@ videos_data AS (
 valid_rubrics_data AS (
     SELECT DISTINCT
         r.id,
-        r.name,
-        COALESCE(r.description, '') as description
+        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
+        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description
     FROM rubrics r
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
-    WHERE r.active = true
+    WHERE EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
       AND EXISTS (SELECT 1 FROM domains d WHERE d.artifact = CAST('agent' AS artifacts))
       AND (
           rd.department_id = ANY(udi.ids)
@@ -301,21 +301,22 @@ rubrics_data AS (
 parameters_data AS (
     SELECT DISTINCT
         p.id,
-        p.name,
-        COALESCE(p.description, '') as description,
-        p.document_parameter,
-        p.persona_parameter
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter
     FROM parameters p
-    JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_department_ids udi
-    WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = true)
+    GROUP BY p.id, (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE)
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(udi.ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN fields f2 ON f2.id = fd2.field_id 
-                      WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true)
+                      JOIN parameter_fields pf2 ON pf2.field_id = f2.id
+                      WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = f2.id AND fl2.name = 'active' AND ff2.type = 'active'::type_field_flags AND ff2.value = true) AND fd2.active = true)
 ),
 parameters_full_data AS (
     SELECT 
@@ -328,12 +329,12 @@ parameters_full_data AS (
 parameter_items_data AS (
     SELECT 
         f.id,
-        f.parameter_id,
-        f.name,
-        COALESCE(f.description, '') as description,
-        p.name as parameter_name
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as parameter_name
     FROM fields f
-    JOIN parameters p ON p.id = f.parameter_id
+    JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     WHERE p.id IN (SELECT id FROM parameters_data)
 ),
 parameter_items_list_data AS (
@@ -360,10 +361,10 @@ scenario_persona_data AS (
     SELECT 
         sp.scenario_id,
         sp.persona_id,
-        p.name as persona_name,
-        COALESCE(p.description, '') as persona_description,
-        p.color as persona_color,
-        p.icon as persona_icon,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as persona_description,
+        (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as persona_color,
+        (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as persona_icon,
         false as image_model
     FROM scenario_personas sp
     JOIN personas p ON p.id = sp.persona_id
@@ -393,8 +394,8 @@ scenario_document_mapping AS (
     SELECT 
         sdd.scenario_id,
         ARRAY_AGG(
-            (d.id, d.name, ''::text)::types.q_get_simulation_new_v4_document
-            ORDER BY d.name
+            (d.id, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), ''::text)::types.q_get_simulation_new_v4_document
+            ORDER BY (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
         ) as documents
     FROM scenario_documents_data sdd
     JOIN documents d ON d.id = ANY(sdd.document_ids)
@@ -448,18 +449,18 @@ scenarios_full_data AS (
     LEFT JOIN scenario_field_mapping sfm ON sfm.scenario_id = vsl.id
 ),
 user_departments_for_mapping AS (
-    SELECT DISTINCT d.id, d.title as name, d.description
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
     FROM departments d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = x.profile_id AND d.active = true
+    WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
 ),
 department_scenario_ids_default AS (
     SELECT 
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT s.id ORDER BY s.id) FILTER (WHERE s.id IS NOT NULL), ARRAY[]::uuid[]) as scenario_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN scenarios s ON s.active = true
+    LEFT JOIN scenarios s ON EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     INNER JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     WHERE (sd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
@@ -470,7 +471,7 @@ department_rubric_ids_default AS (
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT r.id ORDER BY r.id) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::uuid[]) as rubric_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN rubrics r ON r.active = true AND r.artifact = CAST('agent' AS artifacts)
+    LEFT JOIN rubrics r ON EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true) AND r.artifact = CAST('agent' AS artifacts)
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     WHERE (rd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true))
     GROUP BY ud.id
@@ -504,23 +505,23 @@ agents_data AS (
         ) as agents,
         ARRAY_AGG(filtered_agents.id ORDER BY filtered_agents.name) as agent_ids
     FROM (
-        SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
+        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(d.artifact::text, '') as role
         FROM agents a
         JOIN domains d ON d.agent_id = a.id
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-        WHERE a.active = true 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) 
         AND d.artifact IN (CAST('message' AS artifacts), CAST('grade' AS artifacts), CAST('scenario' AS artifacts), CAST('agent' AS artifacts))
-        GROUP BY a.id, a.name, a.description, d.artifact
+        GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), d.artifact
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
             OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
         UNION
         -- Get rubric agents (member role) from rubrics.rubric_agent_id
-        SELECT DISTINCT a.id, a.name, a.description, COALESCE(d.artifact::text, '') as role
+        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(d.artifact::text, '') as role
         FROM rubrics r
         JOIN domains d ON d.id = r.rubric_domain_id
         JOIN agents a ON a.id = d.agent_id
-        WHERE a.active = true AND r.rubric_domain_id IS NOT NULL AND d.artifact = CAST('agent' AS artifacts)
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) AND r.rubric_domain_id IS NOT NULL AND d.artifact = CAST('agent' AS artifacts)
     ) filtered_agents
 ),
 -- Auto-select default agents when there's only one option for each role
@@ -529,7 +530,7 @@ valid_hint_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)
-    WHERE a.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -540,7 +541,7 @@ valid_simulation_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('scenario' AS artifacts)
-    WHERE a.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -551,7 +552,7 @@ valid_voice_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('message' AS artifacts)
-    WHERE a.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -562,7 +563,7 @@ valid_member_agents AS (
     FROM agents a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('agent' AS artifacts)
-    WHERE a.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -573,8 +574,8 @@ valid_member_agents AS (
     FROM rubrics r
     JOIN domains d ON d.id = r.rubric_domain_id
     JOIN agents a ON a.id = d.agent_id
-    WHERE a.active = true 
-    AND r.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) 
+    AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
     AND r.rubric_domain_id IS NOT NULL
     AND d.artifact = CAST('agent' AS artifacts)
 ),

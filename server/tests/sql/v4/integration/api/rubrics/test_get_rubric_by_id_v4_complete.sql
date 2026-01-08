@@ -21,14 +21,14 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT 
-        id AS rubric_id,
-        name,
-        description,
-        points,
-        pass_points,
-        active,
-        created_at,
-        updated_at
-    FROM rubrics
-    WHERE id = input_rubric_id;
+        r.id AS rubric_id,
+        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) AS name,
+        (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) AS description,
+        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS points,
+        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS pass_points,
+        EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE) AS active,
+        r.created_at,
+        r.updated_at
+    FROM rubrics r
+    WHERE r.id = input_rubric_id;
 $$;

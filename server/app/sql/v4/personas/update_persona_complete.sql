@@ -51,7 +51,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -85,19 +85,149 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
+-- Insert/update name in names table
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name, NOW(), NOW()
+    FROM params
+    WHERE name IS NOT NULL AND name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert/update description in descriptions table
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+-- Insert/update color in colors table
+color_resource AS (
+    INSERT INTO colors (name, description, hex_code, created_at, updated_at)
+    SELECT 'persona_color', 'Persona color', color, NOW(), NOW()
+    FROM params
+    WHERE color IS NOT NULL AND color != ''
+    ON CONFLICT (hex_code) DO UPDATE SET updated_at = NOW()
+    RETURNING id as color_id
+),
+-- Insert/update icon in icons table
+icon_resource AS (
+    INSERT INTO icons (name, description, value, created_at, updated_at)
+    SELECT 'persona_icon', 'Persona icon', icon, NOW(), NOW()
+    FROM params
+    WHERE icon IS NOT NULL AND icon != ''
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as icon_id
+),
 update_persona AS (
+    -- Update persona (without name/description/active/color/icon columns)
     UPDATE personas
     SET 
-        name = x.name,
-        description = x.description,
-        active = x.active,
-        color = x.color,
-        icon = x.icon,
         instructions = x.instructions,
         updated_at = NOW()
     FROM params x
     WHERE id = x.persona_id
     RETURNING id
+),
+-- Remove old name links
+remove_old_name AS (
+    DELETE FROM persona_names
+    WHERE persona_id = (SELECT persona_id FROM params)
+      AND name_id NOT IN (SELECT name_id FROM name_resource)
+),
+-- Link persona to new name
+link_persona_name AS (
+    INSERT INTO persona_names (persona_id, name_id, created_at, updated_at)
+    SELECT 
+        up.id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM update_persona up
+    CROSS JOIN name_resource nr
+    ON CONFLICT (persona_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old description links
+remove_old_description AS (
+    DELETE FROM persona_descriptions
+    WHERE persona_id = (SELECT persona_id FROM params)
+      AND description_id NOT IN (SELECT description_id FROM description_resource)
+),
+-- Link persona to new description
+link_persona_description AS (
+    INSERT INTO persona_descriptions (persona_id, description_id, created_at, updated_at)
+    SELECT 
+        up.id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM update_persona up
+    CROSS JOIN description_resource dr
+    ON CONFLICT (persona_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old color links
+remove_old_color AS (
+    DELETE FROM persona_colors
+    WHERE persona_id = (SELECT persona_id FROM params)
+      AND color_id NOT IN (SELECT color_id FROM color_resource)
+),
+-- Link persona to new color
+link_persona_color AS (
+    INSERT INTO persona_colors (persona_id, color_id, created_at, updated_at)
+    SELECT 
+        up.id,
+        cr.color_id,
+        NOW(),
+        NOW()
+    FROM update_persona up
+    CROSS JOIN color_resource cr
+    ON CONFLICT (persona_id, color_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old icon links
+remove_old_icon AS (
+    DELETE FROM persona_icons
+    WHERE persona_id = (SELECT persona_id FROM params)
+      AND icon_id NOT IN (SELECT icon_id FROM icon_resource)
+),
+-- Link persona to new icon
+link_persona_icon AS (
+    INSERT INTO persona_icons (persona_id, icon_id, created_at, updated_at)
+    SELECT 
+        up.id,
+        ir.icon_id,
+        NOW(),
+        NOW()
+    FROM update_persona up
+    CROSS JOIN icon_resource ir
+    ON CONFLICT (persona_id, icon_id) DO UPDATE SET updated_at = NOW()
+),
+-- Update persona active flag
+update_persona_active_flag AS (
+    UPDATE persona_flags SET
+        value = (SELECT active FROM params),
+        updated_at = NOW()
+    WHERE persona_id = (SELECT persona_id FROM params)
+      AND type = 'active'::type_persona_flags
+),
+insert_persona_active_flag AS (
+    INSERT INTO persona_flags (persona_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        up.id,
+        f.id,
+        'active'::type_persona_flags,
+        x.active,
+        NOW(),
+        NOW()
+    FROM update_persona up
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND NOT EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = up.id AND pf.type = 'active'::type_persona_flags)
+    ON CONFLICT (persona_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
 ),
 replace_departments AS (
     -- Delete all existing department links

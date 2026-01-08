@@ -36,36 +36,71 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 source_simulation AS (
     SELECT 
         s.id as source_id,
-        s.title,
-        s.description
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
+        COALESCE((SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description
     FROM params x
     JOIN simulations s ON s.id = x.simulation_id
 ),
+get_or_create_name AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT ss.title || ' Copy', NOW(), NOW()
+    FROM source_simulation ss
+    WHERE ss.title IS NOT NULL
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name as name_value
+),
+get_or_create_description AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT ss.description, NOW(), NOW()
+    FROM source_simulation ss
+    WHERE ss.description IS NOT NULL AND ss.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+get_flag_ids AS (
+    SELECT 
+        (SELECT id FROM flags WHERE name = 'active' LIMIT 1) as active_flag_id,
+        (SELECT id FROM flags WHERE name = 'practice' LIMIT 1) as practice_flag_id
+),
 new_simulation AS (
     INSERT INTO simulations (
-        title,
-        description,
-        active,
-        practice_simulation,
         created_at,
         updated_at
     )
-    SELECT 
-        ss.title || ' Copy',
-        ss.description,
-        false,
-        false,
-        NOW(),
-        NOW()
+    SELECT NOW(), NOW()
     FROM source_simulation ss
     RETURNING id as simulation_id
+),
+link_name AS (
+    INSERT INTO simulation_names (simulation_id, name_id, created_at, updated_at)
+    SELECT ns.simulation_id, gocn.name_id, NOW(), NOW()
+    FROM new_simulation ns
+    CROSS JOIN get_or_create_name gocn
+    WHERE gocn.name_id IS NOT NULL
+),
+link_description AS (
+    INSERT INTO simulation_descriptions (simulation_id, description_id, created_at, updated_at)
+    SELECT ns.simulation_id, gocd.description_id, NOW(), NOW()
+    FROM new_simulation ns
+    CROSS JOIN get_or_create_description gocd
+    WHERE gocd.description_id IS NOT NULL
+),
+link_flags AS (
+    INSERT INTO simulation_flags (simulation_id, flag_id, type, value, created_at, updated_at)
+    SELECT ns.simulation_id, gfi.active_flag_id, 'active'::type_simulation_flags, false, NOW(), NOW()
+    FROM new_simulation ns
+    CROSS JOIN get_flag_ids gfi
+    UNION ALL
+    SELECT ns.simulation_id, gfi.practice_flag_id, 'practice'::type_simulation_flags, false, NOW(), NOW()
+    FROM new_simulation ns
+    CROSS JOIN get_flag_ids gfi
 ),
 copy_scenarios AS (
     INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, created_at, updated_at)
@@ -107,9 +142,10 @@ copy_departments AS (
 )
 SELECT 
     ns.simulation_id,
-    ss.title::text as simulation_name,
+    COALESCE(gocn.name_value, '')::text as simulation_name,
     ap.actor_name::text as actor_name
 FROM new_simulation ns
 CROSS JOIN source_simulation ss
+LEFT JOIN get_or_create_name gocn ON gocn.name_id IS NOT NULL
 CROSS JOIN actor_profile ap
 $$;

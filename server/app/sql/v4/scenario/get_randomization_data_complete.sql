@@ -61,11 +61,11 @@ LANGUAGE sql
 STABLE
 AS $$
 WITH filtered_personas AS (
-    SELECT DISTINCT p.id, p.name, COALESCE(p.description, '') as description
+    SELECT DISTINCT p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
     FROM personas p
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
-    WHERE p.active = true
-    GROUP BY p.id, p.name, p.description
+    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1)
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR
@@ -73,13 +73,13 @@ WITH filtered_personas AS (
          OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true))
 ),
 filtered_documents AS (
-    SELECT DISTINCT d.id, d.name, NULL::text as type, u.file_path
+    SELECT DISTINCT d.id, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), NULL::text as type, u.file_path
     FROM documents d
     INNER JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     INNER JOIN uploads u ON u.id = du.upload_id AND u.file_path IS NOT NULL
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
-    WHERE d.active = true
-    GROUP BY d.id, d.name, u.file_path
+    WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
+    GROUP BY d.id, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), u.file_path
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR
@@ -89,30 +89,32 @@ filtered_documents AS (
 filtered_parameters AS (
     SELECT DISTINCT 
         p.id, 
-        p.name, 
-        p.description, 
-        p.document_parameter,
-        p.persona_parameter
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), 
+        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), 
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter
     FROM parameters p
-    JOIN fields f ON f.parameter_id = p.id AND f.active = true
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE p.active = true
-    GROUP BY p.id, p.name, p.description, p.document_parameter, p.persona_parameter
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = true)
+      AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = true)
+    GROUP BY p.id, (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE)
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR
          COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(api_get_randomization_data_v4.department_ids)) > 0
          OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
                       JOIN fields f2 ON f2.id = fd2.field_id 
-                      WHERE f2.parameter_id = p.id AND f2.active = true AND fd2.active = true))
+                      JOIN parameter_fields pf2 ON pf2.field_id = f2.id
+                      WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = f2.id AND fl2.name = 'active' AND ff2.type = 'active'::type_field_flags AND ff2.value = true) AND fd2.active = true))
 ),
 parameter_items_data AS (
-    SELECT DISTINCT f.id, f.name, f.description, f.parameter_id
+    SELECT DISTINCT f.id, (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     FROM fields f
-    JOIN filtered_parameters fp2 ON fp2.id = f.parameter_id
+    JOIN filtered_parameters fp2 ON fp2.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-    WHERE f.active = true
-    GROUP BY f.id, f.name, f.description, f.parameter_id
+    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    GROUP BY f.id, (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     HAVING 
         -- If department_ids provided and not empty, filter by departments; otherwise include all
         (COALESCE(array_length(api_get_randomization_data_v4.department_ids, 1), 0) = 0 OR

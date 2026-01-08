@@ -134,14 +134,14 @@ user_departments AS (
 user_profile AS (
     SELECT 
         role,
-        first_name || ' ' || last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profiles p ON p.id = x.profile_id
 ),
 simulation_scenarios_data AS (
     SELECT 
         ss.simulation_id,
-        ARRAY_AGG(ss.scenario_id ORDER BY sc.name) as scenario_ids,
+        ARRAY_AGG(ss.scenario_id ORDER BY (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1)) as scenario_ids,
         COUNT(ss.scenario_id) as num_scenarios
     FROM simulation_scenarios ss
     JOIN scenarios sc ON sc.id = ss.scenario_id
@@ -174,7 +174,7 @@ simulation_all_cohort_links AS (
 simulation_cohorts_data AS (
     SELECT 
         cs.simulation_id,
-        ARRAY_AGG(cs.cohort_id::text ORDER BY c.title) as cohort_ids
+        ARRAY_AGG(cs.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
     FROM cohort_simulations cs
     JOIN cohorts c ON c.id = cs.cohort_id
     WHERE cs.active = true
@@ -191,8 +191,8 @@ simulation_departments_data AS (
 simulation_data AS (
     SELECT 
         s.id as simulation_id,
-        s.title as name,
-        s.description,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -200,8 +200,8 @@ simulation_data AS (
              WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
             0
         ) as time_limit,
-        s.active,
-        s.practice_simulation,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         (SELECT rga.rubric_id FROM simulation_scenarios ss_rubric 
          JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss_rubric.simulation_id AND ssrga.scenario_id = ss_rubric.scenario_id
          JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
@@ -225,7 +225,7 @@ simulation_data AS (
     LEFT JOIN simulation_active_cohort_links sacl ON sacl.simulation_id = s.id
     LEFT JOIN simulation_all_cohort_links salcl ON salcl.simulation_id = s.id
     LEFT JOIN simulation_cohorts_data scd ON scd.simulation_id = s.id
-    GROUP BY s.id, s.title, s.description, s.active, s.practice_simulation, 
+    GROUP BY s.id, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE), EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE), 
              s.updated_at, sdd.department_ids, ssd.scenario_ids, ssd.num_scenarios, sa.attempt_count, 
              sacl.active_cohort_count, salcl.total_cohort_links, salcl.num_cohorts, scd.cohort_ids
     HAVING 
@@ -262,10 +262,10 @@ image_model_check AS (
 persona_data AS (
     SELECT 
         p.id as persona_id,
-        p.name,
-        COALESCE(p.description, '') as description,
-        p.color,
-        p.icon,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
+        (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
+        (SELECT i.name FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
         false as image_model
     FROM all_persona_ids api
     JOIN personas p ON p.id = api.persona_id
@@ -273,9 +273,9 @@ persona_data AS (
 scenario_base_data AS (
     SELECT 
         s.id as scenario_id,
-        s.name,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
-        s.active,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
         COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
         ARRAY[]::text[] as parameter_item_ids,
         ARRAY[]::text[] as document_ids
@@ -307,8 +307,8 @@ all_rubric_ids AS (
 rubric_data AS (
     SELECT 
         r.id as rubric_id,
-        r.name,
-        COALESCE(r.description, '') as description
+        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
+        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description
     FROM all_rubric_ids ari
     JOIN rubrics r ON r.id = ari.rubric_id
 ),
@@ -320,16 +320,16 @@ all_cohort_ids AS (
 cohort_data AS (
     SELECT 
         c.id as cohort_id,
-        c.title as name,
-        COALESCE(c.description, '') as description
+        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
     FROM all_cohort_ids aci
     JOIN cohorts c ON c.id = aci.cohort_id::uuid
 ),
 department_data AS (
     SELECT 
         d.id as department_id,
-        d.title as name,
-        COALESCE(d.description, '') as description
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
 )

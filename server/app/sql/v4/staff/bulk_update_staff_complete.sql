@@ -48,9 +48,13 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profiles p ON p.id = x.profile_id
 ),
 role_param AS (
     -- Use role to help PostgreSQL infer type (even if NULL)
@@ -102,14 +106,31 @@ validated_profiles AS (
     WHERE can_assign_role = true AND role_level_ok = true AND can_edit_default = true
 ),
 profile_update AS (
-    -- Update profiles table with dynamic SET clauses
+    -- Update profiles table with dynamic SET clauses (without active column)
     UPDATE profiles p
     SET 
         role = COALESCE((SELECT CAST(rp.role_value AS profile_role) FROM role_param rp WHERE rp.role_value IS NOT NULL LIMIT 1), p.role),
-        active = COALESCE((SELECT active FROM params), p.active),
         updated_at = NOW()
     WHERE p.id IN (SELECT id FROM validated_profiles)
     RETURNING p.id
+),
+-- Update active flag if provided
+update_active_flags AS (
+    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        pu.id,
+        f.id,
+        'active'::type_profile_flags,
+        (SELECT active FROM params),
+        NOW(),
+        NOW()
+    FROM profile_update pu
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND (SELECT active FROM params) IS NOT NULL
+    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+        value = (SELECT active FROM params),
+        updated_at = NOW()
 ),
 request_limit_update AS (
     -- Update request limits if provided (skip if NULL)

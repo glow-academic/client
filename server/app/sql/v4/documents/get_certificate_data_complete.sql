@@ -64,8 +64,12 @@ WITH params AS (
 ),
 profile_info AS (
     SELECT 
-        id,
-        first_name || ' ' || last_name AS profile_name
+        p.id,
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = p.id AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            'Unknown'
+        ) AS profile_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -73,12 +77,19 @@ profile_info AS (
 profile_cohorts AS (
     SELECT DISTINCT
         c.id AS cohort_id,
-        c.title AS cohort_title
+        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title
     FROM params x
     JOIN cohort_profiles cp ON cp.profile_id = x.profile_id
     JOIN cohorts c ON c.id = cp.cohort_id
     WHERE cp.active = TRUE
-      AND c.active = TRUE
+      AND EXISTS (
+        SELECT 1 FROM cohort_flags cf
+        JOIN flags f ON cf.flag_id = f.id
+        WHERE cf.cohort_id = c.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND cf.type = 'active'::type_cohort_flags
+          AND cf.value = TRUE
+      )
 ),
 -- Get all simulations for each cohort
 cohort_sims AS (
@@ -86,7 +97,7 @@ cohort_sims AS (
         pc.cohort_id,
         pc.cohort_title,
         s.id AS simulation_id,
-        s.title AS simulation_title,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_title,
         (SELECT rga.rubric_id FROM simulation_scenarios ss 
          JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
          JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
@@ -97,8 +108,22 @@ cohort_sims AS (
     JOIN cohort_simulations cs ON cs.cohort_id = pc.cohort_id
     JOIN simulations s ON s.id = cs.simulation_id
     WHERE cs.active = TRUE
-      AND s.active = TRUE
-      AND s.practice_simulation = FALSE
+      AND EXISTS (
+        SELECT 1 FROM simulation_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.simulation_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND sf.type = 'active'::type_simulation_flags
+          AND sf.value = TRUE
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM simulation_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.simulation_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+          AND sf.type = 'practice'::type_simulation_flags
+          AND sf.value = TRUE
+      )
 ),
 -- Get expected scenarios per simulation
 sim_expected AS (
@@ -149,12 +174,11 @@ user_sim_status AS (
         aa.simulation_id,
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
-            (SELECT ROUND(100.0 * r.pass_points::numeric / NULLIF(r.points,0))
+            (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
              FROM simulations s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
              LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
              LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
-             LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
              WHERE s.id = aa.simulation_id
              ORDER BY ss_rubric.position
              LIMIT 1), 70

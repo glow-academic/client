@@ -41,7 +41,7 @@ model_exists_check AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params)::uuid as profile_id,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM profiles p
     WHERE p.id = (SELECT profile_id FROM params)::uuid
 ),
@@ -56,7 +56,10 @@ agents_usage_check AS (
     WHERE model_id = (SELECT model_id FROM params)
 ),
 model_info AS (
-    SELECT name FROM models WHERE id = (SELECT model_id FROM params)
+    SELECT 
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name
+    FROM models m
+    WHERE m.id = (SELECT model_id FROM params)
 ),
 delete_result AS (
     DELETE FROM models 

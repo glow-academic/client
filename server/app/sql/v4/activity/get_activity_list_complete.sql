@@ -72,7 +72,7 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
 ),
@@ -82,12 +82,12 @@ filtered_activities AS (
         a.created_at,
         a.message,
         a.error,
-        COALESCE(p.first_name || ' ' || p.last_name, 'Anonymous') as profile_name,
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'Anonymous') as profile_name,
         p.id as profile_id
     FROM activity a
     LEFT JOIN profiles p ON p.id = a.profile_id
     CROSS JOIN params x
-    WHERE (x.search IS NULL OR x.search = '' OR a.message ILIKE '%' || x.search || '%' OR COALESCE(p.first_name || ' ' || p.last_name, 'Anonymous') ILIKE '%' || x.search || '%')
+    WHERE (x.search IS NULL OR x.search = '' OR a.message ILIKE '%' || x.search || '%' OR COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'Anonymous') ILIKE '%' || x.search || '%')
 ),
 activity_count AS (
     SELECT COUNT(*) as total_count

@@ -88,7 +88,11 @@ WITH params AS (
 user_profile AS (
     SELECT 
         COALESCE((SELECT role FROM profiles WHERE id = (SELECT profile_id FROM params)), 'guest') as role,
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' || 
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
 ),
@@ -100,7 +104,7 @@ user_departments AS (
 profile_cohorts AS (
     SELECT 
         cp.profile_id,
-        ARRAY_AGG(cp.cohort_id::text ORDER BY c.title) as cohort_ids
+        ARRAY_AGG(cp.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
     FROM cohort_profiles cp
     JOIN cohorts c ON c.id = cp.cohort_id
     WHERE cp.active = true
@@ -109,7 +113,7 @@ profile_cohorts AS (
 profile_departments_agg AS (
     SELECT 
         pd.profile_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY d.title) as department_ids
+        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as department_ids
     FROM profile_departments pd
     JOIN departments d ON d.id = pd.department_id
     WHERE pd.active = true
@@ -141,29 +145,29 @@ profile_total_runs AS (
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
     FROM cohorts c
-    WHERE c.active = true
+    WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
 ),
 cohorts_data AS (
     SELECT 
         c.id as cohort_id,
-        c.title as name,
-        COALESCE(c.description, '') as description
+        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
     FROM cohorts c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 departments_data AS (
     SELECT 
         d.id as department_id,
-        d.title as name,
-        COALESCE(d.description, '') as description
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description
     FROM departments d
-    WHERE d.active = true
+    WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
 ),
 staff_rows AS (
     SELECT DISTINCT ON (p.id)
         p.id as profile_id,
-        p.first_name,
-        p.last_name,
+        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
+        (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         COALESCE(
             ARRAY(
                 SELECT email FROM (
@@ -180,9 +184,9 @@ staff_rows AS (
             ARRAY[]::text[]
         ) as emails,
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
-        p.first_name || ' ' || p.last_name as name,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
         p.role,
-        p.active,
+        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         pa.last_active,
         COALESCE(
             ARRAY(SELECT unnest(pc.cohort_ids)::text),
@@ -219,10 +223,10 @@ staff_rows AS (
         -- For create-staff-data, show all staff with active departments
         true
     )
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active,
+    GROUP BY p.id, (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), p.role, EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE),
              pa.last_active, prl.requests_per_day, pc.cohort_ids, pda.department_ids,
              ppd.department_id, ptr.total_requests, rr.run_count
-    ORDER BY p.id, p.last_name, p.first_name
+    ORDER BY p.id, (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1)
 )
 SELECT 
     up.actor_name::text as actor_name,

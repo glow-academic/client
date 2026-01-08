@@ -18,15 +18,41 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    WITH new_profile AS (
-        INSERT INTO profiles(first_name, last_name, role, active)
-        VALUES (
-            test_create_test_profile_v4.first_name,
-            test_create_test_profile_v4.last_name,
-            test_create_test_profile_v4.role::profile_role,
-            true
-        )
+    WITH first_name_resource AS (
+        INSERT INTO names(name)
+        VALUES (test_create_test_profile_v4.first_name)
+        RETURNING id
+    ),
+    last_name_resource AS (
+        INSERT INTO names(name)
+        VALUES (test_create_test_profile_v4.last_name)
+        RETURNING id
+    ),
+    active_flag AS (
+        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+    ),
+    new_profile AS (
+        INSERT INTO profiles(role)
+        VALUES (test_create_test_profile_v4.role::profile_role)
         RETURNING id, role::text
+    ),
+    profile_first_name_link AS (
+        INSERT INTO profile_names(profile_id, name_id, type)
+        SELECT np.id, fnr.id, 'first'::type_profile_names
+        FROM new_profile np, first_name_resource fnr
+        RETURNING profile_id
+    ),
+    profile_last_name_link AS (
+        INSERT INTO profile_names(profile_id, name_id, type)
+        SELECT np.id, lnr.id, 'last'::type_profile_names
+        FROM new_profile np, last_name_resource lnr
+        RETURNING profile_id
+    ),
+    profile_flag_link AS (
+        INSERT INTO profile_flags(profile_id, flag_id, type, value)
+        SELECT np.id, af.id, 'active'::type_profile_flags, true
+        FROM new_profile np, active_flag af
+        RETURNING profile_id
     ),
     new_email AS (
         INSERT INTO profile_emails(profile_id, email, is_primary, active)

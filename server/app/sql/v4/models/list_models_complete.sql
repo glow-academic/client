@@ -77,7 +77,11 @@ WITH params AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
 ),
@@ -85,29 +89,33 @@ user_profile AS (
 -- Simulations are linked to models via simulation_text_domain_id/simulation_voice_domain_id -> domains -> agents -> model_id
 simulation_usage AS (
     SELECT 
-        a.model_id,
+        am.model_id,
         COUNT(*) as usage_count
     FROM (
         SELECT d_text.agent_id
         FROM simulations sim
-        JOIN domains d_text ON d_text.id = sim.simulation_text_domain_id
-        WHERE sim.simulation_text_domain_id IS NOT NULL
+        LEFT JOIN simulation_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
+        LEFT JOIN domains d_text ON d_text.id = sd_text.domain_id
+        WHERE sd_text.domain_id IS NOT NULL
         UNION ALL
         SELECT d_voice.agent_id
         FROM simulations sim
-        JOIN domains d_voice ON d_voice.id = sim.simulation_voice_domain_id
-        WHERE sim.simulation_voice_domain_id IS NOT NULL
+        LEFT JOIN simulation_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
+        LEFT JOIN domains d_voice ON d_voice.id = sd_voice.domain_id
+        WHERE sd_voice.domain_id IS NOT NULL
     ) combined_agents
-    JOIN agents a ON a.id = combined_agents.agent_id AND a.active = true
-    GROUP BY a.model_id
+    JOIN agents a ON a.id = combined_agents.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    JOIN agent_models am ON am.agent_id = a.id
+    GROUP BY am.model_id
 ),
 -- Pre-aggregate agent usage counts for all models
 agent_usage AS (
     SELECT 
-        model_id,
+        am.model_id,
         COUNT(*) as usage_count
-    FROM agents
-    GROUP BY model_id
+    FROM agents a
+    JOIN agent_models am ON am.agent_id = a.id
+    GROUP BY am.model_id
 ),
 -- Determine if model is an image model (has 'image' output modality)
 image_model_check AS (
@@ -121,19 +129,20 @@ image_model_check AS (
 models_with_usage AS (
     SELECT 
         m.id as model_id,
-        m.name,
-        m.description,
-        m.active,
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
         p.value as provider,
         p.id as provider_id,
-        p.name as provider_name,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as provider_name,
         COALESCE(me.base_url, '') as base_url,
         COALESCE(su.usage_count, 0) as simulation_usage_count,
         COALESCE(au.usage_count, 0) as agent_usage_count
     FROM models m
-    JOIN providers p ON p.id = m.provider_id
+    JOIN model_providers mp ON mp.model_id = m.id
+    JOIN providers p ON p.id = mp.provider_id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     LEFT JOIN simulation_usage su ON su.model_id = m.id
     LEFT JOIN agent_usage au ON au.model_id = m.id
@@ -141,11 +150,11 @@ models_with_usage AS (
 ),
 provider_options_data AS (
     SELECT 
-        value,
-        name as label
-    FROM providers
-    WHERE active = true
-    ORDER BY name
+        p.value,
+        (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1) as label
+    FROM providers p
+    WHERE EXISTS (SELECT 1 FROM provider_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.provider_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_provider_flags AND pf.value = true)
+    ORDER BY (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1)
 ),
 models_aggregated AS (
     SELECT 

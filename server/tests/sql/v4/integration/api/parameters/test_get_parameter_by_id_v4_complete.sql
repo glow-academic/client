@@ -21,14 +21,14 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT 
-        id AS parameter_id,
-        name,
-        description,
-        active,
-        document_parameter,
-        simulation_parameter,
-        created_at,
-        updated_at
-    FROM parameters
-    WHERE id = input_parameter_id;
+        p.id AS parameter_id,
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) AS name,
+        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) AS document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags AND pf.value = TRUE) AS simulation_parameter,
+        p.created_at,
+        p.updated_at
+    FROM parameters p
+    WHERE p.id = input_parameter_id;
 $$;

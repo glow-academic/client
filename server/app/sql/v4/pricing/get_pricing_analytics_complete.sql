@@ -130,7 +130,11 @@ profile_role_check AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
     WHERE x.profile_id IS NOT NULL
@@ -145,7 +149,7 @@ runs_base AS (
         mrp.profile_id,
         mr.agent_id,
         mrper.persona_id,
-        sim.practice_simulation,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         sa.archived
     FROM runs mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
@@ -214,8 +218,8 @@ runs_base AS (
             OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
             OR sim.id IS NULL  -- Runs not linked to simulations are always included
             OR (
-                ('general' = ANY(p.simulation_filters) AND sim.practice_simulation = FALSE AND COALESCE(sa.archived, FALSE) = FALSE) OR
-                ('practice' = ANY(p.simulation_filters) AND sim.practice_simulation = TRUE AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('general' = ANY(p.simulation_filters) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('practice' = ANY(p.simulation_filters) AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
                 ('archived' = ANY(p.simulation_filters) AND COALESCE(sa.archived, FALSE) = TRUE)
             )
         )
@@ -289,25 +293,25 @@ SELECT
     ) as model_runs,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (m.id, m.name, COALESCE(m.description, ''), COALESCE(mpa.input_ppm, 0.0), COALESCE(mpa.output_ppm, 0.0))::types.q_get_pricing_analytics_v4_model
+            DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''), COALESCE(mpa.input_ppm, 0.0), COALESCE(mpa.output_ppm, 0.0))::types.q_get_pricing_analytics_v4_model
         ) FILTER (WHERE m.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_model[]
     ) as models,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (p.id, p.first_name || ' ' || p.last_name)::types.q_get_pricing_analytics_v4_profile
+            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''))::types.q_get_pricing_analytics_v4_profile
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_profile[]
     ) as profiles,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (a.id, a.name)::types.q_get_pricing_analytics_v4_agent
+            DISTINCT (a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_analytics_v4_agent
         ) FILTER (WHERE a.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_agent[]
     ) as agents,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (per.id, per.name)::types.q_get_pricing_analytics_v4_persona
+            DISTINCT (per.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1))::types.q_get_pricing_analytics_v4_persona
         ) FILTER (WHERE per.id IS NOT NULL),
         '{}'::types.q_get_pricing_analytics_v4_persona[]
     ) as personas

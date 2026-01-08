@@ -160,10 +160,17 @@ agent_exists_check AS (
 agent_info AS (
     SELECT 
         a.id::text as agent_id,
-        a.name,
-        a.description,
-        a.model_id::text,
-        a.active,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) AS name,
+        (SELECT d.description FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) AS description,
+        (SELECT m.id::text FROM agent_models am JOIN models m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) AS model_id,
+        EXISTS (
+            SELECT 1 FROM agent_flags af
+            JOIN flags f ON af.flag_id = f.id
+            WHERE af.agent_id = a.id
+              AND f.name = 'active'
+              AND af.type = 'active'::type_agent_flags
+              AND af.value = TRUE
+        ) AS active,
         COALESCE(d.artifact::text, '') as role  -- Derive from domains
     FROM params x
     JOIN agents a ON a.id = x.agent_id
@@ -276,9 +283,9 @@ debug_data AS (
 all_models AS (
     SELECT 
         id::text as model_id,
-        name,
-        COALESCE(description, '') as description,
-        active
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = models.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = models.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = models.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
     FROM models
 ),
 model_modalities_data AS (
@@ -292,14 +299,18 @@ model_modalities_data AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 user_departments AS (
-    SELECT DISTINCT d.id, d.title as name, d.description
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
     FROM params x
-    JOIN departments d ON d.active = true
+    JOIN departments d ON EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 user_has_agent_access AS (
@@ -602,6 +613,6 @@ LEFT JOIN model_voices_data_flat mvf_selected ON mvf_selected.model_id = ai.mode
 GROUP BY aec.agent_exists, ai.agent_id, ai.name, ai.description, aap.system_prompt, aap.prompt_id,
          ai.model_id, ai.active, ai.role, ast.selected_temperature_level_id, ast.selected_temperature,
          asr.selected_reasoning_level_id, asr.selected_reasoning, add.department_ids, up.actor_name,
-         up.role, uhaa.has_access
+         up.role, uhaa.has_access, uhaa.has_access
 LIMIT 1
 $$;

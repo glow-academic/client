@@ -21,14 +21,47 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    -- NOTE: simulations table doesn't have rubric_id column
-    -- Simulations don't directly link to rubrics in current schema
-    -- This function creates a simulation without rubric link - tests using this may need updating
-    INSERT INTO simulations(title, description, active)
-    VALUES (
-        COALESCE(simulation_name, 'Test Simulation'),
-        COALESCE(simulation_description, 'Test Description'),
-        simulation_active
+    WITH new_simulation AS (
+        INSERT INTO simulations DEFAULT VALUES
+        RETURNING id, created_at
+    ),
+    name_resource AS (
+        INSERT INTO names(name)
+        VALUES (COALESCE(simulation_name, 'Test Simulation'))
+        RETURNING id
+    ),
+    description_resource AS (
+        INSERT INTO descriptions(description)
+        VALUES (COALESCE(simulation_description, 'Test Description'))
+        RETURNING id
+    ),
+    active_flag AS (
+        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+    ),
+    simulation_name_link AS (
+        INSERT INTO simulation_names(simulation_id, name_id)
+        SELECT ns.id, nr.id
+        FROM new_simulation ns, name_resource nr
+        RETURNING simulation_id
+    ),
+    simulation_description_link AS (
+        INSERT INTO simulation_descriptions(simulation_id, description_id)
+        SELECT ns.id, dr.id
+        FROM new_simulation ns, description_resource dr
+        RETURNING simulation_id
+    ),
+    simulation_flag_link AS (
+        INSERT INTO simulation_flags(simulation_id, flag_id, type, value)
+        SELECT ns.id, af.id, 'active'::type_simulation_flags, simulation_active
+        FROM new_simulation ns, active_flag af
+        RETURNING simulation_id
     )
-    RETURNING id AS simulation_id, title AS name, description, active, NULL::uuid AS rubric_id, created_at;
+    SELECT 
+        ns.id AS simulation_id,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = ns.id LIMIT 1) AS name,
+        (SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = ns.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AS active,
+        NULL::uuid AS rubric_id,
+        ns.created_at
+    FROM new_simulation ns;
 $$;

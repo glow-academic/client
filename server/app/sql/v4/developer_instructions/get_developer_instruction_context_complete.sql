@@ -47,18 +47,18 @@ scenario_parameters_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', p.id::text,
-                            'name', p.name,
-                            'description', p.description,
-                            'active', p.active,
-                            'document_parameter', p.document_parameter,
-                            'persona_parameter', p.persona_parameter,
-                            'scenario_parameter', p.scenario_parameter,
-                            'video_parameter', p.video_parameter,
-                            'simulation_parameter', p.simulation_parameter,
+                            'name', (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+                            'description', (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
+                            'active', EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE),
+                            'document_parameter', EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE),
+                            'persona_parameter', EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE),
+                            'scenario_parameter', EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE),
+                            'video_parameter', EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'video_parameter' AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE),
+                            'simulation_parameter', EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags AND pf.value = TRUE),
                             'created_at', p.created_at::text,
                             'updated_at', p.updated_at::text
                         )
-                        ORDER BY p.name
+                        ORDER BY (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )
@@ -68,7 +68,7 @@ scenario_parameters_data AS (
     JOIN parameters p ON p.id = sp.parameter_id
     WHERE (p_scenario_id IS NOT NULL AND sp.scenario_id = p_scenario_id)
       AND sp.active = true
-      AND p.active = true
+      AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = true)
       AND EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
 ),
 -- Get fields for scenario (if scenario_id provided and agent has scenario artifact)
@@ -81,14 +81,14 @@ scenario_fields_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', f.id::text,
-                            'name', f.name,
-                            'description', f.description,
-                            'parameter_id', f.parameter_id::text,
-                            'active', f.active,
+                            'name', (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+                            'description', (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
+                            'parameter_id', (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)::text,
+                            'active', EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = TRUE),
                             'created_at', f.created_at::text,
                             'updated_at', f.updated_at::text
                         )
-                        ORDER BY f.name
+                        ORDER BY (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )
@@ -98,7 +98,7 @@ scenario_fields_data AS (
     JOIN fields f ON f.id = sf.field_id
     WHERE (p_scenario_id IS NOT NULL AND sf.scenario_id = p_scenario_id)
       AND sf.active = true
-      AND f.active = true
+      AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
       AND EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
 ),
 -- Get documents for scenario (if scenario_id provided and agent has scenario artifact)
@@ -111,14 +111,14 @@ scenario_documents_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', d.id::text,
-                            'name', d.name,
-                            'description', COALESCE(d.description, ''),
-                            'content', COALESCE(d.content, ''),
-                            'active', d.active,
+                            'name', (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+                            'description', COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''),
+                            'content', COALESCE((SELECT c.content FROM document_content dc JOIN content c ON dc.content_id = c.id WHERE dc.document_id = d.id LIMIT 1), ''),
+                            'active', EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE),
                             'created_at', d.created_at::text,
                             'updated_at', d.updated_at::text
                         )
-                        ORDER BY d.name
+                        ORDER BY (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )
@@ -128,7 +128,7 @@ scenario_documents_data AS (
     JOIN documents d ON d.id = sd.document_id
     WHERE (p_scenario_id IS NOT NULL AND sd.scenario_id = p_scenario_id)
       AND sd.active = true
-      AND d.active = true
+      AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
       AND EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
 )
 SELECT 

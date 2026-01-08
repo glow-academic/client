@@ -30,7 +30,7 @@ AS $$
 SELECT 
     sa.simulation_id::text,
     sa.id::text as attempt_id,
-    s.practice_simulation
+    EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
 FROM chats sc
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id

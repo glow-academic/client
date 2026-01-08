@@ -72,7 +72,7 @@ WITH params AS (
 requester_profile AS (
     SELECT 
         role,
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM profiles p
     WHERE p.id = (SELECT profile_id FROM params)
 ),
@@ -82,12 +82,12 @@ requester_role AS (
 simulatable_data AS (
     SELECT 
         p.id,
-        p.first_name,
-        p.last_name,
+        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
+        (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
-        p.active,
+        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         COALESCE(prl.requests_per_day, 0) as req_per_day,
         p.last_login,
         pa.last_active,
@@ -113,11 +113,11 @@ simulatable_data AS (
         WHEN rr.role = 'instructional'::profile_role THEN p.role IN ('member'::profile_role, 'guest'::profile_role)
         ELSE false
       END
-      AND ((SELECT query FROM params) IS NULL OR (SELECT query FROM params) = '' OR (p.first_name ILIKE '%' || (SELECT query FROM params) || '%' OR p.last_name ILIKE '%' || (SELECT query FROM params) || '%' OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE '%' || (SELECT query FROM params) || '%') OR p.role::text ILIKE '%' || (SELECT query FROM params) || '%' OR (p.first_name || ' ' || p.last_name) ILIKE '%' || (SELECT query FROM params) || '%'))
-    GROUP BY p.id, p.first_name, p.last_name, p.role, p.active, 
+      AND ((SELECT query FROM params) IS NULL OR (SELECT query FROM params) = '' OR ((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) ILIKE '%' || (SELECT query FROM params) || '%' OR (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) ILIKE '%' || (SELECT query FROM params) || '%' OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE '%' || (SELECT query FROM params) || '%') OR p.role::text ILIKE '%' || (SELECT query FROM params) || '%' OR (COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) ILIKE '%' || (SELECT query FROM params) || '%'))
+    GROUP BY p.id, p.role, EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
              prl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
-    ORDER BY p.first_name, p.last_name
+    ORDER BY (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1)
     LIMIT (SELECT limit_count FROM params)
 )
 SELECT 
@@ -125,7 +125,7 @@ SELECT
     COALESCE(
         ARRAY_AGG(
             (sp.id, sp.first_name, sp.last_name, COALESCE(sp.emails, ARRAY[]::text[]), sp.primary_email, sp.role, sp.active, sp.req_per_day, sp.last_login, sp.last_active, sp.created_at, sp.updated_at, sp.primary_department_id)::types.q_search_simulatable_profiles_v4_profile
-            ORDER BY sp.first_name, sp.last_name
+            ORDER BY sp.first_name, sp.last_name NULLS LAST
         ),
         '{}'::types.q_search_simulatable_profiles_v4_profile[]
     ) as profiles

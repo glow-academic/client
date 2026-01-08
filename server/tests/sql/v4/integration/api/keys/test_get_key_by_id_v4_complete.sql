@@ -20,13 +20,13 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT 
-        id AS key_id,
-        name,
-        key,
-        description,
-        active,
-        created_at,
-        updated_at
-    FROM keys
-    WHERE id = input_key_id;
+        k.id AS key_id,
+        (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) AS name,
+        k.key,
+        (SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) AS active,
+        k.created_at,
+        k.updated_at
+    FROM keys k
+    WHERE k.id = input_key_id;
 $$;

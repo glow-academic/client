@@ -104,7 +104,11 @@ user_departments AS (
 user_profile AS (
     SELECT 
         role,
-        first_name || ' ' || last_name as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
 ),
@@ -138,21 +142,20 @@ persona_departments_data AS (
         pd.persona_id,
         ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
     FROM persona_departments pd
-    WHERE pd.active = true
     GROUP BY pd.persona_id
 ),
 persona_data_base AS (
     SELECT 
         p.id as persona_id,
-        p.name as persona_name,
-        p.description,
-        p.color,
-        p.icon,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
+        (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
+        (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
         NULL::uuid as agent_id,
         NULL::uuid as model_id,
         NULL::text as reasoning,
         NULL::numeric as temperature,
-        p.active,
+        EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE) as active,
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
@@ -165,11 +168,11 @@ persona_data_base AS (
     LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
     LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
-    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true AND pd.department_id IN (SELECT department_id FROM user_departments)
-    GROUP BY p.id, p.name, p.description, p.color, p.icon, p.active, p.updated_at, 
+    LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
+    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE), p.updated_at, 
              pdd.department_ids, ps.scenario_ids, ps.num_scenarios, pasl.active_scenario_count, pasl_all.total_scenario_links
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (
-        SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true
+        SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id
     )
 ),
 persona_data AS (
@@ -216,9 +219,9 @@ valid_scenario_ids AS (
 scenario_mapping_data AS (
     SELECT 
         s.id as scenario_id,
-        s.name,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
-        s.active,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
         ARRAY[]::uuid[] as persona_ids,
         ARRAY[]::uuid[] as document_ids,
         ARRAY[]::uuid[] as parameter_item_ids
@@ -231,8 +234,8 @@ scenario_mapping_data AS (
 department_mapping_data AS (
     SELECT 
         d.id as department_id,
-        d.title as name,
-        COALESCE(d.description, '') as description
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
 ),
@@ -244,13 +247,13 @@ assigned_agent_ids AS (
 agent_mapping_data AS (
     SELECT 
         a.id as agent_id,
-        a.name,
-        COALESCE(a.description, '') as description,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
         ARRAY[COALESCE(d.artifact::text, '')] as roles
     FROM agents a
     LEFT JOIN domains d ON d.agent_id = a.id
     WHERE a.id IN (SELECT agent_id FROM assigned_agent_ids)
-    AND a.active = true
+    AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
 )
 SELECT 
     up.actor_name::text as actor_name,

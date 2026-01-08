@@ -74,7 +74,7 @@ user_profile AS (
     SELECT 
         up.id,
         up.role,
-        COALESCE(up.first_name || ' ' || up.last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = up.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = up.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profiles up ON up.id = x.profile_id
 ),
@@ -86,8 +86,8 @@ user_departments AS (
 valid_departments_data AS (
     SELECT 
         d.id as department_id,
-        d.title as name,
-        COALESCE(d.description, '') as description
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
        OR EXISTS (SELECT 1 FROM user_profile WHERE role = 'superadmin')
@@ -95,10 +95,10 @@ valid_departments_data AS (
 valid_parameters_data AS (
     SELECT 
         p.id as parameter_id,
-        p.name,
-        COALESCE(p.description, '') as description
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
     FROM parameters p
-    WHERE p.active = true
+    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 primary_department_data AS (
     SELECT 

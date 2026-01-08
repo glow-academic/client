@@ -24,13 +24,69 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO parameters(name, description, active, document_parameter, simulation_parameter)
-    VALUES (
-        parameter_name,
-        parameter_description,
-        parameter_active,
-        parameter_document_parameter,
-        parameter_simulation_parameter
+    WITH new_parameter AS (
+        INSERT INTO parameters DEFAULT VALUES
+        RETURNING id, created_at, updated_at
+    ),
+    name_resource AS (
+        INSERT INTO names(name)
+        VALUES (parameter_name)
+        RETURNING id
+    ),
+    description_resource AS (
+        INSERT INTO descriptions(description)
+        VALUES (COALESCE(parameter_description, 'Test parameter description'))
+        RETURNING id
+    ),
+    active_flag AS (
+        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+    ),
+    document_parameter_flag AS (
+        SELECT id FROM flags WHERE name = 'document_parameter' LIMIT 1
+    ),
+    simulation_parameter_flag AS (
+        SELECT id FROM flags WHERE name = 'simulation_parameter' LIMIT 1
+    ),
+    parameter_name_link AS (
+        INSERT INTO parameter_names(parameter_id, name_id)
+        SELECT np.id, nr.id
+        FROM new_parameter np, name_resource nr
+        RETURNING parameter_id
+    ),
+    parameter_description_link AS (
+        INSERT INTO parameter_descriptions(parameter_id, description_id)
+        SELECT np.id, dr.id
+        FROM new_parameter np, description_resource dr
+        RETURNING parameter_id
+    ),
+    parameter_active_flag_link AS (
+        INSERT INTO parameter_flags(parameter_id, flag_id, type, value)
+        SELECT np.id, af.id, 'active'::type_parameter_flags, COALESCE(parameter_active, true)
+        FROM new_parameter np, active_flag af
+        RETURNING parameter_id
+    ),
+    parameter_document_flag_link AS (
+        INSERT INTO parameter_flags(parameter_id, flag_id, type, value)
+        SELECT np.id, dpf.id, 'document_parameter'::type_parameter_flags, COALESCE(parameter_document_parameter, false)
+        FROM new_parameter np, document_parameter_flag dpf
+        WHERE COALESCE(parameter_document_parameter, false) = true
+        RETURNING parameter_id
+    ),
+    parameter_simulation_flag_link AS (
+        INSERT INTO parameter_flags(parameter_id, flag_id, type, value)
+        SELECT np.id, spf.id, 'simulation_parameter'::type_parameter_flags, COALESCE(parameter_simulation_parameter, false)
+        FROM new_parameter np, simulation_parameter_flag spf
+        WHERE COALESCE(parameter_simulation_parameter, false) = true
+        RETURNING parameter_id
     )
-    RETURNING id AS parameter_id, name, description, active, document_parameter, simulation_parameter, created_at, updated_at;
+    SELECT 
+        np.id AS parameter_id,
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = np.id LIMIT 1) AS name,
+        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = np.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) AS document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags AND pf.value = TRUE) AS simulation_parameter,
+        np.created_at,
+        np.updated_at
+    FROM new_parameter np;
 $$;

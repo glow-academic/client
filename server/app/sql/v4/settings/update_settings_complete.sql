@@ -166,69 +166,183 @@ WITH params AS (
 actor_profile AS (
     SELECT
         p.id as profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
+active_flag_id AS (
+    -- Get the active flag ID
+    SELECT id as flag_id FROM flags WHERE name = 'active' LIMIT 1
+),
 old_settings_id AS (
-    -- Capture old settings ID before deactivating
-    SELECT id as old_id FROM settings WHERE active = true LIMIT 1
+    -- Capture old settings ID before deactivating (using setting_flags)
+    SELECT s.id as old_id 
+    FROM settings s
+    JOIN setting_flags sf ON sf.setting_id = s.id
+    JOIN flags fl ON sf.flag_id = fl.id
+    CROSS JOIN active_flag_id afi
+    WHERE fl.name = 'active' 
+      AND sf.type = 'active'::type_setting_flags 
+      AND sf.value = TRUE
+      AND sf.flag_id = afi.flag_id
+    LIMIT 1
 ),
 deactivate_current AS (
-    -- Deactivate the current active settings row
-    UPDATE settings
-    SET active = false
-    WHERE active = true
+    -- Deactivate the current active settings row (update setting_flags)
+    UPDATE setting_flags
+    SET value = FALSE, updated_at = NOW()
+    FROM flags fl
+    CROSS JOIN active_flag_id afi
+    WHERE setting_flags.flag_id = fl.id
+      AND fl.name = 'active'
+      AND setting_flags.type = 'active'::type_setting_flags
+      AND setting_flags.value = TRUE
+      AND setting_flags.flag_id = afi.flag_id
+),
+get_or_create_name AS (
+    -- Get or create name in names table
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT x.name, NOW(), NOW()
+    FROM params x
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name as name_value
+),
+get_or_create_description AS (
+    -- Get or create description in descriptions table
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT x.description, NOW(), NOW()
+    FROM params x
+    WHERE x.description IS NOT NULL AND x.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+get_or_create_colors AS (
+    -- Get or create colors in colors table for each color type
+    INSERT INTO colors (hex_code, created_at, updated_at)
+    SELECT DISTINCT color_value, NOW(), NOW()
+    FROM params x
+    CROSS JOIN LATERAL (
+        VALUES 
+            ('primary', x.primary_color),
+            ('accent', x.accent),
+            ('background', x.background),
+            ('surface', x.surface),
+            ('success', x.success),
+            ('warning', x.warning),
+            ('error', x.error),
+            ('sidebar_background', x.sidebar_background),
+            ('sidebar_primary', x.sidebar_primary),
+            ('chart1', x.chart1),
+            ('chart2', x.chart2),
+            ('chart3', x.chart3),
+            ('chart4', x.chart4),
+            ('chart5', x.chart5)
+    ) AS color_types(color_type, color_value)
+    WHERE color_value IS NOT NULL AND color_value != ''
+    ON CONFLICT (hex_code) DO UPDATE SET updated_at = NOW()
+    RETURNING id as color_id, hex_code
+),
+get_or_create_thresholds AS (
+    -- Get or create thresholds in thresholds table for each threshold type
+    INSERT INTO thresholds (value, created_at, updated_at)
+    SELECT DISTINCT threshold_value, NOW(), NOW()
+    FROM params x
+    CROSS JOIN LATERAL (
+        VALUES 
+            ('success', x.success_threshold),
+            ('warning', x.warning_threshold),
+            ('danger', x.danger_threshold)
+    ) AS threshold_types(threshold_type, threshold_value)
+    WHERE threshold_value IS NOT NULL
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as threshold_id, value as threshold_value
+),
+get_guest_login_flag AS (
+    -- Get the guest_login_enabled flag ID
+    SELECT id as flag_id
+    FROM flags
+    WHERE name = 'guest_login_enabled'
+    LIMIT 1
 ),
 insert_new AS (
-    -- Insert new active settings row
-    INSERT INTO settings (
-        active,
-        name,
-        description,
-        primary_color,
-        accent,
-        background,
-        surface,
-        success,
-        warning,
-        error,
-        sidebar_background,
-        sidebar_primary,
-        chart1,
-        chart2,
-        chart3,
-        chart4,
-        chart5,
-        guest_login_enabled,
-        success_threshold,
-        warning_threshold,
-        danger_threshold
-    )
-    SELECT 
-        true,
-        name,
-        description,
-        primary_color,
-        accent,
-        background,
-        surface,
-        success,
-        warning,
-        error,
-        sidebar_background,
-        sidebar_primary,
-        chart1,
-        chart2,
-        chart3,
-        chart4,
-        chart5,
-        guest_login_enabled,
-        success_threshold,
-        warning_threshold,
-        danger_threshold
+    -- Insert new settings row (only id, created_at remain)
+    INSERT INTO settings (created_at)
+    SELECT NOW()
     FROM params
-    RETURNING id as settings_id, name as settings_name
+    RETURNING id as settings_id
+),
+link_name AS (
+    -- Link name to settings
+    INSERT INTO setting_names (setting_id, name_id, created_at, updated_at)
+    SELECT ins.settings_id, gocn.name_id, NOW(), NOW()
+    FROM insert_new ins
+    CROSS JOIN get_or_create_name gocn
+),
+link_description AS (
+    -- Link description to settings (if provided)
+    INSERT INTO setting_descriptions (setting_id, description_id, created_at, updated_at)
+    SELECT ins.settings_id, gocd.description_id, NOW(), NOW()
+    FROM insert_new ins
+    CROSS JOIN get_or_create_description gocd
+    WHERE gocd.description_id IS NOT NULL
+),
+link_colors AS (
+    -- Link colors to settings
+    INSERT INTO setting_colors (setting_id, color_id, type, created_at, updated_at)
+    SELECT ins.settings_id, gocc.color_id, color_type::type_setting_colors, NOW(), NOW()
+    FROM insert_new ins
+    CROSS JOIN params x
+    CROSS JOIN LATERAL (
+        VALUES 
+            ('primary', x.primary_color),
+            ('accent', x.accent),
+            ('background', x.background),
+            ('surface', x.surface),
+            ('success', x.success),
+            ('warning', x.warning),
+            ('error', x.error),
+            ('sidebar_background', x.sidebar_background),
+            ('sidebar_primary', x.sidebar_primary),
+            ('chart1', x.chart1),
+            ('chart2', x.chart2),
+            ('chart3', x.chart3),
+            ('chart4', x.chart4),
+            ('chart5', x.chart5)
+    ) AS color_types(color_type, color_value)
+    JOIN get_or_create_colors gocc ON gocc.hex_code = color_value
+    WHERE color_value IS NOT NULL AND color_value != ''
+    ON CONFLICT (setting_id, color_id, type) DO UPDATE SET updated_at = NOW()
+),
+link_thresholds AS (
+    -- Link thresholds to settings
+    INSERT INTO setting_thresholds (setting_id, threshold_id, type, created_at, updated_at)
+    SELECT ins.settings_id, goct.threshold_id, threshold_type::type_setting_thresholds, NOW(), NOW()
+    FROM insert_new ins
+    CROSS JOIN params x
+    CROSS JOIN LATERAL (
+        VALUES 
+            ('success', x.success_threshold),
+            ('warning', x.warning_threshold),
+            ('danger', x.danger_threshold)
+    ) AS threshold_types(threshold_type, threshold_value)
+    JOIN get_or_create_thresholds goct ON goct.threshold_value = threshold_types.threshold_value
+    WHERE threshold_types.threshold_value IS NOT NULL
+    ON CONFLICT (setting_id, threshold_id, type) DO UPDATE SET updated_at = NOW()
+),
+link_guest_login_flag AS (
+    -- Link guest_login_enabled flag to settings
+    INSERT INTO setting_flags (setting_id, flag_id, type, value, created_at, updated_at)
+    SELECT ins.settings_id, glf.flag_id, 'guest_login_enabled'::type_setting_flags, x.guest_login_enabled, NOW(), NOW()
+    FROM insert_new ins
+    CROSS JOIN get_guest_login_flag glf
+    CROSS JOIN params x
+    ON CONFLICT (setting_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
+),
+settings_with_name AS (
+    -- Get settings_id and name for RETURNING clause
+    SELECT ins.settings_id, gocn.name_value as settings_name
+    FROM insert_new ins
+    CROSS JOIN get_or_create_name gocn
 ),
 manage_setting_providers AS (
     -- Manage provider links based on provider_enabled array
@@ -510,11 +624,26 @@ link_department_settings AS (
     ON CONFLICT (settings_id, department_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
+),
+activate_new_settings AS (
+    -- Activate the new settings row by inserting into setting_flags
+    INSERT INTO setting_flags (setting_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        (SELECT settings_id FROM insert_new LIMIT 1),
+        afi.flag_id,
+        'active'::type_setting_flags,
+        TRUE,
+        NOW(),
+        NOW()
+    FROM active_flag_id afi
+    ON CONFLICT (setting_id, flag_id, type) DO UPDATE SET
+        value = TRUE,
+        updated_at = NOW()
 )
 SELECT 
-    in_new.settings_id,
-    in_new.settings_name,
+    swn.settings_id,
+    swn.settings_name,
     ap.actor_name
-FROM insert_new in_new
+FROM settings_with_name swn
 CROSS JOIN actor_profile ap
 $$;

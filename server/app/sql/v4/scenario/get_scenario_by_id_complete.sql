@@ -36,13 +36,13 @@ STABLE
 AS $$
 SELECT 
     s.id,
-    s.name,
-    s.description,
+    (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
+    (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = s.id AND st.parent_id != s.id LIMIT 1) as root_scenario_id,
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = s.id AND st.parent_id != s.id LIMIT 1) as parent_scenario_id,
     s.created_at,
     s.updated_at,
-    s.active,
+    EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE),
     NULL::uuid as profile_id,
     (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
 FROM scenarios s

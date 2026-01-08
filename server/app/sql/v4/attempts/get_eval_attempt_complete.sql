@@ -108,7 +108,7 @@ WITH params AS (
 actor_profile AS (
     SELECT
         p.id as profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -150,48 +150,48 @@ agent_system_prompt AS (
 eval_info AS (
     SELECT 
         e.id as eval_id,
-        e.name as eval_name,
-        e.description as eval_description,
+        (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
+        (SELECT d.description FROM eval_descriptions ed JOIN descriptions d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
         COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
-        e.dynamic,
+        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'dynamic' AND ef.type = 'dynamic'::type_eval_flags AND ef.value = true) AS dynamic,
         -- Get first rubric and eval_agent from junction table
         -- Get first rubric from runs (when use_groups = false) or groups (when use_groups = true)
         (SELECT rga.rubric_id 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND e.use_groups = false
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND e.use_groups = true
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
-        (SELECT r.name 
+        (SELECT (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND e.use_groups = false
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND e.use_groups = true
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          JOIN rubrics r ON r.id = rga.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_name,
-        (SELECT r.description 
+        (SELECT (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND e.use_groups = false
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND e.use_groups = true
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          JOIN rubrics r ON r.id = rga.rubric_id
@@ -201,11 +201,11 @@ eval_info AS (
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
-             WHERE errga.eval_id = e.id AND e.use_groups = false
+             WHERE errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
              UNION ALL
              SELECT egga.rubric_grade_agent_id, egga.created_at
              FROM eval_groups_rubric_grade_agents egga
-             WHERE egga.eval_id = e.id AND e.use_groups = true
+             WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          ORDER BY combined.created_at 
@@ -307,15 +307,15 @@ runs_with_details AS (
         r.created_at as run_created_at,
         -- Model info
         rm.model_id,
-        m.name as model_name,
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
         -- Agent/persona info
         r.agent_id,
-        a.name as agent_name,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         rper.persona_id,
-        per.name as persona_name,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
         -- Profile info
         rp.profile_id,
-        p.first_name || ' ' || p.last_name as profile_name,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as profile_name,
         -- Grade info (from eval_agent's run, not original run)
         -- Grade is on the eval_agent run (test.run_id), not original run
         (

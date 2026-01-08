@@ -94,7 +94,7 @@ auth_exists_check AS (
 user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -103,15 +103,15 @@ auth_data AS (
         -- Merge draft payload with auth data (draft takes precedence)
         COALESCE(
             (SELECT payload->>'name' FROM draft_payload_data),
-            a.name
+            (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)
         ) as name,
         COALESCE(
             (SELECT payload->>'description' FROM draft_payload_data),
-            a.description
+            (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1)
         ) as description,
         COALESCE(
             (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-            a.active
+            EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
         ) as active,
         CASE 
             WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true

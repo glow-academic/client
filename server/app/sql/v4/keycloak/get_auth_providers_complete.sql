@@ -17,14 +17,14 @@ WITH dept_settings AS (
     FROM settings s
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE (api_get_auth_providers_v4.department_id IS NOT NULL AND ds.department_id = api_get_auth_providers_v4.department_id)
-      AND s.active = true
+      AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     LIMIT 1
 ),
 default_settings AS (
     -- Get default settings (no department links)
     SELECT s.id as settings_id
     FROM settings s
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -61,16 +61,16 @@ settings_auths AS (
     FROM auth a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
     JOIN selected_settings ss ON sa.settings_id = ss.settings_id
-    WHERE a.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
 )
 -- Return providers for the selected settings
 SELECT DISTINCT
     a.id, 
     a.slug, 
     a.auth_type as provider_id, 
-    a.name 
+    (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) 
 FROM auth a
-WHERE a.active = true
+WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
   AND EXISTS (SELECT 1 FROM settings_auths sa WHERE sa.id = a.id)
 ORDER BY a.slug
 $$;

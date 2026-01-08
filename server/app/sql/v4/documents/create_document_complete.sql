@@ -50,36 +50,105 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 new_document_id AS (
     SELECT gen_random_uuid() as document_id
 ),
+-- Insert name into names table and get ID
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name, NOW(), NOW()
+    FROM params
+    WHERE name IS NOT NULL AND name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert description into descriptions table and get ID
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 insert_doc AS (
+    -- Create document (without name/description/active/template columns)
     INSERT INTO documents (
         id, 
-        name,
-        description,
-        active,
-        template,
         created_at, 
         updated_at,
         document_domain_id
     )
     SELECT 
         ndi.document_id,
-        p.name,
-        p.description,
-        true,
-        false,  -- template defaults to false - must be explicitly enabled via update
         NOW(), 
         NOW(),
-        (SELECT d.id FROM domains d JOIN agents a ON a.id = d.agent_id WHERE d.artifact = CAST('document' AS artifacts) AND a.active = true LIMIT 1)
+        (SELECT d.id FROM domains d JOIN agents a ON a.id = d.agent_id WHERE d.artifact = CAST('document' AS artifacts) AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true) LIMIT 1)
     FROM params p
     CROSS JOIN new_document_id ndi
     RETURNING id
+),
+-- Link document to name
+link_document_name AS (
+    INSERT INTO document_names (document_id, name_id, created_at, updated_at)
+    SELECT 
+        id.id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM insert_doc id
+    CROSS JOIN name_resource nr
+    ON CONFLICT (document_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link document to description
+link_document_description AS (
+    INSERT INTO document_descriptions (document_id, description_id, created_at, updated_at)
+    SELECT 
+        id.id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM insert_doc id
+    CROSS JOIN description_resource dr
+    ON CONFLICT (document_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link document active flag
+link_document_active_flag AS (
+    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        id.id,
+        f.id,
+        'active'::type_document_flags,
+        true,
+        NOW(),
+        NOW()
+    FROM insert_doc id
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
+        value = true,
+        updated_at = NOW()
+),
+-- Link document template flag (defaults to false)
+link_document_template_flag AS (
+    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        id.id,
+        f.id,
+        'template'::type_document_flags,
+        false,
+        NOW(),
+        NOW()
+    FROM insert_doc id
+    CROSS JOIN flags f
+    WHERE f.name = 'template'
+    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
+        value = false,
+        updated_at = NOW()
 ),
 insert_upload AS (
     -- Link regular upload if provided
@@ -96,7 +165,7 @@ create_template AS (
     -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
     INSERT INTO templates (name, created_at, updated_at)
     SELECT 
-        p.name as name,
+        (SELECT n.name FROM names n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) as name,
         NOW(),
         NOW()
     FROM params p

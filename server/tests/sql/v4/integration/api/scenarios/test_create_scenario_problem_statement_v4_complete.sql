@@ -17,11 +17,22 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO scenario_problem_statements(scenario_id, problem_statement, active)
-    VALUES (
-        test_create_scenario_problem_statement_v4.input_scenario_id,
-        test_create_scenario_problem_statement_v4.input_problem_statement,
-        true
+    WITH new_problem_statement AS (
+        INSERT INTO problem_statements(name, problem_statement, tool_call_id)
+        SELECT 'Test Problem Statement', test_create_scenario_problem_statement_v4.input_problem_statement, (SELECT id FROM calls LIMIT 1)
+        RETURNING id, problem_statement, created_at
+    ),
+    new_link AS (
+        INSERT INTO scenario_problem_statements(scenario_id, problem_statement_id, active)
+        SELECT test_create_scenario_problem_statement_v4.input_scenario_id, nps.id, true
+        FROM new_problem_statement nps
+        RETURNING scenario_id, problem_statement_id, active, created_at
     )
-    RETURNING scenario_id, problem_statement, active, created_at;
+    SELECT 
+        nl.scenario_id,
+        nps.problem_statement,
+        nl.active,
+        nl.created_at
+    FROM new_link nl
+    JOIN new_problem_statement nps ON nps.id = nl.problem_statement_id;
 $$;

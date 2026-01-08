@@ -18,10 +18,29 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    WITH new_scenario AS (
-        INSERT INTO scenarios(name, active)
-        VALUES ('Test Scenario', true)
-        RETURNING id AS scenario_id, name, active, created_at
+    WITH name_resource AS (
+        INSERT INTO names(name)
+        VALUES ('Test Scenario')
+        RETURNING id
+    ),
+    active_flag AS (
+        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+    ),
+    new_scenario AS (
+        INSERT INTO scenarios DEFAULT VALUES
+        RETURNING id AS scenario_id, created_at
+    ),
+    scenario_name_link AS (
+        INSERT INTO scenario_names(scenario_id, name_id)
+        SELECT ns.scenario_id, nr.id
+        FROM new_scenario ns, name_resource nr
+        RETURNING scenario_id
+    ),
+    scenario_flag_link AS (
+        INSERT INTO scenario_flags(scenario_id, flag_id, type, value)
+        SELECT ns.scenario_id, af.id, 'active'::type_scenario_flags, true
+        FROM new_scenario ns, active_flag af
+        RETURNING scenario_id
     ),
     new_link AS (
         INSERT INTO scenario_parameters(scenario_id, parameter_id, active)
@@ -31,8 +50,8 @@ AS $$
     )
     SELECT 
         ns.scenario_id,
-        ns.name,
-        ns.active,
+        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = ns.scenario_id LIMIT 1) as name,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = ns.scenario_id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
         nl.parameter_id AS parameter_item_id,
         nl.link_active,
         ns.created_at

@@ -118,11 +118,11 @@ rubric_exists_check AS (
 rubric_data AS (
     SELECT 
         r.id as rubric_id,
-        r.name,
-        r.description,
-        r.active,
-        r.points,
-        r.pass_points,
+        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
+        (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1),
+        EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE) as active,
+        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
+        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points,
         r.rubric_domain_id
     FROM rubrics r
     WHERE r.id = (SELECT rubric_id FROM params)
@@ -140,16 +140,16 @@ user_departments AS (
 ),
 valid_depts AS (
     SELECT 
-        array_agg(d.id::text ORDER BY d.title) as dept_ids
+        array_agg(d.id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as dept_ids
     FROM departments d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE pd.profile_id = x.profile_id AND d.active = true
+    WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
 ),
 user_profile AS (
     SELECT 
         role as user_role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -187,7 +187,7 @@ standard_groups_data AS (
         sg.pass_points,
         rsg.position,
         rsg.active,
-        ARRAY_AGG(s.id ORDER BY s.name) as standard_ids
+        ARRAY_AGG(s.id ORDER BY (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)) as standard_ids
     FROM rubric_standard_groups rsg
     JOIN standard_groups sg ON sg.id = rsg.standard_group_id
     LEFT JOIN standards s ON s.standard_group_id = sg.id
@@ -208,10 +208,10 @@ standard_groups_aggregated AS (
 ),
 standards_distinct AS (
     SELECT DISTINCT ON (s.id)
-        s.id, s.name, COALESCE(s.description, '') as description, s.points
+        s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description, s.points
     FROM standards s
     WHERE s.standard_group_id IN (SELECT standard_group_id FROM standard_groups_data)
-    ORDER BY s.id, s.name
+    ORDER BY s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),
 standards_aggregated AS (
     SELECT 
@@ -226,17 +226,17 @@ standards_aggregated AS (
 ),
 departments_distinct AS (
     SELECT DISTINCT ON (d.id)
-        d.id, d.title, COALESCE(d.description, '') as description
+        d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
-    ORDER BY d.id, d.title
+    ORDER BY d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)
 ),
 departments_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (dd.id, dd.title, dd.description)::types.q_get_rubric_detail_v4_department
-                ORDER BY dd.title
+                (dd.id, dd.name, dd.description)::types.q_get_rubric_detail_v4_department
+                ORDER BY dd.name
             ),
             '{}'::types.q_get_rubric_detail_v4_department[]
         ) as departments
@@ -244,44 +244,44 @@ departments_aggregated AS (
 ),
 valid_agents_data AS (
     SELECT 
-        a.id as agent_id,
-        a.name,
-        a.description,
+        agents_table.id as agent_id,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = agents_table.id LIMIT 1) as name,
+        COALESCE((SELECT desc_text.description FROM agent_descriptions adesc JOIN descriptions desc_text ON adesc.description_id = desc_text.id WHERE adesc.agent_id = agents_table.id LIMIT 1), '') as description,
         ARRAY[COALESCE(d.artifact::text, '')] as roles
-    FROM agents a
-    JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('rubric' AS artifacts)
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    FROM agents agents_table
+    JOIN domains d ON d.agent_id = agents_table.id AND d.artifact = CAST('rubric' AS artifacts)
+    LEFT JOIN agent_departments ad ON ad.agent_id = agents_table.id AND ad.active = true
     CROSS JOIN rubric_data rd
-    WHERE a.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = agents_table.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         EXISTS (
             SELECT 1 FROM agent_departments ad2 
-            WHERE ad2.agent_id = a.id 
+            WHERE ad2.agent_id = agents_table.id 
             AND ad2.active = true 
             AND ad2.department_id IN (SELECT department_id FROM user_departments_for_agents)
         )
         OR NOT EXISTS (
             SELECT 1 FROM agent_departments ad3 
-            WHERE ad3.agent_id = a.id 
+            WHERE ad3.agent_id = agents_table.id 
             AND ad3.active = true
         )
-        OR EXISTS (SELECT 1 FROM domains d WHERE d.id = rd.rubric_domain_id AND d.agent_id = a.id)
+        OR EXISTS (SELECT 1 FROM domains d2 WHERE d2.id = rd.rubric_domain_id AND d2.agent_id = agents_table.id)
     )
 ),
 agents_aggregated AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(a.agent_id::text ORDER BY a.name),
+            ARRAY_AGG(vad.agent_id::text ORDER BY vad.name),
             ARRAY[]::text[]
         ) as valid_agent_ids,
         COALESCE(
             ARRAY_AGG(
-                (a.agent_id, a.name, COALESCE(a.description, ''), a.roles)::types.q_get_rubric_detail_v4_agent
-                ORDER BY a.name
+                (vad.agent_id, vad.name, vad.description, vad.roles)::types.q_get_rubric_detail_v4_agent
+                ORDER BY vad.name
             ),
             '{}'::types.q_get_rubric_detail_v4_agent[]
         ) as agents
-    FROM valid_agents_data a
+    FROM valid_agents_data vad
 )
 SELECT 
     rec.rubric_exists,

@@ -52,7 +52,7 @@ run_info AS (
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
              WHERE rpf.run_id = x.run_id AND rpf.active = true LIMIT 1),
             -- Fallback to any active department
-            (SELECT id FROM departments WHERE active = true LIMIT 1)
+            (SELECT id FROM departments d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
         ) as department_id
     FROM params x
     JOIN runs r ON r.id = x.run_id

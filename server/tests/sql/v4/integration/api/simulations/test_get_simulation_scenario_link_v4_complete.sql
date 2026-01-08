@@ -12,7 +12,7 @@ RETURNS TABLE (
     simulation_id uuid,
     scenario_id uuid,
     active boolean,
-    position integer,
+    "position" integer,
     created_at timestamptz
 )
 LANGUAGE sql
@@ -22,7 +22,7 @@ AS $$
         simulation_id,
         scenario_id,
         active,
-        position,
+        "position",
         created_at
     FROM simulation_scenarios
     WHERE simulation_id = test_get_simulation_scenario_link_v4.input_simulation_id

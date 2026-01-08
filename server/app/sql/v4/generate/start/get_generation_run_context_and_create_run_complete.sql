@@ -57,7 +57,7 @@ selected_agent AS (
     FROM agents a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND a.active = true
+      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     LIMIT 1
 ),
 -- Get agent model output modalities
@@ -65,7 +65,8 @@ agent_model_modalities AS (
     SELECT 
         array_agg(mm.modality::text ORDER BY mm.modality) as output_modalities
     FROM agents a
-    JOIN model_modalities mm ON mm.model_id = a.model_id
+    JOIN agent_models am ON am.agent_id = a.id
+    JOIN model_modalities mm ON mm.model_id = am.model_id
     CROSS JOIN params p
     WHERE a.id = p.agent_id
       AND mm.is_input = false

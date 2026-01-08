@@ -133,7 +133,7 @@ best_agent AS (
     FROM agents a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND a.active = true
+      AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile (or NULL if profile_id is NULL)
@@ -171,7 +171,7 @@ profile_primary_department AS (
 default_settings AS (
     SELECT s.id as settings_id
     FROM settings s
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -184,7 +184,7 @@ dept_specific_settings AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
-      AND s.active = true
+      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND sd.active = true
     LIMIT 1
 ),
@@ -192,7 +192,7 @@ settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
     JOIN keys k ON k.id = spk.key_id
-    WHERE spk.active = true AND k.active = true
+    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
@@ -201,14 +201,14 @@ dept_specific_settings_with_keys AS (
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE ppd.department_id IS NOT NULL
-      AND s.active = true AND sd.active = true
+      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM settings s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -223,7 +223,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM settings WHERE active = true LIMIT 1)
+            (SELECT s.id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
         ) as settings_id
 ),
 context_data AS (
@@ -231,7 +231,7 @@ context_data AS (
     SELECT
         -- Agent data
         a.id::text as agent_id,
-        a.name as agent_name,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
@@ -265,7 +265,8 @@ context_data AS (
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
-    INNER JOIN models m ON m.id = a.model_id
+    INNER JOIN agent_models am ON am.agent_id = a.id
+    INNER JOIN models m ON m.id = am.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl
         ON mtl.id = atl.model_temperature_level_id
@@ -277,13 +278,14 @@ context_data AS (
         AND mrl.active = true
         AND mrl.model_id = m.id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    LEFT JOIN providers prov ON prov.id = m.provider_id
+    LEFT JOIN model_providers mp ON mp.model_id = m.id
+    LEFT JOIN providers prov ON prov.id = mp.provider_id
     CROSS JOIN active_settings act_s
     LEFT JOIN setting_provider_keys spk
         ON spk.provider_id = prov.id
         AND spk.settings_id = act_s.settings_id
         AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     LEFT JOIN profile_rate_limit prl ON TRUE
     LEFT JOIN runs_today rt ON TRUE
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)

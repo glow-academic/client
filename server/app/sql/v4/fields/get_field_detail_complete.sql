@@ -84,7 +84,7 @@ user_profile AS (
     SELECT 
         up.id,
         up.role,
-        COALESCE(up.first_name || ' ' || up.last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = up.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = up.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profiles up ON up.id = x.profile_id
 ),
@@ -92,7 +92,7 @@ field_parameters_data AS (
     SELECT 
         f.id as field_id,
         CASE 
-            WHEN f.parameter_id IS NOT NULL THEN ARRAY[f.parameter_id::text]
+            WHEN (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL THEN ARRAY[(SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)::text]
             ELSE ARRAY[]::text[]
         END as parameter_ids
     FROM params x
@@ -101,7 +101,7 @@ field_parameters_data AS (
 field_conditional_parameters_data AS (
     SELECT 
         fcp.field_id,
-        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY p.name) as conditional_parameter_ids
+        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)) as conditional_parameter_ids
     FROM params x
     JOIN field_conditional_parameters fcp ON fcp.field_id = x.field_id AND fcp.active = true
     JOIN parameters p ON p.id = fcp.conditional_parameter_id
@@ -123,8 +123,8 @@ user_departments AS (
 valid_departments_data AS (
     SELECT 
         d.id as department_id,
-        d.title as name,
-        COALESCE(d.description, '') as description
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), '') as description
     FROM departments d
     WHERE d.id IN (SELECT department_id FROM user_departments)
        OR EXISTS (SELECT 1 FROM user_profile WHERE role = 'superadmin'::profile_role)
@@ -132,10 +132,10 @@ valid_departments_data AS (
 valid_parameters_data AS (
     SELECT 
         p.id as parameter_id,
-        p.name,
-        COALESCE(p.description, '') as description
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
     FROM parameters p
-    WHERE p.active = true
+    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 user_has_field_access AS (
     SELECT EXISTS(
@@ -164,15 +164,15 @@ SELECT
     -- Merge draft payload with field data (draft takes precedence)
     COALESCE(
         (SELECT payload->>'name' FROM draft_payload_data),
-        f.name
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
     ) as name,
     COALESCE(
         (SELECT payload->>'description' FROM draft_payload_data),
-        f.description
+        (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
     ) as description,
     COALESCE(
         (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-        f.active
+        EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = TRUE)
     ) as active,
     COALESCE(
         (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds')) FROM draft_payload_data),
@@ -218,7 +218,7 @@ SELECT
 FROM field_exists_check fec
 CROSS JOIN user_profile up
 LEFT JOIN params x ON true
-LEFT JOIN fields f ON f.id = x.field_id AND f.active = true
+LEFT JOIN fields f ON f.id = x.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
 LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
 LEFT JOIN field_parameters_data fpd ON fpd.field_id = f.id
 LEFT JOIN field_conditional_parameters_data fcpd ON fcpd.field_id = f.id

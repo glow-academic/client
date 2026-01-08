@@ -109,7 +109,7 @@ updated_standards AS (
           AND rsg.rubric_id = (SELECT rubric_id FROM params)
           AND rsg.active = true
       )
-    RETURNING s.standard_group_id, s.id as standard_id, s.description
+    RETURNING s.standard_group_id, s.id as standard_id, (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1)
 )
 SELECT 
     COUNT(*)::int as updated_count,

@@ -72,27 +72,119 @@ profile_exists_check AS (
 ),
 actor_profile AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            ''
+        ) as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
+),
+-- Insert/update first_name in names table if provided
+first_name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT first_name, NOW(), NOW()
+    FROM params
+    WHERE first_name IS NOT NULL AND first_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as first_name_id, name
+),
+-- Insert/update last_name in names table if provided
+last_name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT last_name, NOW(), NOW()
+    FROM params
+    WHERE last_name IS NOT NULL AND last_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as last_name_id, name
 ),
 profile_update AS (
     -- Update profile fields (only update non-NULL parameters, keep existing values for NULL)
     UPDATE profiles
     SET 
-        first_name = COALESCE((SELECT first_name FROM params), first_name),
-        last_name = COALESCE((SELECT last_name FROM params), last_name),
         last_login = COALESCE((SELECT last_login FROM params), last_login),
         role = COALESCE((SELECT role FROM params)::profile_role, role),
-        active = COALESCE((SELECT active FROM params), active),
         updated_at = NOW()
     WHERE id = (SELECT target_profile_id FROM params)
       AND EXISTS (SELECT 1 FROM profile_exists_check WHERE profile_exists = true)
-    RETURNING 
-        id,
-        first_name,
-        last_name,
-        first_name || ' ' || last_name as name
+    RETURNING id
+),
+-- Delete old first_name link if updating
+delete_old_first_name AS (
+    DELETE FROM profile_names
+    WHERE profile_id = (SELECT target_profile_id FROM params)
+      AND type = 'first'::type_profile_names
+      AND EXISTS (SELECT 1 FROM profile_update)
+      AND EXISTS (SELECT 1 FROM first_name_resource)
+),
+-- Link new first_name if provided
+link_profile_first_name AS (
+    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    SELECT 
+        pu.id,
+        fnr.first_name_id,
+        'first'::type_profile_names,
+        NOW(),
+        NOW()
+    FROM profile_update pu
+    CROSS JOIN first_name_resource fnr
+    WHERE EXISTS (SELECT 1 FROM profile_update)
+    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+),
+-- Delete old last_name link if updating
+delete_old_last_name AS (
+    DELETE FROM profile_names
+    WHERE profile_id = (SELECT target_profile_id FROM params)
+      AND type = 'last'::type_profile_names
+      AND EXISTS (SELECT 1 FROM profile_update)
+      AND EXISTS (SELECT 1 FROM last_name_resource)
+),
+-- Link new last_name if provided
+link_profile_last_name AS (
+    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    SELECT 
+        pu.id,
+        lnr.last_name_id,
+        'last'::type_profile_names,
+        NOW(),
+        NOW()
+    FROM profile_update pu
+    CROSS JOIN last_name_resource lnr
+    WHERE EXISTS (SELECT 1 FROM profile_update)
+    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+),
+-- Update active flag if provided
+update_profile_active_flag AS (
+    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        pu.id,
+        f.id,
+        'active'::type_profile_flags,
+        (SELECT active FROM params),
+        NOW(),
+        NOW()
+    FROM profile_update pu
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND EXISTS (SELECT 1 FROM profile_update)
+      AND (SELECT active FROM params) IS NOT NULL
+    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+        value = (SELECT active FROM params),
+        updated_at = NOW()
+),
+-- Get profile with names for return
+profile_with_names AS (
+    SELECT 
+        pu.id,
+        COALESCE(
+            (SELECT fnr.name FROM first_name_resource fnr WHERE EXISTS (SELECT 1 FROM first_name_resource)),
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = pu.id AND pn.type = 'first' LIMIT 1)
+        ) as first_name,
+        COALESCE(
+            (SELECT lnr.name FROM last_name_resource lnr WHERE EXISTS (SELECT 1 FROM last_name_resource)),
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = pu.id AND pn.type = 'last' LIMIT 1)
+        ) as last_name
+    FROM profile_update pu
 ),
 insert_activity AS (
     -- Insert into profile_activity if last_active is provided
@@ -220,13 +312,13 @@ department_insert AS (
 -- Return profile info (always returns a row if profile exists)
 SELECT 
     pec.profile_exists::boolean as profile_exists,
-    pu.id as profile_id,
-    pu.first_name,
-    pu.last_name,
-    pu.name,
+    pwn.id as profile_id,
+    pwn.first_name,
+    pwn.last_name,
+    COALESCE(pwn.first_name || ' ' || pwn.last_name, pwn.first_name, pwn.last_name, '') as name,
     ap.actor_name
 FROM profile_exists_check pec
 CROSS JOIN actor_profile ap
-LEFT JOIN profile_update pu ON pec.profile_exists = true
+LEFT JOIN profile_with_names pwn ON pec.profile_exists = true
 LIMIT 1
 $$;

@@ -32,12 +32,29 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-WITH update_profile AS (
-    -- Update profile to active
-    UPDATE profiles 
-    SET active = true
-    WHERE id = profile_id
-    RETURNING id::uuid as profile_id
+WITH get_active_flag AS (
+    -- Get the active flag ID
+    SELECT id as flag_id
+    FROM flags
+    WHERE name = 'active'
+    LIMIT 1
+),
+insert_or_update_flag AS (
+    -- Insert or update profile_flags to set active = true
+    INSERT INTO profile_flags (profile_id, flag_id, type, value)
+    SELECT 
+        profile_id,
+        (SELECT flag_id FROM get_active_flag),
+        'active'::type_profile_flags,
+        true
+    FROM get_active_flag
+    ON CONFLICT (profile_id, flag_id, type) 
+    DO UPDATE SET value = true
+    RETURNING profile_id::uuid as profile_id
+),
+update_profile AS (
+    -- Return profile_id if flag was set
+    SELECT profile_id FROM insert_or_update_flag
 ),
 insert_activity AS (
     -- Insert activity record

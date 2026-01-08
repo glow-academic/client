@@ -44,7 +44,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -78,17 +78,111 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
+-- Insert/update name in names table
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name, NOW(), NOW()
+    FROM params
+    WHERE name IS NOT NULL AND name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert/update description in descriptions table
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 update_agent AS (
+    -- Update agent (without name/description/model_id/active columns)
     UPDATE agents
     SET 
-        name = x.name,
-        description = x.description,
-        model_id = x.model_id,
-        active = x.active,
         updated_at = NOW()
     FROM params x
     WHERE agents.id = x.agent_id
     RETURNING agents.id::text as agent_id
+),
+-- Remove old name links
+remove_old_name AS (
+    DELETE FROM agent_names
+    WHERE agent_id = (SELECT agent_id FROM params)
+      AND name_id NOT IN (SELECT name_id FROM name_resource)
+),
+-- Link agent to new name
+link_agent_name AS (
+    INSERT INTO agent_names (agent_id, name_id, created_at, updated_at)
+    SELECT 
+        ua.agent_id::uuid,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM update_agent ua
+    CROSS JOIN name_resource nr
+    ON CONFLICT (agent_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old description links
+remove_old_description AS (
+    DELETE FROM agent_descriptions
+    WHERE agent_id = (SELECT agent_id FROM params)
+      AND description_id NOT IN (SELECT description_id FROM description_resource)
+),
+-- Link agent to new description
+link_agent_description AS (
+    INSERT INTO agent_descriptions (agent_id, description_id, created_at, updated_at)
+    SELECT 
+        ua.agent_id::uuid,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM update_agent ua
+    CROSS JOIN description_resource dr
+    ON CONFLICT (agent_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old model links
+remove_old_model AS (
+    DELETE FROM agent_models
+    WHERE agent_id = (SELECT agent_id FROM params)
+      AND model_id != (SELECT model_id FROM params)
+),
+-- Link agent to new model
+link_agent_model AS (
+    INSERT INTO agent_models (agent_id, model_id, created_at, updated_at)
+    SELECT 
+        ua.agent_id::uuid,
+        (SELECT model_id FROM params),
+        NOW(),
+        NOW()
+    FROM update_agent ua
+    WHERE (SELECT model_id FROM params) IS NOT NULL
+    ON CONFLICT (agent_id, model_id) DO UPDATE SET updated_at = NOW()
+),
+-- Update agent active flag
+update_agent_active_flag AS (
+    UPDATE agent_flags SET
+        value = (SELECT active FROM params),
+        updated_at = NOW()
+    WHERE agent_id = (SELECT agent_id FROM params)
+      AND type = 'active'::type_agent_flags
+),
+insert_agent_active_flag AS (
+    INSERT INTO agent_flags (agent_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        ua.agent_id::uuid,
+        f.id,
+        'active'::type_agent_flags,
+        (SELECT active FROM params),
+        NOW(),
+        NOW()
+    FROM update_agent ua
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND NOT EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = ua.agent_id::uuid AND af.type = 'active'::type_agent_flags)
+    ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
+        value = (SELECT active FROM params),
+        updated_at = NOW()
 ),
 update_domain_link AS (
     -- Update domains link (delete old, insert new)

@@ -73,7 +73,7 @@ user_departments AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
 ),
@@ -96,15 +96,15 @@ agent_departments_data AS (
 filtered_agents AS (
     SELECT 
         a.id,
-        a.name,
-        a.description,
-        a.model_id,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
+        (SELECT m.id FROM agent_models am JOIN models m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
         COALESCE(d.artifact::text, '') as role,  -- Derive from domains
         a.updated_at
     FROM agents a
     LEFT JOIN domains d ON d.agent_id = a.id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    GROUP BY a.id, a.name, a.description, a.model_id, d.artifact, a.updated_at
+    GROUP BY a.id, d.artifact, a.updated_at
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
@@ -126,8 +126,8 @@ SELECT
                  WHEN up.role = 'superadmin'::profile_role THEN true
                  ELSE false
              END,
-             m.name,
-             COALESCE(m.description, ''),
+             (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+             COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''),
              up.actor_name
             )::types.q_list_agents_v4_agent
             ORDER BY fa.name

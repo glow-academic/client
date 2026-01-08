@@ -13,8 +13,8 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT 
-        id as department_id,
-        title
-    FROM departments
+        d.id as department_id,
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title
+    FROM departments d
     LIMIT 1;
 $$;

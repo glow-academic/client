@@ -55,7 +55,7 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         p.id as profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -64,7 +64,7 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM settings s
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -88,7 +88,7 @@ dept_specific_settings AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN resolve_department_id rdi ON sd.department_id = rdi.resolved_department_id
     WHERE rdi.resolved_department_id IS NOT NULL
-      AND s.active = true 
+      AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -98,29 +98,29 @@ selected_settings AS (
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM settings WHERE active = true LIMIT 1)
+            (SELECT s.id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
         ) as settings_id
 )
 SELECT 
-    d.name::text as document_name,
+    (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)::text as document_name,
     ap.actor_name::text as actor_name,
     u.file_path::text as file_path,
     ds.schema_id,
     -- Settings fields
-    s.primary_color::text as settings_primary_color,
-    s.accent::text as settings_accent,
-    s.background::text as settings_background,
-    s.surface::text as settings_surface,
-    s.success::text as settings_success,
-    s.warning::text as settings_warning,
-    s.error::text as settings_error,
-    s.sidebar_background::text as settings_sidebar_background,
-    s.sidebar_primary::text as settings_sidebar_primary,
-    s.chart1::text as settings_chart1,
-    s.chart2::text as settings_chart2,
-    s.chart3::text as settings_chart3,
-    s.chart4::text as settings_chart4,
-    s.chart5::text as settings_chart5
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'primary'::type_setting_colors LIMIT 1), '#171717')::text as settings_primary_color,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'accent'::type_setting_colors LIMIT 1), '#f5f5f5')::text as settings_accent,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'background'::type_setting_colors LIMIT 1), '#ffffff')::text as settings_background,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'surface'::type_setting_colors LIMIT 1), '#ffffff')::text as settings_surface,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'success'::type_setting_colors LIMIT 1), '#009e34')::text as settings_success,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'warning'::type_setting_colors LIMIT 1), '#ff9800')::text as settings_warning,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'error'::type_setting_colors LIMIT 1), '#d32f2f')::text as settings_error,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'sidebar_background'::type_setting_colors LIMIT 1), '#171717')::text as settings_sidebar_background,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'sidebar_primary'::type_setting_colors LIMIT 1), '#f5f5f5')::text as settings_sidebar_primary,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'chart1'::type_setting_colors LIMIT 1), '#1976d2')::text as settings_chart1,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'chart2'::type_setting_colors LIMIT 1), '#388e3c')::text as settings_chart2,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'chart3'::type_setting_colors LIMIT 1), '#f57c00')::text as settings_chart3,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'chart4'::type_setting_colors LIMIT 1), '#7b1fa2')::text as settings_chart4,
+    COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = ss.settings_id AND sc.type = 'chart5'::type_setting_colors LIMIT 1), '#c2185b')::text as settings_chart5
 FROM params x
 JOIN documents d ON d.id = x.document_id
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
@@ -131,7 +131,6 @@ INNER JOIN uploads u ON u.id = hu.upload_id
 LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
 CROSS JOIN actor_profile ap
 CROSS JOIN selected_settings ss
-LEFT JOIN settings s ON s.id = ss.settings_id
 ORDER BY dt.created_at DESC
 LIMIT 1
 $$;

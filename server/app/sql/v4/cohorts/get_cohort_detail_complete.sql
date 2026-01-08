@@ -178,9 +178,9 @@ cohort_department_access_check AS (
 cohort_data AS (
     SELECT 
         c.id,
-        COALESCE((SELECT payload->>'title' FROM draft_payload_data), c.title, '') as title,
-        COALESCE((SELECT payload->>'description' FROM draft_payload_data), c.description, '') as description,
-        COALESCE((SELECT (payload->>'active')::boolean FROM draft_payload_data), c.active, true) as active,
+        COALESCE((SELECT payload->>'title' FROM draft_payload_data), (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), '') as title,
+        COALESCE((SELECT payload->>'description' FROM draft_payload_data), (SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
+        COALESCE((SELECT (payload->>'active')::boolean FROM draft_payload_data), EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE), true) as active,
         c.updated_at,
         COALESCE(
             CASE 
@@ -218,8 +218,8 @@ cohort_simulation_stats AS (
         cs.simulation_id,
         cs.active,
         cs.position,
-        s.title as name,
-        COALESCE(s.description, '') as description,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -261,14 +261,14 @@ cohort_simulation_stats AS (
             JOIN chats c_check ON c_check.id = cg_check.chat_id
             WHERE r_check.id = scg.run_id
         )
-    GROUP BY cs.simulation_id, cs.active, cs.position, s.title, s.description
+    GROUP BY cs.simulation_id, cs.active, cs.position, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1)
 ),
 valid_departments AS (
-    SELECT DISTINCT d.id, d.title as name, d.description
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
     FROM params x
     JOIN departments d ON true
     JOIN profile_departments pd ON pd.department_id = d.id
-    WHERE pd.profile_id = x.profile_id AND d.active = true
+    WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
 ),
 valid_dept_ids AS (
     SELECT id FROM valid_departments
@@ -280,7 +280,7 @@ cohort_is_default AS (
 valid_simulations AS (
     SELECT DISTINCT s.id
     FROM params x
-    JOIN simulations s ON s.active = true
+    JOIN simulations s ON EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     CROSS JOIN cohort_is_default cid
     GROUP BY s.id, cid.is_default
@@ -297,7 +297,7 @@ valid_simulations AS (
 cross_dept_simulations AS (
     SELECT DISTINCT s.id::text as simulation_id
     FROM simulations s
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
         AND NOT EXISTS (
             SELECT 1 FROM simulation_departments sd2 
             WHERE sd2.simulation_id = s.id AND sd2.active = true
@@ -309,7 +309,7 @@ department_simulation_ids AS (
         ARRAY_AGG(DISTINCT s.id::text) FILTER (WHERE s.id IS NOT NULL) as simulation_ids
     FROM valid_departments d
     LEFT JOIN simulation_departments sd ON sd.department_id = d.id AND sd.active = true
-    LEFT JOIN simulations s ON s.id = sd.simulation_id AND s.active = true
+    LEFT JOIN simulations s ON s.id = sd.simulation_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     GROUP BY d.id
 ),
 department_simulation_ids_with_cross AS (
@@ -322,8 +322,8 @@ department_simulation_ids_with_cross AS (
 simulation_mapping_data AS (
     SELECT 
         s.id as simulation_id,
-        s.title as name,
-        COALESCE(s.description, '') as description,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -410,7 +410,7 @@ department_mapping_data AS (
 user_profile_for_cohort AS (
     SELECT 
         role,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 )

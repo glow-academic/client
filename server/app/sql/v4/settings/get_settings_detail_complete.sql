@@ -207,7 +207,7 @@ settings_exists_check AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -215,10 +215,10 @@ settings_auths_with_items AS (
     -- Get linked auths for this settings with nested auth_items
     SELECT 
         a.id as auth_id,
-        a.name,
-        COALESCE(a.description, '') as description,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
         a.slug,
-        a.active,
+        EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE) AS active,
         COALESCE(
             ARRAY_AGG(
                 (ai.id, ai.name, COALESCE(ai.description, ''), ai.encrypted)::types.q_get_settings_detail_v4_auth_item
@@ -228,10 +228,10 @@ settings_auths_with_items AS (
         ) as auth_items
     FROM settings s
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auth a ON a.id = sa.auth_id AND a.active = true
+    JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     LEFT JOIN auth_items ai ON ai.auth_id = a.id
     WHERE s.id = (SELECT settings_id FROM params)
-    GROUP BY a.id, a.name, a.description, a.slug, a.active
+    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), a.slug, EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
 ),
 settings_auths_data AS (
     -- Aggregate linked auths into array
@@ -251,15 +251,15 @@ settings_providers_data AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (p.id, p.name, COALESCE(p.description, ''), p.value, p.active)::types.q_get_settings_detail_v4_provider
-                ORDER BY p.name
+                (p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''), p.value, EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE))::types.q_get_settings_detail_v4_provider
+                ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
             ),
             '{}'::types.q_get_settings_detail_v4_provider[]
         ) as providers,
         ARRAY_AGG(p.id::text ORDER BY p.id::text) FILTER (WHERE p.id IS NOT NULL) as provider_ids
     FROM settings s
     JOIN setting_providers sp ON sp.settings_id = s.id AND sp.active = true
-    JOIN providers p ON p.id = sp.provider_id AND p.active = true
+    JOIN providers p ON p.id = sp.provider_id AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     WHERE s.id = (SELECT settings_id FROM params)
 ),
 all_providers_data AS (
@@ -267,22 +267,22 @@ all_providers_data AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (p.id, p.name, COALESCE(p.description, ''), p.value, p.active)::types.q_get_settings_detail_v4_provider
-                ORDER BY p.name
+                (p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''), p.value, EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE))::types.q_get_settings_detail_v4_provider
+                ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
             ),
             '{}'::types.q_get_settings_detail_v4_provider[]
         ) as all_providers
     FROM providers p
-    WHERE p.active = true
+    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 all_auths_with_items AS (
     -- Get ALL auths (not just linked ones) with nested auth_items
     SELECT 
         a.id as auth_id,
-        a.name,
-        COALESCE(a.description, '') as description,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
         a.slug,
-        a.active,
+        EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE) AS active,
         COALESCE(
             ARRAY_AGG(
                 (ai.id, ai.name, COALESCE(ai.description, ''), ai.encrypted)::types.q_get_settings_detail_v4_auth_item
@@ -292,8 +292,8 @@ all_auths_with_items AS (
         ) as auth_items
     FROM auth a
     LEFT JOIN auth_items ai ON ai.auth_id = a.id
-    WHERE a.active = true
-    GROUP BY a.id, a.name, a.description, a.slug, a.active
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), a.slug, EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
 ),
 all_auths_data AS (
     -- Aggregate all auths into array
@@ -378,7 +378,7 @@ settings_default_account_data AS (
     -- Get default admin/superadmin account for this settings
     SELECT 
         sda.profile_id as default_admin_profile_id,
-        p.first_name || ' ' || p.last_name as default_admin_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as default_admin_name
     FROM settings_default_account sda
     JOIN profiles p ON p.id = sda.profile_id
     WHERE sda.settings_id = (SELECT settings_id FROM params) AND sda.active = true
@@ -388,7 +388,7 @@ settings_default_guest_data AS (
     -- Get default guest account for this settings
     SELECT 
         sdg.profile_id as default_guest_profile_id,
-        p.first_name || ' ' || p.last_name as default_guest_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as default_guest_name
     FROM settings_default_guest sdg
     JOIN profiles p ON p.id = sdg.profile_id
     WHERE sdg.settings_id = (SELECT settings_id FROM params) AND sdg.active = true
@@ -408,114 +408,114 @@ SELECT
     -- Merge draft payload over existing settings data if draft_id provided
     COALESCE(
         (SELECT payload->>'active' FROM draft_payload_data),
-        s.active::text,
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)::text,
         'true'
     )::boolean as active,
     COALESCE(
         (SELECT payload->>'name' FROM draft_payload_data),
-        s.name,
+        (SELECT n.name FROM setting_names sn JOIN names n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1),
         ''
     ) as name,
     COALESCE(
         (SELECT payload->>'description' FROM draft_payload_data),
-        s.description,
+        (SELECT d.description FROM setting_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
         ''
     ) as description,
     COALESCE(
         (SELECT payload->>'primary_color' FROM draft_payload_data),
         (SELECT payload->>'primaryColor' FROM draft_payload_data),
-        s.primary_color,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::type_setting_colors LIMIT 1),
         '#171717'
     ) as primary_color,
     COALESCE(
         (SELECT payload->>'accent' FROM draft_payload_data),
-        s.accent,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::type_setting_colors LIMIT 1),
         '#f5f5f5'
     ) as accent,
     COALESCE(
         (SELECT payload->>'background' FROM draft_payload_data),
-        s.background,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'background'::type_setting_colors LIMIT 1),
         '#ffffff'
     ) as background,
     COALESCE(
         (SELECT payload->>'surface' FROM draft_payload_data),
-        s.surface,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'surface'::type_setting_colors LIMIT 1),
         '#ffffff'
     ) as surface,
     COALESCE(
         (SELECT payload->>'success' FROM draft_payload_data),
-        s.success,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'success'::type_setting_colors LIMIT 1),
         '#009e34'
     ) as success,
     COALESCE(
         (SELECT payload->>'warning' FROM draft_payload_data),
-        s.warning,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'warning'::type_setting_colors LIMIT 1),
         '#ea8100'
     ) as warning,
     COALESCE(
         (SELECT payload->>'error' FROM draft_payload_data),
-        s.error,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'error'::type_setting_colors LIMIT 1),
         '#e7000b'
     ) as error,
     COALESCE(
         (SELECT payload->>'sidebar_background' FROM draft_payload_data),
         (SELECT payload->>'sidebarBackground' FROM draft_payload_data),
-        s.sidebar_background,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_background'::type_setting_colors LIMIT 1),
         '#fafafa'
     ) as sidebar_background,
     COALESCE(
         (SELECT payload->>'sidebar_primary' FROM draft_payload_data),
         (SELECT payload->>'sidebarPrimary' FROM draft_payload_data),
-        s.sidebar_primary,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_primary'::type_setting_colors LIMIT 1),
         '#171717'
     ) as sidebar_primary,
     COALESCE(
         (SELECT payload->>'chart1' FROM draft_payload_data),
-        s.chart1,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart1'::type_setting_colors LIMIT 1),
         '#f54900'
     ) as chart1,
     COALESCE(
         (SELECT payload->>'chart2' FROM draft_payload_data),
-        s.chart2,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart2'::type_setting_colors LIMIT 1),
         '#009689'
     ) as chart2,
     COALESCE(
         (SELECT payload->>'chart3' FROM draft_payload_data),
-        s.chart3,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart3'::type_setting_colors LIMIT 1),
         '#104e64'
     ) as chart3,
     COALESCE(
         (SELECT payload->>'chart4' FROM draft_payload_data),
-        s.chart4,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart4'::type_setting_colors LIMIT 1),
         '#ffb900'
     ) as chart4,
     COALESCE(
         (SELECT payload->>'chart5' FROM draft_payload_data),
-        s.chart5,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart5'::type_setting_colors LIMIT 1),
         '#fe9a00'
     ) as chart5,
     COALESCE(
         (SELECT (payload->>'guest_login_enabled')::boolean FROM draft_payload_data),
         (SELECT (payload->>'guestLoginEnabled')::boolean FROM draft_payload_data),
-        s.guest_login_enabled,
+        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'guest_login_enabled' AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE),
         true
     ) as guest_login_enabled,
     COALESCE(
         (SELECT (payload->>'success_threshold')::integer FROM draft_payload_data),
         (SELECT (payload->>'successThreshold')::integer FROM draft_payload_data),
-        s.success_threshold,
+        (SELECT p.value FROM setting_thresholds st JOIN thresholds p ON st.threshold_id = p.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1),
         85
     ) as success_threshold,
     COALESCE(
         (SELECT (payload->>'warning_threshold')::integer FROM draft_payload_data),
         (SELECT (payload->>'warningThreshold')::integer FROM draft_payload_data),
-        s.warning_threshold,
+        (SELECT p.value FROM setting_thresholds st JOIN thresholds p ON st.threshold_id = p.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1),
         80
     ) as warning_threshold,
     COALESCE(
         (SELECT (payload->>'danger_threshold')::integer FROM draft_payload_data),
         (SELECT (payload->>'dangerThreshold')::integer FROM draft_payload_data),
-        s.danger_threshold,
+        (SELECT p.value FROM setting_thresholds st JOIN thresholds p ON st.threshold_id = p.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1),
         70
     ) as danger_threshold,
     COALESCE(sad.auth_ids, ARRAY[]::text[]) as auth_ids,

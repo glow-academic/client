@@ -53,21 +53,78 @@ provider_exists_check AS (
 ),
 actor_profile AS (
     SELECT 
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
+),
+get_or_create_name AS (
+    -- Get or create name in names table
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT x.name, NOW(), NOW()
+    FROM params x
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+get_or_create_description AS (
+    -- Get or create description in descriptions table
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT x.description, NOW(), NOW()
+    FROM params x
+    WHERE x.description IS NOT NULL AND x.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+get_active_flag AS (
+    -- Get the active flag ID
+    SELECT id as flag_id
+    FROM flags
+    WHERE name = 'active'
+    LIMIT 1
 ),
 update_provider AS (
     UPDATE providers
     SET 
-        name = x.name,
-        description = x.description,
         value = x.value,
-        active = x.active,
         updated_at = NOW()
     FROM params x
     WHERE id = x.provider_id
     RETURNING id as provider_id
+),
+update_name AS (
+    -- Update provider name (delete old, insert new)
+    DELETE FROM provider_names
+    WHERE provider_id = (SELECT provider_id FROM params)
+    RETURNING provider_id
+),
+link_name AS (
+    -- Link new name to provider
+    INSERT INTO provider_names (provider_id, name_id, created_at, updated_at)
+    SELECT up.provider_id, gocn.name_id, NOW(), NOW()
+    FROM update_provider up
+    CROSS JOIN get_or_create_name gocn
+),
+update_description AS (
+    -- Update provider description (delete old, insert new if provided)
+    DELETE FROM provider_descriptions
+    WHERE provider_id = (SELECT provider_id FROM params)
+    RETURNING provider_id
+),
+link_description AS (
+    -- Link new description to provider (if provided)
+    INSERT INTO provider_descriptions (provider_id, description_id, created_at, updated_at)
+    SELECT up.provider_id, gocd.description_id, NOW(), NOW()
+    FROM update_provider up
+    CROSS JOIN get_or_create_description gocd
+    WHERE gocd.description_id IS NOT NULL
+),
+update_flag AS (
+    -- Update active flag
+    INSERT INTO provider_flags (provider_id, flag_id, type, value, created_at, updated_at)
+    SELECT up.provider_id, gaf.flag_id, 'active'::type_provider_flags, x.active, NOW(), NOW()
+    FROM update_provider up
+    CROSS JOIN get_active_flag gaf
+    CROSS JOIN params x
+    ON CONFLICT (provider_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
 ),
 update_endpoint AS (
     -- Update or create endpoint if base_url provided

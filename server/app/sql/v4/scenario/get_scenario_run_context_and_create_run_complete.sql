@@ -153,7 +153,7 @@ best_agent AS (
     FROM agents a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-    AND a.active = true
+    AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile
@@ -189,7 +189,7 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM settings s
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -203,7 +203,7 @@ dept_specific_settings AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
-      AND s.active = true 
+      AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -212,7 +212,7 @@ settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
     JOIN keys k ON k.id = spk.key_id
-    WHERE spk.active = true AND k.active = true
+    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
@@ -222,7 +222,7 @@ dept_specific_settings_with_keys AS (
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE ppd.department_id IS NOT NULL
-      AND s.active = true AND sd.active = true
+      AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
@@ -230,7 +230,7 @@ default_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM settings s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE s.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -247,7 +247,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),  -- Any with keys
             (SELECT settings_id FROM dept_specific_settings),  -- Original fallback (no keys available)
             (SELECT settings_id FROM default_settings),  -- Original fallback (no keys available)
-            (SELECT id FROM settings WHERE active = true LIMIT 1)  -- Last resort
+            (SELECT id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)  -- Last resort
         ) as settings_id
 ),
 context_data AS (
@@ -255,7 +255,7 @@ context_data AS (
     SELECT 
         -- Agent data (via department_agents junction for 'scenario' role)
         a.id::text as agent_id,
-        a.name as agent_name,
+        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(d.artifact::text, '') as agent_role,  -- Derive from domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
@@ -275,14 +275,14 @@ context_data AS (
         
         -- Persona data (nullable)
         pers.id::text as persona_id,
-        pers.name as persona_name,
-        pers.description as persona_description,
+        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = pers.id LIMIT 1) as persona_name,
+        (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = pers.id LIMIT 1) as persona_description,
         
         -- Documents data (aggregated as composite type array)
         -- Includes template file paths for template documents (COALESCE pattern)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), d.template, ds.schema_id)::types.i_get_scenario_run_context_and_create_run_v4_document
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'template' AND df.type = 'template'::type_document_flags AND df.value = TRUE), ds.schema_id)::types.i_get_scenario_run_context_and_create_run_v4_document
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document[]
             FROM documents d
@@ -303,7 +303,7 @@ context_data AS (
         -- Includes all parent document info needed for child creation
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, d.name, COALESCE(d.description, ''), d.document_domain_id::text, ds.schema_id, dh.html_id::text, u.file_path)::types.i_get_scenario_run_context_and_create_run_v4_document_template
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), d.document_domain_id::text, ds.schema_id, dh.html_id::text, u.file_path)::types.i_get_scenario_run_context_and_create_run_v4_document_template
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document_template[]
             FROM documents d
@@ -314,7 +314,7 @@ context_data AS (
             INNER JOIN uploads u ON u.id = hu.upload_id
             LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
             WHERE d.id = ANY(p.document_ids)
-              AND d.template = true
+              AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'template' AND df.type = 'template'::type_document_flags AND df.value = TRUE)
             ),
             ARRAY[]::types.i_get_scenario_run_context_and_create_run_v4_document_template[]
         ) as document_templates,
@@ -322,12 +322,13 @@ context_data AS (
         -- Parameter items data (aggregated as composite type array with parameter info)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (f.name, f.description, pa.name, pa.description)::types.i_get_scenario_run_context_and_create_run_v4_parameter_item
+                ((SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1), (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = pa.id LIMIT 1))::types.i_get_scenario_run_context_and_create_run_v4_parameter_item
                 ORDER BY array_position(p.parameter_item_ids, f.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_parameter_item[]
             FROM fields f
-            JOIN parameters pa ON pa.id = f.parameter_id AND pa.active = true
+            JOIN parameters pa ON pa.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) 
             WHERE f.id = ANY(p.parameter_item_ids)
+            AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = pa.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
             ),
             ARRAY[]::types.i_get_scenario_run_context_and_create_run_v4_parameter_item[]
         ) as parameter_items,
@@ -341,20 +342,20 @@ context_data AS (
         p.profile_id::text as profile_id,
         
         -- Theme tokens from settings (for Jinja2 rendering)
-        s.primary_color,
-        s.accent,
-        s.background,
-        s.surface,
-        s.success,
-        s.warning,
-        s.error,
-        s.sidebar_background,
-        s.sidebar_primary,
-        s.chart1,
-        s.chart2,
-        s.chart3,
-        s.chart4,
-        s.chart5
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::type_setting_colors LIMIT 1) as primary_color,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::type_setting_colors LIMIT 1) as accent,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'background'::type_setting_colors LIMIT 1) as background,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'surface'::type_setting_colors LIMIT 1) as surface,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'success'::type_setting_colors LIMIT 1) as success,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'warning'::type_setting_colors LIMIT 1) as warning,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'error'::type_setting_colors LIMIT 1) as error,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_background'::type_setting_colors LIMIT 1) as sidebar_background,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'sidebar_primary'::type_setting_colors LIMIT 1) as sidebar_primary,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart1'::type_setting_colors LIMIT 1) as chart1,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart2'::type_setting_colors LIMIT 1) as chart2,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart3'::type_setting_colors LIMIT 1) as chart3,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart4'::type_setting_colors LIMIT 1) as chart4,
+        (SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'chart5'::type_setting_colors LIMIT 1) as chart5
 
     FROM best_agent ba
     INNER JOIN agents a ON a.id = ba.agent_id
@@ -367,7 +368,8 @@ context_data AS (
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     -- Use department-specific prompt if available, otherwise use default
     LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
-    INNER JOIN models m ON m.id = a.model_id
+    INNER JOIN agent_models am ON am.agent_id = a.id
+    INNER JOIN models m ON m.id = am.model_id
     -- Join temperature from junction table
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
@@ -377,12 +379,13 @@ context_data AS (
     LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
     LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN providers p_prov ON p_prov.id = m.provider_id
+    LEFT JOIN model_providers mp_prov ON mp_prov.model_id = m.id
+    LEFT JOIN providers p_prov ON p_prov.id = mp_prov.provider_id
     CROSS JOIN active_settings act_s_key
     LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
         AND spk.settings_id = act_s_key.settings_id 
         AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND k.active = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     LEFT JOIN personas pers ON pers.id = p.persona_id
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt

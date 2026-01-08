@@ -56,7 +56,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM profiles p
     JOIN params x ON p.id = x.profile_id
 ),
@@ -81,18 +81,87 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
+-- Insert name into names table and get ID
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name, NOW(), NOW()
+    FROM params
+    WHERE name IS NOT NULL AND name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert description into descriptions table and get ID
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 new_agent AS (
-    INSERT INTO agents (name, description, model_id, active, created_at, updated_at)
+    -- Create agent (without model_id/active columns)
+    INSERT INTO agents (created_at, updated_at)
     SELECT 
-        x.name,
-        x.description,
-        x.model_id,
-        x.active,
         NOW(), 
         NOW()
-    FROM params x
-    JOIN assert_permissions ap ON TRUE
+    FROM assert_permissions ap
     RETURNING id::text as agent_id
+),
+-- Link agent to model
+link_agent_model AS (
+    INSERT INTO agent_models (agent_id, model_id, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        x.model_id,
+        NOW(),
+        NOW()
+    FROM new_agent na
+    CROSS JOIN params x
+    WHERE x.model_id IS NOT NULL
+    ON CONFLICT (agent_id, model_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link agent active flag
+link_agent_active_flag AS (
+    INSERT INTO agent_flags (agent_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        f.id,
+        'active'::type_agent_flags,
+        x.active,
+        NOW(),
+        NOW()
+    FROM new_agent na
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+-- Link agent to name
+link_agent_name AS (
+    INSERT INTO agent_names (agent_id, name_id, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM new_agent na
+    CROSS JOIN name_resource nr
+    ON CONFLICT (agent_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link agent to description
+link_agent_description AS (
+    INSERT INTO agent_descriptions (agent_id, description_id, created_at, updated_at)
+    SELECT 
+        na.agent_id::uuid,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM new_agent na
+    CROSS JOIN description_resource dr
+    ON CONFLICT (agent_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
 link_domain AS (
     -- Link agent to artifact via domains
@@ -118,10 +187,11 @@ new_prompt AS (
 selected_prompt_id AS (
     -- Use provided prompt_id or newly created prompt_id (only return row if prompt exists)
     SELECT COALESCE(
-        (SELECT prompt_id::text FROM params),
+        x.prompt_id::text,
         (SELECT prompt_id FROM new_prompt LIMIT 1)
     ) as prompt_id
-    WHERE (SELECT prompt_id FROM params) IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
+    FROM params x
+    WHERE x.prompt_id IS NOT NULL OR EXISTS (SELECT 1 FROM new_prompt)
 ),
 link_prompt AS (
     -- Link agent to prompt if prompt_id exists

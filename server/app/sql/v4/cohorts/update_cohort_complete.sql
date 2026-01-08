@@ -48,20 +48,97 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id AS profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
+-- Insert/update title (name) in names table
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT title, NOW(), NOW()
+    FROM params
+    WHERE title IS NOT NULL AND title != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert/update description in descriptions table
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM params
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 cohort_update AS (
-    -- Update cohort
+    -- Update cohort (without title/description/active columns)
     UPDATE cohorts c SET
-        title = x.title,
-        description = x.description,
-        active = x.active,
         updated_at = NOW()
     FROM params x
     WHERE c.id = x.cohort_id
-    RETURNING c.id, c.title
+    RETURNING c.id, (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
+),
+-- Remove old name links
+remove_old_name AS (
+    DELETE FROM cohort_names
+    WHERE cohort_id = (SELECT cohort_id FROM params)
+      AND name_id NOT IN (SELECT name_id FROM name_resource)
+),
+-- Link cohort to new name
+link_cohort_name AS (
+    INSERT INTO cohort_names (cohort_id, name_id, created_at, updated_at)
+    SELECT 
+        cu.id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM cohort_update cu
+    CROSS JOIN name_resource nr
+    ON CONFLICT (cohort_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old description links
+remove_old_description AS (
+    DELETE FROM cohort_descriptions
+    WHERE cohort_id = (SELECT cohort_id FROM params)
+      AND description_id NOT IN (SELECT description_id FROM description_resource)
+),
+-- Link cohort to new description
+link_cohort_description AS (
+    INSERT INTO cohort_descriptions (cohort_id, description_id, created_at, updated_at)
+    SELECT 
+        cu.id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM cohort_update cu
+    CROSS JOIN description_resource dr
+    ON CONFLICT (cohort_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Update cohort active flag
+update_cohort_active_flag AS (
+    UPDATE cohort_flags SET
+        value = (SELECT active FROM params),
+        updated_at = NOW()
+    WHERE cohort_id = (SELECT cohort_id FROM params)
+      AND type = 'active'::type_cohort_flags
+),
+insert_cohort_active_flag AS (
+    INSERT INTO cohort_flags (cohort_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        cu.id,
+        f.id,
+        'active'::type_cohort_flags,
+        x.active,
+        NOW(),
+        NOW()
+    FROM cohort_update cu
+    CROSS JOIN params x
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+      AND NOT EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = cu.id AND cf.type = 'active'::type_cohort_flags)
+    ON CONFLICT (cohort_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
 ),
 delete_departments AS (
     -- Delete existing department relationships

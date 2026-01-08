@@ -83,7 +83,7 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -119,19 +119,137 @@ actor_profile AS (
     FROM params x
     CROSS JOIN user_profile up
 ),
+-- Insert/update name in names table
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT x.title, NOW(), NOW()
+    FROM params x
+    WHERE x.title IS NOT NULL AND x.title != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert/update description in descriptions table
+description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT x.description, NOW(), NOW()
+    FROM params x
+    WHERE x.description IS NOT NULL AND x.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
 update_simulation AS (
     UPDATE simulations SET
-        title = x.title,
-        description = x.description,
-        active = x.active,
-        practice_simulation = x.practice_simulation,
-        simulation_text_domain_id = COALESCE(x.simulation_text_domain_id, simulations.simulation_text_domain_id),
-        simulation_voice_domain_id = x.simulation_voice_domain_id,
         updated_at = NOW()
     FROM params x
     JOIN assert_permissions ap ON TRUE
     WHERE simulations.id = x.simulation_id
     RETURNING simulations.id as simulation_id
+),
+-- Update simulation name
+update_simulation_name AS (
+    DELETE FROM simulation_names WHERE simulation_id IN (SELECT simulation_id FROM update_simulation)
+),
+link_simulation_name AS (
+    INSERT INTO simulation_names (simulation_id, name_id, created_at, updated_at)
+    SELECT 
+        us.simulation_id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM update_simulation us
+    CROSS JOIN params x
+    CROSS JOIN name_resource nr
+    WHERE x.title IS NOT NULL AND x.title != ''
+),
+-- Update simulation description
+update_simulation_description AS (
+    DELETE FROM simulation_descriptions WHERE simulation_id IN (SELECT simulation_id FROM update_simulation)
+),
+link_simulation_description AS (
+    INSERT INTO simulation_descriptions (simulation_id, description_id, created_at, updated_at)
+    SELECT 
+        us.simulation_id,
+        dr.description_id,
+        NOW(),
+        NOW()
+    FROM update_simulation us
+    CROSS JOIN params x
+    CROSS JOIN description_resource dr
+    WHERE x.description IS NOT NULL AND x.description != ''
+),
+-- Update simulation active flag
+update_simulation_active_flag AS (
+    DELETE FROM simulation_flags 
+    WHERE simulation_id IN (SELECT simulation_id FROM update_simulation)
+      AND type = 'active'::type_simulation_flags
+),
+link_simulation_active_flag AS (
+    INSERT INTO simulation_flags (simulation_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        us.simulation_id,
+        (SELECT id FROM flags WHERE name = 'active' LIMIT 1),
+        'active'::type_simulation_flags,
+        x.active,
+        NOW(),
+        NOW()
+    FROM update_simulation us
+    CROSS JOIN params x
+    WHERE x.active IS NOT NULL
+),
+-- Update simulation practice flag
+update_simulation_practice_flag AS (
+    DELETE FROM simulation_flags 
+    WHERE simulation_id IN (SELECT simulation_id FROM update_simulation)
+      AND type = 'practice'::type_simulation_flags
+),
+link_simulation_practice_flag AS (
+    INSERT INTO simulation_flags (simulation_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        us.simulation_id,
+        (SELECT id FROM flags WHERE name = 'practice' LIMIT 1),
+        'practice'::type_simulation_flags,
+        x.practice_simulation,
+        NOW(),
+        NOW()
+    FROM update_simulation us
+    CROSS JOIN params x
+    WHERE x.practice_simulation IS NOT NULL
+),
+-- Update simulation text domain
+update_simulation_text_domain AS (
+    DELETE FROM simulation_domains 
+    WHERE simulation_id IN (SELECT simulation_id FROM update_simulation)
+      AND type = 'text'::type_simulation_domains
+),
+link_simulation_text_domain AS (
+    INSERT INTO simulation_domains (simulation_id, domain_id, type, created_at, updated_at)
+    SELECT 
+        us.simulation_id,
+        COALESCE(x.simulation_text_domain_id, (SELECT domain_id FROM simulation_domains sd WHERE sd.simulation_id = us.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)),
+        'text'::type_simulation_domains,
+        NOW(),
+        NOW()
+    FROM update_simulation us
+    CROSS JOIN params x
+    WHERE COALESCE(x.simulation_text_domain_id, (SELECT domain_id FROM simulation_domains sd WHERE sd.simulation_id = us.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)) IS NOT NULL
+),
+-- Update simulation voice domain
+update_simulation_voice_domain AS (
+    DELETE FROM simulation_domains 
+    WHERE simulation_id IN (SELECT simulation_id FROM update_simulation)
+      AND type = 'voice'::type_simulation_domains
+),
+link_simulation_voice_domain AS (
+    INSERT INTO simulation_domains (simulation_id, domain_id, type, created_at, updated_at)
+    SELECT 
+        us.simulation_id,
+        x.simulation_voice_domain_id,
+        'voice'::type_simulation_domains,
+        NOW(),
+        NOW()
+    FROM update_simulation us
+    CROSS JOIN params x
+    WHERE x.simulation_voice_domain_id IS NOT NULL
 ),
 replace_time_limits AS (
     DELETE FROM scenario_time_limits 

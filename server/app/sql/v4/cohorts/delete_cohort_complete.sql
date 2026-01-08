@@ -38,7 +38,7 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id AS profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -47,19 +47,26 @@ usage_check AS (
     FROM params x
     JOIN cohort_profiles cp ON cp.cohort_id = x.cohort_id
 ),
+cohort_title AS (
+    -- Get cohort title before deletion
+    SELECT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
+    FROM params x
+    JOIN cohorts c ON c.id = x.cohort_id
+),
 delete_result AS (
     DELETE FROM cohorts c
     USING params x
     CROSS JOIN usage_check uc
     WHERE c.id = x.cohort_id 
       AND uc.usage_count = 0
-    RETURNING c.id, c.title
+    RETURNING c.id
 )
 SELECT 
     uc.usage_count,
     CASE WHEN EXISTS(SELECT 1 FROM delete_result) THEN true ELSE false END as deleted,
-    COALESCE((SELECT title FROM delete_result LIMIT 1), (SELECT title FROM params x JOIN cohorts c ON c.id = x.cohort_id LIMIT 1)) as title,
+    ct.title,
     ap.actor_name
 FROM actor_profile ap
 CROSS JOIN usage_check uc
+CROSS JOIN cohort_title ct
 $$;

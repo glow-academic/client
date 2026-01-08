@@ -17,11 +17,12 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT 
-        scenario_id,
-        problem_statement,
-        active,
-        created_at
-    FROM scenario_problem_statements
-    WHERE scenario_id = test_get_scenario_problem_statements_v4.input_scenario_id
-    ORDER BY created_at DESC;
+        sps.scenario_id,
+        ps.problem_statement,
+        sps.active,
+        sps.created_at
+    FROM scenario_problem_statements sps
+    JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+    WHERE sps.scenario_id = test_get_scenario_problem_statements_v4.input_scenario_id
+    ORDER BY sps.created_at DESC;
 $$;

@@ -25,52 +25,173 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params) as profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 original_parameter AS (
     SELECT 
-        name,
-        description,
-        COALESCE(simulation_parameter, false) as simulation_parameter,
-        COALESCE(document_parameter, false) as document_parameter,
-        COALESCE(persona_parameter, false) as persona_parameter,
-        COALESCE(scenario_parameter, false) as scenario_parameter,
-        COALESCE(video_parameter, false) as video_parameter
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
+        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
+        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags LIMIT 1), false) as simulation_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags LIMIT 1), false) as document_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags LIMIT 1), false) as persona_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags LIMIT 1), false) as scenario_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'video_parameter' AND pf.type = 'video_parameter'::type_parameter_flags LIMIT 1), false) as video_parameter
     FROM params x
-    JOIN parameters ON parameters.id = x.parameter_id
+    JOIN parameters p ON p.id = x.parameter_id
+),
+-- Insert name into names table
+new_name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT name || ' Copy', NOW(), NOW()
+    FROM original_parameter
+    WHERE name IS NOT NULL
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Insert description into descriptions table
+new_description_resource AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT description, NOW(), NOW()
+    FROM original_parameter
+    WHERE description IS NOT NULL AND description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
 ),
 new_parameter AS (
-    INSERT INTO parameters (
-        name,
-        description,
-        active,
-        simulation_parameter,
-        document_parameter,
-        persona_parameter,
-        scenario_parameter,
-        video_parameter
-    )
-    SELECT 
-        op.name || ' Copy',
-        op.description,
-        false,  -- Duplicated parameters are inactive by default
-        op.simulation_parameter,
-        op.document_parameter,
-        op.persona_parameter,
-        op.scenario_parameter,
-        op.video_parameter
-    FROM original_parameter op
+    -- Insert parameter without name/description/active/flag columns
+    INSERT INTO parameters (created_at, updated_at)
+    SELECT NOW(), NOW()
+    FROM original_parameter
     RETURNING id as parameter_id
+),
+-- Link parameter to name
+link_parameter_name AS (
+    INSERT INTO parameter_names (parameter_id, name_id, created_at, updated_at)
+    SELECT np.parameter_id, nnr.name_id, NOW(), NOW()
+    FROM new_parameter np
+    CROSS JOIN new_name_resource nnr
+    ON CONFLICT (parameter_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link parameter to description
+link_parameter_description AS (
+    INSERT INTO parameter_descriptions (parameter_id, description_id, created_at, updated_at)
+    SELECT np.parameter_id, ndr.description_id, NOW(), NOW()
+    FROM new_parameter np
+    CROSS JOIN new_description_resource ndr
+    ON CONFLICT (parameter_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link parameter active flag (set to false for duplicate)
+link_parameter_active_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        np.parameter_id,
+        f.id,
+        'active'::type_parameter_flags,
+        FALSE,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = FALSE,
+        updated_at = NOW()
+),
+-- Link parameter type flags (simulation_parameter, document_parameter, etc.)
+link_parameter_type_flags AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        np.parameter_id,
+        f.id,
+        'simulation_parameter'::type_parameter_flags,
+        op.simulation_parameter,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN original_parameter op
+    CROSS JOIN flags f
+    WHERE f.name = 'simulation_parameter' AND op.simulation_parameter = TRUE
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+link_parameter_document_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        np.parameter_id,
+        f.id,
+        'document_parameter'::type_parameter_flags,
+        op.document_parameter,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN original_parameter op
+    CROSS JOIN flags f
+    WHERE f.name = 'document_parameter' AND op.document_parameter = TRUE
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+link_parameter_persona_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        np.parameter_id,
+        f.id,
+        'persona_parameter'::type_parameter_flags,
+        op.persona_parameter,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN original_parameter op
+    CROSS JOIN flags f
+    WHERE f.name = 'persona_parameter' AND op.persona_parameter = TRUE
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+link_parameter_scenario_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        np.parameter_id,
+        f.id,
+        'scenario_parameter'::type_parameter_flags,
+        op.scenario_parameter,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN original_parameter op
+    CROSS JOIN flags f
+    WHERE f.name = 'scenario_parameter' AND op.scenario_parameter = TRUE
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+link_parameter_video_flag AS (
+    INSERT INTO parameter_flags (parameter_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        np.parameter_id,
+        f.id,
+        'video_parameter'::type_parameter_flags,
+        op.video_parameter,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN original_parameter op
+    CROSS JOIN flags f
+    WHERE f.name = 'video_parameter' AND op.video_parameter = TRUE
+    ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
+        value = EXCLUDED.value,
+        updated_at = NOW()
 ),
 original_fields AS (
     SELECT 
         f.id as original_field_id,
-        f.name,
-        f.description
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
     FROM params x
-    JOIN fields f ON f.parameter_id = x.parameter_id AND f.active = true
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
 ),
 original_field_departments AS (
     SELECT 
@@ -80,28 +201,88 @@ original_field_departments AS (
     LEFT JOIN field_departments fd ON fd.field_id = of.original_field_id AND fd.active = true
     GROUP BY of.original_field_id
 ),
+-- Insert field names into names table
+field_names_resources AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT of.name, NOW(), NOW()
+    FROM original_fields of
+    WHERE of.name IS NOT NULL
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name
+),
+-- Insert field descriptions into descriptions table
+field_descriptions_resources AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT of.description, NOW(), NOW()
+    FROM original_fields of
+    WHERE of.description IS NOT NULL AND of.description != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id, description
+),
 new_fields AS (
-    -- Create all fields (duplicates of original fields) linked to new parameter
-    INSERT INTO fields (
-        name,
-        description,
-        parameter_id
-    )
-    SELECT 
-        of.name,
-        of.description,
-        np.parameter_id
+    -- Create all fields (without name/description/parameter_id columns)
+    INSERT INTO fields (created_at, updated_at)
+    SELECT NOW(), NOW()
     FROM original_fields of
     CROSS JOIN new_parameter np
-    RETURNING id as field_id, name as field_name
+    RETURNING id as field_id
+),
+-- Link fields to names
+link_field_names AS (
+    INSERT INTO field_names (field_id, name_id, created_at, updated_at)
+    SELECT 
+        nf.field_id,
+        fnr.name_id,
+        NOW(),
+        NOW()
+    FROM new_fields nf
+    CROSS JOIN original_fields of
+    JOIN field_names_resources fnr ON fnr.name = of.name
+    ON CONFLICT (field_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link fields to descriptions
+link_field_descriptions AS (
+    INSERT INTO field_descriptions (field_id, description_id, created_at, updated_at)
+    SELECT 
+        nf.field_id,
+        fdr.description_id,
+        NOW(),
+        NOW()
+    FROM new_fields nf
+    CROSS JOIN original_fields of
+    JOIN field_descriptions_resources fdr ON fdr.description = of.description
+    ON CONFLICT (field_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link fields to parameter via parameter_fields junction table
+link_fields_to_parameter AS (
+    INSERT INTO parameter_fields (parameter_id, field_id, created_at, updated_at)
+    SELECT 
+        np.parameter_id,
+        nf.field_id,
+        NOW(),
+        NOW()
+    FROM new_parameter np
+    CROSS JOIN new_fields nf
+    ON CONFLICT (parameter_id, field_id) DO UPDATE SET updated_at = NOW()
+),
+-- Get field names for return (matching by order)
+new_fields_with_names AS (
+    SELECT 
+        nf.field_id,
+        fnr.name as field_name,
+        ROW_NUMBER() OVER (ORDER BY nf.field_id) as field_row_num
+    FROM new_fields nf
+    JOIN field_names_resources fnr ON true
+    JOIN original_fields of ON of.name = fnr.name
+    ORDER BY nf.field_id
 ),
 new_fields_with_order AS (
     -- Add row numbers to new fields for matching
     SELECT 
         field_id,
         field_name,
-        ROW_NUMBER() OVER (ORDER BY field_name) as field_row_num
-    FROM new_fields
+        field_row_num
+    FROM new_fields_with_names
 ),
 fields_with_depts AS (
     -- Match new fields with original fields and their department arrays

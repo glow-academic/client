@@ -41,9 +41,13 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            'System'
+        ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profiles p ON p.id = x.profile_id
 ),
 email_check AS (
     -- Check if any emails already exist in profile_emails
@@ -72,20 +76,82 @@ profiles_data AS (
         (SELECT department_ids FROM params)
     ) AS t(profile_id, first_name, last_name, email, role, dept_id)
 ),
+-- Insert all unique first_names into names table
+first_names_resources AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT DISTINCT first_name, NOW(), NOW()
+    FROM profiles_data
+    WHERE first_name IS NOT NULL AND first_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name
+),
+-- Insert all unique last_names into names table
+last_names_resources AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT DISTINCT last_name, NOW(), NOW()
+    FROM profiles_data
+    WHERE last_name IS NOT NULL AND last_name != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name
+),
 profile_insert AS (
-    -- Insert all profiles (only if no emails exist)
+    -- Insert all profiles without first_name, last_name, active columns
     INSERT INTO profiles (
-        id, first_name, last_name, role, active
+        id, role
     )
     SELECT 
         pd.profile_id,
-        pd.first_name,
-        pd.last_name,
-        pd.role::profile_role,
-        true  -- active
+        pd.role::profile_role
     FROM profiles_data pd
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE existing_emails IS NOT NULL)
     RETURNING id
+),
+-- Link profiles to first_names
+link_profile_first_names AS (
+    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    SELECT 
+        pd.profile_id,
+        fnr.name_id,
+        'first'::type_profile_names,
+        NOW(),
+        NOW()
+    FROM profiles_data pd
+    JOIN first_names_resources fnr ON fnr.name = pd.first_name
+    WHERE EXISTS (SELECT 1 FROM profile_insert pi WHERE pi.id = pd.profile_id)
+      AND pd.first_name IS NOT NULL AND pd.first_name != ''
+    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+),
+-- Link profiles to last_names
+link_profile_last_names AS (
+    INSERT INTO profile_names (profile_id, name_id, type, created_at, updated_at)
+    SELECT 
+        pd.profile_id,
+        lnr.name_id,
+        'last'::type_profile_names,
+        NOW(),
+        NOW()
+    FROM profiles_data pd
+    JOIN last_names_resources lnr ON lnr.name = pd.last_name
+    WHERE EXISTS (SELECT 1 FROM profile_insert pi WHERE pi.id = pd.profile_id)
+      AND pd.last_name IS NOT NULL AND pd.last_name != ''
+    ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
+),
+-- Link profile active flags
+link_profile_active_flags AS (
+    INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        pi.id,
+        f.id,
+        'active'::type_profile_flags,
+        TRUE,
+        NOW(),
+        NOW()
+    FROM profile_insert pi
+    CROSS JOIN flags f
+    WHERE f.name = 'active'
+    ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
+        value = TRUE,
+        updated_at = NOW()
 ),
 primary_email_insert AS (
     -- Insert all primary emails into profile_emails (set as primary)

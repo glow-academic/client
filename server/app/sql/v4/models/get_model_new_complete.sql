@@ -115,7 +115,7 @@ resolve_profile_id AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params)::uuid as profile_id,
-        COALESCE(p.first_name || ' ' || p.last_name, 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM profiles p
     WHERE p.id = (SELECT profile_id FROM params)::uuid
 ),
@@ -126,11 +126,11 @@ user_departments AS (
     WHERE pd.active = true
 ),
 user_departments_data AS (
-    SELECT DISTINCT d.id, d.title as name, d.description
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
     FROM departments d
     JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
-    WHERE d.active = true
+    WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     AND pd.profile_id = rpi.resolved_profile_id
     AND pd.active = true
 ),
@@ -138,22 +138,27 @@ valid_models AS (
     -- Filter models by department: include if has matching department link OR has no department links at all (cross-dept)
     SELECT 
         m.id as model_id,
-        m.name,
-        COALESCE(m.description, '') as description
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description
     FROM models m
     LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
-    WHERE m.active = true
-    GROUP BY m.id, m.name, m.description
+    WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
+    GROUP BY m.id, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1)
     HAVING 
         COUNT(md.model_id) FILTER (WHERE md.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
-    ORDER BY m.name
+    ORDER BY (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)
 ),
 valid_keys AS (
     -- Get all active keys (no model-specific filtering for default view)
-    SELECT DISTINCT k.id as key_id, k.name, k.key, k.description, k.active
+    SELECT DISTINCT 
+        k.id as key_id, 
+        (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name, 
+        k.key, 
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active
     FROM keys k
-    WHERE k.active = true
+    WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 profile_data AS (
     SELECT role as user_role 
@@ -179,10 +184,10 @@ all_units_data AS (
 ),
 providers_aggregated AS (
     SELECT 
-        ARRAY_AGG(p.id ORDER BY p.name) as valid_provider_ids,
-        ARRAY_AGG((p.id, p.name, COALESCE(p.description, ''))::types.q_get_model_new_v4_provider ORDER BY p.name) as providers
+        ARRAY_AGG(p.id ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)) as valid_provider_ids,
+        ARRAY_AGG((p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''))::types.q_get_model_new_v4_provider ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)) as providers
     FROM providers p
-    WHERE p.active = true
+    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 departments_aggregated AS (
     SELECT 

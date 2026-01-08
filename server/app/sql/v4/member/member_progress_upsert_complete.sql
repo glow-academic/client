@@ -29,14 +29,14 @@ member_agent AS (
     SELECT a.id as agent_id
     FROM agents a
     JOIN domains d ON d.agent_id = a.id AND d.artifact = CAST('agent' AS artifacts)
-    WHERE a.active = true
+    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     LIMIT 1
 ),
 -- Get chat context
 chat_context AS (
     SELECT 
         c.id as chat_id,
-        c.title as chat_title,
+        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as chat_title,
         c.scenario_id,
         g.trace_id,
         sa.id as attempt_id,
@@ -296,7 +296,7 @@ resolved_dept AS (
          JOIN scenario_departments sd ON sd.scenario_id = cc.scenario_id AND sd.active = true LIMIT 1),
         (SELECT pd.department_id FROM chat_context cc
          JOIN profile_departments pd ON pd.profile_id = cc.profile_id AND pd.active = true LIMIT 1),
-        (SELECT id FROM departments WHERE active = true LIMIT 1)
+        (SELECT id FROM departments d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
     ) as department_id
 ),
 -- Link system/developer messages to run (reuse logic from link_system_developer_messages_to_run.sql)

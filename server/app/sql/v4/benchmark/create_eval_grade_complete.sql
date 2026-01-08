@@ -40,7 +40,7 @@ DECLARE
     v_end_reason text;
 BEGIN
     -- Get chat title if run is linked to a chat
-    SELECT c.title INTO v_chat_title
+    SELECT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) INTO v_chat_title
     FROM chat_runs cr
     JOIN chats c ON c.id = cr.chat_id
     WHERE cr.run_id = run_id

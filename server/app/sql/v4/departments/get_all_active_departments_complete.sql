@@ -23,5 +23,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT id FROM departments WHERE active = true
+SELECT d.id FROM departments d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 $$;

@@ -44,7 +44,7 @@ department_exists_check AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
@@ -52,7 +52,7 @@ department_info AS (
     -- Check if department exists and get usage counts
     SELECT 
         d.id,
-        d.title,
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
         (SELECT COUNT(*) FROM simulation_departments WHERE department_id = d.id AND active = true) as simulation_count,
         (SELECT COUNT(*) FROM scenario_departments WHERE department_id = d.id AND active = true) as scenario_count,
         (SELECT COUNT(*) FROM persona_departments WHERE department_id = d.id AND active = true) as persona_count,
@@ -65,14 +65,14 @@ usage_summary AS (
     -- Calculate total usage
     SELECT 
         id,
-        title,
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = di.id LIMIT 1) as title,
         simulation_count,
         scenario_count,
         persona_count,
         document_count,
         cohort_count,
         (simulation_count + scenario_count + persona_count + document_count + cohort_count) as total_usage
-    FROM department_info
+    FROM department_info di
 ),
 delete_department AS (
     -- Delete department only if it exists and is not in use

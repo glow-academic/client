@@ -58,28 +58,106 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         p.id as profile_id,
-        p.first_name || ' ' || p.last_name as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
     JOIN profiles p ON p.id = x.profile_id
 ),
 update_document AS (
     UPDATE documents d
     SET 
-        name = COALESCE((SELECT name FROM params), d.name),
-        description = COALESCE((SELECT description FROM params), d.description),
-        active = COALESCE((SELECT active FROM params), d.active),
-        template = COALESCE((SELECT template FROM params), d.template),
         document_domain_id = COALESCE((SELECT document_domain_id FROM params), d.document_domain_id),
         updated_at = NOW()
     FROM params p
     WHERE d.id = p.document_id
     RETURNING d.id
 ),
+-- Update name if provided
+update_document_name AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT (SELECT name FROM params), NOW(), NOW()
+    WHERE (SELECT name FROM params) IS NOT NULL AND (SELECT name FROM params) != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id, name
+),
+link_document_name AS (
+    INSERT INTO document_names (document_id, name_id, created_at, updated_at)
+    SELECT 
+        ud.id,
+        udn.name_id,
+        NOW(),
+        NOW()
+    FROM update_document ud
+    CROSS JOIN update_document_name udn
+    WHERE (SELECT name FROM params) IS NOT NULL
+    ON CONFLICT (document_id, name_id) DO UPDATE SET updated_at = NOW()
+),
+-- Update description if provided
+update_document_description AS (
+    INSERT INTO descriptions (description, created_at, updated_at)
+    SELECT (SELECT description FROM params), NOW(), NOW()
+    WHERE (SELECT description FROM params) IS NOT NULL AND (SELECT description FROM params) != ''
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id, description
+),
+link_document_description AS (
+    INSERT INTO document_descriptions (document_id, description_id, created_at, updated_at)
+    SELECT 
+        ud.id,
+        udd.description_id,
+        NOW(),
+        NOW()
+    FROM update_document ud
+    CROSS JOIN update_document_description udd
+    WHERE (SELECT description FROM params) IS NOT NULL
+    ON CONFLICT (document_id, description_id) DO UPDATE SET updated_at = NOW()
+),
+-- Get active flag ID
+active_flag_id AS (
+    SELECT id as flag_id FROM flags WHERE name = 'active' LIMIT 1
+),
+-- Update active flag if provided
+update_document_active_flag AS (
+    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        ud.id,
+        afi.flag_id,
+        'active'::type_document_flags,
+        (SELECT active FROM params),
+        NOW(),
+        NOW()
+    FROM update_document ud
+    CROSS JOIN active_flag_id afi
+    WHERE (SELECT active FROM params) IS NOT NULL
+    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
+-- Get template flag ID
+template_flag_id AS (
+    SELECT id as flag_id FROM flags WHERE name = 'template' LIMIT 1
+),
+-- Update template flag if provided
+update_document_template_flag AS (
+    INSERT INTO document_flags (document_id, flag_id, type, value, created_at, updated_at)
+    SELECT 
+        ud.id,
+        tfi.flag_id,
+        'template'::type_document_flags,
+        (SELECT template FROM params),
+        NOW(),
+        NOW()
+    FROM update_document ud
+    CROSS JOIN template_flag_id tfi
+    WHERE (SELECT template FROM params) IS NOT NULL
+    ON CONFLICT (document_id, flag_id, type) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated_at = NOW()
+),
 create_template AS (
     -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
     INSERT INTO templates (name, created_at, updated_at)
     SELECT 
-        COALESCE((SELECT name FROM documents WHERE id = (SELECT document_id FROM params)), 'Template'),
+        COALESCE((SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = (SELECT document_id FROM params) LIMIT 1), 'Template'),
         NOW(),
         NOW()
     FROM params p
@@ -237,7 +315,7 @@ SELECT
     true::boolean as success,
     'Document updated successfully'::text as message,
     ud.id as document_id,
-    COALESCE((SELECT name FROM documents WHERE id = ud.id), 'Unknown')::text as document_name,
+    COALESCE((SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = ud.id LIMIT 1), 'Unknown')::text as document_name,
     ap.actor_name::text as actor_name
 FROM update_document ud
 CROSS JOIN actor_profile ap

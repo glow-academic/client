@@ -31,7 +31,7 @@ STABLE
 AS $$
 SELECT 
     (SELECT rp.persona_id FROM scenario_personas rp WHERE rp.scenario_id = s.id AND rp.active = true LIMIT 1) as persona_id,
-    s.scenario_domain_id::text as scenario_domain_id,
+    (SELECT sd.domain_id::text FROM scenario_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'default'::type_scenario_domains LIMIT 1) as scenario_domain_id,
     COALESCE(
         json_agg(DISTINCT sd.document_id::text) FILTER (WHERE sd.document_id IS NOT NULL),
         '[]'::json
@@ -44,5 +44,5 @@ FROM scenarios s
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
 LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id AND sf.active = true
 WHERE s.id = api_get_scenario_ids_for_regeneration_v4.scenario_id
-GROUP BY s.id, s.scenario_domain_id
+GROUP BY s.id
 $$;

@@ -36,14 +36,16 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profiles ON profiles.id = x.profile_id
 ),
 eval_info AS (
-    SELECT id as eval_id, name as eval_name 
+    SELECT 
+        e.id as eval_id, 
+        (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name
     FROM params x
-    JOIN evals ON evals.id = x.eval_id
+    JOIN evals e ON e.id = x.eval_id
 ),
 delete_eval AS (
     DELETE FROM evals

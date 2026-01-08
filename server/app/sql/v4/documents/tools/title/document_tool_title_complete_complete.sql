@@ -58,17 +58,43 @@ extract_title AS (
         ) as title
     FROM get_tool_call gtc
 ),
--- Update document name
+-- Insert/update name in names table
+name_resource AS (
+    INSERT INTO names (name, created_at, updated_at)
+    SELECT et.title, NOW(), NOW()
+    FROM extract_title et
+    WHERE et.title IS NOT NULL AND et.title != ''
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+-- Update document (without name column)
 update_document AS (
     UPDATE documents
-    SET name = et.title,
-        updated_at = NOW()
+    SET updated_at = NOW()
     FROM extract_title et
     CROSS JOIN params p
     WHERE documents.id = p.document_id
       AND et.title IS NOT NULL
       AND et.title != ''
-    RETURNING documents.id as document_id, documents.name as title
+    RETURNING documents.id as document_id
+),
+-- Remove old name links
+remove_old_name AS (
+    DELETE FROM document_names
+    WHERE document_id IN (SELECT document_id FROM update_document)
+      AND name_id NOT IN (SELECT name_id FROM name_resource)
+),
+-- Link document to new name
+link_document_name AS (
+    INSERT INTO document_names (document_id, name_id, created_at, updated_at)
+    SELECT 
+        ud.document_id,
+        nr.name_id,
+        NOW(),
+        NOW()
+    FROM update_document ud
+    CROSS JOIN name_resource nr
+    ON CONFLICT (document_id, name_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Finalize tool_call (mark as completed)
 finalize_tool_call AS (
@@ -82,7 +108,7 @@ finalize_tool_call AS (
 SELECT 
     (SELECT tool_call_id::text FROM finalize_tool_call LIMIT 1) as tool_call_id,
     (SELECT document_id FROM update_document LIMIT 1) as document_id,
-    (SELECT title FROM update_document LIMIT 1) as title,
+    (SELECT n.name FROM names n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) as title,
     (SELECT completed FROM finalize_tool_call LIMIT 1) as completed
 $$;
 

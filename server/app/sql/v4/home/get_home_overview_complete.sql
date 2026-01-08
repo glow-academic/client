@@ -126,7 +126,14 @@ filtered_simulation_ids AS (
     SELECT DISTINCT s.id AS simulation_id
     FROM params p
     CROSS JOIN simulations s
-    WHERE s.active = TRUE
+    WHERE EXISTS (
+        SELECT 1 FROM simulation_flags sf
+        JOIN flags f ON sf.flag_id = f.id
+        WHERE sf.simulation_id = s.id
+          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND sf.type = 'active'::type_simulation_flags
+          AND sf.value = TRUE
+    )
       AND (
           -- If cohort_ids provided, get simulations linked to those cohorts
           (cardinality(p.cohort_ids) > 0 AND EXISTS (
@@ -138,7 +145,14 @@ filtered_simulation_ids AS (
           ))
           OR
           -- Always include practice simulations without cohorts
-          (s.practice_simulation = TRUE 
+          (EXISTS (
+            SELECT 1 FROM simulation_flags sf
+            JOIN flags f ON sf.flag_id = f.id
+            WHERE sf.simulation_id = s.id
+              AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+              AND sf.type = 'practice'::type_simulation_flags
+              AND sf.value = TRUE
+          )
            AND NOT EXISTS (
                SELECT 1 
                FROM cohort_simulations cs2 
@@ -191,13 +205,15 @@ filt AS (
 ),
 -- Get cohort-simulation pairs (includes empty cohorts)
 cohort_sim AS (
-    SELECT c.id AS cohort_id, c.title AS cohort_title, cs.simulation_id
+    SELECT c.id AS cohort_id, 
+           (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title, 
+           cs.simulation_id
     FROM params p
     CROSS JOIN cohorts c
     JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.active = true
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     WHERE (cardinality(p.cohort_ids) = 0 OR c.id = ANY(p.cohort_ids))
-    GROUP BY c.id, c.title, cs.simulation_id, p.department_ids
+    GROUP BY c.id, cs.simulation_id, p.department_ids
     HAVING 
         (cardinality(p.department_ids) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY(p.department_ids)) > 0)
         OR (cardinality(p.department_ids) = 0 AND NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
@@ -254,12 +270,11 @@ user_sim_status AS (
         COALESCE(aa.simulation_id, cac.simulation_id) AS simulation_id,
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         COALESCE(BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
-            (SELECT ROUND(100.0 * r.pass_points::numeric / NULLIF(r.points,0))
+            (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
              FROM simulations s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
              LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
              LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
-             LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
              WHERE s.id = COALESCE(aa.simulation_id, cac.simulation_id)
              ORDER BY ss_rubric.position
              LIMIT 1), 0
@@ -275,7 +290,7 @@ cohort_membership AS (
         cp.profile_id,
         cp.cohort_id,
         cs.simulation_id,
-        c.title AS cohort_title,
+        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title,
         prof.role
     FROM params p
     CROSS JOIN cohort_profiles cp
@@ -290,7 +305,7 @@ cohort_membership AS (
       AND prof.role = ANY(prl.role_hierarchy)  -- Use computed role hierarchy from profile_role_lookup
       -- When member mode, only include the current member's profile_id
       AND (NOT prl.is_member_mode OR cp.profile_id = rpi.resolved_profile_id)
-    GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, c.title, prof.role, c.id, p.department_ids
+    GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, prof.role, c.id, p.department_ids
     HAVING 
         (cardinality(p.department_ids) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY(p.department_ids)) > 0)
         OR (cardinality(p.department_ids) = 0 AND NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
@@ -299,8 +314,8 @@ cohort_membership AS (
 sim_meta AS (
     SELECT DISTINCT
         s.id AS simulation_id,
-        s.title,
-        s.description,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS title,
+        (SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1) AS description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -315,21 +330,20 @@ sim_meta AS (
          ORDER BY ss.position 
          LIMIT 1) as rubric_id,
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
-        COALESCE(r.points, 0) AS rubric_points,
-        COALESCE(r.pass_points, 0) AS rubric_pass_points
+        COALESCE((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0) AS rubric_points,
+        COALESCE((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1), 0) AS rubric_pass_points
     FROM simulations s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
     LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
-    LEFT JOIN rubrics r ON r.id = rga_rubric.rubric_id
     WHERE s.id IN (SELECT simulation_id FROM cohort_sim)
 ),
 -- Simulation persona metadata
 sim_persona_meta AS (
     SELECT
         sm.simulation_id,
-        (ARRAY_AGG(p.color ORDER BY cnt DESC, COALESCE(p.color, '') DESC))[1] AS color,
-        (ARRAY_AGG(p.icon ORDER BY cnt DESC, COALESCE(p.icon, '') DESC))[1] AS icon
+        (ARRAY_AGG(COALESCE((SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), '') ORDER BY cnt DESC, COALESCE((SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), '') DESC))[1] AS color,
+        (ARRAY_AGG(COALESCE((SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), '') ORDER BY cnt DESC, COALESCE((SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), '') DESC))[1] AS icon
     FROM (
         SELECT
             s.id AS simulation_id,
@@ -363,7 +377,7 @@ sim_standard_groups AS (
 ta_primary_cohort AS (
     SELECT
         c.id AS cohort_id,
-        c.title AS cohort_title,
+        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title,
         cs.simulation_id,
         ROW_NUMBER() OVER (ORDER BY c.id, cs.simulation_id) AS order_idx,
         ROW_NUMBER() OVER (PARTITION BY cs.simulation_id ORDER BY c.id) AS rn
@@ -374,7 +388,7 @@ ta_primary_cohort AS (
         AND cp.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     WHERE (cardinality(p.cohort_ids) = 0 OR c.id = ANY(p.cohort_ids))
-    GROUP BY c.id, c.title, cs.simulation_id, p.department_ids
+    GROUP BY c.id, cs.simulation_id, p.department_ids
     HAVING 
         (cardinality(p.department_ids) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY(p.department_ids)) > 0)
         OR (cardinality(p.department_ids) = 0 AND NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
@@ -386,9 +400,9 @@ ta_rows AS (
     SELECT
         ('member'::text,
          s.simulation_id,
-         s.title,
-         s.description,
-         s.title,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.simulation_id LIMIT 1),
+        (SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.simulation_id LIMIT 1),
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.simulation_id LIMIT 1),
          s.time_limit,
          s.num_scenarios,
          COALESCE((
@@ -481,9 +495,9 @@ inst_rows AS (
     SELECT
         ('instructional'::text,
          s.simulation_id,
-         s.title,
-         s.description,
-         s.title,
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.simulation_id LIMIT 1),
+        (SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.simulation_id LIMIT 1),
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.simulation_id LIMIT 1),
          s.time_limit,
          s.num_scenarios,
          NULL::int,
@@ -527,7 +541,7 @@ inst_rows AS (
             ELSE false
         END AS has_passed_bool,
         (icn.titles)[1] AS sort_cohort_name,
-        s.title AS sort_title
+        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.simulation_id LIMIT 1) AS sort_title
     FROM sim_meta s
     JOIN inst_counts ic ON ic.simulation_id = s.simulation_id
     LEFT JOIN sim_persona_meta spm ON spm.simulation_id = s.simulation_id
@@ -559,7 +573,7 @@ standards_array AS (
 -- Simulation mapping (as array)
 simulation_array AS (
     SELECT 
-        (sim.id, sim.title, COALESCE(sim.description, ''), 
+        (sim.id, (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1), COALESCE((SELECT d.description FROM simulation_descriptions simd JOIN descriptions d ON simd.description_id = d.id WHERE simd.simulation_id = sim.id LIMIT 1), ''), 
          COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -582,13 +596,16 @@ simulation_array AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(first_name || ' ' || last_name, 'System') as actor_name
+        COALESCE(
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = rpi.resolved_profile_id AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = rpi.resolved_profile_id AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            'System'
+        ) as actor_name
     FROM resolve_profile_id rpi
-    JOIN profiles ON profiles.id = rpi.resolved_profile_id
 ),
 -- Aggregate ta items
 ta_items_agg AS (
-    SELECT COALESCE(ARRAY_AGG(tr.item ORDER BY (SELECT title FROM sim_meta WHERE simulation_id = (tr.item).simulation_id)), '{}'::types.q_get_home_overview_v4_simulation_item[]) as items
+    SELECT COALESCE(ARRAY_AGG(tr.item ORDER BY (SELECT sm.title FROM sim_meta sm WHERE sm.simulation_id = (tr.item).simulation_id)), '{}'::types.q_get_home_overview_v4_simulation_item[]) as items
     FROM ta_rows tr
 ),
 -- Aggregate inst items

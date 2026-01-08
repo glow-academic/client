@@ -29,12 +29,12 @@ STABLE
 AS $$
 SELECT 
     p.id::text as persona_id,
-    p.name as persona_name,
+    (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
     COALESCE(p.instructions, '') as instructions
 FROM chats c
 JOIN scenario_personas sp ON sp.scenario_id = c.scenario_id AND sp.active = true
 JOIN personas p ON p.id = sp.persona_id
 WHERE c.id = chat_id
-  AND p.active = true
-ORDER BY p.name
+  AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
 $$;
