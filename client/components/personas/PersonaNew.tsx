@@ -811,7 +811,8 @@ function PersonaNewComponent({
   }, [suggestedIconsAll, iconOptions]);
 
   // Filter icons client-side based on search state from URL
-  const allIcons = useMemo(() => {
+  // NOTE: Icons component now handles filtering internally
+  const _allIcons = useMemo(() => {
     if (!iconSearch.trim()) {
       return allIconsAll;
     }
@@ -833,7 +834,8 @@ function PersonaNewComponent({
   // Examples component manages its own mapping via exampleMapping prop
 
   // Helper to filter example_suggestions based on selected departments
-  const getExamplesHistory = useCallback(
+  // NOTE: Examples component now handles suggestions internally, keeping for potential future use
+  const _getExamplesHistory = useCallback(
     (departmentIds: string[] | null | undefined) => {
       if (!personaData || !("example_suggestions" in personaData)) return [];
       const rawHistory =
@@ -1226,7 +1228,13 @@ function PersonaNewComponent({
                   label="Name"
                   placeholder="e.g., Enthusiastic Student"
                   required
-                  createNamesAction={createNamesAction}
+                  createNamesAction={
+                    createNamesAction as
+                      | ((
+                          input: CreateDraftNamesIn
+                        ) => Promise<CreateDraftNamesOut>)
+                      | undefined
+                  }
                 />
 
                 {/* Description field - using Descriptions resource component */}
@@ -1404,25 +1412,15 @@ function PersonaNewComponent({
             >
               {/* Icon picker - using Icons resource component */}
               <Icons
-                iconResource={
-                  (
-                    personaData as PersonaDetailOut & {
-                      icon_resource?: {
-                        id: string;
-                        name: string;
-                        description: string;
-                        value: string;
-                      } | null;
-                    }
-                  )?.icon_resource || null
-                }
-                iconId={formState.icon_id}
+                icon_id={formState.icon_id ?? null}
+                icon_resource={personaData?.icon_resource ?? null}
+                show_icon={personaData?.show_icon ?? false}
+                icon_suggestions={personaData?.icon_suggestions ?? []}
+                icons={personaData?.icons ?? []}
+                disabled={disabled}
                 onIconIdChange={(iconId) =>
                   setFormState((prev) => ({ ...prev, icon_id: iconId }))
                 }
-                allIcons={allIcons}
-                suggestedIcons={suggestedIconsAll}
-                disabled={isReadonly}
                 searchTerm={iconSearch}
                 onSearchChange={(term) =>
                   setStepFormData({ iconSearch: term || null })
@@ -1431,28 +1429,7 @@ function PersonaNewComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ iconShowSelected: value || null })
                 }
-                {...((
-                  personaData as PersonaDetailOut & {
-                    icon_suggestions?: string[];
-                  }
-                )?.icon_suggestions && {
-                  iconSuggestions: (
-                    personaData as PersonaDetailOut & {
-                      icon_suggestions?: string[];
-                    }
-                  ).icon_suggestions,
-                })}
-                createIconsAction={
-                  createIconsAction as
-                    | ((input: {
-                        body: {
-                          name: string;
-                          description: string;
-                          value: number;
-                        };
-                      }) => Promise<{ icon_id?: string | null }>)
-                    | undefined
-                }
+                createIconsAction={createIconsAction}
               />
             </StepCard>
           );
@@ -1473,17 +1450,15 @@ function PersonaNewComponent({
             >
               {/* Instructions - using Instructions resource component */}
               <Instructions
-                instructionsResource={
-                  (
-                    personaData as PersonaDetailOut & {
-                      instructions_resource?: {
-                        id: string;
-                        template: string;
-                      } | null;
-                    }
-                  )?.instructions_resource || null
+                instructions_id={formState.instructions_id ?? null}
+                instructions_resource={
+                  personaData?.instructions_resource ?? null
                 }
-                instructionsId={formState.instructions_id}
+                show_instructions={personaData?.show_instructions ?? true}
+                instructions_suggestions={
+                  personaData?.instructions_suggestions ?? []
+                }
+                disabled={disabled}
                 onInstructionsIdChange={(instructionsId) =>
                   setFormState((prev) => ({
                     ...prev,
@@ -1495,28 +1470,10 @@ function PersonaNewComponent({
                 label="Instructions"
                 placeholder="Instructions that define how the persona should behave and respond."
                 required
-                disabled={isReadonly}
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
-                {...((
-                  personaData as PersonaDetailOut & {
-                    instructions_suggestions?: string[]; // Note: Now UUIDs, but component expects strings - needs lookup
-                  }
-                )?.instructions_suggestions && {
-                  suggestions: (
-                    personaData as PersonaDetailOut & {
-                      instructions_suggestions?: string[];
-                    }
-                  ).instructions_suggestions,
-                })}
-                createInstructionsAction={
-                  createInstructionsAction as
-                    | ((input: {
-                        body: { template: string };
-                      }) => Promise<{ instruction_id?: string | null }>)
-                    | undefined
-                }
+                createInstructionsAction={createInstructionsAction}
               />
 
               {/* Examples Section */}
@@ -1524,7 +1481,18 @@ function PersonaNewComponent({
                 example_ids={formState.example_ids ?? []}
                 example_resources={personaData?.example_resources ?? []}
                 show_examples={personaData?.show_examples ?? false}
-                example_suggestions={personaData?.example_suggestions ?? []}
+                example_suggestions={
+                  personaData?.example_suggestions
+                    ? personaData.example_suggestions
+                        .filter((s) => s.example !== null)
+                        .map((s) => ({
+                          example: s.example!,
+                          ...(s.department_ids !== null && {
+                            department_ids: s.department_ids,
+                          }),
+                        }))
+                    : []
+                }
                 examples={personaData?.examples ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -1557,8 +1525,8 @@ function PersonaNewComponent({
     [
       personaData,
       disabled,
+      isReadonly,
       isEditMode,
-      getExamplesHistory,
       createColorFilterOnChange,
       createIconFilterOnChange,
       handleGenerateName,
@@ -1577,9 +1545,6 @@ function PersonaNewComponent({
       createInstructionsAction,
       createFlagsAction,
       createExamplesAction,
-      setStepFormData,
-      stepFormData,
-      onReset,
     ]
   );
 

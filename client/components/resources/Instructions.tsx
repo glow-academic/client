@@ -7,6 +7,7 @@
 
 "use client";
 
+import type { CreateDraftInstructionsIn, CreateDraftInstructionsOut } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,11 +30,7 @@ export interface InstructionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  createInstructionsAction?:
-    | ((input: {
-        body: { template: string };
-      }) => Promise<{ instruction_id?: string | null }>)
-    | undefined;
+  createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
   // Legacy props for backward compatibility
   instructionsResource?: { id: string; template: string } | null;
   instructionsId?: string | null;

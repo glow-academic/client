@@ -7,6 +7,7 @@
 
 "use client";
 
+import type { CreateDraftNamesIn, CreateDraftNamesOut } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,11 +28,7 @@ export interface NamesProps {
   required?: boolean;
   id?: string;
   "data-testid"?: string;
-  createNamesAction?:
-    | ((input: {
-        body: { name: string };
-      }) => Promise<{ name_id?: string | null }>)
-    | undefined;
+  createNamesAction?: ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>) | undefined;
   // Legacy props for backward compatibility
   nameResource?: { id: string; name: string } | null;
   nameId?: string | null;

@@ -6,6 +6,7 @@
 
 "use client";
 
+import type { CreateDraftColorsIn, CreateDraftColorsOut } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,15 +45,7 @@ export interface ColorsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
-  createColorsAction?:
-    | ((input: {
-        body: {
-          name: string;
-          description: string;
-          hex_code: string;
-        };
-      }) => Promise<{ color_id?: string | null }>)
-    | undefined;
+  createColorsAction?: ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>) | undefined;
   // Legacy props for backward compatibility
   colorResource?: {
     id: string;

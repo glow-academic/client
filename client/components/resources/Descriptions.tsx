@@ -7,6 +7,7 @@
 
 "use client";
 
+import type { CreateDraftDescriptionsIn, CreateDraftDescriptionsOut } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,11 +30,7 @@ export interface DescriptionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  createDescriptionsAction?:
-    | ((input: {
-        body: { description: string };
-      }) => Promise<{ description_id?: string | null }>)
-    | undefined;
+  createDescriptionsAction?: ((input: CreateDraftDescriptionsIn) => Promise<CreateDraftDescriptionsOut>) | undefined;
   // Legacy props for backward compatibility
   descriptionResource?: { id: string; description: string } | null;
   descriptionId?: string | null;

@@ -6,6 +6,10 @@
 
 "use client";
 
+import type {
+  CreateDraftIconsIn,
+  CreateDraftIconsOut,
+} from "@/app/(main)/create/personas/p/[personaId]/page";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -39,13 +43,7 @@ export interface IconsProps {
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
   createIconsAction?:
-    | ((input: {
-        body: {
-          name: string;
-          description: string;
-          value: number;
-        };
-      }) => Promise<{ icon_id?: string | null }>)
+    | ((input: CreateDraftIconsIn) => Promise<CreateDraftIconsOut>)
     | undefined;
   // Legacy props for backward compatibility
   iconResource?: {
@@ -61,7 +59,7 @@ export interface IconsProps {
 }
 
 export function Icons({
-  icon_id,
+  icon_id: _icon_id,
   icon_resource,
   show_icon = false,
   icon_suggestions,
@@ -85,14 +83,11 @@ export function Icons({
 }: IconsProps) {
   // Use standardized props with fallback to legacy props
   const resource = icon_resource ?? iconResource ?? null;
-  const resourceId = icon_id ?? _iconId ?? null;
   const show = show_icon ?? false;
-  const suggestionsList = icon_suggestions ?? iconSuggestions ?? [];
-
-  // Don't render if show_icon is false
-  if (!show) {
-    return null;
-  }
+  const suggestionsListMemo = useMemo(
+    () => icon_suggestions ?? iconSuggestions ?? [],
+    [icon_suggestions, iconSuggestions]
+  );
 
   // Convert icons array from API format to string array (extract value field)
   const allIconsList = useMemo(() => {
@@ -106,13 +101,13 @@ export function Icons({
 
   // Get suggested icon values from icon_suggestions (UUIDs) by looking up in icons array
   const suggestedIconsList = useMemo(() => {
-    if (suggestionsList.length > 0 && icons) {
-      return suggestionsList
+    if (suggestionsListMemo.length > 0 && icons) {
+      return suggestionsListMemo
         .map((id) => icons.find((i) => i.id === id)?.value)
         .filter((v): v is string => v !== null && v !== undefined);
     }
     return suggestedIcons ?? [];
-  }, [suggestionsList, icons, suggestedIcons]);
+  }, [suggestionsListMemo, icons, suggestedIcons]);
 
   // Handle nullable resource properties
   const resourceValue = resource?.value ?? null;
@@ -188,8 +183,11 @@ export function Icons({
             value: iconIndex >= 0 ? iconIndex : 0,
           },
         });
-        if (result.icon_id) {
-          onIconIdChange(result.icon_id);
+        if (result && typeof result === "object" && "icon_id" in result) {
+          const iconId = (result as { icon_id?: string | null }).icon_id;
+          if (iconId) {
+            onIconIdChange(iconId);
+          }
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
@@ -207,6 +205,11 @@ export function Icons({
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
   }, []);
+
+  // Don't render if show_icon is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
 
   return (
     <div className="space-y-4">

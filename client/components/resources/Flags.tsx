@@ -7,6 +7,7 @@
 
 "use client";
 
+import type { CreateDraftFlagsIn, CreateDraftFlagsOut } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Power } from "lucide-react";
@@ -28,15 +29,7 @@ export interface FlagsProps {
   helpText?: string;
   icon?: React.ReactNode;
   iconId?: string; // Icon ID to use when creating flag resource (required when value=true)
-  createFlagsAction?:
-    | ((input: {
-        body: {
-          name: string;
-          description: string;
-          icon_id: string;
-        };
-      }) => Promise<{ flag_id?: string | null }>)
-    | undefined;
+  createFlagsAction?: ((input: CreateDraftFlagsIn) => Promise<CreateDraftFlagsOut>) | undefined;
   // Legacy props for backward compatibility
   flagResource?: {
     id: string;
