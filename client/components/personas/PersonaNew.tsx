@@ -1231,7 +1231,7 @@ function PersonaNewComponent({
                   disabled={isReadonly}
                   {...((
                     personaData as PersonaDetailOut & {
-                      name_suggestions?: string[];
+                      name_suggestions?: string[]; // Note: Now UUIDs, but component expects strings - needs lookup
                     }
                   )?.name_suggestions && {
                     suggestions: (
@@ -1278,7 +1278,7 @@ function PersonaNewComponent({
                   data-testid="input-persona-description"
                   {...((
                     personaData as PersonaDetailOut & {
-                      description_suggestions?: string[];
+                      description_suggestions?: string[]; // Note: Now UUIDs, but component expects strings - needs lookup
                     }
                   )?.description_suggestions && {
                     suggestions: (
@@ -1617,7 +1617,7 @@ function PersonaNewComponent({
                 data-testid="input-instructions"
                 {...((
                   personaData as PersonaDetailOut & {
-                    instructions_suggestions?: string[];
+                    instructions_suggestions?: string[]; // Note: Now UUIDs, but component expects strings - needs lookup
                   }
                 )?.instructions_suggestions && {
                   suggestions: (

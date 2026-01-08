@@ -120,52 +120,59 @@ CREATE OR REPLACE FUNCTION api_get_persona_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Actor & UI Fields (booleans only)
+    -- Required fields (first 3)
     actor_name text,
     persona_exists boolean,
     can_edit boolean,
-    show_departments boolean,
-    show_fields boolean,
     -- Single-select resources: name
     name_id uuid,
     name_resource types.q_get_persona_v4_name_resource,
-    name_suggestions text[],
+    show_name boolean,
+    name_suggestions uuid[],
     -- Single-select resources: description
     description_id uuid,
     description_resource types.q_get_persona_v4_description_resource,
-    description_suggestions text[],
+    show_description boolean,
+    description_suggestions uuid[],
     -- Single-select resources: color
     color_id uuid,
     color_resource types.q_get_persona_v4_color_resource,
+    show_color boolean,
     color_suggestions uuid[],
     colors types.q_get_persona_v4_color_option[],
     -- Single-select resources: icon
     icon_id uuid,
     icon_resource types.q_get_persona_v4_icon_resource,
+    show_icon boolean,
     icon_suggestions uuid[],
     icons types.q_get_persona_v4_icon_option[],
     -- Single-select resources: instructions
     instructions_id uuid,
     instructions_resource types.q_get_persona_v4_instructions_resource,
-    instructions_suggestions text[],
+    show_instructions boolean,
+    instructions_suggestions uuid[],
     -- Single-select resources: flag
     active_flag_id uuid,
     flag_resource types.q_get_persona_v4_flag_resource,
+    show_flag boolean,
     -- Multi-select resources: departments
-    departments types.q_get_persona_v4_department[],
     department_ids uuid[],
     department_resources types.q_get_persona_v4_department[],
+    show_departments boolean,
     department_suggestions uuid[],
+    departments types.q_get_persona_v4_department[],
     -- Multi-select resources: fields
-    fields types.q_get_persona_v4_field[],
     field_ids uuid[],
     field_resources types.q_get_persona_v4_field[],
+    show_fields boolean,
     field_suggestions uuid[],
+    fields types.q_get_persona_v4_field[],
     -- Multi-select resources: examples
-    examples types.q_get_persona_v4_example[],
     example_ids uuid[],
     example_resources types.q_get_persona_v4_example[],
-    example_suggestions types.q_get_persona_v4_example_history_item[]
+    show_examples boolean,
+    example_suggestions types.q_get_persona_v4_example_history_item[],
+    examples types.q_get_persona_v4_example[]
 )
 LANGUAGE sql
 STABLE
@@ -287,6 +294,15 @@ field_mapping_data AS (
 ),
 ui_flags AS (
     SELECT 
+        -- Single-select resource flags (based on whether options exist)
+        true as show_name,  -- Always show name picker
+        true as show_description,  -- Always show description picker
+        -- show_color and show_icon will be computed later using colors_data and icons_data
+        true as show_color,  -- Will be updated in SELECT to check colors array
+        true as show_icon,  -- Will be updated in SELECT to check icons array
+        true as show_instructions,  -- Always show instructions picker
+        false as show_flag,  -- Flag is just a boolean toggle, no picker needed
+        -- Multi-select resource flags (based on business logic)
         CASE 
             WHEN up.role = 'superadmin'::profile_role THEN false
             WHEN (SELECT COUNT(*) FROM department_mapping_data) > 1 THEN true
@@ -296,6 +312,7 @@ ui_flags AS (
             WHEN (SELECT COUNT(*) FROM field_mapping_data) > 0 THEN true
             ELSE false
         END as show_fields
+        -- show_examples will be computed in SELECT clause
     FROM params x
     CROSS JOIN user_profile up
 ),
@@ -461,59 +478,59 @@ icon_suggestions_data AS (
         LIMIT 10
     ) icon_usage
 ),
--- Name suggestions based on historical usage
+-- Name suggestions based on historical usage (returns UUIDs)
 name_suggestions_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(name_usage.name ORDER BY name_usage.max_created_at DESC),
-            ARRAY[]::text[]
+            ARRAY_AGG(name_usage.id ORDER BY name_usage.max_created_at DESC),
+            ARRAY[]::uuid[]
         ) as name_suggestions
     FROM (
         SELECT DISTINCT
-            n.name,
+            n.id,
             MAX(pn.created_at) as max_created_at
         FROM persona_names pn
         JOIN names n ON pn.name_id = n.id
         WHERE n.name IS NOT NULL AND n.name != ''
-        GROUP BY n.name
+        GROUP BY n.id
         ORDER BY MAX(pn.created_at) DESC
         LIMIT 20
     ) name_usage
 ),
--- Description suggestions based on historical usage
+-- Description suggestions based on historical usage (returns UUIDs)
 description_suggestions_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(desc_usage.description ORDER BY desc_usage.max_created_at DESC),
-            ARRAY[]::text[]
+            ARRAY_AGG(desc_usage.id ORDER BY desc_usage.max_created_at DESC),
+            ARRAY[]::uuid[]
         ) as description_suggestions
     FROM (
         SELECT DISTINCT
-            d.description,
+            d.id,
             MAX(pd.created_at) as max_created_at
         FROM persona_descriptions pd
         JOIN descriptions d ON pd.description_id = d.id
         WHERE d.description IS NOT NULL AND d.description != ''
-        GROUP BY d.description
+        GROUP BY d.id
         ORDER BY MAX(pd.created_at) DESC
         LIMIT 20
     ) desc_usage
 ),
--- Instructions suggestions based on historical usage
+-- Instructions suggestions based on historical usage (returns UUIDs)
 instructions_suggestions_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(inst_usage.template ORDER BY inst_usage.max_created_at DESC),
-            ARRAY[]::text[]
+            ARRAY_AGG(inst_usage.id ORDER BY inst_usage.max_created_at DESC),
+            ARRAY[]::uuid[]
         ) as instructions_suggestions
     FROM (
         SELECT DISTINCT
-            i.template,
+            i.id,
             MAX(pi.created_at) as max_created_at
         FROM persona_instructions pi
         JOIN instructions i ON pi.instruction_id = i.id
         WHERE i.active = true AND i.template IS NOT NULL AND i.template != ''
-        GROUP BY i.template
+        GROUP BY i.id
         ORDER BY MAX(pi.created_at) DESC
         LIMIT 20
     ) inst_usage
@@ -608,23 +625,27 @@ field_suggestions_data AS (
     SELECT ARRAY[]::uuid[] as field_suggestions
 )
 SELECT
-    -- Actor & UI Fields (booleans only)
+    -- Required fields (first 3)
     up.actor_name::text as actor_name,
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
     perm.can_edit,
-    uf.show_departments,
-    uf.show_fields,
     -- Single-select resources: name
     (SELECT name_id FROM name_resource_data) as name_id,
     nrd.name_resource,
-    COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::text[]) as name_suggestions,
+    uf.show_name,
+    COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     -- Single-select resources: description
     (SELECT description_id FROM description_resource_data) as description_id,
     (SELECT desc_res FROM (SELECT drd.draft_description_resource as desc_res UNION ALL SELECT drd.persona_description_resource LIMIT 1) sub WHERE desc_res IS NOT NULL LIMIT 1) as description_resource,
-    COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::text[]) as description_suggestions,
+    uf.show_description,
+    COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
     -- Single-select resources: color
     (SELECT color_id FROM color_resource_data) as color_id,
     (SELECT color_res FROM (SELECT crd.draft_color_resource as color_res UNION ALL SELECT crd.persona_color_resource LIMIT 1) sub WHERE color_res IS NOT NULL LIMIT 1) as color_resource,
+    CASE 
+        WHEN (SELECT COUNT(*) FROM colors_data) > 0 THEN true
+        ELSE false
+    END as show_color,
     ARRAY[]::uuid[] as color_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -636,6 +657,10 @@ SELECT
     -- Single-select resources: icon
     (SELECT icon_id FROM icon_resource_data) as icon_id,
     (SELECT icon_res FROM (SELECT ird.draft_icon_resource as icon_res UNION ALL SELECT ird.persona_icon_resource LIMIT 1) sub WHERE icon_res IS NOT NULL LIMIT 1) as icon_resource,
+    CASE 
+        WHEN (SELECT COUNT(*) FROM icons_data) > 0 THEN true
+        ELSE false
+    END as show_icon,
     COALESCE((SELECT icon_suggestions FROM icon_suggestions_data), ARRAY[]::uuid[]) as icon_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -647,18 +672,13 @@ SELECT
     -- Single-select resources: instructions
     (SELECT instructions_id FROM instructions_resource_data) as instructions_id,
     (SELECT inst_res FROM (SELECT instrd.draft_instructions_resource as inst_res UNION ALL SELECT instrd.persona_instructions_resource LIMIT 1) sub WHERE inst_res IS NOT NULL LIMIT 1) as instructions_resource,
-    COALESCE((SELECT instructions_suggestions FROM instructions_suggestions_data), ARRAY[]::text[]) as instructions_suggestions,
+    uf.show_instructions,
+    COALESCE((SELECT instructions_suggestions FROM instructions_suggestions_data), ARRAY[]::uuid[]) as instructions_suggestions,
     -- Single-select resources: flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.persona_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,
+    uf.show_flag,
     -- Multi-select resources: departments
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description)::types.q_get_persona_v4_department
-            ORDER BY dmd.name
-        ) FROM department_mapping_data dmd),
-        '{}'::types.q_get_persona_v4_department[]
-    ) as departments,
     COALESCE(
         (SELECT 
             CASE 
@@ -704,15 +724,16 @@ SELECT
         )),
         '{}'::types.q_get_persona_v4_department[]
     ) as department_resources,
+    uf.show_departments,
     dsd_dept.department_suggestions,
-    -- Multi-select resources: fields
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description)::types.q_get_persona_v4_field
-            ORDER BY fmd.name
-        ) FROM field_mapping_data fmd),
-        '{}'::types.q_get_persona_v4_field[]
-    ) as fields,
+            (dmd.department_id, dmd.name, dmd.description)::types.q_get_persona_v4_department
+            ORDER BY dmd.name
+        ) FROM department_mapping_data dmd),
+        '{}'::types.q_get_persona_v4_department[]
+    ) as departments,
+    -- Multi-select resources: fields
     fid.field_ids,
     -- Field resources (selected fields filtered by field_ids)
     COALESCE(
@@ -724,15 +745,16 @@ SELECT
         WHERE fmd.field_id = ANY(fid.field_ids)),
         '{}'::types.q_get_persona_v4_field[]
     ) as field_resources,
+    uf.show_fields,
     fsd.field_suggestions,
-    -- Multi-select resources: examples (available for both new and detail)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (emd.example, emd.idx)::types.q_get_persona_v4_example
-            ORDER BY emd.idx
-        ) FROM example_mapping_data emd),
-        '{}'::types.q_get_persona_v4_example[]
-    ) as examples,
+            (fmd.field_id, fmd.name, fmd.description)::types.q_get_persona_v4_field
+            ORDER BY fmd.name
+        ) FROM field_mapping_data fmd),
+        '{}'::types.q_get_persona_v4_field[]
+    ) as fields,
+    -- Multi-select resources: examples
     ped.example_ids,
     -- Example resources (selected examples - same as examples array)
     COALESCE(
@@ -743,7 +765,18 @@ SELECT
         FROM example_mapping_data emd),
         '{}'::types.q_get_persona_v4_example[]
     ) as example_resources,
-    COALESCE(esd.example_suggestions, '{}'::types.q_get_persona_v4_example_history_item[]) as example_suggestions
+    CASE 
+        WHEN (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN true
+        ELSE false
+    END as show_examples,
+    COALESCE(esd.example_suggestions, '{}'::types.q_get_persona_v4_example_history_item[]) as example_suggestions,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (emd.example, emd.idx)::types.q_get_persona_v4_example
+            ORDER BY emd.idx
+        ) FROM example_mapping_data emd),
+        '{}'::types.q_get_persona_v4_example[]
+    ) as examples
 FROM user_profile up
 CROSS JOIN permissions_data perm
 CROSS JOIN ui_flags uf
