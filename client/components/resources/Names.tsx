@@ -14,10 +14,9 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface NamesProps {
-  value: string; // Initial display value (from server data)
-  resourceId: string | null; // Current resource_id (for form state)
-  onChange: (value: string) => void; // Update display value (for UI only)
-  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
+  nameResource?: { id: string; name: string } | null; // Resource data from server (composite type)
+  nameId: string | null; // Current name_id (for form state)
+  onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
@@ -34,10 +33,9 @@ export interface NamesProps {
 }
 
 export function Names({
-  value,
-  resourceId,
-  onChange,
-  onResourceIdChange,
+  nameResource,
+  nameId: _nameId,
+  onNameIdChange,
   onGenerate,
   isGenerating = false,
   label = "Name",
@@ -48,18 +46,18 @@ export function Names({
   "data-testid": dataTestId,
   createNamesAction,
 }: NamesProps) {
-  const [internalValue, setInternalValue] = useState(value);
+  const [internalValue, setInternalValue] = useState(nameResource?.name || "");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(value);
+  const lastSavedValueRef = useRef<string>(nameResource?.name || "");
   const isInitialMountRef = useRef(true);
 
-  // Sync external value changes
+  // Update internal value when nameResource changes
   useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value);
-      lastSavedValueRef.current = value;
+    if (nameResource?.name) {
+      setInternalValue(nameResource.name);
+      lastSavedValueRef.current = nameResource.name;
     }
-  }, [value, internalValue]);
+  }, [nameResource?.name]);
 
   // Debounced resource creation
   useEffect(() => {
@@ -95,11 +93,11 @@ export function Names({
             },
           });
           if (result.name_id) {
-            onResourceIdChange(result.name_id);
+            onNameIdChange(result.name_id);
           }
         } else {
           // Clear resource ID if value is empty
-          onResourceIdChange(null);
+          onNameIdChange(null);
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
@@ -112,15 +110,11 @@ export function Names({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createNamesAction, onResourceIdChange]);
+  }, [internalValue, createNamesAction, onNameIdChange]);
 
-  const handleChange = useCallback(
-    (newValue: string) => {
-      setInternalValue(newValue);
-      onChange(newValue); // Update display value immediately for UI
-    },
-    [onChange]
-  );
+  const handleChange = useCallback((newValue: string) => {
+    setInternalValue(newValue);
+  }, []);
 
   return (
     <div className="space-y-2">

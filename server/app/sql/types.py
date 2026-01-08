@@ -15519,9 +15519,27 @@ class QGetPersonaDetailV4Color(BaseModel):
 
 
 
+class QGetPersonaDetailV4ColorResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    hex_code: str | None
+
+
+
+
 class QGetPersonaDetailV4Department(BaseModel):
 
     department_id: UUID | None
+
+
+
+
+class QGetPersonaDetailV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
 
 
 
@@ -15545,6 +15563,42 @@ class QGetPersonaDetailV4ExampleHistoryItem(BaseModel):
 class QGetPersonaDetailV4Field(BaseModel):
 
     field_id: UUID | None
+
+
+
+
+class QGetPersonaDetailV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+
+
+
+
+class QGetPersonaDetailV4IconResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+
+
+
+
+class QGetPersonaDetailV4InstructionsResource(BaseModel):
+
+    id: UUID | None
+    template: str | None
+
+
+
+
+class QGetPersonaDetailV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
 
 
 
@@ -15585,6 +15639,19 @@ class GetPersonaDetailSqlRow(BaseModel):
     preset_colors: list[QGetPersonaDetailV4Color] | None = None
     suggested_icons: list[str] | None = None
     valid_icons: list[str] | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    name_resource: QGetPersonaDetailV4NameResource | None = None
+    description_resource: QGetPersonaDetailV4DescriptionResource | None = None
+    color_resource: QGetPersonaDetailV4ColorResource | None = None
+    icon_resource: QGetPersonaDetailV4IconResource | None = None
+    instructions_resource: QGetPersonaDetailV4InstructionsResource | None = None
+    flag_resource: QGetPersonaDetailV4FlagResource | None = None
+    preset_colors_resources: list[QGetPersonaDetailV4ColorResource] | None = None
 
 class GetPersonaDetailApiRequest(BaseModel):
 
@@ -15629,6 +15696,19 @@ class GetPersonaDetailApiResponse(BaseModel):
     preset_colors: list[QGetPersonaDetailV4Color] | None = None
     suggested_icons: list[str] | None = None
     valid_icons: list[str] | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    name_resource: QGetPersonaDetailV4NameResource | None = None
+    description_resource: QGetPersonaDetailV4DescriptionResource | None = None
+    color_resource: QGetPersonaDetailV4ColorResource | None = None
+    icon_resource: QGetPersonaDetailV4IconResource | None = None
+    instructions_resource: QGetPersonaDetailV4InstructionsResource | None = None
+    flag_resource: QGetPersonaDetailV4FlagResource | None = None
+    preset_colors_resources: list[QGetPersonaDetailV4ColorResource] | None = None
 
 
 
@@ -15675,6 +15755,16 @@ class QGetPersonaNewV4Color(BaseModel):
 
 
 
+class QGetPersonaNewV4ColorResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    hex_code: str | None
+
+
+
+
 class QGetPersonaNewV4Department(BaseModel):
 
     department_id: UUID | None
@@ -15682,9 +15772,53 @@ class QGetPersonaNewV4Department(BaseModel):
 
 
 
+class QGetPersonaNewV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+
+
+
+
 class QGetPersonaNewV4Field(BaseModel):
 
     field_id: UUID | None
+
+
+
+
+class QGetPersonaNewV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+
+
+
+
+class QGetPersonaNewV4IconResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+
+
+
+
+class QGetPersonaNewV4InstructionsResource(BaseModel):
+
+    id: UUID | None
+    template: str | None
+
+
+
+
+class QGetPersonaNewV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
 
 
 
@@ -15721,6 +15855,19 @@ class GetPersonaNewSqlRow(BaseModel):
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    name_resource: QGetPersonaNewV4NameResource | None = None
+    description_resource: QGetPersonaNewV4DescriptionResource | None = None
+    color_resource: QGetPersonaNewV4ColorResource | None = None
+    icon_resource: QGetPersonaNewV4IconResource | None = None
+    instructions_resource: QGetPersonaNewV4InstructionsResource | None = None
+    flag_resource: QGetPersonaNewV4FlagResource | None = None
+    preset_colors_resources: list[QGetPersonaNewV4ColorResource] | None = None
 
 class GetPersonaNewApiRequest(BaseModel):
 
@@ -15760,6 +15907,19 @@ class GetPersonaNewApiResponse(BaseModel):
     can_edit: bool | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    name_resource: QGetPersonaNewV4NameResource | None = None
+    description_resource: QGetPersonaNewV4DescriptionResource | None = None
+    color_resource: QGetPersonaNewV4ColorResource | None = None
+    icon_resource: QGetPersonaNewV4IconResource | None = None
+    instructions_resource: QGetPersonaNewV4InstructionsResource | None = None
+    flag_resource: QGetPersonaNewV4FlagResource | None = None
+    preset_colors_resources: list[QGetPersonaNewV4ColorResource] | None = None
 
 
 

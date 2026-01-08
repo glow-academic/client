@@ -13,10 +13,14 @@ import { Power } from "lucide-react";
 import React, { useCallback, useEffect, useRef } from "react";
 
 export interface FlagsProps {
-  value: boolean; // Current boolean value
-  resourceId: string | null; // Current resource_id (for form state)
-  onChange: (value: boolean) => void; // Update boolean value (for UI only)
-  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
+  flagResource?: {
+    id: string;
+    name: string;
+    description: string;
+    icon_id: string | null;
+  } | null; // Resource data from server (composite type)
+  flagId: string | null; // Current flag_id (for form state)
+  onFlagIdChange: (flagId: string | null) => void; // Update flag_id in parent form state
   label?: string;
   disabled?: boolean;
   id?: string;
@@ -35,10 +39,9 @@ export interface FlagsProps {
 }
 
 export function Flags({
-  value,
-  resourceId,
-  onChange,
-  onResourceIdChange,
+  flagResource,
+  flagId,
+  onFlagIdChange,
   label = "Active",
   disabled = false,
   id = "active",
@@ -47,21 +50,34 @@ export function Flags({
   iconId,
   createFlagsAction,
 }: FlagsProps) {
-  const lastSavedValueRef = useRef<boolean>(value);
+  // If flagResource exists, the flag is active (true), otherwise false
+  const [internalValue, setInternalValue] = React.useState(
+    flagResource !== null && flagResource !== undefined
+  );
+  const lastSavedValueRef = useRef<boolean>(
+    flagResource !== null && flagResource !== undefined
+  );
   const isInitialMountRef = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Update internal value when flagResource changes
+  React.useEffect(() => {
+    const newValue = flagResource !== null && flagResource !== undefined;
+    setInternalValue(newValue);
+    lastSavedValueRef.current = newValue;
+  }, [flagResource]);
 
   // Debounced flag resource creation
   useEffect(() => {
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
-      lastSavedValueRef.current = value;
+      lastSavedValueRef.current = internalValue;
       return;
     }
 
     // Skip if value hasn't changed
-    if (value === lastSavedValueRef.current) {
+    if (internalValue === lastSavedValueRef.current) {
       return;
     }
 
@@ -73,7 +89,7 @@ export function Flags({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        if (value && createFlagsAction && iconId) {
+        if (internalValue && createFlagsAction && iconId) {
           // Create flag resource when active=true
           const result = await createFlagsAction({
             body: {
@@ -83,13 +99,13 @@ export function Flags({
             },
           });
           if (result.flag_id) {
-            onResourceIdChange(result.flag_id);
+            onFlagIdChange(result.flag_id);
           }
-        } else if (!value) {
+        } else if (!internalValue) {
           // Clear resource ID when active=false
-          onResourceIdChange(null);
+          onFlagIdChange(null);
         }
-        lastSavedValueRef.current = value;
+        lastSavedValueRef.current = internalValue;
       } catch (error) {
         console.error("Failed to create flag resource:", error);
       }
@@ -100,14 +116,11 @@ export function Flags({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [value, createFlagsAction, iconId, onResourceIdChange]);
+  }, [internalValue, createFlagsAction, iconId, onFlagIdChange]);
 
-  const handleChange = useCallback(
-    (checked: boolean) => {
-      onChange(checked); // Update boolean value immediately for UI
-    },
-    [onChange]
-  );
+  const handleChange = useCallback((checked: boolean) => {
+    setInternalValue(checked);
+  }, []);
 
   return (
     <div className="space-y-2 pt-2">
@@ -122,7 +135,7 @@ export function Flags({
           </Label>
           <Switch
             id={id}
-            checked={value ?? false}
+            checked={internalValue ?? false}
             onCheckedChange={handleChange}
             disabled={disabled}
           />

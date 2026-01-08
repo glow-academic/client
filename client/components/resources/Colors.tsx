@@ -9,10 +9,10 @@
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { getColorName } from "@/utils/color-helpers";
 import { Check } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ColorItem {
   hex: string;
@@ -20,10 +20,14 @@ export interface ColorItem {
 }
 
 export interface ColorsProps {
-  value: string; // Initial display value (hex code from server data)
-  resourceId: string | null; // Current resource_id (for form state)
-  onChange: (value: string) => void; // Update display value (for UI only)
-  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
+  colorResource?: {
+    id: string;
+    name: string;
+    description: string;
+    hex_code: string;
+  } | null; // Resource data from server (composite type)
+  colorId: string | null; // Current color_id (for form state)
+  onColorIdChange: (colorId: string | null) => void; // Update color_id in parent form state
   presetColors: ColorItem[];
   label?: string;
   disabled?: boolean;
@@ -45,33 +49,34 @@ export interface ColorsProps {
 }
 
 export function Colors({
-  value,
-  resourceId,
-  onChange,
-  onResourceIdChange,
+  colorResource,
+  colorId: _colorId,
+  onColorIdChange,
   presetColors,
   label = "Color",
   disabled = false,
   id = "color",
-  searchTerm = "",
-  onSearchChange,
-  searchPlaceholder = "Search colors...",
+  searchTerm: _searchTerm,
+  onSearchChange: _onSearchChange,
+  searchPlaceholder: _searchPlaceholder,
   showSelectedFilter = false,
-  onShowSelectedChange,
+  onShowSelectedChange: _onShowSelectedChange,
   createColorsAction,
 }: ColorsProps) {
-  const [internalValue, setInternalValue] = useState(value);
+  const [internalValue, setInternalValue] = useState(
+    colorResource?.hex_code || ""
+  );
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(value);
+  const lastSavedValueRef = useRef<string>(colorResource?.hex_code || "");
   const isInitialMountRef = useRef(true);
 
-  // Sync external value changes
+  // Update internal value when colorResource changes
   useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value);
-      lastSavedValueRef.current = value;
+    if (colorResource?.hex_code) {
+      setInternalValue(colorResource.hex_code);
+      lastSavedValueRef.current = colorResource.hex_code;
     }
-  }, [value]);
+  }, [colorResource?.hex_code]);
 
   // Normalize current color for comparison
   const currentColor = useMemo(() => {
@@ -99,7 +104,7 @@ export function Colors({
     if (!createColorsAction || !internalValue) {
       if (!internalValue) {
         // Clear resource ID if value is empty
-        onResourceIdChange(null);
+        onColorIdChange(null);
       }
       return;
     }
@@ -122,7 +127,7 @@ export function Colors({
           },
         });
         if (result.color_id) {
-          onResourceIdChange(result.color_id);
+          onColorIdChange(result.color_id);
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
@@ -135,15 +140,11 @@ export function Colors({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, currentColor, createColorsAction, onResourceIdChange]);
+  }, [internalValue, currentColor, createColorsAction, onColorIdChange]);
 
-  const handleChange = useCallback(
-    (newValue: string) => {
-      setInternalValue(newValue);
-      onChange(newValue); // Update display value immediately for UI
-    },
-    [onChange]
-  );
+  const handleChange = useCallback((newValue: string) => {
+    setInternalValue(newValue);
+  }, []);
 
   // Filter by showSelected if enabled (presetColors already filtered by search in parent)
   const displayColors = useMemo(() => {
@@ -212,7 +213,7 @@ export function Colors({
         <div className="flex gap-2">
           <Input
             id={`${id}Input`}
-            value={value || ""}
+            value={internalValue || ""}
             onChange={(e) => {
               const inputValue = e.target.value;
               // Allow any hex value (with or without #, any length)

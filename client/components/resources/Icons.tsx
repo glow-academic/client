@@ -8,16 +8,20 @@
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import { Check } from "lucide-react";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface IconsProps {
-  value: string; // Initial display value (icon name from server data)
-  resourceId: string | null; // Current resource_id (for form state)
-  onChange: (value: string) => void; // Update display value (for UI only)
-  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
+  iconResource?: {
+    id: string;
+    name: string;
+    description: string;
+    value: string;
+  } | null; // Resource data from server (composite type)
+  iconId: string | null; // Current icon_id (for form state)
+  onIconIdChange: (iconId: string | null) => void; // Update icon_id in parent form state
   allIcons: string[];
   suggestedIcons?: string[];
   label?: string;
@@ -40,34 +44,33 @@ export interface IconsProps {
 }
 
 export function Icons({
-  value,
-  resourceId,
-  onChange,
-  onResourceIdChange,
+  iconResource,
+  iconId: _iconId,
+  onIconIdChange,
   allIcons,
   suggestedIcons = [],
   label = "Icon",
   disabled = false,
   id = "icon",
   searchTerm = "",
-  onSearchChange,
-  searchPlaceholder = "Search icons...",
+  onSearchChange: _onSearchChange,
+  searchPlaceholder: _searchPlaceholder = "Search icons...",
   showSelectedFilter = false,
-  onShowSelectedChange,
+  onShowSelectedChange: _onShowSelectedChange,
   createIconsAction,
 }: IconsProps) {
-  const [internalValue, setInternalValue] = useState(value);
+  const [internalValue, setInternalValue] = useState(iconResource?.value || "");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(value);
+  const lastSavedValueRef = useRef<string>(iconResource?.value || "");
   const isInitialMountRef = useRef(true);
 
-  // Sync external value changes
+  // Update internal value when iconResource changes
   useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value);
-      lastSavedValueRef.current = value;
+    if (iconResource?.value) {
+      setInternalValue(iconResource.value);
+      lastSavedValueRef.current = iconResource.value;
     }
-  }, [value]);
+  }, [iconResource?.value]);
 
   // Filter icons based on search term
   const filteredIcons = useMemo(() => {
@@ -75,9 +78,7 @@ export function Icons({
       return allIcons;
     }
     const searchLower = searchTerm.toLowerCase();
-    return allIcons.filter((icon) =>
-      icon.toLowerCase().includes(searchLower)
-    );
+    return allIcons.filter((icon) => icon.toLowerCase().includes(searchLower));
   }, [allIcons, searchTerm]);
 
   // Filter by showSelected if enabled
@@ -106,7 +107,7 @@ export function Icons({
     if (!createIconsAction || !internalValue) {
       if (!internalValue) {
         // Clear resource ID if value is empty
-        onResourceIdChange(null);
+        onIconIdChange(null);
       }
       return;
     }
@@ -129,7 +130,7 @@ export function Icons({
           },
         });
         if (result.icon_id) {
-          onResourceIdChange(result.icon_id);
+          onIconIdChange(result.icon_id);
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
@@ -142,15 +143,11 @@ export function Icons({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createIconsAction, allIcons, onResourceIdChange]);
+  }, [internalValue, createIconsAction, allIcons, onIconIdChange]);
 
-  const handleChange = useCallback(
-    (newValue: string) => {
-      setInternalValue(newValue);
-      onChange(newValue); // Update display value immediately for UI
-    },
-    [onChange]
-  );
+  const handleChange = useCallback((newValue: string) => {
+    setInternalValue(newValue);
+  }, []);
 
   return (
     <div className="space-y-4">

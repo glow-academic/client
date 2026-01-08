@@ -58,6 +58,42 @@ CREATE TYPE types.q_get_persona_new_v4_color AS (
     name text
 );
 
+CREATE TYPE types.q_get_persona_new_v4_name_resource AS (
+    id uuid,
+    name text
+);
+
+CREATE TYPE types.q_get_persona_new_v4_color_resource AS (
+    id uuid,
+    name text,
+    description text,
+    hex_code text
+);
+
+CREATE TYPE types.q_get_persona_new_v4_flag_resource AS (
+    id uuid,
+    name text,
+    description text,
+    icon_id uuid
+);
+
+CREATE TYPE types.q_get_persona_new_v4_icon_resource AS (
+    id uuid,
+    name text,
+    description text,
+    value text
+);
+
+CREATE TYPE types.q_get_persona_new_v4_description_resource AS (
+    id uuid,
+    description text
+);
+
+CREATE TYPE types.q_get_persona_new_v4_instructions_resource AS (
+    id uuid,
+    template text
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_persona_new_v4(
     profile_id uuid,
@@ -95,7 +131,23 @@ RETURNS TABLE (
     scenario_count int,
     can_edit boolean,
     can_duplicate boolean,
-    can_delete boolean
+    can_delete boolean,
+    -- Resource IDs for form state
+    name_id uuid,
+    description_id uuid,
+    color_id uuid,
+    icon_id uuid,
+    instructions_id uuid,
+    active_flag_id uuid,
+    -- Resource composite types
+    name_resource types.q_get_persona_new_v4_name_resource,
+    description_resource types.q_get_persona_new_v4_description_resource,
+    color_resource types.q_get_persona_new_v4_color_resource,
+    icon_resource types.q_get_persona_new_v4_icon_resource,
+    instructions_resource types.q_get_persona_new_v4_instructions_resource,
+    flag_resource types.q_get_persona_new_v4_flag_resource,
+    -- Preset colors as resource array
+    preset_colors_resources types.q_get_persona_new_v4_color_resource[]
 )
 LANGUAGE sql
 STABLE
@@ -278,8 +330,75 @@ valid_icons_filtered AS (
             p.current_icon IS NULL OR
             LOWER(avi.icon_name) = LOWER(COALESCE(p.current_icon, ''))
         )
+),
+-- Resource data CTEs - query from draft_* tables if draft_id provided, otherwise NULL
+name_resource_data AS (
+    SELECT 
+        (SELECT dn.names_id FROM draft_names dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1) as name_id,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM draft_names dn JOIN names n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params)) THEN
+                (SELECT ROW(n.id, n.name)::types.q_get_persona_new_v4_name_resource FROM draft_names dn JOIN names n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1)
+        END as name_resource
+    FROM params
+),
+description_resource_data AS (
+    SELECT 
+        (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as description_id,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params)) THEN
+                (SELECT ROW(d.id, d.description)::types.q_get_persona_new_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1)
+        END as description_resource
+    FROM params
+),
+color_resource_data AS (
+    SELECT 
+        (SELECT dc.colors_id FROM draft_colors dc WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1) as color_id,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id WHERE dc.draft_id = (SELECT draft_id FROM params)) THEN
+                (SELECT ROW(c.id, c.name, c.description, c.hex_code)::types.q_get_persona_new_v4_color_resource FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1)
+        END as color_resource
+    FROM params
+),
+icon_resource_data AS (
+    SELECT 
+        (SELECT di.icons_id FROM draft_icons di WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1) as icon_id,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM draft_icons di JOIN icons i ON di.icons_id = i.id WHERE di.draft_id = (SELECT draft_id FROM params)) THEN
+                (SELECT ROW(i.id, i.name, i.description, i.value)::types.q_get_persona_new_v4_icon_resource FROM draft_icons di JOIN icons i ON di.icons_id = i.id WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1)
+        END as icon_resource
+    FROM params
+),
+instructions_resource_data AS (
+    SELECT 
+        (SELECT dinst.instructions_id FROM draft_instructions dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as instructions_id,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params)) THEN
+                (SELECT ROW(inst.id, inst.template)::types.q_get_persona_new_v4_instructions_resource FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1)
+        END as instructions_resource
+    FROM params
+),
+flag_resource_data AS (
+    SELECT 
+        (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as active_flag_id,
+        CASE 
+            WHEN EXISTS (SELECT 1 FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params)) THEN
+                (SELECT ROW(f.id, f.name, f.description, f.icon_id)::types.q_get_persona_new_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1)
+        END as flag_resource
+    FROM params
+),
+-- Preset colors as resource array (convert preset_colors_filtered to color_resource array)
+preset_colors_resources_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                ROW(NULL::uuid, pcf.name, 'Color: ' || pcf.hex, pcf.hex)::types.q_get_persona_new_v4_color_resource
+                ORDER BY pcf.name
+            ) FROM preset_colors_filtered pcf),
+            '{}'::types.q_get_persona_new_v4_color_resource[]
+        ) as preset_colors_resources
+    FROM params
 )
-SELECT 
+SELECT
     up.actor_name::text as actor_name,
     up.user_role::text as user_role,
     (SELECT department_id FROM primary_department_id_data) as primary_department_id,
@@ -381,10 +500,33 @@ SELECT
         ELSE false
     END::boolean as can_edit,
     false::boolean as can_duplicate,
-    false::boolean as can_delete
+    false::boolean as can_delete,
+    -- Resource IDs for form state
+    (SELECT name_id FROM name_resource_data) as name_id,
+    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT color_id FROM color_resource_data) as color_id,
+    (SELECT icon_id FROM icon_resource_data) as icon_id,
+    (SELECT instructions_id FROM instructions_resource_data) as instructions_id,
+    (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
+    -- Resource composite types
+    (SELECT name_resource FROM name_resource_data) as name_resource,
+    (SELECT description_resource FROM description_resource_data) as description_resource,
+    (SELECT color_resource FROM color_resource_data) as color_resource,
+    (SELECT icon_resource FROM icon_resource_data) as icon_resource,
+    (SELECT instructions_resource FROM instructions_resource_data) as instructions_resource,
+    (SELECT flag_resource FROM flag_resource_data) as flag_resource,
+    -- Preset colors as resource array
+    (SELECT preset_colors_resources FROM preset_colors_resources_data) as preset_colors_resources
 FROM user_profile up
 CROSS JOIN valid_department_ids_data vdid
 CROSS JOIN valid_agent_ids_data vaid
 CROSS JOIN valid_parameter_ids_data vpid
 CROSS JOIN valid_parameter_item_ids_data vpiid
+CROSS JOIN name_resource_data nrd
+CROSS JOIN description_resource_data drd
+CROSS JOIN color_resource_data crd
+CROSS JOIN icon_resource_data ird
+CROSS JOIN instructions_resource_data instrd
+CROSS JOIN flag_resource_data frd
+CROSS JOIN preset_colors_resources_data pcrd
 $$;

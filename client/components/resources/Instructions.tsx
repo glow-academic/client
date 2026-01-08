@@ -14,10 +14,9 @@ import { Loader2, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface InstructionsProps {
-  value: string; // Initial display value (from server data)
-  resourceId: string | null; // Current resource_id (for form state)
-  onChange: (value: string) => void; // Update display value (for UI only)
-  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
+  instructionsResource?: { id: string; template: string } | null; // Resource data from server (composite type)
+  instructionsId: string | null; // Current instructions_id (for form state)
+  onInstructionsIdChange: (instructionsId: string | null) => void; // Update instructions_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
@@ -36,10 +35,9 @@ export interface InstructionsProps {
 }
 
 export function Instructions({
-  value,
-  resourceId,
-  onChange,
-  onResourceIdChange,
+  instructionsResource,
+  instructionsId,
+  onInstructionsIdChange,
   onGenerate,
   isGenerating = false,
   label = "Instructions",
@@ -52,18 +50,22 @@ export function Instructions({
   helpText,
   createInstructionsAction,
 }: InstructionsProps) {
-  const [internalValue, setInternalValue] = useState(value);
+  const [internalValue, setInternalValue] = useState(
+    instructionsResource?.template || ""
+  );
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(value);
+  const lastSavedValueRef = useRef<string>(
+    instructionsResource?.template || ""
+  );
   const isInitialMountRef = useRef(true);
 
-  // Sync external value changes
+  // Update internal value when instructionsResource changes
   useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value);
-      lastSavedValueRef.current = value;
+    if (instructionsResource?.template) {
+      setInternalValue(instructionsResource.template);
+      lastSavedValueRef.current = instructionsResource.template;
     }
-  }, [value, internalValue]);
+  }, [instructionsResource?.template]);
 
   // Debounced resource creation
   useEffect(() => {
@@ -99,11 +101,11 @@ export function Instructions({
             },
           });
           if (result.instruction_id) {
-            onResourceIdChange(result.instruction_id);
+            onInstructionsIdChange(result.instruction_id);
           }
         } else {
           // Clear resource ID if value is empty
-          onResourceIdChange(null);
+          onInstructionsIdChange(null);
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
@@ -116,15 +118,11 @@ export function Instructions({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createInstructionsAction, onResourceIdChange]);
+  }, [internalValue, createInstructionsAction, onInstructionsIdChange]);
 
-  const handleChange = useCallback(
-    (newValue: string) => {
-      setInternalValue(newValue);
-      onChange(newValue); // Update display value immediately for UI
-    },
-    [onChange]
-  );
+  const handleChange = useCallback((newValue: string) => {
+    setInternalValue(newValue);
+  }, []);
 
   return (
     <div className="space-y-2">

@@ -14,10 +14,9 @@ import { Loader2, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface DescriptionsProps {
-  value: string; // Initial display value (from server data)
-  resourceId: string | null; // Current resource_id (for form state)
-  onChange: (value: string) => void; // Update display value (for UI only)
-  onResourceIdChange: (resourceId: string | null) => void; // Update resource_id in parent form state
+  descriptionResource?: { id: string; description: string } | null; // Resource data from server (composite type)
+  descriptionId: string | null; // Current description_id (for form state)
+  onDescriptionIdChange: (descriptionId: string | null) => void; // Update description_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
@@ -36,10 +35,9 @@ export interface DescriptionsProps {
 }
 
 export function Descriptions({
-  value,
-  resourceId,
-  onChange,
-  onResourceIdChange,
+  descriptionResource,
+  descriptionId,
+  onDescriptionIdChange,
   onGenerate,
   isGenerating = false,
   label = "Description",
@@ -52,18 +50,22 @@ export function Descriptions({
   helpText,
   createDescriptionsAction,
 }: DescriptionsProps) {
-  const [internalValue, setInternalValue] = useState(value);
+  const [internalValue, setInternalValue] = useState(
+    descriptionResource?.description || ""
+  );
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(value);
+  const lastSavedValueRef = useRef<string>(
+    descriptionResource?.description || ""
+  );
   const isInitialMountRef = useRef(true);
 
-  // Sync external value changes
+  // Update internal value when descriptionResource changes
   useEffect(() => {
-    if (value !== internalValue) {
-      setInternalValue(value);
-      lastSavedValueRef.current = value;
+    if (descriptionResource?.description) {
+      setInternalValue(descriptionResource.description);
+      lastSavedValueRef.current = descriptionResource.description;
     }
-  }, [value, internalValue]);
+  }, [descriptionResource?.description]);
 
   // Debounced resource creation
   useEffect(() => {
@@ -99,11 +101,11 @@ export function Descriptions({
             },
           });
           if (result.description_id) {
-            onResourceIdChange(result.description_id);
+            onDescriptionIdChange(result.description_id);
           }
         } else {
           // Clear resource ID if value is empty
-          onResourceIdChange(null);
+          onDescriptionIdChange(null);
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
@@ -116,15 +118,11 @@ export function Descriptions({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createDescriptionsAction, onResourceIdChange]);
+  }, [internalValue, createDescriptionsAction, onDescriptionIdChange]);
 
-  const handleChange = useCallback(
-    (newValue: string) => {
-      setInternalValue(newValue);
-      onChange(newValue); // Update display value immediately for UI
-    },
-    [onChange]
-  );
+  const handleChange = useCallback((newValue: string) => {
+    setInternalValue(newValue);
+  }, []);
 
   return (
     <div className="space-y-2">
