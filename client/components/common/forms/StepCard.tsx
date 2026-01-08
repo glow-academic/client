@@ -52,7 +52,9 @@ export interface StepCardProps {
     value: boolean;
     onChange: (value: boolean) => void;
   }>;
-  // Optional editable title (replaces static stepTitle)
+  // Optional custom header (replaces static stepTitle/stepDescription and editableTitle)
+  customHeader?: React.ReactNode;
+  // Optional editable title (replaces static stepTitle) - deprecated, use customHeader instead
   editableTitle?: {
     value: string;
     onChange: (value: string) => void;
@@ -82,6 +84,7 @@ export function StepCard({
   onSearchChange,
   searchPlaceholder,
   filters,
+  customHeader,
   editableTitle,
   resetFields,
   onReset,
@@ -236,7 +239,9 @@ export function StepCard({
             )}
           </div>
           <div className="flex-1">
-            {editableTitle ? (
+            {customHeader ? (
+              customHeader
+            ) : editableTitle ? (
               <>
                 <input
                   type="text"

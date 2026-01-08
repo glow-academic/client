@@ -1,7 +1,7 @@
 /**
  * Names.tsx
  * Resource component for name input fields
- * Full UI component with Label + Input + optional AI generate button
+ * Header-style input with optional AI generate button
  * Creates resources independently and reports resource IDs to parent
  */
 
@@ -9,8 +9,6 @@
 
 import type { CreateDraftNamesIn, CreateDraftNamesOut } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -23,11 +21,11 @@ export interface NamesProps {
   onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
-  label?: string;
   placeholder?: string;
   required?: boolean;
   id?: string;
   "data-testid"?: string;
+  defaultName?: string; // Default name value (for header style - reverts to this on blur if empty)
   createNamesAction?: ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>) | undefined;
   // Legacy props for backward compatibility
   nameResource?: { id: string; name: string } | null;
@@ -44,11 +42,11 @@ export function Names({
   onNameIdChange,
   onGenerate,
   isGenerating = false,
-  label = "Name",
   placeholder = "Enter name",
   required = false,
   id = "name",
   "data-testid": dataTestId,
+  defaultName,
   createNamesAction,
   // Legacy props for backward compatibility
   nameResource,
@@ -68,9 +66,10 @@ export function Names({
 
   // Handle nullable resource properties
   const resourceName = resource?.name ?? null;
-  const [internalValue, setInternalValue] = useState(resourceName || "");
+  const initialValue = resourceName || defaultName || "";
+  const [internalValue, setInternalValue] = useState(initialValue);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(resourceName || "");
+  const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
 
   // Update internal value when name_resource changes
@@ -78,8 +77,12 @@ export function Names({
     if (resourceName) {
       setInternalValue(resourceName);
       lastSavedValueRef.current = resourceName;
+    } else if (defaultName && !resourceName) {
+      // If no resource name but defaultName exists, use defaultName
+      setInternalValue(defaultName);
+      lastSavedValueRef.current = defaultName;
     }
-  }, [resourceName]);
+  }, [resourceName, defaultName]);
 
   // Debounced resource creation
   useEffect(() => {
@@ -138,13 +141,43 @@ export function Names({
     setInternalValue(newValue);
   }, []);
 
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      // If value equals defaultName, select all text on focus
+      if (defaultName && e.target.value === defaultName) {
+        e.target.select();
+      }
+    },
+    [defaultName]
+  );
+
+  const handleBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      // If empty on blur and defaultName exists, revert to defaultName
+      if (defaultName && (!e.target.value || e.target.value.trim() === "")) {
+        setInternalValue(defaultName);
+        lastSavedValueRef.current = defaultName;
+      }
+    },
+    [defaultName]
+  );
+
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <Label htmlFor={id}>
-          {label}
-          {required && <span className="text-destructive ml-1">*</span>}
-        </Label>
+    <div className="flex-1">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          id={id}
+          data-testid={dataTestId}
+          value={internalValue || ""}
+          onChange={(e) => handleChange(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          placeholder={placeholder || defaultName || "Enter name"}
+          required={required}
+          disabled={disabled}
+          className="w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20 min-w-[300px]"
+        />
         {onGenerate && (
           <Button
             type="button"
@@ -167,15 +200,11 @@ export function Names({
           </Button>
         )}
       </div>
-      <Input
-        id={id}
-        data-testid={dataTestId}
-        value={internalValue || ""}
-        onChange={(e) => handleChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        disabled={disabled}
-      />
+      <p className="text-xs text-muted-foreground mt-1 px-2">
+        {internalValue === defaultName || !internalValue
+          ? "Click to edit"
+          : "Click to edit"}
+      </p>
     </div>
   );
 }

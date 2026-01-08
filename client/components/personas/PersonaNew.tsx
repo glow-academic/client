@@ -519,26 +519,6 @@ function PersonaNewComponent({
   // Keep isReadonly for backward compatibility with existing code
   const isReadonly = disabled;
 
-  // Form initialization function for GenericForm
-  const initializeForm = useCallback(
-    (serverData: unknown, editMode: boolean) => {
-      if (
-        !editMode ||
-        !serverData ||
-        typeof serverData !== "object" ||
-        !("department_ids" in serverData)
-      ) {
-        return {};
-      }
-
-      // Components manage their own display state - formState only stores IDs
-      // Resource IDs are already set via getInitialFormState, so no updates needed here
-      // Return empty object for GenericForm compatibility
-      return {};
-    },
-    []
-  );
-
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
     const personaName = personaData?.name_resource?.name;
@@ -807,14 +787,35 @@ function PersonaNewComponent({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              editableTitle={{
-                value:
-                  (stepFormData["name"] as string | null | undefined) ?? "",
-                onChange: (value) => setStepFormData({ name: value || null }),
-                placeholder: "e.g., Enthusiastic Student",
-                defaultName: "New Persona",
-                required: true,
-              }}
+              customHeader={
+                <>
+                  <Names
+                    name_id={formState.name_id ?? null}
+                    name_resource={personaData?.name_resource ?? null}
+                    show_name={personaData?.show_name ?? true}
+                    name_suggestions={personaData?.name_suggestions ?? []}
+                    disabled={disabled}
+                    onNameIdChange={(nameId) =>
+                      setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    }
+                    onGenerate={handleGenerateName}
+                    isGenerating={isGeneratingName}
+                    placeholder="e.g., Enthusiastic Student"
+                    defaultName="New Persona"
+                    required
+                    createNamesAction={
+                      createNamesAction as
+                        | ((
+                            input: CreateDraftNamesIn
+                          ) => Promise<CreateDraftNamesOut>)
+                        | undefined
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground mt-1 px-2">
+                    {stepDescription}
+                  </p>
+                </>
+              }
               resetFields={[
                 "name",
                 "description",
@@ -826,30 +827,6 @@ function PersonaNewComponent({
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                {/* Name field - using Names resource component */}
-                <Names
-                  name_id={formState.name_id ?? null}
-                  name_resource={personaData?.name_resource ?? null}
-                  show_name={personaData?.show_name ?? true}
-                  name_suggestions={personaData?.name_suggestions ?? []}
-                  disabled={disabled}
-                  onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
-                  }
-                  onGenerate={handleGenerateName}
-                  isGenerating={isGeneratingName}
-                  label="Name"
-                  placeholder="e.g., Enthusiastic Student"
-                  required
-                  createNamesAction={
-                    createNamesAction as
-                      | ((
-                          input: CreateDraftNamesIn
-                        ) => Promise<CreateDraftNamesOut>)
-                      | undefined
-                  }
-                />
-
                 {/* Description field - using Descriptions resource component */}
                 <Descriptions
                   description_id={formState.description_id ?? null}
@@ -1208,7 +1185,6 @@ function PersonaNewComponent({
           formData={formData}
           setFormData={setFormData}
           serverData={personaData}
-          initializeForm={initializeForm}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={resetSuccessMessage}
           onSubmit={handleSubmit}
