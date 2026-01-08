@@ -11,5 +11,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT id FROM simulations WHERE active = true LIMIT 1;
+    SELECT s.id 
+    FROM simulations s
+    WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)
+    LIMIT 1;
 $$;

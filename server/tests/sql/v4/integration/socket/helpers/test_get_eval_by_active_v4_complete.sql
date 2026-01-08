@@ -11,5 +11,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT id FROM evals WHERE active = true LIMIT 1;
+    SELECT e.id 
+    FROM evals e
+    WHERE EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'active' AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE)
+    LIMIT 1;
 $$;

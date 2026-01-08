@@ -16,13 +16,71 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO rubrics(name, description, points, pass_points, active) 
-    VALUES (
-        test_create_test_rubric_v4.name, 
-        test_create_test_rubric_v4.description, 
-        test_create_test_rubric_v4.points, 
-        test_create_test_rubric_v4.pass_points, 
-        true
-    ) 
-    RETURNING id as rubric_id;
+    WITH new_rubric AS (
+        INSERT INTO rubrics DEFAULT VALUES
+        RETURNING id
+    ),
+    name_resource AS (
+        INSERT INTO names(name)
+        VALUES (test_create_test_rubric_v4.name)
+        RETURNING id
+    ),
+    description_resource AS (
+        INSERT INTO descriptions(description)
+        VALUES (test_create_test_rubric_v4.description)
+        RETURNING id
+    ),
+    points_resource AS (
+        INSERT INTO points(value)
+        VALUES (test_create_test_rubric_v4.points)
+        ON CONFLICT (value) DO NOTHING
+        RETURNING id
+    ),
+    points_lookup AS (
+        SELECT id FROM points WHERE value = test_create_test_rubric_v4.points LIMIT 1
+    ),
+    pass_points_resource AS (
+        INSERT INTO points(value)
+        VALUES (test_create_test_rubric_v4.pass_points)
+        ON CONFLICT (value) DO NOTHING
+        RETURNING id
+    ),
+    pass_points_lookup AS (
+        SELECT id FROM points WHERE value = test_create_test_rubric_v4.pass_points LIMIT 1
+    ),
+    active_flag AS (
+        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+    ),
+    rubric_name_link AS (
+        INSERT INTO rubric_names(rubric_id, name_id)
+        SELECT nr.id, nrr.id
+        FROM new_rubric nr, name_resource nrr
+        RETURNING rubric_id
+    ),
+    rubric_description_link AS (
+        INSERT INTO rubric_descriptions(rubric_id, description_id)
+        SELECT nr.id, dr.id
+        FROM new_rubric nr, description_resource dr
+        RETURNING rubric_id
+    ),
+    rubric_points_link AS (
+        INSERT INTO rubric_points(rubric_id, point_id, type)
+        SELECT nr.id, COALESCE(pr.id, pl.id), 'total'::type_rubric_points
+        FROM new_rubric nr, points_resource pr FULL OUTER JOIN points_lookup pl ON true
+        RETURNING rubric_id
+    ),
+    rubric_pass_points_link AS (
+        INSERT INTO rubric_points(rubric_id, point_id, type)
+        SELECT nr.id, COALESCE(ppr.id, ppl.id), 'pass'::type_rubric_points
+        FROM new_rubric nr, pass_points_resource ppr FULL OUTER JOIN pass_points_lookup ppl ON true
+        RETURNING rubric_id
+    ),
+    rubric_flag_link AS (
+        INSERT INTO rubric_flags(rubric_id, flag_id, type, value)
+        SELECT nr.id, af.id, 'active'::type_rubric_flags, true
+        FROM new_rubric nr, active_flag af
+        RETURNING rubric_id
+    )
+    SELECT nr.id as rubric_id
+    FROM new_rubric nr;
 $$;

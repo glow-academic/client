@@ -13,5 +13,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT active FROM profiles WHERE id = test_get_profile_by_id_v4.profile_id;
+    SELECT EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active
+    FROM profiles p
+    WHERE p.id = test_get_profile_by_id_v4.profile_id;
 $$;

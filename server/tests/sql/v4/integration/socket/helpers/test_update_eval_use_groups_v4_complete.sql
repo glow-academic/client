@@ -14,8 +14,14 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    UPDATE evals
-    SET use_groups = test_update_eval_use_groups_v4.use_groups
-    WHERE id = test_update_eval_use_groups_v4.eval_id
-    RETURNING id as eval_id;
+    WITH groups_flag AS (
+        SELECT id FROM flags WHERE name = 'groups' LIMIT 1
+    )
+    UPDATE eval_flags ef
+    SET value = test_update_eval_use_groups_v4.use_groups
+    FROM groups_flag gf
+    WHERE ef.eval_id = test_update_eval_use_groups_v4.eval_id
+      AND ef.flag_id = gf.id
+      AND ef.type = 'groups'::type_eval_flags
+    RETURNING ef.eval_id as eval_id;
 $$;
