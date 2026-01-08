@@ -18,18 +18,18 @@ type SavePersonaIn = InputOf<"/api/v4/personas/save", "post">;
 type SavePersonaOut = OutputOf<"/api/v4/personas/save", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v4/drafts/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/drafts/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<"/api/v4/drafts/descriptions", "post">;
-type CreateDraftDescriptionsOut = OutputOf<"/api/v4/drafts/descriptions", "post">;
-type CreateDraftInstructionsIn = InputOf<"/api/v4/drafts/instructions", "post">;
-type CreateDraftInstructionsOut = OutputOf<"/api/v4/drafts/instructions", "post">;
-type CreateDraftColorsIn = InputOf<"/api/v4/drafts/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v4/drafts/colors", "post">;
-type CreateDraftIconsIn = InputOf<"/api/v4/drafts/icons", "post">;
-type CreateDraftIconsOut = OutputOf<"/api/v4/drafts/icons", "post">;
-type CreateDraftFlagsIn = InputOf<"/api/v4/drafts/flags", "post">;
-type CreateDraftFlagsOut = OutputOf<"/api/v4/drafts/flags", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<"/api/v4/resources/descriptions", "post">;
+type CreateDraftDescriptionsOut = OutputOf<"/api/v4/resources/descriptions", "post">;
+type CreateDraftInstructionsIn = InputOf<"/api/v4/resources/instructions", "post">;
+type CreateDraftInstructionsOut = OutputOf<"/api/v4/resources/instructions", "post">;
+type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
+type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
+type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
+type CreateDraftIconsOut = OutputOf<"/api/v4/resources/icons", "post">;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -177,8 +177,7 @@ export default async function NewPersonaPage({
     >
       <PersonaNew
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        mode="create"
-        personaDetailDefault={personaDetailDefault}
+        data={personaDetailDefault}
         savePersonaAction={savePersona}
         patchPersonaDraftAction={patchPersonaDraft}
         createNamesAction={createDraftNames}
@@ -192,24 +191,4 @@ export default async function NewPersonaPage({
   );
 }
 
-/** ---- Export types for client component (type-only imports) ---- */
-export type {
-  SavePersonaIn,
-  SavePersonaOut,
-  CreateDraftNamesIn,
-  CreateDraftNamesOut,
-  CreateDraftDescriptionsIn,
-  CreateDraftDescriptionsOut,
-  CreateDraftInstructionsIn,
-  CreateDraftInstructionsOut,
-  CreateDraftColorsIn,
-  CreateDraftColorsOut,
-  CreateDraftIconsIn,
-  CreateDraftIconsOut,
-  CreateDraftFlagsIn,
-  CreateDraftFlagsOut,
-  PatchPersonaDraftIn,
-  PatchPersonaDraftOut,
-  GetPersonaIn,
-  GetPersonaOut,
-};
+// Types are now defined inline in components using InputOf/OutputOf

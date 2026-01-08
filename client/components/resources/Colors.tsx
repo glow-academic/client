@@ -6,14 +6,17 @@
 
 "use client";
 
-import type { CreateDraftColorsIn, CreateDraftColorsOut } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getColorName } from "@/utils/color-helpers";
 import { Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
+type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
 
 export interface ColorItem {
   hex: string;
@@ -45,7 +48,9 @@ export interface ColorsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
-  createColorsAction?: ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>) | undefined;
+  createColorsAction?:
+    | ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>)
+    | undefined;
   // Legacy props for backward compatibility
   colorResource?: {
     id: string;
@@ -106,9 +111,7 @@ export function Colors({
 
   // Handle nullable resource properties
   const resourceHexCode = resource?.hex_code ?? null;
-  const [internalValue, setInternalValue] = useState(
-    resourceHexCode || ""
-  );
+  const [internalValue, setInternalValue] = useState(resourceHexCode || "");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(resourceHexCode || "");
   const isInitialMountRef = useRef(true);

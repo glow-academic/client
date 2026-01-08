@@ -7,7 +7,10 @@
 
 "use client";
 
-import type { CreateDraftNamesIn, CreateDraftNamesOut } from "@/app/(main)/create/personas/p/[personaId]/page";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 import { Button } from "@/components/ui/button";
 import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";

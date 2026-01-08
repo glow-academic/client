@@ -7,7 +7,10 @@
 
 "use client";
 
-import type { CreateDraftInstructionsIn, CreateDraftInstructionsOut } from "@/app/(main)/create/personas/p/[personaId]/page";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+
+type CreateDraftInstructionsIn = InputOf<"/api/v4/resources/instructions", "post">;
+type CreateDraftInstructionsOut = OutputOf<"/api/v4/resources/instructions", "post">;
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";

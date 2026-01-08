@@ -7,7 +7,10 @@
 
 "use client";
 
-import type { CreateDraftFlagsIn, CreateDraftFlagsOut } from "@/app/(main)/create/personas/p/[personaId]/page";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Power } from "lucide-react";

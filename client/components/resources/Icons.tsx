@@ -6,16 +6,16 @@
 
 "use client";
 
-import type {
-  CreateDraftIconsIn,
-  CreateDraftIconsOut,
-} from "@/app/(main)/create/personas/p/[personaId]/page";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Label } from "@/components/ui/label";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { PERSONA_ICON_MAP } from "@/utils/persona-icons";
 import { Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+
+type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
+type CreateDraftIconsOut = OutputOf<"/api/v4/resources/icons", "post">;
 
 export interface IconsProps {
   icon_id?: string | null; // Current icon_id (standardized prop name)

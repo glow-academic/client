@@ -11,25 +11,6 @@ import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useProfile } from "@/contexts/profile-context";
-
-import type {
-  CreateDraftColorsIn,
-  CreateDraftColorsOut,
-  CreateDraftDescriptionsIn,
-  CreateDraftDescriptionsOut,
-  CreateDraftFlagsIn,
-  CreateDraftFlagsOut,
-  CreateDraftIconsIn,
-  CreateDraftIconsOut,
-  CreateDraftInstructionsIn,
-  CreateDraftInstructionsOut,
-  CreateDraftNamesIn,
-  CreateDraftNamesOut,
-  SavePersonaIn,
-  SavePersonaOut,
-} from "@/app/(main)/create/personas/p/[personaId]/page";
 import {
   GenericForm,
   type StepStatus,
@@ -45,6 +26,8 @@ import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpers";
 import {
@@ -54,15 +37,40 @@ import {
   type Parser,
 } from "nuqs";
 
-type PersonaDetailOut = OutputOf<"/api/v4/personas/get", "post">;
-type PersonaNewOut = OutputOf<"/api/v4/personas/get", "post">;
+// Types defined inline using InputOf/OutputOf
+type SavePersonaIn = InputOf<"/api/v4/personas/save", "post">;
+type SavePersonaOut = OutputOf<"/api/v4/personas/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
+type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
+type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
+type CreateDraftIconsOut = OutputOf<"/api/v4/resources/icons", "post">;
+type CreateDraftInstructionsIn = InputOf<
+  "/api/v4/resources/instructions",
+  "post"
+>;
+type CreateDraftInstructionsOut = OutputOf<
+  "/api/v4/resources/instructions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+
+type PersonaData = OutputOf<"/api/v4/personas/get", "post">;
 
 export interface PersonaNewProps {
   personaId?: string;
-  mode?: "create" | "edit";
   // Server-provided data (for server-side rendering)
-  personaDetail?: PersonaDetailOut;
-  personaDetailDefault?: PersonaNewOut;
+  data?: PersonaData;
   // Server actions (replaces useMutation)
   savePersonaAction?: (input: SavePersonaIn) => Promise<SavePersonaOut>;
   patchPersonaDraftAction?: (input: {
@@ -110,9 +118,7 @@ export interface PersonaNewProps {
 
 function PersonaNewComponent({
   personaId,
-  mode = personaId ? "edit" : "create",
-  personaDetail: serverPersonaDetail,
-  personaDetailDefault: serverPersonaDetailDefault,
+  data: personaData,
   savePersonaAction,
   patchPersonaDraftAction,
   createNamesAction,
@@ -124,7 +130,7 @@ function PersonaNewComponent({
   createExamplesAction,
 }: PersonaNewProps) {
   const router = useRouter();
-  const isEditMode = mode === "edit" && !!personaId;
+  const isEditMode = !!personaId;
   const {
     effectiveProfile,
     selectedDraftId,
@@ -140,12 +146,7 @@ function PersonaNewComponent({
   const [isGeneratingInstructions, setIsGeneratingInstructions] =
     useState(false);
 
-  // Use edit detail when editing, default detail when creating
-  const personaData = isEditMode
-    ? serverPersonaDetail
-    : serverPersonaDetailDefault;
-
-  // Inline parsers for URL-backed state (navigation/search params only - form fields moved to local state)
+  // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const personaSearchParamsClient = {
     // Draft ID (URL-backed, updated when draft is created)
     draftId: parseAsString,
@@ -156,24 +157,6 @@ function PersonaNewComponent({
     colorShowSelected: parseAsBoolean,
     iconShowSelected: parseAsBoolean,
   } as const;
-
-  // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(personaSearchParamsClient, {
-    history: "replace",
-    shallow: true, // Use shallow routing to prevent server component re-renders
-  });
-
-  // Get draftId from URL (managed by nuqs via urlParams)
-  const urlDraftId = urlParams.draftId || null;
-
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (urlDraftId !== selectedDraftId) {
-      setSelectedDraftId(urlDraftId);
-    }
-  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
-
-  const draftId = urlDraftId;
 
   // Local form state (not in URL) - stores only resource IDs
   // Display values are managed inside resource components
@@ -236,6 +219,28 @@ function PersonaNewComponent({
   // Draft version tracking for optimistic concurrency control
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
 
+  // Get draftId from URL for draft change listener and profile sync
+  // GenericForm also manages this via nuqs, but we need it here for the draft listener
+  const [draftIdState, setDraftIdState] = useQueryStates(
+    { draftId: parseAsString },
+    {
+      history: "replace",
+      shallow: true,
+    }
+  );
+  const draftId = draftIdState.draftId || null;
+  const setDraftId = useCallback(
+    (value: string | null) => setDraftIdState({ draftId: value }),
+    [setDraftIdState]
+  );
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (draftId !== selectedDraftId) {
+      setSelectedDraftId(draftId);
+    }
+  }, [draftId, selectedDraftId, setSelectedDraftId]);
+
   // Draft change listener - watches resource IDs and patches draft
   useEffect(() => {
     const hasResourceIds =
@@ -271,12 +276,12 @@ function PersonaNewComponent({
           },
         });
         if (!draftId && result.draft_id) {
-          // Update URL when draft is created
-          setUrlParams({ draftId: result.draft_id });
+          // Update URL when draft is created (GenericForm will also sync this)
+          setDraftId(result.draft_id);
         }
         setLastSavedVersion(result.new_version);
-      } catch (error) {
-        console.error("Failed to save draft:", error);
+      } catch {
+        // Failed to save draft - error already logged by API
       }
     }, 1000);
 
@@ -294,7 +299,7 @@ function PersonaNewComponent({
     draftId,
     lastSavedVersion,
     patchPersonaDraftAction,
-    setUrlParams,
+    setDraftId,
   ]);
 
   // WebSocket handlers for AI generation
@@ -439,76 +444,8 @@ function PersonaNewComponent({
     });
   }, [socket, isConnected, draftId, personaId, formState]);
 
-  // Merge formState with urlParams for formData (GenericForm expects single formData object)
-  const formData = useMemo(() => {
-    return {
-      ...formState,
-      colorSearch: urlParams.colorSearch || null,
-      iconSearch: urlParams.iconSearch || null,
-      colorShowSelected: urlParams.colorShowSelected || null,
-      iconShowSelected: urlParams.iconShowSelected || null,
-    } as Record<string, unknown>;
-  }, [formState, urlParams]);
-
-  // Wrapper for setFormData that updates formState for form fields, urlParams for navigation
-  const setFormData = useCallback(
-    (
-      updates:
-        | Partial<Record<string, unknown>>
-        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
-    ) => {
-      // Handle function form
-      const resolvedUpdates =
-        typeof updates === "function" ? updates(formData) : updates;
-
-      const formUpdates: Partial<typeof formState> = {};
-      const urlUpdates: Partial<Record<string, unknown>> = {};
-
-      Object.entries(resolvedUpdates).forEach(([key, value]) => {
-        if (
-          key === "name" ||
-          key === "description" ||
-          key === "instructions" ||
-          key === "color" ||
-          key === "icon" ||
-          key === "active" ||
-          key === "departmentIds" ||
-          key === "field_ids" ||
-          key === "examples"
-        ) {
-          formUpdates[key as keyof typeof formState] = value as never;
-        } else if (
-          key === "colorSearch" ||
-          key === "iconSearch" ||
-          key === "colorShowSelected" ||
-          key === "iconShowSelected"
-        ) {
-          urlUpdates[key] = value;
-        }
-      });
-
-      if (Object.keys(formUpdates).length > 0) {
-        setFormState((prev) => ({ ...prev, ...formUpdates }));
-      }
-      if (Object.keys(urlUpdates).length > 0) {
-        // Check if URL params actually changed before updating
-        const hasChanges = Object.keys(urlUpdates).some((key) => {
-          const newValue = urlUpdates[key];
-          const currentValue = urlParams[key as keyof typeof urlParams];
-          return newValue !== currentValue;
-        });
-
-        if (hasChanges) {
-          setUrlParams(urlUpdates as Parameters<typeof setUrlParams>[0]);
-        }
-      }
-    },
-    [formData, setUrlParams, urlParams]
-  );
-
-  // Extract specific form values to avoid re-renders when formData object reference changes
-  const colorSearch = urlParams.colorSearch || "";
-  const iconSearch = urlParams.iconSearch || "";
+  // GenericForm will manage URL state via nuqs parsers
+  // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
 
   // Disabled logic based on can_edit flag - standardized for all resource components
   const disabled = useMemo(() => {
@@ -663,7 +600,7 @@ function PersonaNewComponent({
         resetFields: [
           "name",
           "description",
-          "departmentIds",
+          "department_ids",
           "field_ids",
           "active",
         ],
@@ -700,7 +637,7 @@ function PersonaNewComponent({
       "icon",
       "instructions",
       "active",
-      "departmentIds",
+      "department_ids",
       "field_ids",
       "examples",
     ],
@@ -734,20 +671,8 @@ function PersonaNewComponent({
     []
   );
 
-  // Create stable filter onChange callbacks using memoized setFormData
-  const createColorFilterOnChange = useCallback(
-    (value: boolean) => {
-      setFormData({ colorShowSelected: value || null });
-    },
-    [setFormData]
-  );
-
-  const createIconFilterOnChange = useCallback(
-    (value: boolean) => {
-      setFormData({ iconShowSelected: value || null });
-    },
-    [setFormData]
-  );
+  // Filter onChange callbacks will be created inline in renderStep
+  // to have access to setStepFormData
 
   // Memoize renderStep to prevent GenericForm re-renders
   const renderStep = useCallback(
@@ -819,7 +744,7 @@ function PersonaNewComponent({
               resetFields={[
                 "name",
                 "description",
-                "departmentIds",
+                "department_ids",
                 "field_ids",
                 "active",
               ]}
@@ -935,7 +860,8 @@ function PersonaNewComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: colorShowSelected,
-                  onChange: createColorFilterOnChange,
+                  onChange: (value: boolean) =>
+                    setStepFormData({ colorShowSelected: value || null }),
                 },
               ]}
               resetFields={["color", "colorSearch", "colorShowSelected"]}
@@ -953,7 +879,10 @@ function PersonaNewComponent({
                 onColorIdChange={(colorId) =>
                   setFormState((prev) => ({ ...prev, color_id: colorId }))
                 }
-                searchTerm={colorSearch}
+                searchTerm={
+                  (stepFormData["colorSearch"] as string | null | undefined) ||
+                  ""
+                }
                 onSearchChange={(term) =>
                   setStepFormData({ colorSearch: term || null })
                 }
@@ -993,7 +922,8 @@ function PersonaNewComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: iconShowSelected,
-                  onChange: createIconFilterOnChange,
+                  onChange: (value: boolean) =>
+                    setStepFormData({ iconShowSelected: value || null }),
                 },
               ]}
               resetFields={["icon", "iconSearch", "iconShowSelected"]}
@@ -1011,7 +941,10 @@ function PersonaNewComponent({
                 onIconIdChange={(iconId) =>
                   setFormState((prev) => ({ ...prev, icon_id: iconId }))
                 }
-                searchTerm={iconSearch}
+                searchTerm={
+                  (stepFormData["iconSearch"] as string | null | undefined) ||
+                  ""
+                }
                 onSearchChange={(term) =>
                   setStepFormData({ iconSearch: term || null })
                 }
@@ -1117,16 +1050,12 @@ function PersonaNewComponent({
       disabled,
       isReadonly,
       isEditMode,
-      createColorFilterOnChange,
-      createIconFilterOnChange,
       handleGenerateName,
       handleGenerateDescription,
       handleGenerateInstructions,
       isGeneratingName,
       isGeneratingDescription,
       isGeneratingInstructions,
-      colorSearch,
-      iconSearch,
       formState,
       createNamesAction,
       createDescriptionsAction,
@@ -1182,8 +1111,6 @@ function PersonaNewComponent({
           }
           steps={steps}
           getStepStatus={getStepStatus}
-          formData={formData}
-          setFormData={setFormData}
           serverData={personaData}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={resetSuccessMessage}

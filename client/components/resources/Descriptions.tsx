@@ -7,16 +7,28 @@
 
 "use client";
 
-import type { CreateDraftDescriptionsIn, CreateDraftDescriptionsOut } from "@/app/(main)/create/personas/p/[personaId]/page";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
 
 export interface DescriptionsProps {
   description_id?: string | null; // Current description_id (standardized prop name)
-  description_resource?: { id: string | null; description: string | null } | null; // Resource data from server (standardized prop name)
+  description_resource?: {
+    id: string | null;
+    description: string | null;
+  } | null; // Resource data from server (standardized prop name)
   show_description?: boolean; // Whether to show this resource picker
   description_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   disabled?: boolean; // Based on can_edit flag
@@ -30,7 +42,11 @@ export interface DescriptionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  createDescriptionsAction?: ((input: CreateDraftDescriptionsIn) => Promise<CreateDraftDescriptionsOut>) | undefined;
+  createDescriptionsAction?:
+    | ((
+        input: CreateDraftDescriptionsIn
+      ) => Promise<CreateDraftDescriptionsOut>)
+    | undefined;
   // Legacy props for backward compatibility
   descriptionResource?: { id: string; description: string } | null;
   descriptionId?: string | null;
@@ -72,13 +88,9 @@ export function Descriptions({
 
   // Handle nullable resource properties
   const resourceDescription = resource?.description ?? null;
-  const [internalValue, setInternalValue] = useState(
-    resourceDescription || ""
-  );
+  const [internalValue, setInternalValue] = useState(resourceDescription || "");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(
-    resourceDescription || ""
-  );
+  const lastSavedValueRef = useRef<string>(resourceDescription || "");
   const isInitialMountRef = useRef(true);
 
   // Update internal value when description_resource changes
@@ -185,9 +197,7 @@ export function Descriptions({
         disabled={disabled}
         rows={rows}
       />
-      {helpText && (
-        <p className="text-xs text-muted-foreground">{helpText}</p>
-      )}
+      {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
     </div>
   );
 }
