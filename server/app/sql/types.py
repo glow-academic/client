@@ -15436,6 +15436,7 @@ class CreatePersonaSqlParams(BaseModel):
     department_ids: list[str]
     profile_id: UUID
     example_ids: list[str]
+    field_ids: list[str]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15448,6 +15449,7 @@ class CreatePersonaSqlParams(BaseModel):
             self.department_ids,
             self.profile_id,
             self.example_ids,
+            self.field_ids,
         )
 
 class CreatePersonaSqlRow(BaseModel):
@@ -15465,6 +15467,7 @@ class CreatePersonaApiRequest(BaseModel):
     instructions: str
     department_ids: list[str]
     example_ids: list[str]
+    field_ids: list[str]
 
 class CreatePersonaApiResponse(BaseModel):
 
@@ -15585,17 +15588,14 @@ class QGetPersonaDetailV4Color(BaseModel):
 class QGetPersonaDetailV4Department(BaseModel):
 
     department_id: UUID | None
-    name: str | None
-    description: str | None
 
 
 
 
 class QGetPersonaDetailV4Example(BaseModel):
 
-    example_id: UUID | None
-    name: str | None
-    description: str | None
+    example: str | None
+    idx: int | None
 
 
 
@@ -15611,10 +15611,6 @@ class QGetPersonaDetailV4ExampleHistoryItem(BaseModel):
 class QGetPersonaDetailV4Field(BaseModel):
 
     field_id: UUID | None
-    name: str | None
-    description: str | None
-    parameter_id: UUID | None
-    parameter_name: str | None
 
 
 
@@ -15622,13 +15618,6 @@ class QGetPersonaDetailV4Field(BaseModel):
 class QGetPersonaDetailV4Parameter(BaseModel):
 
     parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    numerical: bool | None
-    document_parameter: bool | None
-    persona_parameter: bool | None
-    scenario_parameter: bool | None
-    video_parameter: bool | None
 
 class GetPersonaDetailSqlRow(BaseModel):
 
@@ -15755,8 +15744,6 @@ class QGetPersonaNewV4Color(BaseModel):
 class QGetPersonaNewV4Department(BaseModel):
 
     department_id: UUID | None
-    name: str | None
-    description: str | None
 
 
 
@@ -15764,10 +15751,6 @@ class QGetPersonaNewV4Department(BaseModel):
 class QGetPersonaNewV4Field(BaseModel):
 
     field_id: UUID | None
-    name: str | None
-    description: str | None
-    parameter_id: UUID | None
-    parameter_name: str | None
 
 
 
@@ -15775,13 +15758,6 @@ class QGetPersonaNewV4Field(BaseModel):
 class QGetPersonaNewV4Parameter(BaseModel):
 
     parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    numerical: bool | None
-    document_parameter: bool | None
-    persona_parameter: bool | None
-    scenario_parameter: bool | None
-    video_parameter: bool | None
 
 class GetPersonaNewSqlRow(BaseModel):
 
@@ -15956,6 +15932,7 @@ class UpdatePersonaSqlParams(BaseModel):
     department_ids: list[str]
     profile_id: UUID
     example_ids: list[str]
+    field_ids: list[str]
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -15969,6 +15946,7 @@ class UpdatePersonaSqlParams(BaseModel):
             self.department_ids,
             self.profile_id,
             self.example_ids,
+            self.field_ids,
         )
 
 class UpdatePersonaSqlRow(BaseModel):
@@ -15987,6 +15965,7 @@ class UpdatePersonaApiRequest(BaseModel):
     instructions: str
     department_ids: list[str]
     example_ids: list[str]
+    field_ids: list[str]
 
 class UpdatePersonaApiResponse(BaseModel):
 

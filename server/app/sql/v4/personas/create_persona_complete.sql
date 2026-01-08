@@ -25,7 +25,8 @@ CREATE OR REPLACE FUNCTION api_create_persona_v4(
     instructions text,
     department_ids text[],
     profile_id uuid,
-    example_ids text[]
+    example_ids text[],
+    field_ids text[]
 )
 RETURNS TABLE (
     persona_id uuid,
@@ -44,7 +45,8 @@ WITH params AS (
         COALESCE(NULLIF(instructions, ''), '') AS instructions,
         COALESCE(department_ids, ARRAY[]::text[]) AS department_ids,
         profile_id AS profile_id,
-        COALESCE(example_ids, ARRAY[]::text[]) AS example_ids
+        COALESCE(example_ids, ARRAY[]::text[]) AS example_ids,
+        COALESCE(field_ids, ARRAY[]::text[]) AS field_ids
 ),
 user_profile AS (
     SELECT 
@@ -216,6 +218,23 @@ link_departments AS (
         active = true,
         updated_at = NOW()
 ),
+link_fields AS (
+    -- Link fields if provided (array is never NULL, but may be empty)
+    INSERT INTO persona_fields (persona_id, field_id, active, created_at, updated_at)
+    SELECT 
+        np.id,
+        field_id::uuid,
+        true,
+        NOW(),
+        NOW()
+    FROM new_persona np
+    CROSS JOIN params x
+    CROSS JOIN UNNEST(x.field_ids) as field_id
+    WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
+    ON CONFLICT (persona_id, field_id) DO UPDATE SET
+        active = true,
+        updated_at = NOW()
+),
 examples_with_index AS (
     -- Prepare examples with their index (skip composite IDs - filtered in Python)
     SELECT 
@@ -252,11 +271,12 @@ all_examples AS (
 ),
 link_examples AS (
     -- Link examples to persona via junction table
-    INSERT INTO persona_examples (persona_id, example_id, idx, created_at)
+    INSERT INTO persona_examples (persona_id, example_id, idx, active, created_at)
     SELECT 
         np.id,
         ae.example_id,
         ewi.idx,
+        true,
         NOW()
     FROM new_persona np
     CROSS JOIN examples_with_index ewi

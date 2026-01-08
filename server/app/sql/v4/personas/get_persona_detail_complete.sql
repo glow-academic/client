@@ -35,9 +35,7 @@ END $$;
 
 -- 3) Recreate types
 CREATE TYPE types.q_get_persona_detail_v4_department AS (
-    department_id uuid,
-    name text,
-    description text
+    department_id uuid
 );
 
 CREATE TYPE types.q_get_persona_detail_v4_agent AS (
@@ -48,28 +46,16 @@ CREATE TYPE types.q_get_persona_detail_v4_agent AS (
 );
 
 CREATE TYPE types.q_get_persona_detail_v4_parameter AS (
-    parameter_id uuid,
-    name text,
-    description text,
-    numerical boolean,
-    document_parameter boolean,
-    persona_parameter boolean,
-    scenario_parameter boolean,
-    video_parameter boolean
+    parameter_id uuid
 );
 
 CREATE TYPE types.q_get_persona_detail_v4_field AS (
-    field_id uuid,
-    name text,
-    description text,
-    parameter_id uuid,
-    parameter_name text
+    field_id uuid
 );
 
 CREATE TYPE types.q_get_persona_detail_v4_example AS (
-    example_id uuid,
-    name text,
-    description text
+    example text,
+    idx integer
 );
 
 CREATE TYPE types.q_get_persona_detail_v4_example_history_item AS (
@@ -296,23 +282,26 @@ valid_parameter_item_ids_data AS (
     FROM field_mapping_data
 ),
 parameter_field_ids_data AS (
-    SELECT ARRAY[]::uuid[] as parameter_field_ids
+    SELECT 
+        ARRAY_AGG(pf.field_id ORDER BY pf.created_at) as parameter_field_ids
+    FROM params x
+    JOIN persona_fields pf ON pf.persona_id = x.persona_id AND pf.active = true
 ),
 persona_examples_data AS (
     SELECT 
         ARRAY_AGG(e.id ORDER BY pe.idx) as example_ids
     FROM params x
-    JOIN persona_examples pe ON pe.persona_id = x.persona_id
+    JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
     JOIN examples e ON e.id = pe.example_id
 ),
 example_mapping_data AS (
     SELECT 
-        e.id as example_id,
-        e.example as name,
-        e.example as description
+        e.example,
+        pe.idx
     FROM params x
-    JOIN persona_examples pe ON pe.persona_id = x.persona_id
+    JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
     JOIN examples e ON e.id = pe.example_id
+    ORDER BY pe.idx
 ),
 accessible_personas AS (
     SELECT DISTINCT p.id as persona_id
@@ -339,7 +328,7 @@ examples_with_departments AS (
     JOIN examples e ON e.id = pe.example_id
     JOIN accessible_personas ap ON ap.persona_id = pe.persona_id
     LEFT JOIN persona_departments pd ON pd.persona_id = pe.persona_id AND pd.active = true
-    WHERE e.example IS NOT NULL AND e.example != ''
+    WHERE pe.active = true AND e.example IS NOT NULL AND e.example != ''
     GROUP BY e.example
 ),
 examples_history_data AS (
@@ -509,10 +498,10 @@ SELECT
     COALESCE(pfid.parameter_field_ids, ARRAY[]::uuid[]) as parameter_field_ids,
     COALESCE(ped.example_ids, ARRAY[]::uuid[]) as example_ids,
     up.actor_name::text as actor_name,
-    -- Aggregate departments separately
+    -- Aggregate departments separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description)::types.q_get_persona_detail_v4_department
+            ROW(dmd.department_id)::types.q_get_persona_detail_v4_department
             ORDER BY dmd.name
         ) FROM department_mapping_data dmd),
         '{}'::types.q_get_persona_detail_v4_department[]
@@ -525,28 +514,27 @@ SELECT
         ) FROM agent_mapping_data amd),
         '{}'::types.q_get_persona_detail_v4_agent[]
     ) as agents,
-    -- Aggregate parameters separately
+    -- Aggregate parameters separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (pmd.parameter_id, pmd.name, pmd.description, pmd.numerical, 
-             pmd.document_parameter, pmd.persona_parameter, pmd.scenario_parameter, pmd.video_parameter)::types.q_get_persona_detail_v4_parameter
+            ROW(pmd.parameter_id)::types.q_get_persona_detail_v4_parameter
             ORDER BY pmd.name
         ) FROM parameter_mapping_data pmd),
         '{}'::types.q_get_persona_detail_v4_parameter[]
     ) as parameters,
-    -- Aggregate fields separately
+    -- Aggregate fields separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.parameter_id, fmd.parameter_name)::types.q_get_persona_detail_v4_field
+            ROW(fmd.field_id)::types.q_get_persona_detail_v4_field
             ORDER BY fmd.name
         ) FROM field_mapping_data fmd),
         '{}'::types.q_get_persona_detail_v4_field[]
     ) as fields,
-    -- Aggregate examples separately
+    -- Aggregate examples separately (example text and idx)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (emd.example_id, emd.name, emd.description)::types.q_get_persona_detail_v4_example
-            ORDER BY emd.name
+            (emd.example, emd.idx)::types.q_get_persona_detail_v4_example
+            ORDER BY emd.idx
         ) FROM example_mapping_data emd),
         '{}'::types.q_get_persona_detail_v4_example[]
     ) as examples,

@@ -35,9 +35,7 @@ END $$;
 
 -- 3) Recreate types
 CREATE TYPE types.q_get_persona_new_v4_department AS (
-    department_id uuid,
-    name text,
-    description text
+    department_id uuid
 );
 
 CREATE TYPE types.q_get_persona_new_v4_agent AS (
@@ -48,22 +46,11 @@ CREATE TYPE types.q_get_persona_new_v4_agent AS (
 );
 
 CREATE TYPE types.q_get_persona_new_v4_parameter AS (
-    parameter_id uuid,
-    name text,
-    description text,
-    numerical boolean,
-    document_parameter boolean,
-    persona_parameter boolean,
-    scenario_parameter boolean,
-    video_parameter boolean
+    parameter_id uuid
 );
 
 CREATE TYPE types.q_get_persona_new_v4_field AS (
-    field_id uuid,
-    name text,
-    description text,
-    parameter_id uuid,
-    parameter_name text
+    field_id uuid
 );
 
 CREATE TYPE types.q_get_persona_new_v4_color AS (
@@ -300,10 +287,10 @@ SELECT
     COALESCE(vaid.valid_agent_ids, ARRAY[]::uuid[]) as valid_agent_ids,
     COALESCE(vpid.valid_parameter_ids, ARRAY[]::uuid[]) as valid_parameter_ids,
     COALESCE(vpiid.valid_parameter_item_ids, ARRAY[]::uuid[]) as valid_parameter_item_ids,
-    -- Aggregate departments separately
+    -- Aggregate departments separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description)::types.q_get_persona_new_v4_department
+            ROW(dmd.department_id)::types.q_get_persona_new_v4_department
             ORDER BY dmd.name
         ) FROM department_mapping_data dmd),
         '{}'::types.q_get_persona_new_v4_department[]
@@ -316,19 +303,18 @@ SELECT
         ) FROM agent_mapping_data amd),
         '{}'::types.q_get_persona_new_v4_agent[]
     ) as agents,
-    -- Aggregate parameters separately
+    -- Aggregate parameters separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (pmd.parameter_id, pmd.name, pmd.description, pmd.numerical, 
-             pmd.document_parameter, pmd.persona_parameter, pmd.scenario_parameter, pmd.video_parameter)::types.q_get_persona_new_v4_parameter
+            ROW(pmd.parameter_id)::types.q_get_persona_new_v4_parameter
             ORDER BY pmd.name
         ) FROM parameter_mapping_data pmd),
         '{}'::types.q_get_persona_new_v4_parameter[]
     ) as parameters,
-    -- Aggregate fields separately
+    -- Aggregate fields separately (only IDs)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.parameter_id, fmd.parameter_name)::types.q_get_persona_new_v4_field
+            ROW(fmd.field_id)::types.q_get_persona_new_v4_field
             ORDER BY fmd.name
         ) FROM field_mapping_data fmd),
         '{}'::types.q_get_persona_new_v4_field[]
