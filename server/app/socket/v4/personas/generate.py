@@ -1,4 +1,4 @@
-"""Persona generation router - routes to resource-specific handlers."""
+"""Persona generation router - unified handler for all persona resource types."""
 
 import uuid
 from typing import Any
@@ -16,12 +16,26 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
+# Persona resource types
+PERSONA_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "colors",
+    "icons",
+    "instructions",
+    "flags",
+    "examples",
+    "fields",
+    "departments",
+]
+
 
 class GeneratePersonaPayload(BaseModel):
-    """Request to generate a persona resource."""
+    """Request to generate persona resources."""
 
     draft_id: str
-    resource_type: str  # "names", "descriptions", "instructions"
+    resource_types: list[str] | None = None  # Array of resource types to generate
+    resource_type: str | None = None  # Single resource type (for backward compatibility)
     persona_id: str | None = None
     context: dict[str, Any] | None = None  # Additional context for generation
 
@@ -29,39 +43,83 @@ class GeneratePersonaPayload(BaseModel):
 async def _persona_generate_impl(
     sid: str, data: GeneratePersonaPayload, profile_id: uuid.UUID
 ) -> None:
-    """Route to resource-specific handler based on resource_type."""
+    """Handle persona generation - emit generate_start for each resource type, then emit client event."""
     try:
-        resource_type = data.resource_type
-
-        # Route to appropriate handler (import here to avoid circular imports)
-        if resource_type == "names":
-            from . import names
-            await names._names_generate_impl(sid, data, profile_id)
-        elif resource_type == "descriptions":
-            from . import descriptions
-            await descriptions._descriptions_generate_impl(sid, data, profile_id)
-        elif resource_type == "instructions":
-            from . import instructions
-            await instructions._instructions_generate_impl(sid, data, profile_id)
+        # Determine resource types to generate
+        resource_types: list[str] = []
+        if data.resource_types:
+            resource_types = data.resource_types
+        elif data.resource_type:
+            resource_types = [data.resource_type]
         else:
             await emit_to_internal(
                 "generate_error",
                 GenerateErrorApiRequest(
                     sid=sid,
-                    error_message=f"Unknown resource type: {resource_type}",
-                    resource_id=data.persona_id,
+                    error_message="Either resource_types or resource_type must be provided",
+                    resource_id=data.persona_id or data.draft_id,
                     group_id=None,
                     resource_type="persona",
                 ),
                 sid=sid,
             )
+            return
+
+        # Validate resource types
+        invalid_types = [rt for rt in resource_types if rt not in PERSONA_RESOURCE_TYPES]
+        if invalid_types:
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Invalid resource types: {', '.join(invalid_types)}",
+                    resource_id=data.persona_id or data.draft_id,
+                    group_id=None,
+                    resource_type="persona",
+                ),
+                sid=sid,
+            )
+            return
+
+        # For now, emit dummy generate_start events (skeleton implementation)
+        # TODO: Implement actual AI generation logic
+        for resource_type in resource_types:
+            # Emit generate_start internal event for each resource type
+            # Note: This is a skeleton - agent_id and other required fields need to be determined
+            await internal_sio.emit(
+                "generate_start",
+                {
+                    "sid": sid,
+                    "agent_id": "",  # TODO: Look up agent_id from persona domain/department
+                    "resource_id": data.persona_id or data.draft_id,
+                    "resource_type": resource_type,
+                    "group_id": None,
+                    "user_instructions": None,
+                    "message_ids": None,
+                    "developer_message_contents": None,  # TODO: Format context for each resource type
+                },
+            )
+
+        # Emit personas_generation_start client event to notify client
+        await sio.emit(
+            "personas_generation_start",
+            {
+                "resource_types": resource_types,
+                "draft_id": data.draft_id,
+                "persona_id": data.persona_id,
+                "success": True,
+                "message": f"Started generation for {len(resource_types)} resource type(s)",
+            },
+            room=sid,
+        )
+
     except Exception as e:
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to route persona generation: {str(e)}",
-                resource_id=data.persona_id,
+                error_message=f"Failed to generate persona resources: {str(e)}",
+                resource_id=data.persona_id or data.draft_id,
                 group_id=None,
                 resource_type="persona",
             ),

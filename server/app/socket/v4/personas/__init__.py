@@ -2,19 +2,16 @@
 
 from fastapi import APIRouter
 
-from . import descriptions, generate, instructions, names
+from . import complete, error, generate, progress
 
 client_router = APIRouter()
 server_router = APIRouter()
 
 # Register client-to-server events
 client_router.include_router(generate.client_router)
-client_router.include_router(names.client_router)
-client_router.include_router(descriptions.client_router)
-client_router.include_router(instructions.client_router)
 
-# Register server-to-server events
+# Register server-to-server events (internal event listeners)
 server_router.include_router(generate.server_router)
-server_router.include_router(names.server_router)
-server_router.include_router(descriptions.server_router)
-server_router.include_router(instructions.server_router)
+server_router.include_router(progress.server_router)
+server_router.include_router(complete.server_router)
+server_router.include_router(error.server_router)
