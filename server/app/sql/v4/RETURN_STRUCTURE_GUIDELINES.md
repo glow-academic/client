@@ -215,6 +215,141 @@ When updating an existing SQL function to follow these guidelines:
 - [ ] Test SQL compilation with `make sql-compile`
 - [ ] Update frontend code if needed for UUID-based suggestions
 
+## Frontend Component Props Standards
+
+**This section documents how the SQL return structure maps to frontend component props, ensuring consistency between server and client.**
+
+### Mapping SQL Return Structure to Component Props
+
+The standardized SQL return structure directly maps to standardized component props. This eliminates the need for type casting, mapping, or transformation at the top level.
+
+### Standardized Component Props
+
+#### Single-Select Resources
+
+**Props Pattern:**
+- `{resource}_id`: `string | null` - Current resource ID (from SQL `{resource}_id`)
+- `{resource}_resource`: `{ id: string; ... } | null` - Resource object (from SQL `{resource}_resource`)
+- `show_{resource}`: `boolean` - Whether to show picker (from SQL `show_{resource}`)
+- `{resource}_suggestions`: `string[]` - Suggested resource IDs (from SQL `{resource}_suggestions`)
+- `{resource}`?: `Array<...>` - All available options (from SQL `{resource}` array, for color/icon)
+- `disabled`: `boolean` - Based on `can_edit` flag (inverted: `disabled = !can_edit`)
+- `onChange`: `(id: string | null) => void` - Callback to update resource ID
+- `onGenerate?`: `() => Promise<void>` - Optional AI generation handler
+- `isGenerating?`: `boolean` - Optional generation state
+- `create{Resource}Action?`: Action for creating new resources
+
+**Example - Names Component:**
+```typescript
+<Names
+  name_id={personaData?.name_id ?? null}
+  name_resource={personaData?.name_resource ?? null}
+  show_name={personaData?.show_name ?? true}
+  name_suggestions={personaData?.name_suggestions ?? []}
+  disabled={disabled}
+  onNameIdChange={(id) => setFormState(prev => ({ ...prev, name_id: id }))}
+  onGenerate={handleGenerateName}
+  isGenerating={isGeneratingName}
+  createNamesAction={createNamesAction}
+/>
+```
+
+**Example - Colors Component:**
+```typescript
+<Colors
+  color_id={personaData?.color_id ?? null}
+  color_resource={personaData?.color_resource ?? null}
+  show_color={personaData?.show_color ?? false}
+  color_suggestions={personaData?.color_suggestions ?? []}
+  colors={personaData?.colors ?? []}
+  disabled={disabled}
+  onColorIdChange={(id) => setFormState(prev => ({ ...prev, color_id: id }))}
+  createColorsAction={createColorsAction}
+/>
+```
+
+#### Multi-Select Resources
+
+**Props Pattern:**
+- `{resource}_ids`: `string[]` - Current resource IDs (from SQL `{resource}_ids`)
+- `{resource}_resources`: `Array<{ id: string; ... }>` - Selected resources (from SQL `{resource}_resources`)
+- `show_{resource}`: `boolean` - Whether to show picker (from SQL `show_{resource}`)
+- `{resource}_suggestions`: `string[]` - Suggested resource IDs (from SQL `{resource}_suggestions`)
+- `{resource}`: `Array<{ id: string; ... }>` - All available options (from SQL `{resource}` array)
+- `disabled`: `boolean` - Based on `can_edit` flag (inverted: `disabled = !can_edit`)
+- `onChange`: `(ids: string[]) => void` - Callback to update resource IDs array
+
+**Example - Departments Component:**
+```typescript
+<Departments
+  department_ids={personaData?.department_ids ?? []}
+  department_resources={personaData?.department_resources ?? []}
+  show_departments={personaData?.show_departments ?? false}
+  department_suggestions={personaData?.department_suggestions ?? []}
+  departments={personaData?.departments ?? []}
+  disabled={disabled}
+  onDepartmentIdsChange={(ids) => setFormState(prev => ({ ...prev, department_ids: ids }))}
+/>
+```
+
+### Component Responsibilities
+
+**Each resource component should:**
+
+1. **Handle `show_{resource}` flag internally**: Don't render if `show_{resource}` is `false`
+2. **Handle its own mapping/transformation**: If internal format differs from API format, transform within component
+3. **Use `disabled` prop consistently**: Apply to all interactive elements (inputs, buttons, pickers)
+4. **Handle suggestions lookup**: If suggestions are UUIDs, component may need to look up full resource objects
+5. **Accept props directly from API**: No type casting or mapping at top level
+
+### Disabled Prop Pattern
+
+**All components must respect the `can_edit` flag:**
+
+```typescript
+// In top-level component (e.g., PersonaNew.tsx)
+const disabled = useMemo(() => {
+  if (!isEditMode || !personaData) return false;
+  return !personaData.can_edit;
+}, [isEditMode, personaData]);
+
+// Pass to all resource components
+<Names disabled={disabled} ... />
+<Colors disabled={disabled} ... />
+<Departments disabled={disabled} ... />
+```
+
+**Key Points:**
+- `disabled` is computed once at the top level from `can_edit`
+- All resource components receive the same `disabled` value
+- Components apply `disabled` to all interactive elements
+- In create mode (`!isEditMode`), `disabled` is always `false`
+
+### Top-Level Component Pattern
+
+**The top-level component (e.g., PersonaNew.tsx) should:**
+
+1. **Extract `disabled` once** from `can_edit` flag
+2. **Pass props directly** from API response without type casting:
+   ```typescript
+   // ❌ WRONG: Type casting and mapping
+   (personaData as PersonaDetailOut & { name_resource?: ... })?.name_resource || null
+   
+   // ✅ CORRECT: Direct prop access
+   personaData?.name_resource ?? null
+   ```
+3. **Remove conditional rendering** based on `show_{resource}` - let components handle it
+4. **Use consistent onChange naming**: `onNameIdChange`, `onDepartmentIdsChange`, etc.
+
+### Benefits
+
+1. **Type Safety**: Direct use of API response types eliminates type casting
+2. **Consistency**: All components follow the same prop pattern
+3. **Reduced Complexity**: Top-level component does minimal mapping
+4. **Better Encapsulation**: Each component handles its own logic
+5. **Maintainability**: Easier to add new resources or modify existing ones
+6. **Standardized Disabled State**: All components respect `can_edit` flag uniformly
+
 ## Related Documentation
 
 - [API v4 Standards](../api/v4/STANDARDS.md) - API endpoint standards

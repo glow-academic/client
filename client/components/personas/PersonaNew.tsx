@@ -704,7 +704,8 @@ function PersonaNewComponent({
 
   // Filter colors client-side based on search state from URL
   // Also include custom colors that aren't in the preset list
-  const presetColors = useMemo(() => {
+  // NOTE: Colors component now handles this internally, but keeping for backward compatibility
+  const _presetColors = useMemo(() => {
     // Get current color from color_resource
     const currentColorResource = (
       personaData as PersonaDetailOut & {
@@ -820,14 +821,14 @@ function PersonaNewComponent({
     );
   }, [allIconsAll, iconSearch]);
 
-  // Readonly logic using v2 permission flags
-  const isReadonly = useMemo(() => {
+  // Disabled logic based on can_edit flag - standardized for all resource components
+  const disabled = useMemo(() => {
     if (!isEditMode || !personaData) return false;
-    if ("can_edit" in personaData) {
-      return !(personaData as PersonaDetailOut).can_edit;
-    }
-    return false;
+    return !personaData.can_edit;
   }, [isEditMode, personaData]);
+
+  // Keep isReadonly for backward compatibility with existing code
+  const isReadonly = disabled;
 
   // Examples component manages its own mapping via exampleMapping prop
 
@@ -1212,14 +1213,11 @@ function PersonaNewComponent({
               <div className="space-y-4">
                 {/* Name field - using Names resource component */}
                 <Names
-                  nameResource={
-                    (
-                      personaData as PersonaDetailOut & {
-                        name_resource?: { id: string; name: string } | null;
-                      }
-                    )?.name_resource || null
-                  }
-                  nameId={formState.name_id}
+                  name_id={formState.name_id ?? null}
+                  name_resource={personaData?.name_resource ?? null}
+                  show_name={personaData?.show_name ?? true}
+                  name_suggestions={personaData?.name_suggestions ?? []}
+                  disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
@@ -1228,40 +1226,20 @@ function PersonaNewComponent({
                   label="Name"
                   placeholder="e.g., Enthusiastic Student"
                   required
-                  disabled={isReadonly}
-                  {...((
-                    personaData as PersonaDetailOut & {
-                      name_suggestions?: string[]; // Note: Now UUIDs, but component expects strings - needs lookup
-                    }
-                  )?.name_suggestions && {
-                    suggestions: (
-                      personaData as PersonaDetailOut & {
-                        name_suggestions?: string[];
-                      }
-                    ).name_suggestions,
-                  })}
-                  createNamesAction={
-                    createNamesAction as
-                      | ((input: {
-                          body: { name: string };
-                        }) => Promise<{ name_id?: string | null }>)
-                      | undefined
-                  }
+                  createNamesAction={createNamesAction}
                 />
 
                 {/* Description field - using Descriptions resource component */}
                 <Descriptions
-                  descriptionResource={
-                    (
-                      personaData as PersonaDetailOut & {
-                        description_resource?: {
-                          id: string;
-                          description: string;
-                        } | null;
-                      }
-                    )?.description_resource || null
+                  description_id={formState.description_id ?? null}
+                  description_resource={
+                    personaData?.description_resource ?? null
                   }
-                  descriptionId={formState.description_id}
+                  show_description={personaData?.show_description ?? true}
+                  description_suggestions={
+                    personaData?.description_suggestions ?? []
+                  }
+                  disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1273,126 +1251,62 @@ function PersonaNewComponent({
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
                   required={false}
-                  disabled={isReadonly}
                   rows={4}
                   data-testid="input-persona-description"
-                  {...((
-                    personaData as PersonaDetailOut & {
-                      description_suggestions?: string[]; // Note: Now UUIDs, but component expects strings - needs lookup
-                    }
-                  )?.description_suggestions && {
-                    suggestions: (
-                      personaData as PersonaDetailOut & {
-                        description_suggestions?: string[];
-                      }
-                    ).description_suggestions,
-                  })}
-                  createDescriptionsAction={
-                    createDescriptionsAction as
-                      | ((input: {
-                          body: { description: string };
-                        }) => Promise<{ description_id?: string | null }>)
-                      | undefined
-                  }
+                  createDescriptionsAction={createDescriptionsAction}
                 />
 
                 {/* Department Selection */}
-                {personaData &&
-                (
-                  personaData as PersonaDetailOut & {
-                    show_departments?: boolean;
+                <Departments
+                  department_ids={formState.department_ids ?? []}
+                  department_resources={personaData?.department_resources ?? []}
+                  show_departments={personaData?.show_departments ?? false}
+                  department_suggestions={
+                    personaData?.department_suggestions ?? []
                   }
-                )?.show_departments ? (
-                  <Departments
-                    departmentIds={formState.department_ids}
-                    onChange={(ids) =>
-                      setFormState((prev) => ({ ...prev, department_ids: ids }))
-                    }
-                    departments={
-                      (
-                        personaData as PersonaDetailOut & {
-                          departments?: Array<{
-                            department_id: string;
-                            name: string;
-                            description?: string;
-                          }>;
-                        }
-                      )?.departments || []
-                    }
-                    disabled={isReadonly}
-                  />
-                ) : null}
+                  departments={personaData?.departments ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, department_ids: ids }))
+                  }
+                />
 
                 {/* Fields Selection */}
-                {personaData &&
-                (personaData as PersonaDetailOut & { show_fields?: boolean })
-                  ?.show_fields ? (
-                  <Fields
-                    fieldIds={formState.field_ids}
-                    onChange={(ids) =>
-                      setFormState((prev) => ({ ...prev, field_ids: ids }))
-                    }
-                    fields={
-                      (
-                        personaData as PersonaDetailOut & {
-                          fields?: Array<{
-                            field_id: string;
-                            name: string;
-                            description?: string;
-                          }>;
-                        }
-                      )?.fields || []
-                    }
-                    label="Fields"
-                    disabled={isReadonly}
-                    description="Select fields for this persona"
-                  />
-                ) : null}
+                <Fields
+                  field_ids={formState.field_ids ?? []}
+                  field_resources={personaData?.field_resources ?? []}
+                  show_fields={personaData?.show_fields ?? false}
+                  field_suggestions={personaData?.field_suggestions ?? []}
+                  fields={personaData?.fields ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, field_ids: ids }))
+                  }
+                  label="Fields"
+                  description="Select fields for this persona"
+                />
 
                 {/* Active Switch - using Flags resource component */}
-                {(() => {
-                  const flagResourceData =
-                    (
-                      personaData as PersonaDetailOut & {
-                        flag_resource?: {
-                          id: string;
-                          name: string;
-                          description: string;
-                          icon_id: string | null;
-                        } | null;
-                      }
-                    )?.flag_resource || null;
-                  return (
-                    <Flags
-                      flagResource={flagResourceData}
-                      flagId={formState.active_flag_id}
-                      onFlagIdChange={(flagId) =>
-                        setFormState((prev) => ({
-                          ...prev,
-                          active_flag_id: flagId,
-                        }))
-                      }
-                      label="Active"
-                      disabled={isReadonly}
-                      helpText="Inactive personas will not be available for scenarios"
-                      {...((formState.icon_id || flagResourceData?.icon_id) && {
-                        iconId: (formState.icon_id ||
-                          flagResourceData?.icon_id) as string,
-                      })}
-                      createFlagsAction={
-                        createFlagsAction as
-                          | ((input: {
-                              body: {
-                                name: string;
-                                description: string;
-                                icon_id: string;
-                              };
-                            }) => Promise<{ flag_id?: string | null }>)
-                          | undefined
-                      }
-                    />
-                  );
-                })()}
+                <Flags
+                  active_flag_id={formState.active_flag_id ?? null}
+                  flag_resource={personaData?.flag_resource ?? null}
+                  show_flag={personaData?.show_flag ?? false}
+                  disabled={disabled}
+                  onFlagIdChange={(flagId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      active_flag_id: flagId,
+                    }))
+                  }
+                  label="Active"
+                  helpText="Inactive personas will not be available for scenarios"
+                  {...((formState.icon_id ||
+                    personaData?.flag_resource?.icon_id) && {
+                    iconId: (formState.icon_id ||
+                      personaData?.flag_resource?.icon_id) as string,
+                  })}
+                  createFlagsAction={createFlagsAction}
+                />
               </div>
             </StepCard>
           );
@@ -1432,24 +1346,15 @@ function PersonaNewComponent({
             >
               {/* Color picker - using Colors resource component */}
               <Colors
-                colorResource={
-                  (
-                    personaData as PersonaDetailOut & {
-                      color_resource?: {
-                        id: string;
-                        name: string;
-                        description: string;
-                        hex_code: string;
-                      } | null;
-                    }
-                  )?.color_resource || null
-                }
-                colorId={formState.color_id}
+                color_id={formState.color_id ?? null}
+                color_resource={personaData?.color_resource ?? null}
+                show_color={personaData?.show_color ?? false}
+                color_suggestions={personaData?.color_suggestions ?? []}
+                colors={personaData?.colors ?? []}
+                disabled={disabled}
                 onColorIdChange={(colorId) =>
                   setFormState((prev) => ({ ...prev, color_id: colorId }))
                 }
-                presetColors={presetColors}
-                disabled={isReadonly}
                 searchTerm={colorSearch}
                 onSearchChange={(term) =>
                   setStepFormData({ colorSearch: term || null })
@@ -1458,28 +1363,7 @@ function PersonaNewComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ colorShowSelected: value || null })
                 }
-                {...((
-                  personaData as PersonaDetailOut & {
-                    color_suggestions?: string[];
-                  }
-                )?.color_suggestions && {
-                  colorSuggestions: (
-                    personaData as PersonaDetailOut & {
-                      color_suggestions?: string[];
-                    }
-                  ).color_suggestions,
-                })}
-                createColorsAction={
-                  createColorsAction as
-                    | ((input: {
-                        body: {
-                          name: string;
-                          description: string;
-                          hex_code: string;
-                        };
-                      }) => Promise<{ color_id?: string | null }>)
-                    | undefined
-                }
+                createColorsAction={createColorsAction}
               />
             </StepCard>
           );
@@ -1637,37 +1521,30 @@ function PersonaNewComponent({
 
               {/* Examples Section */}
               <Examples
-                exampleIds={formState.example_ids}
+                example_ids={formState.example_ids ?? []}
+                example_resources={personaData?.example_resources ?? []}
+                show_examples={personaData?.show_examples ?? false}
+                example_suggestions={personaData?.example_suggestions ?? []}
+                examples={personaData?.examples ?? []}
+                disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, example_ids: ids }))
                 }
-                suggestions={getExamplesHistory(formState.department_ids)}
                 maxItems={10}
                 addButtonLabel="Add example"
-                disabled={isReadonly}
                 itemPlaceholder="Message"
                 createExamplesAction={createExamplesAction}
                 exampleMapping={
-                  (
-                    personaData as PersonaDetailOut & {
-                      examples?: Array<{
-                        example: string | null;
-                        idx: number | null;
-                      }>;
-                    }
-                  )?.examples?.reduce(
-                    (
-                      acc: Record<string, string>,
-                      ex: { example: string | null }
-                    ) => {
-                      if (ex.example) {
-                        // Use example text as both key and value for mapping
-                        acc[ex.example] = ex.example;
-                      }
-                      return acc;
-                    },
-                    {} as Record<string, string>
-                  ) || {}
+                  personaData?.examples && formState.example_ids
+                    ? Object.fromEntries(
+                        personaData.examples
+                          .map((ex, idx) => [
+                            formState.example_ids?.[idx] || "",
+                            ex.example || "",
+                          ])
+                          .filter(([id]) => id)
+                      )
+                    : {}
                 }
               />
             </StepCard>
@@ -1679,11 +1556,8 @@ function PersonaNewComponent({
     },
     [
       personaData,
-      isReadonly,
+      disabled,
       isEditMode,
-      presetColors,
-      allIcons,
-      suggestedIconsAll,
       getExamplesHistory,
       createColorFilterOnChange,
       createIconFilterOnChange,
@@ -1703,6 +1577,9 @@ function PersonaNewComponent({
       createInstructionsAction,
       createFlagsAction,
       createExamplesAction,
+      setStepFormData,
+      stepFormData,
+      onReset,
     ]
   );
 

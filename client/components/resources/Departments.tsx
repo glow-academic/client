@@ -18,38 +18,60 @@ export interface DepartmentItem {
 }
 
 export interface DepartmentsProps {
-  departmentIds: string[]; // Current department resource IDs from form state
+  department_ids?: string[]; // Current department resource IDs (standardized prop name)
+  department_resources?: Array<{ department_id: string | null; name: string | null; description?: string | null }>; // Selected department resources
+  show_departments?: boolean; // Whether to show this resource picker
+  department_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  departments?: Array<{ department_id: string | null; name: string | null; description?: string | null }>; // All available departments from API
+  disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update department_ids in form state
-  departments: Array<{ department_id: string; name: string; description?: string }>; // Array from SQL (database already filtered)
   label?: string;
-  disabled?: boolean;
   id?: string;
   placeholder?: string;
   description?: string;
+  // Legacy props for backward compatibility
+  departmentIds?: string[];
 }
 
 export function Departments({
-  departmentIds,
-  onChange,
-  departments, // Direct array from SQL, no mapping needed
-  label = "Departments",
+  department_ids,
+  department_resources,
+  show_departments = false,
+  department_suggestions,
+  departments,
   disabled = false,
+  onChange,
+  label = "Departments",
   id = "departments",
   placeholder = "Select departments...",
   description,
+  // Legacy props for backward compatibility
+  departmentIds,
 }: DepartmentsProps) {
+  // Use standardized props with fallback to legacy props
+  const ids = department_ids ?? departmentIds ?? [];
+  const show = show_departments ?? false;
+  const allDepartments = departments ?? [];
+
+  // Don't render if show_departments is false
+  if (!show) {
+    return null;
+  }
+
   // Convert departments array to DepartmentItem format for GenericPicker
   const departmentItems = useMemo(() => {
-    return departments.map((d) => ({
-      id: d.department_id,
-      name: d.name,
-      description: d.description,
-    }));
-  }, [departments]);
+    return allDepartments
+      .filter((d) => d.department_id && d.name) // Filter out nulls
+      .map((d) => ({
+        id: d.department_id!,
+        name: d.name!,
+        description: d.description ?? undefined,
+      }));
+  }, [allDepartments]);
 
   const handleSelect = useCallback(
-    (ids: string[]) => {
-      onChange(ids);
+    (selectedIds: string[]) => {
+      onChange(selectedIds);
     },
     [onChange]
   );
@@ -68,8 +90,8 @@ export function Departments({
       )}
       <GenericPicker<DepartmentItem>
         items={departmentItems}
-        itemIds={departments.map((d) => d.department_id)} // All department IDs from array
-        selectedIds={departmentIds}
+        itemIds={allDepartments.map((d) => d.department_id)} // All department IDs from array
+        selectedIds={ids}
         onSelect={handleSelect}
         multiSelect={true}
         getId={(item) => item.id}

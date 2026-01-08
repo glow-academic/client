@@ -20,24 +20,30 @@ export interface ColorItem {
 }
 
 export interface ColorsProps {
-  colorResource?: {
-    id: string;
-    name: string;
-    description: string;
-    hex_code: string;
-  } | null; // Resource data from server (composite type)
-  colorId: string | null; // Current color_id (for form state)
+  color_id?: string | null; // Current color_id (standardized prop name)
+  color_resource?: {
+    id: string | null;
+    name: string | null;
+    description: string | null;
+    hex_code: string | null;
+  } | null; // Resource data from server (standardized prop name)
+  show_color?: boolean; // Whether to show this resource picker
+  color_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  colors?: Array<{
+    id: string | null;
+    name: string | null;
+    description: string | null;
+    hex_code: string | null;
+  }>; // All available colors from API
+  disabled?: boolean; // Based on can_edit flag
   onColorIdChange: (colorId: string | null) => void; // Update color_id in parent form state
-  presetColors: ColorItem[];
   label?: string;
-  disabled?: boolean;
   id?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
-  colorSuggestions?: string[];
   createColorsAction?:
     | ((input: {
         body: {
@@ -47,15 +53,27 @@ export interface ColorsProps {
         };
       }) => Promise<{ color_id?: string | null }>)
     | undefined;
+  // Legacy props for backward compatibility
+  colorResource?: {
+    id: string;
+    name: string;
+    description: string;
+    hex_code: string;
+  } | null;
+  colorId?: string | null;
+  presetColors?: ColorItem[];
+  colorSuggestions?: string[];
 }
 
 export function Colors({
-  colorResource,
-  colorId: _colorId,
-  onColorIdChange,
-  presetColors,
-  label = "Color",
+  color_id,
+  color_resource,
+  show_color = false,
+  color_suggestions,
+  colors,
   disabled = false,
+  onColorIdChange,
+  label = "Color",
   id = "color",
   searchTerm: _searchTerm,
   onSearchChange: _onSearchChange,
@@ -63,21 +81,52 @@ export function Colors({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   createColorsAction,
+  // Legacy props for backward compatibility
+  colorResource,
+  colorId: _colorId,
+  presetColors,
+  colorSuggestions,
 }: ColorsProps) {
+  // Use standardized props with fallback to legacy props
+  const resource = color_resource ?? colorResource ?? null;
+  const resourceId = color_id ?? _colorId ?? null;
+  const show = show_color ?? false;
+  const suggestionsList = color_suggestions ?? colorSuggestions ?? [];
+
+  // Don't render if show_color is false
+  if (!show) {
+    return null;
+  }
+
+  // Convert colors array from API format to ColorItem format
+  const presetColorsList = useMemo(() => {
+    if (colors && colors.length > 0) {
+      return colors
+        .filter((c) => c.hex_code && c.name) // Filter out nulls
+        .map((c) => ({
+          hex: c.hex_code!,
+          name: c.name!,
+        }));
+    }
+    return presetColors ?? [];
+  }, [colors, presetColors]);
+
+  // Handle nullable resource properties
+  const resourceHexCode = resource?.hex_code ?? null;
   const [internalValue, setInternalValue] = useState(
-    colorResource?.hex_code || ""
+    resourceHexCode || ""
   );
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(colorResource?.hex_code || "");
+  const lastSavedValueRef = useRef<string>(resourceHexCode || "");
   const isInitialMountRef = useRef(true);
 
-  // Update internal value when colorResource changes
+  // Update internal value when color_resource changes
   useEffect(() => {
-    if (colorResource?.hex_code) {
-      setInternalValue(colorResource.hex_code);
-      lastSavedValueRef.current = colorResource.hex_code;
+    if (resourceHexCode) {
+      setInternalValue(resourceHexCode);
+      lastSavedValueRef.current = resourceHexCode;
     }
-  }, [colorResource?.hex_code]);
+  }, [resourceHexCode]);
 
   // Normalize current color for comparison
   const currentColor = useMemo(() => {
@@ -147,15 +196,15 @@ export function Colors({
     setInternalValue(newValue);
   }, []);
 
-  // Filter by showSelected if enabled (presetColors already filtered by search in parent)
+  // Filter by showSelected if enabled (presetColorsList already filtered by search in parent)
   const displayColors = useMemo(() => {
     if (!showSelectedFilter) {
-      return presetColors;
+      return presetColorsList;
     }
-    return presetColors.filter(
+    return presetColorsList.filter(
       (color) => color.hex.toLowerCase() === currentColor
     );
-  }, [presetColors, showSelectedFilter, currentColor]);
+  }, [presetColorsList, showSelectedFilter, currentColor]);
 
   return (
     <div className="space-y-4">

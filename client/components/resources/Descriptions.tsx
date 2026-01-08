@@ -14,59 +14,83 @@ import { Loader2, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface DescriptionsProps {
-  descriptionResource?: { id: string; description: string } | null; // Resource data from server (composite type)
-  descriptionId: string | null; // Current description_id (for form state)
+  description_id?: string | null; // Current description_id (standardized prop name)
+  description_resource?: { id: string | null; description: string | null } | null; // Resource data from server (standardized prop name)
+  show_description?: boolean; // Whether to show this resource picker
+  description_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  disabled?: boolean; // Based on can_edit flag
   onDescriptionIdChange: (descriptionId: string | null) => void; // Update description_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
   placeholder?: string;
   required?: boolean;
-  disabled?: boolean;
   rows?: number;
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  suggestions?: string[];
   createDescriptionsAction?:
     | ((input: {
         body: { description: string };
       }) => Promise<{ description_id?: string | null }>)
     | undefined;
+  // Legacy props for backward compatibility
+  descriptionResource?: { id: string; description: string } | null;
+  descriptionId?: string | null;
+  suggestions?: string[];
 }
 
 export function Descriptions({
-  descriptionResource,
-  descriptionId,
+  description_id,
+  description_resource,
+  show_description = true,
+  description_suggestions,
+  disabled = false,
   onDescriptionIdChange,
   onGenerate,
   isGenerating = false,
   label = "Description",
   placeholder = "Enter description",
   required = false,
-  disabled = false,
   rows = 4,
   id = "description",
   "data-testid": dataTestId,
   helpText,
   createDescriptionsAction,
+  // Legacy props for backward compatibility
+  descriptionResource,
+  descriptionId,
+  suggestions,
 }: DescriptionsProps) {
+  // Use standardized props with fallback to legacy props
+  const resource = description_resource ?? descriptionResource ?? null;
+  const resourceId = description_id ?? descriptionId ?? null;
+  const show = show_description ?? true;
+  const suggestionsList = description_suggestions ?? suggestions ?? [];
+
+  // Don't render if show_description is false
+  if (!show) {
+    return null;
+  }
+
+  // Handle nullable resource properties
+  const resourceDescription = resource?.description ?? null;
   const [internalValue, setInternalValue] = useState(
-    descriptionResource?.description || ""
+    resourceDescription || ""
   );
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(
-    descriptionResource?.description || ""
+    resourceDescription || ""
   );
   const isInitialMountRef = useRef(true);
 
-  // Update internal value when descriptionResource changes
+  // Update internal value when description_resource changes
   useEffect(() => {
-    if (descriptionResource?.description) {
-      setInternalValue(descriptionResource.description);
-      lastSavedValueRef.current = descriptionResource.description;
+    if (resourceDescription) {
+      setInternalValue(resourceDescription);
+      lastSavedValueRef.current = resourceDescription;
     }
-  }, [descriptionResource?.description]);
+  }, [resourceDescription]);
 
   // Debounced resource creation
   useEffect(() => {

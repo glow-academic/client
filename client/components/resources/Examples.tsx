@@ -11,11 +11,14 @@ import { Label } from "@/components/ui/label";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ExamplesProps {
-  exampleIds: string[]; // Current example resource IDs from form state
+  example_ids?: string[]; // Current example resource IDs (standardized prop name)
+  example_resources?: Array<{ example: string | null; idx: number | null }>; // Selected example resources
+  show_examples?: boolean; // Whether to show this resource picker
+  example_suggestions?: Array<{ example: string; department_ids?: string[] }>; // Array of suggested examples
+  examples?: Array<{ example: string | null; idx: number | null }>; // All available examples from API
+  disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update example_ids in form state
-  suggestions?: string[]; // History suggestions for autocomplete
   label?: string;
-  disabled?: boolean;
   id?: string;
   maxItems?: number;
   addButtonLabel?: string;
@@ -27,27 +30,76 @@ export interface ExamplesProps {
     | undefined;
   // Optional: mapping of example_id -> example text (for initial display)
   exampleMapping?: Record<string, string>;
+  // Legacy props for backward compatibility
+  exampleIds?: string[];
+  suggestions?: string[]; // History suggestions for autocomplete (legacy)
 }
 
 export function Examples({
-  exampleIds,
-  onChange,
-  suggestions = [],
-  label = "Example Messages",
+  example_ids,
+  example_resources,
+  show_examples = false,
+  example_suggestions,
+  examples,
   disabled = false,
+  onChange,
+  label = "Example Messages",
   id = "examples",
   maxItems = 10,
   addButtonLabel = "Add example",
   itemPlaceholder = "Message",
   createExamplesAction,
   exampleMapping = {},
+  // Legacy props for backward compatibility
+  exampleIds,
+  suggestions = [],
 }: ExamplesProps) {
-  // Internal state for display texts (synced with exampleIds via exampleMapping)
+  // Use standardized props with fallback to legacy props
+  const ids = example_ids ?? exampleIds ?? [];
+  const show = show_examples ?? false;
+  const allExamples = examples ?? [];
+  
+  // Build exampleMapping from examples array if not provided
+  const effectiveExampleMapping = useMemo(() => {
+    if (Object.keys(exampleMapping).length > 0) {
+      return exampleMapping;
+    }
+    // Build mapping from examples array (example_id -> example text)
+    // Note: This requires example_ids to match examples array order
+    const mapping: Record<string, string> = {};
+    ids.forEach((id, idx) => {
+      const example = allExamples[idx];
+      if (example?.example) {
+        mapping[id] = example.example;
+      }
+    });
+    return mapping;
+  }, [exampleMapping, ids, allExamples]);
+
+  // Filter examples to remove nulls
+  const validExamples = useMemo(() => {
+    return allExamples.filter((ex) => ex.example !== null && ex.idx !== null);
+  }, [allExamples]);
+
+  // Convert example_suggestions to string array for autocomplete
+  const suggestionsList = useMemo(() => {
+    if (example_suggestions && example_suggestions.length > 0) {
+      return example_suggestions.map((s) => s.example);
+    }
+    return suggestions;
+  }, [example_suggestions, suggestions]);
+
+  // Don't render if show_examples is false
+  if (!show) {
+    return null;
+  }
+
+  // Internal state for display texts (synced with example_ids via exampleMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
-    // Initialize from exampleIds using exampleMapping
-    if (exampleIds.length > 0 && Object.keys(exampleMapping).length > 0) {
-      return exampleIds
-        .map((id) => exampleMapping[id] || "")
+    // Initialize from example_ids using effectiveExampleMapping
+    if (ids.length > 0 && Object.keys(effectiveExampleMapping).length > 0) {
+      return ids
+        .map((id) => effectiveExampleMapping[id] || "")
         .filter((text) => text.trim() !== "");
     }
     return [""];
@@ -58,23 +110,23 @@ export function Examples({
   const isInitialMountRef = useRef(true);
   const exampleIdMapRef = useRef<Map<string, string>>(new Map()); // Maps example text -> example_id
 
-  // Sync external exampleIds changes (when loading from server)
+  // Sync external example_ids changes (when loading from server)
   useEffect(() => {
-    if (exampleIds.length > 0 && Object.keys(exampleMapping).length > 0) {
-      const texts = exampleIds
-        .map((id) => exampleMapping[id] || "")
+    if (ids.length > 0 && Object.keys(effectiveExampleMapping).length > 0) {
+      const texts = ids
+        .map((id) => effectiveExampleMapping[id] || "")
         .filter((text) => text.trim() !== "");
       if (texts.length > 0) {
         setInternalTexts(texts.length > 0 ? texts : [""]);
         // Update mapping
-        exampleIds.forEach((id, idx) => {
+        ids.forEach((id, idx) => {
           if (texts[idx]) {
             exampleIdMapRef.current.set(texts[idx], id);
           }
         });
       }
     }
-  }, [exampleIds, exampleMapping]);
+  }, [ids, effectiveExampleMapping]);
 
   // Debounced resource creation for each example text
   useEffect(() => {
@@ -154,7 +206,7 @@ export function Examples({
       <ReorderableList
         items={internalTexts}
         onItemsChange={handleItemsChange}
-        suggestions={suggestions}
+        suggestions={suggestionsList}
         maxItems={maxItems}
         addButtonLabel={addButtonLabel}
         disabled={disabled}

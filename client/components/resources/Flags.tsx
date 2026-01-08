@@ -13,16 +13,17 @@ import { Power } from "lucide-react";
 import React, { useCallback, useEffect, useRef } from "react";
 
 export interface FlagsProps {
-  flagResource?: {
-    id: string;
-    name: string;
-    description: string;
+  active_flag_id?: string | null; // Current flag_id (standardized prop name)
+  flag_resource?: {
+    id: string | null;
+    name: string | null;
+    description: string | null;
     icon_id: string | null;
-  } | null; // Resource data from server (composite type)
-  flagId: string | null; // Current flag_id (for form state)
+  } | null; // Resource data from server (standardized prop name)
+  show_flag?: boolean; // Whether to show this resource picker
+  disabled?: boolean; // Based on can_edit flag
   onFlagIdChange: (flagId: string | null) => void; // Update flag_id in parent form state
   label?: string;
-  disabled?: boolean;
   id?: string;
   helpText?: string;
   icon?: React.ReactNode;
@@ -36,36 +37,58 @@ export interface FlagsProps {
         };
       }) => Promise<{ flag_id?: string | null }>)
     | undefined;
+  // Legacy props for backward compatibility
+  flagResource?: {
+    id: string;
+    name: string;
+    description: string;
+    icon_id: string | null;
+  } | null;
+  flagId?: string | null;
 }
 
 export function Flags({
-  flagResource,
-  flagId,
+  active_flag_id,
+  flag_resource,
+  show_flag = false,
+  disabled = false,
   onFlagIdChange,
   label = "Active",
-  disabled = false,
   id = "active",
   helpText,
   icon,
   iconId,
   createFlagsAction,
+  // Legacy props for backward compatibility
+  flagResource,
+  flagId,
 }: FlagsProps) {
-  // If flagResource exists, the flag is active (true), otherwise false
+  // Use standardized props with fallback to legacy props
+  const resource = flag_resource ?? flagResource ?? null;
+  const resourceId = active_flag_id ?? flagId ?? null;
+  const show = show_flag ?? false;
+
+  // Don't render if show_flag is false
+  if (!show) {
+    return null;
+  }
+
+  // If flag_resource exists, the flag is active (true), otherwise false
   const [internalValue, setInternalValue] = React.useState(
-    flagResource !== null && flagResource !== undefined
+    resource !== null && resource !== undefined
   );
   const lastSavedValueRef = useRef<boolean>(
-    flagResource !== null && flagResource !== undefined
+    resource !== null && resource !== undefined
   );
   const isInitialMountRef = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update internal value when flagResource changes
+  // Update internal value when flag_resource changes
   React.useEffect(() => {
-    const newValue = flagResource !== null && flagResource !== undefined;
+    const newValue = resource !== null && resource !== undefined;
     setInternalValue(newValue);
     lastSavedValueRef.current = newValue;
-  }, [flagResource]);
+  }, [resource]);
 
   // Debounced flag resource creation
   useEffect(() => {

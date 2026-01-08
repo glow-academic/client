@@ -14,25 +14,30 @@ import { Check } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface IconsProps {
-  iconResource?: {
-    id: string;
-    name: string;
-    description: string;
-    value: string;
-  } | null; // Resource data from server (composite type)
-  iconId: string | null; // Current icon_id (for form state)
+  icon_id?: string | null; // Current icon_id (standardized prop name)
+  icon_resource?: {
+    id: string | null;
+    name: string | null;
+    description: string | null;
+    value: string | null;
+  } | null; // Resource data from server (standardized prop name)
+  show_icon?: boolean; // Whether to show this resource picker
+  icon_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  icons?: Array<{
+    id: string | null;
+    name: string | null;
+    description: string | null;
+    value: string | null;
+  }>; // All available icons from API
+  disabled?: boolean; // Based on can_edit flag
   onIconIdChange: (iconId: string | null) => void; // Update icon_id in parent form state
-  allIcons: string[];
-  suggestedIcons?: string[];
   label?: string;
-  disabled?: boolean;
   id?: string;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
-  iconSuggestions?: string[];
   createIconsAction?:
     | ((input: {
         body: {
@@ -42,16 +47,28 @@ export interface IconsProps {
         };
       }) => Promise<{ icon_id?: string | null }>)
     | undefined;
+  // Legacy props for backward compatibility
+  iconResource?: {
+    id: string;
+    name: string;
+    description: string;
+    value: string;
+  } | null;
+  iconId?: string | null;
+  allIcons?: string[];
+  suggestedIcons?: string[];
+  iconSuggestions?: string[];
 }
 
 export function Icons({
-  iconResource,
-  iconId: _iconId,
-  onIconIdChange,
-  allIcons,
-  suggestedIcons = [],
-  label = "Icon",
+  icon_id,
+  icon_resource,
+  show_icon = false,
+  icon_suggestions,
+  icons,
   disabled = false,
+  onIconIdChange,
+  label = "Icon",
   id = "icon",
   searchTerm = "",
   onSearchChange: _onSearchChange,
@@ -59,28 +76,69 @@ export function Icons({
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   createIconsAction,
+  // Legacy props for backward compatibility
+  iconResource,
+  iconId: _iconId,
+  allIcons,
+  suggestedIcons = [],
+  iconSuggestions,
 }: IconsProps) {
-  const [internalValue, setInternalValue] = useState(iconResource?.value || "");
+  // Use standardized props with fallback to legacy props
+  const resource = icon_resource ?? iconResource ?? null;
+  const resourceId = icon_id ?? _iconId ?? null;
+  const show = show_icon ?? false;
+  const suggestionsList = icon_suggestions ?? iconSuggestions ?? [];
+
+  // Don't render if show_icon is false
+  if (!show) {
+    return null;
+  }
+
+  // Convert icons array from API format to string array (extract value field)
+  const allIconsList = useMemo(() => {
+    if (icons && icons.length > 0) {
+      return icons
+        .map((i) => i.value)
+        .filter((v): v is string => v !== null && v !== undefined);
+    }
+    return allIcons ?? [];
+  }, [icons, allIcons]);
+
+  // Get suggested icon values from icon_suggestions (UUIDs) by looking up in icons array
+  const suggestedIconsList = useMemo(() => {
+    if (suggestionsList.length > 0 && icons) {
+      return suggestionsList
+        .map((id) => icons.find((i) => i.id === id)?.value)
+        .filter((v): v is string => v !== null && v !== undefined);
+    }
+    return suggestedIcons ?? [];
+  }, [suggestionsList, icons, suggestedIcons]);
+
+  // Handle nullable resource properties
+  const resourceValue = resource?.value ?? null;
+  const [internalValue, setInternalValue] = useState(resourceValue || "");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(iconResource?.value || "");
+  const lastSavedValueRef = useRef<string>(resourceValue || "");
   const isInitialMountRef = useRef(true);
 
-  // Update internal value when iconResource changes
+  // Update internal value when icon_resource changes
   useEffect(() => {
-    if (iconResource?.value) {
-      setInternalValue(iconResource.value);
-      lastSavedValueRef.current = iconResource.value;
+    if (resourceValue) {
+      setInternalValue(resourceValue);
+      lastSavedValueRef.current = resourceValue;
     }
-  }, [iconResource?.value]);
+  }, [resourceValue]);
 
   // Filter icons based on search term
   const filteredIcons = useMemo(() => {
     if (!searchTerm.trim()) {
-      return allIcons;
+      return allIconsList;
     }
     const searchLower = searchTerm.toLowerCase();
-    return allIcons.filter((icon) => icon.toLowerCase().includes(searchLower));
-  }, [allIcons, searchTerm]);
+    return allIconsList.filter((icon) =>
+      icon.toLowerCase().includes(searchLower)
+    );
+  }, [allIconsList, searchTerm]);
 
   // Filter by showSelected if enabled
   const displayIcons = useMemo(() => {
@@ -122,7 +180,7 @@ export function Icons({
     debounceTimerRef.current = setTimeout(async () => {
       try {
         // Find index of icon for value (or use 0)
-        const iconIndex = allIcons.indexOf(internalValue);
+        const iconIndex = allIconsList.indexOf(internalValue);
         const result = await createIconsAction({
           body: {
             name: internalValue,
@@ -144,7 +202,7 @@ export function Icons({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createIconsAction, allIcons, onIconIdChange]);
+  }, [internalValue, createIconsAction, allIconsList, onIconIdChange]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
@@ -166,7 +224,7 @@ export function Icons({
             PERSONA_ICON_MAP[iconName as keyof typeof PERSONA_ICON_MAP];
           if (!IconComponent) return null;
 
-          const isSuggested = suggestedIcons.includes(iconName);
+          const isSuggested = suggestedIconsList.includes(iconName);
 
           return (
             <div

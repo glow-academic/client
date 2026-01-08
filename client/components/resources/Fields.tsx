@@ -18,38 +18,60 @@ export interface FieldItem {
 }
 
 export interface FieldsProps {
-  fieldIds: string[]; // Current field resource IDs from form state
+  field_ids?: string[]; // Current field resource IDs (standardized prop name)
+  field_resources?: Array<{ field_id: string | null; name: string | null; description?: string | null }>; // Selected field resources
+  show_fields?: boolean; // Whether to show this resource picker
+  field_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  fields?: Array<{ field_id: string | null; name: string | null; description?: string | null }>; // All available fields from API
+  disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update field_ids in form state
-  fields: Array<{ field_id: string; name: string; description?: string }>; // Array from SQL (database already filtered)
   label?: string;
-  disabled?: boolean;
   id?: string;
   placeholder?: string;
   description?: string;
+  // Legacy props for backward compatibility
+  fieldIds?: string[];
 }
 
 export function Fields({
-  fieldIds,
-  onChange,
-  fields, // Direct array from SQL, no mapping needed
-  label = "Fields",
+  field_ids,
+  field_resources,
+  show_fields = false,
+  field_suggestions,
+  fields,
   disabled = false,
+  onChange,
+  label = "Fields",
   id = "fields",
   placeholder = "Select fields...",
   description,
+  // Legacy props for backward compatibility
+  fieldIds,
 }: FieldsProps) {
+  // Use standardized props with fallback to legacy props
+  const ids = field_ids ?? fieldIds ?? [];
+  const show = show_fields ?? false;
+  const allFields = fields ?? [];
+
+  // Don't render if show_fields is false
+  if (!show) {
+    return null;
+  }
+
   // Convert fields array to FieldItem format for GenericPicker
   const fieldItems = useMemo(() => {
-    return fields.map((f) => ({
-      id: f.field_id,
-      name: f.name,
-      description: f.description,
-    }));
-  }, [fields]);
+    return allFields
+      .filter((f) => f.field_id && f.name) // Filter out nulls
+      .map((f) => ({
+        id: f.field_id!,
+        name: f.name!,
+        description: f.description ?? undefined,
+      }));
+  }, [allFields]);
 
   const handleSelect = useCallback(
-    (ids: string[]) => {
-      onChange(ids);
+    (selectedIds: string[]) => {
+      onChange(selectedIds);
     },
     [onChange]
   );

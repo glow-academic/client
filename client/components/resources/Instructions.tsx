@@ -14,59 +14,83 @@ import { Loader2, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface InstructionsProps {
-  instructionsResource?: { id: string; template: string } | null; // Resource data from server (composite type)
-  instructionsId: string | null; // Current instructions_id (for form state)
+  instructions_id?: string | null; // Current instructions_id (standardized prop name)
+  instructions_resource?: { id: string | null; template: string | null } | null; // Resource data from server (standardized prop name)
+  show_instructions?: boolean; // Whether to show this resource picker
+  instructions_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  disabled?: boolean; // Based on can_edit flag
   onInstructionsIdChange: (instructionsId: string | null) => void; // Update instructions_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
   placeholder?: string;
   required?: boolean;
-  disabled?: boolean;
   rows?: number;
   id?: string;
   "data-testid"?: string;
   helpText?: string;
-  suggestions?: string[];
   createInstructionsAction?:
     | ((input: {
         body: { template: string };
       }) => Promise<{ instruction_id?: string | null }>)
     | undefined;
+  // Legacy props for backward compatibility
+  instructionsResource?: { id: string; template: string } | null;
+  instructionsId?: string | null;
+  suggestions?: string[];
 }
 
 export function Instructions({
-  instructionsResource,
-  instructionsId,
+  instructions_id,
+  instructions_resource,
+  show_instructions = true,
+  instructions_suggestions,
+  disabled = false,
   onInstructionsIdChange,
   onGenerate,
   isGenerating = false,
   label = "Instructions",
   placeholder = "Enter instructions",
   required = false,
-  disabled = false,
   rows = 8,
   id = "instructions",
   "data-testid": dataTestId,
   helpText,
   createInstructionsAction,
+  // Legacy props for backward compatibility
+  instructionsResource,
+  instructionsId,
+  suggestions,
 }: InstructionsProps) {
+  // Use standardized props with fallback to legacy props
+  const resource = instructions_resource ?? instructionsResource ?? null;
+  const resourceId = instructions_id ?? instructionsId ?? null;
+  const show = show_instructions ?? true;
+  const suggestionsList = instructions_suggestions ?? suggestions ?? [];
+
+  // Don't render if show_instructions is false
+  if (!show) {
+    return null;
+  }
+
+  // Handle nullable resource properties
+  const resourceTemplate = resource?.template ?? null;
   const [internalValue, setInternalValue] = useState(
-    instructionsResource?.template || ""
+    resourceTemplate || ""
   );
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(
-    instructionsResource?.template || ""
+    resourceTemplate || ""
   );
   const isInitialMountRef = useRef(true);
 
-  // Update internal value when instructionsResource changes
+  // Update internal value when instructions_resource changes
   useEffect(() => {
-    if (instructionsResource?.template) {
-      setInternalValue(instructionsResource.template);
-      lastSavedValueRef.current = instructionsResource.template;
+    if (resourceTemplate) {
+      setInternalValue(resourceTemplate);
+      lastSavedValueRef.current = resourceTemplate;
     }
-  }, [instructionsResource?.template]);
+  }, [resourceTemplate]);
 
   // Debounced resource creation
   useEffect(() => {

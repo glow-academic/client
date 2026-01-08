@@ -14,51 +14,75 @@ import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface NamesProps {
-  nameResource?: { id: string; name: string } | null; // Resource data from server (composite type)
-  nameId: string | null; // Current name_id (for form state)
+  name_id?: string | null; // Current name_id (standardized prop name)
+  name_resource?: { id: string | null; name: string | null } | null; // Resource data from server (standardized prop name)
+  show_name?: boolean; // Whether to show this resource picker
+  name_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  disabled?: boolean; // Based on can_edit flag
   onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
   onGenerate?: () => Promise<void>;
   isGenerating?: boolean;
   label?: string;
   placeholder?: string;
   required?: boolean;
-  disabled?: boolean;
   id?: string;
   "data-testid"?: string;
-  suggestions?: string[];
   createNamesAction?:
     | ((input: {
         body: { name: string };
       }) => Promise<{ name_id?: string | null }>)
     | undefined;
+  // Legacy props for backward compatibility
+  nameResource?: { id: string; name: string } | null;
+  nameId?: string | null;
+  suggestions?: string[];
 }
 
 export function Names({
-  nameResource,
-  nameId: _nameId,
+  name_id,
+  name_resource,
+  show_name = true,
+  name_suggestions,
+  disabled = false,
   onNameIdChange,
   onGenerate,
   isGenerating = false,
   label = "Name",
   placeholder = "Enter name",
   required = false,
-  disabled = false,
   id = "name",
   "data-testid": dataTestId,
   createNamesAction,
+  // Legacy props for backward compatibility
+  nameResource,
+  nameId: _nameId,
+  suggestions,
 }: NamesProps) {
-  const [internalValue, setInternalValue] = useState(nameResource?.name || "");
+  // Use standardized props with fallback to legacy props
+  const resource = name_resource ?? nameResource ?? null;
+  const resourceId = name_id ?? _nameId ?? null;
+  const show = show_name ?? true;
+  const suggestionsList = name_suggestions ?? suggestions ?? [];
+
+  // Don't render if show_name is false
+  if (!show) {
+    return null;
+  }
+
+  // Handle nullable resource properties
+  const resourceName = resource?.name ?? null;
+  const [internalValue, setInternalValue] = useState(resourceName || "");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(nameResource?.name || "");
+  const lastSavedValueRef = useRef<string>(resourceName || "");
   const isInitialMountRef = useRef(true);
 
-  // Update internal value when nameResource changes
+  // Update internal value when name_resource changes
   useEffect(() => {
-    if (nameResource?.name) {
-      setInternalValue(nameResource.name);
-      lastSavedValueRef.current = nameResource.name;
+    if (resourceName) {
+      setInternalValue(resourceName);
+      lastSavedValueRef.current = resourceName;
     }
-  }, [nameResource?.name]);
+  }, [resourceName]);
 
   // Debounced resource creation
   useEffect(() => {
