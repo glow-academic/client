@@ -26,10 +26,13 @@ import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
+import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { ResourceType } from "@/lib/resources/types";
+import { Loader2, Sparkles } from "lucide-react";
 import {
   parseAsBoolean,
   parseAsString,
@@ -128,11 +131,15 @@ function PersonaNewComponent({
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
-  // Generation state for AI workflows
-  const [isGeneratingName, setIsGeneratingName] = useState(false);
-  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
-  const [isGeneratingInstructions, setIsGeneratingInstructions] =
-    useState(false);
+  // Generation state for AI workflows - simplified using ResourceType
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ResourceType>
+  >(new Set());
+
+  const isGenerating = useCallback(
+    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    [generatingResources]
+  );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
   const personaSearchParamsClient = {
@@ -290,49 +297,45 @@ function PersonaNewComponent({
     setDraftId,
   ]);
 
-  // WebSocket handlers for AI generation
+  // WebSocket handlers for AI generation - unified handler for all resource types
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    const handleNamesComplete = (data: {
+    const handleGenerationComplete = (data: {
       success: boolean;
-      name?: string;
+      resource_type?: string;
       message?: string;
+      [key: string]: unknown;
     }) => {
-      setIsGeneratingName(false);
-      if (data.success && data.name) {
-        // Component manages its own state - no need to update formState
-        toast.success(data.message || "Name generated successfully");
-      } else {
-        toast.error(data.message || "Failed to generate name");
-      }
-    };
-
-    const handleDescriptionsComplete = (data: {
-      success: boolean;
-      description?: string;
-      message?: string;
-    }) => {
-      setIsGeneratingDescription(false);
-      if (data.success && data.description) {
-        // Component manages its own state - no need to update formState
-        toast.success(data.message || "Description generated successfully");
-      } else {
-        toast.error(data.message || "Failed to generate description");
-      }
-    };
-
-    const handleInstructionsComplete = (data: {
-      success: boolean;
-      instructions?: string;
-      message?: string;
-    }) => {
-      setIsGeneratingInstructions(false);
-      if (data.success && data.instructions) {
-        // Component manages its own state - no need to update formState
-        toast.success(data.message || "Instructions generated successfully");
-      } else {
-        toast.error(data.message || "Failed to generate instructions");
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "colors",
+        "icons",
+        "instructions",
+        "flags",
+        "examples",
+        "fields",
+        "departments",
+      ];
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ResourceType)
+      ) {
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ResourceType);
+          return next;
+        });
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
       }
     };
 
@@ -340,97 +343,151 @@ function PersonaNewComponent({
       success: boolean;
       message?: string;
       resource_type?: string;
+      resource_types?: string[];
     }) => {
-      if (data.resource_type === "names") {
-        setIsGeneratingName(false);
-      } else if (data.resource_type === "descriptions") {
-        setIsGeneratingDescription(false);
-      } else if (data.resource_type === "instructions") {
-        setIsGeneratingInstructions(false);
-      }
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "colors",
+        "icons",
+        "instructions",
+        "flags",
+        "examples",
+        "fields",
+        "departments",
+      ];
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
       toast.error(data.message || "Generation failed");
     };
 
-    socket.on("personas_names_generation_complete", handleNamesComplete);
+    // Listen to all resource-specific completion events
+    socket.on("personas_names_generation_complete", handleGenerationComplete);
     socket.on(
       "personas_descriptions_generation_complete",
-      handleDescriptionsComplete
+      handleGenerationComplete
     );
+    socket.on("personas_colors_generation_complete", handleGenerationComplete);
+    socket.on("personas_icons_generation_complete", handleGenerationComplete);
     socket.on(
       "personas_instructions_generation_complete",
-      handleInstructionsComplete
+      handleGenerationComplete
+    );
+    socket.on("personas_flags_generation_complete", handleGenerationComplete);
+    socket.on(
+      "personas_examples_generation_complete",
+      handleGenerationComplete
+    );
+    socket.on("personas_fields_generation_complete", handleGenerationComplete);
+    socket.on(
+      "personas_departments_generation_complete",
+      handleGenerationComplete
     );
     socket.on("personas_generation_error", handleGenerationError);
 
     return () => {
-      socket.off("personas_names_generation_complete", handleNamesComplete);
+      socket.off(
+        "personas_names_generation_complete",
+        handleGenerationComplete
+      );
       socket.off(
         "personas_descriptions_generation_complete",
-        handleDescriptionsComplete
+        handleGenerationComplete
+      );
+      socket.off(
+        "personas_colors_generation_complete",
+        handleGenerationComplete
+      );
+      socket.off(
+        "personas_icons_generation_complete",
+        handleGenerationComplete
       );
       socket.off(
         "personas_instructions_generation_complete",
-        handleInstructionsComplete
+        handleGenerationComplete
+      );
+      socket.off(
+        "personas_flags_generation_complete",
+        handleGenerationComplete
+      );
+      socket.off(
+        "personas_examples_generation_complete",
+        handleGenerationComplete
+      );
+      socket.off(
+        "personas_fields_generation_complete",
+        handleGenerationComplete
+      );
+      socket.off(
+        "personas_departments_generation_complete",
+        handleGenerationComplete
       );
       socket.off("personas_generation_error", handleGenerationError);
     };
   }, [socket, isConnected]);
 
-  // Generation handlers
-  const handleGenerateName = useCallback(async () => {
-    if (!socket || !isConnected || !draftId) {
-      toast.error("WebSocket not connected or draft not available");
-      return;
-    }
+  // Multi-generation handler - accepts list of resource types
+  const handleGenerateResources = useCallback(
+    async (resourceTypes: ResourceType[]) => {
+      if (!socket || !isConnected || !draftId) {
+        toast.error("WebSocket not connected or draft not available");
+        return;
+      }
 
-    setIsGeneratingName(true);
-    socket.emit("persona_generate", {
-      draft_id: draftId,
-      resource_type: "names",
-      persona_id: personaId || null,
-      context: {
-        name_id: formState.name_id || null,
-        description_id: formState.description_id || null,
-      },
-    });
-  }, [socket, isConnected, draftId, personaId, formState]);
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
 
-  const handleGenerateDescription = useCallback(async () => {
-    if (!socket || !isConnected || !draftId) {
-      toast.error("WebSocket not connected or draft not available");
-      return;
-    }
+      // Send to server - for now, send individual requests for each resource type
+      // TODO: Update server to accept resource_types array
+      resourceTypes.forEach((resourceType) => {
+        socket.emit("persona_generate", {
+          draft_id: draftId,
+          resource_type: resourceType,
+          persona_id: personaId || null,
+          context: {
+            name_id: formState.name_id || null,
+            description_id: formState.description_id || null,
+            instructions_id: formState.instructions_id || null,
+            color_id: formState.color_id || null,
+            icon_id: formState.icon_id || null,
+            field_ids: formState.field_ids || [],
+            department_ids: formState.department_ids || [],
+            example_ids: formState.example_ids || [],
+          },
+        });
+      });
+    },
+    [socket, isConnected, draftId, personaId, formState]
+  );
 
-    setIsGeneratingDescription(true);
-    socket.emit("persona_generate", {
-      draft_id: draftId,
-      resource_type: "descriptions",
-      persona_id: personaId || null,
-      context: {
-        name_id: formState.name_id || null,
-        description_id: formState.description_id || null,
-      },
-    });
-  }, [socket, isConnected, draftId, personaId, formState]);
+  // Individual generation handlers for backward compatibility
+  const handleGenerateName = useCallback(
+    async () => handleGenerateResources(["names"]),
+    [handleGenerateResources]
+  );
 
-  const handleGenerateInstructions = useCallback(async () => {
-    if (!socket || !isConnected || !draftId) {
-      toast.error("WebSocket not connected or draft not available");
-      return;
-    }
+  const handleGenerateDescription = useCallback(
+    async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources]
+  );
 
-    setIsGeneratingInstructions(true);
-    socket.emit("persona_generate", {
-      draft_id: draftId,
-      resource_type: "instructions",
-      persona_id: personaId || null,
-      context: {
-        name_id: formState.name_id || null,
-        description_id: formState.description_id || null,
-        instructions_id: formState.instructions_id || null,
-      },
-    });
-  }, [socket, isConnected, draftId, personaId, formState]);
+  const handleGenerateInstructions = useCallback(
+    async () => handleGenerateResources(["instructions"]),
+    [handleGenerateResources]
+  );
 
   // GenericForm will manage URL state via nuqs parsers
   // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
@@ -539,6 +596,7 @@ function PersonaNewComponent({
       // Check resource IDs from formState (components manage their own display state)
       const hasName = !!formState.name_id;
       const hasDescription = !!formState.description_id;
+      const hasFields = formState.field_ids.length > 0;
       const hasColor = !!formState.color_id;
       const hasIcon = !!formState.icon_id;
       const hasInstructions = !!formState.instructions_id;
@@ -546,6 +604,9 @@ function PersonaNewComponent({
       switch (stepId) {
         case "basic":
           return hasName && hasDescription ? "completed" : "active";
+        case "fields":
+          if (!hasName || !hasDescription) return "pending";
+          return hasFields ? "completed" : "active";
         case "color":
           if (!hasName || !hasDescription) return "pending";
           return hasColor ? "completed" : "active";
@@ -562,6 +623,18 @@ function PersonaNewComponent({
     [formState]
   );
 
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions"],
+      fields: ["fields"],
+      color: ["colors"],
+      icon: ["icons"],
+      content: ["instructions", "examples"],
+    }),
+    []
+  );
+
   // Steps configuration for GenericForm
   const steps = useMemo(
     () => [
@@ -570,13 +643,13 @@ function PersonaNewComponent({
         title: "Basic Information",
         description:
           "Set the persona name, description, departments, and active status.",
-        resetFields: [
-          "name",
-          "description",
-          "department_ids",
-          "field_ids",
-          "active",
-        ],
+        resetFields: ["name", "description", "department_ids", "active"],
+      },
+      {
+        id: "fields",
+        title: "Fields",
+        description: "Select fields for this persona.",
+        resetFields: ["field_ids"],
       },
       {
         id: "color",
@@ -622,6 +695,8 @@ function PersonaNewComponent({
     switch (stepId) {
       case "basic":
         return "Basic information reset";
+      case "fields":
+        return "Fields reset";
       case "color":
         return "Color reset";
       case "icon":
@@ -697,7 +772,7 @@ function PersonaNewComponent({
                       setFormState((prev) => ({ ...prev, name_id: nameId }))
                     }
                     onGenerate={handleGenerateName}
-                    isGenerating={isGeneratingName}
+                    isGenerating={isGenerating("names")}
                     placeholder="e.g., Enthusiastic Student"
                     defaultName="New Persona"
                     required
@@ -714,13 +789,35 @@ function PersonaNewComponent({
                   </p>
                 </>
               }
-              resetFields={[
-                "name",
-                "description",
-                "department_ids",
-                "field_ids",
-                "active",
-              ]}
+              resetFields={["name", "description", "department_ids", "active"]}
+              actions={
+                stepResources["basic"] && stepResources["basic"].length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleGenerateResources(stepResources["basic"]!)
+                    }
+                    disabled={
+                      disabled ||
+                      stepResources["basic"]!.some((rt) => isGenerating(rt))
+                    }
+                  >
+                    {stepResources["basic"]!.some((rt) => isGenerating(rt)) ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                ) : undefined
+              }
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
@@ -743,7 +840,7 @@ function PersonaNewComponent({
                     }))
                   }
                   onGenerate={handleGenerateDescription}
-                  isGenerating={isGeneratingDescription}
+                  isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
                   required={false}
@@ -765,21 +862,6 @@ function PersonaNewComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
-                />
-
-                {/* Fields Selection */}
-                <Fields
-                  field_ids={formState.field_ids ?? []}
-                  field_resources={personaData?.field_resources ?? []}
-                  show_fields={personaData?.show_fields ?? false}
-                  field_suggestions={personaData?.field_suggestions ?? []}
-                  fields={personaData?.fields ?? []}
-                  disabled={disabled}
-                  onChange={(ids) =>
-                    setFormState((prev) => ({ ...prev, field_ids: ids }))
-                  }
-                  label="Fields"
-                  description="Select fields for this persona"
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -804,6 +886,64 @@ function PersonaNewComponent({
                   createFlagsAction={createFlagsAction}
                 />
               </div>
+            </StepCard>
+          );
+
+        case "fields":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["field_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              actions={
+                stepResources["fields"] &&
+                stepResources["fields"].length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleGenerateResources(stepResources["fields"]!)
+                    }
+                    disabled={
+                      disabled ||
+                      stepResources["fields"]!.some((rt) => isGenerating(rt))
+                    }
+                  >
+                    {stepResources["fields"]!.some((rt) => isGenerating(rt)) ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                ) : undefined
+              }
+            >
+              <Fields
+                field_ids={formState.field_ids ?? []}
+                field_resources={personaData?.field_resources ?? []}
+                show_fields={personaData?.show_fields ?? false}
+                field_suggestions={personaData?.field_suggestions ?? []}
+                fields={personaData?.fields ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, field_ids: ids }))
+                }
+                label="Fields"
+                description="Select fields for this persona"
+              />
             </StepCard>
           );
 
@@ -840,6 +980,34 @@ function PersonaNewComponent({
               resetFields={["color", "colorSearch", "colorShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["color"] && stepResources["color"].length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleGenerateResources(stepResources["color"]!)
+                    }
+                    disabled={
+                      disabled ||
+                      stepResources["color"]!.some((rt) => isGenerating(rt))
+                    }
+                  >
+                    {stepResources["color"]!.some((rt) => isGenerating(rt)) ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                ) : undefined
+              }
             >
               {/* Color picker - using Colors resource component */}
               <Colors
@@ -902,6 +1070,34 @@ function PersonaNewComponent({
               resetFields={["icon", "iconSearch", "iconShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["icon"] && stepResources["icon"].length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleGenerateResources(stepResources["icon"]!)
+                    }
+                    disabled={
+                      disabled ||
+                      stepResources["icon"]!.some((rt) => isGenerating(rt))
+                    }
+                  >
+                    {stepResources["icon"]!.some((rt) => isGenerating(rt)) ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                ) : undefined
+              }
             >
               {/* Icon picker - using Icons resource component */}
               <Icons
@@ -943,6 +1139,37 @@ function PersonaNewComponent({
               resetFields={["instructions", "examples"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["content"] &&
+                stepResources["content"].length > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleGenerateResources(stepResources["content"]!)
+                    }
+                    disabled={
+                      disabled ||
+                      stepResources["content"]!.some((rt) => isGenerating(rt))
+                    }
+                  >
+                    {stepResources["content"]!.some((rt) =>
+                      isGenerating(rt)
+                    ) ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                ) : undefined
+              }
             >
               {/* Instructions - using Instructions resource component */}
               <Instructions
@@ -962,7 +1189,7 @@ function PersonaNewComponent({
                   }))
                 }
                 onGenerate={handleGenerateInstructions}
-                isGenerating={isGeneratingInstructions}
+                isGenerating={isGenerating("instructions")}
                 label="Instructions"
                 placeholder="Instructions that define how the persona should behave and respond."
                 required
@@ -1014,9 +1241,9 @@ function PersonaNewComponent({
       handleGenerateName,
       handleGenerateDescription,
       handleGenerateInstructions,
-      isGeneratingName,
-      isGeneratingDescription,
-      isGeneratingInstructions,
+      handleGenerateResources,
+      isGenerating,
+      stepResources,
       formState,
       createNamesAction,
       createDescriptionsAction,

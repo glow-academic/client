@@ -59,7 +59,7 @@ export interface IconsProps {
 }
 
 export function Icons({
-  icon_id: _icon_id,
+  icon_id,
   icon_resource,
   show_icon = false,
   icon_suggestions,
@@ -69,10 +69,10 @@ export function Icons({
   label = "Icon",
   id = "icon",
   searchTerm = "",
-  onSearchChange: _onSearchChange,
-  searchPlaceholder: _searchPlaceholder = "Search icons...",
+  onSearchChange,
+  searchPlaceholder = "Search icons...",
   showSelectedFilter = false,
-  onShowSelectedChange: _onShowSelectedChange,
+  onShowSelectedChange,
   createIconsAction,
   // Legacy props for backward compatibility
   iconResource,
@@ -111,18 +111,41 @@ export function Icons({
 
   // Handle nullable resource properties
   const resourceValue = resource?.value ?? null;
-  const [internalValue, setInternalValue] = useState(resourceValue || "");
+  // Use icon_id to find initial value if resource is not available
+  const initialValue = useMemo(() => {
+    if (resourceValue) return resourceValue;
+    if (icon_id && icons) {
+      const icon = icons.find((i) => i.id === icon_id);
+      return icon?.value || "";
+    }
+    return "";
+  }, [resourceValue, icon_id, icons]);
+  const [internalValue, setInternalValue] = useState(initialValue);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(resourceValue || "");
+  const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
 
-  // Update internal value when icon_resource changes
+  // Update internal value when icon_resource or icon_id changes
   useEffect(() => {
-    if (resourceValue) {
-      setInternalValue(resourceValue);
-      lastSavedValueRef.current = resourceValue;
+    if (initialValue) {
+      setInternalValue(initialValue);
+      lastSavedValueRef.current = initialValue;
     }
-  }, [resourceValue]);
+  }, [initialValue]);
+
+  // Handle search term changes
+  useEffect(() => {
+    if (onSearchChange && searchTerm !== undefined) {
+      onSearchChange(searchTerm);
+    }
+  }, [searchTerm, onSearchChange]);
+
+  // Handle showSelected filter changes
+  useEffect(() => {
+    if (onShowSelectedChange && showSelectedFilter !== undefined) {
+      onShowSelectedChange(showSelectedFilter);
+    }
+  }, [showSelectedFilter, onShowSelectedChange]);
 
   // Filter icons based on search term
   const filteredIcons = useMemo(() => {

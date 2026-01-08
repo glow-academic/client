@@ -73,9 +73,9 @@ export function Colors({
   onColorIdChange,
   label = "Color",
   id = "color",
-  searchTerm: _searchTerm,
+  searchTerm = "",
   onSearchChange: _onSearchChange,
-  searchPlaceholder: _searchPlaceholder,
+  searchPlaceholder: _searchPlaceholder = "Search colors...",
   showSelectedFilter = false,
   onShowSelectedChange: _onShowSelectedChange,
   createColorsAction,
@@ -89,12 +89,10 @@ export function Colors({
   const resource = color_resource ?? colorResource ?? null;
   const resourceId = color_id ?? _colorId ?? null;
   const show = show_color ?? false;
-  const suggestionsList = color_suggestions ?? colorSuggestions ?? [];
-
-  // Don't render if show_color is false
-  if (!show) {
-    return null;
-  }
+  const suggestionsList = useMemo(
+    () => color_suggestions ?? colorSuggestions ?? [],
+    [color_suggestions, colorSuggestions]
+  );
 
   // Convert colors array from API format to ColorItem format
   const presetColorsList = useMemo(() => {
@@ -131,6 +129,11 @@ export function Colors({
       ? internalValue.toLowerCase()
       : `#${internalValue.toLowerCase()}`;
   }, [internalValue]);
+
+  // Don't render if show_color is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
 
   // Debounced resource creation
   useEffect(() => {
@@ -192,15 +195,42 @@ export function Colors({
     setInternalValue(newValue);
   }, []);
 
-  // Filter by showSelected if enabled (presetColorsList already filtered by search in parent)
-  const displayColors = useMemo(() => {
-    if (!showSelectedFilter) {
+  // Map suggestion UUIDs to hex codes
+  const suggestedHexCodes = useMemo(() => {
+    if (suggestionsList.length === 0 || !colors) return new Set<string>();
+    const suggestedSet = new Set<string>();
+    suggestionsList.forEach((suggestionId) => {
+      const color = colors.find((c) => c.id === suggestionId);
+      if (color?.hex_code) {
+        suggestedSet.add(color.hex_code.toLowerCase());
+      }
+    });
+    return suggestedSet;
+  }, [suggestionsList, colors]);
+
+  // Filter colors by search term
+  const filteredColors = useMemo(() => {
+    if (!searchTerm.trim()) {
       return presetColorsList;
     }
+    const searchLower = searchTerm.toLowerCase();
     return presetColorsList.filter(
-      (color) => color.hex.toLowerCase() === currentColor
+      (color) =>
+        color.name.toLowerCase().includes(searchLower) ||
+        color.hex.toLowerCase().includes(searchLower)
     );
-  }, [presetColorsList, showSelectedFilter, currentColor]);
+  }, [presetColorsList, searchTerm]);
+
+  // Filter by showSelected if enabled
+  const displayColors = useMemo(() => {
+    let result = filteredColors;
+    if (showSelectedFilter) {
+      result = result.filter(
+        (color) => color.hex.toLowerCase() === currentColor
+      );
+    }
+    return result;
+  }, [filteredColors, showSelectedFilter, currentColor]);
 
   return (
     <div className="space-y-4">
@@ -231,6 +261,14 @@ export function Colors({
                   <Check className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
               )}
+
+              {/* Suggested badge - top left */}
+              {!isSelected &&
+                suggestedHexCodes.has(color.hex.toLowerCase()) && (
+                  <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                    Suggested
+                  </div>
+                )}
 
               <div className="flex items-center gap-3">
                 <div

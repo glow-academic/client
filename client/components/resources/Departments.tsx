@@ -9,7 +9,9 @@
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Label } from "@/components/ui/label";
+import { Check } from "lucide-react";
 import { useCallback, useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 export interface DepartmentItem {
   id: string;
@@ -52,6 +54,7 @@ export function Departments({
   const ids = department_ids ?? departmentIds ?? [];
   const show = show_departments ?? false;
   const allDepartments = departments ?? [];
+  const suggestionsList = department_suggestions ?? [];
 
   // Don't render if show_departments is false
   if (!show) {
@@ -68,6 +71,12 @@ export function Departments({
         description: d.description ?? undefined,
       }));
   }, [allDepartments]);
+
+  // Check if a department is suggested
+  const isSuggested = useCallback(
+    (departmentId: string) => suggestionsList.includes(departmentId),
+    [suggestionsList]
+  );
 
   const handleSelect = useCallback(
     (selectedIds: string[]) => {
@@ -96,6 +105,31 @@ export function Departments({
         multiSelect={true}
         getId={(item) => item.id}
         getLabel={(item) => item.name}
+        renderItem={(item, isSelected) => (
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {isSuggested(item.id) && !isSelected && (
+                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
+                  Suggested
+                </span>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="truncate">{item.name}</div>
+                {item.description && (
+                  <div className="text-xs text-muted-foreground truncate">
+                    {item.description}
+                  </div>
+                )}
+              </div>
+            </div>
+            <Check
+              className={cn(
+                "ml-auto flex-shrink-0 h-4 w-4",
+                isSelected ? "opacity-100" : "opacity-0"
+              )}
+            />
+          </div>
+        )}
         placeholder={placeholder}
         disabled={disabled}
         showLabel={false}
