@@ -9564,9 +9564,9 @@ class UpdateDocumentNameApiResponse(BaseModel):
 
 
 
-# Generated from: create_draft_analyses
+# Generated from: analyses
 
-class CreateDraftAnalysesSqlParams(BaseModel):
+class AnalysesSqlParams(BaseModel):
 
     draft_id: UUID
     content: str
@@ -9577,26 +9577,26 @@ class CreateDraftAnalysesSqlParams(BaseModel):
             self.content,
         )
 
-class CreateDraftAnalysesSqlRow(BaseModel):
+class AnalysesSqlRow(BaseModel):
 
     analyse_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftAnalysesApiRequest(BaseModel):
+class AnalysesApiRequest(BaseModel):
 
     draft_id: UUID
     content: str
 
-class CreateDraftAnalysesApiResponse(BaseModel):
+class AnalysesApiResponse(BaseModel):
 
     analyse_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_colors
+# Generated from: colors
 
-class CreateDraftColorsSqlParams(BaseModel):
+class ColorsSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -9611,28 +9611,28 @@ class CreateDraftColorsSqlParams(BaseModel):
             self.hex_code,
         )
 
-class CreateDraftColorsSqlRow(BaseModel):
+class ColorsSqlRow(BaseModel):
 
     color_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftColorsApiRequest(BaseModel):
+class ColorsApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     description: str
     hex_code: str
 
-class CreateDraftColorsApiResponse(BaseModel):
+class ColorsApiResponse(BaseModel):
 
     color_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_content
+# Generated from: content
 
-class CreateDraftContentSqlParams(BaseModel):
+class ContentSqlParams(BaseModel):
 
     draft_id: UUID
     content: str
@@ -9643,26 +9643,26 @@ class CreateDraftContentSqlParams(BaseModel):
             self.content,
         )
 
-class CreateDraftContentSqlRow(BaseModel):
+class ContentSqlRow(BaseModel):
 
     content_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftContentApiRequest(BaseModel):
+class ContentApiRequest(BaseModel):
 
     draft_id: UUID
     content: str
 
-class CreateDraftContentApiResponse(BaseModel):
+class ContentApiResponse(BaseModel):
 
     content_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_conversations
+# Generated from: conversations
 
-class CreateDraftConversationsSqlParams(BaseModel):
+class ConversationsSqlParams(BaseModel):
 
     draft_id: UUID
     end_reason: str
@@ -9673,17 +9673,17 @@ class CreateDraftConversationsSqlParams(BaseModel):
             self.end_reason,
         )
 
-class CreateDraftConversationsSqlRow(BaseModel):
+class ConversationsSqlRow(BaseModel):
 
     conversation_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftConversationsApiRequest(BaseModel):
+class ConversationsApiRequest(BaseModel):
 
     draft_id: UUID
     end_reason: str
 
-class CreateDraftConversationsApiResponse(BaseModel):
+class ConversationsApiResponse(BaseModel):
 
     conversation_id: UUID | None = None
     version: int | None = None
@@ -9719,9 +9719,9 @@ class CreateDraftApiResponse(BaseModel):
 
 
 
-# Generated from: create_draft_debug_info
+# Generated from: debug_info
 
-class CreateDraftDebugInfoSqlParams(BaseModel):
+class DebugInfoSqlParams(BaseModel):
 
     draft_id: UUID
     content: str
@@ -9732,26 +9732,26 @@ class CreateDraftDebugInfoSqlParams(BaseModel):
             self.content,
         )
 
-class CreateDraftDebugInfoSqlRow(BaseModel):
+class DebugInfoSqlRow(BaseModel):
 
     debug_info_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftDebugInfoApiRequest(BaseModel):
+class DebugInfoApiRequest(BaseModel):
 
     draft_id: UUID
     content: str
 
-class CreateDraftDebugInfoApiResponse(BaseModel):
+class DebugInfoApiResponse(BaseModel):
 
     debug_info_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_descriptions
+# Generated from: descriptions
 
-class CreateDraftDescriptionsSqlParams(BaseModel):
+class DescriptionsSqlParams(BaseModel):
 
     draft_id: UUID
     description: str
@@ -9762,26 +9762,26 @@ class CreateDraftDescriptionsSqlParams(BaseModel):
             self.description,
         )
 
-class CreateDraftDescriptionsSqlRow(BaseModel):
+class DescriptionsSqlRow(BaseModel):
 
     description_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftDescriptionsApiRequest(BaseModel):
+class DescriptionsApiRequest(BaseModel):
 
     draft_id: UUID
     description: str
 
-class CreateDraftDescriptionsApiResponse(BaseModel):
+class DescriptionsApiResponse(BaseModel):
 
     description_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_feedbacks
+# Generated from: feedbacks
 
-class CreateDraftFeedbacksSqlParams(BaseModel):
+class FeedbacksSqlParams(BaseModel):
 
     draft_id: UUID
     total: float
@@ -9796,28 +9796,28 @@ class CreateDraftFeedbacksSqlParams(BaseModel):
             self.standard_id,
         )
 
-class CreateDraftFeedbacksSqlRow(BaseModel):
+class FeedbacksSqlRow(BaseModel):
 
     feedback_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftFeedbacksApiRequest(BaseModel):
+class FeedbacksApiRequest(BaseModel):
 
     draft_id: UUID
     total: float
     feedback: str
     standard_id: UUID
 
-class CreateDraftFeedbacksApiResponse(BaseModel):
+class FeedbacksApiResponse(BaseModel):
 
     feedback_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_flags
+# Generated from: flags
 
-class CreateDraftFlagsSqlParams(BaseModel):
+class FlagsSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -9832,19 +9832,19 @@ class CreateDraftFlagsSqlParams(BaseModel):
             self.icon_id,
         )
 
-class CreateDraftFlagsSqlRow(BaseModel):
+class FlagsSqlRow(BaseModel):
 
     flag_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftFlagsApiRequest(BaseModel):
+class FlagsApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     description: str
     icon_id: UUID
 
-class CreateDraftFlagsApiResponse(BaseModel):
+class FlagsApiResponse(BaseModel):
 
     flag_id: UUID | None = None
     version: int | None = None
@@ -9886,9 +9886,9 @@ class GetDraftApiResponse(BaseModel):
 
 
 
-# Generated from: create_draft_hints
+# Generated from: hints
 
-class CreateDraftHintsSqlParams(BaseModel):
+class HintsSqlParams(BaseModel):
 
     draft_id: UUID
     hint: str
@@ -9899,26 +9899,26 @@ class CreateDraftHintsSqlParams(BaseModel):
             self.hint,
         )
 
-class CreateDraftHintsSqlRow(BaseModel):
+class HintsSqlRow(BaseModel):
 
     hint_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftHintsApiRequest(BaseModel):
+class HintsApiRequest(BaseModel):
 
     draft_id: UUID
     hint: str
 
-class CreateDraftHintsApiResponse(BaseModel):
+class HintsApiResponse(BaseModel):
 
     hint_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_html
+# Generated from: html
 
-class CreateDraftHtmlSqlParams(BaseModel):
+class HtmlSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -9931,27 +9931,27 @@ class CreateDraftHtmlSqlParams(BaseModel):
             self.description,
         )
 
-class CreateDraftHtmlSqlRow(BaseModel):
+class HtmlSqlRow(BaseModel):
 
     html_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftHtmlApiRequest(BaseModel):
+class HtmlApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     description: str
 
-class CreateDraftHtmlApiResponse(BaseModel):
+class HtmlApiResponse(BaseModel):
 
     html_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_icons
+# Generated from: icons
 
-class CreateDraftIconsSqlParams(BaseModel):
+class IconsSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -9966,28 +9966,28 @@ class CreateDraftIconsSqlParams(BaseModel):
             self.value,
         )
 
-class CreateDraftIconsSqlRow(BaseModel):
+class IconsSqlRow(BaseModel):
 
     icon_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftIconsApiRequest(BaseModel):
+class IconsApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     description: str
     value: float
 
-class CreateDraftIconsApiResponse(BaseModel):
+class IconsApiResponse(BaseModel):
 
     icon_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_images
+# Generated from: images
 
-class CreateDraftImagesSqlParams(BaseModel):
+class ImagesSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10000,27 +10000,27 @@ class CreateDraftImagesSqlParams(BaseModel):
             self.description,
         )
 
-class CreateDraftImagesSqlRow(BaseModel):
+class ImagesSqlRow(BaseModel):
 
     image_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftImagesApiRequest(BaseModel):
+class ImagesApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     description: str
 
-class CreateDraftImagesApiResponse(BaseModel):
+class ImagesApiResponse(BaseModel):
 
     image_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_improvements
+# Generated from: improvements
 
-class CreateDraftImprovementsSqlParams(BaseModel):
+class ImprovementsSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10035,28 +10035,28 @@ class CreateDraftImprovementsSqlParams(BaseModel):
             self.message_id,
         )
 
-class CreateDraftImprovementsSqlRow(BaseModel):
+class ImprovementsSqlRow(BaseModel):
 
     improvement_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftImprovementsApiRequest(BaseModel):
+class ImprovementsApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     description: str
     message_id: UUID
 
-class CreateDraftImprovementsApiResponse(BaseModel):
+class ImprovementsApiResponse(BaseModel):
 
     improvement_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_instructions
+# Generated from: instructions
 
-class CreateDraftInstructionsSqlParams(BaseModel):
+class InstructionsSqlParams(BaseModel):
 
     draft_id: UUID
     template: str
@@ -10067,26 +10067,26 @@ class CreateDraftInstructionsSqlParams(BaseModel):
             self.template,
         )
 
-class CreateDraftInstructionsSqlRow(BaseModel):
+class InstructionsSqlRow(BaseModel):
 
     instruction_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftInstructionsApiRequest(BaseModel):
+class InstructionsApiRequest(BaseModel):
 
     draft_id: UUID
     template: str
 
-class CreateDraftInstructionsApiResponse(BaseModel):
+class InstructionsApiResponse(BaseModel):
 
     instruction_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_names
+# Generated from: names
 
-class CreateDraftNamesSqlParams(BaseModel):
+class NamesSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10097,26 +10097,26 @@ class CreateDraftNamesSqlParams(BaseModel):
             self.name,
         )
 
-class CreateDraftNamesSqlRow(BaseModel):
+class NamesSqlRow(BaseModel):
 
     name_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftNamesApiRequest(BaseModel):
+class NamesApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
 
-class CreateDraftNamesApiResponse(BaseModel):
+class NamesApiResponse(BaseModel):
 
     name_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_objectives
+# Generated from: objectives
 
-class CreateDraftObjectivesSqlParams(BaseModel):
+class ObjectivesSqlParams(BaseModel):
 
     draft_id: UUID
     objective: str
@@ -10127,26 +10127,26 @@ class CreateDraftObjectivesSqlParams(BaseModel):
             self.objective,
         )
 
-class CreateDraftObjectivesSqlRow(BaseModel):
+class ObjectivesSqlRow(BaseModel):
 
     objective_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftObjectivesApiRequest(BaseModel):
+class ObjectivesApiRequest(BaseModel):
 
     draft_id: UUID
     objective: str
 
-class CreateDraftObjectivesApiResponse(BaseModel):
+class ObjectivesApiResponse(BaseModel):
 
     objective_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_options
+# Generated from: options
 
-class CreateDraftOptionsSqlParams(BaseModel):
+class OptionsSqlParams(BaseModel):
 
     draft_id: UUID
     option_text: str
@@ -10159,27 +10159,27 @@ class CreateDraftOptionsSqlParams(BaseModel):
             self.is_correct,
         )
 
-class CreateDraftOptionsSqlRow(BaseModel):
+class OptionsSqlRow(BaseModel):
 
     option_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftOptionsApiRequest(BaseModel):
+class OptionsApiRequest(BaseModel):
 
     draft_id: UUID
     option_text: str
     is_correct: bool
 
-class CreateDraftOptionsApiResponse(BaseModel):
+class OptionsApiResponse(BaseModel):
 
     option_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_points
+# Generated from: points
 
-class CreateDraftPointsSqlParams(BaseModel):
+class PointsSqlParams(BaseModel):
 
     draft_id: UUID
     value: float
@@ -10190,26 +10190,26 @@ class CreateDraftPointsSqlParams(BaseModel):
             self.value,
         )
 
-class CreateDraftPointsSqlRow(BaseModel):
+class PointsSqlRow(BaseModel):
 
     point_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftPointsApiRequest(BaseModel):
+class PointsApiRequest(BaseModel):
 
     draft_id: UUID
     value: float
 
-class CreateDraftPointsApiResponse(BaseModel):
+class PointsApiResponse(BaseModel):
 
     point_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_problem_statements
+# Generated from: problem_statements
 
-class CreateDraftProblemStatementsSqlParams(BaseModel):
+class ProblemStatementsSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10222,27 +10222,27 @@ class CreateDraftProblemStatementsSqlParams(BaseModel):
             self.problem_statement,
         )
 
-class CreateDraftProblemStatementsSqlRow(BaseModel):
+class ProblemStatementsSqlRow(BaseModel):
 
     problem_statement_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftProblemStatementsApiRequest(BaseModel):
+class ProblemStatementsApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     problem_statement: str
 
-class CreateDraftProblemStatementsApiResponse(BaseModel):
+class ProblemStatementsApiResponse(BaseModel):
 
     problem_statement_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_prompts
+# Generated from: prompts
 
-class CreateDraftPromptsSqlParams(BaseModel):
+class PromptsSqlParams(BaseModel):
 
     draft_id: UUID
     system_prompt: str
@@ -10257,28 +10257,28 @@ class CreateDraftPromptsSqlParams(BaseModel):
             self.description,
         )
 
-class CreateDraftPromptsSqlRow(BaseModel):
+class PromptsSqlRow(BaseModel):
 
     prompt_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftPromptsApiRequest(BaseModel):
+class PromptsApiRequest(BaseModel):
 
     draft_id: UUID
     system_prompt: str
     name: str
     description: str
 
-class CreateDraftPromptsApiResponse(BaseModel):
+class PromptsApiResponse(BaseModel):
 
     prompt_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_questions
+# Generated from: questions
 
-class CreateDraftQuestionsSqlParams(BaseModel):
+class QuestionsSqlParams(BaseModel):
 
     draft_id: UUID
     question_text: str
@@ -10293,28 +10293,28 @@ class CreateDraftQuestionsSqlParams(BaseModel):
             self.time_value,
         )
 
-class CreateDraftQuestionsSqlRow(BaseModel):
+class QuestionsSqlRow(BaseModel):
 
     question_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftQuestionsApiRequest(BaseModel):
+class QuestionsApiRequest(BaseModel):
 
     draft_id: UUID
     question_text: str
     allow_multiple: bool
     time_value: int
 
-class CreateDraftQuestionsApiResponse(BaseModel):
+class QuestionsApiResponse(BaseModel):
 
     question_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_responses
+# Generated from: responses
 
-class CreateDraftResponsesSqlParams(BaseModel):
+class ResponsesSqlParams(BaseModel):
 
     draft_id: UUID
     option_id: UUID
@@ -10327,27 +10327,27 @@ class CreateDraftResponsesSqlParams(BaseModel):
             self.question_id,
         )
 
-class CreateDraftResponsesSqlRow(BaseModel):
+class ResponsesSqlRow(BaseModel):
 
     response_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftResponsesApiRequest(BaseModel):
+class ResponsesApiRequest(BaseModel):
 
     draft_id: UUID
     option_id: UUID
     question_id: UUID
 
-class CreateDraftResponsesApiResponse(BaseModel):
+class ResponsesApiResponse(BaseModel):
 
     response_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_schema_field_items
+# Generated from: schema_field_items
 
-class CreateDraftSchemaFieldItemsSqlParams(BaseModel):
+class SchemaFieldItemsSqlParams(BaseModel):
 
     draft_id: UUID
     schema_field_id: UUID
@@ -10360,27 +10360,27 @@ class CreateDraftSchemaFieldItemsSqlParams(BaseModel):
             self.item_schema_id,
         )
 
-class CreateDraftSchemaFieldItemsSqlRow(BaseModel):
+class SchemaFieldItemsSqlRow(BaseModel):
 
     schema_field_items_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftSchemaFieldItemsApiRequest(BaseModel):
+class SchemaFieldItemsApiRequest(BaseModel):
 
     draft_id: UUID
     schema_field_id: UUID
     item_schema_id: UUID
 
-class CreateDraftSchemaFieldItemsApiResponse(BaseModel):
+class SchemaFieldItemsApiResponse(BaseModel):
 
     schema_field_items_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_schema_fields
+# Generated from: schema_fields
 
-class CreateDraftSchemaFieldsSqlParams(BaseModel):
+class SchemaFieldsSqlParams(BaseModel):
 
     draft_id: UUID
     schema_id: UUID
@@ -10405,12 +10405,12 @@ class CreateDraftSchemaFieldsSqlParams(BaseModel):
             self.default_value,
         )
 
-class CreateDraftSchemaFieldsSqlRow(BaseModel):
+class SchemaFieldsSqlRow(BaseModel):
 
     schema_field_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftSchemaFieldsApiRequest(BaseModel):
+class SchemaFieldsApiRequest(BaseModel):
 
     draft_id: UUID
     schema_id: UUID
@@ -10422,16 +10422,16 @@ class CreateDraftSchemaFieldsApiRequest(BaseModel):
     description: str
     default_value: str
 
-class CreateDraftSchemaFieldsApiResponse(BaseModel):
+class SchemaFieldsApiResponse(BaseModel):
 
     schema_field_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_schemas
+# Generated from: schemas
 
-class CreateDraftSchemasSqlParams(BaseModel):
+class SchemasSqlParams(BaseModel):
 
     draft_id: UUID
 
@@ -10440,25 +10440,25 @@ class CreateDraftSchemasSqlParams(BaseModel):
             self.draft_id,
         )
 
-class CreateDraftSchemasSqlRow(BaseModel):
+class SchemasSqlRow(BaseModel):
 
     schema_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftSchemasApiRequest(BaseModel):
+class SchemasApiRequest(BaseModel):
 
     draft_id: UUID
 
-class CreateDraftSchemasApiResponse(BaseModel):
+class SchemasApiResponse(BaseModel):
 
     schema_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_standard_groups
+# Generated from: standard_groups
 
-class CreateDraftStandardGroupsSqlParams(BaseModel):
+class StandardGroupsSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10477,12 +10477,12 @@ class CreateDraftStandardGroupsSqlParams(BaseModel):
             self.pass_points,
         )
 
-class CreateDraftStandardGroupsSqlRow(BaseModel):
+class StandardGroupsSqlRow(BaseModel):
 
     standard_group_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftStandardGroupsApiRequest(BaseModel):
+class StandardGroupsApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10491,16 +10491,16 @@ class CreateDraftStandardGroupsApiRequest(BaseModel):
     points: float
     pass_points: float
 
-class CreateDraftStandardGroupsApiResponse(BaseModel):
+class StandardGroupsApiResponse(BaseModel):
 
     standard_group_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_strengths
+# Generated from: strengths
 
-class CreateDraftStrengthsSqlParams(BaseModel):
+class StrengthsSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10515,28 +10515,28 @@ class CreateDraftStrengthsSqlParams(BaseModel):
             self.message_id,
         )
 
-class CreateDraftStrengthsSqlRow(BaseModel):
+class StrengthsSqlRow(BaseModel):
 
     strength_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftStrengthsApiRequest(BaseModel):
+class StrengthsApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     description: str
     message_id: UUID
 
-class CreateDraftStrengthsApiResponse(BaseModel):
+class StrengthsApiResponse(BaseModel):
 
     strength_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_template_array_items
+# Generated from: template_array_items
 
-class CreateDraftTemplateArrayItemsSqlParams(BaseModel):
+class TemplateArrayItemsSqlParams(BaseModel):
 
     draft_id: UUID
     template_id: UUID
@@ -10553,12 +10553,12 @@ class CreateDraftTemplateArrayItemsSqlParams(BaseModel):
             self.position_value,
         )
 
-class CreateDraftTemplateArrayItemsSqlRow(BaseModel):
+class TemplateArrayItemsSqlRow(BaseModel):
 
     template_array_items_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftTemplateArrayItemsApiRequest(BaseModel):
+class TemplateArrayItemsApiRequest(BaseModel):
 
     draft_id: UUID
     template_id: UUID
@@ -10566,16 +10566,16 @@ class CreateDraftTemplateArrayItemsApiRequest(BaseModel):
     item_template_id: UUID
     position_value: int
 
-class CreateDraftTemplateArrayItemsApiResponse(BaseModel):
+class TemplateArrayItemsApiResponse(BaseModel):
 
     template_array_items_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_template_values
+# Generated from: template_values
 
-class CreateDraftTemplateValuesSqlParams(BaseModel):
+class TemplateValuesSqlParams(BaseModel):
 
     draft_id: UUID
     template_id: UUID
@@ -10594,12 +10594,12 @@ class CreateDraftTemplateValuesSqlParams(BaseModel):
             self.boolean_value,
         )
 
-class CreateDraftTemplateValuesSqlRow(BaseModel):
+class TemplateValuesSqlRow(BaseModel):
 
     template_value_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftTemplateValuesApiRequest(BaseModel):
+class TemplateValuesApiRequest(BaseModel):
 
     draft_id: UUID
     template_id: UUID
@@ -10608,16 +10608,16 @@ class CreateDraftTemplateValuesApiRequest(BaseModel):
     number_value: str
     boolean_value: str
 
-class CreateDraftTemplateValuesApiResponse(BaseModel):
+class TemplateValuesApiResponse(BaseModel):
 
     template_value_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_templates
+# Generated from: templates
 
-class CreateDraftTemplatesSqlParams(BaseModel):
+class TemplatesSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10628,26 +10628,26 @@ class CreateDraftTemplatesSqlParams(BaseModel):
             self.name,
         )
 
-class CreateDraftTemplatesSqlRow(BaseModel):
+class TemplatesSqlRow(BaseModel):
 
     template_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftTemplatesApiRequest(BaseModel):
+class TemplatesApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
 
-class CreateDraftTemplatesApiResponse(BaseModel):
+class TemplatesApiResponse(BaseModel):
 
     template_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_thresholds
+# Generated from: thresholds
 
-class CreateDraftThresholdsSqlParams(BaseModel):
+class ThresholdsSqlParams(BaseModel):
 
     draft_id: UUID
     value: float
@@ -10658,26 +10658,26 @@ class CreateDraftThresholdsSqlParams(BaseModel):
             self.value,
         )
 
-class CreateDraftThresholdsSqlRow(BaseModel):
+class ThresholdsSqlRow(BaseModel):
 
     threshold_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftThresholdsApiRequest(BaseModel):
+class ThresholdsApiRequest(BaseModel):
 
     draft_id: UUID
     value: float
 
-class CreateDraftThresholdsApiResponse(BaseModel):
+class ThresholdsApiResponse(BaseModel):
 
     threshold_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_times
+# Generated from: times
 
-class CreateDraftTimesSqlParams(BaseModel):
+class TimesSqlParams(BaseModel):
 
     draft_id: UUID
     time_taken: float
@@ -10688,26 +10688,26 @@ class CreateDraftTimesSqlParams(BaseModel):
             self.time_taken,
         )
 
-class CreateDraftTimesSqlRow(BaseModel):
+class TimesSqlRow(BaseModel):
 
     time_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftTimesApiRequest(BaseModel):
+class TimesApiRequest(BaseModel):
 
     draft_id: UUID
     time_taken: float
 
-class CreateDraftTimesApiResponse(BaseModel):
+class TimesApiResponse(BaseModel):
 
     time_id: UUID | None = None
     version: int | None = None
 
 
 
-# Generated from: create_draft_videos
+# Generated from: videos
 
-class CreateDraftVideosSqlParams(BaseModel):
+class VideosSqlParams(BaseModel):
 
     draft_id: UUID
     name: str
@@ -10722,19 +10722,19 @@ class CreateDraftVideosSqlParams(BaseModel):
             self.description,
         )
 
-class CreateDraftVideosSqlRow(BaseModel):
+class VideosSqlRow(BaseModel):
 
     video_id: UUID | None = None
     version: int | None = None
 
-class CreateDraftVideosApiRequest(BaseModel):
+class VideosApiRequest(BaseModel):
 
     draft_id: UUID
     name: str
     length_seconds: float
     description: str
 
-class CreateDraftVideosApiResponse(BaseModel):
+class VideosApiResponse(BaseModel):
 
     video_id: UUID | None = None
     version: int | None = None
@@ -14812,29 +14812,27 @@ class InsertObjectiveApiResponse(BaseModel):
 
 class CreateOptionsSqlParams(BaseModel):
 
-    options_json: Any
-    scenario_id: UUID
+    option_text: str
+    is_correct: bool
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.options_json,
-            self.scenario_id,
+            self.option_text,
+            self.is_correct,
         )
 
 class CreateOptionsSqlRow(BaseModel):
 
     option_id: UUID | None = None
-    option_text: str | None = None
 
 class CreateOptionsApiRequest(BaseModel):
 
-    options_json: Any
-    scenario_id: UUID
+    option_text: str
+    is_correct: bool
 
 class CreateOptionsApiResponse(BaseModel):
 
     option_id: UUID | None = None
-    option_text: str | None = None
 
 
 
@@ -19306,6 +19304,105 @@ class GetReportsOverviewApiResponse(BaseModel):
     parameters: list[QReportsOverviewV4Parameter] | None = None
     fields: list[QReportsOverviewV4Field] | None = None
 
+
+
+# Generated from: analyses
+
+
+# Generated from: colors
+
+
+# Generated from: content
+
+
+# Generated from: conversations
+
+
+# Generated from: debug_info
+
+
+# Generated from: descriptions
+
+
+# Generated from: feedbacks
+
+
+# Generated from: flags
+
+
+# Generated from: hints
+
+
+# Generated from: html
+
+
+# Generated from: icons
+
+
+# Generated from: images
+
+
+# Generated from: improvements
+
+
+# Generated from: instructions
+
+
+# Generated from: names
+
+
+# Generated from: objectives
+
+
+# Generated from: options
+
+
+# Generated from: points
+
+
+# Generated from: problem_statements
+
+
+# Generated from: prompts
+
+
+# Generated from: questions
+
+
+# Generated from: responses
+
+
+# Generated from: schema_field_items
+
+
+# Generated from: schema_fields
+
+
+# Generated from: schemas
+
+
+# Generated from: standard_groups
+
+
+# Generated from: strengths
+
+
+# Generated from: template_array_items
+
+
+# Generated from: template_values
+
+
+# Generated from: templates
+
+
+# Generated from: thresholds
+
+
+# Generated from: times
+
+
+# Generated from: videos
 
 
 # Generated from: create_rubric
@@ -28219,28 +28316,28 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentNameApiResponse",
     ),
     "app/sql/v4/drafts/analyses_complete.sql": (
-        "CreateDraftAnalysesSqlParams",
-        "CreateDraftAnalysesSqlRow",
-        "CreateDraftAnalysesApiRequest",
-        "CreateDraftAnalysesApiResponse",
+        "AnalysesSqlParams",
+        "AnalysesSqlRow",
+        "AnalysesApiRequest",
+        "AnalysesApiResponse",
     ),
     "app/sql/v4/drafts/colors_complete.sql": (
-        "CreateDraftColorsSqlParams",
-        "CreateDraftColorsSqlRow",
-        "CreateDraftColorsApiRequest",
-        "CreateDraftColorsApiResponse",
+        "ColorsSqlParams",
+        "ColorsSqlRow",
+        "ColorsApiRequest",
+        "ColorsApiResponse",
     ),
     "app/sql/v4/drafts/content_complete.sql": (
-        "CreateDraftContentSqlParams",
-        "CreateDraftContentSqlRow",
-        "CreateDraftContentApiRequest",
-        "CreateDraftContentApiResponse",
+        "ContentSqlParams",
+        "ContentSqlRow",
+        "ContentApiRequest",
+        "ContentApiResponse",
     ),
     "app/sql/v4/drafts/conversations_complete.sql": (
-        "CreateDraftConversationsSqlParams",
-        "CreateDraftConversationsSqlRow",
-        "CreateDraftConversationsApiRequest",
-        "CreateDraftConversationsApiResponse",
+        "ConversationsSqlParams",
+        "ConversationsSqlRow",
+        "ConversationsApiRequest",
+        "ConversationsApiResponse",
     ),
     "app/sql/v4/drafts/create_draft_complete.sql": (
         "CreateDraftSqlParams",
@@ -28249,28 +28346,28 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateDraftApiResponse",
     ),
     "app/sql/v4/drafts/debug_info_complete.sql": (
-        "CreateDraftDebugInfoSqlParams",
-        "CreateDraftDebugInfoSqlRow",
-        "CreateDraftDebugInfoApiRequest",
-        "CreateDraftDebugInfoApiResponse",
+        "DebugInfoSqlParams",
+        "DebugInfoSqlRow",
+        "DebugInfoApiRequest",
+        "DebugInfoApiResponse",
     ),
     "app/sql/v4/drafts/descriptions_complete.sql": (
-        "CreateDraftDescriptionsSqlParams",
-        "CreateDraftDescriptionsSqlRow",
-        "CreateDraftDescriptionsApiRequest",
-        "CreateDraftDescriptionsApiResponse",
+        "DescriptionsSqlParams",
+        "DescriptionsSqlRow",
+        "DescriptionsApiRequest",
+        "DescriptionsApiResponse",
     ),
     "app/sql/v4/drafts/feedbacks_complete.sql": (
-        "CreateDraftFeedbacksSqlParams",
-        "CreateDraftFeedbacksSqlRow",
-        "CreateDraftFeedbacksApiRequest",
-        "CreateDraftFeedbacksApiResponse",
+        "FeedbacksSqlParams",
+        "FeedbacksSqlRow",
+        "FeedbacksApiRequest",
+        "FeedbacksApiResponse",
     ),
     "app/sql/v4/drafts/flags_complete.sql": (
-        "CreateDraftFlagsSqlParams",
-        "CreateDraftFlagsSqlRow",
-        "CreateDraftFlagsApiRequest",
-        "CreateDraftFlagsApiResponse",
+        "FlagsSqlParams",
+        "FlagsSqlRow",
+        "FlagsApiRequest",
+        "FlagsApiResponse",
     ),
     "app/sql/v4/drafts/get_draft_complete.sql": (
         "GetDraftSqlParams",
@@ -28279,154 +28376,154 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDraftApiResponse",
     ),
     "app/sql/v4/drafts/hints_complete.sql": (
-        "CreateDraftHintsSqlParams",
-        "CreateDraftHintsSqlRow",
-        "CreateDraftHintsApiRequest",
-        "CreateDraftHintsApiResponse",
+        "HintsSqlParams",
+        "HintsSqlRow",
+        "HintsApiRequest",
+        "HintsApiResponse",
     ),
     "app/sql/v4/drafts/html_complete.sql": (
-        "CreateDraftHtmlSqlParams",
-        "CreateDraftHtmlSqlRow",
-        "CreateDraftHtmlApiRequest",
-        "CreateDraftHtmlApiResponse",
+        "HtmlSqlParams",
+        "HtmlSqlRow",
+        "HtmlApiRequest",
+        "HtmlApiResponse",
     ),
     "app/sql/v4/drafts/icons_complete.sql": (
-        "CreateDraftIconsSqlParams",
-        "CreateDraftIconsSqlRow",
-        "CreateDraftIconsApiRequest",
-        "CreateDraftIconsApiResponse",
+        "IconsSqlParams",
+        "IconsSqlRow",
+        "IconsApiRequest",
+        "IconsApiResponse",
     ),
     "app/sql/v4/drafts/images_complete.sql": (
-        "CreateDraftImagesSqlParams",
-        "CreateDraftImagesSqlRow",
-        "CreateDraftImagesApiRequest",
-        "CreateDraftImagesApiResponse",
+        "ImagesSqlParams",
+        "ImagesSqlRow",
+        "ImagesApiRequest",
+        "ImagesApiResponse",
     ),
     "app/sql/v4/drafts/improvements_complete.sql": (
-        "CreateDraftImprovementsSqlParams",
-        "CreateDraftImprovementsSqlRow",
-        "CreateDraftImprovementsApiRequest",
-        "CreateDraftImprovementsApiResponse",
+        "ImprovementsSqlParams",
+        "ImprovementsSqlRow",
+        "ImprovementsApiRequest",
+        "ImprovementsApiResponse",
     ),
     "app/sql/v4/drafts/instructions_complete.sql": (
-        "CreateDraftInstructionsSqlParams",
-        "CreateDraftInstructionsSqlRow",
-        "CreateDraftInstructionsApiRequest",
-        "CreateDraftInstructionsApiResponse",
+        "InstructionsSqlParams",
+        "InstructionsSqlRow",
+        "InstructionsApiRequest",
+        "InstructionsApiResponse",
     ),
     "app/sql/v4/drafts/names_complete.sql": (
-        "CreateDraftNamesSqlParams",
-        "CreateDraftNamesSqlRow",
-        "CreateDraftNamesApiRequest",
-        "CreateDraftNamesApiResponse",
+        "NamesSqlParams",
+        "NamesSqlRow",
+        "NamesApiRequest",
+        "NamesApiResponse",
     ),
     "app/sql/v4/drafts/objectives_complete.sql": (
-        "CreateDraftObjectivesSqlParams",
-        "CreateDraftObjectivesSqlRow",
-        "CreateDraftObjectivesApiRequest",
-        "CreateDraftObjectivesApiResponse",
+        "ObjectivesSqlParams",
+        "ObjectivesSqlRow",
+        "ObjectivesApiRequest",
+        "ObjectivesApiResponse",
     ),
     "app/sql/v4/drafts/options_complete.sql": (
-        "CreateDraftOptionsSqlParams",
-        "CreateDraftOptionsSqlRow",
-        "CreateDraftOptionsApiRequest",
-        "CreateDraftOptionsApiResponse",
+        "OptionsSqlParams",
+        "OptionsSqlRow",
+        "OptionsApiRequest",
+        "OptionsApiResponse",
     ),
     "app/sql/v4/drafts/points_complete.sql": (
-        "CreateDraftPointsSqlParams",
-        "CreateDraftPointsSqlRow",
-        "CreateDraftPointsApiRequest",
-        "CreateDraftPointsApiResponse",
+        "PointsSqlParams",
+        "PointsSqlRow",
+        "PointsApiRequest",
+        "PointsApiResponse",
     ),
     "app/sql/v4/drafts/problem_statements_complete.sql": (
-        "CreateDraftProblemStatementsSqlParams",
-        "CreateDraftProblemStatementsSqlRow",
-        "CreateDraftProblemStatementsApiRequest",
-        "CreateDraftProblemStatementsApiResponse",
+        "ProblemStatementsSqlParams",
+        "ProblemStatementsSqlRow",
+        "ProblemStatementsApiRequest",
+        "ProblemStatementsApiResponse",
     ),
     "app/sql/v4/drafts/prompts_complete.sql": (
-        "CreateDraftPromptsSqlParams",
-        "CreateDraftPromptsSqlRow",
-        "CreateDraftPromptsApiRequest",
-        "CreateDraftPromptsApiResponse",
+        "PromptsSqlParams",
+        "PromptsSqlRow",
+        "PromptsApiRequest",
+        "PromptsApiResponse",
     ),
     "app/sql/v4/drafts/questions_complete.sql": (
-        "CreateDraftQuestionsSqlParams",
-        "CreateDraftQuestionsSqlRow",
-        "CreateDraftQuestionsApiRequest",
-        "CreateDraftQuestionsApiResponse",
+        "QuestionsSqlParams",
+        "QuestionsSqlRow",
+        "QuestionsApiRequest",
+        "QuestionsApiResponse",
     ),
     "app/sql/v4/drafts/responses_complete.sql": (
-        "CreateDraftResponsesSqlParams",
-        "CreateDraftResponsesSqlRow",
-        "CreateDraftResponsesApiRequest",
-        "CreateDraftResponsesApiResponse",
+        "ResponsesSqlParams",
+        "ResponsesSqlRow",
+        "ResponsesApiRequest",
+        "ResponsesApiResponse",
     ),
     "app/sql/v4/drafts/schema_field_items_complete.sql": (
-        "CreateDraftSchemaFieldItemsSqlParams",
-        "CreateDraftSchemaFieldItemsSqlRow",
-        "CreateDraftSchemaFieldItemsApiRequest",
-        "CreateDraftSchemaFieldItemsApiResponse",
+        "SchemaFieldItemsSqlParams",
+        "SchemaFieldItemsSqlRow",
+        "SchemaFieldItemsApiRequest",
+        "SchemaFieldItemsApiResponse",
     ),
     "app/sql/v4/drafts/schema_fields_complete.sql": (
-        "CreateDraftSchemaFieldsSqlParams",
-        "CreateDraftSchemaFieldsSqlRow",
-        "CreateDraftSchemaFieldsApiRequest",
-        "CreateDraftSchemaFieldsApiResponse",
+        "SchemaFieldsSqlParams",
+        "SchemaFieldsSqlRow",
+        "SchemaFieldsApiRequest",
+        "SchemaFieldsApiResponse",
     ),
     "app/sql/v4/drafts/schemas_complete.sql": (
-        "CreateDraftSchemasSqlParams",
-        "CreateDraftSchemasSqlRow",
-        "CreateDraftSchemasApiRequest",
-        "CreateDraftSchemasApiResponse",
+        "SchemasSqlParams",
+        "SchemasSqlRow",
+        "SchemasApiRequest",
+        "SchemasApiResponse",
     ),
     "app/sql/v4/drafts/standard_groups_complete.sql": (
-        "CreateDraftStandardGroupsSqlParams",
-        "CreateDraftStandardGroupsSqlRow",
-        "CreateDraftStandardGroupsApiRequest",
-        "CreateDraftStandardGroupsApiResponse",
+        "StandardGroupsSqlParams",
+        "StandardGroupsSqlRow",
+        "StandardGroupsApiRequest",
+        "StandardGroupsApiResponse",
     ),
     "app/sql/v4/drafts/strengths_complete.sql": (
-        "CreateDraftStrengthsSqlParams",
-        "CreateDraftStrengthsSqlRow",
-        "CreateDraftStrengthsApiRequest",
-        "CreateDraftStrengthsApiResponse",
+        "StrengthsSqlParams",
+        "StrengthsSqlRow",
+        "StrengthsApiRequest",
+        "StrengthsApiResponse",
     ),
     "app/sql/v4/drafts/template_array_items_complete.sql": (
-        "CreateDraftTemplateArrayItemsSqlParams",
-        "CreateDraftTemplateArrayItemsSqlRow",
-        "CreateDraftTemplateArrayItemsApiRequest",
-        "CreateDraftTemplateArrayItemsApiResponse",
+        "TemplateArrayItemsSqlParams",
+        "TemplateArrayItemsSqlRow",
+        "TemplateArrayItemsApiRequest",
+        "TemplateArrayItemsApiResponse",
     ),
     "app/sql/v4/drafts/template_values_complete.sql": (
-        "CreateDraftTemplateValuesSqlParams",
-        "CreateDraftTemplateValuesSqlRow",
-        "CreateDraftTemplateValuesApiRequest",
-        "CreateDraftTemplateValuesApiResponse",
+        "TemplateValuesSqlParams",
+        "TemplateValuesSqlRow",
+        "TemplateValuesApiRequest",
+        "TemplateValuesApiResponse",
     ),
     "app/sql/v4/drafts/templates_complete.sql": (
-        "CreateDraftTemplatesSqlParams",
-        "CreateDraftTemplatesSqlRow",
-        "CreateDraftTemplatesApiRequest",
-        "CreateDraftTemplatesApiResponse",
+        "TemplatesSqlParams",
+        "TemplatesSqlRow",
+        "TemplatesApiRequest",
+        "TemplatesApiResponse",
     ),
     "app/sql/v4/drafts/thresholds_complete.sql": (
-        "CreateDraftThresholdsSqlParams",
-        "CreateDraftThresholdsSqlRow",
-        "CreateDraftThresholdsApiRequest",
-        "CreateDraftThresholdsApiResponse",
+        "ThresholdsSqlParams",
+        "ThresholdsSqlRow",
+        "ThresholdsApiRequest",
+        "ThresholdsApiResponse",
     ),
     "app/sql/v4/drafts/times_complete.sql": (
-        "CreateDraftTimesSqlParams",
-        "CreateDraftTimesSqlRow",
-        "CreateDraftTimesApiRequest",
-        "CreateDraftTimesApiResponse",
+        "TimesSqlParams",
+        "TimesSqlRow",
+        "TimesApiRequest",
+        "TimesApiResponse",
     ),
     "app/sql/v4/drafts/videos_complete.sql": (
-        "CreateDraftVideosSqlParams",
-        "CreateDraftVideosSqlRow",
-        "CreateDraftVideosApiRequest",
-        "CreateDraftVideosApiResponse",
+        "VideosSqlParams",
+        "VideosSqlRow",
+        "VideosApiRequest",
+        "VideosApiResponse",
     ),
     "app/sql/v4/feedback/create_feedback_complete.sql": (
         "CreateFeedbackSqlParams",
@@ -29219,6 +29316,204 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetReportsOverviewSqlRow",
         "GetReportsOverviewApiRequest",
         "GetReportsOverviewApiResponse",
+    ),
+    "app/sql/v4/resources/analyses_complete.sql": (
+        "AnalysesSqlParams",
+        "AnalysesSqlRow",
+        "AnalysesApiRequest",
+        "AnalysesApiResponse",
+    ),
+    "app/sql/v4/resources/colors_complete.sql": (
+        "ColorsSqlParams",
+        "ColorsSqlRow",
+        "ColorsApiRequest",
+        "ColorsApiResponse",
+    ),
+    "app/sql/v4/resources/content_complete.sql": (
+        "ContentSqlParams",
+        "ContentSqlRow",
+        "ContentApiRequest",
+        "ContentApiResponse",
+    ),
+    "app/sql/v4/resources/conversations_complete.sql": (
+        "ConversationsSqlParams",
+        "ConversationsSqlRow",
+        "ConversationsApiRequest",
+        "ConversationsApiResponse",
+    ),
+    "app/sql/v4/resources/debug_info_complete.sql": (
+        "DebugInfoSqlParams",
+        "DebugInfoSqlRow",
+        "DebugInfoApiRequest",
+        "DebugInfoApiResponse",
+    ),
+    "app/sql/v4/resources/descriptions_complete.sql": (
+        "DescriptionsSqlParams",
+        "DescriptionsSqlRow",
+        "DescriptionsApiRequest",
+        "DescriptionsApiResponse",
+    ),
+    "app/sql/v4/resources/feedbacks_complete.sql": (
+        "FeedbacksSqlParams",
+        "FeedbacksSqlRow",
+        "FeedbacksApiRequest",
+        "FeedbacksApiResponse",
+    ),
+    "app/sql/v4/resources/flags_complete.sql": (
+        "FlagsSqlParams",
+        "FlagsSqlRow",
+        "FlagsApiRequest",
+        "FlagsApiResponse",
+    ),
+    "app/sql/v4/resources/hints_complete.sql": (
+        "HintsSqlParams",
+        "HintsSqlRow",
+        "HintsApiRequest",
+        "HintsApiResponse",
+    ),
+    "app/sql/v4/resources/html_complete.sql": (
+        "HtmlSqlParams",
+        "HtmlSqlRow",
+        "HtmlApiRequest",
+        "HtmlApiResponse",
+    ),
+    "app/sql/v4/resources/icons_complete.sql": (
+        "IconsSqlParams",
+        "IconsSqlRow",
+        "IconsApiRequest",
+        "IconsApiResponse",
+    ),
+    "app/sql/v4/resources/images_complete.sql": (
+        "ImagesSqlParams",
+        "ImagesSqlRow",
+        "ImagesApiRequest",
+        "ImagesApiResponse",
+    ),
+    "app/sql/v4/resources/improvements_complete.sql": (
+        "ImprovementsSqlParams",
+        "ImprovementsSqlRow",
+        "ImprovementsApiRequest",
+        "ImprovementsApiResponse",
+    ),
+    "app/sql/v4/resources/instructions_complete.sql": (
+        "InstructionsSqlParams",
+        "InstructionsSqlRow",
+        "InstructionsApiRequest",
+        "InstructionsApiResponse",
+    ),
+    "app/sql/v4/resources/names_complete.sql": (
+        "NamesSqlParams",
+        "NamesSqlRow",
+        "NamesApiRequest",
+        "NamesApiResponse",
+    ),
+    "app/sql/v4/resources/objectives_complete.sql": (
+        "ObjectivesSqlParams",
+        "ObjectivesSqlRow",
+        "ObjectivesApiRequest",
+        "ObjectivesApiResponse",
+    ),
+    "app/sql/v4/resources/options_complete.sql": (
+        "OptionsSqlParams",
+        "OptionsSqlRow",
+        "OptionsApiRequest",
+        "OptionsApiResponse",
+    ),
+    "app/sql/v4/resources/points_complete.sql": (
+        "PointsSqlParams",
+        "PointsSqlRow",
+        "PointsApiRequest",
+        "PointsApiResponse",
+    ),
+    "app/sql/v4/resources/problem_statements_complete.sql": (
+        "ProblemStatementsSqlParams",
+        "ProblemStatementsSqlRow",
+        "ProblemStatementsApiRequest",
+        "ProblemStatementsApiResponse",
+    ),
+    "app/sql/v4/resources/prompts_complete.sql": (
+        "PromptsSqlParams",
+        "PromptsSqlRow",
+        "PromptsApiRequest",
+        "PromptsApiResponse",
+    ),
+    "app/sql/v4/resources/questions_complete.sql": (
+        "QuestionsSqlParams",
+        "QuestionsSqlRow",
+        "QuestionsApiRequest",
+        "QuestionsApiResponse",
+    ),
+    "app/sql/v4/resources/responses_complete.sql": (
+        "ResponsesSqlParams",
+        "ResponsesSqlRow",
+        "ResponsesApiRequest",
+        "ResponsesApiResponse",
+    ),
+    "app/sql/v4/resources/schema_field_items_complete.sql": (
+        "SchemaFieldItemsSqlParams",
+        "SchemaFieldItemsSqlRow",
+        "SchemaFieldItemsApiRequest",
+        "SchemaFieldItemsApiResponse",
+    ),
+    "app/sql/v4/resources/schema_fields_complete.sql": (
+        "SchemaFieldsSqlParams",
+        "SchemaFieldsSqlRow",
+        "SchemaFieldsApiRequest",
+        "SchemaFieldsApiResponse",
+    ),
+    "app/sql/v4/resources/schemas_complete.sql": (
+        "SchemasSqlParams",
+        "SchemasSqlRow",
+        "SchemasApiRequest",
+        "SchemasApiResponse",
+    ),
+    "app/sql/v4/resources/standard_groups_complete.sql": (
+        "StandardGroupsSqlParams",
+        "StandardGroupsSqlRow",
+        "StandardGroupsApiRequest",
+        "StandardGroupsApiResponse",
+    ),
+    "app/sql/v4/resources/strengths_complete.sql": (
+        "StrengthsSqlParams",
+        "StrengthsSqlRow",
+        "StrengthsApiRequest",
+        "StrengthsApiResponse",
+    ),
+    "app/sql/v4/resources/template_array_items_complete.sql": (
+        "TemplateArrayItemsSqlParams",
+        "TemplateArrayItemsSqlRow",
+        "TemplateArrayItemsApiRequest",
+        "TemplateArrayItemsApiResponse",
+    ),
+    "app/sql/v4/resources/template_values_complete.sql": (
+        "TemplateValuesSqlParams",
+        "TemplateValuesSqlRow",
+        "TemplateValuesApiRequest",
+        "TemplateValuesApiResponse",
+    ),
+    "app/sql/v4/resources/templates_complete.sql": (
+        "TemplatesSqlParams",
+        "TemplatesSqlRow",
+        "TemplatesApiRequest",
+        "TemplatesApiResponse",
+    ),
+    "app/sql/v4/resources/thresholds_complete.sql": (
+        "ThresholdsSqlParams",
+        "ThresholdsSqlRow",
+        "ThresholdsApiRequest",
+        "ThresholdsApiResponse",
+    ),
+    "app/sql/v4/resources/times_complete.sql": (
+        "TimesSqlParams",
+        "TimesSqlRow",
+        "TimesApiRequest",
+        "TimesApiResponse",
+    ),
+    "app/sql/v4/resources/videos_complete.sql": (
+        "VideosSqlParams",
+        "VideosSqlRow",
+        "VideosApiRequest",
+        "VideosApiResponse",
     ),
     "app/sql/v4/rubric/create_rubric_complete.sql": (
         "CreateRubricSqlParams",
@@ -31626,6 +31921,171 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/reports/get_reports_overview_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/analyses_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/colors_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/content_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/conversations_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/debug_info_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/descriptions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/feedbacks_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/flags_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/hints_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/html_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/icons_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/images_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/improvements_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/instructions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/names_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/objectives_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/options_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/points_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/problem_statements_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/prompts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/questions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/responses_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/schema_field_items_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/schema_fields_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/schemas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/standard_groups_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/strengths_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/template_array_items_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/template_values_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/templates_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/thresholds_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/times_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/videos_complete.sql"]
     ) -> SqlString: ...
 
     @overload

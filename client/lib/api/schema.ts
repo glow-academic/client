@@ -1248,7 +1248,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/": {
+    "/api/v4/resources/names": {
         parameters: {
             query?: never;
             header?: never;
@@ -1258,37 +1258,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft
-         * @description Create a new draft.
+         * Create Name
+         * @description Create names resource (always INSERT).
          */
-        post: operations["create_draft_api_v4_drafts__post"];
+        post: operations["create_name_api_v4_resources_names_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/{draft_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Draft
-         * @description Get draft metadata.
-         */
-        get: operations["get_draft_api_v4_drafts__draft_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/drafts/names": {
+    "/api/v4/resources/colors": {
         parameters: {
             query?: never;
             header?: never;
@@ -1298,17 +1278,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Names
-         * @description Create/update names resource and link to draft (always INSERT).
+         * Create Color
+         * @description Create colors resource (always INSERT).
          */
-        post: operations["create_draft_names_api_v4_drafts_names_post"];
+        post: operations["create_color_api_v4_resources_colors_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/colors": {
+    "/api/v4/resources/flags": {
         parameters: {
             query?: never;
             header?: never;
@@ -1318,17 +1298,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Colors
-         * @description Create/update colors resource and link to draft (always INSERT).
+         * Create Flag
+         * @description Create flags resource (always INSERT).
          */
-        post: operations["create_draft_colors_api_v4_drafts_colors_post"];
+        post: operations["create_flag_api_v4_resources_flags_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/flags": {
+    "/api/v4/resources/descriptions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1338,17 +1318,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Flags
-         * @description Create/update flags resource and link to draft (always INSERT).
+         * Create Description
+         * @description Create descriptions resource (always INSERT).
          */
-        post: operations["create_draft_flags_api_v4_drafts_flags_post"];
+        post: operations["create_description_api_v4_resources_descriptions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/descriptions": {
+    "/api/v4/resources/icons": {
         parameters: {
             query?: never;
             header?: never;
@@ -1358,17 +1338,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Descriptions
-         * @description Create/update descriptions resource and link to draft (always INSERT).
+         * Create Icon
+         * @description Create icons resource (always INSERT).
          */
-        post: operations["create_draft_descriptions_api_v4_drafts_descriptions_post"];
+        post: operations["create_icon_api_v4_resources_icons_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/icons": {
+    "/api/v4/resources/points": {
         parameters: {
             query?: never;
             header?: never;
@@ -1378,17 +1358,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Icons
-         * @description Create/update icons resource and link to draft (always INSERT).
+         * Create Point
+         * @description Create points resource (always INSERT).
          */
-        post: operations["create_draft_icons_api_v4_drafts_icons_post"];
+        post: operations["create_point_api_v4_resources_points_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/points": {
+    "/api/v4/resources/thresholds": {
         parameters: {
             query?: never;
             header?: never;
@@ -1398,17 +1378,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Points
-         * @description Create/update points resource and link to draft (always INSERT).
+         * Create Threshold
+         * @description Create thresholds resource (always INSERT).
          */
-        post: operations["create_draft_points_api_v4_drafts_points_post"];
+        post: operations["create_threshold_api_v4_resources_thresholds_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/thresholds": {
+    "/api/v4/resources/content": {
         parameters: {
             query?: never;
             header?: never;
@@ -1418,17 +1398,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Thresholds
-         * @description Create/update thresholds resource and link to draft (always INSERT).
+         * Create Content
+         * @description Create content resource (always INSERT).
          */
-        post: operations["create_draft_thresholds_api_v4_drafts_thresholds_post"];
+        post: operations["create_content_api_v4_resources_content_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/content": {
+    "/api/v4/resources/html": {
         parameters: {
             query?: never;
             header?: never;
@@ -1438,17 +1418,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Content
-         * @description Create/update content resource and link to draft (always INSERT).
+         * Create Html
+         * @description Create html resource (always INSERT).
          */
-        post: operations["create_draft_content_api_v4_drafts_content_post"];
+        post: operations["create_html_api_v4_resources_html_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/html": {
+    "/api/v4/resources/hints": {
         parameters: {
             query?: never;
             header?: never;
@@ -1458,17 +1438,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Html
-         * @description Create/update html resource and link to draft (always INSERT).
+         * Create Hint
+         * @description Create hints resource (always INSERT).
          */
-        post: operations["create_draft_html_api_v4_drafts_html_post"];
+        post: operations["create_hint_api_v4_resources_hints_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/hints": {
+    "/api/v4/resources/images": {
         parameters: {
             query?: never;
             header?: never;
@@ -1478,17 +1458,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Hints
-         * @description Create/update hints resource and link to draft (always INSERT).
+         * Create Image
+         * @description Create images resource (always INSERT).
          */
-        post: operations["create_draft_hints_api_v4_drafts_hints_post"];
+        post: operations["create_image_api_v4_resources_images_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/images": {
+    "/api/v4/resources/videos": {
         parameters: {
             query?: never;
             header?: never;
@@ -1498,17 +1478,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Images
-         * @description Create/update images resource and link to draft (always INSERT).
+         * Create Video
+         * @description Create videos resource (always INSERT).
          */
-        post: operations["create_draft_images_api_v4_drafts_images_post"];
+        post: operations["create_video_api_v4_resources_videos_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/videos": {
+    "/api/v4/resources/objectives": {
         parameters: {
             query?: never;
             header?: never;
@@ -1518,17 +1498,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Videos
-         * @description Create/update videos resource and link to draft (always INSERT).
+         * Create Objective
+         * @description Create objectives resource (always INSERT).
          */
-        post: operations["create_draft_videos_api_v4_drafts_videos_post"];
+        post: operations["create_objective_api_v4_resources_objectives_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/objectives": {
+    "/api/v4/resources/options": {
         parameters: {
             query?: never;
             header?: never;
@@ -1538,17 +1518,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Objectives
-         * @description Create/update objectives resource and link to draft (always INSERT).
+         * Create Option
+         * @description Create options resource (always INSERT).
          */
-        post: operations["create_draft_objectives_api_v4_drafts_objectives_post"];
+        post: operations["create_option_api_v4_resources_options_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/options": {
+    "/api/v4/resources/problem_statements": {
         parameters: {
             query?: never;
             header?: never;
@@ -1558,17 +1538,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Options
-         * @description Create/update options resource and link to draft (always INSERT).
+         * Create Problem Statement
+         * @description Create problem_statements resource (always INSERT).
          */
-        post: operations["create_draft_options_api_v4_drafts_options_post"];
+        post: operations["create_problem_statement_api_v4_resources_problem_statements_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/problem_statements": {
+    "/api/v4/resources/prompts": {
         parameters: {
             query?: never;
             header?: never;
@@ -1578,17 +1558,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Problem Statements
-         * @description Create/update problem_statements resource and link to draft (always INSERT).
+         * Create Prompt
+         * @description Create prompts resource (always INSERT).
          */
-        post: operations["create_draft_problem_statements_api_v4_drafts_problem_statements_post"];
+        post: operations["create_prompt_api_v4_resources_prompts_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/prompts": {
+    "/api/v4/resources/questions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1598,17 +1578,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Prompts
-         * @description Create/update prompts resource and link to draft (always INSERT).
+         * Create Questions
+         * @description Create questions resource (always INSERT).
          */
-        post: operations["create_draft_prompts_api_v4_drafts_prompts_post"];
+        post: operations["create_questions_api_v4_resources_questions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/questions": {
+    "/api/v4/resources/responses": {
         parameters: {
             query?: never;
             header?: never;
@@ -1618,17 +1598,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Questions
-         * @description Create/update questions resource and link to draft (always INSERT).
+         * Create Response
+         * @description Create responses resource (always INSERT).
          */
-        post: operations["create_draft_questions_api_v4_drafts_questions_post"];
+        post: operations["create_response_api_v4_resources_responses_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/responses": {
+    "/api/v4/resources/analyses": {
         parameters: {
             query?: never;
             header?: never;
@@ -1638,17 +1618,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Responses
-         * @description Create/update responses resource and link to draft (always INSERT).
+         * Create Analyses
+         * @description Create analyses resource (always INSERT).
          */
-        post: operations["create_draft_responses_api_v4_drafts_responses_post"];
+        post: operations["create_analyses_api_v4_resources_analyses_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/analyses": {
+    "/api/v4/resources/instructions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1658,17 +1638,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Analyses
-         * @description Create/update analyses resource and link to draft (always INSERT).
+         * Create Instruction
+         * @description Create instructions resource (always INSERT).
          */
-        post: operations["create_draft_analyses_api_v4_drafts_analyses_post"];
+        post: operations["create_instruction_api_v4_resources_instructions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/instructions": {
+    "/api/v4/resources/improvements": {
         parameters: {
             query?: never;
             header?: never;
@@ -1678,17 +1658,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Instructions
-         * @description Create/update instructions resource and link to draft (always INSERT).
+         * Create Improvement
+         * @description Create improvements resource (always INSERT).
          */
-        post: operations["create_draft_instructions_api_v4_drafts_instructions_post"];
+        post: operations["create_improvement_api_v4_resources_improvements_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/improvements": {
+    "/api/v4/resources/strengths": {
         parameters: {
             query?: never;
             header?: never;
@@ -1698,17 +1678,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Improvements
-         * @description Create/update improvements resource and link to draft (always INSERT).
+         * Create Strength
+         * @description Create strengths resource (always INSERT).
          */
-        post: operations["create_draft_improvements_api_v4_drafts_improvements_post"];
+        post: operations["create_strength_api_v4_resources_strengths_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/strengths": {
+    "/api/v4/resources/feedbacks": {
         parameters: {
             query?: never;
             header?: never;
@@ -1718,17 +1698,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Strengths
-         * @description Create/update strengths resource and link to draft (always INSERT).
+         * Create Feedbacks
+         * @description Create feedbacks resource (always INSERT).
          */
-        post: operations["create_draft_strengths_api_v4_drafts_strengths_post"];
+        post: operations["create_feedbacks_api_v4_resources_feedbacks_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/feedbacks": {
+    "/api/v4/resources/conversations": {
         parameters: {
             query?: never;
             header?: never;
@@ -1738,17 +1718,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Feedbacks
-         * @description Create/update feedbacks resource and link to draft (always INSERT).
+         * Create Conversation
+         * @description Create conversations resource (always INSERT).
          */
-        post: operations["create_draft_feedbacks_api_v4_drafts_feedbacks_post"];
+        post: operations["create_conversation_api_v4_resources_conversations_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/conversations": {
+    "/api/v4/resources/debug_info": {
         parameters: {
             query?: never;
             header?: never;
@@ -1758,17 +1738,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Conversations
-         * @description Create/update conversations resource and link to draft (always INSERT).
+         * Create Debug Info
+         * @description Create debug_info resource (always INSERT).
          */
-        post: operations["create_draft_conversations_api_v4_drafts_conversations_post"];
+        post: operations["create_debug_info_api_v4_resources_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/debug_info": {
+    "/api/v4/resources/schemas": {
         parameters: {
             query?: never;
             header?: never;
@@ -1778,17 +1758,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Debug Info
-         * @description Create/update debug_info resource and link to draft (always INSERT).
+         * Create Schema
+         * @description Create schemas resource (always INSERT).
          */
-        post: operations["create_draft_debug_info_api_v4_drafts_debug_info_post"];
+        post: operations["create_schema_api_v4_resources_schemas_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/schemas": {
+    "/api/v4/resources/schema_fields": {
         parameters: {
             query?: never;
             header?: never;
@@ -1798,17 +1778,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Schemas
-         * @description Create/update schemas resource and link to draft (always INSERT).
+         * Create Schema Field
+         * @description Create schema_fields resource (always INSERT).
          */
-        post: operations["create_draft_schemas_api_v4_drafts_schemas_post"];
+        post: operations["create_schema_field_api_v4_resources_schema_fields_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/schema_fields": {
+    "/api/v4/resources/schema_field_items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1818,17 +1798,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Schema Fields
-         * @description Create/update schema_fields resource and link to draft (always INSERT).
+         * Create Schema Field Item
+         * @description Create schema_field_items resource (always INSERT).
          */
-        post: operations["create_draft_schema_fields_api_v4_drafts_schema_fields_post"];
+        post: operations["create_schema_field_item_api_v4_resources_schema_field_items_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/schema_field_items": {
+    "/api/v4/resources/templates": {
         parameters: {
             query?: never;
             header?: never;
@@ -1838,17 +1818,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Schema Field Items
-         * @description Create/update schema_field_items resource and link to draft (always INSERT).
+         * Create Template
+         * @description Create templates resource (always INSERT).
          */
-        post: operations["create_draft_schema_field_items_api_v4_drafts_schema_field_items_post"];
+        post: operations["create_template_api_v4_resources_templates_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/templates": {
+    "/api/v4/resources/template_array_items": {
         parameters: {
             query?: never;
             header?: never;
@@ -1858,17 +1838,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Templates
-         * @description Create/update templates resource and link to draft (always INSERT).
+         * Create Template Array Item
+         * @description Create template_array_items resource (always INSERT).
          */
-        post: operations["create_draft_templates_api_v4_drafts_templates_post"];
+        post: operations["create_template_array_item_api_v4_resources_template_array_items_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/template_array_items": {
+    "/api/v4/resources/template_values": {
         parameters: {
             query?: never;
             header?: never;
@@ -1878,17 +1858,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Template Array Items
-         * @description Create/update template_array_items resource and link to draft (always INSERT).
+         * Create Template Value
+         * @description Create template_values resource (always INSERT).
          */
-        post: operations["create_draft_template_array_items_api_v4_drafts_template_array_items_post"];
+        post: operations["create_template_value_api_v4_resources_template_values_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/template_values": {
+    "/api/v4/resources/standard_groups": {
         parameters: {
             query?: never;
             header?: never;
@@ -1898,17 +1878,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Template Values
-         * @description Create/update template_values resource and link to draft (always INSERT).
+         * Create Standard Group
+         * @description Create standard_groups resource (always INSERT).
          */
-        post: operations["create_draft_template_values_api_v4_drafts_template_values_post"];
+        post: operations["create_standard_group_api_v4_resources_standard_groups_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/drafts/standard_groups": {
+    "/api/v4/resources/times": {
         parameters: {
             query?: never;
             header?: never;
@@ -1918,30 +1898,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Draft Standard Groups
-         * @description Create/update standard_groups resource and link to draft (always INSERT).
+         * Create Time
+         * @description Create times resource (always INSERT).
          */
-        post: operations["create_draft_standard_groups_api_v4_drafts_standard_groups_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/drafts/times": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Draft Times
-         * @description Create/update times resource and link to draft (always INSERT).
-         */
-        post: operations["create_draft_times_api_v4_drafts_times_post"];
+        post: operations["create_time_api_v4_resources_times_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5301,6 +5261,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AnalysesApiRequest */
+        AnalysesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Content */
+            content: string;
+        };
+        /** AnalysesApiResponse */
+        AnalysesApiResponse: {
+            /** Analyse Id */
+            analyse_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** AuthorizeEmulationApiRequest */
         AuthorizeEmulationApiRequest: {
             /**
@@ -5673,6 +5650,27 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** ColorsApiRequest */
+        ColorsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Hex Code */
+            hex_code: string;
+        };
+        /** ColorsApiResponse */
+        ColorsApiResponse: {
+            /** Color Id */
+            color_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /**
          * ConnectionConfirmedPayload
          * @description Response indicating WebSocket connection was confirmed.
@@ -5686,6 +5684,40 @@ export interface components {
             guest_id: string | null;
             /** Server Time */
             server_time: number;
+        };
+        /** ContentApiRequest */
+        ContentApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Content */
+            content: string;
+        };
+        /** ContentApiResponse */
+        ContentApiResponse: {
+            /** Content Id */
+            content_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** ConversationsApiRequest */
+        ConversationsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** End Reason */
+            end_reason: string;
+        };
+        /** ConversationsApiResponse */
+        ConversationsApiResponse: {
+            /** Conversation Id */
+            conversation_id?: string | null;
+            /** Version */
+            version?: number | null;
         };
         /** CreateAgentApiRequest */
         CreateAgentApiRequest: {
@@ -5833,703 +5865,6 @@ export interface components {
             document_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /** CreateDraftAnalysesApiRequest */
-        CreateDraftAnalysesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Content */
-            content: string;
-        };
-        /** CreateDraftAnalysesApiResponse */
-        CreateDraftAnalysesApiResponse: {
-            /** Analyse Id */
-            analyse_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftApiRequest */
-        CreateDraftApiRequest: {
-            /** Artifact */
-            artifact: string;
-        };
-        /** CreateDraftApiResponse */
-        CreateDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftColorsApiRequest */
-        CreateDraftColorsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Hex Code */
-            hex_code: string;
-        };
-        /** CreateDraftColorsApiResponse */
-        CreateDraftColorsApiResponse: {
-            /** Color Id */
-            color_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftContentApiRequest */
-        CreateDraftContentApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Content */
-            content: string;
-        };
-        /** CreateDraftContentApiResponse */
-        CreateDraftContentApiResponse: {
-            /** Content Id */
-            content_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftConversationsApiRequest */
-        CreateDraftConversationsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** End Reason */
-            end_reason: string;
-        };
-        /** CreateDraftConversationsApiResponse */
-        CreateDraftConversationsApiResponse: {
-            /** Conversation Id */
-            conversation_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftDebugInfoApiRequest */
-        CreateDraftDebugInfoApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Content */
-            content: string;
-        };
-        /** CreateDraftDebugInfoApiResponse */
-        CreateDraftDebugInfoApiResponse: {
-            /** Debug Info Id */
-            debug_info_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftDescriptionsApiRequest */
-        CreateDraftDescriptionsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Description */
-            description: string;
-        };
-        /** CreateDraftDescriptionsApiResponse */
-        CreateDraftDescriptionsApiResponse: {
-            /** Description Id */
-            description_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftFeedbacksApiRequest */
-        CreateDraftFeedbacksApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Total */
-            total: number;
-            /** Feedback */
-            feedback: string;
-            /**
-             * Standard Id
-             * Format: uuid
-             */
-            standard_id: string;
-        };
-        /** CreateDraftFeedbacksApiResponse */
-        CreateDraftFeedbacksApiResponse: {
-            /** Feedback Id */
-            feedback_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftFlagsApiRequest */
-        CreateDraftFlagsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Icon Id
-             * Format: uuid
-             */
-            icon_id: string;
-        };
-        /** CreateDraftFlagsApiResponse */
-        CreateDraftFlagsApiResponse: {
-            /** Flag Id */
-            flag_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftHintsApiRequest */
-        CreateDraftHintsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Hint */
-            hint: string;
-        };
-        /** CreateDraftHintsApiResponse */
-        CreateDraftHintsApiResponse: {
-            /** Hint Id */
-            hint_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftHtmlApiRequest */
-        CreateDraftHtmlApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** CreateDraftHtmlApiResponse */
-        CreateDraftHtmlApiResponse: {
-            /** Html Id */
-            html_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftIconsApiRequest */
-        CreateDraftIconsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value: number;
-        };
-        /** CreateDraftIconsApiResponse */
-        CreateDraftIconsApiResponse: {
-            /** Icon Id */
-            icon_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftImagesApiRequest */
-        CreateDraftImagesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** CreateDraftImagesApiResponse */
-        CreateDraftImagesApiResponse: {
-            /** Image Id */
-            image_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftImprovementsApiRequest */
-        CreateDraftImprovementsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreateDraftImprovementsApiResponse */
-        CreateDraftImprovementsApiResponse: {
-            /** Improvement Id */
-            improvement_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftInstructionsApiRequest */
-        CreateDraftInstructionsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Template */
-            template: string;
-        };
-        /** CreateDraftInstructionsApiResponse */
-        CreateDraftInstructionsApiResponse: {
-            /** Instruction Id */
-            instruction_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftNamesApiRequest */
-        CreateDraftNamesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-        };
-        /** CreateDraftNamesApiResponse */
-        CreateDraftNamesApiResponse: {
-            /** Name Id */
-            name_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftObjectivesApiRequest */
-        CreateDraftObjectivesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Objective */
-            objective: string;
-        };
-        /** CreateDraftObjectivesApiResponse */
-        CreateDraftObjectivesApiResponse: {
-            /** Objective Id */
-            objective_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftOptionsApiRequest */
-        CreateDraftOptionsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Option Text */
-            option_text: string;
-            /** Is Correct */
-            is_correct: boolean;
-        };
-        /** CreateDraftOptionsApiResponse */
-        CreateDraftOptionsApiResponse: {
-            /** Option Id */
-            option_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftPointsApiRequest */
-        CreateDraftPointsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Value */
-            value: number;
-        };
-        /** CreateDraftPointsApiResponse */
-        CreateDraftPointsApiResponse: {
-            /** Point Id */
-            point_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftProblemStatementsApiRequest */
-        CreateDraftProblemStatementsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Problem Statement */
-            problem_statement: string;
-        };
-        /** CreateDraftProblemStatementsApiResponse */
-        CreateDraftProblemStatementsApiResponse: {
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftPromptsApiRequest */
-        CreateDraftPromptsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** System Prompt */
-            system_prompt: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-        };
-        /** CreateDraftPromptsApiResponse */
-        CreateDraftPromptsApiResponse: {
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftQuestionsApiRequest */
-        CreateDraftQuestionsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Question Text */
-            question_text: string;
-            /** Allow Multiple */
-            allow_multiple: boolean;
-            /** Time Value */
-            time_value: number;
-        };
-        /** CreateDraftQuestionsApiResponse */
-        CreateDraftQuestionsApiResponse: {
-            /** Question Id */
-            question_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftResponsesApiRequest */
-        CreateDraftResponsesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /**
-             * Option Id
-             * Format: uuid
-             */
-            option_id: string;
-            /**
-             * Question Id
-             * Format: uuid
-             */
-            question_id: string;
-        };
-        /** CreateDraftResponsesApiResponse */
-        CreateDraftResponsesApiResponse: {
-            /** Response Id */
-            response_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftSchemaFieldItemsApiRequest */
-        CreateDraftSchemaFieldItemsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /**
-             * Schema Field Id
-             * Format: uuid
-             */
-            schema_field_id: string;
-            /**
-             * Item Schema Id
-             * Format: uuid
-             */
-            item_schema_id: string;
-        };
-        /** CreateDraftSchemaFieldItemsApiResponse */
-        CreateDraftSchemaFieldItemsApiResponse: {
-            /** Schema Field Items Id */
-            schema_field_items_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftSchemaFieldsApiRequest */
-        CreateDraftSchemaFieldsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /**
-             * Schema Id
-             * Format: uuid
-             */
-            schema_id: string;
-            /** Name */
-            name: string;
-            /** Field Type */
-            field_type: string;
-            /** Required */
-            required: boolean;
-            /** Position Value */
-            position_value: number;
-            /** Template */
-            template: string;
-            /** Description */
-            description: string;
-            /** Default Value */
-            default_value: string;
-        };
-        /** CreateDraftSchemaFieldsApiResponse */
-        CreateDraftSchemaFieldsApiResponse: {
-            /** Schema Field Id */
-            schema_field_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftSchemasApiRequest */
-        CreateDraftSchemasApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-        };
-        /** CreateDraftSchemasApiResponse */
-        CreateDraftSchemasApiResponse: {
-            /** Schema Id */
-            schema_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftStandardGroupsApiRequest */
-        CreateDraftStandardGroupsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Short Name */
-            short_name: string;
-            /** Description */
-            description: string;
-            /** Points */
-            points: number;
-            /** Pass Points */
-            pass_points: number;
-        };
-        /** CreateDraftStandardGroupsApiResponse */
-        CreateDraftStandardGroupsApiResponse: {
-            /** Standard Group Id */
-            standard_group_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftStrengthsApiRequest */
-        CreateDraftStrengthsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Message Id
-             * Format: uuid
-             */
-            message_id: string;
-        };
-        /** CreateDraftStrengthsApiResponse */
-        CreateDraftStrengthsApiResponse: {
-            /** Strength Id */
-            strength_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftTemplateArrayItemsApiRequest */
-        CreateDraftTemplateArrayItemsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /**
-             * Template Id
-             * Format: uuid
-             */
-            template_id: string;
-            /**
-             * Schema Field Id
-             * Format: uuid
-             */
-            schema_field_id: string;
-            /**
-             * Item Template Id
-             * Format: uuid
-             */
-            item_template_id: string;
-            /** Position Value */
-            position_value: number;
-        };
-        /** CreateDraftTemplateArrayItemsApiResponse */
-        CreateDraftTemplateArrayItemsApiResponse: {
-            /** Template Array Items Id */
-            template_array_items_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftTemplateValuesApiRequest */
-        CreateDraftTemplateValuesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /**
-             * Template Id
-             * Format: uuid
-             */
-            template_id: string;
-            /**
-             * Schema Field Id
-             * Format: uuid
-             */
-            schema_field_id: string;
-            /** String Value */
-            string_value: string;
-            /** Number Value */
-            number_value: string;
-            /** Boolean Value */
-            boolean_value: string;
-        };
-        /** CreateDraftTemplateValuesApiResponse */
-        CreateDraftTemplateValuesApiResponse: {
-            /** Template Value Id */
-            template_value_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftTemplatesApiRequest */
-        CreateDraftTemplatesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-        };
-        /** CreateDraftTemplatesApiResponse */
-        CreateDraftTemplatesApiResponse: {
-            /** Template Id */
-            template_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftThresholdsApiRequest */
-        CreateDraftThresholdsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Value */
-            value: number;
-        };
-        /** CreateDraftThresholdsApiResponse */
-        CreateDraftThresholdsApiResponse: {
-            /** Threshold Id */
-            threshold_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftTimesApiRequest */
-        CreateDraftTimesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Time Taken */
-            time_taken: number;
-        };
-        /** CreateDraftTimesApiResponse */
-        CreateDraftTimesApiResponse: {
-            /** Time Id */
-            time_id?: string | null;
-            /** Version */
-            version?: number | null;
-        };
-        /** CreateDraftVideosApiRequest */
-        CreateDraftVideosApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /** Name */
-            name: string;
-            /** Length Seconds */
-            length_seconds: number;
-            /** Description */
-            description: string;
-        };
-        /** CreateDraftVideosApiResponse */
-        CreateDraftVideosApiResponse: {
-            /** Video Id */
-            video_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** CreateEvalApiRequest */
         CreateEvalApiRequest: {
@@ -6744,6 +6079,8 @@ export interface components {
             department_ids: string[];
             /** Example Ids */
             example_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
         };
         /** CreatePersonaApiResponse */
         CreatePersonaApiResponse: {
@@ -6943,6 +6280,23 @@ export interface components {
             simulation_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /** DebugInfoApiRequest */
+        DebugInfoApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Content */
+            content: string;
+        };
+        /** DebugInfoApiResponse */
+        DebugInfoApiResponse: {
+            /** Debug Info Id */
+            debug_info_id?: string | null;
+            /** Version */
+            version?: number | null;
         };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
@@ -7295,6 +6649,23 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** DescriptionsApiRequest */
+        DescriptionsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Description */
+            description: string;
+        };
+        /** DescriptionsApiResponse */
+        DescriptionsApiResponse: {
+            /** Description Id */
+            description_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
             /**
@@ -7612,6 +6983,30 @@ export interface components {
              */
             brightspace_format: boolean;
         };
+        /** FeedbacksApiRequest */
+        FeedbacksApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Total */
+            total: number;
+            /** Feedback */
+            feedback: string;
+            /**
+             * Standard Id
+             * Format: uuid
+             */
+            standard_id: string;
+        };
+        /** FeedbacksApiResponse */
+        FeedbacksApiResponse: {
+            /** Feedback Id */
+            feedback_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
             /** Upload Id */
@@ -7624,6 +7019,30 @@ export interface components {
             message?: string | null;
             /** Status */
             status?: string | null;
+        };
+        /** FlagsApiRequest */
+        FlagsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon Id
+             * Format: uuid
+             */
+            icon_id: string;
+        };
+        /** FlagsApiResponse */
+        FlagsApiResponse: {
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Version */
+            version?: number | null;
         };
         /** GetActivityBundleApiRequest */
         GetActivityBundleApiRequest: Record<string, never>;
@@ -8317,21 +7736,6 @@ export interface components {
             valid_department_ids?: string[] | null;
             /** Document Type Options */
             document_type_options?: string[] | null;
-        };
-        /** GetDraftApiResponse */
-        GetDraftApiResponse: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Artifact */
-            artifact?: string | null;
-            /** Version */
-            version?: number | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Draft Exists */
-            draft_exists?: boolean | null;
         };
         /** GetEvalAttemptApiRequest */
         GetEvalAttemptApiRequest: {
@@ -11090,6 +10494,42 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HintsApiRequest */
+        HintsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Hint */
+            hint: string;
+        };
+        /** HintsApiResponse */
+        HintsApiResponse: {
+            /** Hint Id */
+            hint_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** HtmlApiRequest */
+        HtmlApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** HtmlApiResponse */
+        HtmlApiResponse: {
+            /** Html Id */
+            html_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** IBulkCreateStaffV4Profile */
         IBulkCreateStaffV4Profile: {
             /** First Name */
@@ -11337,6 +10777,87 @@ export interface components {
             /** Cohort Ids */
             cohort_ids: string[] | null;
         };
+        /** IconsApiRequest */
+        IconsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Value */
+            value: number;
+        };
+        /** IconsApiResponse */
+        IconsApiResponse: {
+            /** Icon Id */
+            icon_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** ImagesApiRequest */
+        ImagesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** ImagesApiResponse */
+        ImagesApiResponse: {
+            /** Image Id */
+            image_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** ImprovementsApiRequest */
+        ImprovementsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** ImprovementsApiResponse */
+        ImprovementsApiResponse: {
+            /** Improvement Id */
+            improvement_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** InstructionsApiRequest */
+        InstructionsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Template */
+            template: string;
+        };
+        /** InstructionsApiResponse */
+        InstructionsApiResponse: {
+            /** Instruction Id */
+            instruction_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** LeaveCohortApiRequest */
         LeaveCohortApiRequest: {
             /**
@@ -11429,6 +10950,95 @@ export interface components {
             /** Upload Id */
             upload_id?: string | null;
         };
+        /** NamesApiRequest */
+        NamesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+        };
+        /** NamesApiResponse */
+        NamesApiResponse: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** ObjectivesApiRequest */
+        ObjectivesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Objective */
+            objective: string;
+        };
+        /** ObjectivesApiResponse */
+        ObjectivesApiResponse: {
+            /** Objective Id */
+            objective_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** OptionsApiRequest */
+        OptionsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Option Text */
+            option_text: string;
+            /** Is Correct */
+            is_correct: boolean;
+        };
+        /** OptionsApiResponse */
+        OptionsApiResponse: {
+            /** Option Id */
+            option_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** PointsApiRequest */
+        PointsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Value */
+            value: number;
+        };
+        /** PointsApiResponse */
+        PointsApiResponse: {
+            /** Point Id */
+            point_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** ProblemStatementsApiRequest */
+        ProblemStatementsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Problem Statement */
+            problem_statement: string;
+        };
+        /** ProblemStatementsApiResponse */
+        ProblemStatementsApiResponse: {
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** ProcessCsvApiRequest */
         ProcessCsvApiRequest: {
             /** Csv Content */
@@ -11446,6 +11056,27 @@ export interface components {
             rows?: components["schemas"]["QProcessCsvV4ProcessedRow"][] | null;
             /** Actor Name */
             actor_name?: string | null;
+        };
+        /** PromptsApiRequest */
+        PromptsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** PromptsApiResponse */
+        PromptsApiResponse: {
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Version */
+            version?: number | null;
         };
         /** QCreateScenarioV4Parameter */
         QCreateScenarioV4Parameter: {
@@ -13778,19 +13409,13 @@ export interface components {
         QGetPersonaDetailV4Department: {
             /** Department Id */
             department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
         };
         /** QGetPersonaDetailV4Example */
         QGetPersonaDetailV4Example: {
-            /** Example Id */
-            example_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
+            /** Example */
+            example: string | null;
+            /** Idx */
+            idx: number | null;
         };
         /** QGetPersonaDetailV4ExampleHistoryItem */
         QGetPersonaDetailV4ExampleHistoryItem: {
@@ -13803,33 +13428,11 @@ export interface components {
         QGetPersonaDetailV4Field: {
             /** Field Id */
             field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
         };
         /** QGetPersonaDetailV4Parameter */
         QGetPersonaDetailV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Numerical */
-            numerical: boolean | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-            /** Scenario Parameter */
-            scenario_parameter: boolean | null;
-            /** Video Parameter */
-            video_parameter: boolean | null;
         };
         /** QGetPersonaNewV4Agent */
         QGetPersonaNewV4Agent: {
@@ -13853,42 +13456,16 @@ export interface components {
         QGetPersonaNewV4Department: {
             /** Department Id */
             department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
         };
         /** QGetPersonaNewV4Field */
         QGetPersonaNewV4Field: {
             /** Field Id */
             field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
         };
         /** QGetPersonaNewV4Parameter */
         QGetPersonaNewV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Numerical */
-            numerical: boolean | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-            /** Scenario Parameter */
-            scenario_parameter: boolean | null;
-            /** Video Parameter */
-            video_parameter: boolean | null;
         };
         /** QGetPracticeHistoryV4Attempt */
         QGetPracticeHistoryV4Attempt: {
@@ -18262,6 +17839,27 @@ export interface components {
             /** Timestamps */
             timestamps: number[] | null;
         };
+        /** QuestionsApiRequest */
+        QuestionsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Question Text */
+            question_text: string;
+            /** Allow Multiple */
+            allow_multiple: boolean;
+            /** Time Value */
+            time_value: number;
+        };
+        /** QuestionsApiResponse */
+        QuestionsApiResponse: {
+            /** Question Id */
+            question_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /** RefreshAnalyticsApiRequest */
         RefreshAnalyticsApiRequest: Record<string, never>;
         /** RefreshAnalyticsApiResponse */
@@ -18306,6 +17904,105 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /** ResponsesApiRequest */
+        ResponsesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Option Id
+             * Format: uuid
+             */
+            option_id: string;
+            /**
+             * Question Id
+             * Format: uuid
+             */
+            question_id: string;
+        };
+        /** ResponsesApiResponse */
+        ResponsesApiResponse: {
+            /** Response Id */
+            response_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** SchemaFieldItemsApiRequest */
+        SchemaFieldItemsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Schema Field Id
+             * Format: uuid
+             */
+            schema_field_id: string;
+            /**
+             * Item Schema Id
+             * Format: uuid
+             */
+            item_schema_id: string;
+        };
+        /** SchemaFieldItemsApiResponse */
+        SchemaFieldItemsApiResponse: {
+            /** Schema Field Items Id */
+            schema_field_items_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** SchemaFieldsApiRequest */
+        SchemaFieldsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Schema Id
+             * Format: uuid
+             */
+            schema_id: string;
+            /** Name */
+            name: string;
+            /** Field Type */
+            field_type: string;
+            /** Required */
+            required: boolean;
+            /** Position Value */
+            position_value: number;
+            /** Template */
+            template: string;
+            /** Description */
+            description: string;
+            /** Default Value */
+            default_value: string;
+        };
+        /** SchemaFieldsApiResponse */
+        SchemaFieldsApiResponse: {
+            /** Schema Field Id */
+            schema_field_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** SchemasApiRequest */
+        SchemasApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+        };
+        /** SchemasApiResponse */
+        SchemasApiResponse: {
+            /** Schema Id */
+            schema_id?: string | null;
+            /** Version */
+            version?: number | null;
         };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
@@ -18527,6 +18224,31 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** StandardGroupsApiRequest */
+        StandardGroupsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Short Name */
+            short_name: string;
+            /** Description */
+            description: string;
+            /** Points */
+            points: number;
+            /** Pass Points */
+            pass_points: number;
+        };
+        /** StandardGroupsApiResponse */
+        StandardGroupsApiResponse: {
+            /** Standard Group Id */
+            standard_group_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
         /**
          * StartSimulationErrorPayload
          * @description Response indicating an error occurred while starting simulation.
@@ -18611,6 +18333,144 @@ export interface components {
             success: boolean;
             /** Message */
             message: string;
+        };
+        /** StrengthsApiRequest */
+        StrengthsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** StrengthsApiResponse */
+        StrengthsApiResponse: {
+            /** Strength Id */
+            strength_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** TemplateArrayItemsApiRequest */
+        TemplateArrayItemsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /**
+             * Schema Field Id
+             * Format: uuid
+             */
+            schema_field_id: string;
+            /**
+             * Item Template Id
+             * Format: uuid
+             */
+            item_template_id: string;
+            /** Position Value */
+            position_value: number;
+        };
+        /** TemplateArrayItemsApiResponse */
+        TemplateArrayItemsApiResponse: {
+            /** Template Array Items Id */
+            template_array_items_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** TemplateValuesApiRequest */
+        TemplateValuesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Template Id
+             * Format: uuid
+             */
+            template_id: string;
+            /**
+             * Schema Field Id
+             * Format: uuid
+             */
+            schema_field_id: string;
+            /** String Value */
+            string_value: string;
+            /** Number Value */
+            number_value: string;
+            /** Boolean Value */
+            boolean_value: string;
+        };
+        /** TemplateValuesApiResponse */
+        TemplateValuesApiResponse: {
+            /** Template Value Id */
+            template_value_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** TemplatesApiRequest */
+        TemplatesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+        };
+        /** TemplatesApiResponse */
+        TemplatesApiResponse: {
+            /** Template Id */
+            template_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** ThresholdsApiRequest */
+        ThresholdsApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Value */
+            value: number;
+        };
+        /** ThresholdsApiResponse */
+        ThresholdsApiResponse: {
+            /** Threshold Id */
+            threshold_id?: string | null;
+            /** Version */
+            version?: number | null;
+        };
+        /** TimesApiRequest */
+        TimesApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Time Taken */
+            time_taken: number;
+        };
+        /** TimesApiResponse */
+        TimesApiResponse: {
+            /** Time Id */
+            time_id?: string | null;
+            /** Version */
+            version?: number | null;
         };
         /** UpdateAgentApiRequest */
         UpdateAgentApiRequest: {
@@ -18981,6 +18841,8 @@ export interface components {
             department_ids: string[];
             /** Example Ids */
             example_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
         };
         /** UpdatePersonaApiResponse */
         UpdatePersonaApiResponse: {
@@ -19319,6 +19181,27 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VideosApiRequest */
+        VideosApiRequest: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Name */
+            name: string;
+            /** Length Seconds */
+            length_seconds: number;
+            /** Description */
+            description: string;
+        };
+        /** VideosApiResponse */
+        VideosApiResponse: {
+            /** Video Id */
+            video_id?: string | null;
+            /** Version */
+            version?: number | null;
         };
     };
     responses: never;
@@ -21565,7 +21448,7 @@ export interface operations {
             };
         };
     };
-    create_draft_api_v4_drafts__post: {
+    create_name_api_v4_resources_names_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21577,7 +21460,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftApiRequest"];
+                "application/json": components["schemas"]["NamesApiRequest"];
             };
         };
         responses: {
@@ -21587,7 +21470,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftApiResponse"];
+                    "application/json": components["schemas"]["NamesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21601,19 +21484,21 @@ export interface operations {
             };
         };
     };
-    get_draft_api_v4_drafts__draft_id__get: {
+    create_color_api_v4_resources_colors_post: {
         parameters: {
             query?: never;
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
             };
-            path: {
-                draft_id: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ColorsApiRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -21621,7 +21506,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDraftApiResponse"];
+                    "application/json": components["schemas"]["ColorsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21635,7 +21520,7 @@ export interface operations {
             };
         };
     };
-    create_draft_names_api_v4_drafts_names_post: {
+    create_flag_api_v4_resources_flags_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21647,7 +21532,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftNamesApiRequest"];
+                "application/json": components["schemas"]["FlagsApiRequest"];
             };
         };
         responses: {
@@ -21657,7 +21542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftNamesApiResponse"];
+                    "application/json": components["schemas"]["FlagsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21671,7 +21556,7 @@ export interface operations {
             };
         };
     };
-    create_draft_colors_api_v4_drafts_colors_post: {
+    create_description_api_v4_resources_descriptions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21683,7 +21568,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftColorsApiRequest"];
+                "application/json": components["schemas"]["DescriptionsApiRequest"];
             };
         };
         responses: {
@@ -21693,7 +21578,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftColorsApiResponse"];
+                    "application/json": components["schemas"]["DescriptionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21707,7 +21592,7 @@ export interface operations {
             };
         };
     };
-    create_draft_flags_api_v4_drafts_flags_post: {
+    create_icon_api_v4_resources_icons_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21719,7 +21604,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftFlagsApiRequest"];
+                "application/json": components["schemas"]["IconsApiRequest"];
             };
         };
         responses: {
@@ -21729,7 +21614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftFlagsApiResponse"];
+                    "application/json": components["schemas"]["IconsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21743,7 +21628,7 @@ export interface operations {
             };
         };
     };
-    create_draft_descriptions_api_v4_drafts_descriptions_post: {
+    create_point_api_v4_resources_points_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21755,7 +21640,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftDescriptionsApiRequest"];
+                "application/json": components["schemas"]["PointsApiRequest"];
             };
         };
         responses: {
@@ -21765,7 +21650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftDescriptionsApiResponse"];
+                    "application/json": components["schemas"]["PointsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21779,7 +21664,7 @@ export interface operations {
             };
         };
     };
-    create_draft_icons_api_v4_drafts_icons_post: {
+    create_threshold_api_v4_resources_thresholds_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21791,7 +21676,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftIconsApiRequest"];
+                "application/json": components["schemas"]["ThresholdsApiRequest"];
             };
         };
         responses: {
@@ -21801,7 +21686,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftIconsApiResponse"];
+                    "application/json": components["schemas"]["ThresholdsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21815,7 +21700,7 @@ export interface operations {
             };
         };
     };
-    create_draft_points_api_v4_drafts_points_post: {
+    create_content_api_v4_resources_content_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21827,7 +21712,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftPointsApiRequest"];
+                "application/json": components["schemas"]["ContentApiRequest"];
             };
         };
         responses: {
@@ -21837,7 +21722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftPointsApiResponse"];
+                    "application/json": components["schemas"]["ContentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21851,7 +21736,7 @@ export interface operations {
             };
         };
     };
-    create_draft_thresholds_api_v4_drafts_thresholds_post: {
+    create_html_api_v4_resources_html_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21863,7 +21748,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftThresholdsApiRequest"];
+                "application/json": components["schemas"]["HtmlApiRequest"];
             };
         };
         responses: {
@@ -21873,7 +21758,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftThresholdsApiResponse"];
+                    "application/json": components["schemas"]["HtmlApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21887,7 +21772,7 @@ export interface operations {
             };
         };
     };
-    create_draft_content_api_v4_drafts_content_post: {
+    create_hint_api_v4_resources_hints_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21899,7 +21784,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftContentApiRequest"];
+                "application/json": components["schemas"]["HintsApiRequest"];
             };
         };
         responses: {
@@ -21909,7 +21794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftContentApiResponse"];
+                    "application/json": components["schemas"]["HintsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21923,7 +21808,7 @@ export interface operations {
             };
         };
     };
-    create_draft_html_api_v4_drafts_html_post: {
+    create_image_api_v4_resources_images_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21935,7 +21820,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftHtmlApiRequest"];
+                "application/json": components["schemas"]["ImagesApiRequest"];
             };
         };
         responses: {
@@ -21945,7 +21830,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftHtmlApiResponse"];
+                    "application/json": components["schemas"]["ImagesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21959,7 +21844,7 @@ export interface operations {
             };
         };
     };
-    create_draft_hints_api_v4_drafts_hints_post: {
+    create_video_api_v4_resources_videos_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21971,7 +21856,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftHintsApiRequest"];
+                "application/json": components["schemas"]["VideosApiRequest"];
             };
         };
         responses: {
@@ -21981,7 +21866,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftHintsApiResponse"];
+                    "application/json": components["schemas"]["VideosApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21995,7 +21880,7 @@ export interface operations {
             };
         };
     };
-    create_draft_images_api_v4_drafts_images_post: {
+    create_objective_api_v4_resources_objectives_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22007,7 +21892,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftImagesApiRequest"];
+                "application/json": components["schemas"]["ObjectivesApiRequest"];
             };
         };
         responses: {
@@ -22017,7 +21902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftImagesApiResponse"];
+                    "application/json": components["schemas"]["ObjectivesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22031,7 +21916,7 @@ export interface operations {
             };
         };
     };
-    create_draft_videos_api_v4_drafts_videos_post: {
+    create_option_api_v4_resources_options_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22043,7 +21928,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftVideosApiRequest"];
+                "application/json": components["schemas"]["OptionsApiRequest"];
             };
         };
         responses: {
@@ -22053,7 +21938,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftVideosApiResponse"];
+                    "application/json": components["schemas"]["OptionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22067,7 +21952,7 @@ export interface operations {
             };
         };
     };
-    create_draft_objectives_api_v4_drafts_objectives_post: {
+    create_problem_statement_api_v4_resources_problem_statements_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22079,7 +21964,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftObjectivesApiRequest"];
+                "application/json": components["schemas"]["ProblemStatementsApiRequest"];
             };
         };
         responses: {
@@ -22089,7 +21974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftObjectivesApiResponse"];
+                    "application/json": components["schemas"]["ProblemStatementsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22103,7 +21988,7 @@ export interface operations {
             };
         };
     };
-    create_draft_options_api_v4_drafts_options_post: {
+    create_prompt_api_v4_resources_prompts_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22115,7 +22000,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftOptionsApiRequest"];
+                "application/json": components["schemas"]["PromptsApiRequest"];
             };
         };
         responses: {
@@ -22125,7 +22010,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftOptionsApiResponse"];
+                    "application/json": components["schemas"]["PromptsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22139,7 +22024,7 @@ export interface operations {
             };
         };
     };
-    create_draft_problem_statements_api_v4_drafts_problem_statements_post: {
+    create_questions_api_v4_resources_questions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22151,7 +22036,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftProblemStatementsApiRequest"];
+                "application/json": components["schemas"]["QuestionsApiRequest"];
             };
         };
         responses: {
@@ -22161,7 +22046,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftProblemStatementsApiResponse"];
+                    "application/json": components["schemas"]["QuestionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22175,7 +22060,7 @@ export interface operations {
             };
         };
     };
-    create_draft_prompts_api_v4_drafts_prompts_post: {
+    create_response_api_v4_resources_responses_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22187,7 +22072,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftPromptsApiRequest"];
+                "application/json": components["schemas"]["ResponsesApiRequest"];
             };
         };
         responses: {
@@ -22197,7 +22082,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftPromptsApiResponse"];
+                    "application/json": components["schemas"]["ResponsesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22211,7 +22096,7 @@ export interface operations {
             };
         };
     };
-    create_draft_questions_api_v4_drafts_questions_post: {
+    create_analyses_api_v4_resources_analyses_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22223,7 +22108,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftQuestionsApiRequest"];
+                "application/json": components["schemas"]["AnalysesApiRequest"];
             };
         };
         responses: {
@@ -22233,7 +22118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftQuestionsApiResponse"];
+                    "application/json": components["schemas"]["AnalysesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22247,7 +22132,7 @@ export interface operations {
             };
         };
     };
-    create_draft_responses_api_v4_drafts_responses_post: {
+    create_instruction_api_v4_resources_instructions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22259,7 +22144,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftResponsesApiRequest"];
+                "application/json": components["schemas"]["InstructionsApiRequest"];
             };
         };
         responses: {
@@ -22269,7 +22154,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftResponsesApiResponse"];
+                    "application/json": components["schemas"]["InstructionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22283,7 +22168,7 @@ export interface operations {
             };
         };
     };
-    create_draft_analyses_api_v4_drafts_analyses_post: {
+    create_improvement_api_v4_resources_improvements_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22295,7 +22180,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftAnalysesApiRequest"];
+                "application/json": components["schemas"]["ImprovementsApiRequest"];
             };
         };
         responses: {
@@ -22305,7 +22190,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftAnalysesApiResponse"];
+                    "application/json": components["schemas"]["ImprovementsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22319,7 +22204,7 @@ export interface operations {
             };
         };
     };
-    create_draft_instructions_api_v4_drafts_instructions_post: {
+    create_strength_api_v4_resources_strengths_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22331,7 +22216,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftInstructionsApiRequest"];
+                "application/json": components["schemas"]["StrengthsApiRequest"];
             };
         };
         responses: {
@@ -22341,7 +22226,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftInstructionsApiResponse"];
+                    "application/json": components["schemas"]["StrengthsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22355,7 +22240,7 @@ export interface operations {
             };
         };
     };
-    create_draft_improvements_api_v4_drafts_improvements_post: {
+    create_feedbacks_api_v4_resources_feedbacks_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22367,7 +22252,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftImprovementsApiRequest"];
+                "application/json": components["schemas"]["FeedbacksApiRequest"];
             };
         };
         responses: {
@@ -22377,7 +22262,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftImprovementsApiResponse"];
+                    "application/json": components["schemas"]["FeedbacksApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22391,7 +22276,7 @@ export interface operations {
             };
         };
     };
-    create_draft_strengths_api_v4_drafts_strengths_post: {
+    create_conversation_api_v4_resources_conversations_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22403,7 +22288,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftStrengthsApiRequest"];
+                "application/json": components["schemas"]["ConversationsApiRequest"];
             };
         };
         responses: {
@@ -22413,7 +22298,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftStrengthsApiResponse"];
+                    "application/json": components["schemas"]["ConversationsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22427,7 +22312,7 @@ export interface operations {
             };
         };
     };
-    create_draft_feedbacks_api_v4_drafts_feedbacks_post: {
+    create_debug_info_api_v4_resources_debug_info_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22439,7 +22324,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftFeedbacksApiRequest"];
+                "application/json": components["schemas"]["DebugInfoApiRequest"];
             };
         };
         responses: {
@@ -22449,7 +22334,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftFeedbacksApiResponse"];
+                    "application/json": components["schemas"]["DebugInfoApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22463,7 +22348,7 @@ export interface operations {
             };
         };
     };
-    create_draft_conversations_api_v4_drafts_conversations_post: {
+    create_schema_api_v4_resources_schemas_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22475,7 +22360,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftConversationsApiRequest"];
+                "application/json": components["schemas"]["SchemasApiRequest"];
             };
         };
         responses: {
@@ -22485,7 +22370,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftConversationsApiResponse"];
+                    "application/json": components["schemas"]["SchemasApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22499,7 +22384,7 @@ export interface operations {
             };
         };
     };
-    create_draft_debug_info_api_v4_drafts_debug_info_post: {
+    create_schema_field_api_v4_resources_schema_fields_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22511,7 +22396,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftDebugInfoApiRequest"];
+                "application/json": components["schemas"]["SchemaFieldsApiRequest"];
             };
         };
         responses: {
@@ -22521,7 +22406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftDebugInfoApiResponse"];
+                    "application/json": components["schemas"]["SchemaFieldsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22535,7 +22420,7 @@ export interface operations {
             };
         };
     };
-    create_draft_schemas_api_v4_drafts_schemas_post: {
+    create_schema_field_item_api_v4_resources_schema_field_items_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22547,7 +22432,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftSchemasApiRequest"];
+                "application/json": components["schemas"]["SchemaFieldItemsApiRequest"];
             };
         };
         responses: {
@@ -22557,7 +22442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftSchemasApiResponse"];
+                    "application/json": components["schemas"]["SchemaFieldItemsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22571,7 +22456,7 @@ export interface operations {
             };
         };
     };
-    create_draft_schema_fields_api_v4_drafts_schema_fields_post: {
+    create_template_api_v4_resources_templates_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22583,7 +22468,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftSchemaFieldsApiRequest"];
+                "application/json": components["schemas"]["TemplatesApiRequest"];
             };
         };
         responses: {
@@ -22593,7 +22478,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftSchemaFieldsApiResponse"];
+                    "application/json": components["schemas"]["TemplatesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22607,7 +22492,7 @@ export interface operations {
             };
         };
     };
-    create_draft_schema_field_items_api_v4_drafts_schema_field_items_post: {
+    create_template_array_item_api_v4_resources_template_array_items_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22619,7 +22504,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftSchemaFieldItemsApiRequest"];
+                "application/json": components["schemas"]["TemplateArrayItemsApiRequest"];
             };
         };
         responses: {
@@ -22629,7 +22514,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftSchemaFieldItemsApiResponse"];
+                    "application/json": components["schemas"]["TemplateArrayItemsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22643,7 +22528,7 @@ export interface operations {
             };
         };
     };
-    create_draft_templates_api_v4_drafts_templates_post: {
+    create_template_value_api_v4_resources_template_values_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22655,7 +22540,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftTemplatesApiRequest"];
+                "application/json": components["schemas"]["TemplateValuesApiRequest"];
             };
         };
         responses: {
@@ -22665,7 +22550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftTemplatesApiResponse"];
+                    "application/json": components["schemas"]["TemplateValuesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22679,7 +22564,7 @@ export interface operations {
             };
         };
     };
-    create_draft_template_array_items_api_v4_drafts_template_array_items_post: {
+    create_standard_group_api_v4_resources_standard_groups_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22691,7 +22576,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftTemplateArrayItemsApiRequest"];
+                "application/json": components["schemas"]["StandardGroupsApiRequest"];
             };
         };
         responses: {
@@ -22701,7 +22586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftTemplateArrayItemsApiResponse"];
+                    "application/json": components["schemas"]["StandardGroupsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22715,7 +22600,7 @@ export interface operations {
             };
         };
     };
-    create_draft_template_values_api_v4_drafts_template_values_post: {
+    create_time_api_v4_resources_times_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22727,7 +22612,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateDraftTemplateValuesApiRequest"];
+                "application/json": components["schemas"]["TimesApiRequest"];
             };
         };
         responses: {
@@ -22737,79 +22622,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateDraftTemplateValuesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_draft_standard_groups_api_v4_drafts_standard_groups_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateDraftStandardGroupsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateDraftStandardGroupsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_draft_times_api_v4_drafts_times_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateDraftTimesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateDraftTimesApiResponse"];
+                    "application/json": components["schemas"]["TimesApiResponse"];
                 };
             };
             /** @description Validation Error */

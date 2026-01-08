@@ -85,16 +85,6 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
         # Extract operation name from filename (remove _complete.sql suffix)
         operation = filename[: -len("_complete.sql")]
         
-        # Special handling for drafts/{resource}_complete.sql pattern
-        # app/sql/v4/drafts/names_complete.sql -> create_draft_names
-        # app/sql/v4/drafts/get_draft_complete.sql -> get_draft (no prefix)
-        # app/sql/v4/drafts/create_draft_complete.sql -> create_draft (no prefix)
-        if len(parts) == 2 and parts[0] == "drafts":
-            if operation in ["get_draft", "create_draft"]:
-                return operation.replace("-", "_")
-            resource_name = operation  # 'names', 'colors', etc.
-            return f"create_draft_{resource_name}".replace("-", "_")
-        
         return operation.replace("-", "_")
 
     # Pattern: tests/sql/{VERSION}/integration/infra/[resource]/[operation].sql
