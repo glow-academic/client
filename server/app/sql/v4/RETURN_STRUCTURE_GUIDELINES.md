@@ -11,13 +11,14 @@ All SQL functions that return data should follow a consistent structure for thei
 - **Type Safety**: Consistent patterns make type generation and validation easier
 - **Clarity**: The structure itself documents the data model
 
-## Required Fields (First 3)
+## Required Fields (First 4)
 
-**All functions must start with these three required fields:**
+**All functions must start with these four required fields:**
 
 1. **`actor_name`** (text) - The name of the actor/user performing the operation (for audit logging)
 2. **`{artifact}_exists`** (boolean) - Whether the artifact exists (e.g., `persona_exists`, `agent_exists`)
 3. **`can_edit`** (boolean) - Whether the current user has edit permissions
+4. **`disabled_reason`** (text, nullable) - Human-readable explanation of why editing is disabled (NULL if `can_edit = true`)
 
 **Example:**
 ```sql
@@ -25,6 +26,7 @@ RETURNS TABLE (
     actor_name text,
     persona_exists boolean,
     can_edit boolean,
+    disabled_reason text,
     -- ... rest of fields
 )
 ```
@@ -118,10 +120,11 @@ show_fields boolean,  -- true if fields exist
 
 ```sql
 RETURNS TABLE (
-    -- Required fields (first 3)
+    -- Required fields (first 4)
     actor_name text,
     persona_exists boolean,
     can_edit boolean,
+    disabled_reason text,
     
     -- Single-select resources: name
     name_id uuid,
@@ -193,7 +196,7 @@ RETURNS TABLE (
 
 ## Key Principles Summary
 
-1. **Required fields first**: `actor_name`, `{artifact}_exists`, `can_edit`
+1. **Required fields first**: `actor_name`, `{artifact}_exists`, `can_edit`, `disabled_reason`
 2. **Consistent resource patterns**: Single-select vs multi-select follow their respective patterns
 3. **Show flags for all**: Every resource has a `show_{resource}` boolean
 4. **Suggestions are UUIDs**: All `{resource}_suggestions` fields are `uuid[]`, never `text[]`
@@ -205,7 +208,7 @@ RETURNS TABLE (
 
 When updating an existing SQL function to follow these guidelines:
 
-- [ ] Move required fields (`actor_name`, `{artifact}_exists`, `can_edit`) to the top
+- [ ] Move required fields (`actor_name`, `{artifact}_exists`, `can_edit`, `disabled_reason`) to the top
 - [ ] Add `show_{resource}` flags for all resources
 - [ ] Convert text-based suggestions to UUID arrays
 - [ ] Reorder fields to follow single-select/multi-select patterns

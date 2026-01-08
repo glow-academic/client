@@ -8618,6 +8618,8 @@ export interface components {
             persona_exists?: boolean | null;
             /** Can Edit */
             can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
             /** Name Id */
             name_id?: string | null;
             name_resource?: components["schemas"]["QGetPersonaV4NameResource"] | null;
@@ -8689,7 +8691,7 @@ export interface components {
             /** Show Examples */
             show_examples?: boolean | null;
             /** Example Suggestions */
-            example_suggestions?: components["schemas"]["QGetPersonaV4ExampleHistoryItem"][] | null;
+            example_suggestions?: string[] | null;
             /** Examples */
             examples?: components["schemas"]["QGetPersonaV4Example"][] | null;
         };
@@ -13395,13 +13397,6 @@ export interface components {
             example: string | null;
             /** Idx */
             idx: number | null;
-        };
-        /** QGetPersonaV4ExampleHistoryItem */
-        QGetPersonaV4ExampleHistoryItem: {
-            /** Example */
-            example: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
         };
         /** QGetPersonaV4Field */
         QGetPersonaV4Field: {

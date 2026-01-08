@@ -20,10 +20,22 @@ type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<"/api/v4/resources/descriptions", "post">;
-type CreateDraftDescriptionsOut = OutputOf<"/api/v4/resources/descriptions", "post">;
-type CreateDraftInstructionsIn = InputOf<"/api/v4/resources/instructions", "post">;
-type CreateDraftInstructionsOut = OutputOf<"/api/v4/resources/instructions", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftInstructionsIn = InputOf<
+  "/api/v4/resources/instructions",
+  "post"
+>;
+type CreateDraftInstructionsOut = OutputOf<
+  "/api/v4/resources/instructions",
+  "post"
+>;
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
@@ -46,9 +58,7 @@ const getPersonaDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function savePersona(
-  input: SavePersonaIn
-): Promise<SavePersonaOut> {
+async function savePersona(input: SavePersonaIn): Promise<SavePersonaOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
@@ -68,7 +78,7 @@ async function createDraftNames(
 ): Promise<CreateDraftNamesOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/names", input);
+  return api.post("/resources/names", input);
 }
 
 async function createDraftDescriptions(
@@ -76,7 +86,7 @@ async function createDraftDescriptions(
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/descriptions", input);
+  return api.post("/resources/descriptions", input);
 }
 
 async function createDraftInstructions(
@@ -84,7 +94,7 @@ async function createDraftInstructions(
 ): Promise<CreateDraftInstructionsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/instructions", input);
+  return api.post("/resources/instructions", input);
 }
 
 async function createDraftColors(
@@ -92,7 +102,7 @@ async function createDraftColors(
 ): Promise<CreateDraftColorsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/colors", input);
+  return api.post("/resources/colors", input);
 }
 
 async function createDraftIcons(
@@ -100,7 +110,7 @@ async function createDraftIcons(
 ): Promise<CreateDraftIconsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/icons", input);
+  return api.post("/resources/icons", input);
 }
 
 async function createDraftFlags(
@@ -108,7 +118,7 @@ async function createDraftFlags(
 ): Promise<CreateDraftFlagsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/flags", input);
+  return api.post("/resources/flags", input);
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -177,7 +187,7 @@ export default async function NewPersonaPage({
     >
       <PersonaNew
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        data={personaDetailDefault}
+        personaData={personaDetailDefault}
         savePersonaAction={savePersona}
         patchPersonaDraftAction={patchPersonaDraft}
         createNamesAction={createDraftNames}

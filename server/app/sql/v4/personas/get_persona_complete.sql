@@ -52,10 +52,6 @@ CREATE TYPE types.q_get_persona_v4_example AS (
     idx integer
 );
 
-CREATE TYPE types.q_get_persona_v4_example_history_item AS (
-    example text,
-    department_ids text[]
-);
 
 CREATE TYPE types.q_get_persona_v4_name_resource AS (
     id uuid,
@@ -120,10 +116,11 @@ CREATE OR REPLACE FUNCTION api_get_persona_v4(
     draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    -- Required fields (first 3)
+    -- Required fields (first 4)
     actor_name text,
     persona_exists boolean,
     can_edit boolean,
+    disabled_reason text,
     -- Single-select resources: name
     name_id uuid,
     name_resource types.q_get_persona_v4_name_resource,
@@ -171,7 +168,7 @@ RETURNS TABLE (
     example_ids uuid[],
     example_resources types.q_get_persona_v4_example[],
     show_examples boolean,
-    example_suggestions types.q_get_persona_v4_example_history_item[],
+    example_suggestions uuid[],
     examples types.q_get_persona_v4_example[]
 )
 LANGUAGE sql
@@ -363,33 +360,25 @@ accessible_personas AS (
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
       )
 ),
-examples_with_departments AS (
-    SELECT 
-        e.example,
-        COALESCE(
-            ARRAY_AGG(DISTINCT pd.department_id::text) FILTER (
-                WHERE pd.department_id IS NOT NULL
-            ),
-            ARRAY[]::text[]
-        ) as department_ids
-    FROM persona_examples pe
-    JOIN examples e ON e.id = pe.example_id
-    JOIN accessible_personas ap ON ap.persona_id = pe.persona_id
-    LEFT JOIN persona_departments pd ON pd.persona_id = pe.persona_id AND pd.active = true
-    WHERE pe.active = true AND e.example IS NOT NULL AND e.example != ''
-    GROUP BY e.example
-),
 example_suggestions_data AS (
     SELECT 
         COALESCE(
             (
-                SELECT ARRAY_AGG(
-                    (example, department_ids)::types.q_get_persona_v4_example_history_item
-                    ORDER BY example
-                )
-                FROM examples_with_departments
+                SELECT ARRAY_AGG(e.id ORDER BY max_created_at DESC)
+                FROM (
+                    SELECT 
+                        e.id,
+                        MAX(pe.created_at) as max_created_at
+                    FROM persona_examples pe
+                    JOIN examples e ON e.id = pe.example_id
+                    JOIN accessible_personas ap ON ap.persona_id = pe.persona_id
+                    WHERE pe.active = true AND e.example IS NOT NULL AND e.example != ''
+                    GROUP BY e.id
+                    ORDER BY max_created_at DESC
+                    LIMIT 20
+                ) e
             ),
-            '{}'::types.q_get_persona_v4_example_history_item[]
+            ARRAY[]::uuid[]
         ) as example_suggestions
 ),
 permissions_data AS (
@@ -411,7 +400,24 @@ permissions_data AS (
                     WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
                     ELSE false
                 END
-        END as can_edit
+        END as can_edit,
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN
+                -- New mode: always editable if can_edit is true
+                NULL::text
+            ELSE
+                -- Detail mode: compute disabled_reason
+                CASE 
+                    WHEN pdd.department_ids IS NULL AND up.role != 'superadmin' THEN 
+                        'This is a default persona that cannot be edited. You can view the details but cannot make changes.'::text
+                    WHEN EXISTS (SELECT 1 FROM scenario_personas sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN 
+                        'This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes.'::text
+                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 
+                        NULL::text
+                    ELSE 
+                        'This persona cannot be edited. You can view the details but cannot make changes.'::text
+                END
+        END as disabled_reason
     FROM params x
     LEFT JOIN persona_departments_data pdd ON true
     CROSS JOIN user_profile up
@@ -625,10 +631,11 @@ field_suggestions_data AS (
     SELECT ARRAY[]::uuid[] as field_suggestions
 )
 SELECT
-    -- Required fields (first 3)
+    -- Required fields (first 4)
     up.actor_name::text as actor_name,
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
     perm.can_edit,
+    perm.disabled_reason,
     -- Single-select resources: name
     (SELECT name_id FROM name_resource_data) as name_id,
     nrd.name_resource,
@@ -769,7 +776,7 @@ SELECT
         WHEN (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN true
         ELSE false
     END as show_examples,
-    COALESCE(esd.example_suggestions, '{}'::types.q_get_persona_v4_example_history_item[]) as example_suggestions,
+    COALESCE(esd.example_suggestions, ARRAY[]::uuid[]) as example_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
             (emd.example, emd.idx)::types.q_get_persona_v4_example

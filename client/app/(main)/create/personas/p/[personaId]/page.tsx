@@ -21,10 +21,22 @@ type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<"/api/v4/resources/descriptions", "post">;
-type CreateDraftDescriptionsOut = OutputOf<"/api/v4/resources/descriptions", "post">;
-type CreateDraftInstructionsIn = InputOf<"/api/v4/resources/instructions", "post">;
-type CreateDraftInstructionsOut = OutputOf<"/api/v4/resources/instructions", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftInstructionsIn = InputOf<
+  "/api/v4/resources/instructions",
+  "post"
+>;
+type CreateDraftInstructionsOut = OutputOf<
+  "/api/v4/resources/instructions",
+  "post"
+>;
 type CreateDraftColorsIn = InputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftColorsOut = OutputOf<"/api/v4/resources/colors", "post">;
 type CreateDraftIconsIn = InputOf<"/api/v4/resources/icons", "post">;
@@ -35,9 +47,7 @@ type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getPersona = async (
-  input: GetPersonaIn
-): Promise<GetPersonaOut> => {
+const getPersona = async (input: GetPersonaIn): Promise<GetPersonaOut> => {
   return api.post("/personas/get", input, {
     cache: "no-store",
     headers: {
@@ -63,8 +73,8 @@ export async function generateMetadata(
     };
     const persona = await getPersona(input);
     return {
-      title: `${persona?.name || "Persona"} Persona`,
-      description: `${persona?.name ? `${persona.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description ? ` ${persona.description}` : ""}`,
+      title: `${persona?.name_resource?.name || "Persona"} Persona`,
+      description: `${persona?.name_resource?.name ? `${persona.name_resource.name} - ` : ""}AI-powered student persona for simulation-based teaching assistant training. Practice pedagogical techniques and student interaction strategies in realistic educational scenarios.${persona?.description_resource?.description ? ` ${persona.description_resource.description}` : ""}`,
     };
   } catch {
     // Fall through to default metadata
@@ -78,9 +88,7 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function savePersona(
-  input: SavePersonaIn
-): Promise<SavePersonaOut> {
+async function savePersona(input: SavePersonaIn): Promise<SavePersonaOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
@@ -100,7 +108,7 @@ async function createDraftNames(
 ): Promise<CreateDraftNamesOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/names", input);
+  return api.post("/resources/names", input);
 }
 
 async function createDraftDescriptions(
@@ -108,7 +116,7 @@ async function createDraftDescriptions(
 ): Promise<CreateDraftDescriptionsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/descriptions", input);
+  return api.post("/resources/descriptions", input);
 }
 
 async function createDraftInstructions(
@@ -116,7 +124,7 @@ async function createDraftInstructions(
 ): Promise<CreateDraftInstructionsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/instructions", input);
+  return api.post("/resources/instructions", input);
 }
 
 async function createDraftColors(
@@ -124,7 +132,7 @@ async function createDraftColors(
 ): Promise<CreateDraftColorsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/colors", input);
+  return api.post("/resources/colors", input);
 }
 
 async function createDraftIcons(
@@ -132,7 +140,7 @@ async function createDraftIcons(
 ): Promise<CreateDraftIconsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/icons", input);
+  return api.post("/resources/icons", input);
 }
 
 async function createDraftFlags(
@@ -140,7 +148,7 @@ async function createDraftFlags(
 ): Promise<CreateDraftFlagsOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/drafts/flags", input);
+  return api.post("/resources/flags", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -205,7 +213,7 @@ export default async function PersonaEditPage({
       >
         <PersonaNew
           personaId={personaId}
-          data={personaDetail}
+          personaData={personaDetail}
           savePersonaAction={savePersona}
           patchPersonaDraftAction={patchPersonaDraft}
           createNamesAction={createDraftNames}

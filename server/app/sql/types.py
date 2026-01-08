@@ -15493,14 +15493,6 @@ class QGetPersonaV4Example(BaseModel):
 
 
 
-class QGetPersonaV4ExampleHistoryItem(BaseModel):
-
-    example: str | None
-    department_ids: list[str] | None
-
-
-
-
 class QGetPersonaV4Field(BaseModel):
 
     field_id: UUID | None
@@ -15558,6 +15550,7 @@ class GetPersonaSqlRow(BaseModel):
     actor_name: str | None = None
     persona_exists: bool | None = None
     can_edit: bool | None = None
+    disabled_reason: str | None = None
     name_id: UUID | None = None
     name_resource: QGetPersonaV4NameResource | None = None
     show_name: bool | None = None
@@ -15596,7 +15589,7 @@ class GetPersonaSqlRow(BaseModel):
     example_ids: list[UUID] | None = None
     example_resources: list[QGetPersonaV4Example] | None = None
     show_examples: bool | None = None
-    example_suggestions: list[QGetPersonaV4ExampleHistoryItem] | None = None
+    example_suggestions: list[UUID] | None = None
     examples: list[QGetPersonaV4Example] | None = None
 
 class GetPersonaApiRequest(BaseModel):
@@ -15615,6 +15608,7 @@ class GetPersonaApiResponse(BaseModel):
     actor_name: str | None = None
     persona_exists: bool | None = None
     can_edit: bool | None = None
+    disabled_reason: str | None = None
     name_id: UUID | None = None
     name_resource: QGetPersonaV4NameResource | None = None
     show_name: bool | None = None
@@ -15653,7 +15647,7 @@ class GetPersonaApiResponse(BaseModel):
     example_ids: list[UUID] | None = None
     example_resources: list[QGetPersonaV4Example] | None = None
     show_examples: bool | None = None
-    example_suggestions: list[QGetPersonaV4ExampleHistoryItem] | None = None
+    example_suggestions: list[UUID] | None = None
     examples: list[QGetPersonaV4Example] | None = None
 
 

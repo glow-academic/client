@@ -33390,6 +33390,17 @@
             ],
             "title": "Can Edit"
           },
+          "disabled_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabled Reason"
+          },
           "name_id": {
             "anyOf": [
               {
@@ -33873,7 +33884,8 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetPersonaV4ExampleHistoryItem"
+                  "type": "string",
+                  "format": "uuid"
                 },
                 "type": "array"
               },
@@ -58788,41 +58800,6 @@
           "idx"
         ],
         "title": "QGetPersonaV4Example"
-      },
-      "QGetPersonaV4ExampleHistoryItem": {
-        "properties": {
-          "example": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Example"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "example",
-          "department_ids"
-        ],
-        "title": "QGetPersonaV4ExampleHistoryItem"
       },
       "QGetPersonaV4Field": {
         "properties": {

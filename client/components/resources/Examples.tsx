@@ -14,7 +14,7 @@ export interface ExamplesProps {
   example_ids?: string[]; // Current example resource IDs (standardized prop name)
   example_resources?: Array<{ example: string | null; idx: number | null }>; // Selected example resources
   show_examples?: boolean; // Whether to show this resource picker
-  example_suggestions?: Array<{ example: string; department_ids?: string[] }>; // Array of suggested examples
+  example_suggestions?: string[]; // Array of suggested example IDs (UUIDs) - consistent with other suggestions
   examples?: Array<{ example: string | null; idx: number | null }>; // All available examples from API
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update example_ids in form state
@@ -81,13 +81,19 @@ export function Examples({
     return allExamples.filter((ex) => ex.example !== null && ex.idx !== null);
   }, [allExamples]);
 
-  // Convert example_suggestions to string array for autocomplete
+  // Convert example_suggestions (UUIDs) to example strings by looking them up
+  // Use effectiveExampleMapping which maps example_id -> example text from current persona's examples
+  // Note: This only works for suggestions that are in the current persona's examples array
+  // For suggestions from other personas, they won't appear until those examples are added to current persona
   const suggestionsList = useMemo(() => {
     if (example_suggestions && example_suggestions.length > 0) {
-      return example_suggestions.map((s) => s.example);
+      // Look up example text from suggestion IDs using the mapping
+      return example_suggestions
+        .map((id) => effectiveExampleMapping[id])
+        .filter((text): text is string => text !== null && text !== undefined && text.trim() !== "");
     }
     return suggestions;
-  }, [example_suggestions, suggestions]);
+  }, [example_suggestions, effectiveExampleMapping, suggestions]);
 
   // Don't render if show_examples is false
   if (!show) {

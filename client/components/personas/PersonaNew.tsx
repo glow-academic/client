@@ -16,6 +16,7 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
@@ -29,7 +30,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { transformDepartmentIdsForSubmit } from "@/utils/department-picker-helpers";
 import {
   parseAsBoolean,
   parseAsString,
@@ -64,34 +64,22 @@ type CreateDraftInstructionsOut = OutputOf<
 >;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
+type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
+type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
+type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 
 type PersonaData = OutputOf<"/api/v4/personas/get", "post">;
 
 export interface PersonaNewProps {
   personaId?: string;
   // Server-provided data (for server-side rendering)
-  data?: PersonaData;
+  personaData?: PersonaData;
   // Server actions (replaces useMutation)
   savePersonaAction?: (input: SavePersonaIn) => Promise<SavePersonaOut>;
-  patchPersonaDraftAction?: (input: {
-    body: {
-      input_draft_id: string | null;
-      name_id: string | null;
-      description_id: string | null;
-      color_id: string | null;
-      icon_id: string | null;
-      instructions_id: string | null;
-      active_flag_id: string | null;
-      department_ids: string[];
-      field_ids: string[];
-      example_ids: string[];
-      expected_version: number;
-    };
-  }) => Promise<{
-    draft_id: string;
-    new_version: number;
-    draft_exists: boolean;
-  }>;
+  patchPersonaDraftAction?: (
+    input: PatchPersonaDraftIn
+  ) => Promise<PatchPersonaDraftOut>;
   // Resource creation actions
   createNamesAction?: (
     input: CreateDraftNamesIn
@@ -112,13 +100,13 @@ export interface PersonaNewProps {
     input: CreateDraftFlagsIn
   ) => Promise<CreateDraftFlagsOut>;
   createExamplesAction?: (
-    input: InputOf<"/api/v4/resources/examples", "post">
-  ) => Promise<OutputOf<"/api/v4/resources/examples", "post">>;
+    input: CreateDraftExamplesIn
+  ) => Promise<CreateDraftExamplesOut>;
 }
 
 function PersonaNewComponent({
   personaId,
-  data: personaData,
+  personaData,
   savePersonaAction,
   patchPersonaDraftAction,
   createNamesAction,
@@ -279,7 +267,7 @@ function PersonaNewComponent({
           // Update URL when draft is created (GenericForm will also sync this)
           setDraftId(result.draft_id);
         }
-        setLastSavedVersion(result.new_version);
+        setLastSavedVersion(result.new_version ?? 0);
       } catch {
         // Failed to save draft - error already logged by API
       }
@@ -453,9 +441,6 @@ function PersonaNewComponent({
     return !personaData.can_edit;
   }, [isEditMode, personaData]);
 
-  // Keep isReadonly for backward compatibility with existing code
-  const isReadonly = disabled;
-
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
     const personaName = personaData?.name_resource?.name;
@@ -499,18 +484,7 @@ function PersonaNewComponent({
         throw new Error("Instructions are required");
       }
 
-      // Transform department IDs for submit (database handles superadmin logic)
-      // Derive valid_department_ids from departments array
-      const validDepartmentIds =
-        personaData?.departments
-          ?.map((d) => d.department_id)
-          .filter((id): id is string => id !== null) || [];
-      const finalDepartmentIds =
-        transformDepartmentIdsForSubmit(
-          formState.department_ids || [],
-          false, // Always false - database handles superadmin logic via show_departments flag
-          validDepartmentIds
-        ) ?? [];
+      // Pass department_ids directly - SQL handles validation via validate_department_create_permissions/validate_department_update_permissions
 
       // Ensure profileId exists - required for API calls
       if (!effectiveProfile?.id) {
@@ -533,7 +507,7 @@ function PersonaNewComponent({
             icon_id: formState.icon_id,
             instructions_id: formState.instructions_id,
             active_flag_id: formState.active_flag_id || null,
-            department_ids: finalDepartmentIds,
+            department_ids: formState.department_ids || [],
             field_ids: formState.field_ids || [],
             example_ids: formState.example_ids || [],
           },
@@ -553,7 +527,6 @@ function PersonaNewComponent({
       formState,
       isEditMode,
       personaId,
-      personaData,
       effectiveProfile?.id,
       savePersonaAction,
       router,
@@ -710,7 +683,7 @@ function PersonaNewComponent({
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
               customHeader={
                 <>
@@ -845,7 +818,7 @@ function PersonaNewComponent({
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
               searchTerm={
                 (stepFormData["colorSearch"] as string | null | undefined) || ""
@@ -907,7 +880,7 @@ function PersonaNewComponent({
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
               searchTerm={
                 (stepFormData["iconSearch"] as string | null | undefined) || ""
@@ -965,7 +938,7 @@ function PersonaNewComponent({
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
               resetFields={["instructions", "examples"]}
               {...(onReset ? { onReset } : {})}
@@ -1004,18 +977,7 @@ function PersonaNewComponent({
                 example_ids={formState.example_ids ?? []}
                 example_resources={personaData?.example_resources ?? []}
                 show_examples={personaData?.show_examples ?? false}
-                example_suggestions={
-                  personaData?.example_suggestions
-                    ? personaData.example_suggestions
-                        .filter((s) => s.example !== null)
-                        .map((s) => ({
-                          example: s.example!,
-                          ...(s.department_ids !== null && {
-                            department_ids: s.department_ids,
-                          }),
-                        }))
-                    : []
-                }
+                example_suggestions={personaData?.example_suggestions ?? []}
                 examples={personaData?.examples ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
@@ -1048,7 +1010,6 @@ function PersonaNewComponent({
     [
       personaData,
       disabled,
-      isReadonly,
       isEditMode,
       handleGenerateName,
       handleGenerateDescription,
@@ -1073,37 +1034,11 @@ function PersonaNewComponent({
         className="w-full p-6 space-y-8"
         data-page={`persona-${isEditMode ? "edit" : "new"}`}
       >
-        {isReadonly && (
-          <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-muted-foreground"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-foreground">
-                  Persona is read-only
-                </h3>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <p>
-                    {personaData?.department_ids?.length === 0
-                      ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
-                      : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={personaData?.disabled_reason ?? null}
+          entityType="persona"
+        />
 
         <GenericForm
           nuqsParsers={
@@ -1116,7 +1051,7 @@ function PersonaNewComponent({
           resetSuccessMessage={resetSuccessMessage}
           onSubmit={handleSubmit}
           submitButton={submitButton}
-          isReadonly={isReadonly}
+          isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
         />
