@@ -140,166 +140,10 @@ function PersonaNewComponent({
   const [isGeneratingInstructions, setIsGeneratingInstructions] =
     useState(false);
 
-  // Stabilize server props to prevent unnecessary re-renders from object reference changes
-  // Generate stable ID from server props content (same logic as in GenericForm)
-  const stabilizeServerProp = React.useCallback(
-    (
-      data: typeof serverPersonaDetail | typeof serverPersonaDetailDefault
-    ): string | null => {
-      if (!data) return null;
-      if (typeof data === "object" && data !== null) {
-        if ("persona_id" in data && data.persona_id) {
-          return `persona_id:${String(data.persona_id)}`;
-        }
-        const keyFields: Record<string, unknown> = {};
-        if ("colors" in data) {
-          keyFields["colors"] = Array.isArray(data["colors"])
-            ? data["colors"].length
-            : data["colors"];
-        }
-        if ("icons" in data) {
-          keyFields["icons"] = Array.isArray(data["icons"])
-            ? data["icons"].length
-            : data["icons"];
-        }
-        if ("icon_suggestions" in data) {
-          keyFields["icon_suggestions"] = Array.isArray(
-            data["icon_suggestions"]
-          )
-            ? data["icon_suggestions"].length
-            : data["icon_suggestions"];
-        }
-        const sortedKeys = Object.keys(keyFields).sort();
-        const hash = sortedKeys
-          .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-          .join("|");
-        return `new:${hash.length}:${hash.slice(0, 100)}`;
-      }
-      return String(data);
-    },
-    []
-  );
-
-  const personaDetailId = React.useMemo(
-    () => stabilizeServerProp(serverPersonaDetail),
-    [serverPersonaDetail, stabilizeServerProp]
-  );
-  const personaDetailDefaultId = React.useMemo(
-    () => stabilizeServerProp(serverPersonaDetailDefault),
-    [serverPersonaDetailDefault, stabilizeServerProp]
-  );
-
-  // Use refs to track latest server props (for effect access) and stable props (for render)
-  const latestServerPersonaDetailRef = React.useRef(serverPersonaDetail);
-  const latestServerPersonaDetailDefaultRef = React.useRef(
-    serverPersonaDetailDefault
-  );
-
-  // Update latest refs on every render (no effect needed - just sync)
-  latestServerPersonaDetailRef.current = serverPersonaDetail;
-  latestServerPersonaDetailDefaultRef.current = serverPersonaDetailDefault;
-
-  // Use refs to track stable server props - only update when ID changes
-  const stablePersonaDetailRef = React.useRef<{
-    data: typeof serverPersonaDetail;
-    id: string | null;
-  }>({
-    data: serverPersonaDetail,
-    id: personaDetailId,
-  });
-  const stablePersonaDetailDefaultRef = React.useRef<{
-    data: typeof serverPersonaDetailDefault;
-    id: string | null;
-  }>({
-    data: serverPersonaDetailDefault,
-    id: personaDetailDefaultId,
-  });
-
-  React.useEffect(() => {
-    // Only update when ID actually changes, use latest ref for data
-    if (stablePersonaDetailRef.current.id !== personaDetailId) {
-      stablePersonaDetailRef.current = {
-        data: latestServerPersonaDetailRef.current,
-        id: personaDetailId,
-      };
-    }
-  }, [personaDetailId]); // Only depend on ID, not object reference
-
-  React.useEffect(() => {
-    // Only update when ID actually changes, use latest ref for data
-    if (stablePersonaDetailDefaultRef.current.id !== personaDetailDefaultId) {
-      stablePersonaDetailDefaultRef.current = {
-        data: latestServerPersonaDetailDefaultRef.current,
-        id: personaDetailDefaultId,
-      };
-    }
-  }, [personaDetailDefaultId]); // Only depend on ID, not object reference
-
-  // Use stable references
-  const personaDetail = stablePersonaDetailRef.current.data;
-  const personaDetailDefault = stablePersonaDetailDefaultRef.current.data;
-
   // Use edit detail when editing, default detail when creating
-  // Stabilize based on content ID, not object reference, to prevent unnecessary re-renders
-  const personaDataId = React.useMemo(() => {
-    const data = isEditMode ? personaDetail : personaDetailDefault;
-    if (!data) return null;
-    if (typeof data === "object" && data !== null) {
-      if ("persona_id" in data && data.persona_id) {
-        return `persona_id:${String(data.persona_id)}`;
-      }
-      // For new personas, create stable hash from immutable fields
-      const keyFields: Record<string, unknown> = {};
-      if ("colors" in data) {
-        keyFields["colors"] = Array.isArray(data["colors"])
-          ? data["colors"].length
-          : data["colors"];
-      }
-      if ("icons" in data) {
-        keyFields["icons"] = Array.isArray(data["icons"])
-          ? data["icons"].length
-          : data["icons"];
-      }
-      if ("icon_suggestions" in data) {
-        keyFields["icon_suggestions"] = Array.isArray(data["icon_suggestions"])
-          ? data["icon_suggestions"].length
-          : data["icon_suggestions"];
-      }
-      if ("valid_department_ids" in data) {
-        keyFields["valid_department_ids"] = Array.isArray(
-          data["valid_department_ids"]
-        )
-          ? data["valid_department_ids"].sort().join(",")
-          : data["valid_department_ids"];
-      }
-      const sortedKeys = Object.keys(keyFields).sort();
-      const hash = sortedKeys
-        .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-        .join("|");
-      return `new:${hash.length}:${hash.slice(0, 100)}`;
-    }
-    return String(data);
-  }, [isEditMode, personaDetail, personaDetailDefault]);
-
-  // Use ref to track stable personaData - only update when ID changes
-  const stablePersonaDataRef = React.useRef<{
-    data: typeof personaDetail | typeof personaDetailDefault;
-    id: string | null;
-  }>({
-    data: isEditMode ? personaDetail : personaDetailDefault,
-    id: personaDataId,
-  });
-
-  React.useEffect(() => {
-    if (stablePersonaDataRef.current.id !== personaDataId) {
-      stablePersonaDataRef.current = {
-        data: isEditMode ? personaDetail : personaDetailDefault,
-        id: personaDataId,
-      };
-    }
-  }, [isEditMode, personaDetail, personaDetailDefault, personaDataId]);
-
-  const personaData = stablePersonaDataRef.current.data;
+  const personaData = isEditMode
+    ? serverPersonaDetail
+    : serverPersonaDetailDefault;
 
   // Inline parsers for URL-backed state (navigation/search params only - form fields moved to local state)
   const personaSearchParamsClient = {
@@ -334,7 +178,7 @@ function PersonaNewComponent({
   // Local form state (not in URL) - stores only resource IDs
   // Display values are managed inside resource components
   const getInitialFormState = useCallback(() => {
-    const data = isEditMode ? personaDetail : personaDetailDefault;
+    const data = personaData;
     if (!data) {
       return {
         name_id: null as string | null,
@@ -351,32 +195,17 @@ function PersonaNewComponent({
     // Extract resource IDs from server data
     // Note: Server data may have display values, but we only store IDs here
     return {
-      name_id:
-        (data as PersonaDetailOut & { name_id?: string | null })?.name_id ||
-        null,
-      description_id:
-        (data as PersonaDetailOut & { description_id?: string | null })
-          ?.description_id || null,
-      color_id:
-        (data as PersonaDetailOut & { color_id?: string | null })?.color_id ||
-        null,
-      icon_id:
-        (data as PersonaDetailOut & { icon_id?: string | null })?.icon_id ||
-        null,
-      instructions_id:
-        (data as PersonaDetailOut & { instructions_id?: string | null })
-          ?.instructions_id || null,
-      active_flag_id:
-        (data as PersonaDetailOut & { active_flag_id?: string | null })
-          ?.active_flag_id || null,
-      department_ids: data.department_ids || [],
-      field_ids:
-        (data as PersonaDetailOut & { field_ids?: string[] })?.field_ids || [],
-      example_ids:
-        (data as PersonaDetailOut & { example_ids?: string[] })?.example_ids ||
-        [],
+      name_id: data.name_id ?? null,
+      description_id: data.description_id ?? null,
+      color_id: data.color_id ?? null,
+      icon_id: data.icon_id ?? null,
+      instructions_id: data.instructions_id ?? null,
+      active_flag_id: data.active_flag_id ?? null,
+      department_ids: data.department_ids ?? [],
+      field_ids: data.field_ids ?? [],
+      example_ids: data.example_ids ?? [],
     };
-  }, [isEditMode, personaDetail, personaDetailDefault]);
+  }, [personaData]);
 
   const [formState, setFormState] = useState(getInitialFormState);
 
@@ -681,147 +510,6 @@ function PersonaNewComponent({
   const colorSearch = urlParams.colorSearch || "";
   const iconSearch = urlParams.iconSearch || "";
 
-  // Get color options from server, convert to ColorItem format
-  const presetColorsAll = useMemo(() => {
-    const colors =
-      (
-        personaData as PersonaDetailOut & {
-          colors?: Array<{
-            id: string;
-            name: string;
-            description: string;
-            hex_code: string;
-          }>;
-        }
-      )?.colors || [];
-
-    // Convert resource format to ColorItem format
-    return colors.map((c: { hex_code: string; name: string }) => ({
-      hex: c.hex_code,
-      name: c.name,
-    }));
-  }, [personaData]);
-
-  // Filter colors client-side based on search state from URL
-  // Also include custom colors that aren't in the preset list
-  // NOTE: Colors component now handles this internally, but keeping for backward compatibility
-  const _presetColors = useMemo(() => {
-    // Get current color from color_resource
-    const currentColorResource = (
-      personaData as PersonaDetailOut & {
-        color_resource?: {
-          id: string;
-          name: string;
-          description: string;
-          hex_code: string;
-        } | null;
-      }
-    )?.color_resource;
-
-    const currentColorHex = currentColorResource?.hex_code || null;
-
-    // Normalize current color for comparison
-    const normalizedCurrentColor = currentColorHex
-      ? currentColorHex.toUpperCase().startsWith("#")
-        ? currentColorHex.toUpperCase()
-        : `#${currentColorHex.toUpperCase()}`
-      : null;
-
-    // Check if current color is custom (not in preset list)
-    const isCustomColor =
-      normalizedCurrentColor &&
-      !presetColorsAll.some(
-        (c: { hex: string }) => c.hex.toUpperCase() === normalizedCurrentColor
-      );
-
-    // Build colors list: custom color first (if exists), then preset colors
-    let colors = [...presetColorsAll];
-    if (isCustomColor && normalizedCurrentColor && currentColorResource) {
-      colors = [
-        {
-          hex: normalizedCurrentColor,
-          name: currentColorResource.name || normalizedCurrentColor,
-        },
-        ...presetColorsAll,
-      ];
-    }
-
-    // Filter by search term if present (from URL-backed state)
-    if (!colorSearch.trim()) {
-      return colors;
-    }
-    const searchLower = colorSearch.toLowerCase();
-    return colors.filter(
-      (color: { name: string; hex: string }) =>
-        color.name.toLowerCase().includes(searchLower) ||
-        color.hex.toLowerCase().includes(searchLower)
-    );
-  }, [presetColorsAll, colorSearch, personaData]);
-
-  // Get icon options from server
-  const iconOptions = useMemo(
-    () =>
-      (
-        personaData as PersonaDetailOut & {
-          icons?: Array<{
-            id: string;
-            name: string;
-            description: string;
-            value: string;
-          }>;
-        }
-      )?.icons || [],
-    [personaData]
-  );
-
-  // Get icon suggestions (IDs) and map to icon names
-  const iconSuggestionsIds = useMemo(
-    () =>
-      (
-        personaData as PersonaDetailOut & {
-          icon_suggestions?: string[];
-        }
-      )?.icon_suggestions || [],
-    [personaData]
-  );
-
-  // Map icon suggestion IDs to icon names
-  const suggestedIconsAll = useMemo(() => {
-    const iconMap = new Map(
-      iconOptions.map((icon: { id: string; value: string }) => [
-        icon.id,
-        icon.value,
-      ])
-    );
-    return iconSuggestionsIds
-      .map((id: string) => iconMap.get(id))
-      .filter((name): name is string => !!name);
-  }, [iconOptions, iconSuggestionsIds]);
-
-  // All icons from options (suggested first, then others)
-  const allIconsAll = useMemo(() => {
-    const suggestedSet = new Set(suggestedIconsAll);
-    const allIconNames = iconOptions.map(
-      (icon: { value: string }) => icon.value
-    );
-    const otherIcons = allIconNames.filter(
-      (iconName: string) => !suggestedSet.has(iconName)
-    );
-    return [...suggestedIconsAll, ...otherIcons];
-  }, [suggestedIconsAll, iconOptions]);
-
-  // Filter icons client-side based on search state from URL
-  // NOTE: Icons component now handles filtering internally
-  const _allIcons = useMemo(() => {
-    if (!iconSearch.trim()) {
-      return allIconsAll;
-    }
-    const searchLower = iconSearch.toLowerCase();
-    return allIconsAll.filter((icon: string) =>
-      icon.toLowerCase().includes(searchLower)
-    );
-  }, [allIconsAll, iconSearch]);
-
   // Disabled logic based on can_edit flag - standardized for all resource components
   const disabled = useMemo(() => {
     if (!isEditMode || !personaData) return false;
@@ -830,77 +518,6 @@ function PersonaNewComponent({
 
   // Keep isReadonly for backward compatibility with existing code
   const isReadonly = disabled;
-
-  // Examples component manages its own mapping via exampleMapping prop
-
-  // Helper to filter example_suggestions based on selected departments
-  // NOTE: Examples component now handles suggestions internally, keeping for potential future use
-  const _getExamplesHistory = useCallback(
-    (departmentIds: string[] | null | undefined) => {
-      if (!personaData || !("example_suggestions" in personaData)) return [];
-      const rawHistory =
-        (
-          personaData as PersonaDetailOut & {
-            example_suggestions?: Array<{
-              example: string;
-              department_ids?: string[];
-            }>;
-          }
-        )?.example_suggestions || [];
-      const selectedDeptIds = departmentIds || [];
-
-      // Convert to array of strings for autocomplete
-      const examples: string[] = [];
-
-      // If no departments selected, return all examples
-      if (selectedDeptIds.length === 0) {
-        rawHistory.forEach((ex) => {
-          if (typeof ex === "string") {
-            examples.push(ex);
-          } else if (ex && typeof ex === "object") {
-            const exWithDept = ex as {
-              example: string;
-              department_ids?: string[];
-            };
-            if ("example" in exWithDept) {
-              examples.push(exWithDept.example);
-            }
-          }
-        });
-        return examples;
-      }
-
-      // Filter examples that:
-      // 1. Have department_ids that intersect with selected departments
-      // 2. Are cross-department (empty department_ids array)
-      rawHistory.forEach(
-        (ex: { example: string; department_ids?: string[] } | string) => {
-          // Handle both new format (object with department_ids) and legacy format (string)
-          if (typeof ex === "string") {
-            examples.push(ex); // Legacy format - include all
-          } else if (ex && typeof ex === "object") {
-            const exWithDept = ex as {
-              example: string;
-              department_ids?: string[];
-            };
-            if ("example" in exWithDept) {
-              const exDeptIds = exWithDept.department_ids || [];
-              // Include if cross-department (empty) or intersects with selected departments
-              if (
-                exDeptIds.length === 0 ||
-                exDeptIds.some((deptId) => selectedDeptIds.includes(deptId))
-              ) {
-                examples.push(exWithDept.example);
-              }
-            }
-          }
-        }
-      );
-
-      return examples;
-    },
-    [personaData]
-  );
 
   // Form initialization function for GenericForm
   const initializeForm = useCallback(
@@ -924,11 +541,7 @@ function PersonaNewComponent({
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
-    const personaName = (
-      personaDetail as PersonaDetailOut & {
-        name_resource?: { name: string } | null;
-      }
-    )?.name_resource?.name;
+    const personaName = personaData?.name_resource?.name;
     if (personaName && personaId && isEditMode) {
       setEntityMetadata({
         entityId: personaId,
@@ -938,7 +551,7 @@ function PersonaNewComponent({
     }
     return () => clearEntityMetadata();
   }, [
-    personaDetail,
+    personaData,
     personaId,
     isEditMode,
     setEntityMetadata,
@@ -1576,8 +1189,7 @@ function PersonaNewComponent({
                 </h3>
                 <div className="mt-2 text-sm text-muted-foreground">
                   <p>
-                    {(personaData as PersonaDetailOut)?.department_ids
-                      ?.length === 0
+                    {personaData?.department_ids?.length === 0
                       ? "This is a default persona that cannot be edited. You can view the details but cannot make changes."
                       : "This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes."}
                   </p>
@@ -1610,71 +1222,5 @@ function PersonaNewComponent({
   );
 }
 
-// Helper function to generate stable ID from server prop (same logic as inside component)
-function getStableServerPropId(
-  data: PersonaDetailOut | PersonaNewOut | undefined
-): string | null {
-  if (!data) return null;
-  if (typeof data === "object" && data !== null) {
-    if ("persona_id" in data && data.persona_id) {
-      return `persona_id:${String(data.persona_id)}`;
-    }
-    const keyFields: Record<string, unknown> = {};
-    if ("preset_colors" in data) {
-      keyFields["preset_colors"] = Array.isArray(data["preset_colors"])
-        ? data["preset_colors"].length
-        : data["preset_colors"];
-    }
-    if ("valid_icons" in data) {
-      keyFields["valid_icons"] = Array.isArray(data["valid_icons"])
-        ? data["valid_icons"].length
-        : data["valid_icons"];
-    }
-    if ("suggested_icons" in data) {
-      keyFields["suggested_icons"] = Array.isArray(data["suggested_icons"])
-        ? data["suggested_icons"].length
-        : data["suggested_icons"];
-    }
-    if ("valid_department_ids" in data) {
-      keyFields["valid_department_ids"] = Array.isArray(
-        data["valid_department_ids"]
-      )
-        ? data["valid_department_ids"].sort().join(",")
-        : data["valid_department_ids"];
-    }
-    const sortedKeys = Object.keys(keyFields).sort();
-    const hash = sortedKeys
-      .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-      .join("|");
-    return `new:${hash.length}:${hash.slice(0, 100)}`;
-  }
-  return String(data);
-}
-
 // Memoize component to prevent re-renders when only prop references change (content is same)
-export default React.memo(PersonaNewComponent, (prevProps, nextProps) => {
-  const prevDetailId = getStableServerPropId(prevProps.personaDetail);
-  const nextDetailId = getStableServerPropId(nextProps.personaDetail);
-  const prevDefaultId = getStableServerPropId(prevProps.personaDetailDefault);
-  const nextDefaultId = getStableServerPropId(nextProps.personaDetailDefault);
-
-  // Compare primitive props (exclude server actions - they may be new references but functionally equivalent)
-  if (
-    prevProps.personaId !== nextProps.personaId ||
-    prevProps.mode !== nextProps.mode
-  ) {
-    return false; // Props changed, re-render
-  }
-
-  // Compare server props by content ID, not reference
-  if (prevDetailId !== nextDetailId) {
-    return false; // Content changed, re-render
-  }
-
-  if (prevDefaultId !== nextDefaultId) {
-    return false; // Content changed, re-render
-  }
-
-  // All props are equivalent (same content), skip re-render
-  return true;
-});
+export default React.memo(PersonaNewComponent);
