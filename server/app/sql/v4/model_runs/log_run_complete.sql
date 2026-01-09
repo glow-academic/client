@@ -304,18 +304,27 @@ get_prompt_tool_id AS (
     LIMIT 1
 ),
 system_tool_call AS (
-    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
-    SELECT 'log_run_system_' || nsm.system_message_id::text, gpt.tool_id, true, nsm.created_at, nsm.updated_at
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    SELECT 
+        'log_run_system_' || nsm.system_message_id::text, 
+        gpt.tool_id, 
+        (SELECT run_id FROM params LIMIT 1),
+        (SELECT template_id FROM tool_templates WHERE tool_id = gpt.tool_id LIMIT 1),
+        '',
+        true, 
+        nsm.created_at, 
+        nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN get_prompt_tool_id gpt
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 existing_system_tool_call AS (
-    SELECT DISTINCT cnt.tool_call_id
+    SELECT DISTINCT tc.id as tool_call_id
     FROM existing_system_message esm
     JOIN message_content mc ON mc.message_id = esm.system_message_id AND mc.idx = 0
-    JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_runs mr ON mr.message_id = esm.system_message_id
+    JOIN calls tc ON tc.run_id = mr.run_id
     LIMIT 1
 ),
 system_tool_call_id AS (
@@ -324,13 +333,13 @@ system_tool_call_id AS (
     SELECT tool_call_id FROM existing_system_tool_call
 ),
 insert_system_content_step1 AS (
-    INSERT INTO content (content, tool_call_id, created_at, updated_at)
-    SELECT smc.content, stc.tool_call_id, nsm.created_at, nsm.updated_at
+    INSERT INTO content (content, created_at, updated_at)
+    SELECT smc.content, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
     CROSS JOIN system_tool_call_id stc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
-    RETURNING id as content_id, content, tool_call_id, created_at, updated_at
+    RETURNING id as content_id, content, created_at, updated_at
 ),
 insert_system_content AS (
     INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
@@ -339,7 +348,6 @@ insert_system_content AS (
     CROSS JOIN system_message_content smc
     CROSS JOIN system_tool_call_id stc
     JOIN insert_system_content_step1 ic ON ic.content = smc.content
-        AND ic.tool_call_id = stc.tool_call_id
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
 ),
 system_message AS (
@@ -423,10 +431,13 @@ get_instruct_tool_id AS (
     LIMIT 1
 ),
 developer_calls_with_rn AS (
-    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'log_run_developer_' || ndm.message_id::text, 
         git.tool_id, 
+        (SELECT run_id FROM params LIMIT 1),
+        (SELECT template_id FROM tool_templates WHERE tool_id = git.tool_id LIMIT 1),
+        '',
         true, 
         ndm.created_at, 
         ndm.updated_at
@@ -459,10 +470,11 @@ developer_message_with_tool_call AS (
     JOIN developer_calls_ordered dtco ON dtco.rn = dmo.rn
 ),
 existing_developer_calls AS (
-    SELECT edm.message_id, cnt.tool_call_id
+    SELECT edm.message_id, tc.id as tool_call_id
     FROM existing_developer_messages edm
     JOIN message_content mc ON mc.message_id = edm.message_id AND mc.idx = 0
-    JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_runs mr ON mr.message_id = edm.message_id
+    JOIN calls tc ON tc.run_id = mr.run_id
 ),
 all_developer_calls AS (
     SELECT message_id, tool_call_id FROM developer_message_with_tool_call
@@ -470,10 +482,9 @@ all_developer_calls AS (
     SELECT message_id, tool_call_id FROM existing_developer_calls
 ),
 insert_developer_content_step1 AS (
-    INSERT INTO content (content, tool_call_id, created_at, updated_at)
+    INSERT INTO content (content, created_at, updated_at)
     SELECT 
         dmp.content, 
-        adtcm.tool_call_id, 
         dmtc.created_at,
         dmtc.updated_at
     FROM all_developer_calls adtcm
@@ -560,16 +571,24 @@ assistant_message AS (
     RETURNING id as assistant_message_id, created_at, updated_at
 ),
 assistant_tool_call AS (
-    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
-    SELECT 'log_run_assistant_' || am.assistant_message_id::text, NULL, true, am.created_at, am.updated_at
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    SELECT 
+        'log_run_assistant_' || am.assistant_message_id::text, 
+        NULL, 
+        x.run_id,
+        NULL,
+        '',
+        true, 
+        am.created_at, 
+        am.updated_at
     FROM params x
     CROSS JOIN assistant_message am
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''
     RETURNING id as tool_call_id, created_at, updated_at
 ),
 insert_assistant_content_step1 AS (
-    INSERT INTO content (content, tool_call_id, created_at, updated_at)
-    SELECT trim(x.assistant_output), atc.tool_call_id, am.created_at, am.updated_at
+    INSERT INTO content (content, created_at, updated_at)
+    SELECT trim(x.assistant_output), am.created_at, am.updated_at
     FROM params x
     CROSS JOIN assistant_message am
     CROSS JOIN assistant_tool_call atc

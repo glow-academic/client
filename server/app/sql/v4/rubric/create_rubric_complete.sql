@@ -248,15 +248,18 @@ standard_groups_unnested AS (
 ),
 -- Create placeholder calls for API-created standard_groups (not created via tool)
 placeholder_calls AS (
-    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'api_create_rubric_' || sgu.rubric_id::text || '_sg_' || sgu.group_order::text,
         NULL,
+        NULL,
+        NULL,
+        '',
         TRUE,
         NOW(),
         NOW()
     FROM standard_groups_unnested sgu
-    RETURNING id, call_id
+    RETURNING id, external_call_id
 ),
 calls_with_order AS (
     SELECT 
@@ -271,8 +274,7 @@ new_standard_groups AS (
         description,
         points,
         pass_points,
-        active,
-        tool_call_id
+        active
     )
     SELECT 
         sgu.name,
@@ -280,8 +282,7 @@ new_standard_groups AS (
         sgu.description,
         sgu.points,
         sgu.pass_points,
-        sgu.active,
-        tcwo.tool_call_id
+        sgu.active
     FROM standard_groups_unnested sgu
     JOIN calls_with_order tcwo ON tcwo.rn = sgu.group_order
     RETURNING id, name, short_name, description, points, pass_points, active

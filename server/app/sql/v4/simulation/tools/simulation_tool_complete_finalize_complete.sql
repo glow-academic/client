@@ -45,7 +45,7 @@ get_tool_call AS (
     FROM params p
     JOIN calls tc ON (
         (p.tool_call_id IS NOT NULL AND tc.id = p.tool_call_id)
-        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+        OR (p.call_id IS NOT NULL AND tc.external_call_id = p.call_id)
     )
     LIMIT 1
 ),
@@ -62,8 +62,8 @@ finalize_tool_call AS (
 get_message_from_tool_call AS (
     SELECT DISTINCT ON (m.id) m.id as message_id
     FROM get_tool_call gtc
-    JOIN tool_call_runs tcr ON tcr.tool_call_id = gtc.tool_call_id
-    JOIN message_runs mr ON mr.run_id = tcr.run_id
+    JOIN calls tc ON tc.id = gtc.tool_call_id
+    JOIN message_runs mr ON mr.run_id = tc.run_id
     JOIN messages m ON m.id = mr.message_id
     WHERE m.role = 'assistant'::message_role
     ORDER BY m.id, m.created_at DESC

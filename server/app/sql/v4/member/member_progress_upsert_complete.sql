@@ -172,19 +172,29 @@ create_message_if_needed AS (
 ),
 -- Create synthetic tool call for new user messages
 user_tool_call AS (
-    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
-    SELECT 'member_progress_user_' || cm.message_id::text, gst.tool_id, true, cm.created_at, cm.updated_at
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    SELECT 
+        'member_progress_user_' || cm.message_id::text, 
+        gst.tool_id, 
+        ur.run_id,
+        (SELECT template_id FROM tool_templates WHERE tool_id = gst.tool_id LIMIT 1),
+        '',
+        true, 
+        cm.created_at, 
+        cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN get_speak_tool_id gst
+    CROSS JOIN upserted_run ur
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
     RETURNING id as tool_call_id, created_at, updated_at
 ),
--- Get existing tool_call_id for existing user messages
+-- Get existing tool_call_id for existing user messages (via message_runs -> calls)
 existing_user_tool_call AS (
-    SELECT DISTINCT cnt.tool_call_id
+    SELECT DISTINCT tc.id as tool_call_id
     FROM latest_user_message lum
     JOIN message_content mc ON mc.message_id = lum.message_id AND mc.idx = 0
-    JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_runs mr ON mr.message_id = lum.message_id
+    JOIN calls tc ON tc.run_id = mr.run_id
     LIMIT 1
 ),
 -- Combine new and existing tool calls
@@ -194,8 +204,8 @@ user_tool_call_id AS (
     SELECT tool_call_id FROM existing_user_tool_call
 ),
 insert_user_content_if_needed AS (
-    INSERT INTO content (content, tool_call_id, created_at, updated_at)
-    SELECT p.message_content, utc.tool_call_id, cm.created_at, cm.updated_at
+    INSERT INTO content (content, created_at, updated_at)
+    SELECT p.message_content, cm.created_at, cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN params p
     CROSS JOIN user_tool_call_id utc

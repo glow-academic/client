@@ -27,8 +27,8 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH tool_call AS (
-    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
-    VALUES (concat('video:', uuidv7()::text), NULL, FALSE, NOW(), NOW())
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    VALUES (concat('video:', uuidv7()::text), NULL, NULL, NULL, '', FALSE, NOW(), NOW())
     RETURNING id
 ),
 insert_video AS (
@@ -38,11 +38,10 @@ insert_video AS (
         length_seconds,
         active,
         completed,
-        tool_call_id,
         created_at,
         updated_at
     )
-    SELECT name, name, length_seconds, TRUE, FALSE, tool_call.id, NOW(), NOW()
+    SELECT name, name, length_seconds, TRUE, FALSE, NOW(), NOW()
     FROM tool_call
     RETURNING id
 )

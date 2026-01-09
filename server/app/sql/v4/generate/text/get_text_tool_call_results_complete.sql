@@ -49,13 +49,11 @@ WITH tool_call_results AS (
     SELECT 
         jsonb_object_agg(
             t.name,
-            tca.arguments_json
+            CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb ELSE NULL END
         ) as tool_results
     FROM calls tc
-    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
-    JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id
-    WHERE tcr.run_id = $1
+    WHERE tc.run_id = $1
       AND tc.completed = true
 )
 SELECT 

@@ -37,13 +37,13 @@ WITH params AS (
 ),
 -- Get tool_call and final arguments
 get_tool_call AS (
-    SELECT tc.id as tool_call_id, tca.arguments_raw, tca.arguments_json
+    SELECT tc.id as tool_call_id, tc.arguments_raw, 
+           CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb ELSE NULL END as arguments_json
     FROM params p
     JOIN calls tc ON (
         (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
-        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+        OR (p.call_id IS NOT NULL AND tc.external_call_id = p.call_id)
     )
-    LEFT JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     LIMIT 1
 ),
 -- Parse template_html from arguments_json

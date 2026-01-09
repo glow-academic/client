@@ -48,43 +48,42 @@ get_tool_id AS (
 ),
 -- Get or create tool_call
 existing_tool_call AS (
-    SELECT tc.id as tool_call_id, tc.call_id
+    SELECT tc.id as tool_call_id, tc.external_call_id
     FROM params p
     JOIN calls tc ON (
         (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
-        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+        OR (p.call_id IS NOT NULL AND tc.external_call_id = p.call_id)
     )
     LIMIT 1
 ),
 create_tool_call AS (
-    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         COALESCE(p.call_id, 'document_schema_' || p.tool_call_id),
         gt.tool_id,
+        p.run_id,
+        (SELECT template_id FROM tool_templates WHERE tool_id = gt.tool_id LIMIT 1),
+        '',
         false,
         NOW(),
         NOW()
     FROM params p
     CROSS JOIN get_tool_id gt
     WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
-    RETURNING id as tool_call_id, call_id
+    RETURNING id as tool_call_id, external_call_id
 ),
 selected_tool_call AS (
-    SELECT tool_call_id::text, call_id FROM existing_tool_call
+    SELECT tool_call_id::text, external_call_id FROM existing_tool_call
     UNION ALL
-    SELECT tool_call_id::text, call_id FROM create_tool_call
+    SELECT tool_call_id::text, external_call_id FROM create_tool_call
 ),
--- Link tool_call to run
-link_tool_call_to_run AS (
-    INSERT INTO tool_call_runs (tool_call_id, run_id, created_at, updated_at)
-    SELECT 
-        uuid(stc.tool_call_id),
-        p.run_id,
-        NOW(),
-        NOW()
-    FROM params p
-    CROSS JOIN selected_tool_call stc
-    ON CONFLICT (tool_call_id, run_id) DO UPDATE SET updated_at = NOW()
+-- Update run_id on calls if needed (run_id is now a direct column)
+update_call_run_id AS (
+    UPDATE calls
+    SET run_id = (SELECT p.run_id FROM params p LIMIT 1), updated_at = NOW()
+    WHERE id IN (SELECT uuid(tool_call_id) FROM selected_tool_call)
+      AND run_id IS DISTINCT FROM (SELECT p.run_id FROM params p LIMIT 1)
+    RETURNING calls.id
 ),
 -- Accumulate arguments_raw (SQL accumulates!)
 accumulate_arguments AS (
@@ -94,9 +93,8 @@ accumulate_arguments AS (
             WHEN p.progress_type = 'tool_call_start' THEN COALESCE(p.arguments_delta, '')
             WHEN p.progress_type = 'tool_call_progress' THEN 
                 COALESCE(
-                    (SELECT arguments_raw FROM tool_call_arguments tca 
-                     WHERE tca.tool_call_id = uuid(stc.tool_call_id) 
-                     ORDER BY created_at DESC LIMIT 1),
+                    (SELECT arguments_raw FROM calls c 
+                     WHERE c.id = uuid(stc.tool_call_id)),
                     ''
                 ) || COALESCE(p.arguments_delta, '')
             ELSE COALESCE(p.arguments_delta, '')
@@ -104,26 +102,18 @@ accumulate_arguments AS (
     FROM params p
     CROSS JOIN selected_tool_call stc
 ),
--- Upsert tool_call_arguments (SQL accumulates)
-upsert_tool_call_arguments AS (
-    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at)
-    SELECT 
-        aa.tool_call_id,
-        CASE 
-            WHEN aa.accumulated_raw ~ '^[\s]*\{' THEN aa.accumulated_raw::jsonb
-            ELSE NULL
-        END,
-        aa.accumulated_raw,
-        NOW()
-    FROM accumulate_arguments aa
-    WHERE aa.accumulated_raw IS NOT NULL AND aa.accumulated_raw != ''
-    ON CONFLICT (tool_call_id) DO UPDATE SET
-        arguments_raw = EXCLUDED.arguments_raw,
-        arguments_json = EXCLUDED.arguments_json
+-- Update arguments_raw on calls (arguments_raw is now a direct column)
+update_call_arguments AS (
+    UPDATE calls
+    SET arguments_raw = (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1), updated_at = NOW()
+    WHERE id IN (SELECT tool_call_id FROM accumulate_arguments)
+      AND (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) IS NOT NULL 
+      AND (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) != ''
+    RETURNING calls.id
 )
 SELECT 
     (SELECT tool_call_id FROM selected_tool_call LIMIT 1) as tool_call_id,
-    (SELECT call_id FROM selected_tool_call LIMIT 1) as persisted_call_id,
+    (SELECT external_call_id FROM selected_tool_call LIMIT 1) as persisted_call_id,
     (SELECT accumulated_raw FROM accumulate_arguments LIMIT 1) as arguments_raw
 $$;
 

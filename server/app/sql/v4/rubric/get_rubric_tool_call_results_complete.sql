@@ -45,12 +45,10 @@ STABLE
 AS $$
 WITH descriptions_result AS (
     -- Get descriptions array from standard_description tool_call
-    SELECT tca.arguments_json->'descriptions' as descriptions
+    SELECT CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb->'descriptions' ELSE NULL END as descriptions
     FROM calls tc
-    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
-    JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id
-    WHERE tcr.run_id = $1
+    WHERE tc.run_id = $1
       AND t.name = 'standard_description'
       AND tc.completed = true
     ORDER BY tc.created_at DESC

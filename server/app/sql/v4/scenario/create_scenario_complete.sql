@@ -600,33 +600,23 @@ link_images AS (
 ),
 link_problem_statements_to_runs AS (
     -- Link problem statements to run via tool_call if run_id provided
+    -- Note: Problem statements no longer have tool_call_id, so we can't verify the run relationship
+    -- This CTE is kept for compatibility but doesn't perform verification
     SELECT DISTINCT
         cps.problem_statement_id,
         (SELECT run_id FROM params) as run_id
     FROM create_problem_statements cps
     WHERE (SELECT run_id FROM params) IS NOT NULL
-    AND EXISTS (
-        SELECT 1 FROM problem_statements ps
-        JOIN calls tc ON tc.id = ps.tool_call_id
-        JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
-        WHERE ps.id = cps.problem_statement_id
-        AND tcr.run_id = (SELECT run_id FROM params)
-    )
 ),
 link_objectives_to_runs AS (
     -- Link objectives to run via tool_call if run_id provided
+    -- Note: Objectives no longer have tool_call_id, so we can't verify the run relationship
+    -- This CTE is kept for compatibility but doesn't perform verification
     SELECT DISTINCT
         ao.objective_id,
         (SELECT run_id FROM params) as run_id
     FROM all_objectives ao
     WHERE (SELECT run_id FROM params) IS NOT NULL
-    AND EXISTS (
-        SELECT 1 FROM objectives o
-        JOIN calls tc ON tc.id = o.tool_call_id
-        JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
-        WHERE o.id = ao.objective_id
-        AND tcr.run_id = (SELECT run_id FROM params)
-    )
 ),
 link_videos AS (
     -- Link videos to scenario via junction table

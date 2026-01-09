@@ -46,12 +46,10 @@ STABLE
 AS $$
 WITH html_result AS (
     -- Get template_html from generate_html tool_call
-    SELECT tca.arguments_json->>'template_html' as template_html
+    SELECT CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb->>'template_html' ELSE NULL END as template_html
     FROM calls tc
-    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
-    JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id
-    WHERE tcr.run_id = $1
+    WHERE tc.run_id = $1
       AND t.name = 'create_html'
       AND tc.completed = true
     ORDER BY tc.created_at DESC
@@ -59,12 +57,10 @@ WITH html_result AS (
 ),
 schema_result AS (
     -- Get schema_json from generate_schema tool_call
-    SELECT tca.arguments_json->>'schema_json' as schema_json
+    SELECT CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb->>'schema_json' ELSE NULL END as schema_json
     FROM calls tc
-    JOIN tool_call_runs tcr ON tcr.tool_call_id = tc.id
-    JOIN tool_call_arguments tca ON tca.tool_call_id = tc.id
     JOIN tools t ON t.id = tc.tool_id
-    WHERE tcr.run_id = $1
+    WHERE tc.run_id = $1
       AND t.name = 'create_schema'
       AND tc.completed = true
     ORDER BY tc.created_at DESC

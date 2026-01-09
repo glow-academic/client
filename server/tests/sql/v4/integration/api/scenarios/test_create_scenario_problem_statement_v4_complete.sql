@@ -18,8 +18,8 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_problem_statement AS (
-        INSERT INTO problem_statements(name, problem_statement, tool_call_id)
-        SELECT 'Test Problem Statement', test_create_scenario_problem_statement_v4.input_problem_statement, (SELECT id FROM calls LIMIT 1)
+        INSERT INTO problem_statements(name, problem_statement)
+        SELECT 'Test Problem Statement', test_create_scenario_problem_statement_v4.input_problem_statement
         RETURNING id, problem_statement, created_at
     ),
     new_link AS (

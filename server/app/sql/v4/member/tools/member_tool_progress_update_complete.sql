@@ -59,43 +59,51 @@ message_role AS (
 ),
 -- Get or create tool_call
 existing_tool_call AS (
-    SELECT tc.id as tool_call_id
+    SELECT tc.id as tool_call_id, tc.external_call_id
     FROM params p
     JOIN calls tc ON (
         (p.tool_call_id IS NOT NULL AND tc.id::text = p.tool_call_id)
-        OR (p.call_id IS NOT NULL AND tc.call_id = p.call_id)
+        OR (p.call_id IS NOT NULL AND tc.external_call_id = p.call_id)
     )
     LIMIT 1
 ),
 create_tool_call AS (
-    INSERT INTO calls (call_id, tool_id, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         COALESCE(p.call_id, 'member_' || p.tool_call_id),
         gt.tool_id,
+        p.run_id,
+        (SELECT template_id FROM tool_templates WHERE tool_id = gt.tool_id LIMIT 1),
+        COALESCE(p.arguments_raw, ''),
         false,
         NOW(),
         NOW()
     FROM params p
     CROSS JOIN get_tool_id gt
     WHERE NOT EXISTS (SELECT 1 FROM existing_tool_call)
-    RETURNING id as tool_call_id, call_id
+    RETURNING id as tool_call_id, external_call_id
 ),
 selected_tool_call AS (
-    SELECT tool_call_id::text, call_id FROM existing_tool_call
+    SELECT tool_call_id::text, external_call_id FROM existing_tool_call
     UNION ALL
-    SELECT tool_call_id::text, call_id FROM create_tool_call
+    SELECT tool_call_id::text, external_call_id FROM create_tool_call
 ),
--- Link tool_call to run
-link_tool_call_to_run AS (
-    INSERT INTO tool_call_runs (tool_call_id, run_id, created_at, updated_at)
-    SELECT 
-        uuid(stc.tool_call_id),
-        p.run_id,
-        NOW(),
-        NOW()
-    FROM params p
-    CROSS JOIN selected_tool_call stc
-    ON CONFLICT (tool_call_id, run_id) DO UPDATE SET updated_at = NOW()
+-- Update run_id on calls if needed (run_id is now a direct column)
+update_call_run_id AS (
+    UPDATE calls
+    SET run_id = (SELECT p.run_id FROM params p LIMIT 1), updated_at = NOW()
+    WHERE id IN (SELECT uuid(tool_call_id) FROM selected_tool_call)
+      AND run_id IS DISTINCT FROM (SELECT p.run_id FROM params p LIMIT 1)
+    RETURNING calls.id
+),
+-- Update arguments_raw on calls if provided
+update_call_arguments AS (
+    UPDATE calls
+    SET arguments_raw = COALESCE((SELECT p.arguments_raw FROM params p LIMIT 1), ''), updated_at = NOW()
+    WHERE id IN (SELECT uuid(tool_call_id) FROM selected_tool_call)
+      AND (SELECT p.arguments_raw FROM params p LIMIT 1) IS NOT NULL 
+      AND (SELECT p.arguments_raw FROM params p LIMIT 1) != ''
+    RETURNING calls.id
 ),
 -- Get or create message
 existing_message AS (
@@ -106,9 +114,9 @@ existing_message AS (
     SELECT m.id as message_id
     FROM params p
     JOIN selected_tool_call stc ON true
-    JOIN message_content mc ON mc.message_id IS NOT NULL
-    JOIN content cnt ON cnt.id = mc.content_id AND cnt.tool_call_id = uuid(stc.tool_call_id)
-    JOIN messages m ON m.id = mc.message_id
+    JOIN calls tc ON tc.id = uuid(stc.tool_call_id)
+    JOIN message_runs mr ON mr.run_id = tc.run_id
+    JOIN messages m ON m.id = mr.message_id
     WHERE p.message_id IS NULL
     LIMIT 1
 ),
@@ -140,10 +148,9 @@ get_existing_content AS (
     LIMIT 1
 ),
 create_content AS (
-    INSERT INTO content (content, tool_call_id, created_at, updated_at)
+    INSERT INTO content (content, created_at, updated_at)
     SELECT 
         p.accumulated_content,
-        uuid(stc.tool_call_id),
         NOW(),
         NOW()
     FROM params p

@@ -83,13 +83,21 @@ get_tool_id AS (
 get_existing_tool_call AS (
     SELECT tc.id as tool_call_id
     FROM params p
-    JOIN calls tc ON tc.call_id = p.call_id
+    JOIN calls tc ON tc.external_call_id = p.call_id
     WHERE p.call_id IS NOT NULL
     LIMIT 1
 ),
 create_tool_call_if_needed AS (
-    INSERT INTO calls (call_id, tool_id, created_at, updated_at)
-    SELECT p.call_id, gt.tool_id, NOW(), NOW()
+    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    SELECT 
+        p.call_id, 
+        gt.tool_id, 
+        p.run_id,
+        (SELECT template_id FROM tool_templates WHERE tool_id = gt.tool_id LIMIT 1),
+        COALESCE(p.arguments_raw, ''),
+        false,
+        NOW(), 
+        NOW()
     FROM params p
     CROSS JOIN get_tool_id gt
     WHERE p.call_id IS NOT NULL
@@ -102,36 +110,22 @@ selected_tool_call AS (
     UNION ALL
     SELECT tool_call_id FROM create_tool_call_if_needed
 ),
--- Link tool call to run
-link_tool_call_to_run AS (
-    INSERT INTO tool_call_runs (tool_call_id, run_id, created_at, updated_at)
-    SELECT stc.tool_call_id, p.run_id, NOW(), NOW()
-    FROM params p
-    CROSS JOIN selected_tool_call stc
-    WHERE stc.tool_call_id IS NOT NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM tool_call_runs tcr 
-          WHERE tcr.tool_call_id = stc.tool_call_id 
-          AND tcr.run_id = p.run_id
-      )
+-- Update run_id on calls if needed (run_id is now a direct column)
+update_call_run_id AS (
+    UPDATE calls
+    SET run_id = (SELECT p.run_id FROM params p LIMIT 1), updated_at = NOW()
+    WHERE id IN (SELECT tool_call_id FROM selected_tool_call)
+      AND run_id IS DISTINCT FROM (SELECT p.run_id FROM params p LIMIT 1)
+    RETURNING calls.id
 ),
--- Update tool call arguments
-update_tool_call_arguments AS (
-    INSERT INTO tool_call_arguments (tool_call_id, arguments_json, arguments_raw, created_at)
-    SELECT 
-        stc.tool_call_id,
-        COALESCE(safe_jsonb_parse(p.arguments_raw), '{}'::jsonb),
-        p.arguments_raw,
-        NOW()
-    FROM params p
-    CROSS JOIN selected_tool_call stc
-    WHERE stc.tool_call_id IS NOT NULL
-      AND p.arguments_raw IS NOT NULL
-    ON CONFLICT (tool_call_id) 
-    DO UPDATE SET 
-        arguments_json = COALESCE(safe_jsonb_parse(EXCLUDED.arguments_raw), tool_call_arguments.arguments_json),
-        arguments_raw = EXCLUDED.arguments_raw
-    RETURNING tool_call_id
+-- Update arguments_raw on calls if provided (arguments_raw is now a direct column)
+update_call_arguments AS (
+    UPDATE calls
+    SET arguments_raw = COALESCE((SELECT p.arguments_raw FROM params p LIMIT 1), ''), updated_at = NOW()
+    WHERE id IN (SELECT tool_call_id FROM selected_tool_call)
+      AND (SELECT p.arguments_raw FROM params p LIMIT 1) IS NOT NULL 
+      AND (SELECT p.arguments_raw FROM params p LIMIT 1) != ''
+    RETURNING calls.id
 ),
 -- Finalize tool call if is_complete
 finalize_tool_call AS (
