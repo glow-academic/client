@@ -32,26 +32,28 @@ default_settings AS (
 ),
 -- Try department-specific settings first
 dept_encrypted_items AS (
-    SELECT ai.name, k.key as value, ai.encrypted
-    FROM auth_items ai
-    JOIN setting_auth_keys sak ON sak.auth_item_id = ai.id AND sak.active = true
+    SELECT i.name, k.key as value, i.encrypted
+    FROM auth_items ai_j
+    JOIN items i ON i.id = ai_j.item_id
+    JOIN setting_auth_keys sak ON sak.auth_item_id = i.id AND sak.active = true
     JOIN dept_settings ds ON sak.settings_id = ds.settings_id
     JOIN keys k ON k.id = sak.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
-    WHERE ai.auth_id = api_get_auth_items_v4.auth_id AND ai.encrypted = true
+    WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id AND i.encrypted = true
 ),
 -- Fall back to default settings if department-specific has no keys
 default_encrypted_items AS (
-    SELECT ai.name, k.key as value, ai.encrypted
-    FROM auth_items ai
-    JOIN setting_auth_keys sak ON sak.auth_item_id = ai.id AND sak.active = true
+    SELECT i.name, k.key as value, i.encrypted
+    FROM auth_items ai_j
+    JOIN items i ON i.id = ai_j.item_id
+    JOIN setting_auth_keys sak ON sak.auth_item_id = i.id AND sak.active = true
     JOIN default_settings ds ON sak.settings_id = ds.settings_id
     JOIN keys k ON k.id = sak.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
-    WHERE ai.auth_id = api_get_auth_items_v4.auth_id 
-      AND ai.encrypted = true
+    WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id 
+      AND i.encrypted = true
       -- Only use default if department-specific didn't have this key
       AND NOT EXISTS (
           SELECT 1 FROM dept_encrypted_items dei 
-          WHERE dei.name = ai.name
+          WHERE dei.name = i.name
       )
 ),
 -- Combine encrypted items (dept first, then default fallback)
@@ -62,22 +64,24 @@ encrypted_items AS (
 ),
 -- Same logic for non-encrypted items
 dept_non_encrypted_items AS (
-    SELECT ai.name, sav.value, ai.encrypted
-    FROM auth_items ai
-    JOIN setting_auth_values sav ON sav.auth_item_id = ai.id
+    SELECT i.name, sav.value, i.encrypted
+    FROM auth_items ai_j
+    JOIN items i ON i.id = ai_j.item_id
+    JOIN setting_auth_values sav ON sav.auth_item_id = i.id
     JOIN dept_settings ds ON sav.settings_id = ds.settings_id
-    WHERE ai.auth_id = api_get_auth_items_v4.auth_id AND ai.encrypted = false
+    WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id AND i.encrypted = false
 ),
 default_non_encrypted_items AS (
-    SELECT ai.name, sav.value, ai.encrypted
-    FROM auth_items ai
-    JOIN setting_auth_values sav ON sav.auth_item_id = ai.id
+    SELECT i.name, sav.value, i.encrypted
+    FROM auth_items ai_j
+    JOIN items i ON i.id = ai_j.item_id
+    JOIN setting_auth_values sav ON sav.auth_item_id = i.id
     JOIN default_settings ds ON sav.settings_id = ds.settings_id
-    WHERE ai.auth_id = api_get_auth_items_v4.auth_id 
-      AND ai.encrypted = false
+    WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id 
+      AND i.encrypted = false
       AND NOT EXISTS (
           SELECT 1 FROM dept_non_encrypted_items dni 
-          WHERE dni.name = ai.name
+          WHERE dni.name = i.name
       )
 ),
 non_encrypted_items AS (

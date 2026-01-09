@@ -66,7 +66,7 @@ feedback_rows AS (
             ARRAY[]::text[]
         ) as author_emails,
         COALESCE(f.profile_id::text, '') as author_profile_id
-    FROM feedback f
+    FROM problems f
     LEFT JOIN profiles p ON p.id = f.profile_id
     LEFT JOIN profile_emails pe ON pe.profile_id = f.profile_id AND pe.active = true
     GROUP BY f.id, f.type, f.message, f.created_at, f.resolved, f.profile_id

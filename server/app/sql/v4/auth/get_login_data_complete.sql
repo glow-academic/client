@@ -109,7 +109,7 @@ dept_auths AS (
     FROM auth a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
     JOIN dept_settings ds ON ds.settings_id = sa.settings_id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
 ),
 -- Get auths linked to default settings
 default_auths AS (
@@ -117,21 +117,21 @@ default_auths AS (
     FROM auth a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
     JOIN default_settings ds ON ds.settings_id = sa.settings_id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
 ),
 -- Providers query (always returns at least one row)
 providers_data AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (a.slug::text, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)::text, COALESCE(a.icon_url, '')::text, EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id))::types.q_get_login_data_v4_provider
-                ORDER BY (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)
+                ((SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1)::text, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)::text, ''::text, EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id))::types.q_get_login_data_v4_provider
+                ORDER BY (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)
             ),
             '{}'::types.q_get_login_data_v4_provider[]
         ) as providers
     FROM auth a
     CROSS JOIN (SELECT guest_login_enabled FROM active_settings LIMIT 1) s
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
       AND (
           -- Include if department_id not provided (show all auths from all settings)
           (SELECT department_id FROM params) IS NULL

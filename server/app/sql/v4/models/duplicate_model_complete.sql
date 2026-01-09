@@ -48,7 +48,8 @@ source_model AS (
         (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
         (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
         EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE),
-        (SELECT mp.provider_id FROM model_providers mp WHERE mp.model_id = m.id LIMIT 1) as provider_id,
+        (SELECT d.id FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id WHERE md_j.model_id = m.id LIMIT 1) as domain_id,
+        (SELECT dp.provider FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider,
         m.value
     FROM params x
     JOIN models m ON m.id = x.model_id
@@ -106,18 +107,18 @@ link_model_description AS (
     CROSS JOIN new_description_resource ndr
     ON CONFLICT (model_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
--- Link model to provider
-link_model_provider AS (
-    INSERT INTO model_providers (model_id, provider_id, created_at, updated_at)
+-- Link model to domain (which links to provider via domain_providers)
+link_model_domain AS (
+    INSERT INTO model_domains (model_id, domain_id, created_at, updated_at)
     SELECT 
         dm.id,
-        sm.provider_id,
+        sm.domain_id,
         NOW(),
         NOW()
     FROM duplicated_model dm
     CROSS JOIN source_model sm
-    WHERE sm.provider_id IS NOT NULL
-    ON CONFLICT (model_id, provider_id) DO UPDATE SET updated_at = NOW()
+    WHERE sm.domain_id IS NOT NULL
+    ON CONFLICT (model_id, domain_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link model active flag (set to false for duplicate)
 link_model_active_flag AS (

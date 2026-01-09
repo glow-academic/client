@@ -76,10 +76,8 @@ draft_payload_data AS (
     LIMIT 1
 ),
 provider_exists_check AS (
-    -- Check if provider exists independently of access control
-    SELECT EXISTS(
-        SELECT 1 FROM providers WHERE id = (SELECT provider_id FROM params)
-    )::boolean as provider_exists
+    -- Providers is now an enum, not a table - always return false
+    SELECT false::boolean as provider_exists
 ),
 actor_profile AS (
     SELECT 
@@ -88,18 +86,16 @@ actor_profile AS (
     JOIN profiles p ON p.id = x.profile_id
 ),
 provider_data AS (
+    -- Providers is now an enum, not a table - return NULL values
     SELECT 
-        p.id as provider_id,
-        (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1),
-        (SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = p.id LIMIT 1) as description,
-        p.value,
-        EXISTS (SELECT 1 FROM provider_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.provider_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_provider_flags AND pf.value = TRUE) as active,
-        p.created_at,
-        p.updated_at,
-        COALESCE(pe.base_url, '') as base_url
-    FROM providers p
-    LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
-    WHERE p.id = (SELECT provider_id FROM params)
+        NULL::uuid as provider_id,
+        NULL::text as name,
+        NULL::text as description,
+        NULL::text as value,
+        false::boolean as active,
+        NULL::timestamptz as created_at,
+        NULL::timestamptz as updated_at,
+        ''::text as base_url
 ),
 user_profile AS (
     SELECT role 
@@ -107,11 +103,8 @@ user_profile AS (
     JOIN profiles p ON p.id = x.profile_id
 ),
 check_usage AS (
-    -- Check if provider is used by models
-    SELECT EXISTS(
-        SELECT 1 FROM models m 
-        WHERE EXISTS (SELECT 1 FROM model_providers mp WHERE mp.provider_id = (SELECT provider_id FROM params) AND mp.model_id = m.id) AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
-    ) as is_used
+    -- Providers is now an enum - always return false for usage check
+    SELECT false::boolean as is_used
 )
 SELECT 
     pec.provider_exists::boolean as provider_exists,

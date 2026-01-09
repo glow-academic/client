@@ -281,12 +281,12 @@ context_data AS (
         mrl.reasoning_level as reasoning,
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(p_prov.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
+        COALESCE(dp.provider::text, '') as provider,
+        COALESCE(e.base_url, '') as base_url,
         k.key as api_key,
-        CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
+        CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN m.value ELSE NULL END as custom_model,
         NULL::text as provider_id,
-        COALESCE(p_prov.value::text, '') as provider_name,
+        COALESCE(dp.provider::text, '') as provider_name,
         pa.agent_id::text as agent_id,
         
         -- Profile data (via attempt_profiles junction)
@@ -319,12 +319,15 @@ context_data AS (
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
+    LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
+    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN model_providers mp_prov ON mp_prov.model_id = m.id
-    LEFT JOIN providers p_prov ON p_prov.id = mp_prov.provider_id
+    LEFT JOIN model_domains md_j ON md_j.model_id = m.id
+    LEFT JOIN domains d ON d.id = md_j.domain_id
+    LEFT JOIN domain_providers dp ON dp.domain_id = d.id
+    -- Providers is now an enum, no need to join providers table
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
+    LEFT JOIN setting_provider_keys spk ON spk.provider = dp.provider 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
@@ -341,7 +344,7 @@ context_data AS (
              s.id,
              -- Prompt agent fields
              pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
-             m.id, m.value, p_prov.value, k.key, me.base_url, pa.agent_id, act_s.settings_id,
+             m.id, m.value, dp.provider, k.key, e.base_url, pa.agent_id, act_s.settings_id,
              -- Other fields
              ap.profile_id,
              prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at

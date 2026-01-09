@@ -44,10 +44,11 @@ active_settings AS (
 )
 SELECT spk.key_id::text as key_id
 FROM models m
-LEFT JOIN model_providers mp ON mp.model_id = m.id
-LEFT JOIN providers p ON p.id = mp.provider_id
+LEFT JOIN model_domains md_j ON md_j.model_id = m.id
+LEFT JOIN domains d ON d.id = md_j.domain_id
+LEFT JOIN domain_providers dp ON dp.domain_id = d.id
 CROSS JOIN active_settings act_s
-JOIN setting_provider_keys spk ON spk.provider_id = p.id 
+JOIN setting_provider_keys spk ON spk.provider = dp.provider 
     AND spk.settings_id = act_s.settings_id 
     AND spk.active = true
 JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true

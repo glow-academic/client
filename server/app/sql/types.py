@@ -16986,7 +16986,7 @@ class QGetProfileContextV4Draft(BaseModel):
 
 class QGetProfileContextV4Provider(BaseModel):
 
-    provider_id: UUID | None
+    provider_id: str | None
     name: str | None
     description: str | None
     value: str | None
@@ -22920,7 +22920,7 @@ class QGetSettingsDetailV4Auth(BaseModel):
 
 class QGetSettingsDetailV4Provider(BaseModel):
 
-    provider_id: UUID | None
+    provider_id: str | None
     name: str | None
     description: str | None
     value: str | None
@@ -23111,7 +23111,7 @@ class QGetSettingsDetailV4AuthValue(BaseModel):
 
 class QGetSettingsDetailV4ProviderKey(BaseModel):
 
-    provider_id: UUID | None
+    provider_id: str | None
     key_id: UUID | None
 
 class GetSettingsDetailSqlRow(BaseModel):
@@ -23291,7 +23291,7 @@ class IUpdateSettingsV4AuthValue(BaseModel):
 
 class IUpdateSettingsV4ProviderEnabled(BaseModel):
 
-    provider_id: UUID | None
+    provider: Any | None
     enabled: bool | None
 
 
@@ -23299,7 +23299,7 @@ class IUpdateSettingsV4ProviderEnabled(BaseModel):
 
 class IUpdateSettingsV4ProviderKey(BaseModel):
 
-    provider_id: UUID | None
+    provider: Any | None
     key_id: UUID | None
 
 class UpdateSettingsSqlParams(BaseModel):
@@ -23337,7 +23337,7 @@ class UpdateSettingsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert provider_keys composite array to tuples for asyncpg
         provider_keys_tuples = [
-            (conn.provider_id, conn.key_id)
+            (conn.provider, conn.key_id)
             for conn in self.provider_keys
         ]
         # Convert auth_keys composite array to tuples for asyncpg
@@ -23347,7 +23347,7 @@ class UpdateSettingsSqlParams(BaseModel):
         ]
         # Convert provider_enabled composite array to tuples for asyncpg
         provider_enabled_tuples = [
-            (conn.provider_id, conn.enabled)
+            (conn.provider, conn.enabled)
             for conn in self.provider_enabled
         ]
         # Convert auth_enabled composite array to tuples for asyncpg
@@ -23651,7 +23651,7 @@ class GetVoiceRegenerationRunContextAndCreateRunSqlRow(BaseModel):
     provider_id: UUID | None = None
     provider_name: str | None = None
     base_url: str | None = None
-    voice_provider_id: UUID | None = None
+    voice_provider_id: str | None = None
     voice_provider: str | None = None
     voice_base_url: str | None = None
     settings_id: UUID | None = None
@@ -23698,7 +23698,7 @@ class GetVoiceRegenerationRunContextAndCreateRunApiResponse(BaseModel):
     provider_id: UUID | None = None
     provider_name: str | None = None
     base_url: str | None = None
-    voice_provider_id: UUID | None = None
+    voice_provider_id: str | None = None
     voice_provider: str | None = None
     voice_base_url: str | None = None
     settings_id: UUID | None = None

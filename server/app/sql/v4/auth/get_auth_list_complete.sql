@@ -75,10 +75,11 @@ user_profile AS (
 ),
 auth_item_counts AS (
     SELECT 
-        auth_id,
+        ai_j.auth_id,
         COUNT(*) as num_items
-    FROM auth_items
-    GROUP BY auth_id
+    FROM auth_items ai_j
+    JOIN items i ON i.id = ai_j.item_id
+    GROUP BY ai_j.auth_id
 ),
 auth_sample_items AS (
     SELECT 
@@ -88,9 +89,10 @@ auth_sample_items AS (
             ORDER BY ai.name
         ) as sample_items
     FROM (
-        SELECT id, auth_id, name, description,
-               ROW_NUMBER() OVER (PARTITION BY auth_id ORDER BY name) as rn
-        FROM auth_items
+        SELECT i.id, ai_j.auth_id, i.name, i.description,
+               ROW_NUMBER() OVER (PARTITION BY ai_j.auth_id ORDER BY i.name) as rn
+        FROM auth_items ai_j
+        JOIN items i ON i.id = ai_j.item_id
     ) ai
     WHERE ai.rn <= 3
     GROUP BY ai.auth_id
@@ -99,7 +101,7 @@ SELECT
     up.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE), a.updated_at,
+            (a.id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE), a.updated_at,
              COALESCE(aic.num_items, 0),
              COALESCE(asi.sample_items, '{}'::types.q_get_auth_list_v4_auth_item[]),
              CASE WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END,

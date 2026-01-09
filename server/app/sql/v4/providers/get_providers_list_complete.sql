@@ -81,29 +81,20 @@ user_profile AS (
     JOIN profiles p ON p.id = x.profile_id
 ),
 provider_data AS (
+    -- Providers is now an enum, not a table - return empty results
     SELECT 
-        p.id as provider_id,
-        (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1) as name,
-        (SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = p.id LIMIT 1) as description,
-        p.value,
-        EXISTS (SELECT 1 FROM provider_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.provider_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_provider_flags AND pf.value = TRUE) as active,
-        p.created_at,
-        p.updated_at,
-        COALESCE(pe.base_url, '') as base_url,
-        CASE 
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
-            ELSE false
-        END as can_edit,
-        CASE 
-            -- Check if provider is used by models
-            WHEN EXISTS (SELECT 1 FROM model_providers mp JOIN models m ON m.id = mp.model_id WHERE mp.provider_id = p.id AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)) THEN false
-            WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
-            ELSE false
-        END as can_delete,
-        true as can_duplicate
-    FROM providers p
-    LEFT JOIN provider_endpoints pe ON pe.provider_id = p.id AND pe.active = true
-    CROSS JOIN user_profile up
+        NULL::uuid as provider_id,
+        NULL::text as name,
+        NULL::text as description,
+        NULL::text as value,
+        false::boolean as active,
+        NULL::timestamptz as created_at,
+        NULL::timestamptz as updated_at,
+        ''::text as base_url,
+        false::boolean as can_edit,
+        false::boolean as can_delete,
+        false::boolean as can_duplicate
+    WHERE false  -- Always return no rows
 ),
 providers_agg AS (
     SELECT 
@@ -118,16 +109,16 @@ providers_agg AS (
     FROM provider_data pd
 ),
 provider_options_agg AS (
+    -- Get provider options from domain_providers (providers is now enum)
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (p.value, (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1))::types.q_list_providers_v4_provider_option
-                ORDER BY (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1)
-            ) FILTER (WHERE EXISTS (SELECT 1 FROM provider_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.provider_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_provider_flags AND pf.value = true)),
+                (dp.provider::text, dp.provider::text)::types.q_list_providers_v4_provider_option
+                ORDER BY dp.provider::text
+            ),
             '{}'::types.q_list_providers_v4_provider_option[]
         ) as provider_options
-    FROM providers p
-    WHERE EXISTS (SELECT 1 FROM provider_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.provider_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_provider_flags AND pf.value = true)
+    FROM domain_providers dp
 )
 SELECT 
     pa.actor_name,

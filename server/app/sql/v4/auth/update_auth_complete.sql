@@ -106,10 +106,10 @@ delete_existing_values AS (
     SELECT 1 WHERE false
 ),
 delete_existing_items AS (
-    -- Delete all existing auth items (cascade will handle keys/values)
+    -- Delete all existing auth item links (cascade will handle keys/values)
     DELETE FROM auth_items
     WHERE auth_id = (SELECT auth_id FROM auth_id_resolved)
-    RETURNING id
+    RETURNING item_id
 ),
 -- Insert/update name in names table
 name_resource AS (
@@ -129,15 +129,66 @@ description_resource AS (
     ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
     RETURNING id as description_id
 ),
+-- Insert or get protocol
+protocol_resource AS (
+    INSERT INTO protocols (value, created_at, updated_at)
+    SELECT auth_type, NOW(), NOW()
+    FROM params
+    WHERE auth_type IS NOT NULL AND auth_type != ''
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as protocol_id
+),
+-- Insert or get slug
+slug_resource AS (
+    INSERT INTO slugs (value, created_at, updated_at)
+    SELECT slug, NOW(), NOW()
+    FROM params
+    WHERE slug IS NOT NULL AND slug != ''
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as slug_id
+),
 update_auth AS (
-    -- Update auth entry (without name/description/active columns)
+    -- Update auth entry (only updated_at, no other columns)
     UPDATE auth
-    SET 
-        auth_type = (SELECT auth_type FROM params),
-        slug = (SELECT slug FROM params),
-        updated_at = NOW()
+    SET updated_at = NOW()
     WHERE id = (SELECT auth_id FROM auth_id_resolved)
     RETURNING id as auth_id
+),
+-- Remove old protocol links
+remove_old_protocol AS (
+    DELETE FROM auth_protocols
+    WHERE auth_id = (SELECT auth_id FROM auth_id_resolved)
+      AND protocol_id NOT IN (SELECT protocol_id FROM protocol_resource)
+),
+-- Link auth to new protocol
+link_auth_protocol AS (
+    INSERT INTO auth_protocols (auth_id, protocol_id, created_at, updated_at)
+    SELECT 
+        ua.auth_id,
+        pr.protocol_id,
+        NOW(),
+        NOW()
+    FROM update_auth ua
+    CROSS JOIN protocol_resource pr
+    ON CONFLICT (auth_id, protocol_id) DO UPDATE SET updated_at = NOW()
+),
+-- Remove old slug links
+remove_old_slug AS (
+    DELETE FROM auth_slugs
+    WHERE auth_id = (SELECT auth_id FROM auth_id_resolved)
+      AND slug_id NOT IN (SELECT slug_id FROM slug_resource)
+),
+-- Link auth to new slug
+link_auth_slug AS (
+    INSERT INTO auth_slugs (auth_id, slug_id, created_at, updated_at)
+    SELECT 
+        ua.auth_id,
+        sr.slug_id,
+        NOW(),
+        NOW()
+    FROM update_auth ua
+    CROSS JOIN slug_resource sr
+    ON CONFLICT (auth_id, slug_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Remove old name links
 remove_old_name AS (
@@ -201,8 +252,9 @@ insert_auth_active_flag AS (
         updated_at = NOW()
 ),
 items_expanded AS (
-    -- Expand composite type array
+    -- Expand composite type array with row numbers for matching
     SELECT 
+        row_number() OVER () as item_idx,
         item.name as item_name,
         item.description as item_description,
         COALESCE(item.encrypted, true) as item_encrypted,
@@ -213,25 +265,47 @@ items_expanded AS (
     CROSS JOIN LATERAL unnest(x.auth_items) AS item
 ),
 new_items AS (
-    -- Create all auth items (without value column - dropped in migration)
-    INSERT INTO auth_items (
-        auth_id,
+    -- Create all items (standalone table)
+    INSERT INTO items (
         name,
         description,
         encrypted,
         position,
-        active
+        active,
+        created_at,
+        updated_at
     )
     SELECT 
-        ua.auth_id,
         ie.item_name,
         ie.item_description,
         ie.item_encrypted,
         ie.item_position,
-        ie.item_active
+        ie.item_active,
+        NOW(),
+        NOW()
+    FROM items_expanded ie
+    ORDER BY ie.item_idx
+    RETURNING id as item_id
+),
+items_with_idx AS (
+    -- Match created items back to their expanded data using row numbers
+    SELECT 
+        ROW_NUMBER() OVER (ORDER BY ni.item_id) as item_idx,
+        ni.item_id
+    FROM new_items ni
+),
+-- Link auth to items via junction table
+link_auth_items AS (
+    INSERT INTO auth_items (auth_id, item_id, created_at, updated_at)
+    SELECT 
+        ua.auth_id,
+        iwi.item_id,
+        NOW(),
+        NOW()
     FROM update_auth ua
     CROSS JOIN items_expanded ie
-    RETURNING id as item_id, encrypted
+    JOIN items_with_idx iwi ON iwi.item_idx = ie.item_idx
+    ON CONFLICT (auth_id, item_id) DO UPDATE SET updated_at = NOW()
 ),
 link_encrypted_keys AS (
     -- NOTE: auth_item_keys table was removed in migration 74

@@ -61,16 +61,16 @@ settings_auths AS (
     FROM auth a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
     JOIN selected_settings ss ON sa.settings_id = ss.settings_id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
 )
 -- Return providers for the selected settings
 SELECT DISTINCT
     a.id, 
-    a.slug, 
-    a.auth_type as provider_id, 
-    (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) 
+    (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1) as slug, 
+    (SELECT p.value FROM auth_protocols ap JOIN protocols p ON p.id = ap.protocol_id WHERE ap.auth_id = a.id LIMIT 1) as provider_id, 
+    (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1) 
 FROM auth a
-WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
   AND EXISTS (SELECT 1 FROM settings_auths sa WHERE sa.id = a.id)
-ORDER BY a.slug
+ORDER BY (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1)
 $$;

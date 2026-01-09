@@ -92,7 +92,7 @@ CREATE TYPE types.q_get_settings_detail_v4_auth AS (
 
 -- Provider
 CREATE TYPE types.q_get_settings_detail_v4_provider AS (
-    provider_id uuid,
+    provider_id text,
     name text,
     description text,
     value text,
@@ -101,7 +101,7 @@ CREATE TYPE types.q_get_settings_detail_v4_provider AS (
 
 -- Provider key mapping
 CREATE TYPE types.q_get_settings_detail_v4_provider_key AS (
-    provider_id uuid,
+    provider_id text,
     key_id uuid
 );
 
@@ -215,10 +215,10 @@ settings_auths_with_items AS (
     -- Get linked auths for this settings with nested auth_items
     SELECT 
         a.id as auth_id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
-        a.slug,
-        EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE) AS active,
+        (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), '') as description,
+        (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1) as slug,
+        EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE) AS active,
         COALESCE(
             ARRAY_AGG(
                 (ai.id, ai.name, COALESCE(ai.description, ''), ai.encrypted)::types.q_get_settings_detail_v4_auth_item
@@ -228,10 +228,11 @@ settings_auths_with_items AS (
         ) as auth_items
     FROM settings s
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
-    LEFT JOIN auth_items ai ON ai.auth_id = a.id
+    JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
+    LEFT JOIN auth_items ai_j ON ai_j.auth_id = a.id
+    LEFT JOIN items ai ON ai.id = ai_j.item_id
     WHERE s.id = (SELECT settings_id FROM params)
-    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), a.slug, EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
+    GROUP BY a.id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE)
 ),
 settings_auths_data AS (
     -- Aggregate linked auths into array
@@ -247,42 +248,41 @@ settings_auths_data AS (
     FROM settings_auths_with_items sawi
 ),
 settings_providers_data AS (
-    -- Get linked providers for this settings
+    -- Get linked providers for this settings (providers is now an enum)
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''), p.value, EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE))::types.q_get_settings_detail_v4_provider
-                ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
+                (sp.provider::text, sp.provider::text, '', sp.provider::text, sp.active)::types.q_get_settings_detail_v4_provider
+                ORDER BY sp.provider::text
             ),
             '{}'::types.q_get_settings_detail_v4_provider[]
         ) as providers,
-        ARRAY_AGG(p.id::text ORDER BY p.id::text) FILTER (WHERE p.id IS NOT NULL) as provider_ids
+        ARRAY_AGG(sp.provider::text ORDER BY sp.provider::text) as provider_ids
     FROM settings s
     JOIN setting_providers sp ON sp.settings_id = s.id AND sp.active = true
-    JOIN providers p ON p.id = sp.provider_id AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     WHERE s.id = (SELECT settings_id FROM params)
 ),
 all_providers_data AS (
-    -- Get ALL providers (not just linked ones)
+    -- Get ALL providers (not just linked ones) - providers is now an enum, get from domain_providers
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''), p.value, EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE))::types.q_get_settings_detail_v4_provider
-                ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
+                (dp.provider::text, dp.provider::text, '', dp.provider::text, true)::types.q_get_settings_detail_v4_provider
+                ORDER BY dp.provider::text
             ),
             '{}'::types.q_get_settings_detail_v4_provider[]
         ) as all_providers
-    FROM providers p
-    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+    FROM domain_providers dp
+    GROUP BY dp.provider
 ),
 all_auths_with_items AS (
     -- Get ALL auths (not just linked ones) with nested auth_items
     SELECT 
         a.id as auth_id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
-        a.slug,
-        EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE) AS active,
+        (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), '') as description,
+        (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1) as slug,
+        EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE) AS active,
         COALESCE(
             ARRAY_AGG(
                 (ai.id, ai.name, COALESCE(ai.description, ''), ai.encrypted)::types.q_get_settings_detail_v4_auth_item
@@ -291,9 +291,10 @@ all_auths_with_items AS (
             '{}'::types.q_get_settings_detail_v4_auth_item[]
         ) as auth_items
     FROM auth a
-    LEFT JOIN auth_items ai ON ai.auth_id = a.id
-    WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
-    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), a.slug, EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
+    LEFT JOIN auth_items ai_j ON ai_j.auth_id = a.id
+    LEFT JOIN items ai ON ai.id = ai_j.item_id
+    WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
+    GROUP BY a.id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE)
 ),
 all_auths_data AS (
     -- Aggregate all auths into array
@@ -312,8 +313,8 @@ settings_provider_keys_data AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (spk.provider_id, spk.key_id)::types.q_get_settings_detail_v4_provider_key
-                ORDER BY spk.provider_id
+                (spk.provider::text, spk.key_id)::types.q_get_settings_detail_v4_provider_key
+                ORDER BY spk.provider::text
             ),
             '{}'::types.q_get_settings_detail_v4_provider_key[]
         ) as provider_keys

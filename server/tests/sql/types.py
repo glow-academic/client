@@ -520,30 +520,6 @@ class GetFirstDepartmentApiResponse(BaseModel):
 
 
 
-# Generated from: get_first_model
-
-class GetFirstModelSqlParams(BaseModel):
-
-    pass
-
-class GetFirstModelSqlRow(BaseModel):
-
-    model_id: UUID | None = None
-    name: str | None = None
-    provider_id: UUID | None = None
-
-class GetFirstModelApiRequest(BaseModel):
-
-    pass
-
-class GetFirstModelApiResponse(BaseModel):
-
-    model_id: UUID | None = None
-    name: str | None = None
-    provider_id: UUID | None = None
-
-
-
 # Generated from: create_cohort_department_link
 
 class CreateCohortDepartmentLinkSqlParams(BaseModel):
@@ -3032,35 +3008,6 @@ class GetOrCreateTestDepartmentApiResponse(BaseModel):
 
 
 
-# Generated from: get_or_create_test_model
-
-class GetOrCreateTestModelSqlParams(BaseModel):
-
-    name: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name,
-        )
-
-class GetOrCreateTestModelSqlRow(BaseModel):
-
-    model_id: UUID | None = None
-    name: str | None = None
-    provider_id: UUID | None = None
-
-class GetOrCreateTestModelApiRequest(BaseModel):
-
-    name: str | None = None
-
-class GetOrCreateTestModelApiResponse(BaseModel):
-
-    model_id: UUID | None = None
-    name: str | None = None
-    provider_id: UUID | None = None
-
-
-
 # Generated from: get_or_create_test_profile
 
 class GetOrCreateTestProfileSqlParams(BaseModel):
@@ -3886,12 +3833,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFirstDepartmentApiRequest",
         "GetFirstDepartmentApiResponse",
     ),
-    "tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql": (
-        "GetFirstModelSqlParams",
-        "GetFirstModelSqlRow",
-        "GetFirstModelApiRequest",
-        "GetFirstModelApiResponse",
-    ),
     "tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql": (
         "CreateCohortDepartmentLinkSqlParams",
         "CreateCohortDepartmentLinkSqlRow",
@@ -4336,12 +4277,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetOrCreateTestDepartmentApiRequest",
         "GetOrCreateTestDepartmentApiResponse",
     ),
-    "tests/sql/v4/integration/helpers/test_get_or_create_test_model_v4_complete.sql": (
-        "GetOrCreateTestModelSqlParams",
-        "GetOrCreateTestModelSqlRow",
-        "GetOrCreateTestModelApiRequest",
-        "GetOrCreateTestModelApiResponse",
-    ),
     "tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql": (
         "GetOrCreateTestProfileSqlParams",
         "GetOrCreateTestProfileSqlRow",
@@ -4627,11 +4562,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -5002,11 +4932,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/helpers/test_get_or_create_test_department_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/helpers/test_get_or_create_test_model_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

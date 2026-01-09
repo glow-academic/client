@@ -290,8 +290,8 @@ context_data AS (
         s.id::text as scenario_id,
         (SELECT department_id::text FROM resolved_dept) as department_id,
         ps.problem_statement,
-        p.id::text as persona_id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
+        first_persona.persona_id::text as persona_id,
+        first_persona.persona_name as persona_name,
         COALESCE(
             COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
             ''
@@ -300,12 +300,12 @@ context_data AS (
         mrl.reasoning_level as reasoning,
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(p_prov.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
+        COALESCE(dp.provider::text, '') as provider,
+        COALESCE(e.base_url, '') as base_url,
         k.key as api_key,
-        CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
+        CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN m.value ELSE NULL END as custom_model,
         NULL::text as provider_id,
-        COALESCE(p_prov.value::text, '') as provider_name,
+        COALESCE(dp.provider::text, '') as provider_name,
         ma.agent_id::text as agent_id,
         COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), false) as image_input_enabled,
         COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
@@ -325,13 +325,11 @@ context_data AS (
         SELECT DISTINCT ON (sp.scenario_id) 
             sp.scenario_id,
             sp.persona_id,
-            (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name
+            (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1) as persona_name
         FROM scenario_personas sp
-        JOIN personas p ON p.id = sp.persona_id
-        WHERE sp.active = true AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
-        ORDER BY sp.scenario_id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
+        WHERE sp.active = true AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = sp.persona_id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+        ORDER BY sp.scenario_id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1)
     ) first_persona ON first_persona.scenario_id = s.id
-    LEFT JOIN personas p ON p.id = first_persona.persona_id
     CROSS JOIN member_agent ma
     JOIN agents a ON a.id = ma.agent_id AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
     LEFT JOIN agent_models am ON am.agent_id = a.id
@@ -346,11 +344,13 @@ context_data AS (
     LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
     LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    LEFT JOIN model_providers mp_prov ON mp_prov.model_id = m.id
-    LEFT JOIN providers p_prov ON p_prov.id = mp_prov.provider_id
+    LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
+    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
+    LEFT JOIN model_domains md_j ON md_j.model_id = m.id
+    LEFT JOIN domains d ON d.id = md_j.domain_id
+    LEFT JOIN domain_providers dp ON dp.domain_id = d.id
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
+    LEFT JOIN setting_provider_keys spk ON spk.provider = dp.provider 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
@@ -365,9 +365,9 @@ context_data AS (
              sa.id, sa.simulation_id,
              s.id, ps.problem_statement,
              first_persona.persona_id, first_persona.persona_name,
-             p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), 
+             dp.provider,
              pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
-             m.id, m.value, p_prov.value, k.key, me.base_url, ma.agent_id, act_s.settings_id,
+             m.id, m.value, dp.provider, k.key, e.base_url, ma.agent_id, act_s.settings_id,
              EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), ss.copy_paste_allowed,
              ap.profile_id,
              prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at

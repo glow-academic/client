@@ -124,15 +124,16 @@ key_departments_data AS (
     JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
 ),
--- Get model_ids via setting_provider_keys -> providers -> models
+-- Get model_ids via setting_provider_keys -> providers (enum) -> domains -> models
 key_models_data AS (
     SELECT 
         ARRAY_AGG(m.id::text ORDER BY (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)) as model_ids
     FROM params x
     JOIN setting_provider_keys spk ON spk.key_id = x.key_id AND spk.active = true
-    JOIN providers p ON p.id = spk.provider_id
-    JOIN model_providers mp ON mp.provider_id = p.id
-    JOIN models m ON m.id = mp.model_id AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
+    JOIN domain_providers dp ON dp.provider = spk.provider
+    JOIN domains d ON d.id = dp.domain_id
+    JOIN model_domains md_j ON md_j.domain_id = d.id
+    JOIN models m ON m.id = md_j.model_id AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
 ),
 valid_depts AS (
     SELECT 
@@ -155,13 +156,14 @@ models_data AS (
         m.id as model_id,
         (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description,
-        p.value as provider,
+        (SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider,
         EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
     FROM params x
     JOIN setting_provider_keys spk ON spk.key_id = x.key_id AND spk.active = true
-    JOIN providers p ON p.id = spk.provider_id
-    JOIN model_providers mp ON mp.provider_id = p.id
-    JOIN models m ON m.id = mp.model_id AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
+    JOIN domain_providers dp ON dp.provider = spk.provider
+    JOIN domains d ON d.id = dp.domain_id
+    JOIN model_domains md_j ON md_j.domain_id = d.id
+    JOIN models m ON m.id = md_j.model_id AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
 ),
 profile_data AS (
     SELECT role as user_role 

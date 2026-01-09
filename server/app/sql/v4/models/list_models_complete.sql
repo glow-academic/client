@@ -134,27 +134,24 @@ models_with_usage AS (
         EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
-        p.value as provider,
-        p.id as provider_id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as provider_name,
-        COALESCE(me.base_url, '') as base_url,
+        (SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider,
+        NULL::uuid as provider_id,  -- Provider is now enum, not UUID
+        (SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider_name,
+        COALESCE((SELECT e.base_url FROM model_endpoints me_j JOIN endpoints e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
         COALESCE(su.usage_count, 0) as simulation_usage_count,
         COALESCE(au.usage_count, 0) as agent_usage_count
     FROM models m
-    JOIN model_providers mp ON mp.model_id = m.id
-    JOIN providers p ON p.id = mp.provider_id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
     LEFT JOIN simulation_usage su ON su.model_id = m.id
     LEFT JOIN agent_usage au ON au.model_id = m.id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id
 ),
 provider_options_data AS (
-    SELECT 
-        p.value,
-        (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1) as label
-    FROM providers p
-    WHERE EXISTS (SELECT 1 FROM provider_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.provider_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_provider_flags AND pf.value = true)
-    ORDER BY (SELECT n.name FROM provider_names pn JOIN names n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1)
+    -- Get provider options from domain_providers (providers is now enum)
+    SELECT DISTINCT
+        dp.provider::text as value,
+        dp.provider::text as label
+    FROM domain_providers dp
+    ORDER BY dp.provider::text
 ),
 models_aggregated AS (
     SELECT 

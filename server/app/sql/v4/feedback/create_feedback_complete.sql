@@ -37,7 +37,7 @@ WITH actor_profile AS (
     WHERE p.id = profile_id
 ),
 new_feedback AS (
-    INSERT INTO feedback (type, message, profile_id, created_at)
+    INSERT INTO problems (type, message, profile_id, created_at)
     VALUES (type, message, profile_id, NOW())
     RETURNING id as feedback_id
 )

@@ -122,22 +122,23 @@ auth_data AS (
     CROSS JOIN user_profile up
 ),
 auth_items_data AS (
-    -- Get all auth items (values managed separately in settings page)
+    -- Get all auth items (values managed separately in settings page) via junction table
     SELECT 
-        ai.id as auth_item_id,
-        ai.name,
-        ai.description,
-        ai.position,
-        ai.active,
-        ai.encrypted,
+        i.id as auth_item_id,
+        i.name,
+        i.description,
+        i.position,
+        i.active,
+        i.encrypted,
         NULL::text as key_id,
         CASE 
-            WHEN ai.encrypted THEN '****'::text
+            WHEN i.encrypted THEN '****'::text
             ELSE ''::text
         END as value_masked
     FROM params x
-    JOIN auth_items ai ON ai.auth_id = x.auth_id
-    ORDER BY ai.position
+    JOIN auth_items ai_j ON ai_j.auth_id = x.auth_id
+    JOIN items i ON i.id = ai_j.item_id
+    ORDER BY i.position
 )
 SELECT 
     aec.auth_exists::boolean as auth_exists,

@@ -56,8 +56,8 @@ source_auth AS (
         (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = auth.id LIMIT 1) as name, 
         (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = auth.id LIMIT 1) as description, 
         EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = auth.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE) as active, 
-        auth_type, 
-        slug
+        (SELECT p.value FROM auth_protocols ap JOIN protocols p ON p.id = ap.protocol_id WHERE ap.auth_id = auth.id LIMIT 1) as auth_type, 
+        (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = auth.id LIMIT 1) as slug
     FROM params x
     JOIN auth ON auth.id = x.auth_id
 ),
@@ -79,17 +79,54 @@ description_resource AS (
     ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
     RETURNING id as description_id
 ),
+-- Insert or get protocol for new auth
+protocol_resource AS (
+    INSERT INTO protocols (value, created_at, updated_at)
+    SELECT auth_type, NOW(), NOW()
+    FROM source_auth
+    WHERE auth_type IS NOT NULL AND auth_type != ''
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as protocol_id
+),
+-- Insert or get slug for new auth
+slug_resource AS (
+    INSERT INTO slugs (value, created_at, updated_at)
+    SELECT slug || '-copy', NOW(), NOW()
+    FROM source_auth
+    WHERE slug IS NOT NULL AND slug != ''
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as slug_id
+),
 new_auth AS (
-    -- Create auth (without name/description/active columns)
-    INSERT INTO auth (
-        auth_type,
-        slug
-    )
-    SELECT 
-        auth_type,
-        slug || '-copy'
+    -- Create auth (no columns needed - all data in junction tables)
+    INSERT INTO auth (id)
+    SELECT uuidv7()
     FROM source_auth
     RETURNING id as auth_id
+),
+-- Link auth to protocol
+link_auth_protocol AS (
+    INSERT INTO auth_protocols (auth_id, protocol_id, created_at, updated_at)
+    SELECT 
+        na.auth_id,
+        pr.protocol_id,
+        NOW(),
+        NOW()
+    FROM new_auth na
+    CROSS JOIN protocol_resource pr
+    ON CONFLICT (auth_id, protocol_id) DO UPDATE SET updated_at = NOW()
+),
+-- Link auth to slug
+link_auth_slug AS (
+    INSERT INTO auth_slugs (auth_id, slug_id, created_at, updated_at)
+    SELECT 
+        na.auth_id,
+        sr.slug_id,
+        NOW(),
+        NOW()
+    FROM new_auth na
+    CROSS JOIN slug_resource sr
+    ON CONFLICT (auth_id, slug_id) DO UPDATE SET updated_at = NOW()
 ),
 -- Link auth to name
 link_auth_name AS (
@@ -134,33 +171,58 @@ link_auth_active_flag AS (
 ),
 source_items AS (
     SELECT 
-        ai.name,
-        ai.description,
-        ai.encrypted,
-        ai.position,
-        ai.active
+        ROW_NUMBER() OVER (ORDER BY i.position, i.id) as item_idx,
+        i.name,
+        i.description,
+        i.encrypted,
+        i.position,
+        i.active
     FROM source_auth sa
-    JOIN auth_items ai ON ai.auth_id = sa.id
+    JOIN auth_items ai_j ON ai_j.auth_id = sa.id
+    JOIN items i ON i.id = ai_j.item_id
 ),
 new_items AS (
-    INSERT INTO auth_items (
-        auth_id,
+    -- Create new items (standalone table)
+    INSERT INTO items (
         name,
         description,
         encrypted,
         position,
-        active
+        active,
+        created_at,
+        updated_at
     )
     SELECT 
-        na.auth_id,
         si.name,
         si.description,
         si.encrypted,
         si.position,
-        si.active
+        si.active,
+        NOW(),
+        NOW()
+    FROM source_items si
+    ORDER BY si.item_idx
+    RETURNING id as item_id
+),
+items_with_idx AS (
+    -- Match created items back to their source data using row numbers
+    SELECT 
+        ROW_NUMBER() OVER (ORDER BY ni.item_id) as item_idx,
+        ni.item_id
+    FROM new_items ni
+),
+-- Link auth to items via junction table
+link_auth_items AS (
+    INSERT INTO auth_items (auth_id, item_id, created_at, updated_at)
+    SELECT 
+        na.auth_id,
+        iwi.item_id,
+        NOW(),
+        NOW()
     FROM new_auth na
     CROSS JOIN source_items si
-    RETURNING id as item_id
+    JOIN items_with_idx iwi ON iwi.item_idx = si.item_idx
+    ON CONFLICT (auth_id, item_id) DO UPDATE SET updated_at = NOW()
 )
 SELECT 
     aec.auth_exists::boolean as auth_exists,

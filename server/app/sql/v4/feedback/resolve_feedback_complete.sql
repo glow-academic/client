@@ -27,7 +27,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-UPDATE feedback
+UPDATE problems
 SET resolved = api_resolve_feedback_v4.resolved
 WHERE id = feedback_id
 RETURNING id, resolved

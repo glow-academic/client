@@ -247,9 +247,8 @@ profile_rate_limit AS (
     -- Get rate limit for the profile
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles p
-    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    WHERE p.id = (SELECT profile_id FROM params)
+    FROM params p
+    LEFT JOIN profile_request_limits prl ON prl.profile_id = p.profile_id AND prl.active = true
 ),
 runs_today AS (
     -- Count model runs for this profile since start of day
@@ -409,8 +408,8 @@ context_data AS (
         -- Model data
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(p_prov.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
+        COALESCE(dp.provider::text, '') as provider,
+        COALESCE(e.base_url, '') as base_url,
         k.key as api_key,
         
         -- Profile data
@@ -447,12 +446,14 @@ context_data AS (
     -- Join reasoning from junction table
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
+    LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
+    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN model_providers mp ON mp.model_id = m.id
-    LEFT JOIN providers p_prov ON p_prov.id = mp.provider_id
+    LEFT JOIN model_domains md_j ON md_j.model_id = m.id
+    LEFT JOIN domains d ON d.id = md_j.domain_id
+    LEFT JOIN domain_providers dp ON dp.domain_id = d.id
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
+    LEFT JOIN setting_provider_keys spk ON spk.provider = dp.provider 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true

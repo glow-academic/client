@@ -330,8 +330,8 @@ context_data AS (
         ps.problem_statement,
         
         -- Persona data (via scenario_personas junction - first persona for orchestrator)
-        p.id::text as persona_id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
+        first_persona.persona_id::text as persona_id,
+        first_persona.persona_name as persona_name,
         
         -- Text agent/model data (backward compatibility - existing fields)
         COALESCE(
@@ -342,12 +342,12 @@ context_data AS (
         mrl.reasoning_level as reasoning,
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(p_prov.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
+        COALESCE(dp.provider::text, '') as provider,
+        COALESCE(e.base_url, '') as base_url,
         k.key as api_key,
-        CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
+        CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN m.value ELSE NULL END as custom_model,
         NULL::text as provider_id,
-        COALESCE(p_prov.value::text, '') as provider_name,
+        COALESCE(dp.provider::text, '') as provider_name,
         a.id::text as agent_id,
         
         -- Voice agent/model data (prefixed with voice_*)
@@ -359,11 +359,11 @@ context_data AS (
         mrl_voice.reasoning_level as voice_reasoning,
         m_voice.id::text as voice_model_id,
         m_voice.value as voice_model_name,
-        COALESCE(p_voice.value::text, '') as voice_provider,
-        COALESCE(me_voice.base_url, '') as voice_base_url,
+        COALESCE(dp_voice.provider::text, '') as voice_provider,
+        COALESCE(e_voice.base_url, '') as voice_base_url,
         k_voice.key as voice_api_key,
-        CASE WHEN me_voice.base_url IS NOT NULL AND me_voice.base_url != '' THEN m_voice.value ELSE NULL END as voice_custom_model,
-        COALESCE(p_voice.value::text, '') as voice_provider_name,
+        CASE WHEN e_voice.base_url IS NOT NULL AND e_voice.base_url != '' THEN m_voice.value ELSE NULL END as voice_custom_model,
+        COALESCE(dp_voice.provider::text, '') as voice_provider_name,
         a_voice.id::text as voice_agent_id,
         
         -- Scenario settings (flags moved from scenarios to simulation_scenarios)
@@ -389,14 +389,12 @@ context_data AS (
     CROSS JOIN group_data g
     -- Get first persona for orchestrator (via scenario_personas junction)
     LEFT JOIN LATERAL (
-        SELECT sp.persona_id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name
+        SELECT sp.persona_id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1) as persona_name
         FROM scenario_personas sp
-        JOIN personas p ON p.id = sp.persona_id
         WHERE sp.scenario_id = s.id AND sp.active = true
         ORDER BY sp.created_at
         LIMIT 1
     ) first_persona ON true
-    LEFT JOIN personas p ON p.id = first_persona.persona_id
     -- Text agent (use simulation agent - fallback to persona agent if persona_text_agents table exists)
     -- Note: For regeneration, we use simulation agent to match original run context
     LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
@@ -418,12 +416,14 @@ context_data AS (
     -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
+    LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
+    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN model_providers mp_prov ON mp_prov.model_id = m.id
-    LEFT JOIN providers p_prov ON p_prov.id = mp_prov.provider_id
+    LEFT JOIN model_domains md_j ON md_j.model_id = m.id
+    LEFT JOIN domains d ON d.id = md_j.domain_id
+    LEFT JOIN domain_providers dp ON dp.domain_id = d.id
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = p_prov.id 
+    LEFT JOIN setting_provider_keys spk ON spk.provider = dp.provider 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
@@ -447,12 +447,14 @@ context_data AS (
     -- Join voice reasoning from junction table
     LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
     LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.id = arl_voice.model_reasoning_level_id AND mrl_voice.active = true AND mrl_voice.model_id = m_voice.id
-    LEFT JOIN model_endpoints me_voice ON me_voice.model_id = m_voice.id AND me_voice.active = true
+    LEFT JOIN model_endpoints me_voice_j ON me_voice_j.model_id = m_voice.id
+    LEFT JOIN endpoints e_voice ON e_voice.id = me_voice_j.endpoint_id AND e_voice.active = true
     -- Get voice keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN model_providers mp_voice_prov ON mp_voice_prov.model_id = m_voice.id
-    LEFT JOIN providers p_voice ON p_voice.id = mp_voice_prov.provider_id
+    LEFT JOIN model_domains md_voice_j ON md_voice_j.model_id = m_voice.id
+    LEFT JOIN domains d_voice ON d_voice.id = md_voice_j.domain_id
+    LEFT JOIN domain_providers dp_voice ON dp_voice.domain_id = d_voice.id
     CROSS JOIN active_settings act_s_voice
-    LEFT JOIN setting_provider_keys spk_voice ON spk_voice.provider_id = p_voice.id 
+    LEFT JOIN setting_provider_keys spk_voice ON spk_voice.provider = dp_voice.provider 
         AND spk_voice.settings_id = act_s_voice.settings_id 
         AND spk_voice.active = true
     LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id 
@@ -469,13 +471,13 @@ context_data AS (
              sa.id, sa.simulation_id,
              s.id, ps.problem_statement,
              first_persona.persona_id, first_persona.persona_name,
-             p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), 
+             dp.provider,
              -- Text agent fields
              pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
-             m.id, m.value, p_prov.value, k.key, me.base_url, a.id, act_s.settings_id,
+             m.id, m.value, dp.provider, k.key, e.base_url, a.id, act_s.settings_id,
              -- Voice agent fields
              pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(mtl_voice.temperature, 0.0), mrl_voice.reasoning_level,
-             m_voice.id, m_voice.value, p_voice.value, k_voice.key, me_voice.base_url, a_voice.id, act_s_voice.settings_id,
+             m_voice.id, m_voice.value, dp_voice.provider, k_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
              -- Other fields
              EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), ss.copy_paste_allowed,
              ap.profile_id,

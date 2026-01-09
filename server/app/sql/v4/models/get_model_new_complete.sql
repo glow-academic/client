@@ -183,11 +183,11 @@ all_units_data AS (
     ORDER BY unit_category, value, name
 ),
 providers_aggregated AS (
+    -- Get providers from domain_providers (providers is now enum)
     SELECT 
-        ARRAY_AGG(p.id ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)) as valid_provider_ids,
-        ARRAY_AGG((p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''))::types.q_get_model_new_v4_provider ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)) as providers
-    FROM providers p
-    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+        ARRAY[]::uuid[] as valid_provider_ids,  -- Provider is enum, not UUID, so empty array
+        ARRAY_AGG((NULL::uuid, dp.provider::text, ''::text)::types.q_get_model_new_v4_provider ORDER BY dp.provider::text) as providers
+    FROM domain_providers dp
 ),
 departments_aggregated AS (
     SELECT 

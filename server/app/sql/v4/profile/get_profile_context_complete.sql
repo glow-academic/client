@@ -87,7 +87,7 @@ CREATE TYPE types.q_get_profile_context_v4_auth AS (
 );
 
 CREATE TYPE types.q_get_profile_context_v4_provider AS (
-    provider_id uuid,
+    provider_id text,
     name text,
     description text,
     value text
@@ -740,11 +740,11 @@ settings_resolution AS (
     settings_auths_data AS (
         -- Get linked auths for this settings
         SELECT 
-            ARRAY_AGG(a.id::text ORDER BY (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)) as auth_ids,
+            ARRAY_AGG(a.id::text ORDER BY (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)) as auth_ids,
             COALESCE(
                 ARRAY_AGG(
-                    (a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), ''), a.slug)::types.q_get_profile_context_v4_auth
-                    ORDER BY (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)
+                    (a.id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), COALESCE((SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), ''), (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1))::types.q_get_profile_context_v4_auth
+                    ORDER BY (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)
                 ),
                 '{}'::types.q_get_profile_context_v4_auth[]
             ) as auths
@@ -753,19 +753,18 @@ settings_resolution AS (
         JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
     ),
     settings_providers_data AS (
-        -- Get linked providers for this settings
+        -- Get linked providers for this settings (providers is now an enum)
         SELECT 
-            ARRAY_AGG(p.id::text ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)) as provider_ids,
+            ARRAY_AGG(sp.provider::text ORDER BY sp.provider::text) as provider_ids,
             COALESCE(
                 ARRAY_AGG(
-                    (p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''), p.value)::types.q_get_profile_context_v4_provider
-                    ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
+                    (sp.provider::text, sp.provider::text, '', sp.provider::text)::types.q_get_profile_context_v4_provider
+                    ORDER BY sp.provider::text
                 ),
                 '{}'::types.q_get_profile_context_v4_provider[]
             ) as providers
         FROM selected_settings ss
         JOIN setting_providers sp ON sp.settings_id = ss.settings_id AND sp.active = true
-        JOIN providers p ON p.id = sp.provider_id AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     ),
     settings_default_guest_data AS (
         -- Get default guest account: try selected settings first, fall back to default settings

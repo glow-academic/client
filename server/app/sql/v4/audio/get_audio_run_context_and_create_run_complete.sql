@@ -197,16 +197,16 @@ context_data AS (
         -- Model data
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(prov.value::text, '') as provider,
-        COALESCE(me.base_url, '') as base_url,
+        COALESCE(dp.provider::text, '') as provider,
+        COALESCE(e.base_url, '') as base_url,
         k.key as api_key,
         
-        -- Custom model (if any) - indicated by presence of base_url in model_endpoints
-        CASE WHEN me.base_url IS NOT NULL AND me.base_url != '' THEN m.value ELSE NULL END as custom_model,
+        -- Custom model (if any) - indicated by presence of base_url in endpoints
+        CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN m.value ELSE NULL END as custom_model,
         
-        -- Provider data (provider enum is now on models table, no separate providers table)
+        -- Provider data (provider is now enum, not UUID)
         NULL::text as provider_id,
-        COALESCE(prov.value::text, '') as provider_name,
+        COALESCE(dp.provider::text, '') as provider_name,
         
         -- Profile data
         p.profile_id::text as profile_id,
@@ -240,12 +240,14 @@ context_data AS (
     -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
-    LEFT JOIN model_endpoints me ON me.model_id = m.id AND me.active = true
-    -- Get keys via settings system: provider -> active settings -> setting_provider_keys
-    LEFT JOIN model_providers mp ON mp.model_id = m.id
-    LEFT JOIN providers prov ON prov.id = mp.provider_id
+    LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
+    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
+    -- Get keys via settings system: provider (enum) -> active settings -> setting_provider_keys
+    LEFT JOIN model_domains md_j ON md_j.model_id = m.id
+    LEFT JOIN domains d ON d.id = md_j.domain_id
+    LEFT JOIN domain_providers dp ON dp.domain_id = d.id
     CROSS JOIN active_settings act_s
-    LEFT JOIN setting_provider_keys spk ON spk.provider_id = prov.id 
+    LEFT JOIN setting_provider_keys spk ON spk.provider = dp.provider 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true

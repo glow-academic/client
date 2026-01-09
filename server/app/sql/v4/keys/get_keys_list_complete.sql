@@ -117,15 +117,16 @@ key_departments_data AS (
     WHERE spk.active = true
     GROUP BY spk.key_id
 ),
--- Get model_ids via setting_provider_keys -> providers -> models
+-- Get model_ids via setting_provider_keys -> providers (enum) -> domains -> models
 key_models_data AS (
     SELECT 
         spk.key_id,
         ARRAY_AGG(m.id::text ORDER BY (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)) as model_ids
     FROM setting_provider_keys spk
-    JOIN providers p ON p.id = spk.provider_id
-    JOIN model_providers mp ON mp.provider_id = p.id
-    JOIN models m ON m.id = mp.model_id
+    JOIN domain_providers dp ON dp.provider = spk.provider
+    JOIN domains d ON d.id = dp.domain_id
+    JOIN model_domains md_j ON md_j.domain_id = d.id
+    JOIN models m ON m.id = md_j.model_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
     GROUP BY spk.key_id
 ),
@@ -218,11 +219,9 @@ models_data AS (
         m.id as model_id,
         (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description,
-        p.value as provider,
+        (SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider,
         EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
     FROM models m
-    JOIN model_providers mp2 ON mp2.model_id = m.id
-    JOIN providers p ON p.id = mp2.provider_id
     WHERE m.id IN (SELECT model_id FROM all_model_ids)
 )
 SELECT 
