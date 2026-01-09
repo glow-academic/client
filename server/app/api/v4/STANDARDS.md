@@ -798,6 +798,105 @@ See `server/app/api/v4/personas/draft.py` and `server/app/sql/v4/personas/patch_
 
 See `server/app/api/v3/agents/list.py` and `server/app/sql/v4/agents/get_agents_list_complete.sql` as the reference implementation.
 
+## MCP Documentation Pattern
+
+**⚠️ CRITICAL: Artifact documentation lives alongside API routes.**
+
+### Documentation File Location
+
+Each artifact should have a `docs.py` file alongside its API route files:
+
+```
+server/app/api/v4/personas/
+├── get.py
+├── save.py
+├── list.py
+├── duplicate.py
+├── delete.py
+├── draft.py
+└── docs.py           # <-- Documentation here
+```
+
+### Documentation Function
+
+**Function Name**: `get_{artifact}_docs() -> dict[str, Any]`
+
+**Example**:
+```python
+# server/app/api/v4/personas/docs.py
+def get_personas_docs() -> dict[str, Any]:
+    """Get comprehensive documentation for the personas artifact."""
+    return {
+        "name": "personas",
+        "type": "artifact",
+        "database": {...},
+        "relationships": {...},
+        "api_routing": {...},
+        "resources": {...},
+        "frontend": {...},
+        "glow_context": {...}
+    }
+```
+
+### Documentation Schema
+
+The documentation dictionary should include:
+
+1. **database**: Table structure, columns, indexes, foreign keys
+2. **relationships**: Resources, junction tables, related artifacts
+3. **api_routing**: Endpoints, request/response models
+4. **resources**: Available resources for the artifact
+5. **frontend**: Components, pages, usage patterns
+6. **glow_context**: Description, use cases, related concepts
+
+### MCP Server Integration
+
+The MCP server imports artifact docs from API routes:
+
+```python
+# server/app/mcp/endpoints.py
+try:
+    from app.api.v4.personas.docs import get_personas_docs
+    ARTIFACT_DOCS["personas"] = get_personas_docs
+except ImportError:
+    pass
+```
+
+### Root GLOW Documentation
+
+General GLOW information lives in `server/app/mcp/docs.py`:
+
+```python
+# server/app/mcp/docs.py
+def get_glow_docs() -> dict[str, Any]:
+    """Get general GLOW documentation."""
+    return {
+        "name": "GLOW",
+        "description": "...",
+        "architecture": {...},
+        "concepts": {...},
+        "api_patterns": {...},
+        "sql_patterns": {...},
+        "mcp_server": {...}
+    }
+```
+
+### MCP Endpoints
+
+The MCP server exposes documentation via:
+
+- `docs_artifact(name: str) -> dict` - Get artifact-specific documentation
+- `docs() -> dict` - Get general GLOW documentation
+- `artifacts() -> list[dict]` - List artifacts with descriptions
+- `resources() -> list[dict]` - List resources with descriptions
+
+### Key Principles
+
+1. **Documentation lives with routes**: `docs.py` is alongside `get.py`, `save.py`, etc.
+2. **MCP imports docs**: MCP server imports from API routes, doesn't duplicate
+3. **Consistent pattern**: Each artifact follows same pattern for docs
+4. **Root docs separate**: General GLOW info in MCP folder, artifact-specific in API routes
+
 ## Benefits
 
 1. **Strong Typing**: PostgreSQL enforces types at database level, Pydantic enforces at API level
@@ -807,4 +906,5 @@ See `server/app/api/v3/agents/list.py` and `server/app/sql/v4/agents/get_agents_
 5. **No JSONB Parsing Errors**: Types are enforced at database level - no runtime `json.loads()` failures or type mismatches
 6. **Developer Experience**: Auto-completion, type checking, fewer runtime errors
 7. **Consistency**: Same pattern for API, WebSocket, and infrastructure endpoints
+8. **Documentation**: Artifact docs live with routes, MCP server exposes them for tool-based access
 

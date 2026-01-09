@@ -732,6 +732,11 @@ fastapi_app.include_router(socket_v4_router)
 # mounting the mcp servers - ensure trailing slashes for proper routing
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
 
+# Mount artifacts/resources MCP server
+from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
+
+fastapi_app.mount("/mcp", artifacts_resources_mcp_server.streamable_http_app(), name="Artifacts-Resources-MCP")
+
 # Create the combined ASGI app with Socket.IO
 app = socketio.ASGIApp(sio, fastapi_app, socketio_path=socket_path)
 
