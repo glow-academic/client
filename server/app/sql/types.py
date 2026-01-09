@@ -15454,6 +15454,7 @@ class QGetPersonaV4ColorOption(BaseModel):
     name: str | None
     description: str | None
     hex_code: str | None
+    generated: bool | None
 
 
 
@@ -15464,6 +15465,7 @@ class QGetPersonaV4ColorResource(BaseModel):
     name: str | None
     description: str | None
     hex_code: str | None
+    generated: bool | None
 
 
 
@@ -15473,6 +15475,7 @@ class QGetPersonaV4Department(BaseModel):
     department_id: UUID | None
     name: str | None
     description: str | None
+    generated: bool | None
 
 
 
@@ -15481,6 +15484,7 @@ class QGetPersonaV4DescriptionResource(BaseModel):
 
     id: UUID | None
     description: str | None
+    generated: bool | None
 
 
 
@@ -15489,6 +15493,7 @@ class QGetPersonaV4Example(BaseModel):
 
     example: str | None
     idx: int | None
+    generated: bool | None
 
 
 
@@ -15498,6 +15503,7 @@ class QGetPersonaV4Field(BaseModel):
     field_id: UUID | None
     name: str | None
     description: str | None
+    generated: bool | None
 
 
 
@@ -15508,6 +15514,7 @@ class QGetPersonaV4FlagResource(BaseModel):
     name: str | None
     description: str | None
     icon_id: UUID | None
+    generated: bool | None
 
 
 
@@ -15518,6 +15525,7 @@ class QGetPersonaV4IconOption(BaseModel):
     name: str | None
     description: str | None
     value: str | None
+    generated: bool | None
 
 
 
@@ -15528,6 +15536,7 @@ class QGetPersonaV4IconResource(BaseModel):
     name: str | None
     description: str | None
     value: str | None
+    generated: bool | None
 
 
 
@@ -15536,6 +15545,7 @@ class QGetPersonaV4InstructionsResource(BaseModel):
 
     id: UUID | None
     template: str | None
+    generated: bool | None
 
 
 
@@ -15544,6 +15554,7 @@ class QGetPersonaV4NameResource(BaseModel):
 
     id: UUID | None
     name: str | None
+    generated: bool | None
 
 class GetPersonaSqlRow(BaseModel):
 

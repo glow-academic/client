@@ -30,7 +30,8 @@ export interface ColorsProps {
     name: string | null;
     description: string | null;
     hex_code: string | null;
-  } | null; // Resource data from server (standardized prop name)
+    generated?: boolean;
+  } | null; // Resource data from server (standardized prop name; includes generated field)
   show_color?: boolean; // Whether to show this resource picker
   color_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   colors?: Array<{
@@ -38,7 +39,8 @@ export interface ColorsProps {
     name: string | null;
     description: string | null;
     hex_code: string | null;
-  }>; // All available colors from API
+    generated?: boolean;
+  }>; // All available colors from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onColorIdChange: (colorId: string | null) => void; // Update color_id in parent form state
   label?: string;
@@ -57,6 +59,7 @@ export interface ColorsProps {
     name: string;
     description: string;
     hex_code: string;
+    generated?: boolean;
   } | null;
   colorId?: string | null;
   presetColors?: ColorItem[];

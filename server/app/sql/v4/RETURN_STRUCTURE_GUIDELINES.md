@@ -41,10 +41,12 @@ After the required fields, resources follow consistent patterns based on whether
 
 **Order:**
 1. `{resource}_id` (uuid) - The selected resource ID
-2. `{resource}_resource` (composite type) - The selected resource object
+2. `{resource}_resource` (composite type) - The selected resource object (includes `generated` boolean field)
 3. `show_{resource}` (boolean) - Whether to show this resource picker (based on whether options exist)
 4. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs, never text)
-5. `{resource}` (array, optional) - All available options array (only for resources with options like colors/icons)
+5. `{resource}` (array, optional) - All available options array (only for resources with options like colors/icons; each option includes `generated` boolean)
+
+**Note:** The `{resource}_resource` composite type includes a `generated` boolean field that indicates if the resource was AI-generated. This enables regeneration workflows where users can regenerate resources with custom instructions.
 
 **Examples:**
 - **name**: `name_id`, `name_resource`, `show_name`, `name_suggestions`
@@ -62,10 +64,12 @@ After the required fields, resources follow consistent patterns based on whether
 
 **Order:**
 1. `{resource}_ids` (uuid[]) - Array of selected resource IDs
-2. `{resource}_resources` (composite_type[]) - Array of selected resource objects
+2. `{resource}_resources` (composite_type[]) - Array of selected resource objects (each includes `generated` boolean)
 3. `show_{resource}` (boolean) - Whether to show this resource picker
 4. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs)
-5. `{resource}` (composite_type[]) - **All available options array (comes last)**
+5. `{resource}` (composite_type[]) - **All available options array (comes last; each includes `generated` boolean)**
+
+**Note:** Each resource object in the arrays includes a `generated` boolean field that indicates if that specific resource was AI-generated. This provides a single standard pattern for both single-select and multi-select resources.
 
 **Examples:**
 - **departments**: `department_ids`, `department_resources`, `show_departments`, `department_suggestions`, `departments` (all available)
@@ -128,61 +132,61 @@ RETURNS TABLE (
     
     -- Single-select resources: name
     name_id uuid,
-    name_resource types.q_get_persona_v4_name_resource,
+    name_resource types.q_get_persona_v4_name_resource,  -- Includes: id, name, generated
     show_name boolean,
     name_suggestions uuid[],
     
     -- Single-select resources: description
     description_id uuid,
-    description_resource types.q_get_persona_v4_description_resource,
+    description_resource types.q_get_persona_v4_description_resource,  -- Includes: id, description, generated
     show_description boolean,
     description_suggestions uuid[],
     
     -- Single-select resources: color
     color_id uuid,
-    color_resource types.q_get_persona_v4_color_resource,
+    color_resource types.q_get_persona_v4_color_resource,  -- Includes: id, name, description, hex_code, generated
     show_color boolean,
     color_suggestions uuid[],
-    colors types.q_get_persona_v4_color_option[],  -- Array comes last
+    colors types.q_get_persona_v4_color_option[],  -- Array comes last; each includes generated
     
     -- Single-select resources: icon
     icon_id uuid,
-    icon_resource types.q_get_persona_v4_icon_resource,
+    icon_resource types.q_get_persona_v4_icon_resource,  -- Includes: id, name, description, value, generated
     show_icon boolean,
     icon_suggestions uuid[],
-    icons types.q_get_persona_v4_icon_option[],  -- Array comes last
+    icons types.q_get_persona_v4_icon_option[],  -- Array comes last; each includes generated
     
     -- Single-select resources: instructions
     instructions_id uuid,
-    instructions_resource types.q_get_persona_v4_instructions_resource,
+    instructions_resource types.q_get_persona_v4_instructions_resource,  -- Includes: id, template, generated
     show_instructions boolean,
     instructions_suggestions uuid[],
     
     -- Single-select resources: flag
     active_flag_id uuid,
-    flag_resource types.q_get_persona_v4_flag_resource,
+    flag_resource types.q_get_persona_v4_flag_resource,  -- Includes: id, name, description, icon_id, generated
     show_flag boolean,
     
     -- Multi-select resources: departments
     department_ids uuid[],
-    department_resources types.q_get_persona_v4_department[],
+    department_resources types.q_get_persona_v4_department[],  -- Each includes: department_id, name, description, generated
     show_departments boolean,
     department_suggestions uuid[],
-    departments types.q_get_persona_v4_department[],  -- Array comes last
+    departments types.q_get_persona_v4_department[],  -- Array comes last; each includes generated
     
     -- Multi-select resources: fields
     field_ids uuid[],
-    field_resources types.q_get_persona_v4_field[],
+    field_resources types.q_get_persona_v4_field[],  -- Each includes: field_id, name, description, generated
     show_fields boolean,
     field_suggestions uuid[],
-    fields types.q_get_persona_v4_field[],  -- Array comes last
+    fields types.q_get_persona_v4_field[],  -- Array comes last; each includes generated
     
     -- Multi-select resources: examples
     example_ids uuid[],
-    example_resources types.q_get_persona_v4_example[],
+    example_resources types.q_get_persona_v4_example[],  -- Each includes: example, idx, generated
     show_examples boolean,
     example_suggestions uuid[],
-    examples types.q_get_persona_v4_example[]  -- Array comes last
+    examples types.q_get_persona_v4_example[]  -- Array comes last; each includes generated
 )
 ```
 
@@ -199,10 +203,11 @@ RETURNS TABLE (
 1. **Required fields first**: `actor_name`, `{artifact}_exists`, `can_edit`, `disabled_reason`
 2. **Consistent resource patterns**: Single-select vs multi-select follow their respective patterns
 3. **Show flags for all**: Every resource has a `show_{resource}` boolean
-4. **Suggestions are UUIDs**: All `{resource}_suggestions` fields are `uuid[]`, never `text[]`
-5. **Arrays come last**: For resources with option arrays, the array comes last in that resource's group
-6. **Multi-select arrays last**: The full `{resource}` array comes last in multi-select resource groups
-7. **SELECT matches RETURN**: SELECT clause order must match RETURN TABLE order exactly
+4. **Generated field in resources**: All resource composite types include a `generated` boolean field to track AI generation
+5. **Suggestions are UUIDs**: All `{resource}_suggestions` fields are `uuid[]`, never `text[]`
+6. **Arrays come last**: For resources with option arrays, the array comes last in that resource's group
+7. **Multi-select arrays last**: The full `{resource}` array comes last in multi-select resource groups
+8. **SELECT matches RETURN**: SELECT clause order must match RETURN TABLE order exactly
 
 ## Migration Checklist
 
@@ -232,15 +237,19 @@ The standardized SQL return structure directly maps to standardized component pr
 
 **Props Pattern:**
 - `{resource}_id`: `string | null` - Current resource ID (from SQL `{resource}_id`)
-- `{resource}_resource`: `{ id: string; ... } | null` - Resource object (from SQL `{resource}_resource`)
+- `{resource}_resource`: `{ id: string; ...; generated: boolean } | null` - Resource object (from SQL `{resource}_resource`; includes `generated` field)
 - `show_{resource}`: `boolean` - Whether to show picker (from SQL `show_{resource}`)
 - `{resource}_suggestions`: `string[]` - Suggested resource IDs (from SQL `{resource}_suggestions`)
-- `{resource}`?: `Array<...>` - All available options (from SQL `{resource}` array, for color/icon)
+- `{resource}`?: `Array<{ ...; generated: boolean }>` - All available options (from SQL `{resource}` array, for color/icon; each includes `generated`)
 - `disabled`: `boolean` - Based on `can_edit` flag (inverted: `disabled = !can_edit`)
 - `onChange`: `(id: string | null) => void` - Callback to update resource ID
 - `onGenerate?`: `() => Promise<void>` - Optional AI generation handler
 - `isGenerating?`: `boolean` - Optional generation state
 - `create{Resource}Action?`: Action for creating new resources
+
+**Accessing Generated Status:**
+- Single-select: `name_resource?.generated ?? false` - Check if the selected resource was AI-generated
+- Options arrays: `colors.find(c => c.id === color_id)?.generated ?? false` - Check if a specific option was generated
 
 **Example - Names Component:**
 ```typescript
@@ -275,12 +284,16 @@ The standardized SQL return structure directly maps to standardized component pr
 
 **Props Pattern:**
 - `{resource}_ids`: `string[]` - Current resource IDs (from SQL `{resource}_ids`)
-- `{resource}_resources`: `Array<{ id: string; ... }>` - Selected resources (from SQL `{resource}_resources`)
+- `{resource}_resources`: `Array<{ id: string; ...; generated: boolean }>` - Selected resources (from SQL `{resource}_resources`; each includes `generated`)
 - `show_{resource}`: `boolean` - Whether to show picker (from SQL `show_{resource}`)
 - `{resource}_suggestions`: `string[]` - Suggested resource IDs (from SQL `{resource}_suggestions`)
-- `{resource}`: `Array<{ id: string; ... }>` - All available options (from SQL `{resource}` array)
+- `{resource}`: `Array<{ id: string; ...; generated: boolean }>` - All available options (from SQL `{resource}` array; each includes `generated`)
 - `disabled`: `boolean` - Based on `can_edit` flag (inverted: `disabled = !can_edit`)
 - `onChange`: `(ids: string[]) => void` - Callback to update resource IDs array
+
+**Accessing Generated Status:**
+- Multi-select: `department_resources.some(d => d.generated)` - Check if any selected resource was generated
+- Individual check: `department_resources.find(d => d.department_id === id)?.generated ?? false` - Check if a specific resource was generated
 
 **Example - Departments Component:**
 ```typescript

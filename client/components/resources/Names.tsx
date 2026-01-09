@@ -17,7 +17,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface NamesProps {
   name_id?: string | null; // Current name_id (standardized prop name)
-  name_resource?: { id: string | null; name: string | null } | null; // Resource data from server (standardized prop name)
+  name_resource?: { id: string | null; name: string | null; generated?: boolean } | null; // Resource data from server (standardized prop name; includes generated field)
   show_name?: boolean; // Whether to show this resource picker
   name_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   disabled?: boolean; // Based on can_edit flag
@@ -31,7 +31,7 @@ export interface NamesProps {
   defaultName?: string; // Default name value (for header style - reverts to this on blur if empty)
   createNamesAction?: ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>) | undefined;
   // Legacy props for backward compatibility
-  nameResource?: { id: string; name: string } | null;
+  nameResource?: { id: string; name: string; generated?: boolean } | null;
   nameId?: string | null;
   suggestions?: string[];
 }

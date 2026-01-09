@@ -12,10 +12,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ExamplesProps {
   example_ids?: string[]; // Current example resource IDs (standardized prop name)
-  example_resources?: Array<{ example: string | null; idx: number | null }>; // Selected example resources
+  example_resources?: Array<{ example: string | null; idx: number | null; generated?: boolean }>; // Selected example resources (each includes generated field)
   show_examples?: boolean; // Whether to show this resource picker
   example_suggestions?: string[]; // Array of suggested example IDs (UUIDs) - consistent with other suggestions
-  examples?: Array<{ example: string | null; idx: number | null }>; // All available examples from API
+  examples?: Array<{ example: string | null; idx: number | null; generated?: boolean }>; // All available examples from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update example_ids in form state
   label?: string;

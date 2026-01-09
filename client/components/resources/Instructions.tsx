@@ -19,7 +19,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface InstructionsProps {
   instructions_id?: string | null; // Current instructions_id (standardized prop name)
-  instructions_resource?: { id: string | null; template: string | null } | null; // Resource data from server (standardized prop name)
+  instructions_resource?: { id: string | null; template: string | null; generated?: boolean } | null; // Resource data from server (standardized prop name; includes generated field)
   show_instructions?: boolean; // Whether to show this resource picker
   instructions_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   disabled?: boolean; // Based on can_edit flag
@@ -35,7 +35,7 @@ export interface InstructionsProps {
   helpText?: string;
   createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
   // Legacy props for backward compatibility
-  instructionsResource?: { id: string; template: string } | null;
+  instructionsResource?: { id: string; template: string; generated?: boolean } | null;
   instructionsId?: string | null;
   suggestions?: string[];
 }

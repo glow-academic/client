@@ -21,10 +21,10 @@ export interface DepartmentItem {
 
 export interface DepartmentsProps {
   department_ids?: string[]; // Current department resource IDs (standardized prop name)
-  department_resources?: Array<{ department_id: string | null; name: string | null; description?: string | null }>; // Selected department resources
+  department_resources?: Array<{ department_id: string | null; name: string | null; description?: string | null; generated?: boolean }>; // Selected department resources (each includes generated field)
   show_departments?: boolean; // Whether to show this resource picker
   department_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  departments?: Array<{ department_id: string | null; name: string | null; description?: string | null }>; // All available departments from API
+  departments?: Array<{ department_id: string | null; name: string | null; description?: string | null; generated?: boolean }>; // All available departments from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update department_ids in form state
   label?: string;

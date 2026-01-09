@@ -28,7 +28,8 @@ export interface DescriptionsProps {
   description_resource?: {
     id: string | null;
     description: string | null;
-  } | null; // Resource data from server (standardized prop name)
+    generated?: boolean;
+  } | null; // Resource data from server (standardized prop name; includes generated field)
   show_description?: boolean; // Whether to show this resource picker
   description_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   disabled?: boolean; // Based on can_edit flag
@@ -48,7 +49,7 @@ export interface DescriptionsProps {
       ) => Promise<CreateDraftDescriptionsOut>)
     | undefined;
   // Legacy props for backward compatibility
-  descriptionResource?: { id: string; description: string } | null;
+  descriptionResource?: { id: string; description: string; generated?: boolean } | null;
   descriptionId?: string | null;
   suggestions?: string[];
 }

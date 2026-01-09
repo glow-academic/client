@@ -23,7 +23,8 @@ export interface FlagsProps {
     name: string | null;
     description: string | null;
     icon_id: string | null;
-  } | null; // Resource data from server (standardized prop name)
+    generated?: boolean;
+  } | null; // Resource data from server (standardized prop name; includes generated field)
   show_flag?: boolean; // Whether to show this resource picker
   disabled?: boolean; // Based on can_edit flag
   onFlagIdChange: (flagId: string | null) => void; // Update flag_id in parent form state
@@ -39,6 +40,7 @@ export interface FlagsProps {
     name: string;
     description: string;
     icon_id: string | null;
+    generated?: boolean;
   } | null;
   flagId?: string | null;
 }

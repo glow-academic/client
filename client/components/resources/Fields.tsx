@@ -25,14 +25,16 @@ export interface FieldsProps {
     field_id: string | null;
     name: string | null;
     description?: string | null;
-  }>; // Selected field resources
+    generated?: boolean;
+  }>; // Selected field resources (each includes generated field)
   show_fields?: boolean; // Whether to show this resource picker
   field_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   fields?: Array<{
     field_id: string | null;
     name: string | null;
     description?: string | null;
-  }>; // All available fields from API
+    generated?: boolean;
+  }>; // All available fields from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update field_ids in form state
   label?: string;
