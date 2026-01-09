@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 5lRSv44tAqbi3yC5hHSaDD3kRv0Kp5pKVItNRGQx1Hc9smrKo84aSsl0jzWM8eR
+\restrict 1HzJE9tNhRPIAGl1ICBBoydgx96kyrgfuE8AGrjs05FEtQIfwBfoH5XUceGgLmn
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -82,38 +82,11 @@ CREATE TYPE public.artifacts AS ENUM (
     'model',
     'eval',
     'department',
-    'provider',
     'auth',
     'key',
     'setting',
-    'profile'
-);
-
-
---
--- Name: draft_resource_type; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.draft_resource_type AS ENUM (
-    'cohorts',
-    'simulations',
-    'scenarios',
-    'personas',
-    'staff',
-    'documents',
-    'parameters',
-    'fields',
-    'agents',
-    'models',
-    'rubrics',
-    'evals',
-    'departments',
-    'providers',
-    'auth',
-    'keys',
-    'practice',
-    'benchmark',
-    'settings'
+    'profile',
+    'tool'
 );
 
 
@@ -149,7 +122,9 @@ CREATE TYPE public.modality_type AS ENUM (
     'text',
     'video',
     'audio',
-    'image'
+    'image',
+    'document',
+    'call'
 );
 
 
@@ -174,6 +149,16 @@ CREATE TYPE public.profile_role AS ENUM (
     'instructional',
     'member',
     'guest'
+);
+
+
+--
+-- Name: providers; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.providers AS ENUM (
+    'openai',
+    'gemini'
 );
 
 
@@ -207,55 +192,61 @@ CREATE TYPE public.reasoning_effort AS ENUM (
 
 CREATE TYPE public.resources AS ENUM (
     'agents',
+    'analyses',
     'auth',
     'cohorts',
     'colors',
     'content',
+    'conversations',
     'debug_info',
     'departments',
     'descriptions',
+    'documents',
+    'endpoints',
     'evals',
-    'feedback',
+    'examples',
+    'feedbacks',
     'fields',
     'flags',
+    'hints',
     'html',
     'icons',
+    'images',
+    'improvements',
+    'instructions',
+    'items',
     'keys',
     'models',
     'names',
+    'objectives',
+    'options',
     'parameters',
     'personas',
     'points',
-    'profiles',
-    'providers',
-    'rubrics',
-    'scenarios',
-    'settings',
-    'simulations',
-    'thresholds',
-    'times',
-    'conversations',
-    'documents',
-    'hints',
-    'images',
-    'improvements',
-    'objectives',
-    'options',
     'problem_statements',
+    'profiles',
     'prompts',
+    'protocols',
     'questions',
     'responses',
+    'rubrics',
+    'scenarios',
     'schemas',
-    'schema_fields',
     'schema_field_items',
+    'schema_fields',
+    'settings',
+    'simulations',
+    'slugs',
     'standard_groups',
     'strengths',
-    'templates',
     'template_array_items',
     'template_values',
+    'templates',
+    'thresholds',
+    'times',
     'videos',
-    'analyses',
-    'instructions'
+    'texts',
+    'audios'
 );
 
 
@@ -1088,7 +1079,10 @@ CREATE TABLE public.agent_voices (
 CREATE TABLE public.agents (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT agents_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT agents_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1099,7 +1093,10 @@ CREATE TABLE public.agents (
 CREATE TABLE public.analyses (
     id uuid DEFAULT uuidv7() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    content text NOT NULL
+    content text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -1114,6 +1111,18 @@ CREATE TABLE public.app_metrics (
     avg_latency_ms double precision NOT NULL,
     cpu_percent double precision NOT NULL,
     memory_bytes bigint NOT NULL
+);
+
+
+--
+-- Name: artifact_resources; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.artifact_resources (
+    artifact public.artifacts NOT NULL,
+    resource public.resources NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -1155,16 +1164,43 @@ CREATE TABLE public.attempt_tests (
 
 
 --
+-- Name: audio_uploads; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audio_uploads (
+    audio_id uuid NOT NULL,
+    upload_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: audios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audios (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
+);
+
+
+--
 -- Name: auth; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.auth (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    auth_type text NOT NULL,
-    slug text NOT NULL,
-    icon_url text DEFAULT ''::text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT auth_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT auth_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1199,15 +1235,10 @@ CREATE TABLE public.auth_flags (
 --
 
 CREATE TABLE public.auth_items (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    name text NOT NULL,
-    description text NOT NULL,
-    encrypted boolean DEFAULT true NOT NULL,
-    "position" integer DEFAULT 1 NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT auth_items_id_v7_not_null NOT NULL,
-    auth_id uuid
+    auth_id uuid CONSTRAINT auth_items_new_auth_id_not_null NOT NULL,
+    item_id uuid CONSTRAINT auth_items_new_item_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_items_new_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT auth_items_new_updated_at_not_null NOT NULL
 );
 
 
@@ -1224,17 +1255,42 @@ CREATE TABLE public.auth_names (
 
 
 --
+-- Name: auth_protocols; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_protocols (
+    auth_id uuid NOT NULL,
+    protocol_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: auth_slugs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_slugs (
+    auth_id uuid NOT NULL,
+    slug_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: calls; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.calls (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT tool_calls_created_at_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT tool_calls_updated_at_not_null NOT NULL,
-    call_id text CONSTRAINT tool_calls_call_id_not_null NOT NULL,
+    external_call_id text CONSTRAINT tool_calls_call_id_not_null NOT NULL,
     completed boolean DEFAULT false CONSTRAINT tool_calls_completed_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT calls_id_v7_not_null NOT NULL,
     tool_id uuid CONSTRAINT tool_calls_tool_id_not_null NOT NULL,
-    template_id uuid
+    template_id uuid NOT NULL,
+    arguments_raw text DEFAULT ''::text NOT NULL
 );
 
 
@@ -1375,7 +1431,10 @@ CREATE TABLE public.cohort_simulations (
 CREATE TABLE public.cohorts (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1389,20 +1448,25 @@ CREATE TABLE public.colors (
     description text NOT NULL,
     hex_code text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
 --
--- Name: content; Type: TABLE; Schema: public; Owner: -
+-- Name: contents; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.content (
-    id uuid DEFAULT uuidv7() NOT NULL,
-    content text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    tool_call_id uuid
+CREATE TABLE public.contents (
+    id uuid DEFAULT uuidv7() CONSTRAINT content_id_not_null NOT NULL,
+    content text CONSTRAINT content_content_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT content_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT content_updated_at_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT content_active_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT content_generated_not_null NOT NULL,
+    call_id uuid CONSTRAINT content_call_id_not_null NOT NULL
 );
 
 
@@ -1414,7 +1478,10 @@ CREATE TABLE public.conversations (
     id uuid DEFAULT uuidv7() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    end_reason text NOT NULL
+    end_reason text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1425,7 +1492,10 @@ CREATE TABLE public.conversations (
 CREATE TABLE public.debug_info (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     content text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT debug_info_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT debug_info_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1487,7 +1557,10 @@ CREATE TABLE public.department_settings (
 CREATE TABLE public.departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT departments_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT departments_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1499,7 +1572,10 @@ CREATE TABLE public.descriptions (
     id uuid DEFAULT uuidv7() NOT NULL,
     description text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1510,18 +1586,6 @@ CREATE TABLE public.descriptions (
 CREATE TABLE public.document_agent_domains (
     document_id uuid NOT NULL,
     agent_domain_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: document_content; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.document_content (
-    document_id uuid NOT NULL,
-    content_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -1682,7 +1746,10 @@ CREATE TABLE public.document_uploads (
 CREATE TABLE public.documents (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT documents_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT documents_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1693,6 +1760,18 @@ CREATE TABLE public.documents (
 CREATE TABLE public.domain_artifacts (
     domain_id uuid NOT NULL,
     artifact public.artifacts NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: domain_providers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.domain_providers (
+    domain_id uuid NOT NULL,
+    provider public.providers NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -1710,17 +1789,734 @@ CREATE TABLE public.domains (
 
 
 --
+-- Name: draft_agents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_agents (
+    draft_id uuid NOT NULL,
+    agents_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_analyses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_analyses (
+    draft_id uuid NOT NULL,
+    analyses_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_auth; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_auth (
+    draft_id uuid NOT NULL,
+    auth_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_cohorts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_cohorts (
+    draft_id uuid NOT NULL,
+    cohorts_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_colors; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_colors (
+    draft_id uuid NOT NULL,
+    colors_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_content; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_content (
+    draft_id uuid NOT NULL,
+    content_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_conversations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_conversations (
+    draft_id uuid NOT NULL,
+    conversations_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_debug_info; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_debug_info (
+    draft_id uuid NOT NULL,
+    debug_info_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_departments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_departments (
+    draft_id uuid NOT NULL,
+    departments_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_descriptions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_descriptions (
+    draft_id uuid NOT NULL,
+    descriptions_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_documents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_documents (
+    draft_id uuid NOT NULL,
+    documents_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_endpoints; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_endpoints (
+    draft_id uuid NOT NULL,
+    endpoints_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_evals; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_evals (
+    draft_id uuid NOT NULL,
+    evals_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_examples; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_examples (
+    draft_id uuid NOT NULL,
+    examples_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_feedbacks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_feedbacks (
+    draft_id uuid NOT NULL,
+    feedbacks_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_fields; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_fields (
+    draft_id uuid NOT NULL,
+    fields_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_flags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_flags (
+    draft_id uuid NOT NULL,
+    flags_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_hints; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_hints (
+    draft_id uuid NOT NULL,
+    hints_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_html; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_html (
+    draft_id uuid NOT NULL,
+    html_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_icons; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_icons (
+    draft_id uuid NOT NULL,
+    icons_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_images (
+    draft_id uuid NOT NULL,
+    images_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_improvements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_improvements (
+    draft_id uuid NOT NULL,
+    improvements_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_instructions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_instructions (
+    draft_id uuid NOT NULL,
+    instructions_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_items (
+    draft_id uuid NOT NULL,
+    items_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_keys; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_keys (
+    draft_id uuid NOT NULL,
+    keys_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_models; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_models (
+    draft_id uuid NOT NULL,
+    models_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_names; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_names (
+    draft_id uuid NOT NULL,
+    names_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_objectives; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_objectives (
+    draft_id uuid NOT NULL,
+    objectives_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_options; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_options (
+    draft_id uuid NOT NULL,
+    options_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_parameters; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_parameters (
+    draft_id uuid NOT NULL,
+    parameters_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_personas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_personas (
+    draft_id uuid NOT NULL,
+    personas_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_points; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_points (
+    draft_id uuid NOT NULL,
+    points_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_problem_statements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_problem_statements (
+    draft_id uuid NOT NULL,
+    problem_statements_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_profiles; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_profiles (
+    draft_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_prompts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_prompts (
+    draft_id uuid NOT NULL,
+    prompts_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_protocols; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_protocols (
+    draft_id uuid NOT NULL,
+    protocols_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_questions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_questions (
+    draft_id uuid NOT NULL,
+    questions_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_responses; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_responses (
+    draft_id uuid NOT NULL,
+    responses_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_rubrics; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_rubrics (
+    draft_id uuid NOT NULL,
+    rubrics_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_scenarios; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_scenarios (
+    draft_id uuid NOT NULL,
+    scenarios_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_schema_field_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_schema_field_items (
+    draft_id uuid NOT NULL,
+    schema_field_items_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_schema_fields; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_schema_fields (
+    draft_id uuid NOT NULL,
+    schema_fields_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_schemas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_schemas (
+    draft_id uuid NOT NULL,
+    schemas_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_settings; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_settings (
+    draft_id uuid NOT NULL,
+    settings_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_simulations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_simulations (
+    draft_id uuid NOT NULL,
+    simulations_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_slugs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_slugs (
+    draft_id uuid NOT NULL,
+    slugs_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_standard_groups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_standard_groups (
+    draft_id uuid NOT NULL,
+    standard_groups_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_strengths; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_strengths (
+    draft_id uuid NOT NULL,
+    strengths_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_template_array_items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_template_array_items (
+    draft_id uuid NOT NULL,
+    template_array_items_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_template_values; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_template_values (
+    draft_id uuid NOT NULL,
+    template_values_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_templates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_templates (
+    draft_id uuid NOT NULL,
+    templates_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_thresholds; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_thresholds (
+    draft_id uuid NOT NULL,
+    thresholds_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_times; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_times (
+    draft_id uuid NOT NULL,
+    times_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: draft_videos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_videos (
+    draft_id uuid NOT NULL,
+    videos_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: drafts; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.drafts (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
-    resource_type public.draft_resource_type NOT NULL,
     profile_id uuid NOT NULL,
-    payload jsonb DEFAULT '{}'::jsonb NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    artifact public.artifacts NOT NULL
+);
+
+
+--
+-- Name: endpoints; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.endpoints (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    base_url text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL,
+    CONSTRAINT endpoints_base_url_check CHECK ((base_url <> ''::text))
 );
 
 
@@ -1858,7 +2654,10 @@ CREATE TABLE public.eval_runs_rubric_grade_agents (
 CREATE TABLE public.evals (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT evals_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT evals_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1870,21 +2669,9 @@ CREATE TABLE public.examples (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     example text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT examples_id_v7_not_null NOT NULL
-);
-
-
---
--- Name: feedback; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.feedback (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    type public.feedback_type NOT NULL,
-    message text DEFAULT 'No message provided'::text NOT NULL,
-    resolved boolean DEFAULT false NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT feedback_id_v7_not_null NOT NULL,
-    profile_id uuid
+    id uuid DEFAULT uuidv7() CONSTRAINT examples_id_v7_not_null NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1897,7 +2684,10 @@ CREATE TABLE public.feedbacks (
     total integer NOT NULL,
     feedback text DEFAULT 'No feedback provided'::text NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT feedbacks_id_v7_not_null NOT NULL,
-    standard_id uuid
+    standard_id uuid,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1972,7 +2762,10 @@ CREATE TABLE public.field_names (
 CREATE TABLE public.fields (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT fields_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT fields_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1986,7 +2779,10 @@ CREATE TABLE public.flags (
     description text NOT NULL,
     icon_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2133,7 +2929,10 @@ CREATE TABLE public.hints (
     id uuid DEFAULT uuidv7() NOT NULL,
     hint text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -2148,7 +2947,9 @@ CREATE TABLE public.html (
     name text NOT NULL,
     description text,
     active boolean DEFAULT true NOT NULL,
-    completed boolean DEFAULT false NOT NULL
+    completed boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2175,7 +2976,10 @@ CREATE TABLE public.icons (
     description text NOT NULL,
     value text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2216,8 +3020,9 @@ CREATE TABLE public.images (
     active boolean DEFAULT true NOT NULL,
     completed boolean DEFAULT false NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT images_id_v7_not_null NOT NULL,
-    tool_call_id uuid NOT NULL,
-    description text NOT NULL
+    description text NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -2230,8 +3035,10 @@ CREATE TABLE public.improvements (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     name text NOT NULL,
     description text DEFAULT 'No description provided'::text NOT NULL,
-    tool_call_id uuid NOT NULL,
-    message_id uuid NOT NULL
+    message_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -2256,7 +3063,27 @@ CREATE TABLE public.instructions (
     template text CONSTRAINT developer_instructions_template_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT developer_instructions_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT developer_instructions_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT developer_instructions_updated_at_not_null NOT NULL
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT developer_instructions_updated_at_not_null NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
+);
+
+
+--
+-- Name: items; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.items (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    name text NOT NULL,
+    description text NOT NULL,
+    encrypted boolean DEFAULT true NOT NULL,
+    "position" integer DEFAULT 1 NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2306,33 +3133,60 @@ CREATE TABLE public.keys (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     key text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT keys_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT keys_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
 --
--- Name: message_audio; Type: TABLE; Schema: public; Owner: -
+-- Name: message_audios; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.message_audio (
+CREATE TABLE public.message_audios (
+    message_id uuid NOT NULL,
+    audio_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_id uuid NOT NULL,
-    upload_id uuid NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
 --
--- Name: message_content; Type: TABLE; Schema: public; Owner: -
+-- Name: message_calls; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.message_content (
+CREATE TABLE public.message_calls (
     message_id uuid NOT NULL,
-    content_id uuid NOT NULL,
+    call_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: message_contents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_contents (
+    message_id uuid CONSTRAINT message_content_message_id_not_null NOT NULL,
+    content_id uuid CONSTRAINT message_content_content_id_not_null NOT NULL,
     idx integer CONSTRAINT message_content_idx_not_null1 NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT message_content_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT message_content_updated_at_not_null1 NOT NULL,
-    CONSTRAINT message_content_idx_check1 CHECK ((idx >= 0))
+    CONSTRAINT message_contents_idx_check1 CHECK ((idx >= 0))
+);
+
+
+--
+-- Name: message_documents; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_documents (
+    message_id uuid NOT NULL,
+    document_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -2376,6 +3230,18 @@ CREATE TABLE public.message_hints (
 
 
 --
+-- Name: message_images; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_images (
+    message_id uuid NOT NULL,
+    image_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: message_personas; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2400,6 +3266,18 @@ CREATE TABLE public.message_runs (
 
 
 --
+-- Name: message_texts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_texts (
+    message_id uuid NOT NULL,
+    text_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: message_tree; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2409,6 +3287,18 @@ CREATE TABLE public.message_tree (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     parent_id uuid NOT NULL,
     child_id uuid NOT NULL
+);
+
+
+--
+-- Name: message_videos; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.message_videos (
+    message_id uuid NOT NULL,
+    video_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -2453,16 +3343,26 @@ CREATE TABLE public.model_descriptions (
 
 
 --
+-- Name: model_domains; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.model_domains (
+    model_id uuid NOT NULL,
+    domain_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: model_endpoints; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.model_endpoints (
-    base_url text NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    model_id uuid,
-    CONSTRAINT model_endpoints_base_url_check CHECK ((base_url <> ''::text))
+    model_id uuid CONSTRAINT model_endpoints_new_model_id_not_null NOT NULL,
+    endpoint_id uuid CONSTRAINT model_endpoints_new_endpoint_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT model_endpoints_new_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT model_endpoints_new_updated_at_not_null NOT NULL
 );
 
 
@@ -2475,6 +3375,18 @@ CREATE TABLE public.model_flags (
     flag_id uuid NOT NULL,
     type public.type_model_flags NOT NULL,
     value boolean NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: model_keys; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.model_keys (
+    model_id uuid NOT NULL,
+    key_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -2518,18 +3430,6 @@ CREATE TABLE public.model_pricing (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     model_id uuid NOT NULL,
     unit_id uuid NOT NULL
-);
-
-
---
--- Name: model_providers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.model_providers (
-    model_id uuid NOT NULL,
-    provider_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -2598,7 +3498,10 @@ CREATE TABLE public.models (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     value text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT models_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT models_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2610,7 +3513,10 @@ CREATE TABLE public.names (
     id uuid DEFAULT uuidv7() NOT NULL,
     name text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -2636,7 +3542,9 @@ CREATE TABLE public.objectives (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     objective text NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT objectives_id_v7_not_null NOT NULL,
-    tool_call_id uuid NOT NULL
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -2650,7 +3558,9 @@ CREATE TABLE public.options (
     option_text text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT options_id_v7_not_null NOT NULL,
-    is_correct boolean DEFAULT false NOT NULL
+    is_correct boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2724,7 +3634,10 @@ CREATE TABLE public.parameter_names (
 CREATE TABLE public.parameters (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT parameters_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT parameters_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2773,7 +3686,8 @@ CREATE TABLE public.persona_examples (
     idx integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     example_id uuid NOT NULL,
-    persona_id uuid NOT NULL
+    persona_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 
@@ -2847,7 +3761,10 @@ CREATE TABLE public.persona_names (
 CREATE TABLE public.personas (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT personas_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT personas_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2859,7 +3776,10 @@ CREATE TABLE public.points (
     id uuid DEFAULT uuidv7() NOT NULL,
     value integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2886,7 +3806,23 @@ CREATE TABLE public.problem_statements (
     name text NOT NULL,
     problem_statement text NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT problem_statements_id_v7_not_null NOT NULL,
-    tool_call_id uuid NOT NULL
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
+);
+
+
+--
+-- Name: problems; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.problems (
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT feedback_created_at_not_null NOT NULL,
+    type public.feedback_type CONSTRAINT feedback_type_not_null NOT NULL,
+    message text DEFAULT 'No message provided'::text CONSTRAINT feedback_message_not_null NOT NULL,
+    resolved boolean DEFAULT false CONSTRAINT feedback_resolved_not_null NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT feedback_id_v7_not_null NOT NULL,
+    profile_id uuid
 );
 
 
@@ -2987,7 +3923,10 @@ CREATE TABLE public.profiles (
     last_login timestamp with time zone DEFAULT now() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     role public.profile_role DEFAULT 'guest'::public.profile_role NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3015,71 +3954,23 @@ CREATE TABLE public.prompts (
     name text NOT NULL,
     description text NOT NULL,
     active boolean DEFAULT true NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT prompts_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT prompts_id_v7_not_null NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
 --
--- Name: provider_descriptions; Type: TABLE; Schema: public; Owner: -
+-- Name: protocols; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.provider_descriptions (
-    provider_id uuid NOT NULL,
-    description_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: provider_endpoints; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.provider_endpoints (
-    base_url text NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    provider_id uuid,
-    CONSTRAINT provider_endpoints_base_url_check CHECK ((base_url <> ''::text))
-);
-
-
---
--- Name: provider_flags; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.provider_flags (
-    provider_id uuid NOT NULL,
-    flag_id uuid NOT NULL,
-    type public.type_provider_flags NOT NULL,
-    value boolean NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: provider_names; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.provider_names (
-    provider_id uuid NOT NULL,
-    name_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: providers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.providers (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+CREATE TABLE public.protocols (
+    id uuid DEFAULT uuidv7() NOT NULL,
     value text NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT providers_id_v7_not_null NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3107,7 +3998,21 @@ CREATE TABLE public.questions (
     allow_multiple boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT questions_id_v7_not_null NOT NULL,
-    "time" integer NOT NULL
+    "time" integer NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
+);
+
+
+--
+-- Name: resource_modalities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.resource_modalities (
+    resource public.resources NOT NULL,
+    modality public.modality_type NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -3145,7 +4050,10 @@ CREATE TABLE public.responses (
     completed boolean DEFAULT false CONSTRAINT quiz_responses_completed_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT quiz_responses_id_v7_not_null NOT NULL,
     option_id uuid,
-    question_id uuid
+    question_id uuid,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -3297,7 +4205,10 @@ CREATE TABLE public.rubrics (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_v7_not_null NOT NULL,
-    rubric_domain_id uuid
+    rubric_domain_id uuid,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3706,7 +4617,10 @@ CREATE TABLE public.scenario_videos (
 CREATE TABLE public.scenarios (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3718,7 +4632,11 @@ CREATE TABLE public.schema_field_items (
     schema_field_id uuid NOT NULL,
     item_schema_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    id uuid DEFAULT uuidv7() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3737,7 +4655,10 @@ CREATE TABLE public.schema_fields (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     template text DEFAULT ''::text NOT NULL,
     description text DEFAULT ''::text NOT NULL,
-    default_value text DEFAULT ''::text NOT NULL
+    default_value text DEFAULT ''::text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3760,7 +4681,10 @@ CREATE TABLE public.schema_templates (
 CREATE TABLE public.schemas (
     id uuid DEFAULT uuidv7() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3879,8 +4803,8 @@ CREATE TABLE public.setting_provider_keys (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     key_id uuid NOT NULL,
-    provider_id uuid NOT NULL,
-    settings_id uuid NOT NULL
+    settings_id uuid NOT NULL,
+    provider public.providers NOT NULL
 );
 
 
@@ -3892,8 +4816,8 @@ CREATE TABLE public.setting_providers (
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    provider_id uuid NOT NULL,
-    settings_id uuid NOT NULL
+    settings_id uuid NOT NULL,
+    provider public.providers NOT NULL
 );
 
 
@@ -3917,7 +4841,10 @@ CREATE TABLE public.setting_thresholds (
 CREATE TABLE public.settings (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT settings_id_v7_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4078,7 +5005,24 @@ CREATE TABLE public.simulation_scenarios_rubric_grade_agents (
 CREATE TABLE public.simulations (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
+);
+
+
+--
+-- Name: slugs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.slugs (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    value text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4095,7 +5039,8 @@ CREATE TABLE public.standard_groups (
     pass_points integer NOT NULL,
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT standard_groups_id_v7_not_null NOT NULL,
-    tool_call_id uuid NOT NULL
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4122,8 +5067,10 @@ CREATE TABLE public.strengths (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     name text NOT NULL,
     description text DEFAULT 'No description provided'::text NOT NULL,
-    tool_call_id uuid NOT NULL,
-    message_id uuid NOT NULL
+    message_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -4137,7 +5084,11 @@ CREATE TABLE public.template_array_items (
     item_template_id uuid NOT NULL,
     "position" integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    id uuid DEFAULT uuidv7() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -4154,6 +5105,9 @@ CREATE TABLE public.template_values (
     boolean_value boolean,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid,
     CONSTRAINT template_values_check CHECK ((((((string_value IS NOT NULL))::integer + ((number_value IS NOT NULL))::integer) + ((boolean_value IS NOT NULL))::integer) = 1))
 );
 
@@ -4167,7 +5121,9 @@ CREATE TABLE public.templates (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     name text NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT templates_id_v7_not_null NOT NULL,
-    tool_call_id uuid NOT NULL
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4199,6 +5155,21 @@ CREATE TABLE public.tests (
 
 
 --
+-- Name: texts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.texts (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    content text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
+);
+
+
+--
 -- Name: thresholds; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4206,7 +5177,10 @@ CREATE TABLE public.thresholds (
     id uuid DEFAULT uuidv7() NOT NULL,
     value integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4219,43 +5193,21 @@ CREATE TABLE public.times (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     time_taken integer NOT NULL,
-    active boolean DEFAULT true NOT NULL
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
 --
--- Name: tool_call_arguments; Type: TABLE; Schema: public; Owner: -
+-- Name: tool_domains; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.tool_call_arguments (
-    arguments_json jsonb NOT NULL,
-    arguments_raw text NOT NULL,
+CREATE TABLE public.tool_domains (
+    tool_id uuid NOT NULL,
+    domain_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tool_call_id uuid NOT NULL
-);
-
-
---
--- Name: tool_call_results; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.tool_call_results (
-    result_content text NOT NULL,
-    result_json jsonb,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    tool_call_id uuid
-);
-
-
---
--- Name: tool_call_runs; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.tool_call_runs (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    run_id uuid NOT NULL,
-    tool_call_id uuid NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -4272,6 +5224,18 @@ CREATE TABLE public.tool_schemas (
 
 
 --
+-- Name: tool_templates; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.tool_templates (
+    tool_id uuid NOT NULL,
+    template_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: tools; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -4281,8 +5245,7 @@ CREATE TABLE public.tools (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     name text NOT NULL,
     description text NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    template_id uuid NOT NULL
+    active boolean DEFAULT true NOT NULL
 );
 
 
@@ -4353,8 +5316,9 @@ CREATE TABLE public.videos (
     active boolean DEFAULT true NOT NULL,
     completed boolean DEFAULT false NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT videos_id_v7_not_null NOT NULL,
-    tool_call_id uuid NOT NULL,
     description text NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    call_id uuid,
     CONSTRAINT videos_length_seconds_check CHECK ((length_seconds > 0))
 );
 
@@ -4504,6 +5468,14 @@ ALTER TABLE ONLY public.app_metrics
 
 
 --
+-- Name: artifact_resources artifact_resources_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.artifact_resources
+    ADD CONSTRAINT artifact_resources_pkey PRIMARY KEY (artifact, resource);
+
+
+--
 -- Name: attempt_chats attempt_chats_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4528,6 +5500,22 @@ ALTER TABLE ONLY public.attempt_tests
 
 
 --
+-- Name: audio_uploads audio_uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audio_uploads
+    ADD CONSTRAINT audio_uploads_pkey PRIMARY KEY (audio_id, upload_id);
+
+
+--
+-- Name: audios audios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audios
+    ADD CONSTRAINT audios_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: auth_descriptions auth_descriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4548,7 +5536,7 @@ ALTER TABLE ONLY public.auth_flags
 --
 
 ALTER TABLE ONLY public.auth_items
-    ADD CONSTRAINT auth_items_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT auth_items_pkey PRIMARY KEY (auth_id, item_id);
 
 
 --
@@ -4565,6 +5553,22 @@ ALTER TABLE ONLY public.auth_names
 
 ALTER TABLE ONLY public.auth
     ADD CONSTRAINT auth_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: auth_protocols auth_protocols_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_protocols
+    ADD CONSTRAINT auth_protocols_pkey PRIMARY KEY (auth_id, protocol_id);
+
+
+--
+-- Name: auth_slugs auth_slugs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_slugs
+    ADD CONSTRAINT auth_slugs_pkey PRIMARY KEY (auth_id, slug_id);
 
 
 --
@@ -4672,11 +5676,11 @@ ALTER TABLE ONLY public.colors
 
 
 --
--- Name: content content_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: contents contents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.content
-    ADD CONSTRAINT content_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.contents
+    ADD CONSTRAINT contents_pkey PRIMARY KEY (id);
 
 
 --
@@ -4765,14 +5769,6 @@ ALTER TABLE ONLY public.instructions
 
 ALTER TABLE ONLY public.document_agent_domains
     ADD CONSTRAINT document_agent_domains_pkey PRIMARY KEY (document_id, agent_domain_id);
-
-
---
--- Name: document_content document_content_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_content
-    ADD CONSTRAINT document_content_pkey PRIMARY KEY (document_id, content_id);
 
 
 --
@@ -4880,6 +5876,14 @@ ALTER TABLE ONLY public.domain_artifacts
 
 
 --
+-- Name: domain_providers domain_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.domain_providers
+    ADD CONSTRAINT domain_providers_pkey PRIMARY KEY (domain_id, provider);
+
+
+--
 -- Name: domains domains_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4888,11 +5892,451 @@ ALTER TABLE ONLY public.domains
 
 
 --
+-- Name: draft_agents draft_agents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_agents
+    ADD CONSTRAINT draft_agents_pkey PRIMARY KEY (draft_id, agents_id);
+
+
+--
+-- Name: draft_analyses draft_analyses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_analyses
+    ADD CONSTRAINT draft_analyses_pkey PRIMARY KEY (draft_id, analyses_id);
+
+
+--
+-- Name: draft_auth draft_auth_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_auth
+    ADD CONSTRAINT draft_auth_pkey PRIMARY KEY (draft_id, auth_id);
+
+
+--
+-- Name: draft_cohorts draft_cohorts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_cohorts
+    ADD CONSTRAINT draft_cohorts_pkey PRIMARY KEY (draft_id, cohorts_id);
+
+
+--
+-- Name: draft_colors draft_colors_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_colors
+    ADD CONSTRAINT draft_colors_pkey PRIMARY KEY (draft_id, colors_id);
+
+
+--
+-- Name: draft_content draft_content_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_content
+    ADD CONSTRAINT draft_content_pkey PRIMARY KEY (draft_id, content_id);
+
+
+--
+-- Name: draft_conversations draft_conversations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_conversations
+    ADD CONSTRAINT draft_conversations_pkey PRIMARY KEY (draft_id, conversations_id);
+
+
+--
+-- Name: draft_debug_info draft_debug_info_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_debug_info
+    ADD CONSTRAINT draft_debug_info_pkey PRIMARY KEY (draft_id, debug_info_id);
+
+
+--
+-- Name: draft_departments draft_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_departments
+    ADD CONSTRAINT draft_departments_pkey PRIMARY KEY (draft_id, departments_id);
+
+
+--
+-- Name: draft_descriptions draft_descriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_descriptions
+    ADD CONSTRAINT draft_descriptions_pkey PRIMARY KEY (draft_id, descriptions_id);
+
+
+--
+-- Name: draft_documents draft_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_documents
+    ADD CONSTRAINT draft_documents_pkey PRIMARY KEY (draft_id, documents_id);
+
+
+--
+-- Name: draft_endpoints draft_endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_endpoints
+    ADD CONSTRAINT draft_endpoints_pkey PRIMARY KEY (draft_id, endpoints_id);
+
+
+--
+-- Name: draft_evals draft_evals_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_evals
+    ADD CONSTRAINT draft_evals_pkey PRIMARY KEY (draft_id, evals_id);
+
+
+--
+-- Name: draft_examples draft_examples_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_examples
+    ADD CONSTRAINT draft_examples_pkey PRIMARY KEY (draft_id, examples_id);
+
+
+--
+-- Name: draft_feedbacks draft_feedbacks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_feedbacks
+    ADD CONSTRAINT draft_feedbacks_pkey PRIMARY KEY (draft_id, feedbacks_id);
+
+
+--
+-- Name: draft_fields draft_fields_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_fields
+    ADD CONSTRAINT draft_fields_pkey PRIMARY KEY (draft_id, fields_id);
+
+
+--
+-- Name: draft_flags draft_flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_flags
+    ADD CONSTRAINT draft_flags_pkey PRIMARY KEY (draft_id, flags_id);
+
+
+--
+-- Name: draft_hints draft_hints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_hints
+    ADD CONSTRAINT draft_hints_pkey PRIMARY KEY (draft_id, hints_id);
+
+
+--
+-- Name: draft_html draft_html_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_html
+    ADD CONSTRAINT draft_html_pkey PRIMARY KEY (draft_id, html_id);
+
+
+--
+-- Name: draft_icons draft_icons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_icons
+    ADD CONSTRAINT draft_icons_pkey PRIMARY KEY (draft_id, icons_id);
+
+
+--
+-- Name: draft_images draft_images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_images
+    ADD CONSTRAINT draft_images_pkey PRIMARY KEY (draft_id, images_id);
+
+
+--
+-- Name: draft_improvements draft_improvements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_improvements
+    ADD CONSTRAINT draft_improvements_pkey PRIMARY KEY (draft_id, improvements_id);
+
+
+--
+-- Name: draft_instructions draft_instructions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_instructions
+    ADD CONSTRAINT draft_instructions_pkey PRIMARY KEY (draft_id, instructions_id);
+
+
+--
+-- Name: draft_items draft_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_items
+    ADD CONSTRAINT draft_items_pkey PRIMARY KEY (draft_id, items_id);
+
+
+--
+-- Name: draft_keys draft_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_keys
+    ADD CONSTRAINT draft_keys_pkey PRIMARY KEY (draft_id, keys_id);
+
+
+--
+-- Name: draft_models draft_models_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_models
+    ADD CONSTRAINT draft_models_pkey PRIMARY KEY (draft_id, models_id);
+
+
+--
+-- Name: draft_names draft_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_names
+    ADD CONSTRAINT draft_names_pkey PRIMARY KEY (draft_id, names_id);
+
+
+--
+-- Name: draft_objectives draft_objectives_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_objectives
+    ADD CONSTRAINT draft_objectives_pkey PRIMARY KEY (draft_id, objectives_id);
+
+
+--
+-- Name: draft_options draft_options_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_options
+    ADD CONSTRAINT draft_options_pkey PRIMARY KEY (draft_id, options_id);
+
+
+--
+-- Name: draft_parameters draft_parameters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_parameters
+    ADD CONSTRAINT draft_parameters_pkey PRIMARY KEY (draft_id, parameters_id);
+
+
+--
+-- Name: draft_personas draft_personas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_personas
+    ADD CONSTRAINT draft_personas_pkey PRIMARY KEY (draft_id, personas_id);
+
+
+--
+-- Name: draft_points draft_points_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_points
+    ADD CONSTRAINT draft_points_pkey PRIMARY KEY (draft_id, points_id);
+
+
+--
+-- Name: draft_problem_statements draft_problem_statements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_problem_statements
+    ADD CONSTRAINT draft_problem_statements_pkey PRIMARY KEY (draft_id, problem_statements_id);
+
+
+--
+-- Name: draft_profiles draft_profiles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_profiles
+    ADD CONSTRAINT draft_profiles_pkey PRIMARY KEY (draft_id, profiles_id);
+
+
+--
+-- Name: draft_prompts draft_prompts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_prompts
+    ADD CONSTRAINT draft_prompts_pkey PRIMARY KEY (draft_id, prompts_id);
+
+
+--
+-- Name: draft_protocols draft_protocols_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_protocols
+    ADD CONSTRAINT draft_protocols_pkey PRIMARY KEY (draft_id, protocols_id);
+
+
+--
+-- Name: draft_questions draft_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_questions
+    ADD CONSTRAINT draft_questions_pkey PRIMARY KEY (draft_id, questions_id);
+
+
+--
+-- Name: draft_responses draft_responses_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_responses
+    ADD CONSTRAINT draft_responses_pkey PRIMARY KEY (draft_id, responses_id);
+
+
+--
+-- Name: draft_rubrics draft_rubrics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_rubrics
+    ADD CONSTRAINT draft_rubrics_pkey PRIMARY KEY (draft_id, rubrics_id);
+
+
+--
+-- Name: draft_scenarios draft_scenarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_scenarios
+    ADD CONSTRAINT draft_scenarios_pkey PRIMARY KEY (draft_id, scenarios_id);
+
+
+--
+-- Name: draft_schema_field_items draft_schema_field_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schema_field_items
+    ADD CONSTRAINT draft_schema_field_items_pkey PRIMARY KEY (draft_id, schema_field_items_id);
+
+
+--
+-- Name: draft_schema_fields draft_schema_fields_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schema_fields
+    ADD CONSTRAINT draft_schema_fields_pkey PRIMARY KEY (draft_id, schema_fields_id);
+
+
+--
+-- Name: draft_schemas draft_schemas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schemas
+    ADD CONSTRAINT draft_schemas_pkey PRIMARY KEY (draft_id, schemas_id);
+
+
+--
+-- Name: draft_settings draft_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_settings
+    ADD CONSTRAINT draft_settings_pkey PRIMARY KEY (draft_id, settings_id);
+
+
+--
+-- Name: draft_simulations draft_simulations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_simulations
+    ADD CONSTRAINT draft_simulations_pkey PRIMARY KEY (draft_id, simulations_id);
+
+
+--
+-- Name: draft_slugs draft_slugs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_slugs
+    ADD CONSTRAINT draft_slugs_pkey PRIMARY KEY (draft_id, slugs_id);
+
+
+--
+-- Name: draft_standard_groups draft_standard_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_standard_groups
+    ADD CONSTRAINT draft_standard_groups_pkey PRIMARY KEY (draft_id, standard_groups_id);
+
+
+--
+-- Name: draft_strengths draft_strengths_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_strengths
+    ADD CONSTRAINT draft_strengths_pkey PRIMARY KEY (draft_id, strengths_id);
+
+
+--
+-- Name: draft_template_array_items draft_template_array_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_template_array_items
+    ADD CONSTRAINT draft_template_array_items_pkey PRIMARY KEY (draft_id, template_array_items_id);
+
+
+--
+-- Name: draft_template_values draft_template_values_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_template_values
+    ADD CONSTRAINT draft_template_values_pkey PRIMARY KEY (draft_id, template_values_id);
+
+
+--
+-- Name: draft_templates draft_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_templates
+    ADD CONSTRAINT draft_templates_pkey PRIMARY KEY (draft_id, templates_id);
+
+
+--
+-- Name: draft_thresholds draft_thresholds_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_thresholds
+    ADD CONSTRAINT draft_thresholds_pkey PRIMARY KEY (draft_id, thresholds_id);
+
+
+--
+-- Name: draft_times draft_times_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_times
+    ADD CONSTRAINT draft_times_pkey PRIMARY KEY (draft_id, times_id);
+
+
+--
+-- Name: draft_videos draft_videos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_videos
+    ADD CONSTRAINT draft_videos_pkey PRIMARY KEY (draft_id, videos_id);
+
+
+--
 -- Name: drafts drafts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.drafts
     ADD CONSTRAINT drafts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: endpoints endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.endpoints
+    ADD CONSTRAINT endpoints_pkey PRIMARY KEY (id);
 
 
 --
@@ -4989,14 +6433,6 @@ ALTER TABLE ONLY public.evals
 
 ALTER TABLE ONLY public.examples
     ADD CONSTRAINT examples_pkey PRIMARY KEY (id);
-
-
---
--- Name: feedback feedback_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.feedback
-    ADD CONSTRAINT feedback_pkey PRIMARY KEY (id);
 
 
 --
@@ -5224,6 +6660,14 @@ ALTER TABLE ONLY public.improvements
 
 
 --
+-- Name: items items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.items
+    ADD CONSTRAINT items_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: key_descriptions key_descriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5256,19 +6700,35 @@ ALTER TABLE ONLY public.keys
 
 
 --
--- Name: message_audio message_audio_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: message_audios message_audios_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.message_audio
-    ADD CONSTRAINT message_audio_pkey PRIMARY KEY (message_id, upload_id);
+ALTER TABLE ONLY public.message_audios
+    ADD CONSTRAINT message_audios_pkey PRIMARY KEY (message_id, audio_id);
 
 
 --
--- Name: message_content message_content_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: message_calls message_calls_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.message_content
-    ADD CONSTRAINT message_content_pkey PRIMARY KEY (message_id, content_id);
+ALTER TABLE ONLY public.message_calls
+    ADD CONSTRAINT message_calls_pkey PRIMARY KEY (message_id, call_id);
+
+
+--
+-- Name: message_contents message_contents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_contents
+    ADD CONSTRAINT message_contents_pkey PRIMARY KEY (message_id, content_id);
+
+
+--
+-- Name: message_documents message_documents_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_documents
+    ADD CONSTRAINT message_documents_pkey PRIMARY KEY (message_id, document_id);
 
 
 --
@@ -5277,6 +6737,14 @@ ALTER TABLE ONLY public.message_content
 
 ALTER TABLE ONLY public.message_hints
     ADD CONSTRAINT message_hints_pkey PRIMARY KEY (message_id, hint_id);
+
+
+--
+-- Name: message_images message_images_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_images
+    ADD CONSTRAINT message_images_pkey PRIMARY KEY (message_id, image_id);
 
 
 --
@@ -5296,11 +6764,27 @@ ALTER TABLE ONLY public.message_runs
 
 
 --
+-- Name: message_texts message_texts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_texts
+    ADD CONSTRAINT message_texts_pkey PRIMARY KEY (message_id, text_id);
+
+
+--
 -- Name: message_tree message_tree_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.message_tree
     ADD CONSTRAINT message_tree_pkey PRIMARY KEY (parent_id, child_id);
+
+
+--
+-- Name: message_videos message_videos_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_videos
+    ADD CONSTRAINT message_videos_pkey PRIMARY KEY (message_id, video_id);
 
 
 --
@@ -5328,11 +6812,35 @@ ALTER TABLE ONLY public.model_descriptions
 
 
 --
+-- Name: model_domains model_domains_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_domains
+    ADD CONSTRAINT model_domains_pkey PRIMARY KEY (model_id, domain_id);
+
+
+--
+-- Name: model_endpoints model_endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_endpoints
+    ADD CONSTRAINT model_endpoints_pkey PRIMARY KEY (model_id, endpoint_id);
+
+
+--
 -- Name: model_flags model_flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.model_flags
     ADD CONSTRAINT model_flags_pkey PRIMARY KEY (model_id, flag_id, type);
+
+
+--
+-- Name: model_keys model_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_keys
+    ADD CONSTRAINT model_keys_pkey PRIMARY KEY (model_id, key_id);
 
 
 --
@@ -5357,14 +6865,6 @@ ALTER TABLE ONLY public.model_names
 
 ALTER TABLE ONLY public.model_pricing
     ADD CONSTRAINT model_pricing_pkey PRIMARY KEY (model_id, pricing_type, unit_id);
-
-
---
--- Name: model_providers model_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_providers
-    ADD CONSTRAINT model_providers_pkey PRIMARY KEY (model_id, provider_id);
 
 
 --
@@ -5584,6 +7084,14 @@ ALTER TABLE ONLY public.problem_statements
 
 
 --
+-- Name: problems problems_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.problems
+    ADD CONSTRAINT problems_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: profile_activity profile_activity_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5640,35 +7148,19 @@ ALTER TABLE ONLY public.prompts
 
 
 --
--- Name: provider_descriptions provider_descriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: protocols protocols_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.provider_descriptions
-    ADD CONSTRAINT provider_descriptions_pkey PRIMARY KEY (provider_id, description_id);
-
-
---
--- Name: provider_flags provider_flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.provider_flags
-    ADD CONSTRAINT provider_flags_pkey PRIMARY KEY (provider_id, flag_id, type);
+ALTER TABLE ONLY public.protocols
+    ADD CONSTRAINT protocols_pkey PRIMARY KEY (id);
 
 
 --
--- Name: provider_names provider_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: protocols protocols_value_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.provider_names
-    ADD CONSTRAINT provider_names_pkey PRIMARY KEY (provider_id, name_id);
-
-
---
--- Name: providers providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.providers
-    ADD CONSTRAINT providers_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.protocols
+    ADD CONSTRAINT protocols_value_key UNIQUE (value);
 
 
 --
@@ -5693,6 +7185,14 @@ ALTER TABLE ONLY public.questions
 
 ALTER TABLE ONLY public.responses
     ADD CONSTRAINT quiz_responses_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: resource_modalities resource_modalities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.resource_modalities
+    ADD CONSTRAINT resource_modalities_pkey PRIMARY KEY (resource, modality);
 
 
 --
@@ -6020,7 +7520,7 @@ ALTER TABLE ONLY public.scenarios
 --
 
 ALTER TABLE ONLY public.schema_field_items
-    ADD CONSTRAINT schema_field_items_pkey PRIMARY KEY (schema_field_id, item_schema_id);
+    ADD CONSTRAINT schema_field_items_pkey PRIMARY KEY (id);
 
 
 --
@@ -6124,15 +7624,7 @@ ALTER TABLE ONLY public.setting_names
 --
 
 ALTER TABLE ONLY public.setting_provider_keys
-    ADD CONSTRAINT setting_provider_keys_pkey PRIMARY KEY (settings_id, provider_id, key_id);
-
-
---
--- Name: setting_providers setting_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_providers
-    ADD CONSTRAINT setting_providers_pkey PRIMARY KEY (settings_id, provider_id);
+    ADD CONSTRAINT setting_provider_keys_pkey PRIMARY KEY (settings_id, provider, key_id);
 
 
 --
@@ -6248,6 +7740,22 @@ ALTER TABLE ONLY public.simulations
 
 
 --
+-- Name: slugs slugs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.slugs
+    ADD CONSTRAINT slugs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: slugs slugs_value_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.slugs
+    ADD CONSTRAINT slugs_value_key UNIQUE (value);
+
+
+--
 -- Name: standard_groups standard_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6276,7 +7784,7 @@ ALTER TABLE ONLY public.strengths
 --
 
 ALTER TABLE ONLY public.template_array_items
-    ADD CONSTRAINT template_array_items_pkey PRIMARY KEY (template_id, schema_field_id, item_template_id);
+    ADD CONSTRAINT template_array_items_pkey PRIMARY KEY (id);
 
 
 --
@@ -6320,6 +7828,14 @@ ALTER TABLE ONLY public.tests
 
 
 --
+-- Name: texts texts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.texts
+    ADD CONSTRAINT texts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: thresholds thresholds_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6336,19 +7852,11 @@ ALTER TABLE ONLY public.times
 
 
 --
--- Name: tool_call_arguments tool_call_arguments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tool_domains tool_domains_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tool_call_arguments
-    ADD CONSTRAINT tool_call_arguments_pkey PRIMARY KEY (tool_call_id);
-
-
---
--- Name: tool_call_runs tool_call_runs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_call_runs
-    ADD CONSTRAINT tool_call_runs_pkey PRIMARY KEY (tool_call_id, run_id);
+ALTER TABLE ONLY public.tool_domains
+    ADD CONSTRAINT tool_domains_pkey PRIMARY KEY (tool_id, domain_id);
 
 
 --
@@ -6357,6 +7865,14 @@ ALTER TABLE ONLY public.tool_call_runs
 
 ALTER TABLE ONLY public.tool_schemas
     ADD CONSTRAINT tool_schemas_pkey PRIMARY KEY (tool_id, schema_id);
+
+
+--
+-- Name: tool_templates tool_templates_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_templates
+    ADD CONSTRAINT tool_templates_pkey PRIMARY KEY (tool_id, template_id);
 
 
 --
@@ -6696,6 +8212,20 @@ CREATE INDEX agent_voices_model_voice_id_v7_idx ON public.agent_voices USING btr
 
 
 --
+-- Name: agents_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agents_call_id_idx ON public.agents USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: analyses_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX analyses_call_id_idx ON public.analyses USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: analyses_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6707,6 +8237,20 @@ CREATE INDEX analyses_created_at_idx ON public.analyses USING btree (created_at)
 --
 
 CREATE INDEX app_metrics_ts_idx ON public.app_metrics USING btree (ts);
+
+
+--
+-- Name: artifact_resources_artifact_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX artifact_resources_artifact_idx ON public.artifact_resources USING btree (artifact);
+
+
+--
+-- Name: artifact_resources_resource_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX artifact_resources_resource_idx ON public.artifact_resources USING btree (resource);
 
 
 --
@@ -6766,6 +8310,55 @@ CREATE INDEX attempt_tests_test_id_v7_idx ON public.attempt_tests USING btree (t
 
 
 --
+-- Name: audio_uploads_audio_id_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audio_uploads_audio_id_active_idx ON public.audio_uploads USING btree (audio_id, active);
+
+
+--
+-- Name: audio_uploads_audio_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audio_uploads_audio_id_idx ON public.audio_uploads USING btree (audio_id);
+
+
+--
+-- Name: audio_uploads_upload_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audio_uploads_upload_id_idx ON public.audio_uploads USING btree (upload_id);
+
+
+--
+-- Name: audios_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audios_active_idx ON public.audios USING btree (active);
+
+
+--
+-- Name: audios_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audios_call_id_idx ON public.audios USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: audios_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX audios_created_at_idx ON public.audios USING btree (created_at);
+
+
+--
+-- Name: auth_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX auth_call_id_idx ON public.auth USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: auth_descriptions_auth_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6801,17 +8394,17 @@ CREATE INDEX auth_flags_type_idx ON public.auth_flags USING btree (type);
 
 
 --
--- Name: auth_items_auth_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_items_auth_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_items_auth_id_v7_idx ON public.auth_items USING btree (auth_id);
+CREATE INDEX auth_items_auth_id_idx ON public.auth_items USING btree (auth_id);
 
 
 --
--- Name: auth_items_encrypted_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_items_item_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_items_encrypted_idx ON public.auth_items USING btree (encrypted);
+CREATE INDEX auth_items_item_id_idx ON public.auth_items USING btree (item_id);
 
 
 --
@@ -6829,17 +8422,45 @@ CREATE INDEX auth_names_name_id_idx ON public.auth_names USING btree (name_id);
 
 
 --
--- Name: auth_slug_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_protocols_auth_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_slug_idx ON public.auth USING btree (slug);
+CREATE INDEX auth_protocols_auth_id_idx ON public.auth_protocols USING btree (auth_id);
 
 
 --
--- Name: auth_slug_unique; Type: INDEX; Schema: public; Owner: -
+-- Name: auth_protocols_protocol_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX auth_slug_unique ON public.auth USING btree (slug);
+CREATE INDEX auth_protocols_protocol_id_idx ON public.auth_protocols USING btree (protocol_id);
+
+
+--
+-- Name: auth_slugs_auth_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX auth_slugs_auth_id_idx ON public.auth_slugs USING btree (auth_id);
+
+
+--
+-- Name: auth_slugs_slug_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX auth_slugs_slug_id_idx ON public.auth_slugs USING btree (slug_id);
+
+
+--
+-- Name: calls_arguments_raw_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX calls_arguments_raw_idx ON public.calls USING btree (arguments_raw) WHERE ((arguments_raw <> ''::text) AND (length(arguments_raw) < 2000));
+
+
+--
+-- Name: calls_external_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX calls_external_call_id_idx ON public.calls USING btree (external_call_id);
 
 
 --
@@ -7011,6 +8632,20 @@ CREATE INDEX cohort_simulations_simulation_id_v7_idx ON public.cohort_simulation
 
 
 --
+-- Name: cohorts_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cohorts_call_id_idx ON public.cohorts USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: colors_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX colors_call_id_idx ON public.colors USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: colors_hex_code_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7018,17 +8653,24 @@ CREATE INDEX colors_hex_code_idx ON public.colors USING btree (hex_code);
 
 
 --
--- Name: content_created_at_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: contents_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX content_created_at_idx ON public.content USING btree (created_at);
+CREATE INDEX contents_call_id_idx ON public.contents USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
--- Name: content_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: contents_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX content_tool_call_id_idx ON public.content USING btree (tool_call_id);
+CREATE INDEX contents_created_at_idx ON public.contents USING btree (created_at);
+
+
+--
+-- Name: conversations_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX conversations_call_id_idx ON public.conversations USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -7036,6 +8678,13 @@ CREATE INDEX content_tool_call_id_idx ON public.content USING btree (tool_call_i
 --
 
 CREATE INDEX conversations_created_at_idx ON public.conversations USING btree (created_at);
+
+
+--
+-- Name: debug_info_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX debug_info_call_id_idx ON public.debug_info USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -7109,6 +8758,20 @@ CREATE INDEX department_settings_settings_id_v7_idx ON public.department_setting
 
 
 --
+-- Name: departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX departments_call_id_idx ON public.departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX descriptions_call_id_idx ON public.descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: document_agent_domains_agent_domain_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7120,20 +8783,6 @@ CREATE INDEX document_agent_domains_agent_domain_id_idx ON public.document_agent
 --
 
 CREATE INDEX document_agent_domains_document_id_idx ON public.document_agent_domains USING btree (document_id);
-
-
---
--- Name: document_content_content_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX document_content_content_id_idx ON public.document_content USING btree (content_id);
-
-
---
--- Name: document_content_document_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX document_content_document_id_idx ON public.document_content USING btree (document_id);
 
 
 --
@@ -7312,6 +8961,13 @@ CREATE INDEX document_uploads_upload_id_v7_idx ON public.document_uploads USING 
 
 
 --
+-- Name: documents_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX documents_call_id_idx ON public.documents USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: domain_artifacts_artifact_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7323,6 +8979,48 @@ CREATE INDEX domain_artifacts_artifact_idx ON public.domain_artifacts USING btre
 --
 
 CREATE INDEX domain_artifacts_domain_id_idx ON public.domain_artifacts USING btree (domain_id);
+
+
+--
+-- Name: domain_providers_domain_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_providers_domain_id_idx ON public.domain_providers USING btree (domain_id);
+
+
+--
+-- Name: domain_providers_provider_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX domain_providers_provider_idx ON public.domain_providers USING btree (provider);
+
+
+--
+-- Name: endpoints_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX endpoints_active_idx ON public.endpoints USING btree (active);
+
+
+--
+-- Name: endpoints_base_url_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX endpoints_base_url_unique ON public.endpoints USING btree (base_url) WHERE (active = true);
+
+
+--
+-- Name: endpoints_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX endpoints_call_id_idx ON public.endpoints USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: endpoints_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX endpoints_created_at_idx ON public.endpoints USING btree (created_at);
 
 
 --
@@ -7494,6 +9192,20 @@ CREATE INDEX eval_runs_run_id_v7_idx ON public.eval_runs USING btree (run_id);
 
 
 --
+-- Name: evals_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX evals_call_id_idx ON public.evals USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: examples_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX examples_call_id_idx ON public.examples USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: examples_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7504,28 +9216,14 @@ CREATE INDEX examples_created_at_idx ON public.examples USING btree (created_at)
 -- Name: feedback_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX feedback_created_at_idx ON public.feedback USING btree (created_at);
+CREATE INDEX feedback_created_at_idx ON public.problems USING btree (created_at);
 
 
 --
--- Name: feedback_profile_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: feedbacks_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX feedback_profile_id_v7_idx ON public.feedback USING btree (profile_id);
-
-
---
--- Name: feedback_resolved_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX feedback_resolved_idx ON public.feedback USING btree (resolved);
-
-
---
--- Name: feedback_type_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX feedback_type_idx ON public.feedback USING btree (type);
+CREATE INDEX feedbacks_call_id_idx ON public.feedbacks USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -7610,6 +9308,20 @@ CREATE INDEX field_names_field_id_idx ON public.field_names USING btree (field_i
 --
 
 CREATE INDEX field_names_name_id_idx ON public.field_names USING btree (name_id);
+
+
+--
+-- Name: fields_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX fields_call_id_idx ON public.fields USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX flags_call_id_idx ON public.flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -7823,6 +9535,13 @@ CREATE INDEX groups_trace_id_idx ON public.groups USING btree (trace_id);
 
 
 --
+-- Name: hints_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX hints_call_id_idx ON public.hints USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: hints_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7834,6 +9553,13 @@ CREATE INDEX hints_created_at_idx ON public.hints USING btree (created_at);
 --
 
 CREATE INDEX html_active_idx ON public.html USING btree (active);
+
+
+--
+-- Name: html_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX html_call_id_idx ON public.html USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -7865,6 +9591,13 @@ CREATE INDEX html_uploads_upload_id_idx ON public.html_uploads USING btree (uplo
 
 
 --
+-- Name: icons_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX icons_call_id_idx ON public.icons USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: icons_value_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7886,10 +9619,1144 @@ CREATE INDEX idx_cohort_simulations_active ON public.cohort_simulations USING bt
 
 
 --
--- Name: idx_drafts_profile_resource; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_draft_agents_agents_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_drafts_profile_resource ON public.drafts USING btree (profile_id, resource_type);
+CREATE INDEX idx_draft_agents_agents_id ON public.draft_agents USING btree (agents_id);
+
+
+--
+-- Name: idx_draft_agents_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_agents_draft_id ON public.draft_agents USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_agents_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_agents_version ON public.draft_agents USING btree (version);
+
+
+--
+-- Name: idx_draft_analyses_analyses_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_analyses_analyses_id ON public.draft_analyses USING btree (analyses_id);
+
+
+--
+-- Name: idx_draft_analyses_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_analyses_draft_id ON public.draft_analyses USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_analyses_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_analyses_version ON public.draft_analyses USING btree (version);
+
+
+--
+-- Name: idx_draft_auth_auth_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_auth_auth_id ON public.draft_auth USING btree (auth_id);
+
+
+--
+-- Name: idx_draft_auth_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_auth_draft_id ON public.draft_auth USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_auth_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_auth_version ON public.draft_auth USING btree (version);
+
+
+--
+-- Name: idx_draft_cohorts_cohorts_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_cohorts_cohorts_id ON public.draft_cohorts USING btree (cohorts_id);
+
+
+--
+-- Name: idx_draft_cohorts_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_cohorts_draft_id ON public.draft_cohorts USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_cohorts_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_cohorts_version ON public.draft_cohorts USING btree (version);
+
+
+--
+-- Name: idx_draft_colors_colors_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_colors_colors_id ON public.draft_colors USING btree (colors_id);
+
+
+--
+-- Name: idx_draft_colors_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_colors_draft_id ON public.draft_colors USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_colors_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_colors_version ON public.draft_colors USING btree (version);
+
+
+--
+-- Name: idx_draft_content_content_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_content_content_id ON public.draft_content USING btree (content_id);
+
+
+--
+-- Name: idx_draft_content_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_content_draft_id ON public.draft_content USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_content_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_content_version ON public.draft_content USING btree (version);
+
+
+--
+-- Name: idx_draft_conversations_conversations_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_conversations_conversations_id ON public.draft_conversations USING btree (conversations_id);
+
+
+--
+-- Name: idx_draft_conversations_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_conversations_draft_id ON public.draft_conversations USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_conversations_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_conversations_version ON public.draft_conversations USING btree (version);
+
+
+--
+-- Name: idx_draft_debug_info_debug_info_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_debug_info_debug_info_id ON public.draft_debug_info USING btree (debug_info_id);
+
+
+--
+-- Name: idx_draft_debug_info_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_debug_info_draft_id ON public.draft_debug_info USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_debug_info_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_debug_info_version ON public.draft_debug_info USING btree (version);
+
+
+--
+-- Name: idx_draft_departments_departments_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_departments_departments_id ON public.draft_departments USING btree (departments_id);
+
+
+--
+-- Name: idx_draft_departments_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_departments_draft_id ON public.draft_departments USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_departments_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_departments_version ON public.draft_departments USING btree (version);
+
+
+--
+-- Name: idx_draft_descriptions_descriptions_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_descriptions_descriptions_id ON public.draft_descriptions USING btree (descriptions_id);
+
+
+--
+-- Name: idx_draft_descriptions_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_descriptions_draft_id ON public.draft_descriptions USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_descriptions_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_descriptions_version ON public.draft_descriptions USING btree (version);
+
+
+--
+-- Name: idx_draft_documents_documents_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_documents_documents_id ON public.draft_documents USING btree (documents_id);
+
+
+--
+-- Name: idx_draft_documents_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_documents_draft_id ON public.draft_documents USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_documents_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_documents_version ON public.draft_documents USING btree (version);
+
+
+--
+-- Name: idx_draft_endpoints_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_endpoints_draft_id ON public.draft_endpoints USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_endpoints_endpoints_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_endpoints_endpoints_id ON public.draft_endpoints USING btree (endpoints_id);
+
+
+--
+-- Name: idx_draft_endpoints_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_endpoints_version ON public.draft_endpoints USING btree (version);
+
+
+--
+-- Name: idx_draft_evals_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_evals_draft_id ON public.draft_evals USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_evals_evals_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_evals_evals_id ON public.draft_evals USING btree (evals_id);
+
+
+--
+-- Name: idx_draft_evals_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_evals_version ON public.draft_evals USING btree (version);
+
+
+--
+-- Name: idx_draft_examples_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_examples_draft_id ON public.draft_examples USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_examples_examples_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_examples_examples_id ON public.draft_examples USING btree (examples_id);
+
+
+--
+-- Name: idx_draft_examples_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_examples_version ON public.draft_examples USING btree (version);
+
+
+--
+-- Name: idx_draft_feedbacks_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_feedbacks_draft_id ON public.draft_feedbacks USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_feedbacks_feedbacks_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_feedbacks_feedbacks_id ON public.draft_feedbacks USING btree (feedbacks_id);
+
+
+--
+-- Name: idx_draft_feedbacks_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_feedbacks_version ON public.draft_feedbacks USING btree (version);
+
+
+--
+-- Name: idx_draft_fields_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_fields_draft_id ON public.draft_fields USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_fields_fields_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_fields_fields_id ON public.draft_fields USING btree (fields_id);
+
+
+--
+-- Name: idx_draft_fields_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_fields_version ON public.draft_fields USING btree (version);
+
+
+--
+-- Name: idx_draft_flags_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_flags_draft_id ON public.draft_flags USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_flags_flags_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_flags_flags_id ON public.draft_flags USING btree (flags_id);
+
+
+--
+-- Name: idx_draft_flags_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_flags_version ON public.draft_flags USING btree (version);
+
+
+--
+-- Name: idx_draft_hints_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_hints_draft_id ON public.draft_hints USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_hints_hints_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_hints_hints_id ON public.draft_hints USING btree (hints_id);
+
+
+--
+-- Name: idx_draft_hints_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_hints_version ON public.draft_hints USING btree (version);
+
+
+--
+-- Name: idx_draft_html_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_html_draft_id ON public.draft_html USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_html_html_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_html_html_id ON public.draft_html USING btree (html_id);
+
+
+--
+-- Name: idx_draft_html_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_html_version ON public.draft_html USING btree (version);
+
+
+--
+-- Name: idx_draft_icons_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_icons_draft_id ON public.draft_icons USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_icons_icons_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_icons_icons_id ON public.draft_icons USING btree (icons_id);
+
+
+--
+-- Name: idx_draft_icons_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_icons_version ON public.draft_icons USING btree (version);
+
+
+--
+-- Name: idx_draft_images_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_images_draft_id ON public.draft_images USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_images_images_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_images_images_id ON public.draft_images USING btree (images_id);
+
+
+--
+-- Name: idx_draft_images_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_images_version ON public.draft_images USING btree (version);
+
+
+--
+-- Name: idx_draft_improvements_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_improvements_draft_id ON public.draft_improvements USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_improvements_improvements_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_improvements_improvements_id ON public.draft_improvements USING btree (improvements_id);
+
+
+--
+-- Name: idx_draft_improvements_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_improvements_version ON public.draft_improvements USING btree (version);
+
+
+--
+-- Name: idx_draft_instructions_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_instructions_draft_id ON public.draft_instructions USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_instructions_instructions_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_instructions_instructions_id ON public.draft_instructions USING btree (instructions_id);
+
+
+--
+-- Name: idx_draft_instructions_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_instructions_version ON public.draft_instructions USING btree (version);
+
+
+--
+-- Name: idx_draft_items_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_items_draft_id ON public.draft_items USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_items_items_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_items_items_id ON public.draft_items USING btree (items_id);
+
+
+--
+-- Name: idx_draft_items_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_items_version ON public.draft_items USING btree (version);
+
+
+--
+-- Name: idx_draft_keys_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_keys_draft_id ON public.draft_keys USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_keys_keys_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_keys_keys_id ON public.draft_keys USING btree (keys_id);
+
+
+--
+-- Name: idx_draft_keys_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_keys_version ON public.draft_keys USING btree (version);
+
+
+--
+-- Name: idx_draft_models_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_models_draft_id ON public.draft_models USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_models_models_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_models_models_id ON public.draft_models USING btree (models_id);
+
+
+--
+-- Name: idx_draft_models_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_models_version ON public.draft_models USING btree (version);
+
+
+--
+-- Name: idx_draft_names_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_names_draft_id ON public.draft_names USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_names_names_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_names_names_id ON public.draft_names USING btree (names_id);
+
+
+--
+-- Name: idx_draft_names_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_names_version ON public.draft_names USING btree (version);
+
+
+--
+-- Name: idx_draft_objectives_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_objectives_draft_id ON public.draft_objectives USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_objectives_objectives_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_objectives_objectives_id ON public.draft_objectives USING btree (objectives_id);
+
+
+--
+-- Name: idx_draft_objectives_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_objectives_version ON public.draft_objectives USING btree (version);
+
+
+--
+-- Name: idx_draft_options_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_options_draft_id ON public.draft_options USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_options_options_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_options_options_id ON public.draft_options USING btree (options_id);
+
+
+--
+-- Name: idx_draft_options_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_options_version ON public.draft_options USING btree (version);
+
+
+--
+-- Name: idx_draft_parameters_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_parameters_draft_id ON public.draft_parameters USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_parameters_parameters_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_parameters_parameters_id ON public.draft_parameters USING btree (parameters_id);
+
+
+--
+-- Name: idx_draft_parameters_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_parameters_version ON public.draft_parameters USING btree (version);
+
+
+--
+-- Name: idx_draft_personas_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_personas_draft_id ON public.draft_personas USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_personas_personas_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_personas_personas_id ON public.draft_personas USING btree (personas_id);
+
+
+--
+-- Name: idx_draft_personas_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_personas_version ON public.draft_personas USING btree (version);
+
+
+--
+-- Name: idx_draft_points_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_points_draft_id ON public.draft_points USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_points_points_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_points_points_id ON public.draft_points USING btree (points_id);
+
+
+--
+-- Name: idx_draft_points_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_points_version ON public.draft_points USING btree (version);
+
+
+--
+-- Name: idx_draft_problem_statements_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_problem_statements_draft_id ON public.draft_problem_statements USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_problem_statements_problem_statements_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_problem_statements_problem_statements_id ON public.draft_problem_statements USING btree (problem_statements_id);
+
+
+--
+-- Name: idx_draft_problem_statements_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_problem_statements_version ON public.draft_problem_statements USING btree (version);
+
+
+--
+-- Name: idx_draft_profiles_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_profiles_draft_id ON public.draft_profiles USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_profiles_profiles_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_profiles_profiles_id ON public.draft_profiles USING btree (profiles_id);
+
+
+--
+-- Name: idx_draft_profiles_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_profiles_version ON public.draft_profiles USING btree (version);
+
+
+--
+-- Name: idx_draft_prompts_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_prompts_draft_id ON public.draft_prompts USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_prompts_prompts_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_prompts_prompts_id ON public.draft_prompts USING btree (prompts_id);
+
+
+--
+-- Name: idx_draft_prompts_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_prompts_version ON public.draft_prompts USING btree (version);
+
+
+--
+-- Name: idx_draft_protocols_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_protocols_draft_id ON public.draft_protocols USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_protocols_protocols_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_protocols_protocols_id ON public.draft_protocols USING btree (protocols_id);
+
+
+--
+-- Name: idx_draft_protocols_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_protocols_version ON public.draft_protocols USING btree (version);
+
+
+--
+-- Name: idx_draft_questions_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_questions_draft_id ON public.draft_questions USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_questions_questions_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_questions_questions_id ON public.draft_questions USING btree (questions_id);
+
+
+--
+-- Name: idx_draft_questions_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_questions_version ON public.draft_questions USING btree (version);
+
+
+--
+-- Name: idx_draft_responses_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_responses_draft_id ON public.draft_responses USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_responses_responses_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_responses_responses_id ON public.draft_responses USING btree (responses_id);
+
+
+--
+-- Name: idx_draft_responses_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_responses_version ON public.draft_responses USING btree (version);
+
+
+--
+-- Name: idx_draft_rubrics_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_rubrics_draft_id ON public.draft_rubrics USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_rubrics_rubrics_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_rubrics_rubrics_id ON public.draft_rubrics USING btree (rubrics_id);
+
+
+--
+-- Name: idx_draft_rubrics_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_rubrics_version ON public.draft_rubrics USING btree (version);
+
+
+--
+-- Name: idx_draft_scenarios_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_scenarios_draft_id ON public.draft_scenarios USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_scenarios_scenarios_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_scenarios_scenarios_id ON public.draft_scenarios USING btree (scenarios_id);
+
+
+--
+-- Name: idx_draft_scenarios_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_scenarios_version ON public.draft_scenarios USING btree (version);
+
+
+--
+-- Name: idx_draft_schema_field_items_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_field_items_draft_id ON public.draft_schema_field_items USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_schema_field_items_schema_field_items_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_field_items_schema_field_items_id ON public.draft_schema_field_items USING btree (schema_field_items_id);
+
+
+--
+-- Name: idx_draft_schema_field_items_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_field_items_version ON public.draft_schema_field_items USING btree (version);
+
+
+--
+-- Name: idx_draft_schema_fields_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_fields_draft_id ON public.draft_schema_fields USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_schema_fields_schema_fields_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_fields_schema_fields_id ON public.draft_schema_fields USING btree (schema_fields_id);
+
+
+--
+-- Name: idx_draft_schema_fields_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_fields_version ON public.draft_schema_fields USING btree (version);
+
+
+--
+-- Name: idx_draft_schemas_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schemas_draft_id ON public.draft_schemas USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_schemas_schemas_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schemas_schemas_id ON public.draft_schemas USING btree (schemas_id);
+
+
+--
+-- Name: idx_draft_schemas_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schemas_version ON public.draft_schemas USING btree (version);
+
+
+--
+-- Name: idx_draft_settings_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_settings_draft_id ON public.draft_settings USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_settings_settings_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_settings_settings_id ON public.draft_settings USING btree (settings_id);
+
+
+--
+-- Name: idx_draft_settings_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_settings_version ON public.draft_settings USING btree (version);
+
+
+--
+-- Name: idx_draft_simulations_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_simulations_draft_id ON public.draft_simulations USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_simulations_simulations_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_simulations_simulations_id ON public.draft_simulations USING btree (simulations_id);
+
+
+--
+-- Name: idx_draft_simulations_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_simulations_version ON public.draft_simulations USING btree (version);
+
+
+--
+-- Name: idx_draft_slugs_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_slugs_draft_id ON public.draft_slugs USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_slugs_slugs_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_slugs_slugs_id ON public.draft_slugs USING btree (slugs_id);
+
+
+--
+-- Name: idx_draft_slugs_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_slugs_version ON public.draft_slugs USING btree (version);
+
+
+--
+-- Name: idx_draft_standard_groups_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_standard_groups_draft_id ON public.draft_standard_groups USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_standard_groups_standard_groups_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_standard_groups_standard_groups_id ON public.draft_standard_groups USING btree (standard_groups_id);
+
+
+--
+-- Name: idx_draft_standard_groups_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_standard_groups_version ON public.draft_standard_groups USING btree (version);
+
+
+--
+-- Name: idx_draft_strengths_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_strengths_draft_id ON public.draft_strengths USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_strengths_strengths_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_strengths_strengths_id ON public.draft_strengths USING btree (strengths_id);
+
+
+--
+-- Name: idx_draft_strengths_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_strengths_version ON public.draft_strengths USING btree (version);
+
+
+--
+-- Name: idx_draft_template_array_items_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_array_items_draft_id ON public.draft_template_array_items USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_template_array_items_template_array_items_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_array_items_template_array_items_id ON public.draft_template_array_items USING btree (template_array_items_id);
+
+
+--
+-- Name: idx_draft_template_array_items_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_array_items_version ON public.draft_template_array_items USING btree (version);
+
+
+--
+-- Name: idx_draft_template_values_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_values_draft_id ON public.draft_template_values USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_template_values_template_values_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_values_template_values_id ON public.draft_template_values USING btree (template_values_id);
+
+
+--
+-- Name: idx_draft_template_values_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_values_version ON public.draft_template_values USING btree (version);
+
+
+--
+-- Name: idx_draft_templates_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_templates_draft_id ON public.draft_templates USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_templates_templates_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_templates_templates_id ON public.draft_templates USING btree (templates_id);
+
+
+--
+-- Name: idx_draft_templates_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_templates_version ON public.draft_templates USING btree (version);
+
+
+--
+-- Name: idx_draft_thresholds_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_thresholds_draft_id ON public.draft_thresholds USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_thresholds_thresholds_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_thresholds_thresholds_id ON public.draft_thresholds USING btree (thresholds_id);
+
+
+--
+-- Name: idx_draft_thresholds_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_thresholds_version ON public.draft_thresholds USING btree (version);
+
+
+--
+-- Name: idx_draft_times_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_times_draft_id ON public.draft_times USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_times_times_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_times_times_id ON public.draft_times USING btree (times_id);
+
+
+--
+-- Name: idx_draft_times_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_times_version ON public.draft_times USING btree (version);
+
+
+--
+-- Name: idx_draft_videos_draft_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_videos_draft_id ON public.draft_videos USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_videos_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_videos_version ON public.draft_videos USING btree (version);
+
+
+--
+-- Name: idx_draft_videos_videos_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_videos_videos_id ON public.draft_videos USING btree (videos_id);
+
+
+--
+-- Name: idx_drafts_profile_artifact; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_drafts_profile_artifact ON public.drafts USING btree (profile_id, artifact);
 
 
 --
@@ -7935,6 +10802,13 @@ CREATE INDEX images_active_idx ON public.images USING btree (active);
 
 
 --
+-- Name: images_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX images_call_id_idx ON public.images USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: images_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -7949,10 +10823,10 @@ CREATE INDEX images_name_idx ON public.images USING btree (name);
 
 
 --
--- Name: images_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: improvements_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX images_tool_call_id_idx ON public.images USING btree (tool_call_id);
+CREATE INDEX improvements_call_id_idx ON public.improvements USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -7967,13 +10841,6 @@ CREATE INDEX improvements_created_at_idx ON public.improvements USING btree (cre
 --
 
 CREATE INDEX improvements_message_id_idx ON public.improvements USING btree (message_id);
-
-
---
--- Name: improvements_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX improvements_tool_call_id_idx ON public.improvements USING btree (tool_call_id);
 
 
 --
@@ -7995,6 +10862,41 @@ CREATE INDEX instruction_schemas_schema_id_idx ON public.instruction_schemas USI
 --
 
 CREATE INDEX instructions_active_idx ON public.instructions USING btree (active);
+
+
+--
+-- Name: instructions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX instructions_call_id_idx ON public.instructions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: items_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX items_active_idx ON public.items USING btree (active);
+
+
+--
+-- Name: items_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX items_call_id_idx ON public.items USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: items_encrypted_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX items_encrypted_idx ON public.items USING btree (encrypted);
+
+
+--
+-- Name: items_name_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX items_name_idx ON public.items USING btree (name);
 
 
 --
@@ -8047,38 +10949,73 @@ CREATE INDEX key_names_name_id_idx ON public.key_names USING btree (name_id);
 
 
 --
--- Name: message_audio_message_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: keys_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX message_audio_message_id_v7_idx ON public.message_audio USING btree (message_id);
-
-
---
--- Name: message_audio_upload_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX message_audio_upload_id_v7_idx ON public.message_audio USING btree (upload_id);
+CREATE INDEX keys_call_id_idx ON public.keys USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
--- Name: message_content_content_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: message_audios_audio_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX message_content_content_id_idx ON public.message_content USING btree (content_id);
-
-
---
--- Name: message_content_message_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX message_content_message_id_idx ON public.message_content USING btree (message_id);
+CREATE INDEX message_audios_audio_id_idx ON public.message_audios USING btree (audio_id);
 
 
 --
--- Name: message_content_message_id_idx_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: message_audios_message_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX message_content_message_id_idx_idx ON public.message_content USING btree (message_id, idx);
+CREATE INDEX message_audios_message_id_idx ON public.message_audios USING btree (message_id);
+
+
+--
+-- Name: message_calls_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_calls_call_id_idx ON public.message_calls USING btree (call_id);
+
+
+--
+-- Name: message_calls_message_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_calls_message_id_idx ON public.message_calls USING btree (message_id);
+
+
+--
+-- Name: message_contents_content_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_contents_content_id_idx ON public.message_contents USING btree (content_id);
+
+
+--
+-- Name: message_contents_message_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_contents_message_id_idx ON public.message_contents USING btree (message_id);
+
+
+--
+-- Name: message_contents_message_id_idx_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_contents_message_id_idx_idx ON public.message_contents USING btree (message_id, idx);
+
+
+--
+-- Name: message_documents_document_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_documents_document_id_idx ON public.message_documents USING btree (document_id);
+
+
+--
+-- Name: message_documents_message_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_documents_message_id_idx ON public.message_documents USING btree (message_id);
 
 
 --
@@ -8117,6 +11054,20 @@ CREATE INDEX message_hints_message_id_idx_idx ON public.message_hints USING btre
 
 
 --
+-- Name: message_images_image_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_images_image_id_idx ON public.message_images USING btree (image_id);
+
+
+--
+-- Name: message_images_message_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_images_message_id_idx ON public.message_images USING btree (message_id);
+
+
+--
 -- Name: message_personas_message_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8152,6 +11103,20 @@ CREATE INDEX message_runs_run_id_v7_idx ON public.message_runs USING btree (run_
 
 
 --
+-- Name: message_texts_message_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_texts_message_id_idx ON public.message_texts USING btree (message_id);
+
+
+--
+-- Name: message_texts_text_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_texts_text_id_idx ON public.message_texts USING btree (text_id);
+
+
+--
 -- Name: message_tree_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8170,6 +11135,20 @@ CREATE INDEX message_tree_child_id_v7_idx ON public.message_tree USING btree (ch
 --
 
 CREATE INDEX message_tree_parent_id_v7_idx ON public.message_tree USING btree (parent_id);
+
+
+--
+-- Name: message_videos_message_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_videos_message_id_idx ON public.message_videos USING btree (message_id);
+
+
+--
+-- Name: message_videos_video_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX message_videos_video_id_idx ON public.message_videos USING btree (video_id);
 
 
 --
@@ -8208,17 +11187,31 @@ CREATE INDEX model_descriptions_model_id_idx ON public.model_descriptions USING 
 
 
 --
--- Name: model_endpoints_active_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: model_domains_domain_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_endpoints_active_idx ON public.model_endpoints USING btree (active);
+CREATE INDEX model_domains_domain_id_idx ON public.model_domains USING btree (domain_id);
 
 
 --
--- Name: model_endpoints_model_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: model_domains_model_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_endpoints_model_id_v7_idx ON public.model_endpoints USING btree (model_id);
+CREATE INDEX model_domains_model_id_idx ON public.model_domains USING btree (model_id);
+
+
+--
+-- Name: model_endpoints_endpoint_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_endpoints_endpoint_id_idx ON public.model_endpoints USING btree (endpoint_id);
+
+
+--
+-- Name: model_endpoints_model_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_endpoints_model_id_idx ON public.model_endpoints USING btree (model_id);
 
 
 --
@@ -8240,6 +11233,20 @@ CREATE INDEX model_flags_model_id_idx ON public.model_flags USING btree (model_i
 --
 
 CREATE INDEX model_flags_type_idx ON public.model_flags USING btree (type);
+
+
+--
+-- Name: model_keys_key_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_keys_key_id_idx ON public.model_keys USING btree (key_id);
+
+
+--
+-- Name: model_keys_model_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_keys_model_id_idx ON public.model_keys USING btree (model_id);
 
 
 --
@@ -8310,20 +11317,6 @@ CREATE INDEX model_pricing_pricing_type_idx ON public.model_pricing USING btree 
 --
 
 CREATE INDEX model_pricing_unit_id_v7_idx ON public.model_pricing USING btree (unit_id);
-
-
---
--- Name: model_providers_model_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX model_providers_model_id_idx ON public.model_providers USING btree (model_id);
-
-
---
--- Name: model_providers_provider_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX model_providers_provider_id_idx ON public.model_providers USING btree (provider_id);
 
 
 --
@@ -8418,6 +11411,20 @@ CREATE INDEX model_voices_voice_idx ON public.model_voices USING btree (voice);
 
 
 --
+-- Name: models_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX models_call_id_idx ON public.models USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX names_call_id_idx ON public.names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: names_name_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8439,6 +11446,13 @@ CREATE INDEX objective_departments_objective_id_v7_idx ON public.objective_depar
 
 
 --
+-- Name: objectives_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX objectives_call_id_idx ON public.objectives USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: objectives_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8446,17 +11460,17 @@ CREATE INDEX objectives_created_at_idx ON public.objectives USING btree (created
 
 
 --
--- Name: objectives_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX objectives_tool_call_id_idx ON public.objectives USING btree (tool_call_id);
-
-
---
 -- Name: options_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX options_active_idx ON public.options USING btree (active);
+
+
+--
+-- Name: options_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX options_call_id_idx ON public.options USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8537,6 +11551,13 @@ CREATE INDEX parameter_names_parameter_id_idx ON public.parameter_names USING bt
 
 
 --
+-- Name: parameters_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX parameters_call_id_idx ON public.parameters USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: persona_colors_color_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8583,6 +11604,13 @@ CREATE INDEX persona_descriptions_description_id_idx ON public.persona_descripti
 --
 
 CREATE INDEX persona_descriptions_persona_id_idx ON public.persona_descriptions USING btree (persona_id);
+
+
+--
+-- Name: persona_examples_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_examples_active_idx ON public.persona_examples USING btree (active);
 
 
 --
@@ -8677,10 +11705,24 @@ CREATE INDEX persona_names_persona_id_idx ON public.persona_names USING btree (p
 
 
 --
+-- Name: personas_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX personas_call_id_idx ON public.personas USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: personas_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX personas_id_idx ON public.personas USING btree (id);
+
+
+--
+-- Name: points_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX points_call_id_idx ON public.points USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8705,6 +11747,13 @@ CREATE INDEX problem_statement_departments_problem_statement_id_v7_idx ON public
 
 
 --
+-- Name: problem_statements_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX problem_statements_call_id_idx ON public.problem_statements USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: problem_statements_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8719,10 +11768,24 @@ CREATE INDEX problem_statements_name_idx ON public.problem_statements USING btre
 
 
 --
--- Name: problem_statements_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: problems_profile_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX problem_statements_tool_call_id_idx ON public.problem_statements USING btree (tool_call_id);
+CREATE INDEX problems_profile_id_v7_idx ON public.problems USING btree (profile_id);
+
+
+--
+-- Name: problems_resolved_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX problems_resolved_idx ON public.problems USING btree (resolved);
+
+
+--
+-- Name: problems_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX problems_type_idx ON public.problems USING btree (type);
 
 
 --
@@ -8824,6 +11887,13 @@ CREATE INDEX profile_request_limits_profile_id_v7_idx ON public.profile_request_
 
 
 --
+-- Name: profiles_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profiles_call_id_idx ON public.profiles USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: prompt_departments_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8845,6 +11915,13 @@ CREATE INDEX prompt_departments_prompt_id_v7_idx ON public.prompt_departments US
 
 
 --
+-- Name: prompts_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX prompts_call_id_idx ON public.prompts USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: prompts_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8852,59 +11929,17 @@ CREATE INDEX prompts_created_at_idx ON public.prompts USING btree (created_at);
 
 
 --
--- Name: provider_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: protocols_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX provider_descriptions_description_id_idx ON public.provider_descriptions USING btree (description_id);
-
-
---
--- Name: provider_descriptions_provider_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX provider_descriptions_provider_id_idx ON public.provider_descriptions USING btree (provider_id);
+CREATE INDEX protocols_call_id_idx ON public.protocols USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
--- Name: provider_endpoints_provider_id_v7_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: protocols_value_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX provider_endpoints_provider_id_v7_idx ON public.provider_endpoints USING btree (provider_id);
-
-
---
--- Name: provider_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX provider_flags_flag_id_idx ON public.provider_flags USING btree (flag_id);
-
-
---
--- Name: provider_flags_provider_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX provider_flags_provider_id_idx ON public.provider_flags USING btree (provider_id);
-
-
---
--- Name: provider_flags_type_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX provider_flags_type_idx ON public.provider_flags USING btree (type);
-
-
---
--- Name: provider_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX provider_names_name_id_idx ON public.provider_names USING btree (name_id);
-
-
---
--- Name: provider_names_provider_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX provider_names_provider_id_idx ON public.provider_names USING btree (provider_id);
+CREATE INDEX protocols_value_idx ON public.protocols USING btree (value);
 
 
 --
@@ -8929,6 +11964,13 @@ CREATE INDEX questions_active_idx ON public.questions USING btree (active);
 
 
 --
+-- Name: questions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX questions_call_id_idx ON public.questions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: questions_time_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8950,6 +11992,20 @@ CREATE INDEX quiz_responses_question_id_v7_idx ON public.responses USING btree (
 
 
 --
+-- Name: resource_modalities_modality_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX resource_modalities_modality_idx ON public.resource_modalities USING btree (modality);
+
+
+--
+-- Name: resource_modalities_resource_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX resource_modalities_resource_idx ON public.resource_modalities USING btree (resource);
+
+
+--
 -- Name: resource_schemas_schema_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8961,6 +12017,13 @@ CREATE INDEX resource_schemas_schema_id_idx ON public.resource_schemas USING btr
 --
 
 CREATE INDEX resource_tools_tool_id_idx ON public.resource_tools USING btree (tool_id);
+
+
+--
+-- Name: responses_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX responses_call_id_idx ON public.responses USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9143,6 +12206,13 @@ CREATE UNIQUE INDEX rubric_standard_groups_rubric_position_uniq ON public.rubric
 --
 
 CREATE INDEX rubric_standard_groups_standard_group_id_idx ON public.rubric_standard_groups USING btree (standard_group_id);
+
+
+--
+-- Name: rubrics_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubrics_call_id_idx ON public.rubrics USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9629,6 +12699,20 @@ CREATE INDEX scenario_videos_video_id_v7_idx ON public.scenario_videos USING btr
 
 
 --
+-- Name: scenarios_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenarios_call_id_idx ON public.scenarios USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: schema_field_items_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schema_field_items_call_id_idx ON public.schema_field_items USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: schema_field_items_item_schema_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9640,6 +12724,13 @@ CREATE INDEX schema_field_items_item_schema_id_idx ON public.schema_field_items 
 --
 
 CREATE INDEX schema_field_items_schema_field_id_idx ON public.schema_field_items USING btree (schema_field_id);
+
+
+--
+-- Name: schema_fields_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schema_fields_call_id_idx ON public.schema_fields USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9668,6 +12759,13 @@ CREATE INDEX schema_templates_schema_id_idx ON public.schema_templates USING btr
 --
 
 CREATE INDEX schema_templates_template_id_idx ON public.schema_templates USING btree (template_id);
+
+
+--
+-- Name: schemas_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX schemas_call_id_idx ON public.schemas USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9853,13 +12951,6 @@ CREATE INDEX setting_provider_keys_key_id_v7_idx ON public.setting_provider_keys
 
 
 --
--- Name: setting_provider_keys_provider_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX setting_provider_keys_provider_id_v7_idx ON public.setting_provider_keys USING btree (provider_id);
-
-
---
 -- Name: setting_provider_keys_settings_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9871,13 +12962,6 @@ CREATE INDEX setting_provider_keys_settings_id_v7_idx ON public.setting_provider
 --
 
 CREATE INDEX setting_providers_active_idx ON public.setting_providers USING btree (active);
-
-
---
--- Name: setting_providers_provider_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX setting_providers_provider_id_v7_idx ON public.setting_providers USING btree (provider_id);
 
 
 --
@@ -9906,6 +12990,13 @@ CREATE INDEX setting_thresholds_threshold_id_idx ON public.setting_thresholds US
 --
 
 CREATE INDEX setting_thresholds_type_idx ON public.setting_thresholds USING btree (type);
+
+
+--
+-- Name: settings_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX settings_call_id_idx ON public.settings USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -10126,10 +13217,31 @@ CREATE INDEX simulation_scenarios_simulation_id_v7_idx ON public.simulation_scen
 
 
 --
--- Name: standard_groups_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: simulations_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX standard_groups_tool_call_id_idx ON public.standard_groups USING btree (tool_call_id);
+CREATE INDEX simulations_call_id_idx ON public.simulations USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: slugs_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX slugs_call_id_idx ON public.slugs USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: slugs_value_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX slugs_value_idx ON public.slugs USING btree (value);
+
+
+--
+-- Name: standard_groups_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX standard_groups_call_id_idx ON public.standard_groups USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -10147,6 +13259,13 @@ CREATE INDEX standards_standard_group_id_v7_idx ON public.standards USING btree 
 
 
 --
+-- Name: strengths_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX strengths_call_id_idx ON public.strengths USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: strengths_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10161,10 +13280,10 @@ CREATE INDEX strengths_message_id_idx ON public.strengths USING btree (message_i
 
 
 --
--- Name: strengths_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: template_array_items_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX strengths_tool_call_id_idx ON public.strengths USING btree (tool_call_id);
+CREATE INDEX template_array_items_call_id_idx ON public.template_array_items USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -10196,6 +13315,13 @@ CREATE INDEX template_array_items_template_id_idx ON public.template_array_items
 
 
 --
+-- Name: template_values_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX template_values_call_id_idx ON public.template_values USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: template_values_schema_field_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10210,6 +13336,13 @@ CREATE INDEX template_values_template_id_idx ON public.template_values USING btr
 
 
 --
+-- Name: templates_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX templates_call_id_idx ON public.templates USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: templates_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10221,13 +13354,6 @@ CREATE INDEX templates_created_at_idx ON public.templates USING btree (created_a
 --
 
 CREATE INDEX templates_name_idx ON public.templates USING btree (name);
-
-
---
--- Name: templates_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX templates_tool_call_id_idx ON public.templates USING btree (tool_call_id);
 
 
 --
@@ -10252,6 +13378,34 @@ CREATE INDEX tests_run_id_v7_idx ON public.tests USING btree (run_id);
 
 
 --
+-- Name: texts_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX texts_active_idx ON public.texts USING btree (active);
+
+
+--
+-- Name: texts_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX texts_call_id_idx ON public.texts USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: texts_created_at_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX texts_created_at_idx ON public.texts USING btree (created_at);
+
+
+--
+-- Name: thresholds_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX thresholds_call_id_idx ON public.thresholds USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: thresholds_value_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10263,6 +13417,13 @@ CREATE INDEX thresholds_value_idx ON public.thresholds USING btree (value);
 --
 
 CREATE INDEX times_active_idx ON public.times USING btree (active);
+
+
+--
+-- Name: times_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX times_call_id_idx ON public.times USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -10280,41 +13441,6 @@ CREATE INDEX times_time_taken_idx ON public.times USING btree (time_taken);
 
 
 --
--- Name: tool_call_arguments_tool_call_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX tool_call_arguments_tool_call_id_v7_idx ON public.tool_call_arguments USING btree (tool_call_id);
-
-
---
--- Name: tool_call_results_tool_call_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX tool_call_results_tool_call_id_v7_idx ON public.tool_call_results USING btree (tool_call_id);
-
-
---
--- Name: tool_call_runs_run_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX tool_call_runs_run_id_v7_idx ON public.tool_call_runs USING btree (run_id);
-
-
---
--- Name: tool_call_runs_tool_call_id_v7_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX tool_call_runs_tool_call_id_v7_idx ON public.tool_call_runs USING btree (tool_call_id);
-
-
---
--- Name: tool_calls_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX tool_calls_call_id_idx ON public.calls USING btree (call_id);
-
-
---
 -- Name: tool_calls_created_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10326,6 +13452,20 @@ CREATE INDEX tool_calls_created_at_idx ON public.calls USING btree (created_at);
 --
 
 CREATE INDEX tool_calls_tool_id_idx ON public.calls USING btree (tool_id);
+
+
+--
+-- Name: tool_domains_domain_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tool_domains_domain_id_idx ON public.tool_domains USING btree (domain_id);
+
+
+--
+-- Name: tool_domains_tool_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tool_domains_tool_id_idx ON public.tool_domains USING btree (tool_id);
 
 
 --
@@ -10343,17 +13483,24 @@ CREATE INDEX tool_schemas_tool_id_idx ON public.tool_schemas USING btree (tool_i
 
 
 --
+-- Name: tool_templates_template_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tool_templates_template_id_idx ON public.tool_templates USING btree (template_id);
+
+
+--
+-- Name: tool_templates_tool_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX tool_templates_tool_id_idx ON public.tool_templates USING btree (tool_id);
+
+
+--
 -- Name: tools_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX tools_active_idx ON public.tools USING btree (active);
-
-
---
--- Name: tools_template_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX tools_template_id_idx ON public.tools USING btree (template_id);
 
 
 --
@@ -10427,10 +13574,10 @@ CREATE INDEX video_uploads_video_id_v7_idx ON public.video_uploads USING btree (
 
 
 --
--- Name: videos_tool_call_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: videos_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX videos_tool_call_id_idx ON public.videos USING btree (tool_call_id);
+CREATE INDEX videos_call_id_idx ON public.videos USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -10819,6 +13966,22 @@ ALTER TABLE ONLY public.agent_voices
 
 
 --
+-- Name: agents agents_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agents
+    ADD CONSTRAINT agents_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: analyses analyses_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analyses
+    ADD CONSTRAINT analyses_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: attempt_chats attempt_chats_attempt_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10867,6 +14030,38 @@ ALTER TABLE ONLY public.attempt_tests
 
 
 --
+-- Name: audio_uploads audio_uploads_audio_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audio_uploads
+    ADD CONSTRAINT audio_uploads_audio_id_fkey FOREIGN KEY (audio_id) REFERENCES public.audios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: audio_uploads audio_uploads_upload_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audio_uploads
+    ADD CONSTRAINT audio_uploads_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads(id) ON DELETE CASCADE;
+
+
+--
+-- Name: audios audios_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audios
+    ADD CONSTRAINT audios_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: auth auth_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth
+    ADD CONSTRAINT auth_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: auth_descriptions auth_descriptions_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10899,11 +14094,19 @@ ALTER TABLE ONLY public.auth_flags
 
 
 --
--- Name: auth_items auth_items_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: auth_items auth_items_new_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_items
-    ADD CONSTRAINT auth_items_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id);
+    ADD CONSTRAINT auth_items_new_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+
+
+--
+-- Name: auth_items auth_items_new_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_items
+    ADD CONSTRAINT auth_items_new_item_id_fkey FOREIGN KEY (item_id) REFERENCES public.items(id) ON DELETE CASCADE;
 
 
 --
@@ -10920,6 +14123,38 @@ ALTER TABLE ONLY public.auth_names
 
 ALTER TABLE ONLY public.auth_names
     ADD CONSTRAINT auth_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names(id) ON DELETE CASCADE;
+
+
+--
+-- Name: auth_protocols auth_protocols_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_protocols
+    ADD CONSTRAINT auth_protocols_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+
+
+--
+-- Name: auth_protocols auth_protocols_protocol_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_protocols
+    ADD CONSTRAINT auth_protocols_protocol_id_fkey FOREIGN KEY (protocol_id) REFERENCES public.protocols(id) ON DELETE CASCADE;
+
+
+--
+-- Name: auth_slugs auth_slugs_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_slugs
+    ADD CONSTRAINT auth_slugs_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+
+
+--
+-- Name: auth_slugs auth_slugs_slug_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_slugs
+    ADD CONSTRAINT auth_slugs_slug_id_fkey FOREIGN KEY (slug_id) REFERENCES public.slugs(id) ON DELETE CASCADE;
 
 
 --
@@ -11091,11 +14326,43 @@ ALTER TABLE ONLY public.cohort_simulations
 
 
 --
--- Name: content content_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cohorts cohorts_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.content
-    ADD CONSTRAINT content_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+ALTER TABLE ONLY public.cohorts
+    ADD CONSTRAINT cohorts_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: colors colors_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.colors
+    ADD CONSTRAINT colors_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: contents content_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.contents
+    ADD CONSTRAINT content_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: conversations conversations_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.conversations
+    ADD CONSTRAINT conversations_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: debug_info debug_info_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.debug_info
+    ADD CONSTRAINT debug_info_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -11163,6 +14430,22 @@ ALTER TABLE ONLY public.department_settings
 
 
 --
+-- Name: departments departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.departments
+    ADD CONSTRAINT departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: descriptions descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.descriptions
+    ADD CONSTRAINT descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: instruction_schemas developer_instruction_schemas_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11184,22 +14467,6 @@ ALTER TABLE ONLY public.document_agent_domains
 
 ALTER TABLE ONLY public.document_agent_domains
     ADD CONSTRAINT document_agent_domains_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE CASCADE;
-
-
---
--- Name: document_content document_content_content_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_content
-    ADD CONSTRAINT document_content_content_id_fkey FOREIGN KEY (content_id) REFERENCES public.content(id) ON DELETE CASCADE;
-
-
---
--- Name: document_content document_content_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_content
-    ADD CONSTRAINT document_content_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE CASCADE;
 
 
 --
@@ -11379,6 +14646,14 @@ ALTER TABLE ONLY public.document_uploads
 
 
 --
+-- Name: documents documents_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.documents
+    ADD CONSTRAINT documents_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: domain_artifacts domain_artifacts_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11387,11 +14662,891 @@ ALTER TABLE ONLY public.domain_artifacts
 
 
 --
+-- Name: domain_providers domain_providers_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.domain_providers
+    ADD CONSTRAINT domain_providers_domain_id_fkey FOREIGN KEY (domain_id) REFERENCES public.domains(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_agents draft_agents_agents_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_agents
+    ADD CONSTRAINT draft_agents_agents_id_fkey FOREIGN KEY (agents_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_agents draft_agents_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_agents
+    ADD CONSTRAINT draft_agents_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_analyses draft_analyses_analyses_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_analyses
+    ADD CONSTRAINT draft_analyses_analyses_id_fkey FOREIGN KEY (analyses_id) REFERENCES public.analyses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_analyses draft_analyses_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_analyses
+    ADD CONSTRAINT draft_analyses_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_auth draft_auth_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_auth
+    ADD CONSTRAINT draft_auth_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_auth draft_auth_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_auth
+    ADD CONSTRAINT draft_auth_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_cohorts draft_cohorts_cohorts_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_cohorts
+    ADD CONSTRAINT draft_cohorts_cohorts_id_fkey FOREIGN KEY (cohorts_id) REFERENCES public.cohorts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_cohorts draft_cohorts_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_cohorts
+    ADD CONSTRAINT draft_cohorts_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_colors draft_colors_colors_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_colors
+    ADD CONSTRAINT draft_colors_colors_id_fkey FOREIGN KEY (colors_id) REFERENCES public.colors(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_colors draft_colors_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_colors
+    ADD CONSTRAINT draft_colors_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_content draft_content_content_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_content
+    ADD CONSTRAINT draft_content_content_id_fkey FOREIGN KEY (content_id) REFERENCES public.contents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_content draft_content_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_content
+    ADD CONSTRAINT draft_content_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_conversations draft_conversations_conversations_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_conversations
+    ADD CONSTRAINT draft_conversations_conversations_id_fkey FOREIGN KEY (conversations_id) REFERENCES public.conversations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_conversations draft_conversations_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_conversations
+    ADD CONSTRAINT draft_conversations_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_debug_info draft_debug_info_debug_info_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_debug_info
+    ADD CONSTRAINT draft_debug_info_debug_info_id_fkey FOREIGN KEY (debug_info_id) REFERENCES public.debug_info(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_debug_info draft_debug_info_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_debug_info
+    ADD CONSTRAINT draft_debug_info_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_departments draft_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_departments
+    ADD CONSTRAINT draft_departments_departments_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_departments draft_departments_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_departments
+    ADD CONSTRAINT draft_departments_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_descriptions draft_descriptions_descriptions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_descriptions
+    ADD CONSTRAINT draft_descriptions_descriptions_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_descriptions draft_descriptions_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_descriptions
+    ADD CONSTRAINT draft_descriptions_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_documents draft_documents_documents_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_documents
+    ADD CONSTRAINT draft_documents_documents_id_fkey FOREIGN KEY (documents_id) REFERENCES public.documents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_documents draft_documents_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_documents
+    ADD CONSTRAINT draft_documents_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_endpoints draft_endpoints_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_endpoints
+    ADD CONSTRAINT draft_endpoints_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_endpoints draft_endpoints_endpoints_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_endpoints
+    ADD CONSTRAINT draft_endpoints_endpoints_id_fkey FOREIGN KEY (endpoints_id) REFERENCES public.endpoints(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_evals draft_evals_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_evals
+    ADD CONSTRAINT draft_evals_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_evals draft_evals_evals_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_evals
+    ADD CONSTRAINT draft_evals_evals_id_fkey FOREIGN KEY (evals_id) REFERENCES public.evals(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_examples draft_examples_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_examples
+    ADD CONSTRAINT draft_examples_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_examples draft_examples_examples_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_examples
+    ADD CONSTRAINT draft_examples_examples_id_fkey FOREIGN KEY (examples_id) REFERENCES public.examples(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_feedbacks draft_feedbacks_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_feedbacks
+    ADD CONSTRAINT draft_feedbacks_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_feedbacks draft_feedbacks_feedbacks_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_feedbacks
+    ADD CONSTRAINT draft_feedbacks_feedbacks_id_fkey FOREIGN KEY (feedbacks_id) REFERENCES public.feedbacks(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_fields draft_fields_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_fields
+    ADD CONSTRAINT draft_fields_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_fields draft_fields_fields_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_fields
+    ADD CONSTRAINT draft_fields_fields_id_fkey FOREIGN KEY (fields_id) REFERENCES public.fields(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_flags draft_flags_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_flags
+    ADD CONSTRAINT draft_flags_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_flags draft_flags_flags_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_flags
+    ADD CONSTRAINT draft_flags_flags_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_hints draft_hints_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_hints
+    ADD CONSTRAINT draft_hints_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_hints draft_hints_hints_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_hints
+    ADD CONSTRAINT draft_hints_hints_id_fkey FOREIGN KEY (hints_id) REFERENCES public.hints(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_html draft_html_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_html
+    ADD CONSTRAINT draft_html_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_html draft_html_html_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_html
+    ADD CONSTRAINT draft_html_html_id_fkey FOREIGN KEY (html_id) REFERENCES public.html(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_icons draft_icons_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_icons
+    ADD CONSTRAINT draft_icons_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_icons draft_icons_icons_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_icons
+    ADD CONSTRAINT draft_icons_icons_id_fkey FOREIGN KEY (icons_id) REFERENCES public.icons(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_images draft_images_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_images
+    ADD CONSTRAINT draft_images_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_images draft_images_images_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_images
+    ADD CONSTRAINT draft_images_images_id_fkey FOREIGN KEY (images_id) REFERENCES public.images(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_improvements draft_improvements_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_improvements
+    ADD CONSTRAINT draft_improvements_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_improvements draft_improvements_improvements_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_improvements
+    ADD CONSTRAINT draft_improvements_improvements_id_fkey FOREIGN KEY (improvements_id) REFERENCES public.improvements(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_instructions draft_instructions_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_instructions
+    ADD CONSTRAINT draft_instructions_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_instructions draft_instructions_instructions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_instructions
+    ADD CONSTRAINT draft_instructions_instructions_id_fkey FOREIGN KEY (instructions_id) REFERENCES public.instructions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_items draft_items_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_items
+    ADD CONSTRAINT draft_items_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_items draft_items_items_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_items
+    ADD CONSTRAINT draft_items_items_id_fkey FOREIGN KEY (items_id) REFERENCES public.items(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_keys draft_keys_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_keys
+    ADD CONSTRAINT draft_keys_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_keys draft_keys_keys_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_keys
+    ADD CONSTRAINT draft_keys_keys_id_fkey FOREIGN KEY (keys_id) REFERENCES public.keys(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_models draft_models_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_models
+    ADD CONSTRAINT draft_models_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_models draft_models_models_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_models
+    ADD CONSTRAINT draft_models_models_id_fkey FOREIGN KEY (models_id) REFERENCES public.models(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_names draft_names_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_names
+    ADD CONSTRAINT draft_names_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_names draft_names_names_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_names
+    ADD CONSTRAINT draft_names_names_id_fkey FOREIGN KEY (names_id) REFERENCES public.names(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_objectives draft_objectives_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_objectives
+    ADD CONSTRAINT draft_objectives_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_objectives draft_objectives_objectives_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_objectives
+    ADD CONSTRAINT draft_objectives_objectives_id_fkey FOREIGN KEY (objectives_id) REFERENCES public.objectives(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_options draft_options_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_options
+    ADD CONSTRAINT draft_options_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_options draft_options_options_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_options
+    ADD CONSTRAINT draft_options_options_id_fkey FOREIGN KEY (options_id) REFERENCES public.options(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_parameters draft_parameters_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_parameters
+    ADD CONSTRAINT draft_parameters_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_parameters draft_parameters_parameters_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_parameters
+    ADD CONSTRAINT draft_parameters_parameters_id_fkey FOREIGN KEY (parameters_id) REFERENCES public.parameters(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_personas draft_personas_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_personas
+    ADD CONSTRAINT draft_personas_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_personas draft_personas_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_personas
+    ADD CONSTRAINT draft_personas_personas_id_fkey FOREIGN KEY (personas_id) REFERENCES public.personas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_points draft_points_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_points
+    ADD CONSTRAINT draft_points_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_points draft_points_points_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_points
+    ADD CONSTRAINT draft_points_points_id_fkey FOREIGN KEY (points_id) REFERENCES public.points(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_problem_statements draft_problem_statements_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_problem_statements
+    ADD CONSTRAINT draft_problem_statements_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_problem_statements draft_problem_statements_problem_statements_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_problem_statements
+    ADD CONSTRAINT draft_problem_statements_problem_statements_id_fkey FOREIGN KEY (problem_statements_id) REFERENCES public.problem_statements(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_profiles draft_profiles_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_profiles
+    ADD CONSTRAINT draft_profiles_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_profiles draft_profiles_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_profiles
+    ADD CONSTRAINT draft_profiles_profiles_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_prompts draft_prompts_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_prompts
+    ADD CONSTRAINT draft_prompts_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_prompts draft_prompts_prompts_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_prompts
+    ADD CONSTRAINT draft_prompts_prompts_id_fkey FOREIGN KEY (prompts_id) REFERENCES public.prompts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_protocols draft_protocols_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_protocols
+    ADD CONSTRAINT draft_protocols_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_protocols draft_protocols_protocols_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_protocols
+    ADD CONSTRAINT draft_protocols_protocols_id_fkey FOREIGN KEY (protocols_id) REFERENCES public.protocols(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_questions draft_questions_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_questions
+    ADD CONSTRAINT draft_questions_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_questions draft_questions_questions_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_questions
+    ADD CONSTRAINT draft_questions_questions_id_fkey FOREIGN KEY (questions_id) REFERENCES public.questions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_responses draft_responses_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_responses
+    ADD CONSTRAINT draft_responses_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_responses draft_responses_responses_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_responses
+    ADD CONSTRAINT draft_responses_responses_id_fkey FOREIGN KEY (responses_id) REFERENCES public.responses(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_rubrics draft_rubrics_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_rubrics
+    ADD CONSTRAINT draft_rubrics_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_rubrics draft_rubrics_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_rubrics
+    ADD CONSTRAINT draft_rubrics_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_scenarios draft_scenarios_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_scenarios
+    ADD CONSTRAINT draft_scenarios_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_scenarios draft_scenarios_scenarios_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_scenarios
+    ADD CONSTRAINT draft_scenarios_scenarios_id_fkey FOREIGN KEY (scenarios_id) REFERENCES public.scenarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_schema_field_items draft_schema_field_items_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schema_field_items
+    ADD CONSTRAINT draft_schema_field_items_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_schema_field_items draft_schema_field_items_schema_field_items_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schema_field_items
+    ADD CONSTRAINT draft_schema_field_items_schema_field_items_id_fkey FOREIGN KEY (schema_field_items_id) REFERENCES public.schema_field_items(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_schema_fields draft_schema_fields_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schema_fields
+    ADD CONSTRAINT draft_schema_fields_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_schema_fields draft_schema_fields_schema_fields_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schema_fields
+    ADD CONSTRAINT draft_schema_fields_schema_fields_id_fkey FOREIGN KEY (schema_fields_id) REFERENCES public.schema_fields(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_schemas draft_schemas_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schemas
+    ADD CONSTRAINT draft_schemas_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_schemas draft_schemas_schemas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_schemas
+    ADD CONSTRAINT draft_schemas_schemas_id_fkey FOREIGN KEY (schemas_id) REFERENCES public.schemas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_settings draft_settings_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_settings
+    ADD CONSTRAINT draft_settings_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_settings draft_settings_settings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_settings
+    ADD CONSTRAINT draft_settings_settings_id_fkey FOREIGN KEY (settings_id) REFERENCES public.settings(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_simulations draft_simulations_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_simulations
+    ADD CONSTRAINT draft_simulations_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_simulations draft_simulations_simulations_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_simulations
+    ADD CONSTRAINT draft_simulations_simulations_id_fkey FOREIGN KEY (simulations_id) REFERENCES public.simulations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_slugs draft_slugs_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_slugs
+    ADD CONSTRAINT draft_slugs_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_slugs draft_slugs_slugs_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_slugs
+    ADD CONSTRAINT draft_slugs_slugs_id_fkey FOREIGN KEY (slugs_id) REFERENCES public.slugs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_standard_groups draft_standard_groups_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_standard_groups
+    ADD CONSTRAINT draft_standard_groups_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_standard_groups draft_standard_groups_standard_groups_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_standard_groups
+    ADD CONSTRAINT draft_standard_groups_standard_groups_id_fkey FOREIGN KEY (standard_groups_id) REFERENCES public.standard_groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_strengths draft_strengths_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_strengths
+    ADD CONSTRAINT draft_strengths_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_strengths draft_strengths_strengths_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_strengths
+    ADD CONSTRAINT draft_strengths_strengths_id_fkey FOREIGN KEY (strengths_id) REFERENCES public.strengths(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_template_array_items draft_template_array_items_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_template_array_items
+    ADD CONSTRAINT draft_template_array_items_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_template_array_items draft_template_array_items_template_array_items_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_template_array_items
+    ADD CONSTRAINT draft_template_array_items_template_array_items_id_fkey FOREIGN KEY (template_array_items_id) REFERENCES public.template_array_items(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_template_values draft_template_values_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_template_values
+    ADD CONSTRAINT draft_template_values_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_template_values draft_template_values_template_values_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_template_values
+    ADD CONSTRAINT draft_template_values_template_values_id_fkey FOREIGN KEY (template_values_id) REFERENCES public.template_values(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_templates draft_templates_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_templates
+    ADD CONSTRAINT draft_templates_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_templates draft_templates_templates_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_templates
+    ADD CONSTRAINT draft_templates_templates_id_fkey FOREIGN KEY (templates_id) REFERENCES public.templates(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_thresholds draft_thresholds_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_thresholds
+    ADD CONSTRAINT draft_thresholds_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_thresholds draft_thresholds_thresholds_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_thresholds
+    ADD CONSTRAINT draft_thresholds_thresholds_id_fkey FOREIGN KEY (thresholds_id) REFERENCES public.thresholds(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_times draft_times_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_times
+    ADD CONSTRAINT draft_times_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_times draft_times_times_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_times
+    ADD CONSTRAINT draft_times_times_id_fkey FOREIGN KEY (times_id) REFERENCES public.times(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_videos draft_videos_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_videos
+    ADD CONSTRAINT draft_videos_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_videos draft_videos_videos_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_videos
+    ADD CONSTRAINT draft_videos_videos_id_fkey FOREIGN KEY (videos_id) REFERENCES public.videos(id) ON DELETE CASCADE;
+
+
+--
 -- Name: drafts drafts_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.drafts
     ADD CONSTRAINT drafts_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id);
+
+
+--
+-- Name: endpoints endpoints_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.endpoints
+    ADD CONSTRAINT endpoints_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -11547,11 +15702,27 @@ ALTER TABLE ONLY public.eval_runs
 
 
 --
--- Name: feedback feedback_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: evals evals_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.feedback
-    ADD CONSTRAINT feedback_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id);
+ALTER TABLE ONLY public.evals
+    ADD CONSTRAINT evals_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: examples examples_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.examples
+    ADD CONSTRAINT examples_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: feedbacks feedbacks_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.feedbacks
+    ADD CONSTRAINT feedbacks_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -11640,6 +15811,22 @@ ALTER TABLE ONLY public.field_names
 
 ALTER TABLE ONLY public.field_names
     ADD CONSTRAINT field_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names(id) ON DELETE CASCADE;
+
+
+--
+-- Name: fields fields_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.fields
+    ADD CONSTRAINT fields_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: flags flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.flags
+    ADD CONSTRAINT flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -11811,6 +15998,22 @@ ALTER TABLE ONLY public.group_stop
 
 
 --
+-- Name: hints hints_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hints
+    ADD CONSTRAINT hints_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: html html_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.html
+    ADD CONSTRAINT html_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: html_uploads html_uploads_html_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11824,6 +16027,14 @@ ALTER TABLE ONLY public.html_uploads
 
 ALTER TABLE ONLY public.html_uploads
     ADD CONSTRAINT html_uploads_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads(id) ON DELETE RESTRICT;
+
+
+--
+-- Name: icons icons_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.icons
+    ADD CONSTRAINT icons_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -11859,11 +16070,19 @@ ALTER TABLE ONLY public.image_uploads
 
 
 --
--- Name: images images_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: images images_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.images
-    ADD CONSTRAINT images_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+    ADD CONSTRAINT images_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: improvements improvements_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.improvements
+    ADD CONSTRAINT improvements_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -11875,19 +16094,27 @@ ALTER TABLE ONLY public.improvements
 
 
 --
--- Name: improvements improvements_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.improvements
-    ADD CONSTRAINT improvements_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
-
-
---
 -- Name: instruction_schemas instruction_schemas_instruction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.instruction_schemas
     ADD CONSTRAINT instruction_schemas_instruction_id_fkey FOREIGN KEY (instruction_id) REFERENCES public.instructions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: instructions instructions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.instructions
+    ADD CONSTRAINT instructions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: items items_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.items
+    ADD CONSTRAINT items_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -11939,35 +16166,75 @@ ALTER TABLE ONLY public.key_names
 
 
 --
--- Name: message_audio message_audio_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: keys keys_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.message_audio
-    ADD CONSTRAINT message_audio_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id);
-
-
---
--- Name: message_audio message_audio_upload_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_audio
-    ADD CONSTRAINT message_audio_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads(id);
+ALTER TABLE ONLY public.keys
+    ADD CONSTRAINT keys_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
--- Name: message_content message_content_content_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: message_audios message_audios_audio_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.message_content
-    ADD CONSTRAINT message_content_content_id_fkey FOREIGN KEY (content_id) REFERENCES public.content(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.message_audios
+    ADD CONSTRAINT message_audios_audio_id_fkey FOREIGN KEY (audio_id) REFERENCES public.audios(id) ON DELETE CASCADE;
 
 
 --
--- Name: message_content message_content_message_id_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: message_audios message_audios_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.message_content
-    ADD CONSTRAINT message_content_message_id_fkey1 FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.message_audios
+    ADD CONSTRAINT message_audios_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_calls message_calls_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_calls
+    ADD CONSTRAINT message_calls_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_calls message_calls_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_calls
+    ADD CONSTRAINT message_calls_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_contents message_contents_content_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_contents
+    ADD CONSTRAINT message_contents_content_id_fkey FOREIGN KEY (content_id) REFERENCES public.contents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_contents message_contents_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_contents
+    ADD CONSTRAINT message_contents_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_documents message_documents_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_documents
+    ADD CONSTRAINT message_documents_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_documents message_documents_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_documents
+    ADD CONSTRAINT message_documents_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
 
 
 --
@@ -12003,6 +16270,22 @@ ALTER TABLE ONLY public.message_hints
 
 
 --
+-- Name: message_images message_images_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_images
+    ADD CONSTRAINT message_images_image_id_fkey FOREIGN KEY (image_id) REFERENCES public.images(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_images message_images_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_images
+    ADD CONSTRAINT message_images_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
 -- Name: message_personas message_personas_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12035,6 +16318,22 @@ ALTER TABLE ONLY public.message_runs
 
 
 --
+-- Name: message_texts message_texts_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_texts
+    ADD CONSTRAINT message_texts_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_texts message_texts_text_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_texts
+    ADD CONSTRAINT message_texts_text_id_fkey FOREIGN KEY (text_id) REFERENCES public.texts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: message_tree message_tree_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12048,6 +16347,22 @@ ALTER TABLE ONLY public.message_tree
 
 ALTER TABLE ONLY public.message_tree
     ADD CONSTRAINT message_tree_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.messages(id);
+
+
+--
+-- Name: message_videos message_videos_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_videos
+    ADD CONSTRAINT message_videos_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages(id) ON DELETE CASCADE;
+
+
+--
+-- Name: message_videos message_videos_video_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.message_videos
+    ADD CONSTRAINT message_videos_video_id_fkey FOREIGN KEY (video_id) REFERENCES public.videos(id) ON DELETE CASCADE;
 
 
 --
@@ -12083,11 +16398,35 @@ ALTER TABLE ONLY public.model_descriptions
 
 
 --
--- Name: model_endpoints model_endpoints_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: model_domains model_domains_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_domains
+    ADD CONSTRAINT model_domains_domain_id_fkey FOREIGN KEY (domain_id) REFERENCES public.domains(id) ON DELETE CASCADE;
+
+
+--
+-- Name: model_domains model_domains_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_domains
+    ADD CONSTRAINT model_domains_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
+
+
+--
+-- Name: model_endpoints model_endpoints_new_endpoint_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.model_endpoints
-    ADD CONSTRAINT model_endpoints_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id);
+    ADD CONSTRAINT model_endpoints_new_endpoint_id_fkey FOREIGN KEY (endpoint_id) REFERENCES public.endpoints(id) ON DELETE CASCADE;
+
+
+--
+-- Name: model_endpoints model_endpoints_new_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_endpoints
+    ADD CONSTRAINT model_endpoints_new_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
 
 
 --
@@ -12104,6 +16443,22 @@ ALTER TABLE ONLY public.model_flags
 
 ALTER TABLE ONLY public.model_flags
     ADD CONSTRAINT model_flags_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
+
+
+--
+-- Name: model_keys model_keys_key_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_keys
+    ADD CONSTRAINT model_keys_key_id_fkey FOREIGN KEY (key_id) REFERENCES public.keys(id) ON DELETE CASCADE;
+
+
+--
+-- Name: model_keys model_keys_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_keys
+    ADD CONSTRAINT model_keys_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
 
 
 --
@@ -12147,22 +16502,6 @@ ALTER TABLE ONLY public.model_pricing
 
 
 --
--- Name: model_providers model_providers_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_providers
-    ADD CONSTRAINT model_providers_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
-
-
---
--- Name: model_providers model_providers_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_providers
-    ADD CONSTRAINT model_providers_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id) ON DELETE CASCADE;
-
-
---
 -- Name: model_qualities model_qualities_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12195,6 +16534,22 @@ ALTER TABLE ONLY public.model_voices
 
 
 --
+-- Name: models models_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.models
+    ADD CONSTRAINT models_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: names names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.names
+    ADD CONSTRAINT names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: objective_departments objective_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12211,11 +16566,19 @@ ALTER TABLE ONLY public.objective_departments
 
 
 --
--- Name: objectives objectives_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: objectives objectives_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.objectives
-    ADD CONSTRAINT objectives_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+    ADD CONSTRAINT objectives_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: options options_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.options
+    ADD CONSTRAINT options_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -12296,6 +16659,14 @@ ALTER TABLE ONLY public.parameter_names
 
 ALTER TABLE ONLY public.parameter_names
     ADD CONSTRAINT parameter_names_parameter_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameters(id) ON DELETE CASCADE;
+
+
+--
+-- Name: parameters parameters_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parameters
+    ADD CONSTRAINT parameters_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -12443,6 +16814,22 @@ ALTER TABLE ONLY public.persona_names
 
 
 --
+-- Name: personas personas_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.personas
+    ADD CONSTRAINT personas_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: points points_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.points
+    ADD CONSTRAINT points_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: problem_statement_departments problem_statement_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12459,11 +16846,19 @@ ALTER TABLE ONLY public.problem_statement_departments
 
 
 --
--- Name: problem_statements problem_statements_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: problem_statements problem_statements_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.problem_statements
-    ADD CONSTRAINT problem_statements_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+    ADD CONSTRAINT problem_statements_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: problems problems_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.problems
+    ADD CONSTRAINT problems_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id);
 
 
 --
@@ -12539,6 +16934,14 @@ ALTER TABLE ONLY public.profile_request_limits
 
 
 --
+-- Name: profiles profiles_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profiles
+    ADD CONSTRAINT profiles_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: prompt_departments prompt_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12555,59 +16958,19 @@ ALTER TABLE ONLY public.prompt_departments
 
 
 --
--- Name: provider_descriptions provider_descriptions_description_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: prompts prompts_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.provider_descriptions
-    ADD CONSTRAINT provider_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions(id) ON DELETE CASCADE;
-
-
---
--- Name: provider_descriptions provider_descriptions_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.provider_descriptions
-    ADD CONSTRAINT provider_descriptions_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.prompts
+    ADD CONSTRAINT prompts_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
--- Name: provider_endpoints provider_endpoints_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: protocols protocols_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.provider_endpoints
-    ADD CONSTRAINT provider_endpoints_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id);
-
-
---
--- Name: provider_flags provider_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.provider_flags
-    ADD CONSTRAINT provider_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags(id) ON DELETE CASCADE;
-
-
---
--- Name: provider_flags provider_flags_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.provider_flags
-    ADD CONSTRAINT provider_flags_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id) ON DELETE CASCADE;
-
-
---
--- Name: provider_names provider_names_name_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.provider_names
-    ADD CONSTRAINT provider_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names(id) ON DELETE CASCADE;
-
-
---
--- Name: provider_names provider_names_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.provider_names
-    ADD CONSTRAINT provider_names_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.protocols
+    ADD CONSTRAINT protocols_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -12624,6 +16987,14 @@ ALTER TABLE ONLY public.question_departments
 
 ALTER TABLE ONLY public.question_departments
     ADD CONSTRAINT question_departments_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions(id);
+
+
+--
+-- Name: questions questions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -12656,6 +17027,14 @@ ALTER TABLE ONLY public.resource_schemas
 
 ALTER TABLE ONLY public.resource_tools
     ADD CONSTRAINT resource_tools_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tools(id) ON DELETE CASCADE;
+
+
+--
+-- Name: responses responses_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.responses
+    ADD CONSTRAINT responses_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -12832,6 +17211,14 @@ ALTER TABLE ONLY public.rubric_standard_groups
 
 ALTER TABLE ONLY public.rubric_standard_groups
     ADD CONSTRAINT rubric_standard_groups_standard_group_id_fkey FOREIGN KEY (standard_group_id) REFERENCES public.standard_groups(id) ON DELETE CASCADE;
+
+
+--
+-- Name: rubrics rubrics_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubrics
+    ADD CONSTRAINT rubrics_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13291,6 +17678,22 @@ ALTER TABLE ONLY public.scenario_videos
 
 
 --
+-- Name: scenarios scenarios_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenarios
+    ADD CONSTRAINT scenarios_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: schema_field_items schema_field_items_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_field_items
+    ADD CONSTRAINT schema_field_items_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: schema_field_items schema_field_items_item_schema_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13304,6 +17707,14 @@ ALTER TABLE ONLY public.schema_field_items
 
 ALTER TABLE ONLY public.schema_field_items
     ADD CONSTRAINT schema_field_items_schema_field_id_fkey FOREIGN KEY (schema_field_id) REFERENCES public.schema_fields(id) ON DELETE CASCADE;
+
+
+--
+-- Name: schema_fields schema_fields_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schema_fields
+    ADD CONSTRAINT schema_fields_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13331,6 +17742,14 @@ ALTER TABLE ONLY public.schema_templates
 
 
 --
+-- Name: schemas schemas_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.schemas
+    ADD CONSTRAINT schemas_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: setting_auth_keys setting_auth_keys_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13343,7 +17762,7 @@ ALTER TABLE ONLY public.setting_auth_keys
 --
 
 ALTER TABLE ONLY public.setting_auth_keys
-    ADD CONSTRAINT setting_auth_keys_auth_item_id_fkey FOREIGN KEY (auth_item_id) REFERENCES public.auth_items(id);
+    ADD CONSTRAINT setting_auth_keys_auth_item_id_fkey FOREIGN KEY (auth_item_id) REFERENCES public.items(id) ON DELETE CASCADE;
 
 
 --
@@ -13375,7 +17794,7 @@ ALTER TABLE ONLY public.setting_auth_values
 --
 
 ALTER TABLE ONLY public.setting_auth_values
-    ADD CONSTRAINT setting_auth_values_auth_item_id_fkey FOREIGN KEY (auth_item_id) REFERENCES public.auth_items(id);
+    ADD CONSTRAINT setting_auth_values_auth_item_id_fkey FOREIGN KEY (auth_item_id) REFERENCES public.items(id) ON DELETE CASCADE;
 
 
 --
@@ -13475,27 +17894,11 @@ ALTER TABLE ONLY public.setting_provider_keys
 
 
 --
--- Name: setting_provider_keys setting_provider_keys_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_provider_keys
-    ADD CONSTRAINT setting_provider_keys_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id);
-
-
---
 -- Name: setting_provider_keys setting_provider_keys_settings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.setting_provider_keys
     ADD CONSTRAINT setting_provider_keys_settings_id_fkey FOREIGN KEY (settings_id) REFERENCES public.settings(id);
-
-
---
--- Name: setting_providers setting_providers_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_providers
-    ADD CONSTRAINT setting_providers_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.providers(id);
 
 
 --
@@ -13520,6 +17923,14 @@ ALTER TABLE ONLY public.setting_thresholds
 
 ALTER TABLE ONLY public.setting_thresholds
     ADD CONSTRAINT setting_thresholds_threshold_id_fkey FOREIGN KEY (threshold_id) REFERENCES public.thresholds(id) ON DELETE CASCADE;
+
+
+--
+-- Name: settings settings_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.settings
+    ADD CONSTRAINT settings_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13691,11 +18102,27 @@ ALTER TABLE ONLY public.simulation_scenarios
 
 
 --
--- Name: standard_groups standard_groups_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: simulations simulations_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulations
+    ADD CONSTRAINT simulations_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: slugs slugs_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.slugs
+    ADD CONSTRAINT slugs_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: standard_groups standard_groups_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.standard_groups
-    ADD CONSTRAINT standard_groups_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+    ADD CONSTRAINT standard_groups_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13707,6 +18134,14 @@ ALTER TABLE ONLY public.standards
 
 
 --
+-- Name: strengths strengths_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.strengths
+    ADD CONSTRAINT strengths_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: strengths strengths_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13715,11 +18150,11 @@ ALTER TABLE ONLY public.strengths
 
 
 --
--- Name: strengths strengths_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: template_array_items template_array_items_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.strengths
-    ADD CONSTRAINT strengths_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+ALTER TABLE ONLY public.template_array_items
+    ADD CONSTRAINT template_array_items_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13747,6 +18182,14 @@ ALTER TABLE ONLY public.template_array_items
 
 
 --
+-- Name: template_values template_values_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.template_values
+    ADD CONSTRAINT template_values_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: template_values template_values_schema_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13763,11 +18206,11 @@ ALTER TABLE ONLY public.template_values
 
 
 --
--- Name: templates templates_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: templates templates_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.templates
-    ADD CONSTRAINT templates_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+    ADD CONSTRAINT templates_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13795,35 +18238,43 @@ ALTER TABLE ONLY public.tests
 
 
 --
--- Name: tool_call_arguments tool_call_arguments_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: texts texts_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tool_call_arguments
-    ADD CONSTRAINT tool_call_arguments_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
-
-
---
--- Name: tool_call_results tool_call_results_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_call_results
-    ADD CONSTRAINT tool_call_results_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+ALTER TABLE ONLY public.texts
+    ADD CONSTRAINT texts_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
--- Name: tool_call_runs tool_call_runs_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: thresholds thresholds_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tool_call_runs
-    ADD CONSTRAINT tool_call_runs_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(id);
+ALTER TABLE ONLY public.thresholds
+    ADD CONSTRAINT thresholds_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
--- Name: tool_call_runs tool_call_runs_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: times times_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tool_call_runs
-    ADD CONSTRAINT tool_call_runs_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+ALTER TABLE ONLY public.times
+    ADD CONSTRAINT times_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: tool_domains tool_domains_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_domains
+    ADD CONSTRAINT tool_domains_domain_id_fkey FOREIGN KEY (domain_id) REFERENCES public.domains(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tool_domains tool_domains_tool_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_domains
+    ADD CONSTRAINT tool_domains_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tools(id) ON DELETE CASCADE;
 
 
 --
@@ -13843,11 +18294,19 @@ ALTER TABLE ONLY public.tool_schemas
 
 
 --
--- Name: tools tools_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tool_templates tool_templates_template_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.tools
-    ADD CONSTRAINT tools_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.templates(id);
+ALTER TABLE ONLY public.tool_templates
+    ADD CONSTRAINT tool_templates_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.templates(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tool_templates tool_templates_tool_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tool_templates
+    ADD CONSTRAINT tool_templates_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tools(id) ON DELETE CASCADE;
 
 
 --
@@ -13883,16 +18342,16 @@ ALTER TABLE ONLY public.video_uploads
 
 
 --
--- Name: videos videos_tool_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: videos videos_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.videos
-    ADD CONSTRAINT videos_tool_call_id_fkey FOREIGN KEY (tool_call_id) REFERENCES public.calls(id);
+    ADD CONSTRAINT videos_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 5lRSv44tAqbi3yC5hHSaDD3kRv0Kp5pKVItNRGQx1Hc9smrKo84aSsl0jzWM8eR
+\unrestrict 1HzJE9tNhRPIAGl1ICBBoydgx96kyrgfuE8AGrjs05FEtQIfwBfoH5XUceGgLmn
 
