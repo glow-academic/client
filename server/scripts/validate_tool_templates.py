@@ -145,7 +145,7 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
         SELECT 
             t.id as tool_id,
             t.name as tool_name,
-            t.template_id,
+            tt.template_id,
             rt.resource::text as resource,
             CASE WHEN ts.schema_id IS NOT NULL THEN true ELSE false END as has_input_schema,
             ts.schema_id as input_schema_id,
@@ -157,8 +157,9 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
         FROM tools t
         LEFT JOIN resource_tools rt ON rt.tool_id = t.id
         LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
-        LEFT JOIN schema_templates st ON st.template_id = t.template_id
-        LEFT JOIN templates tmpl ON tmpl.id = t.template_id
+        LEFT JOIN tool_templates tt ON tt.tool_id = t.id
+        LEFT JOIN schema_templates st ON st.template_id = tt.template_id
+        LEFT JOIN templates tmpl ON tmpl.id = tt.template_id
         WHERE t.active = true
         ORDER BY t.name
     """)
@@ -169,11 +170,12 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
         SELECT 
             t.id as tool_id,
             t.name as tool_name,
-            t.template_id,
+            tt.template_id,
             rt.resource::text as resource
         FROM tools t
         JOIN resource_tools rt ON rt.tool_id = t.id
-        LEFT JOIN schema_templates st ON st.template_id = t.template_id
+        LEFT JOIN tool_templates tt ON tt.tool_id = t.id
+        LEFT JOIN schema_templates st ON st.template_id = tt.template_id
         WHERE t.active = true
         AND st.schema_id IS NULL
         ORDER BY t.name
@@ -233,7 +235,8 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
             sf.position
         FROM tools t
         JOIN resource_tools rt ON rt.tool_id = t.id
-        LEFT JOIN schema_templates st ON st.template_id = t.template_id
+        LEFT JOIN tool_templates tt ON tt.tool_id = t.id
+        LEFT JOIN schema_templates st ON st.template_id = tt.template_id
         LEFT JOIN schema_fields sf ON sf.schema_id = st.schema_id
         WHERE t.active = true
         ORDER BY t.name, sf.position NULLS LAST
@@ -304,7 +307,8 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
             END as table_exists
         FROM tools t
         JOIN resource_tools rt ON rt.tool_id = t.id
-        LEFT JOIN schema_templates st ON st.template_id = t.template_id
+        LEFT JOIN tool_templates tt ON tt.tool_id = t.id
+        LEFT JOIN schema_templates st ON st.template_id = tt.template_id
         LEFT JOIN schema_fields sf ON sf.schema_id = st.schema_id
         WHERE t.active = true
         AND sf.name IS NOT NULL
@@ -353,7 +357,8 @@ async def run_audit(conn: asyncpg.Connection) -> dict[str, Any]:
             (SELECT COUNT(*) FROM tools WHERE active = true) as total_active_tools,
             (SELECT COUNT(*) FROM tools t 
              JOIN resource_tools rt ON rt.tool_id = t.id
-             LEFT JOIN schema_templates st ON st.template_id = t.template_id
+             LEFT JOIN tool_templates tt ON tt.tool_id = t.id
+             LEFT JOIN schema_templates st ON st.template_id = tt.template_id
              WHERE t.active = true AND st.schema_id IS NULL) as tools_missing_output_schema,
             (SELECT COUNT(*) FROM tools t
              JOIN resource_tools rt ON rt.tool_id = t.id
