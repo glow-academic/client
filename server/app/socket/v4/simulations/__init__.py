@@ -2,6 +2,9 @@
 
 from fastapi import APIRouter
 
+# Import audio handlers to register them
+from . import audio  # noqa: F401
+
 from .advance import (
     client_router as advance_client_router,
 )

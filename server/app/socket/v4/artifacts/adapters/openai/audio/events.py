@@ -96,6 +96,16 @@ async def _audio_webrtc_event_impl(
                 run_id=run_id_uuid,
             )
 
+            # Emit generic audio event for listeners (simulation layer, benchmarks, etc.)
+            await emit_to_internal(
+                data.event_type,
+                {
+                    "run_id": data.run_id,
+                    "event_data": data.event_data,
+                },
+                sid=sid,
+            )
+
     except Exception as e:
         await emit_to_internal(
             "generate_error",
@@ -223,122 +233,7 @@ async def _forward_to_webrtc_handler(event_type: str, data: dict[str, Any]) -> N
     })
 
 
-# Backward compatibility: Map old simulation_voice_* events to new audio_webrtc_* events
-OLD_TO_NEW_EVENT_MAPPING = {
-    "simulation_voice_user_start": "audio_user_start",
-    "simulation_voice_user_progress": "audio_user_progress",
-    "simulation_voice_user_complete": "audio_user_complete",
-    "simulation_voice_assistant_start": "audio_assistant_start",
-    "simulation_voice_assistant_delta": "audio_assistant_progress",
-    "simulation_voice_assistant_done": "audio_assistant_complete",
-    "simulation_voice_tool_call_start": "audio_tool_call_start",
-    "simulation_voice_tool_call_progress": "audio_tool_call_progress",
-    "simulation_voice_tool_call_complete": "audio_tool_call_complete",
-    "simulation_voice_user_audio_link": "audio_user_audio_link",
-    "simulation_voice_assistant_audio_link": "audio_assistant_audio_link",
-    "simulation_voice_usage": "audio_session_usage",
-    "simulation_voice_interrupt": "audio_session_interrupt",
-    "simulation_voice_error": "audio_error",
-}
-
-
-@internal_sio.on("simulation_voice_user_start")  # type: ignore
-async def simulation_voice_user_start_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_user_start to audio_user_start."""
-    await _map_old_event_to_new("simulation_voice_user_start", data)
-
-
-@internal_sio.on("simulation_voice_user_progress")  # type: ignore
-async def simulation_voice_user_progress_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_user_progress to audio_user_progress."""
-    await _map_old_event_to_new("simulation_voice_user_progress", data)
-
-
-@internal_sio.on("simulation_voice_user_complete")  # type: ignore
-async def simulation_voice_user_complete_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_user_complete to audio_user_complete."""
-    await _map_old_event_to_new("simulation_voice_user_complete", data)
-
-
-@internal_sio.on("simulation_voice_assistant_start")  # type: ignore
-async def simulation_voice_assistant_start_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_assistant_start to audio_assistant_start."""
-    await _map_old_event_to_new("simulation_voice_assistant_start", data)
-
-
-@internal_sio.on("simulation_voice_assistant_delta")  # type: ignore
-async def simulation_voice_assistant_delta_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_assistant_delta to audio_assistant_progress."""
-    await _map_old_event_to_new("simulation_voice_assistant_delta", data)
-
-
-@internal_sio.on("simulation_voice_assistant_done")  # type: ignore
-async def simulation_voice_assistant_done_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_assistant_done to audio_assistant_complete."""
-    await _map_old_event_to_new("simulation_voice_assistant_done", data)
-
-
-@internal_sio.on("simulation_voice_tool_call_start")  # type: ignore
-async def simulation_voice_tool_call_start_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_tool_call_start to audio_tool_call_start."""
-    await _map_old_event_to_new("simulation_voice_tool_call_start", data)
-
-
-@internal_sio.on("simulation_voice_tool_call_progress")  # type: ignore
-async def simulation_voice_tool_call_progress_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_tool_call_progress to audio_tool_call_progress."""
-    await _map_old_event_to_new("simulation_voice_tool_call_progress", data)
-
-
-@internal_sio.on("simulation_voice_tool_call_complete")  # type: ignore
-async def simulation_voice_tool_call_complete_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_tool_call_complete to audio_tool_call_complete."""
-    await _map_old_event_to_new("simulation_voice_tool_call_complete", data)
-
-
-@internal_sio.on("simulation_voice_user_audio_link")  # type: ignore
-async def simulation_voice_user_audio_link_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_user_audio_link to audio_user_audio_link."""
-    await _map_old_event_to_new("simulation_voice_user_audio_link", data)
-
-
-@internal_sio.on("simulation_voice_assistant_audio_link")  # type: ignore
-async def simulation_voice_assistant_audio_link_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_assistant_audio_link to audio_assistant_audio_link."""
-    await _map_old_event_to_new("simulation_voice_assistant_audio_link", data)
-
-
-@internal_sio.on("simulation_voice_usage")  # type: ignore
-async def simulation_voice_usage_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_usage to audio_session_usage."""
-    await _map_old_event_to_new("simulation_voice_usage", data)
-
-
-@internal_sio.on("simulation_voice_interrupt")  # type: ignore
-async def simulation_voice_interrupt_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_interrupt to audio_session_interrupt."""
-    await _map_old_event_to_new("simulation_voice_interrupt", data)
-
-
-@internal_sio.on("simulation_voice_error")  # type: ignore
-async def simulation_voice_error_backward_compat(data: dict[str, Any]) -> None:
-    """Backward compatibility: Map simulation_voice_error to audio_error."""
-    await _map_old_event_to_new("simulation_voice_error", data)
-
-
-async def _map_old_event_to_new(old_event_name: str, data: dict[str, Any]) -> None:
-    """Map old simulation_voice_* event to new audio_webrtc_* event."""
-    new_event_name = OLD_TO_NEW_EVENT_MAPPING.get(old_event_name)
-    if not new_event_name:
-        return
-
-    # Extract run_id from data (may be in different fields)
-    run_id = data.get("run_id") or data.get("model_run_id") or data.get("runId")
-    if not run_id:
-        return
-
-    # Forward to new event handler
-    await _forward_to_webrtc_handler(new_event_name, data)
+# Backward compatibility handlers removed - now handled by simulations/audio/forward.py
 
 
 register_server_endpoint(
