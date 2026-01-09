@@ -63,7 +63,7 @@ async def _generate_start_impl(
                     department_id=None,  # Can be NULL, modality handlers will get it
                     group_id=uuid.UUID(data.group_id) if data.group_id else None,
                     user_instructions=data.user_instructions,
-                    developer_message_contents=data.developer_message_contents,
+                        developer_message_contentss=data.developer_message_contents,
                 )
                 result = cast(
                     GetGenerationRunContextAndCreateRunSqlRow,

@@ -17,8 +17,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
 
-from ..adapters.audio.openai import OpenAIAudioAdapter
-from ..adapters.base import AgentConfig
+from ..adapters.openai.audio.adapter import OpenAIAudioAdapter
+from ..adapters.base.types import AgentConfig
+from ..adapters.service.prepare_config import prepare_audio_config
 
 internal_sio = get_internal_sio()
 
@@ -55,8 +56,15 @@ async def _audio_session_start_impl(
         async with get_db_connection() as conn:
             # Get agent context + create run atomically
             try:
+                # For voice, upload_id is not available, but SQL requires it
+                # Use dummy UUID for voice (SQL will handle it)
+                upload_id_for_audio = (
+                    uuid.UUID(data.resource_id) 
+                    if data.resource_type == "audio" 
+                    else uuid.UUID("00000000-0000-0000-0000-000000000000")  # Dummy UUID for voice
+                )
                 params = GetAudioRunContextAndCreateRunSqlParams(
-                    upload_id=uuid.UUID(data.resource_id) if data.resource_type == "audio" else None,
+                    upload_id=upload_id_for_audio,
                     agent_id=uuid.UUID(data.agent_id),
                     profile_id=profile_id,
                     department_id=uuid.UUID(data.department_id) if data.department_id else None,
@@ -125,15 +133,22 @@ async def _audio_session_start_impl(
                 )
                 return
 
-            # Initialize session via adapter
+            # Prepare adapter config using service layer
             run_id = uuid.UUID(result.run_id)
             resource_id_uuid = uuid.UUID(data.resource_id)
-            session_config = await adapter.initialize_session(
+            adapter_config = await prepare_audio_config(
                 conn=conn,
                 agent_config=agent_config,
                 resource_id=resource_id_uuid,
                 resource_type=data.resource_type,
                 run_id=run_id,
+            )
+
+            # Initialize session via adapter (now database-free)
+            session_config = await adapter.initialize_session(
+                config=adapter_config,
+                resource_id=resource_id_uuid,
+                resource_type=data.resource_type,
             )
 
             # Emit session config to frontend

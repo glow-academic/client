@@ -17,13 +17,32 @@ internal_sio = get_internal_sio()
 
 SQL_PATH = "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"
 
-# Import adapters - modality-first structure
-from app.socket.v4.artifacts.adapters.audio.openai import OpenAIAudioAdapter
-from app.socket.v4.artifacts.adapters.image.openai import OpenAIImageAdapter
+from app.socket.v4.artifacts.adapters.base.config import (
+    AdapterConfig, AdapterEventCallbacks)
+from app.socket.v4.artifacts.adapters.base.coordinator import \
+    MultiModalityCoordinator
+from app.socket.v4.artifacts.adapters.gemini.audio.adapter import \
+    GeminiAudioAdapter
+from app.socket.v4.artifacts.adapters.gemini.image.adapter import \
+    GeminiImageAdapter
+from app.socket.v4.artifacts.adapters.gemini.text.adapter import \
+    GeminiTextAdapter
+from app.socket.v4.artifacts.adapters.gemini.video.adapter import \
+    GeminiVideoAdapter
+# Import adapters - provider-first structure
+from app.socket.v4.artifacts.adapters.openai.audio.adapter import \
+    OpenAIAudioAdapter
+from app.socket.v4.artifacts.adapters.openai.image.adapter import \
+    OpenAIImageAdapter
+from app.socket.v4.artifacts.adapters.openai.text.adapter import \
+    OpenAITextAdapter
+from app.socket.v4.artifacts.adapters.openai.video.adapter import \
+    OpenAIVideoAdapter
 from app.socket.v4.artifacts.adapters.persistence import (persist_image,
                                                           persist_video)
-from app.socket.v4.artifacts.adapters.text.openai import OpenAITextAdapter
-from app.socket.v4.artifacts.adapters.video.openai import OpenAIVideoAdapter
+from app.socket.v4.artifacts.adapters.service.prepare_config import (
+    prepare_audio_config, prepare_image_config, prepare_text_config,
+    prepare_video_config)
 
 
 def determine_modality_from_output_modalities(
@@ -43,6 +62,56 @@ def determine_modality_from_output_modalities(
     
     # Otherwise use first modality
     return output_modalities[0]
+
+
+async def get_required_modality_for_resource(
+    conn: Any,
+    resource_type: str,
+) -> str | None:
+    """Get required modality for a resource type from resource_modalities table.
+    
+    Args:
+        conn: Database connection
+        resource_type: Resource type (e.g., "texts", "images", "documents")
+    
+    Returns:
+        Required modality or None if not found
+    """
+    # Query resource_modalities table
+    sql_query = """
+        SELECT modality::text
+        FROM resource_modalities
+        WHERE resource = $1::resources
+        AND modality != 'call'::modality_type
+        ORDER BY modality
+        LIMIT 1
+    """
+    result = await conn.fetchval(sql_query, resource_type)
+    return result if result else None
+
+
+def should_use_multimodal_coordinator(
+    output_modalities: list[str] | None,
+) -> bool:
+    """Determine if multi-modality coordinator should be used.
+    
+    Args:
+        output_modalities: List of output modalities from model
+    
+    Returns:
+        True if coordinator should be used (multiple modalities in single call)
+    """
+    if not output_modalities or len(output_modalities) <= 1:
+        return False
+    
+    # Check if this is a known multi-modality scenario
+    # e.g., OpenAI Realtime API produces text+audio in single call
+    if len(output_modalities) > 1:
+        # For now, only handle text+audio (Realtime API)
+        if "text" in output_modalities and "audio" in output_modalities:
+            return True
+    
+    return False
 
 
 async def _generate_artifact_impl(
@@ -95,7 +164,7 @@ async def _generate_artifact_impl(
                         department_id=None,  # Can be NULL, modality handlers will get it
                         group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
                         user_instructions=data.get("user_instructions"),
-                        developer_message_contents=data.get("developer_message_contents"),
+                        developer_message_contentss=data.get("developer_message_contents"),
                     )
                     result = cast(
                         GetGenerationRunContextAndCreateRunSqlRow,
@@ -162,16 +231,43 @@ async def _generate_artifact_impl(
                 message_ids = [str(mid) for mid in (result.message_ids or [])]
                 provider = getattr(result, "provider", None) or "openai"
 
-            # Modality-first adapter mapping
-            MODALITY_ADAPTERS = {
-                "text": {"openai": OpenAITextAdapter, "gemini": None},  # TODO: Add Gemini
-                "image": {"openai": OpenAIImageAdapter, "gemini": None},  # TODO: Add Gemini
-                "video": {"openai": OpenAIVideoAdapter, "gemini": None},  # TODO: Add Gemini
-                "audio": {"openai": OpenAIAudioAdapter, "gemini": None},  # TODO: Add Gemini
+            # Provider-first adapter mapping
+            PROVIDER_ADAPTERS = {
+                "openai": {
+                    "text": OpenAITextAdapter,
+                    "image": OpenAIImageAdapter,
+                    "video": OpenAIVideoAdapter,
+                    "audio": OpenAIAudioAdapter,
+                    "call": None,  # Tool calls handled by text adapter
+                    "document": None,  # Not yet implemented
+                },
+                "gemini": {
+                    "text": GeminiTextAdapter,
+                    "image": GeminiImageAdapter,
+                    "video": GeminiVideoAdapter,
+                    "audio": GeminiAudioAdapter,
+                    "call": None,  # Tool calls handled by text adapter
+                    "document": None,  # Not yet implemented
+                },
             }
 
-            # Get adapter class
-            adapter_class = MODALITY_ADAPTERS.get(modality, {}).get(provider)
+            # Check if multi-modality coordinator is needed
+            if output_modalities and should_use_multimodal_coordinator(output_modalities):
+                coordinator = MultiModalityCoordinator()
+                await coordinator.generate(
+                    provider=provider,
+                    output_modalities=output_modalities,  # type: ignore
+                    sid=sid,
+                    data=data,
+                    profile_id=profile_id,
+                    conn=conn,
+                )
+                return
+
+            # Get adapter class from provider-first mapping
+            provider_adapters = PROVIDER_ADAPTERS.get(provider, {})
+            adapter_class = provider_adapters.get(modality)
+            
             if not adapter_class:
                 await emit_to_internal(
                     "generate_error",
@@ -186,73 +282,196 @@ async def _generate_artifact_impl(
                 )
                 return
 
-            # Build payload for adapter
-            adapter_payload = {
-                "sid": sid,
-                "run_id": run_id,
-                "agent_id": data["agent_id"],
-                "resource_id": data["resource_id"],
-                "resource_type": data["resource_type"],
-                "group_id": group_id,
-                "trace_id": trace_id,
-                "message_ids": message_ids,
-                "department_id": data.get("department_id"),
-            }
+            # Create event callbacks
+            async def emit_progress(event_type: str, payload: dict[str, Any]) -> None:
+                await internal_sio.emit(event_type, payload)
 
-            # Special handling for image/video/audio adapters
-            if modality == "image":
-                adapter_payload.update({
-                    "image_id": data.get("image_id") or data.get("resource_id"),
-                    "name": data.get("name", "image"),
-                    "prompt": data.get("prompt", ""),
-                })
+            async def emit_complete(event_type: str, payload: dict[str, Any]) -> None:
+                await internal_sio.emit(event_type, payload)
+
+            async def emit_error(event_type: str, payload: dict[str, Any]) -> None:
+                await emit_to_internal(
+                    event_type,
+                    GenerateErrorApiRequest(
+                        sid=payload.get("sid", sid),
+                        error_message=payload.get("error_message", "Unknown error"),
+                        resource_id=payload.get("resource_id"),
+                        group_id=payload.get("group_id"),
+                        resource_type=payload.get("resource_type", data.get("resource_type", "")),
+                    ),
+                    sid=sid,
+                )
+
+            callbacks = AdapterEventCallbacks(
+                emit_progress=emit_progress,
+                emit_complete=emit_complete,
+                emit_error=emit_error,
+            )
+
+            # Prepare adapter config based on modality
+            adapter_config: AdapterConfig
+            if modality == "text":
+                # Convert message_ids to UUID array if provided
+                message_ids_uuid = (
+                    [uuid.UUID(mid) for mid in message_ids]
+                    if message_ids
+                    else None
+                )
+                adapter_config = await prepare_text_config(
+                    conn=conn,
+                    run_id=uuid.UUID(run_id),
+                    agent_id=uuid.UUID(data["agent_id"]),
+                    resource_id=uuid.UUID(data["resource_id"]),
+                    resource_type=data["resource_type"],
+                    message_ids=message_ids_uuid,
+                    group_id=uuid.UUID(group_id) if group_id else None,
+                )
+                # Update with additional data
+                adapter_config.department_id = uuid.UUID(data["department_id"]) if data.get("department_id") else None
+                adapter_config.resource_id = uuid.UUID(data["resource_id"])
+                adapter_config.resource_type = data["resource_type"]
+            elif modality == "image":
+                image_id_for_config = uuid.UUID(data.get("image_id") or data.get("resource_id"))
+                adapter_config = await prepare_image_config(
+                    conn=conn,
+                    image_id=image_id_for_config,
+                    agent_id=uuid.UUID(data["agent_id"]),
+                    profile_id=profile_id,
+                    department_id=uuid.UUID(data["department_id"]) if data.get("department_id") else None,
+                    prompt=data.get("prompt", ""),
+                )
             elif modality == "video":
-                adapter_payload.update({
-                    "videoId": data.get("videoId") or data.get("resource_id"),
-                    "prompt": data.get("prompt", ""),
-                    "imageReferenceId": data.get("imageReferenceId"),
-                })
+                video_id_for_config = uuid.UUID(data.get("videoId") or data.get("resource_id"))
+                # Create upload record first (moved from adapter)
+                from app.sql.types import (InsertUploadSqlParams,
+                                           InsertUploadSqlRow)
+                from utils.sql_helper import load_sql
+
+                # We don't know file size yet, so create with placeholder
+                sql_query = load_sql("app/sql/v4/uploads/insert_upload_complete.sql")
+                upload_params = InsertUploadSqlParams(
+                    file_path="",  # Will be set during persistence
+                    mime_type="video/mp4",
+                    size=0,  # Will be updated after generation
+                )
+                upload_result = cast(
+                    InsertUploadSqlRow,
+                    await execute_sql_typed(conn, sql_query, params=upload_params),
+                )
+                if not upload_result or not upload_result.id:
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Failed to create upload record",
+                            resource_id=data.get("resource_id"),
+                            group_id=group_id,
+                            resource_type=data.get("resource_type"),
+                        ),
+                        sid=sid,
+                    )
+                    return
+                
+                upload_id = uuid.UUID(upload_result.id)
+                
+                adapter_config = await prepare_video_config(
+                    conn=conn,
+                    video_id=video_id_for_config,
+                    profile_id=profile_id,
+                    prompt=data.get("prompt", ""),
+                    image_reference_id=data.get("imageReferenceId"),
+                    upload_id=upload_id,
+                )
             elif modality == "audio":
-                adapter_payload.update({
-                    "uploadId": data.get("uploadId"),
-                    "prompt": data.get("prompt", ""),
-                    "agentId": data.get("agent_id"),
-                    "departmentId": data.get("department_id"),
-                })
+                # Audio uses prepare_audio_config which needs AgentConfig
+                from app.socket.v4.artifacts.adapters.base.types import \
+                    AgentConfig
+                from app.sql.types import (
+                    GetAudioRunContextAndCreateRunSqlParams,
+                    GetAudioRunContextAndCreateRunSqlRow)
+
+                # Get agent config first
+                audio_sql_path = "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"
+                # For voice, upload_id is not available, but SQL requires it
+                # Use resource_id as upload_id (SQL will handle NULL case)
+                upload_id_for_audio = (
+                    uuid.UUID(data["resource_id"]) 
+                    if data["resource_type"] == "audio" 
+                    else uuid.UUID("00000000-0000-0000-0000-000000000000")  # Dummy UUID for voice
+                )
+                audio_params = GetAudioRunContextAndCreateRunSqlParams(
+                    upload_id=upload_id_for_audio,
+                    agent_id=uuid.UUID(data["agent_id"]),
+                    profile_id=profile_id,
+                    department_id=uuid.UUID(data["department_id"]) if data.get("department_id") else None,
+                )
+                audio_result = cast(
+                    GetAudioRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, audio_sql_path, params=audio_params),
+                )
+                
+                if not audio_result:
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="No audio agent configured",
+                            resource_id=data.get("resource_id"),
+                            group_id=group_id,
+                            resource_type=data.get("resource_type"),
+                        ),
+                        sid=sid,
+                    )
+                    return
+                
+                agent_config = AgentConfig(
+                    agent_id=audio_result.agent_id or "",
+                    agent_name=getattr(audio_result, "agent_name", None),
+                    system_prompt=getattr(audio_result, "system_prompt", None),
+                    temperature=getattr(audio_result, "temperature", None),
+                    reasoning=getattr(audio_result, "reasoning", None),
+                    model_id=getattr(audio_result, "model_id", None),
+                    model_name=getattr(audio_result, "model_name", None),
+                    provider=getattr(audio_result, "provider", None) or "openai",
+                    base_url=getattr(audio_result, "base_url", None),
+                    api_key=getattr(audio_result, "api_key", None),
+                    custom_model=getattr(audio_result, "custom_model", None),
+                    provider_id=getattr(audio_result, "provider_id", None),
+                    provider_name=getattr(audio_result, "provider_name", None),
+                )
+                
+                adapter_config = await prepare_audio_config(
+                    conn=conn,
+                    agent_config=agent_config,
+                    resource_id=uuid.UUID(data["resource_id"]),
+                    resource_type=data["resource_type"],
+                    run_id=uuid.UUID(run_id),
+                )
+            else:
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"Modality {modality} not yet supported",
+                        resource_id=data.get("resource_id"),
+                        group_id=group_id,
+                        resource_type=data.get("resource_type"),
+                    ),
+                    sid=sid,
+                )
+                return
 
             # Instantiate and call adapter
             adapter: Any = adapter_class()
 
             # Handle audio special case - returns AudioSessionConfig
             if modality == "audio":
-                if adapter.get_implementation_type() == "webrtc":
-                    # Build AgentConfig from result
-                    from app.socket.v4.artifacts.adapters.base import \
-                        AgentConfig
-
-                    agent_config = AgentConfig(
-                        agent_id=data["agent_id"],
-                        agent_name=None,  # Not available from payload
-                        system_prompt=None,  # Not available from payload
-                        temperature=None,  # Not available from payload
-                        reasoning=None,  # Not available from payload
-                        model_id=None,  # Not available from payload
-                        model_name=None,  # Not available from payload
-                        provider=provider,
-                        base_url=None,  # Not available from payload
-                        api_key=None,  # Not available from payload
-                        custom_model=None,  # Not available from payload
-                        provider_id=None,  # Not available from payload
-                        provider_name=None,  # Not available from payload
-                    )
-
-                    # Initialize session
+                if hasattr(adapter, "get_implementation_type") and adapter.get_implementation_type() == "webrtc":
+                    # Initialize session using adapter config
                     session_config = await adapter.initialize_session(
-                        conn=conn,
-                        agent_config=agent_config,
+                        config=adapter_config,
                         resource_id=uuid.UUID(data["resource_id"]),
                         resource_type=data["resource_type"],
-                        run_id=uuid.UUID(run_id),
                     )
 
                     # Emit session config to frontend
@@ -274,15 +493,19 @@ async def _generate_artifact_impl(
                     )
                     return
 
-            # For text, image, video - call generate method
+            # For text, image, video - call generate_output method with AdapterConfig
             if modality == "text":
-                await adapter.generate(sid, adapter_payload, profile_id, conn)
+                # Update config with resource info for callbacks
+                resource_id_str = str(data.get("resource_id")) if data.get("resource_id") else None
+                await adapter.generate_output(sid, adapter_config, callbacks)
             elif modality == "image":
                 # Image adapter returns ImageGenerationResult
-                image_result = await adapter.generate(sid, adapter_payload, profile_id, conn)
+                image_result = await adapter.generate_output(sid, adapter_config, callbacks)
                 # Persist image
-                image_id = uuid.UUID(adapter_payload["image_id"])
-                image_name = adapter_payload["name"]
+                if not adapter_config.image_id:
+                    raise ValueError("image_id is required")
+                image_id: uuid.UUID = adapter_config.image_id  # type: ignore[assignment]
+                image_name = data.get("name", "image")
                 file_path = await persist_image(conn, image_id, image_result, image_name)
                 # Emit completion event
                 await internal_sio.emit(
@@ -298,10 +521,12 @@ async def _generate_artifact_impl(
                 )
             elif modality == "video":
                 # Video adapter returns VideoGenerationResult
-                video_result = await adapter.generate(sid, adapter_payload, profile_id, conn)
+                video_result = await adapter.generate_output(sid, adapter_config, callbacks)
                 # Persist video
-                video_id = uuid.UUID(adapter_payload["videoId"])
-                run_id_uuid = uuid.UUID(result.run_id)
+                if not adapter_config.video_id:
+                    raise ValueError("video_id is required")
+                video_id: uuid.UUID = adapter_config.video_id  # type: ignore[assignment]
+                run_id_uuid = uuid.UUID(run_id)
                 file_path = await persist_video(conn, video_id, video_result, run_id_uuid)
                 # Emit completion event
                 await internal_sio.emit(

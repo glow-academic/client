@@ -10,7 +10,7 @@ from app.sql.types import (CompleteImageGenerationSqlParams,
                            CreateGenerationAndLinkSqlRow)
 from utils.sql_helper import execute_sql_typed, load_sql
 
-from .base import ImageGenerationResult, VideoGenerationResult
+from .base.types import ImageGenerationResult, VideoGenerationResult
 
 
 async def persist_image(
