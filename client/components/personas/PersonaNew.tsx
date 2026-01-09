@@ -26,7 +26,19 @@ import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -136,9 +148,117 @@ function PersonaNewComponent({
     Set<ResourceType>
   >(new Set());
 
+  // Regeneration dialog state
+  const [showRegenerationDialog, setShowRegenerationDialog] = useState(false);
+  const [regenerationInstructions, setRegenerationInstructions] = useState("");
+  const [pendingResourceTypes, setPendingResourceTypes] = useState<
+    ResourceType[]
+  >([]);
+
   const isGenerating = useCallback(
     (resourceType: ResourceType) => generatingResources.has(resourceType),
     [generatingResources]
+  );
+
+  // Helper to get group_id for a resource type
+  const getResourceGroupId = useCallback(
+    (resourceType: ResourceType): string | null => {
+      switch (resourceType) {
+        case "names":
+          return personaData?.name_resource?.group_id ?? null;
+        case "descriptions":
+          return personaData?.description_resource?.group_id ?? null;
+        case "colors":
+          return personaData?.color_resource?.group_id ?? null;
+        case "icons":
+          return personaData?.icon_resource?.group_id ?? null;
+        case "instructions":
+          return personaData?.instructions_resource?.group_id ?? null;
+        case "flags":
+          return personaData?.flag_resource?.group_id ?? null;
+        case "departments":
+          return (
+            personaData?.department_resources?.find((d) => d.group_id)
+              ?.group_id ?? null
+          );
+        case "fields":
+          return (
+            personaData?.field_resources?.find((f) => f.group_id)?.group_id ??
+            null
+          );
+        case "examples":
+          return (
+            personaData?.example_resources?.find((e) => e.group_id)?.group_id ??
+            null
+          );
+        default:
+          return null;
+      }
+    },
+    [personaData]
+  );
+
+  // Helper to check if a resource type can be regenerated
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType): boolean => {
+      const groupId = getResourceGroupId(resourceType);
+      switch (resourceType) {
+        case "names":
+          return (
+            (personaData?.name_resource?.generated ?? false) && groupId !== null
+          );
+        case "descriptions":
+          return (
+            (personaData?.description_resource?.generated ?? false) &&
+            groupId !== null
+          );
+        case "colors":
+          return (
+            (personaData?.color_resource?.generated ?? false) &&
+            groupId !== null
+          );
+        case "icons":
+          return (
+            (personaData?.icon_resource?.generated ?? false) && groupId !== null
+          );
+        case "instructions":
+          return (
+            (personaData?.instructions_resource?.generated ?? false) &&
+            groupId !== null
+          );
+        case "flags":
+          return (
+            (personaData?.flag_resource?.generated ?? false) && groupId !== null
+          );
+        case "departments":
+          return (
+            (personaData?.department_resources?.some(
+              (d) => d.generated && d.group_id !== null
+            ) ??
+              false) &&
+            groupId !== null
+          );
+        case "fields":
+          return (
+            (personaData?.field_resources?.some(
+              (f) => f.generated && f.group_id !== null
+            ) ??
+              false) &&
+            groupId !== null
+          );
+        case "examples":
+          return (
+            (personaData?.example_resources?.some(
+              (e) => e.generated && e.group_id !== null
+            ) ??
+              false) &&
+            groupId !== null
+          );
+        default:
+          return false;
+      }
+    },
+    [personaData, getResourceGroupId]
   );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
@@ -339,6 +459,19 @@ function PersonaNewComponent({
       }
     };
 
+    const handleGenerationStart = (data: {
+      resource_types?: string[];
+      draft_id?: string;
+      persona_id?: string;
+      success?: boolean;
+      message?: string;
+    }) => {
+      // Optional: Acknowledge generation start
+      if (data.success && data.resource_types) {
+        // Generation started successfully
+      }
+    };
+
     const handleGenerationError = (data: {
       success: boolean;
       message?: string;
@@ -370,74 +503,21 @@ function PersonaNewComponent({
       toast.error(data.message || "Generation failed");
     };
 
-    // Listen to all resource-specific completion events
-    socket.on("personas_names_generation_complete", handleGenerationComplete);
-    socket.on(
-      "personas_descriptions_generation_complete",
-      handleGenerationComplete
-    );
-    socket.on("personas_colors_generation_complete", handleGenerationComplete);
-    socket.on("personas_icons_generation_complete", handleGenerationComplete);
-    socket.on(
-      "personas_instructions_generation_complete",
-      handleGenerationComplete
-    );
-    socket.on("personas_flags_generation_complete", handleGenerationComplete);
-    socket.on(
-      "personas_examples_generation_complete",
-      handleGenerationComplete
-    );
-    socket.on("personas_fields_generation_complete", handleGenerationComplete);
-    socket.on(
-      "personas_departments_generation_complete",
-      handleGenerationComplete
-    );
+    // Listen to unified events
+    socket.on("personas_generation_start", handleGenerationStart);
+    socket.on("personas_generation_complete", handleGenerationComplete);
     socket.on("personas_generation_error", handleGenerationError);
 
     return () => {
-      socket.off(
-        "personas_names_generation_complete",
-        handleGenerationComplete
-      );
-      socket.off(
-        "personas_descriptions_generation_complete",
-        handleGenerationComplete
-      );
-      socket.off(
-        "personas_colors_generation_complete",
-        handleGenerationComplete
-      );
-      socket.off(
-        "personas_icons_generation_complete",
-        handleGenerationComplete
-      );
-      socket.off(
-        "personas_instructions_generation_complete",
-        handleGenerationComplete
-      );
-      socket.off(
-        "personas_flags_generation_complete",
-        handleGenerationComplete
-      );
-      socket.off(
-        "personas_examples_generation_complete",
-        handleGenerationComplete
-      );
-      socket.off(
-        "personas_fields_generation_complete",
-        handleGenerationComplete
-      );
-      socket.off(
-        "personas_departments_generation_complete",
-        handleGenerationComplete
-      );
+      socket.off("personas_generation_start", handleGenerationStart);
+      socket.off("personas_generation_complete", handleGenerationComplete);
       socket.off("personas_generation_error", handleGenerationError);
     };
   }, [socket, isConnected]);
 
-  // Multi-generation handler - accepts list of resource types
+  // Multi-generation handler - accepts list of resource types and optional user instructions
   const handleGenerateResources = useCallback(
-    async (resourceTypes: ResourceType[]) => {
+    async (resourceTypes: ResourceType[], userInstructions?: string) => {
       if (!socket || !isConnected || !draftId) {
         toast.error("WebSocket not connected or draft not available");
         return;
@@ -450,27 +530,72 @@ function PersonaNewComponent({
         return next;
       });
 
-      // Send to server - for now, send individual requests for each resource type
-      // TODO: Update server to accept resource_types array
-      resourceTypes.forEach((resourceType) => {
-        socket.emit("persona_generate", {
-          draft_id: draftId,
-          resource_type: resourceType,
-          persona_id: personaId || null,
-          context: {
-            name_id: formState.name_id || null,
-            description_id: formState.description_id || null,
-            instructions_id: formState.instructions_id || null,
-            color_id: formState.color_id || null,
-            icon_id: formState.icon_id || null,
-            field_ids: formState.field_ids || [],
-            department_ids: formState.department_ids || [],
-            example_ids: formState.example_ids || [],
-          },
-        });
+      // Build group_ids mapping for regeneration
+      const groupIds: Record<string, string | null> = {};
+      resourceTypes.forEach((rt) => {
+        let groupId: string | null = null;
+        switch (rt) {
+          case "names":
+            groupId = personaData?.name_resource?.group_id ?? null;
+            break;
+          case "descriptions":
+            groupId = personaData?.description_resource?.group_id ?? null;
+            break;
+          case "colors":
+            groupId = personaData?.color_resource?.group_id ?? null;
+            break;
+          case "icons":
+            groupId = personaData?.icon_resource?.group_id ?? null;
+            break;
+          case "instructions":
+            groupId = personaData?.instructions_resource?.group_id ?? null;
+            break;
+          case "flags":
+            groupId = personaData?.flag_resource?.group_id ?? null;
+            break;
+          case "departments":
+            groupId =
+              personaData?.department_resources?.find((d) => d.group_id)
+                ?.group_id ?? null;
+            break;
+          case "fields":
+            groupId =
+              personaData?.field_resources?.find((f) => f.group_id)?.group_id ??
+              null;
+            break;
+          case "examples":
+            groupId =
+              personaData?.example_resources?.find((e) => e.group_id)
+                ?.group_id ?? null;
+            break;
+          default:
+            groupId = null;
+        }
+        groupIds[rt] = groupId;
+      });
+
+      // Emit single event with resource_types array
+      socket.emit("persona_generate", {
+        draft_id: draftId,
+        resource_types: resourceTypes,
+        persona_id: personaId || null,
+        user_instructions: userInstructions || null,
+        group_ids: Object.keys(groupIds).some((k) => groupIds[k] !== null)
+          ? groupIds
+          : null,
+        context: {
+          name_id: formState.name_id || null,
+          description_id: formState.description_id || null,
+          instructions_id: formState.instructions_id || null,
+          color_id: formState.color_id || null,
+          icon_id: formState.icon_id || null,
+          field_ids: formState.field_ids || [],
+          department_ids: formState.department_ids || [],
+          example_ids: formState.example_ids || [],
+        },
       });
     },
-    [socket, isConnected, draftId, personaId, formState]
+    [socket, isConnected, draftId, personaId, formState, personaData]
   );
 
   // Individual generation handlers for backward compatibility
@@ -908,9 +1033,18 @@ function PersonaNewComponent({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      handleGenerateResources(stepResources["fields"]!)
-                    }
+                    onClick={() => {
+                      const resourceTypes = stepResources["fields"]!;
+                      const hasRegeneratable = resourceTypes.some((rt) =>
+                        canRegenerate(rt)
+                      );
+                      if (hasRegeneratable) {
+                        setPendingResourceTypes(resourceTypes);
+                        setShowRegenerationDialog(true);
+                      } else {
+                        handleGenerateResources(resourceTypes);
+                      }
+                    }}
                     disabled={
                       disabled ||
                       stepResources["fields"]!.some((rt) => isGenerating(rt))
@@ -986,9 +1120,18 @@ function PersonaNewComponent({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      handleGenerateResources(stepResources["color"]!)
-                    }
+                    onClick={() => {
+                      const resourceTypes = stepResources["color"]!;
+                      const hasRegeneratable = resourceTypes.some((rt) =>
+                        canRegenerate(rt)
+                      );
+                      if (hasRegeneratable) {
+                        setPendingResourceTypes(resourceTypes);
+                        setShowRegenerationDialog(true);
+                      } else {
+                        handleGenerateResources(resourceTypes);
+                      }
+                    }}
                     disabled={
                       disabled ||
                       stepResources["color"]!.some((rt) => isGenerating(rt))
@@ -1076,9 +1219,18 @@ function PersonaNewComponent({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      handleGenerateResources(stepResources["icon"]!)
-                    }
+                    onClick={() => {
+                      const resourceTypes = stepResources["icon"]!;
+                      const hasRegeneratable = resourceTypes.some((rt) =>
+                        canRegenerate(rt)
+                      );
+                      if (hasRegeneratable) {
+                        setPendingResourceTypes(resourceTypes);
+                        setShowRegenerationDialog(true);
+                      } else {
+                        handleGenerateResources(resourceTypes);
+                      }
+                    }}
                     disabled={
                       disabled ||
                       stepResources["icon"]!.some((rt) => isGenerating(rt))
@@ -1146,9 +1298,18 @@ function PersonaNewComponent({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      handleGenerateResources(stepResources["content"]!)
-                    }
+                    onClick={() => {
+                      const resourceTypes = stepResources["content"]!;
+                      const hasRegeneratable = resourceTypes.some((rt) =>
+                        canRegenerate(rt)
+                      );
+                      if (hasRegeneratable) {
+                        setPendingResourceTypes(resourceTypes);
+                        setShowRegenerationDialog(true);
+                      } else {
+                        handleGenerateResources(resourceTypes);
+                      }
+                    }}
                     disabled={
                       disabled ||
                       stepResources["content"]!.some((rt) => isGenerating(rt))
@@ -1252,6 +1413,9 @@ function PersonaNewComponent({
       createInstructionsAction,
       createFlagsAction,
       createExamplesAction,
+      canRegenerate,
+      setPendingResourceTypes,
+      setShowRegenerationDialog,
     ]
   );
 
@@ -1282,6 +1446,61 @@ function PersonaNewComponent({
           isEditMode={isEditMode}
           renderStep={renderStep}
         />
+
+        {/* Regeneration Dialog */}
+        <AlertDialog
+          open={showRegenerationDialog}
+          onOpenChange={setShowRegenerationDialog}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Regenerate Resources</AlertDialogTitle>
+              <AlertDialogDescription className="pb-2">
+                Provide instructions for what you'd like to change.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="regeneration-instructions">Instructions</Label>
+                <Textarea
+                  id="regeneration-instructions"
+                  value={regenerationInstructions}
+                  onChange={(e) => setRegenerationInstructions(e.target.value)}
+                  placeholder="e.g., Make it more professional, focus on empathy..."
+                  className="min-h-[100px]"
+                  disabled={pendingResourceTypes.some((rt) => isGenerating(rt))}
+                />
+              </div>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                onClick={() => {
+                  setRegenerationInstructions("");
+                  setShowRegenerationDialog(false);
+                }}
+                disabled={pendingResourceTypes.some((rt) => isGenerating(rt))}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  handleGenerateResources(
+                    pendingResourceTypes,
+                    regenerationInstructions.trim() || undefined
+                  );
+                  setShowRegenerationDialog(false);
+                  setRegenerationInstructions("");
+                }}
+                disabled={pendingResourceTypes.some((rt) => isGenerating(rt))}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {pendingResourceTypes.some((rt) => isGenerating(rt))
+                  ? "Regenerating..."
+                  : "Regenerate"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </TooltipProvider>
   );

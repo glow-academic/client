@@ -38,6 +38,8 @@ class GeneratePersonaPayload(BaseModel):
     resource_type: str | None = None  # Single resource type (for backward compatibility)
     persona_id: str | None = None
     context: dict[str, Any] | None = None  # Additional context for generation
+    user_instructions: str | None = None  # Optional: For regeneration
+    group_ids: dict[str, str | None] | None = None  # Optional: resource_type -> group_id mapping for regeneration
 
 
 async def _persona_generate_impl(
@@ -84,6 +86,17 @@ async def _persona_generate_impl(
         # For now, emit dummy generate_start events (skeleton implementation)
         # TODO: Implement actual AI generation logic
         for resource_type in resource_types:
+            # Get group_id for this resource type if regenerating
+            group_id = None
+            if data.group_ids and resource_type in data.group_ids:
+                group_id_str = data.group_ids[resource_type]
+                if group_id_str:
+                    try:
+                        group_id = uuid.UUID(group_id_str)
+                    except ValueError:
+                        # Invalid UUID, treat as None
+                        group_id = None
+
             # Emit generate_start internal event for each resource type
             # Note: This is a skeleton - agent_id and other required fields need to be determined
             await internal_sio.emit(
@@ -93,8 +106,8 @@ async def _persona_generate_impl(
                     "agent_id": "",  # TODO: Look up agent_id from persona domain/department
                     "resource_id": data.persona_id or data.draft_id,
                     "resource_type": resource_type,
-                    "group_id": None,
-                    "user_instructions": None,
+                    "group_id": str(group_id) if group_id else None,  # Pass group_id (string or None)
+                    "user_instructions": data.user_instructions,  # Pass user_instructions
                     "message_ids": None,
                     "developer_message_contents": None,  # TODO: Format context for each resource type
                 },
