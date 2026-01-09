@@ -219,17 +219,17 @@ class CreateTestAgentApiResponse(BaseModel):
 
 class CreateTestProfileSqlParams(BaseModel):
 
-    first_name: str | None = None
-    last_name: str | None = None
-    role: str | None = None
-    email: str | None = None
+    profile_first_name: str
+    profile_last_name: str
+    profile_role: str | None = None
+    profile_active: bool | None = True
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.first_name,
-            self.last_name,
-            self.role,
-            self.email,
+            self.profile_first_name,
+            self.profile_last_name,
+            self.profile_role,
+            self.profile_active,
         )
 
 class CreateTestProfileSqlRow(BaseModel):
@@ -244,10 +244,10 @@ class CreateTestProfileSqlRow(BaseModel):
 
 class CreateTestProfileApiRequest(BaseModel):
 
-    first_name: str | None = None
-    last_name: str | None = None
-    role: str | None = None
-    email: str | None = None
+    profile_first_name: str
+    profile_last_name: str
+    profile_role: str | None = None
+    profile_active: bool | None = True
 
 class CreateTestProfileApiResponse(BaseModel):
 
@@ -1982,62 +1982,6 @@ class CreateTestSimulationWithRubricApiResponse(BaseModel):
 
 
 
-# Generated from: create_test_standard_group
-
-class CreateTestStandardGroupSqlParams(BaseModel):
-
-    input_rubric_id: UUID
-    group_name: str
-    group_short_name: str
-    group_description: str
-    group_points: int
-    group_pass_points: int
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_rubric_id,
-            self.group_name,
-            self.group_short_name,
-            self.group_description,
-            self.group_points,
-            self.group_pass_points,
-        )
-
-class CreateTestStandardGroupSqlRow(BaseModel):
-
-    standard_group_id: UUID | None = None
-    rubric_id: UUID | None = None
-    name: str | None = None
-    short_name: str | None = None
-    description: str | None = None
-    points: int | None = None
-    pass_points: int | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-class CreateTestStandardGroupApiRequest(BaseModel):
-
-    input_rubric_id: UUID
-    group_name: str
-    group_short_name: str
-    group_description: str
-    group_points: int
-    group_pass_points: int
-
-class CreateTestStandardGroupApiResponse(BaseModel):
-
-    standard_group_id: UUID | None = None
-    rubric_id: UUID | None = None
-    name: str | None = None
-    short_name: str | None = None
-    description: str | None = None
-    points: int | None = None
-    pass_points: int | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-
-
 # Generated from: create_test_standard
 
 class CreateTestStandardSqlParams(BaseModel):
@@ -2358,40 +2302,6 @@ class CreateScenarioPersonaLinkApiResponse(BaseModel):
     active: bool | None = None
     created_at: str | None = None
     updated_at: str | None = None
-
-
-
-# Generated from: create_scenario_problem_statement
-
-class CreateScenarioProblemStatementSqlParams(BaseModel):
-
-    input_scenario_id: UUID
-    input_problem_statement: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_scenario_id,
-            self.input_problem_statement,
-        )
-
-class CreateScenarioProblemStatementSqlRow(BaseModel):
-
-    scenario_id: UUID | None = None
-    problem_statement: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-
-class CreateScenarioProblemStatementApiRequest(BaseModel):
-
-    input_scenario_id: UUID
-    input_problem_statement: str
-
-class CreateScenarioProblemStatementApiResponse(BaseModel):
-
-    scenario_id: UUID | None = None
-    problem_statement: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
 
 
 
@@ -4085,12 +3995,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateTestSimulationWithRubricApiRequest",
         "CreateTestSimulationWithRubricApiResponse",
     ),
-    "tests/sql/v4/integration/api/rubrics/test_create_test_standard_group_v4_complete.sql": (
-        "CreateTestStandardGroupSqlParams",
-        "CreateTestStandardGroupSqlRow",
-        "CreateTestStandardGroupApiRequest",
-        "CreateTestStandardGroupApiResponse",
-    ),
     "tests/sql/v4/integration/api/rubrics/test_create_test_standard_v4_complete.sql": (
         "CreateTestStandardSqlParams",
         "CreateTestStandardSqlRow",
@@ -4144,12 +4048,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateScenarioPersonaLinkSqlRow",
         "CreateScenarioPersonaLinkApiRequest",
         "CreateScenarioPersonaLinkApiResponse",
-    ),
-    "tests/sql/v4/integration/api/scenarios/test_create_scenario_problem_statement_v4_complete.sql": (
-        "CreateScenarioProblemStatementSqlParams",
-        "CreateScenarioProblemStatementSqlRow",
-        "CreateScenarioProblemStatementApiRequest",
-        "CreateScenarioProblemStatementApiResponse",
     ),
     "tests/sql/v4/integration/api/scenarios/test_create_scenario_tree_edge_v4_complete.sql": (
         "CreateScenarioTreeEdgeSqlParams",
@@ -4776,11 +4674,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_test_standard_group_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/rubrics/test_create_test_standard_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4822,11 +4715,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_persona_link_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_scenario_problem_statement_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
