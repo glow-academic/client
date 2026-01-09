@@ -17,9 +17,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
 
-from ..adapters.openai.audio.adapter import OpenAIAudioAdapter
-from ..adapters.base.types import AgentConfig
-from ..adapters.service.prepare_config import prepare_audio_config
+from .adapter import OpenAIAudioAdapter
+from ...base.types import AgentConfig
+from ...service.prepare_config import prepare_audio_config
 
 internal_sio = get_internal_sio()
 

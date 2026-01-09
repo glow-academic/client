@@ -14,7 +14,7 @@ from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ..adapters.openai.audio.adapter import OpenAIAudioAdapter
+from .adapter import OpenAIAudioAdapter
 
 internal_sio = get_internal_sio()
 

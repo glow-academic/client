@@ -39,6 +39,10 @@ import VoiceWaveform from "./VoiceWaveform";
 //   ServerToClientEvents[T] extends (payload: infer P) => unknown ? P : never;
 // type StartVoiceResponsePayload = EventPayload<"simulation_voice_start_response">;
 import {
+  OpenAIAudioAdapter,
+  type AudioSessionConfig,
+} from "@/lib/adapters/audio";
+import {
   OpenAIRealtimeWebRTC,
   RealtimeAgent,
   RealtimeSession,
@@ -108,6 +112,7 @@ export default function AttemptInput({
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const realtimeSessionRef = useRef<RealtimeSession | null>(null);
+  const audioAdapterRef = useRef<OpenAIAudioAdapter | null>(null);
   // Track which Realtime items we've already forwarded to the server
   const processedItemIdsRef = useRef<Set<string>>(new Set());
   // Use strongly typed tool context map from WebSocket event payload
@@ -423,11 +428,20 @@ export default function AttemptInput({
 
     setIsStartingVoice(true);
     try {
-      // Start voice session on server - this will return ephemeral key + tools + config
+      // Start voice session on server - use new audio_session_start event
       // eslint-disable-next-line no-console
-      console.log("[Voice] Emitting simulation_voice_start event:", {
+      console.log("[Voice] Emitting audio_session_start event:", {
         chat_id: currentChat.id,
       });
+
+      // Emit audio_session_start (new unified event)
+      socket.emit("audio_session_start", {
+        agent_id: "", // Will be determined by backend from chat context
+        resource_id: currentChat.id,
+        resource_type: "voice",
+      });
+
+      // Also emit old event for backward compatibility
       socket.emit("simulation_voice_start", { chat_id: currentChat.id });
 
       // Wait for server response with ephemeral key, tools, instructions, config, and tool context map
@@ -1889,6 +1903,91 @@ export default function AttemptInput({
       setIsStartingVoice(false);
     }
   }, [cleanupRealtime, currentChat?.id, isConnected, socket]);
+
+  // Listen for audio_session_started event and initialize adapter
+  useEffect(() => {
+    if (!socket || !isConnected || !currentChat?.id) return;
+
+    const handleAudioSessionStarted = async (
+      data: AudioSessionConfig & {
+        success?: boolean;
+        resource_id?: string;
+        resource_type?: string;
+      }
+    ) => {
+      if (!data.success || !data.ephemeral_key) {
+        console.warn("[Voice] Invalid audio_session_started event:", data);
+        return;
+      }
+
+      try {
+        // Initialize adapter with config from backend
+        const adapter = new OpenAIAudioAdapter({
+          config: data as AudioSessionConfig,
+          eventEmitter: (eventType, payload) => {
+            // Forward events to backend via Socket.IO
+            if (socket) {
+              socket.emit("audio_webrtc_event", {
+                event_type: eventType,
+                ...payload,
+                run_id: data.run_id,
+              });
+            }
+          },
+          chatId: currentChat.id,
+        });
+
+        // Initialize session
+        await adapter.initializeSession(data as AudioSessionConfig);
+
+        // Subscribe to adapter events for UI updates
+        adapter.on("audio_user_start", (payload) => {
+          console.log("[Voice] Adapter: audio_user_start", payload);
+          // Component can handle UI updates here
+        });
+
+        adapter.on("audio_user_complete", (payload) => {
+          console.log("[Voice] Adapter: audio_user_complete", payload);
+          // Component can handle UI updates here
+        });
+
+        adapter.on("audio_assistant_progress", (payload) => {
+          console.log("[Voice] Adapter: audio_assistant_progress", payload);
+          // Component can handle UI updates here
+        });
+
+        adapter.on("audio_error", (payload) => {
+          console.error("[Voice] Adapter: audio_error", payload);
+          toast.error(
+            (payload as { error_message?: string }).error_message ||
+              "Audio error occurred"
+          );
+        });
+
+        // Store adapter reference
+        audioAdapterRef.current = adapter;
+        setVoiceModeEnabled(true);
+        setIsStartingVoice(false);
+
+        console.log("[Voice] Adapter initialized successfully");
+      } catch (error) {
+        console.error("[Voice] Failed to initialize adapter:", error);
+        toast.error("Failed to initialize audio adapter");
+        setIsStartingVoice(false);
+      }
+    };
+
+    socket.on("audio_session_started", handleAudioSessionStarted);
+
+    return () => {
+      socket.off("audio_session_started", handleAudioSessionStarted);
+      // Cleanup adapter on unmount
+      if (audioAdapterRef.current) {
+        audioAdapterRef.current.disconnect().catch(console.error);
+        audioAdapterRef.current = null;
+      }
+    };
+  }, [socket, isConnected, currentChat?.id]);
 
   // Voice mode handlers
   const handleVoiceToggle = useCallback(async () => {
