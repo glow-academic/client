@@ -20,7 +20,6 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-from mcp.server.fastmcp import FastMCP
 from starlette.middleware.base import BaseHTTPMiddleware
 
 if TYPE_CHECKING:  # pragma: no cover - runtime import happens lazily
@@ -70,9 +69,6 @@ VIDEO_FOLDER.mkdir(parents=True, exist_ok=True)
 # Directory for storing tus uploads in progress
 TUS_UPLOADS_DIR = UPLOAD_FOLDER / "tus_uploads"
 TUS_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-
-# MCP server instance for tool registration
-server = FastMCP("Domain-API", stateless_http=True)
 
 # Configure logging first - compact format to reduce whitespace
 # Use basicConfig with force=True to override uvicorn's default logging (Python 3.8+)
@@ -555,7 +551,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
                 "Metrics snapshot and health logging now handled by notify service"
             )
 
-        await stack.enter_async_context(server.session_manager.run())
+        # Import MCP server for lifespan management
+        from app.mcp import \
+            mcp_server as artifacts_resources_mcp_server  # noqa: E402
+
+        # Add MCP server session manager to lifespan
+        await stack.enter_async_context(artifacts_resources_mcp_server.session_manager.run())
 
         # Generate OpenAPI schema and write to disk
         schema = get_openapi(
@@ -717,6 +718,11 @@ class DBLoggingMiddleware(BaseHTTPMiddleware):
 
 fastapi_app.add_middleware(DBLoggingMiddleware)
 
+# Add MCP OAuth middleware (before mounting MCP server)
+from app.mcp.oauth import McpOAuthMiddleware  # noqa: E402
+
+fastapi_app.add_middleware(McpOAuthMiddleware)
+
 # Include routers
 
 # Include API v4 router (DHH-style)
@@ -728,9 +734,6 @@ fastapi_app.include_router(api_v4_router)
 from app.socket.v4 import router as socket_v4_router  # noqa: E402
 
 fastapi_app.include_router(socket_v4_router)
-
-# mounting the mcp servers - ensure trailing slashes for proper routing
-fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
 
 # Mount artifacts/resources MCP server
 from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402

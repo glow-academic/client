@@ -194,6 +194,7 @@ services:
       - INTERNAL_API_BASE=http://server:8000
       - REDIS_URL=redis://redis:6379
       - KEYCLOAK_INTERNAL_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=${KEYCLOAK_REALM:-master}
     volumes:
       - uploads:/app/uploads   # Docker volume for uploads
     healthcheck:

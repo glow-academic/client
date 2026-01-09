@@ -59,6 +59,7 @@ dependencies = [
     "pytest-playwright>=0.4.0",
     "playwright>=1.40.0",
     "python-keycloak>=2.10.0",
+    "python-jose[cryptography]>=3.3.0",
 ]
 
 [project.scripts]

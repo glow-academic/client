@@ -43,3 +43,6 @@ pytest-asyncio==0.23.7
 
 # Keycloak integration
 python-keycloak>=2.10.0
+
+# JWT verification for MCP OAuth
+python-jose[cryptography]>=3.3.0

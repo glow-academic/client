@@ -9,15 +9,14 @@ client_router = start.client_router
 server_router = start.server_router
 
 # Include audio routers
-from .audio import start as audio_start
+# Note: start.py and events.py modules not yet implemented
+# from .audio import start as audio_start
+# client_router.include_router(audio_start.client_router, prefix="/audio")
+# server_router.include_router(audio_start.server_router, prefix="/audio")
 
-client_router.include_router(audio_start.client_router, prefix="/audio")
-server_router.include_router(audio_start.server_router, prefix="/audio")
-
-from .audio import events as audio_events
-
-client_router.include_router(audio_events.client_router, prefix="/audio")
-server_router.include_router(audio_events.server_router, prefix="/audio")
+# from .audio import events as audio_events
+# client_router.include_router(audio_events.client_router, prefix="/audio")
+# server_router.include_router(audio_events.server_router, prefix="/audio")
 
 from .audio import stop as audio_stop
 
