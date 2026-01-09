@@ -121,8 +121,8 @@ system_message_hash AS (
 existing_system_message AS (
     SELECT m.id as system_message_id
     FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        JOIN contents cnt ON cnt.id = mc.content_id
     JOIN system_message_hash smh ON message_content_hash(cnt.content, 'system') = smh.hash
     WHERE m.role = 'system'
     LIMIT 1
@@ -136,28 +136,37 @@ new_system_message AS (
 ),
 -- Create synthetic tool call for new system messages
 system_tool_call AS (
-    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'link_sys_dev_system_' || nsm.system_message_id::text, 
         NULL, 
-        run_id,
         NULL,
         '',
         true, 
         nsm.created_at, 
         nsm.updated_at
     FROM new_system_message nsm
-    CROSS JOIN (SELECT run_id FROM run_info LIMIT 1) ri
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
     RETURNING id as tool_call_id, created_at, updated_at
+),
+link_system_tool_call AS (
+    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
+    SELECT 
+        nsm.system_message_id,
+        stc.tool_call_id,
+        NOW(),
+        NOW()
+    FROM new_system_message nsm
+    CROSS JOIN system_tool_call stc
+    WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
+    ON CONFLICT (message_id, call_id) DO NOTHING
 ),
 -- Get existing tool_call_id for existing system messages (via message_runs -> calls)
 existing_system_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM existing_system_message esm
-    JOIN message_content mc ON mc.message_id = esm.system_message_id AND mc.idx = 0
-    JOIN message_runs mr ON mr.message_id = esm.system_message_id
-    JOIN calls tc ON tc.run_id = mr.run_id
+    JOIN message_calls mcc3 ON mcc3.message_id = esm.system_message_id
+    JOIN calls tc ON tc.id = mcc3.call_id
     LIMIT 1
 ),
 -- Combine new and existing tool calls
@@ -167,7 +176,7 @@ system_tool_call_id AS (
     SELECT tool_call_id FROM existing_system_tool_call
 ),
 insert_system_content_step1 AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT smc.content, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
@@ -176,7 +185,7 @@ insert_system_content_step1 AS (
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_system_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT nsm.system_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
@@ -236,8 +245,8 @@ scenario_developer_hash AS (
 existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
     FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        JOIN contents cnt ON cnt.id = mc.content_id
     JOIN scenario_developer_hash sdh ON message_content_hash(cnt.content, 'developer') = sdh.hash
     WHERE m.role = 'developer'
     LIMIT 1
@@ -251,28 +260,37 @@ new_scenario_developer_message AS (
 ),
 -- Create synthetic tool call for new developer messages
 developer_tool_call AS (
-    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'link_sys_dev_developer_' || nsdm.developer_message_id::text, 
         NULL, 
-        run_id,
         NULL,
         '',
         true, 
         nsdm.created_at, 
         nsdm.updated_at
     FROM new_scenario_developer_message nsdm
-    CROSS JOIN (SELECT run_id FROM run_info LIMIT 1) ri
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
     RETURNING id as tool_call_id, created_at, updated_at
+),
+link_developer_tool_call AS (
+    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
+    SELECT 
+        nsdm.developer_message_id,
+        dtc.tool_call_id,
+        NOW(),
+        NOW()
+    FROM new_scenario_developer_message nsdm
+    CROSS JOIN developer_tool_call dtc
+    WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)
+    ON CONFLICT (message_id, call_id) DO NOTHING
 ),
 -- Get existing tool_call_id for existing developer messages (via message_runs -> calls)
 existing_developer_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM existing_scenario_developer_message esdm
-    JOIN message_content mc ON mc.message_id = esdm.developer_message_id AND mc.idx = 0
-    JOIN message_runs mr ON mr.message_id = esdm.developer_message_id
-    JOIN calls tc ON tc.run_id = mr.run_id
+    JOIN message_calls mcc4 ON mcc4.message_id = esdm.developer_message_id
+    JOIN calls tc ON tc.id = mcc4.call_id
     LIMIT 1
 ),
 -- Combine new and existing tool calls
@@ -282,7 +300,7 @@ developer_tool_call_id AS (
     SELECT tool_call_id FROM existing_developer_tool_call
 ),
 insert_scenario_developer_content_step1 AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT sdc.content, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc
@@ -291,7 +309,7 @@ insert_scenario_developer_content_step1 AS (
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_scenario_developer_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT nsdm.developer_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc

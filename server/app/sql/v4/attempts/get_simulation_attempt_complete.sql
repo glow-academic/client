@@ -1061,8 +1061,8 @@ messages_with_tree AS (
         JOIN runs r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id
         JOIN messages m ON m.id = mr.message_id
-        LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN content cnt ON cnt.id = mc.content_id
+        LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN contents cnt ON cnt.id = mc.content_id
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)
@@ -1086,8 +1086,8 @@ messages_with_tree AS (
             mp.depth + 1 as depth,
             mp.path_root_id
         FROM messages m
-        LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN content cnt ON cnt.id = mc.content_id
+        LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN contents cnt ON cnt.id = mc.content_id
         JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
         JOIN message_runs mr ON mr.message_id = m.id
@@ -1122,8 +1122,8 @@ messages_with_tree AS (
         JOIN runs r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id
         JOIN messages m ON m.id = mr.message_id
-        LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN content cnt ON cnt.id = mc.content_id
+        LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN contents cnt ON cnt.id = mc.content_id
         LEFT JOIN message_personas mp_persona ON mp_persona.message_id = m.id
         CROSS JOIN chat_ids_list cil
         WHERE c.id = ANY(cil.chat_ids)

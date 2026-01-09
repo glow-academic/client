@@ -42,7 +42,7 @@ BEGIN
     END IF;
     
     -- INSERT into content table (always insert, never update)
-    INSERT INTO content(content, active)
+    INSERT INTO contents(content, active)
     VALUES (content, true)
     RETURNING id INTO v_content_id;
     

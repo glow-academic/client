@@ -73,11 +73,10 @@ existing_tool_call AS (
     LIMIT 1
 ),
 create_tool_call AS (
-    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         COALESCE(p.call_id, 'prompt_' || p.tool_call_id),
         gt.tool_id,
-        p.run_id,
         (SELECT template_id FROM tool_templates WHERE tool_id = gt.tool_id LIMIT 1),
         COALESCE(p.arguments_raw, ''),
         false,
@@ -93,13 +92,22 @@ selected_tool_call AS (
     UNION ALL
     SELECT tool_call_id::text, external_call_id FROM create_tool_call
 ),
--- Update run_id on calls if needed (run_id is now a direct column)
-update_call_run_id AS (
-    UPDATE calls
-    SET run_id = (SELECT p.run_id FROM params p LIMIT 1), updated_at = NOW()
-    WHERE id IN (SELECT uuid(tool_call_id) FROM selected_tool_call)
-      AND run_id IS DISTINCT FROM (SELECT p.run_id FROM params p LIMIT 1)
-    RETURNING calls.id
+-- Link call to message via message_calls (run_id removed from calls table)
+link_call_to_message AS (
+    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
+    SELECT 
+        m.id as message_id,
+        uuid(stc.tool_call_id) as call_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+    JOIN message_runs mr ON mr.run_id = p.run_id
+    JOIN messages m ON m.id = mr.message_id
+    WHERE m.role = 'assistant'
+    ORDER BY m.created_at
+    LIMIT 1
+    ON CONFLICT (message_id, call_id) DO NOTHING
 ),
 -- Update arguments_raw on calls if provided
 update_call_arguments AS (
@@ -120,8 +128,8 @@ existing_message AS (
     FROM params p
     JOIN selected_tool_call stc ON true
     JOIN calls tc ON tc.id = uuid(stc.tool_call_id)
-    JOIN message_runs mr ON mr.run_id = tc.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message_calls mc ON mc.call_id = tc.id
+    JOIN messages m ON m.id = mc.message_id
     WHERE p.message_id IS NULL
     LIMIT 1
 ),
@@ -143,17 +151,17 @@ selected_message AS (
     UNION ALL
     SELECT message_id FROM create_message
 ),
--- Get existing content_id if message_content exists, otherwise create new content
+-- Get existing content_id if message_contents exists, otherwise create new content
 get_existing_content AS (
     SELECT cnt.id as content_id
     FROM params p
     CROSS JOIN selected_message sm
-    JOIN message_content mc ON mc.message_id = uuid(sm.message_id) AND mc.idx = 0
-    JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_contents mc ON mc.message_id = uuid(sm.message_id) AND mc.idx = 0
+    JOIN contents cnt ON cnt.id = mc.content_id
     LIMIT 1
 ),
 create_content AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT 
         p.accumulated_content,
         NOW(),
@@ -171,7 +179,7 @@ selected_content_id AS (
 ),
 -- Update existing content or create new junction
 update_existing_content AS (
-    UPDATE content cnt
+    UPDATE contents cnt
     SET content = p.accumulated_content,
         updated_at = NOW()
     FROM params p
@@ -180,7 +188,7 @@ update_existing_content AS (
       AND EXISTS (SELECT 1 FROM get_existing_content)
 ),
 upsert_message_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT 
         uuid(sm.message_id),
         sci.content_id,

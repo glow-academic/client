@@ -53,7 +53,9 @@ WITH tool_call_results AS (
         ) as tool_results
     FROM calls tc
     JOIN tools t ON t.id = tc.tool_id
-    WHERE tc.run_id = $1
+    JOIN message_calls mc ON mc.call_id = tc.id
+    JOIN message_runs mr ON mr.message_id = mc.message_id
+    WHERE mr.run_id = $1
       AND tc.completed = true
 )
 SELECT 

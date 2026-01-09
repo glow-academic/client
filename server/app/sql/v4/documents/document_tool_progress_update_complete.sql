@@ -67,11 +67,10 @@ existing_tool_call AS (
     LIMIT 1
 ),
 create_tool_call AS (
-    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         COALESCE(p.call_id, 'document_' || p.tool_call_id),
         gt.tool_id,
-        p.run_id,
         (SELECT template_id FROM tool_templates WHERE tool_id = gt.tool_id LIMIT 1),
         '',
         false,
@@ -87,13 +86,22 @@ selected_tool_call AS (
     UNION ALL
     SELECT tool_call_id::text, external_call_id FROM create_tool_call
 ),
--- Update run_id on calls if needed (run_id is now a direct column)
-update_call_run_id AS (
-    UPDATE calls
-    SET run_id = (SELECT p.run_id FROM params p LIMIT 1), updated_at = NOW()
-    WHERE id IN (SELECT uuid(tool_call_id) FROM selected_tool_call)
-      AND run_id IS DISTINCT FROM (SELECT p.run_id FROM params p LIMIT 1)
-    RETURNING calls.id
+-- Link call to message via message_calls (run_id removed from calls table)
+link_call_to_message AS (
+    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
+    SELECT 
+        m.id as message_id,
+        uuid(stc.tool_call_id) as call_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+    JOIN message_runs mr ON mr.run_id = p.run_id
+    JOIN messages m ON m.id = mr.message_id
+    WHERE m.role = 'assistant'
+    ORDER BY m.created_at
+    LIMIT 1
+    ON CONFLICT (message_id, call_id) DO NOTHING
 ),
 -- Accumulate arguments_raw (SQL accumulates!)
 accumulate_arguments AS (

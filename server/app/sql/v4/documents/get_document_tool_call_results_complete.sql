@@ -49,7 +49,9 @@ WITH html_result AS (
     SELECT CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb->>'template_html' ELSE NULL END as template_html
     FROM calls tc
     JOIN tools t ON t.id = tc.tool_id
-    WHERE tc.run_id = $1
+    JOIN message_calls mc ON mc.call_id = tc.id
+    JOIN message_runs mr ON mr.message_id = mc.message_id
+    WHERE mr.run_id = $1
       AND t.name = 'create_html'
       AND tc.completed = true
     ORDER BY tc.created_at DESC
@@ -60,7 +62,9 @@ schema_result AS (
     SELECT CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb->>'schema_json' ELSE NULL END as schema_json
     FROM calls tc
     JOIN tools t ON t.id = tc.tool_id
-    WHERE tc.run_id = $1
+    JOIN message_calls mc ON mc.call_id = tc.id
+    JOIN message_runs mr ON mr.message_id = mc.message_id
+    WHERE mr.run_id = $1
       AND t.name = 'create_schema'
       AND tc.completed = true
     ORDER BY tc.created_at DESC

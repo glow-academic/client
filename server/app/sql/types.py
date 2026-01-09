@@ -11158,7 +11158,7 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
     department_id: UUID | None = None
     group_id: UUID | None = None
     user_instructions: str | None = None
-    developer_message_contents: list[str] | None = None
+    developer_message_contentss: list[str] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11170,7 +11170,7 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.department_id,
             self.group_id,
             self.user_instructions,
-            self.developer_message_contents,
+            self.developer_message_contentss,
         )
 
 class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
@@ -11190,7 +11190,7 @@ class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
     department_id: UUID | None = None
     group_id: UUID | None = None
     user_instructions: str | None = None
-    developer_message_contents: list[str] | None = None
+    developer_message_contentss: list[str] | None = None
 
 class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -13734,14 +13734,14 @@ class GetMemberRunContextAndCreateRunApiResponse(BaseModel):
 class MemberProgressUpsertSqlParams(BaseModel):
 
     chat_id: UUID
-    message_content: str
+    message_contents: str
     audio: bool
     upload_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.chat_id,
-            self.message_content,
+            self.message_contents,
             self.audio,
             self.upload_id,
         )
@@ -13757,7 +13757,7 @@ class MemberProgressUpsertSqlRow(BaseModel):
 class MemberProgressUpsertApiRequest(BaseModel):
 
     chat_id: UUID
-    message_content: str
+    message_contents: str
     audio: bool
     upload_id: UUID | None = None
 
@@ -23880,7 +23880,7 @@ class VoiceProgressUpsertSqlParams(BaseModel):
     call_id: str | None = None
     tool_name: str | None = None
     arguments_raw: str | None = None
-    message_content: str | None = None
+    message_contents: str | None = None
     persona_id: UUID | None = None
     parent_message_id: UUID | None = None
     upload_id: UUID | None = None
@@ -23894,7 +23894,7 @@ class VoiceProgressUpsertSqlParams(BaseModel):
             self.call_id,
             self.tool_name,
             self.arguments_raw,
-            self.message_content,
+            self.message_contents,
             self.persona_id,
             self.parent_message_id,
             self.upload_id,
@@ -23916,7 +23916,7 @@ class VoiceProgressUpsertApiRequest(BaseModel):
     call_id: str | None = None
     tool_name: str | None = None
     arguments_raw: str | None = None
-    message_content: str | None = None
+    message_contents: str | None = None
     persona_id: UUID | None = None
     parent_message_id: UUID | None = None
     upload_id: UUID | None = None

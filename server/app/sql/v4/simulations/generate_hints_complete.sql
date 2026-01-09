@@ -75,8 +75,8 @@ WITH params AS (
 target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, cnt.content, m.created_at
     FROM messages m
-    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN content cnt ON cnt.id = mc.content_id
+    LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN contents cnt ON cnt.id = mc.content_id
     JOIN message_runs mr ON mr.message_id = m.id
     JOIN runs r ON r.id = mr.run_id
     JOIN group_runs gr ON gr.run_id = r.id

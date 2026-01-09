@@ -302,8 +302,9 @@ upload_info AS (
         u.mime_type
     FROM params p
     JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN message_audio ma ON ma.message_id = mr.message_id
-    JOIN uploads u ON u.id = ma.upload_id
+    JOIN message_audios ma ON ma.message_id = mr.message_id
+    JOIN audio_uploads au ON au.audio_id = ma.audio_id AND au.active = true
+    JOIN uploads u ON u.id = au.upload_id
     LIMIT 1
 ),
 -- Context data with agent config

@@ -41,7 +41,7 @@ CREATE OR REPLACE FUNCTION socket_voice_progress_upsert_v4(
     call_id text DEFAULT NULL,
     tool_name text DEFAULT NULL,
     arguments_raw text DEFAULT NULL,
-    message_content text DEFAULT NULL,
+    message_contents text DEFAULT NULL,
     persona_id uuid DEFAULT NULL,
     parent_message_id uuid DEFAULT NULL,
     upload_id uuid DEFAULT NULL,
@@ -64,7 +64,7 @@ WITH params AS (
         call_id AS call_id,
         tool_name AS tool_name,
         arguments_raw AS arguments_raw,
-        message_content AS message_content,
+        message_contents AS message_contents,
         persona_id AS persona_id,
         parent_message_id AS parent_message_id,
         upload_id AS upload_id,
@@ -88,11 +88,10 @@ get_existing_tool_call AS (
     LIMIT 1
 ),
 create_tool_call_if_needed AS (
-    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         p.call_id, 
         gt.tool_id, 
-        p.run_id,
         (SELECT template_id FROM tool_templates WHERE tool_id = gt.tool_id LIMIT 1),
         COALESCE(p.arguments_raw, ''),
         false,
@@ -109,14 +108,6 @@ selected_tool_call AS (
     SELECT tool_call_id FROM get_existing_tool_call
     UNION ALL
     SELECT tool_call_id FROM create_tool_call_if_needed
-),
--- Update run_id on calls if needed (run_id is now a direct column)
-update_call_run_id AS (
-    UPDATE calls
-    SET run_id = (SELECT p.run_id FROM params p LIMIT 1), updated_at = NOW()
-    WHERE id IN (SELECT tool_call_id FROM selected_tool_call)
-      AND run_id IS DISTINCT FROM (SELECT p.run_id FROM params p LIMIT 1)
-    RETURNING calls.id
 ),
 -- Update arguments_raw on calls if provided (arguments_raw is now a direct column)
 update_call_arguments AS (
@@ -159,43 +150,56 @@ selected_message AS (
     UNION ALL
     SELECT message_id FROM create_message_if_needed
 ),
+-- Link call to message via message_calls (run_id removed from calls table)
+link_call_to_message AS (
+    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
+    SELECT 
+        uuid(sm.message_id),
+        stc.tool_call_id,
+        NOW(),
+        NOW()
+    FROM params p
+    CROSS JOIN selected_tool_call stc
+    CROSS JOIN selected_message sm
+    ON CONFLICT (message_id, call_id) DO NOTHING
+),
 -- Insert or update message content
 insert_content_if_needed AS (
-    INSERT INTO content (content, created_at, updated_at)
-    SELECT p.message_content, NOW(), NOW()
+    INSERT INTO contents (content, created_at, updated_at)
+    SELECT p.message_contents, NOW(), NOW()
     FROM params p
     CROSS JOIN selected_message sm
-    WHERE p.message_content IS NOT NULL
+    WHERE p.message_contents IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM message_content mc 
+          SELECT 1 FROM message_contents mc 
           WHERE mc.message_id = sm.message_id 
           AND mc.idx = 0
       )
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_message_content_if_needed AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT sm.message_id, ic.content_id, 0, ic.created_at, ic.updated_at
     FROM params p
     CROSS JOIN selected_message sm
     CROSS JOIN insert_content_if_needed ic
-    WHERE p.message_content IS NOT NULL
+    WHERE p.message_contents IS NOT NULL
       AND NOT EXISTS (
-          SELECT 1 FROM message_content mc 
+          SELECT 1 FROM message_contents mc 
           WHERE mc.message_id = sm.message_id 
           AND mc.idx = 0
       )
 ),
 update_message_content AS (
-    UPDATE content
-    SET content = p.message_content,
+    UPDATE contents
+    SET content = p.message_contents,
         updated_at = NOW()
     FROM params p,
-         message_content mc
-    WHERE mc.content_id = content.id
+         message_contents mc
+    WHERE mc.content_id = contents.id
       AND mc.message_id = (SELECT message_id FROM selected_message LIMIT 1)
       AND mc.idx = 0
-      AND p.message_content IS NOT NULL
+      AND p.message_contents IS NOT NULL
 ),
 -- Mark message as completed if is_complete
 complete_message AS (
@@ -252,23 +256,33 @@ create_message_branch AS (
           AND mt.active = true
       )
 ),
--- Link audio upload to message
-link_audio_to_message AS (
-    INSERT INTO message_audio (message_id, upload_id, created_at, updated_at)
-    SELECT sm.message_id, p.upload_id, NOW(), NOW()
+-- Create audio record and link to upload if upload_id provided
+create_audio_if_provided_voice AS (
+    INSERT INTO audios (created_at, updated_at, active, generated, call_id)
+    SELECT NOW(), NOW(), true, false, NULL
     FROM params p
-    CROSS JOIN selected_message sm
     WHERE p.upload_id IS NOT NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM message_audio ma 
-          WHERE ma.message_id = sm.message_id 
-          AND ma.upload_id = p.upload_id
-      )
-    RETURNING upload_id
+    RETURNING id as audio_id
+),
+link_audio_upload_voice AS (
+    INSERT INTO audio_uploads (audio_id, upload_id, active, created_at, updated_at)
+    SELECT ca.audio_id, p.upload_id, true, NOW(), NOW()
+    FROM create_audio_if_provided_voice ca
+    CROSS JOIN params p
+    WHERE p.upload_id IS NOT NULL
+),
+link_audio_to_message AS (
+    INSERT INTO message_audios (message_id, audio_id, created_at, updated_at)
+    SELECT uuid(sm.message_id), ca.audio_id, NOW(), NOW()
+    FROM create_audio_if_provided_voice ca
+    CROSS JOIN selected_message sm
+    CROSS JOIN params p
+    WHERE p.upload_id IS NOT NULL
+    RETURNING audio_id
 )
 SELECT 
     (SELECT message_id FROM selected_message LIMIT 1)::text as message_id,
     (SELECT tool_call_id FROM selected_tool_call LIMIT 1)::text as tool_call_id,
-    (SELECT message_content FROM params LIMIT 1) as final_content,
+    (SELECT message_contents FROM params LIMIT 1) as final_content,
     (SELECT EXISTS(SELECT 1 FROM link_audio_to_message)) as upload_linked
 $$;

@@ -114,7 +114,7 @@ scenario_documents_data AS (
                             'id', d.id::text,
                             'name', (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
                             'description', COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''),
-                            'content', COALESCE((SELECT c.content FROM document_content dc JOIN content c ON dc.content_id = c.id WHERE dc.document_id = d.id LIMIT 1), ''),
+                            'content', '',  -- document_content table was removed, content now accessed via message_documents → message_contents
                             'active', EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE),
                             'created_at', d.created_at::text,
                             'updated_at', d.updated_at::text

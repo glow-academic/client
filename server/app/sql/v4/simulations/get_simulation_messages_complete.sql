@@ -77,8 +77,8 @@ WITH RECURSIVE message_path AS (
     JOIN runs r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
     JOIN messages m ON m.id = mr.message_id
-    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN content cnt ON cnt.id = mc.content_id
+    LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN contents cnt ON cnt.id = mc.content_id
     WHERE c.id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 
@@ -100,8 +100,8 @@ WITH RECURSIVE message_path AS (
         mp.depth + 1 as depth,
         mp.path_root_id
     FROM messages m
-    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN content cnt ON cnt.id = mc.content_id
+    LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN contents cnt ON cnt.id = mc.content_id
     JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
     JOIN message_path mp ON mp.id = mt.parent_id
     JOIN message_runs mr ON mr.message_id = m.id
@@ -135,8 +135,8 @@ messages_without_parents AS (
     JOIN runs r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
     JOIN messages m ON m.id = mr.message_id
-    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN content cnt ON cnt.id = mc.content_id
+    LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN contents cnt ON cnt.id = mc.content_id
     WHERE c.id = $1::uuid
       AND NOT EXISTS (
           SELECT 1 FROM message_tree mt 
@@ -166,9 +166,10 @@ distinct_messages AS (
         am.completed,
         am.updated_at,
         am.audio,
-        ma.upload_id::text as upload_id
+        au.upload_id::text as upload_id
     FROM all_messages am
-    LEFT JOIN message_audio ma ON ma.message_id = am.id
+    LEFT JOIN message_audios ma ON ma.message_id = am.id
+    LEFT JOIN audio_uploads au ON au.audio_id = ma.audio_id AND au.active = true
     ORDER BY am.id, am.depth DESC, am.created_at
 )
 SELECT 

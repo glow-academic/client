@@ -48,7 +48,9 @@ WITH descriptions_result AS (
     SELECT CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb->'descriptions' ELSE NULL END as descriptions
     FROM calls tc
     JOIN tools t ON t.id = tc.tool_id
-    WHERE tc.run_id = $1
+    JOIN message_calls mc ON mc.call_id = tc.id
+    JOIN message_runs mr ON mr.message_id = mc.message_id
+    WHERE mr.run_id = $1
       AND t.name = 'standard_description'
       AND tc.completed = true
     ORDER BY tc.created_at DESC

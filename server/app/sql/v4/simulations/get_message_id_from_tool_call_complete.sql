@@ -28,10 +28,11 @@ STABLE
 AS $$
 SELECT m.id as message_id
 FROM calls tc
-JOIN message_runs mr ON mr.run_id = tc.run_id
-JOIN messages m ON m.id = mr.message_id
+JOIN message_calls mc ON mc.call_id = tc.id
+JOIN messages m ON m.id = mc.message_id
+JOIN message_runs mr ON mr.message_id = m.id
 WHERE tc.id = api_get_message_id_from_tool_call_v4.tool_call_id
-  AND tc.run_id = api_get_message_id_from_tool_call_v4.run_id
+  AND mr.run_id = api_get_message_id_from_tool_call_v4.run_id
   AND m.role = 'assistant'::message_role
 ORDER BY m.created_at DESC
 LIMIT 1

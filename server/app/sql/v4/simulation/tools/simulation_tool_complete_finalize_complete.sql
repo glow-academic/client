@@ -63,8 +63,8 @@ get_message_from_tool_call AS (
     SELECT DISTINCT ON (m.id) m.id as message_id
     FROM get_tool_call gtc
     JOIN calls tc ON tc.id = gtc.tool_call_id
-    JOIN message_runs mr ON mr.run_id = tc.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message_calls mc ON mc.call_id = tc.id
+    JOIN messages m ON m.id = mc.message_id
     WHERE m.role = 'assistant'::message_role
     ORDER BY m.id, m.created_at DESC
     LIMIT 1
@@ -78,12 +78,12 @@ selected_message AS (
 ),
 -- Update message content with final content
 update_message_content_final AS (
-    UPDATE content
+    UPDATE contents
     SET content = p.final_content,
         updated_at = NOW()
     FROM params p,
-         message_content mc
-    WHERE mc.content_id = content.id
+         message_contents mc
+    WHERE mc.content_id = contents.id
       AND mc.message_id = (SELECT message_id FROM selected_message LIMIT 1)
       AND mc.idx = 0
 ),

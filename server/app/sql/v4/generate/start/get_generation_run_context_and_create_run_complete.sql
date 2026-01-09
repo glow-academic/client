@@ -27,7 +27,7 @@ CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
     department_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
     user_instructions text DEFAULT NULL,  -- Optional: for regeneration (creates user message)
-    developer_message_contents text[] DEFAULT NULL  -- Optional: pre-rendered developer message content strings
+    developer_message_contentss text[] DEFAULT NULL  -- Optional: pre-rendered developer message contents strings
 )
 RETURNS TABLE (
     run_id text,
@@ -49,7 +49,7 @@ WITH params AS (
         department_id AS department_id,
         group_id AS group_id,
         user_instructions AS user_instructions,
-        developer_message_contents AS developer_message_contents
+        developer_message_contentss AS developer_message_contentss
 ),
 -- Validate agent exists
 selected_agent AS (
@@ -174,9 +174,9 @@ create_user_message AS (
       AND p.user_instructions != ''
     RETURNING id as message_id, created_at, updated_at
 ),
--- Insert user message content
-insert_user_content AS (
-    INSERT INTO content (content, created_at, updated_at)
+-- Insert user message contents
+insert_user_contents AS (
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT 
         p.user_instructions,
         cum.created_at,
@@ -185,19 +185,19 @@ insert_user_content AS (
     CROSS JOIN params p
     WHERE p.user_instructions IS NOT NULL
       AND p.user_instructions != ''
-    RETURNING id as content_id, created_at, updated_at
+    RETURNING id as contents_id, created_at, updated_at
 ),
-insert_user_message_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+insert_user_message_contents AS (
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT 
         cum.message_id,
-        ic.content_id,
+        ic.contents_id,
         0,
         ic.created_at,
         ic.updated_at
     FROM create_user_message cum
     CROSS JOIN params p
-    CROSS JOIN insert_user_content ic
+    CROSS JOIN insert_user_contents ic
     WHERE p.user_instructions IS NOT NULL
       AND p.user_instructions != ''
 ),
@@ -231,62 +231,62 @@ link_existing_messages AS (
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()
 ),
--- Create developer messages from content strings (with deduplication)
--- Expand developer message contents array into rows with row numbers for ordering
-developer_message_contents_expanded AS (
+-- Create developer messages from contents strings (with deduplication)
+-- Expand developer message contentss array into rows with row numbers for ordering
+developer_message_contentss_expanded AS (
     SELECT 
-        unnest(p.developer_message_contents) as content,
+        unnest(p.developer_message_contentss) as contents,
         lg.run_id,
-        generate_subscripts(p.developer_message_contents, 1) as array_idx
+        generate_subscripts(p.developer_message_contentss, 1) as array_idx
     FROM params p
     CROSS JOIN link_group lg
-    WHERE p.developer_message_contents IS NOT NULL
-      AND array_length(p.developer_message_contents, 1) > 0
+    WHERE p.developer_message_contentss IS NOT NULL
+      AND array_length(p.developer_message_contentss, 1) > 0
 ),
--- Calculate hash for each content
+-- Calculate hash for each contents
 developer_message_hashes AS (
     SELECT 
-        dmce.content,
+        dmce.contents,
         dmce.run_id,
         dmce.array_idx,
-        message_content_hash(dmce.content, 'developer') as content_hash
-    FROM developer_message_contents_expanded dmce
+        message_content_hash(dmce.contents, 'developer') as contents_hash
+    FROM developer_message_contentss_expanded dmce
 ),
 -- Find existing developer messages by hash (deduplication)
 existing_developer_messages AS (
-    SELECT DISTINCT ON (dmh.content_hash)
+    SELECT DISTINCT ON (dmh.contents_hash)
         m.id as message_id,
         dmh.run_id,
-        dmh.content_hash,
+        dmh.contents_hash,
         dmh.array_idx
     FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN content cnt ON cnt.id = mc.content_id
-    JOIN developer_message_hashes dmh ON message_content_hash(cnt.content, 'developer') = dmh.content_hash
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN contents cnt ON cnt.id = mc.content_id
+    JOIN developer_message_hashes dmh ON message_content_hash(cnt.content, 'developer') = dmh.contents_hash
     WHERE m.role = 'developer'::message_role
-    ORDER BY dmh.content_hash, m.id
+    ORDER BY dmh.contents_hash, m.id
 ),
--- Get content that needs new messages (ordered by hash for deterministic matching)
-new_content_needing_messages AS (
-    SELECT DISTINCT ON (content_hash)
-        content,
+-- Get contents that needs new messages (ordered by hash for deterministic matching)
+new_contents_needing_messages AS (
+    SELECT DISTINCT ON (contents_hash)
+        contents,
         run_id,
-        content_hash
+        contents_hash
     FROM developer_message_hashes dmh
     WHERE NOT EXISTS (
         SELECT 1 FROM existing_developer_messages edm 
-        WHERE edm.content_hash = dmh.content_hash
+        WHERE edm.contents_hash = dmh.contents_hash
     )
-    ORDER BY content_hash
+    ORDER BY contents_hash
 ),
--- Create new developer messages (one per content, in same order)
+-- Create new developer messages (one per contents, in same order)
 new_developer_messages AS (
     INSERT INTO messages (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
-    FROM new_content_needing_messages
+    FROM new_contents_needing_messages
     RETURNING id, created_at, updated_at
 ),
--- Match new messages with their content (both ordered the same way)
+-- Match new messages with their contents (both ordered the same way)
 new_developer_messages_ordered AS (
     SELECT 
         id,
@@ -295,43 +295,43 @@ new_developer_messages_ordered AS (
         ROW_NUMBER() OVER (ORDER BY id) as rn
     FROM new_developer_messages
 ),
-new_content_ordered AS (
+new_contents_ordered AS (
     SELECT 
-        content,
+        contents,
         run_id,
-        ROW_NUMBER() OVER (ORDER BY content_hash) as rn
-    FROM new_content_needing_messages
+        ROW_NUMBER() OVER (ORDER BY contents_hash) as rn
+    FROM new_contents_needing_messages
 ),
-new_developer_messages_with_content AS (
+new_developer_messages_with_contents AS (
     SELECT 
         nmo.id as message_id,
-        nco.content,
+        nco.contents,
         nco.run_id,
         nmo.created_at,
         nmo.updated_at
     FROM new_developer_messages_ordered nmo
-    JOIN new_content_ordered nco ON nmo.rn = nco.rn
+    JOIN new_contents_ordered nco ON nmo.rn = nco.rn
 ),
--- Insert content for new developer messages
+-- Insert contents for new developer messages
 insert_developer_contents AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT DISTINCT
-        ndmwc.content,
+        ndmwc.contents,
         ndmwc.created_at,
         ndmwc.updated_at
-    FROM new_developer_messages_with_content ndmwc
+    FROM new_developer_messages_with_contents ndmwc
     RETURNING id as content_id, content, created_at, updated_at
 ),
 insert_developer_message_contents AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT 
         ndmwc.message_id,
         ic.content_id,
         0,
         ic.created_at,
         ic.updated_at
-    FROM new_developer_messages_with_content ndmwc
-    JOIN insert_developer_contents ic ON ic.content = ndmwc.content
+    FROM new_developer_messages_with_contents ndmwc
+    JOIN insert_developer_contents ic ON ic.content = ndmwc.contents
         AND ic.created_at = ndmwc.created_at
         AND ic.updated_at = ndmwc.updated_at
 ),
@@ -339,7 +339,7 @@ insert_developer_message_contents AS (
 all_developer_message_ids AS (
     SELECT message_id, run_id FROM existing_developer_messages
     UNION ALL
-    SELECT message_id, run_id FROM new_developer_messages_with_content
+    SELECT message_id, run_id FROM new_developer_messages_with_contents
 ),
 -- Link developer messages to run
 link_developer_messages_to_run AS (

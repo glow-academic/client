@@ -51,14 +51,15 @@ messages_data AS (
         m.created_at,
         m.completed,
         m.audio,
-        ma.upload_id,
+        au.upload_id,
         array_position(p.message_ids, m.id) as pos
     FROM params p
     CROSS JOIN unnest(p.message_ids) AS msg_id
     JOIN messages m ON m.id = msg_id
-    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    LEFT JOIN content cnt ON cnt.id = mc.content_id
-    LEFT JOIN message_audio ma ON ma.message_id = m.id
+    LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+    LEFT JOIN contents cnt ON cnt.id = mc.content_id
+    LEFT JOIN message_audios ma ON ma.message_id = m.id
+    LEFT JOIN audio_uploads au ON au.audio_id = ma.audio_id AND au.active = true
     WHERE p.message_ids IS NOT NULL
       AND array_length(p.message_ids, 1) > 0
 )

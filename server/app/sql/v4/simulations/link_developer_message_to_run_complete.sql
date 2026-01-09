@@ -34,8 +34,8 @@ WITH content_hash AS (
 existing_message AS (
     SELECT m.id, m.created_at
     FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN contents cnt ON cnt.id = mc.content_id
     JOIN content_hash ch ON message_content_hash(cnt.content, 'developer') = ch.hash
     WHERE m.role = 'developer'
     LIMIT 1
@@ -47,7 +47,7 @@ new_message AS (
     RETURNING id, created_at, updated_at
 ),
 insert_content AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT 
         content,  -- Function parameter
         nm.created_at,
@@ -56,7 +56,7 @@ insert_content AS (
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_message_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT nm.id, ic.content_id, 0, ic.created_at, ic.updated_at
     FROM new_message nm
     CROSS JOIN insert_content ic

@@ -7,7 +7,7 @@ DROP FUNCTION IF EXISTS socket_member_progress_upsert_v4(uuid, text, boolean, uu
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION socket_member_progress_upsert_v4(
     chat_id uuid,
-    message_content text,
+    message_contents text,
     audio boolean,
     upload_id uuid DEFAULT NULL
 )
@@ -22,7 +22,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH params AS (
-    SELECT chat_id, message_content, audio, upload_id
+    SELECT chat_id, message_contents, audio, upload_id
 ),
 -- Get member agent (role='member')
 member_agent AS (
@@ -172,11 +172,10 @@ create_message_if_needed AS (
 ),
 -- Create synthetic tool call for new user messages
 user_tool_call AS (
-    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'member_progress_user_' || cm.message_id::text, 
         gst.tool_id, 
-        ur.run_id,
         (SELECT template_id FROM tool_templates WHERE tool_id = gst.tool_id LIMIT 1),
         '',
         true, 
@@ -188,13 +187,26 @@ user_tool_call AS (
     WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
     RETURNING id as tool_call_id, created_at, updated_at
 ),
+link_user_tool_call_to_message AS (
+    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
+    SELECT 
+        cm.message_id,
+        utc.tool_call_id,
+        NOW(),
+        NOW()
+    FROM create_message_if_needed cm
+    CROSS JOIN user_tool_call utc
+    WHERE NOT EXISTS (SELECT 1 FROM latest_user_message)
+    ON CONFLICT (message_id, call_id) DO NOTHING
+),
 -- Get existing tool_call_id for existing user messages (via message_runs -> calls)
 existing_user_tool_call AS (
     SELECT DISTINCT tc.id as tool_call_id
     FROM latest_user_message lum
-    JOIN message_content mc ON mc.message_id = lum.message_id AND mc.idx = 0
+    JOIN message_contents mc ON mc.message_id = lum.message_id AND mc.idx = 0
     JOIN message_runs mr ON mr.message_id = lum.message_id
-    JOIN calls tc ON tc.run_id = mr.run_id
+    JOIN message_calls mcc ON mcc.message_id = lum.message_id
+    JOIN calls tc ON tc.id = mcc.call_id
     LIMIT 1
 ),
 -- Combine new and existing tool calls
@@ -204,8 +216,8 @@ user_tool_call_id AS (
     SELECT tool_call_id FROM existing_user_tool_call
 ),
 insert_user_content_if_needed AS (
-    INSERT INTO content (content, created_at, updated_at)
-    SELECT p.message_content, cm.created_at, cm.updated_at
+    INSERT INTO contents (content, created_at, updated_at)
+    SELECT p.message_contents, cm.created_at, cm.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN params p
     CROSS JOIN user_tool_call_id utc
@@ -213,7 +225,7 @@ insert_user_content_if_needed AS (
     RETURNING id as content_id, created_at, updated_at
 ),
 update_message_content_if_needed AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT cm.message_id, ic.content_id, 0, ic.created_at, ic.updated_at
     FROM create_message_if_needed cm
     CROSS JOIN params p
@@ -231,12 +243,12 @@ update_existing_message AS (
     RETURNING id as message_id
 ),
 update_existing_message_content AS (
-    UPDATE content
-    SET content = p.message_content,
+    UPDATE contents
+    SET content = p.message_contents,
         updated_at = NOW()
     FROM params p,
-         message_content mc
-    WHERE mc.content_id = content.id
+         message_contents mc
+    WHERE mc.content_id = contents.id
       AND mc.message_id = (SELECT message_id FROM latest_user_message)
       AND mc.idx = 0
       AND EXISTS (SELECT 1 FROM latest_user_message)
@@ -255,11 +267,26 @@ link_message_to_run AS (
     ON CONFLICT (message_id, run_id) DO UPDATE SET updated_at = NOW()
     RETURNING message_id, run_id
 ),
--- Link audio upload to message if upload_id provided
-link_audio_if_provided AS (
-    INSERT INTO message_audio (message_id, upload_id, created_at, updated_at)
-    SELECT um.message_id, p.upload_id, NOW(), NOW()
+-- Create audio record and link to upload if upload_id provided
+create_audio_if_provided AS (
+    INSERT INTO audios (created_at, updated_at, active, generated, call_id)
+    SELECT NOW(), NOW(), true, false, NULL
+    FROM params p
+    WHERE p.upload_id IS NOT NULL
+    RETURNING id as audio_id
+),
+link_audio_upload_if_provided AS (
+    INSERT INTO audio_uploads (audio_id, upload_id, active, created_at, updated_at)
+    SELECT ca.audio_id, p.upload_id, true, NOW(), NOW()
+    FROM create_audio_if_provided ca
+    CROSS JOIN params p
+    WHERE p.upload_id IS NOT NULL
+),
+link_audio_to_message_if_provided AS (
+    INSERT INTO message_audios (message_id, audio_id, created_at, updated_at)
+    SELECT um.message_id, ca.audio_id, NOW(), NOW()
     FROM upserted_message um
+    CROSS JOIN create_audio_if_provided ca
     CROSS JOIN params p
     WHERE p.upload_id IS NOT NULL
     ON CONFLICT (message_id, upload_id) DO UPDATE SET updated_at = NOW()
@@ -373,8 +400,8 @@ system_message_hash AS (
 existing_system_message AS (
     SELECT m.id as system_message_id
     FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        JOIN contents cnt ON cnt.id = mc.content_id
     JOIN system_message_hash smh ON message_content_hash(cnt.content, 'system') = smh.hash
     WHERE m.role = 'system'::message_role
     LIMIT 1
@@ -388,7 +415,7 @@ new_system_message AS (
 ),
 -- Insert system message content (no tool_call_id - prompt tool moved to prompt agent)
 insert_system_content_step1 AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT smc.content, nsm.created_at, nsm.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
@@ -396,7 +423,7 @@ insert_system_content_step1 AS (
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_system_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT nsm.system_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
     FROM new_system_message nsm
     CROSS JOIN system_message_content smc
@@ -436,8 +463,8 @@ scenario_developer_hash AS (
 existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
     FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        JOIN contents cnt ON cnt.id = mc.content_id
     JOIN scenario_developer_hash sdh ON message_content_hash(cnt.content, 'developer') = sdh.hash
     WHERE m.role = 'developer'::message_role
     LIMIT 1
@@ -451,7 +478,7 @@ new_scenario_developer_message AS (
 ),
 -- Insert developer message content (no tool_call_id - instruct tool moved to prompt agent)
 insert_scenario_developer_content_step1 AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT sdc.content, nsdm.created_at, nsdm.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc
@@ -459,7 +486,7 @@ insert_scenario_developer_content_step1 AS (
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_scenario_developer_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT nsdm.developer_message_id, ic.content_id, 0, ic.created_at, ic.updated_at
     FROM new_scenario_developer_message nsdm
     CROSS JOIN scenario_developer_content sdc

@@ -501,8 +501,8 @@ existing_developer_message AS (
         m.created_at,
         dmh.run_id
     FROM messages m
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-    JOIN content cnt ON cnt.id = mc.content_id
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN contents cnt ON cnt.id = mc.content_id
     JOIN developer_message_hash dmh ON message_content_hash(cnt.content, 'developer') = dmh.hash
     WHERE m.role = 'developer'
     LIMIT 1
@@ -515,7 +515,7 @@ new_developer_message AS (
     RETURNING id, created_at, updated_at
 ),
 insert_developer_content AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT 
         (SELECT content FROM developer_message_hash LIMIT 1),
         nm.created_at,
@@ -525,7 +525,7 @@ insert_developer_content AS (
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_developer_message_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT 
         nm.id,
         ic.content_id,

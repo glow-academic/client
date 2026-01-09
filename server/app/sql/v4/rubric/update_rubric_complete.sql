@@ -297,10 +297,9 @@ standard_groups_unnested AS (
 ),
 -- Create placeholder calls for API-updated standard_groups (not created via tool)
 placeholder_calls AS (
-    INSERT INTO calls (external_call_id, tool_id, run_id, template_id, arguments_raw, completed, created_at, updated_at)
+    INSERT INTO calls (external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
     SELECT 
         'api_update_rubric_' || sgu.rubric_id::text || '_sg_' || sgu.group_order::text,
-        NULL,
         NULL,
         NULL,
         '',

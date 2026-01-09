@@ -38,24 +38,27 @@ messages_data AS (
         m.created_at,
         m.completed,
         m.audio,
-        ma.upload_id
+        au.upload_id
     FROM params p
     JOIN message_runs mr ON mr.run_id = p.run_id
     JOIN messages m ON m.id = mr.message_id
-    LEFT JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
-        LEFT JOIN content cnt ON cnt.id = mc.content_id
-    LEFT JOIN message_audio ma ON ma.message_id = m.id
+    LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+        LEFT JOIN contents cnt ON cnt.id = mc.content_id
+    LEFT JOIN message_audios ma ON ma.message_id = m.id
+    LEFT JOIN audio_uploads au ON au.audio_id = ma.audio_id AND au.active = true
     WHERE p.run_id IS NOT NULL
     ORDER BY m.created_at ASC  -- Order by creation time
 )
 SELECT 
     COALESCE(
         ARRAY_AGG(
-            (md.id, md.role, md.content, md.created_at, md.completed, md.audio, md.upload_id)::types.i_get_messages_by_ids_v4_message
+            (md.id, md.role, md.content, md.created_at, md.completed, md.audio, COALESCE(au.upload_id, NULL::uuid))::types.i_get_messages_by_ids_v4_message
             ORDER BY md.created_at
         ),
         '{}'::types.i_get_messages_by_ids_v4_message[]
     ) as messages
 FROM messages_data md
+LEFT JOIN message_audios ma2 ON ma2.message_id = md.id
+LEFT JOIN audio_uploads au ON au.audio_id = ma2.audio_id AND au.active = true
 $$;
 

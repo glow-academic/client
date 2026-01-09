@@ -35,13 +35,13 @@ WITH assistant_message AS (
     RETURNING id, created_at, updated_at
 ),
 insert_content AS (
-    INSERT INTO content (content, created_at, updated_at)
+    INSERT INTO contents (content, created_at, updated_at)
     SELECT content, created_at, updated_at
     FROM assistant_message
     RETURNING id as content_id, created_at, updated_at
 ),
 insert_message_content AS (
-    INSERT INTO message_content (message_id, content_id, idx, created_at, updated_at)
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT am.id, ic.content_id, 0, ic.created_at, ic.updated_at
     FROM assistant_message am
     CROSS JOIN insert_content ic

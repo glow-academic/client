@@ -58,7 +58,7 @@ BEGIN
     SELECT m.id INTO v_message_id
     FROM message_runs mr
     JOIN messages m ON m.id = mr.message_id
-    JOIN message_content mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN chat_groups cg ON cg.group_id IN (
         SELECT gr.group_id 
         FROM group_runs gr 
