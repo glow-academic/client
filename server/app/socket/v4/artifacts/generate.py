@@ -4,12 +4,14 @@ import asyncio
 import base64
 import json
 import uuid
-from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, cast
+from typing import Any, cast
 
 import httpx
 import websockets
 from agents.items import TResponseInputItem
+from app.infra.v4.artifacts import (convert_tools_to_openai_format,
+                                    format_messages_for_litellm,
+                                    stream_litellm_events)
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -18,11 +20,7 @@ from app.infra.v4.websocket.store_active_run import store_active_run
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import IMAGE_FOLDER, VIDEO_FOLDER, get_internal_sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (CompleteImageGenerationSqlParams,
-                           CompleteImageGenerationSqlRow,
-                           CreateGenerationAndLinkSqlParams,
-                           CreateGenerationAndLinkSqlRow,
-                           GetAudioRunContextAndCreateRunSqlParams,
+from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
                            GetAudioRunContextAndCreateRunSqlRow,
                            GetGenerationRunContextAndCreateRunSqlParams,
                            GetGenerationRunContextAndCreateRunSqlRow,
@@ -36,9 +34,7 @@ from app.sql.types import (CompleteImageGenerationSqlParams,
                            GetVideoRunContextAndCreateRunSqlParams,
                            GetVideoRunContextAndCreateRunSqlRow,
                            IGetTextRunContextAndCreateRunV4Tool,
-                           InsertUploadSqlParams, InsertUploadSqlRow,
-                           TextToolProgressUpdateSqlParams,
-                           TextToolProgressUpdateSqlRow)
+                           InsertUploadSqlParams, InsertUploadSqlRow)
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -51,7 +47,6 @@ SQL_PATH_MESSAGES_BY_RUN = "app/sql/v4/messages/get_messages_by_run_id_complete.
 SQL_PATH_IMAGE = "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
 SQL_PATH_VIDEO = "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"
 SQL_PATH_AUDIO = "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"
-SQL_PATH_TEXT_TOOL_PROGRESS = "app/sql/v4/generate/text/text_tool_progress_update_complete.sql"
 
 # Try to import litellm
 try:
@@ -83,327 +78,6 @@ def determine_modality_from_output_modalities(
     return output_modalities[0]
 
 
-# ----------------------------
-# Streaming parser state classes
-# ----------------------------
-@dataclass
-class TextState:
-    started: bool = False
-    buffer: str = ""
-
-
-@dataclass
-class ToolFnState:
-    name: str | None = None
-    arguments: str = ""
-
-
-@dataclass
-class ToolCallState:
-    id: str | None = None
-    type: str = "function"
-    function: ToolFnState = field(default_factory=ToolFnState)
-
-
-@dataclass
-class ChoiceState:
-    text: TextState = field(default_factory=TextState)
-    tool_calls: dict[int, ToolCallState] = field(default_factory=dict)
-    finish_reason: str | None = None
-
-
-# ----------------------------
-# Helper functions for litellm integration
-# ----------------------------
-def _convert_tools_to_openai_format(
-    tools: list[IGetTextRunContextAndCreateRunV4Tool],
-) -> list[dict[str, Any]]:
-    """Convert database tool configs to OpenAI tool format.
-    
-    Args:
-        tools: List of tool configs from database
-        
-    Returns:
-        List of OpenAI tool format dictionaries
-    """
-    openai_tools: list[dict[str, Any]] = []
-    
-    for tool in tools:
-        if not tool.name or not tool.active:
-            continue
-            
-        # Build properties from arguments JSONB
-        properties: dict[str, Any] = {}
-        required_fields: list[str] = []
-        
-        arguments = tool.arguments or {}
-        argument_descriptions = tool.argument_descriptions or {}
-        
-        if isinstance(arguments, dict):
-            for field_name, field_spec in arguments.items():
-                if not isinstance(field_spec, dict):
-                    continue
-                    
-                field_type = field_spec.get("type", "string")
-                field_required = field_spec.get("required", False)
-                field_description = argument_descriptions.get(field_name, "")
-                
-                # Map database types to JSON Schema types
-                json_schema_type = "string"
-                if field_type == "integer":
-                    json_schema_type = "integer"
-                elif field_type == "number":
-                    json_schema_type = "number"
-                elif field_type == "boolean":
-                    json_schema_type = "boolean"
-                elif field_type == "array":
-                    json_schema_type = "array"
-                    # Handle array items if specified
-                    items_type = field_spec.get("items", {}).get("type", "string")
-                    properties[field_name] = {
-                        "type": "array",
-                        "items": {"type": items_type},
-                        "description": field_description,
-                    }
-                elif field_type == "object":
-                    json_schema_type = "object"
-                    properties[field_name] = {
-                        "type": "object",
-                        "description": field_description,
-                    }
-                else:
-                    properties[field_name] = {
-                        "type": json_schema_type,
-                        "description": field_description,
-                    }
-                
-                if json_schema_type not in ("array", "object"):
-                    properties[field_name] = {
-                        "type": json_schema_type,
-                        "description": field_description,
-                    }
-                
-                if field_required:
-                    required_fields.append(field_name)
-        
-        openai_tool = {
-            "type": "function",
-            "function": {
-                "name": tool.name,
-                "description": tool.description or "",
-                "parameters": {
-                    "type": "object",
-                    "properties": properties,
-                    "required": required_fields,
-                },
-            },
-        }
-        openai_tools.append(openai_tool)
-    
-    return openai_tools
-
-
-def _format_messages_for_litellm(
-    input_items: list[TResponseInputItem],
-) -> list[dict[str, Any]]:
-    """Convert input_items to litellm message format.
-    
-    Args:
-        input_items: List of TResponseInputItem
-        
-    Returns:
-        List of message dictionaries for litellm
-    """
-    messages: list[dict[str, Any]] = []
-    
-    for item in input_items:
-        role = item.get("role", "user")
-        content = item.get("content", "")
-        
-        # Handle audio file paths if present
-        if isinstance(content, str) and "Audio file to process:" in content:
-            # For now, just include as text - litellm can handle file paths
-            # TODO: Convert to proper audio format if needed
-            messages.append({
-                "role": role,
-                "content": content,
-            })
-        else:
-            messages.append({
-                "role": role,
-                "content": content,
-            })
-    
-    return messages
-
-
-async def _stream_litellm_events(
-    stream: AsyncIterator[Any],
-) -> AsyncIterator[dict[str, Any]]:
-    """Convert litellm streaming chunks into structured events.
-    
-    Yields events:
-    - text_start: First text delta received
-    - text_delta: Incremental text content
-    - text_complete: Text streaming complete
-    - tool_call_start: Tool call started
-    - tool_call_delta: Incremental tool call arguments
-    - tool_call_complete: Tool call complete (when finish_reason received)
-    - message_complete: Message complete with finish_reason
-    
-    Args:
-        stream: AsyncIterator from litellm.acompletion(stream=True)
-        
-    Yields:
-        Event dictionaries with 'type' and relevant fields
-    """
-    choices: dict[int, ChoiceState] = {}
-    
-    def get_choice_state(choice_index: int) -> ChoiceState:
-        if choice_index not in choices:
-            choices[choice_index] = ChoiceState()
-        return choices[choice_index]
-    
-    async for chunk in stream:
-        # Handle both dict and ModelResponse types
-        if hasattr(chunk, "choices"):
-            chunk_choices = chunk.choices
-        elif isinstance(chunk, dict):
-            chunk_choices = chunk.get("choices", [])
-        else:
-            continue
-        
-        for ch in chunk_choices:
-            # Get choice index
-            if hasattr(ch, "index"):
-                i = ch.index
-            elif isinstance(ch, dict):
-                i = ch.get("index", 0)
-            else:
-                i = 0
-            
-            st = get_choice_state(i)
-            
-            # Get delta
-            if hasattr(ch, "delta"):
-                delta = ch.delta
-            elif isinstance(ch, dict):
-                delta = ch.get("delta", {})
-            else:
-                delta = {}
-            
-            # Get finish_reason
-            if hasattr(ch, "finish_reason"):
-                finish_reason = ch.finish_reason
-            elif isinstance(ch, dict):
-                finish_reason = ch.get("finish_reason")
-            else:
-                finish_reason = None
-            
-            # Handle role signals
-            if isinstance(delta, dict):
-                role = delta.get("role")
-                if role == "assistant":
-                    yield {"type": "assistant_role", "choice_index": i}
-                
-                # Handle text streaming (content)
-                content_piece = delta.get("content")
-                if content_piece:
-                    if not st.text.started:
-                        st.text.started = True
-                        yield {"type": "text_start", "choice_index": i}
-                    st.text.buffer += content_piece
-                    yield {
-                        "type": "text_delta",
-                        "choice_index": i,
-                        "delta": content_piece,
-                    }
-                
-                # Handle tool-call streaming
-                tool_calls_delta = delta.get("tool_calls") or []
-                for tc in tool_calls_delta:
-                    if not isinstance(tc, dict):
-                        continue
-                    
-                    tc_index = tc.get("index", 0)
-                    
-                    # Initialize state for this tool call index
-                    if tc_index not in st.tool_calls:
-                        st.tool_calls[tc_index] = ToolCallState()
-                        yield {
-                            "type": "tool_call_start",
-                            "choice_index": i,
-                            "tool_index": tc_index,
-                        }
-                    
-                    tc_state = st.tool_calls[tc_index]
-                    
-                    # id/type can arrive late or early
-                    if tc.get("id"):
-                        tc_state.id = tc["id"]
-                    if tc.get("type"):
-                        tc_state.type = tc["type"]
-                    
-                    fn = tc.get("function") or {}
-                    if fn.get("name"):
-                        tc_state.function.name = fn["name"]
-                    
-                    # arguments often arrive in multiple chunks; concatenate
-                    args_piece = fn.get("arguments")
-                    if args_piece:
-                        tc_state.function.arguments += args_piece
-                        yield {
-                            "type": "tool_call_delta",
-                            "choice_index": i,
-                            "tool_index": tc_index,
-                            "delta": args_piece,
-                        }
-            
-            # Handle completion signals
-            if finish_reason is not None:
-                st.finish_reason = finish_reason
-                
-                # Extract usage if available in chunk
-                usage_data: dict[str, Any] | None = None
-                if hasattr(chunk, "usage"):
-                    usage_obj = chunk.usage
-                    if hasattr(usage_obj, "prompt_tokens"):
-                        usage_data = {
-                            "prompt_tokens": usage_obj.prompt_tokens,
-                            "completion_tokens": getattr(usage_obj, "completion_tokens", 0),
-                        }
-                elif isinstance(chunk, dict):
-                    usage_data = chunk.get("usage")
-                
-                complete_event: dict[str, Any] = {
-                    "type": "message_complete",
-                    "choice_index": i,
-                    "finish_reason": finish_reason,
-                }
-                if usage_data:
-                    complete_event["usage"] = usage_data
-                
-                yield complete_event
-                
-                # If we have tool calls, emit tool_call_complete for each
-                if st.tool_calls:
-                    for tc_index, tc_state in st.tool_calls.items():
-                        yield {
-                            "type": "tool_call_complete",
-                            "choice_index": i,
-                            "tool_index": tc_index,
-                            "id": tc_state.id,
-                            "name": tc_state.function.name,
-                            "arguments": tc_state.function.arguments,
-                        }
-                
-                # If text started, emit text_complete
-                if st.text.started:
-                    yield {
-                        "type": "text_complete",
-                        "choice_index": i,
-                        "text": st.text.buffer,
-                    }
 
 
 async def _generate_artifact_impl(
@@ -522,7 +196,14 @@ async def _generate_artifact_impl(
                 group_id = str(result.group_id) if result.group_id else None
                 trace_id = result.trace_id
                 message_ids = [str(mid) for mid in (result.message_ids or [])]
-                agent_id = data.get("agent_id") or str(uuid.UUID(result.run_id))  # Fallback
+                agent_id = data.get("agent_id")
+                if not agent_id:
+                    # If your SQL row includes agent_id, prefer that (if available on result)
+                    agent_id_from_sql = getattr(result, "agent_id", None)
+                    if agent_id_from_sql:
+                        agent_id = str(agent_id_from_sql)
+                    else:
+                        raise ValueError("agent_id missing: cannot proceed with generation")
 
             # Route to appropriate modality handler
             if modality == "text" or modality == "call" or modality == "document":
@@ -652,7 +333,7 @@ async def _handle_text_generation(
     ]
 
     # Convert tools to OpenAI format
-    openai_tools = _convert_tools_to_openai_format(agent_tools_config)
+    openai_tools = convert_tools_to_openai_format(agent_tools_config)
 
     # Construct input items for the agent
     input_items: list[TResponseInputItem] = []
@@ -705,7 +386,7 @@ async def _handle_text_generation(
             logging.getLogger(__name__).warning(f"Failed to fetch messages by IDs")
 
     # Format messages for litellm
-    messages = _format_messages_for_litellm(input_items)
+    messages = format_messages_for_litellm(input_items)
     
     # Add system prompt if present
     if result.system_prompt:
@@ -768,25 +449,35 @@ async def _handle_text_generation(
     # but we store it for consistency with existing patterns
     await store_active_run(resource_id_str, stream)
 
+    enforce_required_tools = (tool_choice == "required")
+
     completed_tool_names: set[str] = set()
     assistant_output = ""
     input_tokens = 0
     output_tokens = 0
-    
-    # Track tool calls for persistence
+
     tool_call_states: dict[str, dict[str, Any]] = {}  # tool_call_id -> state
 
     try:
-        # Process streaming events
-        async for event in _stream_litellm_events(stream):
+        async for event in stream_litellm_events(stream):
             event_type = event.get("type")
-            
+
+            # -------- TEXT lifecycle
             if event_type == "text_start":
-                # Text streaming started
-                pass  # Already emitted start event above
-            
+                await internal_sio.emit(
+                    "generate_progress",
+                    {
+                        "modality": "text",
+                        "sid": sid,
+                        "resource_id": str(resource_id),
+                        "resource_type": resource_type,
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "type": "text_start",
+                    },
+                )
+
             elif event_type == "text_delta":
-                # Emit text token
                 delta = event.get("delta", "")
                 if delta:
                     assistant_output += delta
@@ -799,23 +490,42 @@ async def _handle_text_generation(
                             "resource_type": resource_type,
                             "run_id": str(run_id),
                             "group_id": str(group_id) if group_id else None,
-                            "type": "token",
-                            "text": delta,
+                            "type": "text_delta",
+                            "delta": delta,
                         },
                     )
-            
+
+            elif event_type == "text_complete":
+                assistant_output = event.get("text", assistant_output)
+                await internal_sio.emit(
+                    "generate_progress",
+                    {
+                        "modality": "text",
+                        "sid": sid,
+                        "resource_id": str(resource_id),
+                        "resource_type": resource_type,
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "type": "text_complete",
+                        "text": assistant_output,
+                    },
+                )
+
+            # -------- TOOL lifecycle
             elif event_type == "tool_call_start":
-                # Tool call started
+                tool_call_id = cast(str, event.get("tool_call_id"))
                 tool_index = event.get("tool_index", 0)
-                tool_call_id = f"call_{run_id}_{tool_index}"
-                
-                tool_call_states[tool_call_id] = {
-                    "tool_index": tool_index,
-                    "call_id": None,
-                    "tool_name": None,
-                    "arguments": "",
-                }
-                
+
+                tool_call_states.setdefault(
+                    tool_call_id,
+                    {
+                        "tool_index": tool_index,
+                        "call_id": tool_call_id,
+                        "tool_name": None,
+                        "arguments": "",
+                    },
+                )
+
                 await internal_sio.emit(
                     "generate_progress",
                     {
@@ -827,35 +537,21 @@ async def _handle_text_generation(
                         "group_id": str(group_id) if group_id else None,
                         "type": "tool_call_start",
                         "tool_call_id": tool_call_id,
-                        "tool_name": None,  # Will be set when we get name
                     },
                 )
-                
-                # Persist tool call start
-                try:
-                    progress_params = TextToolProgressUpdateSqlParams(
-                        run_id=run_id,
-                        tool_call_id=tool_call_id,
-                        progress_type="tool_call_start",
-                        call_id=None,
-                        tool_name=None,
-                        arguments_delta="",
-                        resource_id=resource_id,
-                    )
-                    await execute_sql_typed(conn, SQL_PATH_TEXT_TOOL_PROGRESS, params=progress_params)
-                except Exception:
-                    import logging
-                    logging.getLogger(__name__).warning(f"Failed to persist tool call start")
-            
+
             elif event_type == "tool_call_delta":
-                # Tool call arguments delta
-                tool_index = event.get("tool_index", 0)
-                tool_call_id = f"call_{run_id}_{tool_index}"
-                delta = event.get("delta", "")
-                
-                if tool_call_id in tool_call_states:
-                    tool_call_states[tool_call_id]["arguments"] += delta
-                
+                tool_call_id = cast(str, event.get("tool_call_id"))
+                delta = event.get("delta", "") or ""
+                tool_name = event.get("tool_name")
+
+                st = tool_call_states.setdefault(
+                    tool_call_id, {"tool_index": event.get("tool_index", 0), "call_id": tool_call_id, "tool_name": None, "arguments": ""}
+                )
+                if tool_name and not st["tool_name"]:
+                    st["tool_name"] = tool_name
+                st["arguments"] += delta
+
                 await internal_sio.emit(
                     "generate_progress",
                     {
@@ -865,79 +561,35 @@ async def _handle_text_generation(
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
-                        "type": "tool_call_progress",
+                        "type": "tool_call_delta",
                         "tool_call_id": tool_call_id,
+                        "delta": delta,
+                        "tool_name": st.get("tool_name"),
                         "arguments_delta": delta,
                     },
                 )
-                
-                # Persist tool call progress
-                try:
-                    progress_params = TextToolProgressUpdateSqlParams(
-                        run_id=run_id,
-                        tool_call_id=tool_call_id,
-                        progress_type="tool_call_progress",
-                        call_id=tool_call_states.get(tool_call_id, {}).get("call_id"),
-                        tool_name=tool_call_states.get(tool_call_id, {}).get("tool_name"),
-                        arguments_delta=delta,
-                        resource_id=resource_id,
-                    )
-                    await execute_sql_typed(conn, SQL_PATH_TEXT_TOOL_PROGRESS, params=progress_params)
-                except Exception:
-                    import logging
-                    logging.getLogger(__name__).warning(f"Failed to persist tool call progress")
-            
+
             elif event_type == "tool_call_complete":
-                # Tool call complete
-                tool_call_id = event.get("id") or f"call_{run_id}_{event.get('tool_index', 0)}"
-                tool_name = event.get("name", "")
-                arguments_str = event.get("arguments", "")
-                
-                # Parse arguments
+                tool_call_id = cast(str, event.get("tool_call_id"))
+                tool_name = event.get("name") or tool_call_states.get(tool_call_id, {}).get("tool_name") or ""
+                arguments_str = event.get("arguments", "") or ""
+
+                # Parse args (best effort)
                 try:
                     arguments_dict = json.loads(arguments_str) if arguments_str else {}
                 except json.JSONDecodeError:
                     arguments_dict = {}
-                
-                # Update state
-                if tool_call_id not in tool_call_states:
-                    tool_call_states[tool_call_id] = {
-                        "tool_index": event.get("tool_index", 0),
-                        "call_id": tool_call_id,
-                        "tool_name": tool_name,
-                        "arguments": arguments_str,
-                    }
-                else:
-                    tool_call_states[tool_call_id]["call_id"] = tool_call_id
-                    tool_call_states[tool_call_id]["tool_name"] = tool_name
-                    tool_call_states[tool_call_id]["arguments"] = arguments_str
-                
-                completed_tool_names.add(tool_name)
-                
-                # Persist tool call complete
-                try:
-                    progress_params = TextToolProgressUpdateSqlParams(
-                        run_id=run_id,
-                        tool_call_id=tool_call_id,
-                        progress_type="tool_call_complete",
-                        call_id=tool_call_id,
-                        tool_name=tool_name,
-                        arguments_delta=arguments_str,
-                        resource_id=resource_id,
-                    )
-                    progress_result = cast(
-                        TextToolProgressUpdateSqlRow,
-                        await execute_sql_typed(conn, SQL_PATH_TEXT_TOOL_PROGRESS, params=progress_params),
-                    )
-                    
-                    # TODO: Execute tool (create resource)
-                    # This is where we would call the actual tool function to create the resource
-                    # For now, tool calls are persisted but not executed
-                    
-                except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).warning(f"Failed to persist tool call complete: {e}")
-                
+
+                st = tool_call_states.setdefault(
+                    tool_call_id,
+                    {"tool_index": event.get("tool_index", 0), "call_id": tool_call_id, "tool_name": None, "arguments": ""}
+                )
+                st["tool_name"] = tool_name or st.get("tool_name")
+                st["arguments"] = arguments_str or st.get("arguments", "")
+
+                if tool_name:
+                    completed_tool_names.add(tool_name)
+
                 await internal_sio.emit(
                     "generate_progress",
                     {
@@ -951,20 +603,16 @@ async def _handle_text_generation(
                         "tool_call_id": tool_call_id,
                         "tool_name": tool_name,
                         "arguments": arguments_dict,
+                        "arguments_delta": st["arguments"],
                     },
                 )
-            
+
+            # -------- message completion + usage
             elif event_type == "message_complete":
-                # Message complete - extract usage if available
-                if "usage" in event:
-                    usage_data = event["usage"]
-                    if isinstance(usage_data, dict):
-                        input_tokens = usage_data.get("prompt_tokens", 0)
-                        output_tokens = usage_data.get("completion_tokens", 0)
-            
-            elif event_type == "text_complete":
-                # Text streaming complete
-                assistant_output = event.get("text", assistant_output)
+                usage_data = event.get("usage")
+                if isinstance(usage_data, dict):
+                    input_tokens = usage_data.get("prompt_tokens", 0) or 0
+                    output_tokens = usage_data.get("completion_tokens", 0) or 0
 
     except BaseException as stream_error:
         if isinstance(
@@ -976,25 +624,22 @@ async def _handle_text_generation(
     finally:
         await remove_active_run(resource_id_str)
 
-    # Verify all required tools were called
-    missing_tools = required_tool_names - completed_tool_names
-    if missing_tools:
-        tool_names_str = ", ".join(sorted(missing_tools))
-        await emit_to_internal(
-            "generate_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message=(
-                    f"Agent did not call all required tools. "
-                    f"Missing: {tool_names_str}"
+    if enforce_required_tools:
+        missing_tools = required_tool_names - completed_tool_names
+        if missing_tools:
+            tool_names_str = ", ".join(sorted(missing_tools))
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Agent did not call all required tools. Missing: {tool_names_str}",
+                    resource_id=str(resource_id),
+                    group_id=str(group_id) if group_id else None,
+                    resource_type=resource_type,
                 ),
-                resource_id=str(resource_id),
-                group_id=str(group_id) if group_id else None,
-                resource_type=resource_type,
-            ),
-            sid=sid,
-        )
-        return
+                sid=sid,
+            )
+            return
 
     # Emit run completion event with usage data
     await internal_sio.emit(
@@ -1360,6 +1005,8 @@ async def _handle_video_generation(
                         "message": "Video generated successfully",
                         "videoUrl": f"/api/uploads/download/{upload_id}",
                         "video_id": str(video_id),
+                        "file_path": file_path,
+                        "upload_id": str(upload_id),
                     },
                 )
                 return
@@ -1436,6 +1083,8 @@ async def _handle_video_generation(
                                 "message": "Video generated successfully",
                                 "videoUrl": f"/api/uploads/download/{upload_id}",
                                 "video_id": str(video_id),
+                                "file_path": file_path,
+                                "upload_id": str(upload_id),
                             },
                         )
                         return
@@ -1785,7 +1434,7 @@ async def _persist_image(
     file_size: int,
     image_name: str,
 ) -> str:
-    """Persist image to disk and database."""
+    """Persist image to disk only (database persistence handled by complete.py)."""
     import re
 
     # Determine file extension from mime type
@@ -1813,22 +1462,6 @@ async def _persist_image(
     with open(full_path, "wb") as f:
         f.write(image_bytes)
 
-    # Persist to database using SQL function
-    params = CompleteImageGenerationSqlParams(
-        image_id=image_id,
-        file_path=file_path,
-        mime_type=mime_type,
-        file_size=file_size,
-    )
-    sql_result = cast(
-        CompleteImageGenerationSqlRow,
-        await execute_sql_typed(
-            conn,
-            "app/sql/v4/images/complete_image_generation_complete.sql",
-            params=params,
-        ),
-    )
-
     return file_path
 
 
@@ -1839,7 +1472,7 @@ async def _persist_video(
     upload_id: uuid.UUID,
     run_id: uuid.UUID,
 ) -> str:
-    """Persist video to disk and database."""
+    """Persist video to disk only (database persistence handled by complete.py)."""
     # Determine file extension from mime type
     file_ext = ".mp4"
     mime_type = "video/mp4"
@@ -1852,24 +1485,6 @@ async def _persist_video(
 
     # Save video bytes to file
     video_path.write_bytes(video_bytes)
-
-    # Persist to database using SQL function
-    params = CreateGenerationAndLinkSqlParams(
-        video_id=video_id,
-        file_path=video_relative_path,
-        mime_type=mime_type,
-        upload_id=upload_id,
-        active=True,
-        run_id=run_id,
-    )
-    sql_result = cast(
-        CreateGenerationAndLinkSqlRow,
-        await execute_sql_typed(
-            conn,
-            "app/sql/v4/videos/create_generation_and_link_complete.sql",
-            params=params,
-        ),
-    )
 
     return video_relative_path
 
