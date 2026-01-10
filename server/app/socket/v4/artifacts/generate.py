@@ -4,15 +4,12 @@ import asyncio
 import base64
 import json
 import uuid
-from typing import Any, cast
+from dataclasses import dataclass, field
+from typing import Any, AsyncIterator, cast
 
 import httpx
 import websockets
-from agents import (FunctionToolResult, RunContextWrapper, Runner,
-                    ToolsToFinalOutputResult, trace)
-from app.infra.v4.agents.generic_agent import GenericAgent
-from app.infra.v4.agents.stream_agent_events import (StreamEventCallbacks,
-                                                     stream_agent_events)
+from agents.items import TResponseInputItem
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
@@ -38,7 +35,10 @@ from app.sql.types import (CompleteImageGenerationSqlParams,
                            GetTextRunContextForExistingRunSqlRow,
                            GetVideoRunContextAndCreateRunSqlParams,
                            GetVideoRunContextAndCreateRunSqlRow,
-                           InsertUploadSqlParams, InsertUploadSqlRow)
+                           IGetTextRunContextAndCreateRunV4Tool,
+                           InsertUploadSqlParams, InsertUploadSqlRow,
+                           TextToolProgressUpdateSqlParams,
+                           TextToolProgressUpdateSqlRow)
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -51,6 +51,7 @@ SQL_PATH_MESSAGES_BY_RUN = "app/sql/v4/messages/get_messages_by_run_id_complete.
 SQL_PATH_IMAGE = "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
 SQL_PATH_VIDEO = "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"
 SQL_PATH_AUDIO = "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"
+SQL_PATH_TEXT_TOOL_PROGRESS = "app/sql/v4/generate/text/text_tool_progress_update_complete.sql"
 
 # Try to import litellm
 try:
@@ -60,10 +61,6 @@ try:
 except ImportError:
     LITELLM_AVAILABLE = False
 
-from agents import Tool
-from agents.items import TResponseInputItem
-# Import tool building helper
-from app.infra.v4.tools.build_tool_from_config import build_tool_from_config
 from app.main import UPLOAD_FOLDER
 
 
@@ -84,6 +81,329 @@ def determine_modality_from_output_modalities(
     
     # Otherwise use first modality
     return output_modalities[0]
+
+
+# ----------------------------
+# Streaming parser state classes
+# ----------------------------
+@dataclass
+class TextState:
+    started: bool = False
+    buffer: str = ""
+
+
+@dataclass
+class ToolFnState:
+    name: str | None = None
+    arguments: str = ""
+
+
+@dataclass
+class ToolCallState:
+    id: str | None = None
+    type: str = "function"
+    function: ToolFnState = field(default_factory=ToolFnState)
+
+
+@dataclass
+class ChoiceState:
+    text: TextState = field(default_factory=TextState)
+    tool_calls: dict[int, ToolCallState] = field(default_factory=dict)
+    finish_reason: str | None = None
+
+
+# ----------------------------
+# Helper functions for litellm integration
+# ----------------------------
+def _convert_tools_to_openai_format(
+    tools: list[IGetTextRunContextAndCreateRunV4Tool],
+) -> list[dict[str, Any]]:
+    """Convert database tool configs to OpenAI tool format.
+    
+    Args:
+        tools: List of tool configs from database
+        
+    Returns:
+        List of OpenAI tool format dictionaries
+    """
+    openai_tools: list[dict[str, Any]] = []
+    
+    for tool in tools:
+        if not tool.name or not tool.active:
+            continue
+            
+        # Build properties from arguments JSONB
+        properties: dict[str, Any] = {}
+        required_fields: list[str] = []
+        
+        arguments = tool.arguments or {}
+        argument_descriptions = tool.argument_descriptions or {}
+        
+        if isinstance(arguments, dict):
+            for field_name, field_spec in arguments.items():
+                if not isinstance(field_spec, dict):
+                    continue
+                    
+                field_type = field_spec.get("type", "string")
+                field_required = field_spec.get("required", False)
+                field_description = argument_descriptions.get(field_name, "")
+                
+                # Map database types to JSON Schema types
+                json_schema_type = "string"
+                if field_type == "integer":
+                    json_schema_type = "integer"
+                elif field_type == "number":
+                    json_schema_type = "number"
+                elif field_type == "boolean":
+                    json_schema_type = "boolean"
+                elif field_type == "array":
+                    json_schema_type = "array"
+                    # Handle array items if specified
+                    items_type = field_spec.get("items", {}).get("type", "string")
+                    properties[field_name] = {
+                        "type": "array",
+                        "items": {"type": items_type},
+                        "description": field_description,
+                    }
+                elif field_type == "object":
+                    json_schema_type = "object"
+                    properties[field_name] = {
+                        "type": "object",
+                        "description": field_description,
+                    }
+                else:
+                    properties[field_name] = {
+                        "type": json_schema_type,
+                        "description": field_description,
+                    }
+                
+                if json_schema_type not in ("array", "object"):
+                    properties[field_name] = {
+                        "type": json_schema_type,
+                        "description": field_description,
+                    }
+                
+                if field_required:
+                    required_fields.append(field_name)
+        
+        openai_tool = {
+            "type": "function",
+            "function": {
+                "name": tool.name,
+                "description": tool.description or "",
+                "parameters": {
+                    "type": "object",
+                    "properties": properties,
+                    "required": required_fields,
+                },
+            },
+        }
+        openai_tools.append(openai_tool)
+    
+    return openai_tools
+
+
+def _format_messages_for_litellm(
+    input_items: list[TResponseInputItem],
+) -> list[dict[str, Any]]:
+    """Convert input_items to litellm message format.
+    
+    Args:
+        input_items: List of TResponseInputItem
+        
+    Returns:
+        List of message dictionaries for litellm
+    """
+    messages: list[dict[str, Any]] = []
+    
+    for item in input_items:
+        role = item.get("role", "user")
+        content = item.get("content", "")
+        
+        # Handle audio file paths if present
+        if isinstance(content, str) and "Audio file to process:" in content:
+            # For now, just include as text - litellm can handle file paths
+            # TODO: Convert to proper audio format if needed
+            messages.append({
+                "role": role,
+                "content": content,
+            })
+        else:
+            messages.append({
+                "role": role,
+                "content": content,
+            })
+    
+    return messages
+
+
+async def _stream_litellm_events(
+    stream: AsyncIterator[Any],
+) -> AsyncIterator[dict[str, Any]]:
+    """Convert litellm streaming chunks into structured events.
+    
+    Yields events:
+    - text_start: First text delta received
+    - text_delta: Incremental text content
+    - text_complete: Text streaming complete
+    - tool_call_start: Tool call started
+    - tool_call_delta: Incremental tool call arguments
+    - tool_call_complete: Tool call complete (when finish_reason received)
+    - message_complete: Message complete with finish_reason
+    
+    Args:
+        stream: AsyncIterator from litellm.acompletion(stream=True)
+        
+    Yields:
+        Event dictionaries with 'type' and relevant fields
+    """
+    choices: dict[int, ChoiceState] = {}
+    
+    def get_choice_state(choice_index: int) -> ChoiceState:
+        if choice_index not in choices:
+            choices[choice_index] = ChoiceState()
+        return choices[choice_index]
+    
+    async for chunk in stream:
+        # Handle both dict and ModelResponse types
+        if hasattr(chunk, "choices"):
+            chunk_choices = chunk.choices
+        elif isinstance(chunk, dict):
+            chunk_choices = chunk.get("choices", [])
+        else:
+            continue
+        
+        for ch in chunk_choices:
+            # Get choice index
+            if hasattr(ch, "index"):
+                i = ch.index
+            elif isinstance(ch, dict):
+                i = ch.get("index", 0)
+            else:
+                i = 0
+            
+            st = get_choice_state(i)
+            
+            # Get delta
+            if hasattr(ch, "delta"):
+                delta = ch.delta
+            elif isinstance(ch, dict):
+                delta = ch.get("delta", {})
+            else:
+                delta = {}
+            
+            # Get finish_reason
+            if hasattr(ch, "finish_reason"):
+                finish_reason = ch.finish_reason
+            elif isinstance(ch, dict):
+                finish_reason = ch.get("finish_reason")
+            else:
+                finish_reason = None
+            
+            # Handle role signals
+            if isinstance(delta, dict):
+                role = delta.get("role")
+                if role == "assistant":
+                    yield {"type": "assistant_role", "choice_index": i}
+                
+                # Handle text streaming (content)
+                content_piece = delta.get("content")
+                if content_piece:
+                    if not st.text.started:
+                        st.text.started = True
+                        yield {"type": "text_start", "choice_index": i}
+                    st.text.buffer += content_piece
+                    yield {
+                        "type": "text_delta",
+                        "choice_index": i,
+                        "delta": content_piece,
+                    }
+                
+                # Handle tool-call streaming
+                tool_calls_delta = delta.get("tool_calls") or []
+                for tc in tool_calls_delta:
+                    if not isinstance(tc, dict):
+                        continue
+                    
+                    tc_index = tc.get("index", 0)
+                    
+                    # Initialize state for this tool call index
+                    if tc_index not in st.tool_calls:
+                        st.tool_calls[tc_index] = ToolCallState()
+                        yield {
+                            "type": "tool_call_start",
+                            "choice_index": i,
+                            "tool_index": tc_index,
+                        }
+                    
+                    tc_state = st.tool_calls[tc_index]
+                    
+                    # id/type can arrive late or early
+                    if tc.get("id"):
+                        tc_state.id = tc["id"]
+                    if tc.get("type"):
+                        tc_state.type = tc["type"]
+                    
+                    fn = tc.get("function") or {}
+                    if fn.get("name"):
+                        tc_state.function.name = fn["name"]
+                    
+                    # arguments often arrive in multiple chunks; concatenate
+                    args_piece = fn.get("arguments")
+                    if args_piece:
+                        tc_state.function.arguments += args_piece
+                        yield {
+                            "type": "tool_call_delta",
+                            "choice_index": i,
+                            "tool_index": tc_index,
+                            "delta": args_piece,
+                        }
+            
+            # Handle completion signals
+            if finish_reason is not None:
+                st.finish_reason = finish_reason
+                
+                # Extract usage if available in chunk
+                usage_data: dict[str, Any] | None = None
+                if hasattr(chunk, "usage"):
+                    usage_obj = chunk.usage
+                    if hasattr(usage_obj, "prompt_tokens"):
+                        usage_data = {
+                            "prompt_tokens": usage_obj.prompt_tokens,
+                            "completion_tokens": getattr(usage_obj, "completion_tokens", 0),
+                        }
+                elif isinstance(chunk, dict):
+                    usage_data = chunk.get("usage")
+                
+                complete_event: dict[str, Any] = {
+                    "type": "message_complete",
+                    "choice_index": i,
+                    "finish_reason": finish_reason,
+                }
+                if usage_data:
+                    complete_event["usage"] = usage_data
+                
+                yield complete_event
+                
+                # If we have tool calls, emit tool_call_complete for each
+                if st.tool_calls:
+                    for tc_index, tc_state in st.tool_calls.items():
+                        yield {
+                            "type": "tool_call_complete",
+                            "choice_index": i,
+                            "tool_index": tc_index,
+                            "id": tc_state.id,
+                            "name": tc_state.function.name,
+                            "arguments": tc_state.function.arguments,
+                        }
+                
+                # If text started, emit text_complete
+                if st.text.started:
+                    yield {
+                        "type": "text_complete",
+                        "choice_index": i,
+                        "text": st.text.buffer,
+                    }
 
 
 async def _generate_artifact_impl(
@@ -293,7 +613,10 @@ async def _handle_text_generation(
     trace_id: str | None,
     tool_choice: str = "auto",
 ) -> None:
-    """Handle text generation using GenericAgent (which uses LiteLLM internally)."""
+    """Handle text generation using litellm directly."""
+    if not LITELLM_AVAILABLE:
+        raise ValueError("litellm is not available")
+    
     if not agent_id:
         raise ValueError("agent_id is required for text generation")
 
@@ -328,27 +651,8 @@ async def _handle_text_generation(
         tool for tool in (result.tools or []) if tool.name is not None
     ]
 
-    text_tools: list[Tool] = []
-    for tool in agent_tools_config:
-        if tool.name is None:
-            continue
-        try:
-            tool_config = {
-                "id": str(tool.id),
-                "name": tool.name,
-                "description": tool.description or "",
-                "tool_type": tool.tool_type or "",
-                "agent_role": tool.agent_role or "",
-                "arguments": tool.arguments,
-                "argument_descriptions": tool.argument_descriptions,
-                "argument_defaults": tool.argument_defaults,
-                "active": tool.active,
-            }
-            built_tool = build_tool_from_config(tool_config)
-            text_tools.append(built_tool)
-        except Exception:
-            import logging
-            logging.getLogger(__name__).warning(f"Failed to build tool {tool.name}")
+    # Convert tools to OpenAI format
+    openai_tools = _convert_tools_to_openai_format(agent_tools_config)
 
     # Construct input items for the agent
     input_items: list[TResponseInputItem] = []
@@ -400,6 +704,16 @@ async def _handle_text_generation(
             import logging
             logging.getLogger(__name__).warning(f"Failed to fetch messages by IDs")
 
+    # Format messages for litellm
+    messages = _format_messages_for_litellm(input_items)
+    
+    # Add system prompt if present
+    if result.system_prompt:
+        messages.insert(0, {
+            "role": "system",
+            "content": result.system_prompt,
+        })
+
     # Track completed tool names for verification
     required_tool_names: set[str] = {
         tool.name for tool in agent_tools_config if tool.name is not None
@@ -425,120 +739,57 @@ async def _handle_text_generation(
         },
     )
 
-    # Create tool use behavior
-    def tool_use_behavior(
-        tool_context: RunContextWrapper[Any],
-        tool_results: list[FunctionToolResult],
-    ) -> ToolsToFinalOutputResult:
-        return ToolsToFinalOutputResult(is_final_output=False)
+    # Prepare litellm completion parameters
+    completion_kwargs: dict[str, Any] = {
+        "model": result.model_name or "",
+        "messages": messages,
+        "stream": True,
+        "api_key": decrypted_api_key,
+        "temperature": result.temperature or 0.0,
+    }
+    
+    if result.base_url:
+        completion_kwargs["base_url"] = result.base_url
+    
+    if openai_tools:
+        completion_kwargs["tools"] = openai_tools
+        completion_kwargs["tool_choice"] = tool_choice
+    
+    # Handle reasoning if present
+    if result.reasoning:
+        completion_kwargs["extra_body"] = {"reasoning": result.reasoning}
 
-    # Build text agent using config
-    text_agent = GenericAgent(
-        agent_name=result.agent_name or "",
-        system_prompt=result.system_prompt or "",
-        temperature=result.temperature or 0.0,
-        model_name=result.model_name or "",
-        provider=result.provider or "",
-        base_url=result.base_url,
-        api_key=decrypted_api_key,
-        reasoning=result.reasoning,
-        tools=text_tools,
-        parallel_tool_calls=False,
-        tool_use_behavior=tool_use_behavior,
-    )
-
-    # Run text generation with streaming
+    # Call litellm with streaming
     resource_id_str = str(group_id) if group_id else sid
-    with trace(
-        f"{result.agent_name or 'Text'} Agent",
-        trace_id=trace_id,
-        group_id=resource_id_str,
-    ):
-        result_runner = Runner.run_streamed(
-            text_agent.agent(),
-            input_items,
-            context=None,
-        )
+    stream = await litellm.acompletion(**completion_kwargs)
 
-    # Store the result in active runs for potential cancellation
-    await store_active_run(resource_id_str, result_runner)
+    # Store stream reference for potential cancellation
+    # Note: litellm streams don't have a direct cancellation method,
+    # but we store it for consistency with existing patterns
+    await store_active_run(resource_id_str, stream)
 
     completed_tool_names: set[str] = set()
+    assistant_output = ""
+    input_tokens = 0
+    output_tokens = 0
+    
+    # Track tool calls for persistence
+    tool_call_states: dict[str, dict[str, Any]] = {}  # tool_call_id -> state
 
     try:
-        # Stream tool calls and text
-        async def on_tool_call_start(tool_call_id: str, tool_name: str, call_id: str | None) -> None:
-            await internal_sio.emit(
-                "generate_progress",
-                {
-                    "modality": "text",
-                    "sid": sid,
-                    "resource_id": str(resource_id),
-                    "resource_type": resource_type,
-                    "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "type": "tool_call_start",
-                    "tool_call_id": tool_call_id,
-                    "tool_name": tool_name,
-                },
-            )
-
-        async def on_tool_call_progress(tool_call_id: str, arguments_delta: str) -> None:
-            await internal_sio.emit(
-                "generate_progress",
-                {
-                    "modality": "text",
-                    "sid": sid,
-                    "resource_id": str(resource_id),
-                    "resource_type": resource_type,
-                    "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "type": "tool_call_progress",
-                    "tool_call_id": tool_call_id,
-                    "arguments_delta": arguments_delta,
-                },
-            )
-
-        async def on_tool_call_complete(tool_call_id: str, arguments: dict[str, Any]) -> None:
-            tool_name = arguments.get("name", "")
-            completed_tool_names.add(tool_name)
-            await internal_sio.emit(
-                "generate_progress",
-                {
-                    "modality": "text",
-                    "sid": sid,
-                    "resource_id": str(resource_id),
-                    "resource_type": resource_type,
-                    "run_id": str(run_id),
-                    "group_id": str(group_id) if group_id else None,
-                    "type": "tool_call_complete",
-                    "tool_call_id": tool_call_id,
-                    "tool_name": tool_name,
-                    "arguments": arguments,
-                },
-            )
-
-        callbacks = StreamEventCallbacks(
-            on_tool_call_start=on_tool_call_start,
-            on_tool_call_progress=on_tool_call_progress,
-            on_tool_call_complete=on_tool_call_complete,
-        )
-
-        await stream_agent_events(result_runner, callbacks)
-
-        # Stream text tokens
-        async for event in result_runner.stream_events():
-            if not hasattr(event, "type") or event.type != "raw_response_event":
-                continue
-
-            event_data = getattr(event, "data", None)
-            if not event_data:
-                continue
-
-            event_data_type = getattr(event_data, "type", None)
-            if event_data_type == "response.text.delta":
-                delta = getattr(event_data, "delta", "")
+        # Process streaming events
+        async for event in _stream_litellm_events(stream):
+            event_type = event.get("type")
+            
+            if event_type == "text_start":
+                # Text streaming started
+                pass  # Already emitted start event above
+            
+            elif event_type == "text_delta":
+                # Emit text token
+                delta = event.get("delta", "")
                 if delta:
+                    assistant_output += delta
                     await internal_sio.emit(
                         "generate_progress",
                         {
@@ -552,6 +803,168 @@ async def _handle_text_generation(
                             "text": delta,
                         },
                     )
+            
+            elif event_type == "tool_call_start":
+                # Tool call started
+                tool_index = event.get("tool_index", 0)
+                tool_call_id = f"call_{run_id}_{tool_index}"
+                
+                tool_call_states[tool_call_id] = {
+                    "tool_index": tool_index,
+                    "call_id": None,
+                    "tool_name": None,
+                    "arguments": "",
+                }
+                
+                await internal_sio.emit(
+                    "generate_progress",
+                    {
+                        "modality": "text",
+                        "sid": sid,
+                        "resource_id": str(resource_id),
+                        "resource_type": resource_type,
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "type": "tool_call_start",
+                        "tool_call_id": tool_call_id,
+                        "tool_name": None,  # Will be set when we get name
+                    },
+                )
+                
+                # Persist tool call start
+                try:
+                    progress_params = TextToolProgressUpdateSqlParams(
+                        run_id=run_id,
+                        tool_call_id=tool_call_id,
+                        progress_type="tool_call_start",
+                        call_id=None,
+                        tool_name=None,
+                        arguments_delta="",
+                        resource_id=resource_id,
+                    )
+                    await execute_sql_typed(conn, SQL_PATH_TEXT_TOOL_PROGRESS, params=progress_params)
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Failed to persist tool call start")
+            
+            elif event_type == "tool_call_delta":
+                # Tool call arguments delta
+                tool_index = event.get("tool_index", 0)
+                tool_call_id = f"call_{run_id}_{tool_index}"
+                delta = event.get("delta", "")
+                
+                if tool_call_id in tool_call_states:
+                    tool_call_states[tool_call_id]["arguments"] += delta
+                
+                await internal_sio.emit(
+                    "generate_progress",
+                    {
+                        "modality": "text",
+                        "sid": sid,
+                        "resource_id": str(resource_id),
+                        "resource_type": resource_type,
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "type": "tool_call_progress",
+                        "tool_call_id": tool_call_id,
+                        "arguments_delta": delta,
+                    },
+                )
+                
+                # Persist tool call progress
+                try:
+                    progress_params = TextToolProgressUpdateSqlParams(
+                        run_id=run_id,
+                        tool_call_id=tool_call_id,
+                        progress_type="tool_call_progress",
+                        call_id=tool_call_states.get(tool_call_id, {}).get("call_id"),
+                        tool_name=tool_call_states.get(tool_call_id, {}).get("tool_name"),
+                        arguments_delta=delta,
+                        resource_id=resource_id,
+                    )
+                    await execute_sql_typed(conn, SQL_PATH_TEXT_TOOL_PROGRESS, params=progress_params)
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Failed to persist tool call progress")
+            
+            elif event_type == "tool_call_complete":
+                # Tool call complete
+                tool_call_id = event.get("id") or f"call_{run_id}_{event.get('tool_index', 0)}"
+                tool_name = event.get("name", "")
+                arguments_str = event.get("arguments", "")
+                
+                # Parse arguments
+                try:
+                    arguments_dict = json.loads(arguments_str) if arguments_str else {}
+                except json.JSONDecodeError:
+                    arguments_dict = {}
+                
+                # Update state
+                if tool_call_id not in tool_call_states:
+                    tool_call_states[tool_call_id] = {
+                        "tool_index": event.get("tool_index", 0),
+                        "call_id": tool_call_id,
+                        "tool_name": tool_name,
+                        "arguments": arguments_str,
+                    }
+                else:
+                    tool_call_states[tool_call_id]["call_id"] = tool_call_id
+                    tool_call_states[tool_call_id]["tool_name"] = tool_name
+                    tool_call_states[tool_call_id]["arguments"] = arguments_str
+                
+                completed_tool_names.add(tool_name)
+                
+                # Persist tool call complete
+                try:
+                    progress_params = TextToolProgressUpdateSqlParams(
+                        run_id=run_id,
+                        tool_call_id=tool_call_id,
+                        progress_type="tool_call_complete",
+                        call_id=tool_call_id,
+                        tool_name=tool_name,
+                        arguments_delta=arguments_str,
+                        resource_id=resource_id,
+                    )
+                    progress_result = cast(
+                        TextToolProgressUpdateSqlRow,
+                        await execute_sql_typed(conn, SQL_PATH_TEXT_TOOL_PROGRESS, params=progress_params),
+                    )
+                    
+                    # TODO: Execute tool (create resource)
+                    # This is where we would call the actual tool function to create the resource
+                    # For now, tool calls are persisted but not executed
+                    
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Failed to persist tool call complete: {e}")
+                
+                await internal_sio.emit(
+                    "generate_progress",
+                    {
+                        "modality": "text",
+                        "sid": sid,
+                        "resource_id": str(resource_id),
+                        "resource_type": resource_type,
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "type": "tool_call_complete",
+                        "tool_call_id": tool_call_id,
+                        "tool_name": tool_name,
+                        "arguments": arguments_dict,
+                    },
+                )
+            
+            elif event_type == "message_complete":
+                # Message complete - extract usage if available
+                if "usage" in event:
+                    usage_data = event["usage"]
+                    if isinstance(usage_data, dict):
+                        input_tokens = usage_data.get("prompt_tokens", 0)
+                        output_tokens = usage_data.get("completion_tokens", 0)
+            
+            elif event_type == "text_complete":
+                # Text streaming complete
+                assistant_output = event.get("text", assistant_output)
 
     except BaseException as stream_error:
         if isinstance(
@@ -584,8 +997,6 @@ async def _handle_text_generation(
         return
 
     # Emit run completion event with usage data
-    usage = result_runner.context_wrapper.usage
-    assistant_output = getattr(result_runner, "final_output", None) or ""
     await internal_sio.emit(
         "generate_complete",
         {
@@ -596,8 +1007,8 @@ async def _handle_text_generation(
             "resource_type": resource_type,
             "run_id": str(run_id),
             "group_id": str(group_id) if group_id else None,
-            "input_text_tokens": usage.input_tokens,
-            "output_text_tokens": usage.output_tokens,
+            "input_text_tokens": input_tokens,
+            "output_text_tokens": output_tokens,
             "system_prompt": result.system_prompt or "",
             "input_items": input_items,
             "assistant_output": assistant_output,
