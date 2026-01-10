@@ -18,11 +18,17 @@ BEGIN
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_schema_fields_v4(
-    agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_schema_fields_v4(agent_id uuid,
     group_id uuid,
-    schema_id uuid, name text, field_type text, required boolean, position_value integer, template text, description text, default_value text
-)
+    schema_id uuid,
+    name text,
+    field_type text,
+    required boolean,
+    position_value integer,
+    template text,
+    description text,
+    default_value text,
+    mcp boolean DEFAULT false)
 RETURNS TABLE (
     schema_field_id uuid
 )
@@ -60,6 +66,17 @@ BEGIN
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource schema_fields', agent_id;
+    END IF;
+    -- Validate agent has mcp flag when mcp=true
+    IF mcp = true AND agent_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM agent_flags 
+            WHERE agent_id = api_create_schema_fields_v4.agent_id 
+              AND type = 'mcp'::type_agent_flags 
+              AND value = true
+        ) THEN
+            RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
+        END IF;
     END IF;
     
     -- Dynamically build arguments_raw from schema_fields and Jinja templates
@@ -116,8 +133,8 @@ BEGIN
     );
     
     -- INSERT into schema_fields table (always insert, never update)
-    INSERT INTO schema_fields(schema_id, name, field_type, required, "position", template, description, default_value, active, call_id)
-    VALUES (schema_id, name, field_type, required, position_value, template, description, default_value, true, v_call_id)
+    INSERT INTO schema_fields(schema_id, name, field_type, required, "position", template, description, default_value, active, call_id, mcp)
+    VALUES (schema_id, name, field_type, required, position_value, template, description, default_value, true, v_call_id, mcp)
     RETURNING id INTO v_schema_field_id;
 
         

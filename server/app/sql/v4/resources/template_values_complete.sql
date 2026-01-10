@@ -18,11 +18,14 @@ BEGIN
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_template_values_v4(
-    agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_template_values_v4(agent_id uuid,
     group_id uuid,
-    template_id uuid, schema_field_id uuid, string_value text, number_value text, boolean_value text
-)
+    template_id uuid,
+    schema_field_id uuid,
+    string_value text,
+    number_value text,
+    boolean_value text,
+    mcp boolean DEFAULT false)
 RETURNS TABLE (
     template_value_id uuid
 )
@@ -60,6 +63,17 @@ BEGIN
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource template_values', agent_id;
+    END IF;
+    -- Validate agent has mcp flag when mcp=true
+    IF mcp = true AND agent_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM agent_flags 
+            WHERE agent_id = api_create_template_values_v4.agent_id 
+              AND type = 'mcp'::type_agent_flags 
+              AND value = true
+        ) THEN
+            RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
+        END IF;
     END IF;
     
     -- Dynamically build arguments_raw from schema_fields and Jinja templates
@@ -112,8 +126,8 @@ BEGIN
     );
     
     -- INSERT into template_values table (always insert, never update)
-    INSERT INTO template_values(template_id, schema_field_id, string_value, number_value, boolean_value, active, call_id)
-    VALUES (template_id, schema_field_id, string_value, number_value, boolean_value, true, v_call_id)
+    INSERT INTO template_values(template_id, schema_field_id, string_value, number_value, boolean_value, active, call_id, mcp)
+    VALUES (template_id, schema_field_id, string_value, number_value, boolean_value, true, v_call_id, mcp)
     RETURNING id INTO v_template_value_id;
 
         

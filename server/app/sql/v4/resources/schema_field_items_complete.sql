@@ -18,11 +18,11 @@ BEGIN
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_schema_field_items_v4(
-    agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_schema_field_items_v4(agent_id uuid,
     group_id uuid,
-    schema_field_id uuid, item_schema_id uuid
-)
+    schema_field_id uuid,
+    item_schema_id uuid,
+    mcp boolean DEFAULT false)
 RETURNS TABLE (
     schema_field_item_id uuid
 )
@@ -60,6 +60,17 @@ BEGIN
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource schema_field_items', agent_id;
+    END IF;
+    -- Validate agent has mcp flag when mcp=true
+    IF mcp = true AND agent_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM agent_flags 
+            WHERE agent_id = api_create_schema_field_items_v4.agent_id 
+              AND type = 'mcp'::type_agent_flags 
+              AND value = true
+        ) THEN
+            RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
+        END IF;
     END IF;
     
     -- Dynamically build arguments_raw from schema_fields and Jinja templates
@@ -112,8 +123,8 @@ BEGIN
     );
     
     -- INSERT into schema_field_items table (always insert, never update)
-    INSERT INTO schema_field_items(schema_field_id, item_schema_id, active, call_id)
-    VALUES (schema_field_id, item_schema_id, true, v_call_id)
+    INSERT INTO schema_field_items(schema_field_id, item_schema_id, active, call_id, mcp)
+    VALUES (schema_field_id, item_schema_id, true, v_call_id, mcp)
     RETURNING id INTO v_schema_field_item_id;
 
         

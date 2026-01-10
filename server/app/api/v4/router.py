@@ -15,6 +15,7 @@ See `AGENTS.md` for overall architecture principles.
 # Batch F: Supporting Resources
 # ============================================================================
 from fastapi import APIRouter, Depends
+from utils.mcp.get_mcp import get_mcp
 from utils.profile.get_effective_profile_id import get_effective_profile_id
 from utils.profile.get_profile_id import get_profile_id
 
@@ -81,7 +82,7 @@ from app.api.v4.uploads import router as uploads_router
 router: APIRouter = APIRouter(
     prefix="/api/v4",
     tags=["v4"],
-    dependencies=[Depends(get_profile_id), Depends(get_effective_profile_id)],
+    dependencies=[Depends(get_profile_id), Depends(get_effective_profile_id), Depends(get_mcp)],
 )
 
 # Batch B: Profile Routes

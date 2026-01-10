@@ -55,7 +55,14 @@ async def create_option(
         async with conn.transaction():
             # Convert API request to SQL params (use double star pattern)
             # Frontend sends snake_case (option_text, is_correct) - auto-generated types match SQL function signature
-            params = OptionsSqlParams(**request.model_dump())
+            # Get mcp flag from header (set by router-level dependency)
+            mcp = getattr(http_request.state, 'mcp', False) or False
+            
+            # Convert API request to SQL params (use double star pattern)
+            # Add mcp from header (not in request body)
+            request_dict = request.model_dump()
+            request_dict['mcp'] = mcp
+            params = OptionsSqlParams(**request_dict)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

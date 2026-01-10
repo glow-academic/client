@@ -18,11 +18,14 @@ BEGIN
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_standard_groups_v4(
-    agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_standard_groups_v4(agent_id uuid,
     group_id uuid,
-    name text, short_name text, description text, points numeric, pass_points numeric
-)
+    name text,
+    short_name text,
+    description text,
+    points numeric,
+    pass_points numeric,
+    mcp boolean DEFAULT false)
 RETURNS TABLE (
     standard_group_id uuid
 )
@@ -60,6 +63,17 @@ BEGIN
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource standard_groups', agent_id;
+    END IF;
+    -- Validate agent has mcp flag when mcp=true
+    IF mcp = true AND agent_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM agent_flags 
+            WHERE agent_id = api_create_standard_groups_v4.agent_id 
+              AND type = 'mcp'::type_agent_flags 
+              AND value = true
+        ) THEN
+            RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
+        END IF;
     END IF;
     
     -- Dynamically build arguments_raw from schema_fields and Jinja templates
@@ -112,8 +126,8 @@ BEGIN
     );
     
     -- INSERT into standard_groups table (always insert, never update)
-    INSERT INTO standard_groups(name, short_name, description, points, pass_points, active, call_id)
-    VALUES (name, short_name, description, points, pass_points, true, v_call_id)
+    INSERT INTO standard_groups(name, short_name, description, points, pass_points, active, call_id, mcp)
+    VALUES (name, short_name, description, points, pass_points, true, v_call_id, mcp)
     RETURNING id INTO v_standard_group_id;
 
         

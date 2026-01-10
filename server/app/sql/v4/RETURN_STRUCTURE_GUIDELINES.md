@@ -297,6 +297,55 @@ RETURNS TABLE (
   - Adds to `disabled_reason`: "No tool configured for {resource1}, {resource2}, and {resource3}. Therefore we cannot proceed ahead."
 - If `{resource}_required = false`, missing tools do not affect `can_edit` or `disabled_reason`
 
+## MCP (Model Context Protocol) Support
+
+**MCP Support:**
+- Artifact endpoints (e.g., `get_persona`) accept an `mcp boolean` parameter (defaults to `false`)
+- When `mcp = true`, agent selection filters to only include agents with the `mcp` flag enabled
+- Agent filtering happens in SQL (embedded in agent selection CTEs), not in Python endpoints
+- Resource creation endpoints validate that the provided `agent_id` has the `mcp` flag when `mcp = true` (validation in SQL)
+- Resources have an `mcp boolean` column (defaults to `false`) to track if they were created via MCP
+- The `mcp` field is stored on resources but **not included in composite types** returned by artifact endpoints
+- MCP header (`X-MCP`) is parsed at the router level and stored in `request.state.mcp`
+
+**Agent Filtering Pattern:**
+```sql
+-- In agent selection CTEs (e.g., name_agent_data, color_agent_data, etc.)
+WHERE ...
+  -- Filter by MCP flag when mcp=true
+  AND (
+      (SELECT mcp FROM params) = false
+      OR EXISTS (
+          SELECT 1 FROM agent_flags af_mcp
+          WHERE af_mcp.agent_id = a.id
+            AND af_mcp.type = 'mcp'::type_agent_flags
+            AND af_mcp.value = true
+      )
+  )
+```
+
+**Resource Creation Validation:**
+```sql
+-- In resource creation functions (e.g., api_create_names_v4)
+-- Validate agent has mcp flag when mcp=true
+IF mcp = true AND agent_id IS NOT NULL THEN
+    IF NOT EXISTS (
+        SELECT 1 FROM agent_flags 
+        WHERE agent_id = api_create_names_v4.agent_id 
+          AND type = 'mcp'::type_agent_flags 
+          AND value = true
+    ) THEN
+        RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
+    END IF;
+END IF;
+```
+
+**Key Points:**
+- MCP validation happens in SQL functions, not Python endpoints (consistent with profile_id pattern)
+- Agent filtering only applies when `mcp=true` (backward compatible)
+- Resource `mcp` field defaults to `false` (backward compatible)
+- All existing resources will have `mcp=false` after migration
+
 ## Key Principles Summary
 
 1. **Required fields first**: `actor_name`, `{artifact}_exists`, `can_edit`, `disabled_reason`

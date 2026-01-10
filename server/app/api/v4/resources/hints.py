@@ -55,7 +55,14 @@ async def create_hint(
         async with conn.transaction():
             # Convert API request to SQL params (use double star pattern)
             # Frontend sends snake_case (hint) - auto-generated types match SQL function signature
-            params = HintsSqlParams(**request.model_dump())
+            # Get mcp flag from header (set by router-level dependency)
+            mcp = getattr(http_request.state, 'mcp', False) or False
+            
+            # Convert API request to SQL params (use double star pattern)
+            # Add mcp from header (not in request body)
+            request_dict = request.model_dump()
+            request_dict['mcp'] = mcp
+            params = HintsSqlParams(**request_dict)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present

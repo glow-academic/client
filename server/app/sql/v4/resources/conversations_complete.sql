@@ -18,11 +18,10 @@ BEGIN
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_conversations_v4(
-    agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_conversations_v4(agent_id uuid,
     group_id uuid,
-    end_reason text
-)
+    end_reason text,
+    mcp boolean DEFAULT false)
 RETURNS TABLE (
     conversation_id uuid
 )
@@ -60,6 +59,17 @@ BEGIN
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource conversations', agent_id;
+    END IF;
+    -- Validate agent has mcp flag when mcp=true
+    IF mcp = true AND agent_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM agent_flags 
+            WHERE agent_id = api_create_conversations_v4.agent_id 
+              AND type = 'mcp'::type_agent_flags 
+              AND value = true
+        ) THEN
+            RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
+        END IF;
     END IF;
     
     -- Dynamically build arguments_raw from schema_fields and Jinja templates
@@ -112,8 +122,8 @@ BEGIN
     );
     
     -- INSERT into conversations table (always insert, never update)
-    INSERT INTO conversations(end_reason, active, call_id)
-    VALUES (end_reason, true, v_call_id)
+    INSERT INTO conversations(end_reason, active, call_id, mcp)
+    VALUES (end_reason, true, v_call_id, mcp)
     RETURNING id INTO v_conversation_id;
 
         

@@ -18,11 +18,11 @@ BEGIN
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_responses_v4(
-    agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_responses_v4(agent_id uuid,
     group_id uuid,
-    option_id uuid, question_id uuid
-)
+    option_id uuid,
+    question_id uuid,
+    mcp boolean DEFAULT false)
 RETURNS TABLE (
     response_id uuid
 )
@@ -60,6 +60,17 @@ BEGIN
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource responses', agent_id;
+    END IF;
+    -- Validate agent has mcp flag when mcp=true
+    IF mcp = true AND agent_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM agent_flags 
+            WHERE agent_id = api_create_responses_v4.agent_id 
+              AND type = 'mcp'::type_agent_flags 
+              AND value = true
+        ) THEN
+            RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
+        END IF;
     END IF;
     
     -- Dynamically build arguments_raw from schema_fields and Jinja templates
@@ -112,8 +123,8 @@ BEGIN
     );
     
     -- INSERT into responses table (always insert, never update)
-    INSERT INTO responses(option_id, question_id, active, call_id)
-    VALUES (option_id, question_id, true, v_call_id)
+    INSERT INTO responses(option_id, question_id, active, call_id, mcp)
+    VALUES (option_id, question_id, true, v_call_id, mcp)
     RETURNING id INTO v_response_id;
     
         

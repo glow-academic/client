@@ -18,11 +18,12 @@ BEGIN
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_videos_v4(
-    agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_videos_v4(agent_id uuid,
     group_id uuid,
-    name text, length_seconds numeric, description text
-)
+    name text,
+    length_seconds numeric,
+    description text,
+    mcp boolean DEFAULT false)
 RETURNS TABLE (
     video_id uuid
 )
@@ -60,6 +61,17 @@ BEGIN
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
         RAISE EXCEPTION 'Agent % does not have tool for resource videos', agent_id;
+    END IF;
+    -- Validate agent has mcp flag when mcp=true
+    IF mcp = true AND agent_id IS NOT NULL THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM agent_flags 
+            WHERE agent_id = api_create_videos_v4.agent_id 
+              AND type = 'mcp'::type_agent_flags 
+              AND value = true
+        ) THEN
+            RAISE EXCEPTION 'Agent % does not have MCP flag enabled', agent_id;
+        END IF;
     END IF;
     
     -- Dynamically build arguments_raw from schema_fields and Jinja templates
@@ -112,8 +124,8 @@ BEGIN
     );
     
     -- INSERT into videos table (always insert, never update)
-    INSERT INTO videos(name, length_seconds, description, active, call_id)
-    VALUES (name, length_seconds, description, true, v_call_id)
+    INSERT INTO videos(name, length_seconds, description, active, call_id, mcp)
+    VALUES (name, length_seconds, description, true, v_call_id, mcp)
     RETURNING id INTO v_video_id;
 
         

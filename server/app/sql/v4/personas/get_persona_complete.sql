@@ -124,7 +124,8 @@ CREATE OR REPLACE FUNCTION api_get_persona_v4(
     icon_show_selected boolean DEFAULT NULL,
     current_color text DEFAULT NULL,
     current_icon text DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    draft_id uuid DEFAULT NULL,
+    mcp boolean DEFAULT false
 )
 RETURNS TABLE (
     -- Required fields (first 4)
@@ -218,7 +219,8 @@ WITH params AS (
         COALESCE(icon_show_selected, false) AS icon_show_selected,
         current_color AS current_color,
         current_icon AS current_icon,
-        draft_id AS draft_id
+        draft_id AS draft_id,
+        COALESCE(mcp, false) AS mcp
 ),
 -- Conditional: Only check persona existence if persona_id provided
 persona_exists_check AS (
@@ -701,6 +703,16 @@ name_agent_data AS (
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resources
         )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
     ),
     agent_department_preference AS (
         SELECT 
@@ -766,6 +778,16 @@ description_agent_data AS (
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
         )
     ),
     agent_department_preference AS (
@@ -833,6 +855,16 @@ color_agent_data AS (
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'colors'::resources
         )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
     ),
     agent_department_preference AS (
         SELECT 
@@ -898,6 +930,16 @@ icon_agent_data AS (
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'icons'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
         )
     ),
     agent_department_preference AS (
@@ -965,6 +1007,16 @@ instructions_agent_data AS (
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'instructions'::resources
         )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
     ),
     agent_department_preference AS (
         SELECT 
@@ -1030,6 +1082,16 @@ flag_agent_data AS (
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'flags'::resources
+        )
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = a.id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
         )
     ),
     agent_department_preference AS (
@@ -1318,6 +1380,16 @@ basic_agent_data AS (
             atr.updated_at
         FROM agent_tool_resources atr
         WHERE ARRAY['names', 'descriptions', 'flags', 'departments']::text[] <@ atr.tool_resources
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = atr.agent_id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
     ),
     agent_department_preference AS (
         SELECT 
@@ -1409,6 +1481,16 @@ content_agent_data AS (
             atr.updated_at
         FROM agent_tool_resources atr
         WHERE ARRAY['instructions', 'examples']::text[] <@ atr.tool_resources
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = atr.agent_id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
     ),
     agent_department_preference AS (
         SELECT 

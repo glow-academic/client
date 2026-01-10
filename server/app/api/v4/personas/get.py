@@ -76,8 +76,11 @@ async def get_persona(
         current_icon = request.current_icon
         draft_id = request.draft_id
         persona_id = request.persona_id  # Can be NULL for new mode
+        
+        # Get mcp flag from header (set by router-level dependency)
+        mcp = getattr(http_request.state, 'mcp', False) or False
 
-        # Convert API request to SQL params (add profile_id from header)
+        # Convert API request to SQL params (add profile_id and mcp from header)
         params = GetPersonaSqlParams(
             persona_id=persona_id,
             profile_id=profile_id,
@@ -88,6 +91,7 @@ async def get_persona(
             current_color=current_color,
             current_icon=current_icon,
             draft_id=draft_id,
+            mcp=mcp,
         )
         sql_params = params.to_tuple()
 
