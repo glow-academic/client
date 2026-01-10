@@ -3,16 +3,15 @@
 import uuid
 from typing import Any
 
-from app.infra.v4.documents.format_document_template_context import (
-    format_document_template_context,
-)
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.documents.format_document_template_context import \
+    format_document_template_context
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from fastapi import APIRouter
-from jinja2 import Template
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
 
@@ -43,8 +42,7 @@ async def _generate_document_impl(
             # Get document context from SQL (fields, department, etc.)
             from app.sql.types import (
                 GetDocumentRunContextAndCreateRunSqlParams,
-                GetDocumentRunContextAndCreateRunSqlRow,
-            )
+                GetDocumentRunContextAndCreateRunSqlRow)
 
             # Get department_id from document if not provided
             if not data.department_id:
@@ -66,8 +64,9 @@ async def _generate_document_impl(
                 field_ids=None,  # Will be populated from document if needed
             )
 
-            from app.sql.types import GetDocumentRunContextAndCreateRunSqlRow
             from typing import cast
+
+            from app.sql.types import GetDocumentRunContextAndCreateRunSqlRow
 
             result = cast(
                 GetDocumentRunContextAndCreateRunSqlRow,
@@ -127,73 +126,9 @@ async def _generate_document_impl(
                 fields=fields_data,
             )
 
-            # Get developer instruction using new renderer with resource-schema-based context
-            from app.infra.v4.developer_instructions.render_developer_instruction import (
-                render_developer_instruction,
-            )
-
-            # Get agent_id from result (best_agent provides agent_id)
-            agent_id: uuid.UUID | None = None
-            if hasattr(result, "agent_id") and result.agent_id:
-                agent_id = uuid.UUID(result.agent_id)
-            else:
-                # Fallback: get agent_id from document's domain
-                agent_id = await conn.fetchval(
-                    """
-                    SELECT d.agent_id
-                    FROM documents doc
-                    JOIN domains d ON d.id = doc.document_domain_id
-                    WHERE doc.id = $1
-                    LIMIT 1
-                    """,
-                    uuid.UUID(data.document_id),
-                )
-
-            developer_message_content: str | None = None
-            if agent_id:
-                try:
-                    # Use new renderer with resource-schema-based context
-                    # For documents, scenario_id is None (documents are standalone)
-                    developer_message_content = await render_developer_instruction(
-                        conn, agent_id, scenario_id=None
-                    )
-                except Exception as e:
-                    # Log error but continue - developer instruction is optional
-                    import logging
-                    logging.getLogger(__name__).warning(
-                        f"Failed to render developer instruction: {e}"
-                    )
-
-            # Fallback to old method if new renderer returns None
-            if (
-                not developer_message_content
-                and hasattr(result, "developer_instruction_template")
-                and result.developer_instruction_template
-            ):
-                # Render Jinja template (no context variables - old method)
-                template = Template(result.developer_instruction_template)
-                developer_message_content = template.render()
-
-            if developer_message_content:
-                context_items.append(
-                    {
-                        "role": "developer",
-                        "content": developer_message_content,
-                    }
-                )
-
             # Step 2: Route to generate_artifact (which will create run and handle generation)
-            # Convert context items to developer_message_contents
-            developer_message_contents = [
-                item["content"] for item in context_items if item.get("role") == "developer"
-            ]
-            # Also include user messages as developer messages for context
-            user_messages = [
-                item["content"] for item in context_items if item.get("role") == "user"
-            ]
-            developer_message_contents.extend(user_messages)
-
             # Get agent_id for generate_artifact from result
+            agent_id: uuid.UUID | None = None
             if not agent_id:
                 # Get agent_id from result (best_agent provides agent_id)
                 if hasattr(result, "agent_id") and result.agent_id:
@@ -224,7 +159,6 @@ async def _generate_document_impl(
                     "group_id": None,  # Will be created by generate_artifact
                     "user_instructions": None,
                     "message_ids": None,
-                    "developer_message_contents": developer_message_contents,
                 },
             )
 

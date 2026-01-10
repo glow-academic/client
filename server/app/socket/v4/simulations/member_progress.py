@@ -238,7 +238,6 @@ async def _member_progress_impl(
                     "group_id": str(group_id) if group_id else None,
                     "user_instructions": None,
                     "message_ids": [message_id],
-                    "developer_message_contents": None,
                 },
             )
     except ValueError as e:

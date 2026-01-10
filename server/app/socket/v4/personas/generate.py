@@ -1,20 +1,24 @@
 """Persona generation router - unified handler for all persona resource types."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from fastapi import APIRouter
 from pydantic import BaseModel
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH = "app/sql/v4/personas/get_persona_generation_context_complete.sql"
 
 # Persona resource types
 PERSONA_RESOURCE_TYPES = [
@@ -83,8 +87,38 @@ async def _persona_generate_impl(
             )
             return
 
-        # For now, emit dummy generate_artifact events (skeleton implementation)
-        # TODO: Implement actual AI generation logic
+        # Get domain_id and agent_id from SQL function
+        async with get_db_connection() as conn:
+            from app.sql.types import (GetPersonaGenerationContextSqlParams,
+                                       GetPersonaGenerationContextSqlRow)
+
+            params = GetPersonaGenerationContextSqlParams(
+                persona_id=uuid.UUID(data.persona_id) if data.persona_id else None,
+                draft_id=uuid.UUID(data.draft_id) if data.draft_id else None,
+                profile_id=profile_id,
+            )
+            result = cast(
+                GetPersonaGenerationContextSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+
+            if not result or not result.domain_id:
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Could not determine domain for persona generation",
+                        resource_id=data.persona_id or data.draft_id,
+                        group_id=None,
+                        resource_type="persona",
+                    ),
+                    sid=sid,
+                )
+                return
+
+            domain_id = result.domain_id
+
+        # Emit generate_artifact events for each resource type
         for resource_type in resource_types:
             # Get group_id for this resource type if regenerating
             group_id = None
@@ -98,18 +132,16 @@ async def _persona_generate_impl(
                         group_id = None
 
             # Emit generate_artifact internal event for each resource type
-            # Note: This is a skeleton - agent_id and other required fields need to be determined
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
-                    "agent_id": "",  # TODO: Look up agent_id from persona domain/department
+                    "domain_id": str(domain_id),  # Use domain_id instead of agent_id
                     "resource_id": data.persona_id or data.draft_id,
-                    "resource_type": resource_type,
+                    "resource_types": [resource_type],  # Use resource_types array
                     "group_id": str(group_id) if group_id else None,  # Pass group_id (string or None)
                     "user_instructions": data.user_instructions,  # Pass user_instructions
                     "message_ids": None,
-                    "developer_message_contents": None,  # TODO: Format context for each resource type
                 },
             )
 

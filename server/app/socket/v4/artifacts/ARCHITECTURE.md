@@ -8,25 +8,15 @@ The artifacts adapter system provides a unified, modality-first architecture for
 - **Unified Persistence**: All providers use the same persistence helpers, ensuring consistent database storage
 - **Unified Interfaces**: Each modality has a base interface that all providers must implement
 - **DHH-Style Pattern**: Database is the source of truth; frontend sends minimal data; backend adapters handle provider-specific logic
-- **Extensibility**: Easy to add new providers by implementing the base interfaces
+- **Domain-Based Agent Resolution**: Resources link to agents via domains, which encapsulate agent and resource context
+- **Instructions in System Prompt**: Developer instructions are fetched from `agent_instructions` table and appended to system_prompt in SQL (not separate developer messages)
+- **Resource Types Array Support**: `generate_artifact` accepts `resource_types` array for batch generation (backward compatible with single `resource_type`)
 
 ## Architecture Principles
 
 ### 1. Modality-First Structure
 
-**Old Structure (Provider-First):**
-```
-adapters/
-├── openai/
-│   ├── text.py
-│   ├── image.py
-│   ├── video.py
-│   └── audio.py
-└── gemini/
-    └── (empty)
-```
-
-**New Structure (Modality-First):**
+**Structure:**
 ```
 adapters/
 ├── text/
@@ -44,8 +34,7 @@ adapters/
 ├── audio/
 │   ├── base.py          # BaseAudioAdapter interface
 │   ├── openai.py        # OpenAI WebRTC implementation
-│   ├── gemini_webrtc.py # Gemini WebRTC stub
-│   └── gemini_websocket.py # Gemini WebSocket stub
+│   └── gemini_webrtc.py # Gemini WebRTC stub
 ├── tool_call/
 │   ├── base.py          # BaseToolCallAdapter interface
 │   ├── openai.py        # OpenAI implementation
@@ -59,10 +48,120 @@ adapters/
 - Consistent behavior: all providers for a modality behave the same way
 - Clear separation: each adapter focuses on provider-specific generation logic
 
-### 2. Unified Persistence
+### 2. Domain-Based Agent Resolution
+
+**Pattern:**
+- Resources (personas, scenarios, documents) link to agents via domains
+- Domains encapsulate agent and resource context via `domain_artifacts` junction table
+- `generate_artifact` accepts `domain_id` (preferred) or `agent_id` (legacy) for backward compatibility
+- When `domain_id` provided, agent_id is resolved from `domains.agent_id` in SQL
+
+**Example:**
+```python
+# Personas handler gets domain_id from SQL
+result = await execute_sql_typed(
+    conn,
+    "app/sql/v4/personas/get_persona_generation_context_complete.sql",
+    params=GetPersonaGenerationContextSqlParams(
+        persona_id=persona_id,
+        draft_id=draft_id,
+        profile_id=profile_id,
+    )
+)
+domain_id = result.domain_id
+
+# Emit generate_artifact with domain_id
+await internal_sio.emit("generate_artifact", {
+    "domain_id": str(domain_id),  # Preferred over agent_id
+    "resource_id": resource_id,
+    "resource_types": ["names", "descriptions"],
+    ...
+})
+```
+
+**Benefits:**
+- Domain encapsulates agent + artifact context
+- Resources can have multiple domains (via domain_artifacts)
+- Cleaner separation: resources don't need to know agent_id directly
+
+### 3. Instructions in System Prompt (Not Developer Messages)
+
+**Pattern:**
+- Developer instructions are fetched from `agent_instructions` → `instructions` table in SQL
+- Instructions are **appended** to `system_prompt` (not prepended) in SQL functions
+- No separate developer messages are created
+- System prompt (with instructions appended) is inserted as first message to LLM
+
+**SQL Pattern:**
+```sql
+-- In context_data CTE:
+COALESCE(
+    CASE 
+        WHEN did.developer_instruction_template IS NOT NULL 
+         AND did.developer_instruction_template != ''
+        THEN COALESCE(pr_prompt.system_prompt, '') || E'\n\n' || did.developer_instruction_template
+        ELSE COALESCE(pr_prompt.system_prompt, '')
+    END,
+    ''
+) as system_prompt
+```
+
+**Benefits:**
+- Instructions are part of system context, not separate messages
+- Simpler message structure: system prompt includes all instructions
+- No need to manage developer message creation/deduplication
+
+### 4. Resource Types Array Support
+
+**Pattern:**
+- `generate_artifact` accepts `resource_types` array (preferred) or `resource_type` (legacy)
+- Each resource_type in array gets its own run and generation flow
+- Backward compatible: single `resource_type` is converted to array internally
+
+**Example:**
+```python
+# New: Multiple resource types
+await internal_sio.emit("generate_artifact", {
+    "domain_id": str(domain_id),
+    "resource_id": resource_id,
+    "resource_types": ["names", "descriptions", "colors"],  # Array
+    ...
+})
+
+# Legacy: Single resource type (still works)
+await internal_sio.emit("generate_artifact", {
+    "agent_id": str(agent_id),
+    "resource_id": resource_id,
+    "resource_type": "names",  # Single value
+    ...
+})
+```
+
+**Implementation:**
+```python
+# In _generate_artifact_impl:
+resource_types = data.get("resource_types")
+if not resource_types:
+    # Backward compatibility: single resource_type
+    resource_type = data.get("resource_type")
+    if resource_type:
+        resource_types = [resource_type]
+    else:
+        raise ValueError("Either resource_types or resource_type must be provided")
+
+# Process each resource_type
+for resource_type in resource_types:
+    # ... handle each type ...
+```
+
+**Benefits:**
+- Batch generation: generate multiple resource types in one request
+- Backward compatible: existing single resource_type calls still work
+- Each resource_type gets its own run (for tracking/auditing)
+
+### 5. Unified Persistence
 
 All artifact persistence goes through unified helpers in `persistence.py`:
-
 - `persist_image()` - Saves image files and creates database records
 - `persist_video()` - Saves video files and creates database records
 - `persist_tool_call()` - Creates tool call records (handled by tool_call adapters)
@@ -73,10 +172,9 @@ All artifact persistence goes through unified helpers in `persistence.py`:
 - Single source of truth: persistence logic is centralized
 - Easier maintenance: changes to persistence affect all providers
 
-### 3. Unified Interfaces
+### 6. Unified Interfaces
 
 Each modality has a base interface that defines the contract:
-
 - `BaseTextAdapter` - `generate()` method for text generation
 - `BaseImageAdapter` - `generate()` returns `ImageGenerationResult`
 - `BaseVideoAdapter` - `generate()` returns `VideoGenerationResult`
@@ -88,22 +186,75 @@ Each modality has a base interface that defines the contract:
 - Predictable behavior: Same methods across all providers
 - Easy testing: Can mock base interfaces
 
-### 4. DHH-Style Pattern
+### 7. DHH-Style Pattern
 
 **Database as Source of Truth:**
 - All configuration comes from SQL functions
 - SQL functions handle rate limiting, run creation, context fetching
-- Adapters fetch what they need from the database
+- Instructions fetched from `agent_instructions` table in SQL
+- System prompt includes instructions (appended in SQL)
 
 **Frontend Sends Minimal Data:**
-- Frontend only sends identifying information (agent_id, resource_id, resource_type)
+- Frontend only sends identifying information (`domain_id` or `agent_id`, `resource_id`, `resource_types`)
 - No provider-specific configuration in frontend
 - Frontend receives unified response types
 
 **Backend Adapters Handle Provider Logic:**
-- Adapters fetch additional data they need (personas, history, tools)
+- Adapters fetch additional data they need (personas, history, tools) from DB
 - Adapters format data for provider-specific APIs
 - Adapters generate provider-specific credentials (ephemeral keys, auth tokens)
+
+## Key Changes from Previous Architecture
+
+### Removed: developer_message_contents Parameter
+
+**Before:**
+- `developer_message_contents` was passed as optional parameter to `generate_artifact`
+- SQL function created separate developer messages with role "developer"
+- Developer messages were linked to runs via `message_runs`
+
+**After:**
+- `developer_message_contents` parameter completely removed
+- Instructions fetched from `agent_instructions` table in SQL
+- Instructions appended to system_prompt (not separate messages)
+- System prompt (with instructions) inserted as first message to LLM
+
+**Files Changed:**
+- `server/app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql` - Removed developer_message_contentss parameter and all developer message creation CTEs
+- `server/app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql` - Append instructions to system_prompt, removed developer message creation
+- `server/app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql` - Append instructions to system_prompt
+- `server/app/socket/v4/artifacts/generate.py` - Removed developer_message_contents from SQL params
+- All resource handlers (scenario, document, personas, rubric, agent) - Removed developer_message_contents from generate_artifact emits
+
+### Added: Resource Types Array Support
+
+**Before:**
+- `generate_artifact` accepted single `resource_type` parameter
+- Handlers emitted one `generate_artifact` event per resource type
+
+**After:**
+- `generate_artifact` accepts `resource_types` array (preferred)
+- Backward compatible: still accepts single `resource_type` parameter
+- Process each resource_type in the array (each gets its own run)
+
+**Files Changed:**
+- `server/app/socket/v4/artifacts/generate.py` - Added resource_types array handling with backward compatibility
+
+### Added: Domain-Based Agent Resolution
+
+**Before:**
+- Resources passed `agent_id` directly to `generate_artifact`
+- Personas handler had hardcoded TODO for agent_id lookup
+
+**After:**
+- Resources pass `domain_id` (preferred) or `agent_id` (legacy)
+- `generate_artifact` resolves `agent_id` from `domain_id` if provided
+- Personas handler uses SQL function to get `domain_id`
+
+**Files Changed:**
+- `server/app/sql/v4/personas/get_persona_generation_context_complete.sql` - NEW FILE: Gets domain_id and agent_id for persona generation
+- `server/app/socket/v4/personas/generate.py` - Calls SQL function to get domain_id, emits with domain_id
+- `server/app/socket/v4/artifacts/generate.py` - Resolves agent_id from domain_id if provided
 
 ## File Structure
 
@@ -152,7 +303,7 @@ class BaseTextAdapter(ABC):
 **Key Features:**
 - Tool call streaming with unified result types
 - Message history handling
-- System/developer message linking
+- System prompt includes instructions (appended in SQL)
 - Usage tracking and logging
 
 #### Image Adapters (`adapters/image/`)
@@ -309,14 +460,17 @@ MODALITY_ADAPTERS = {
 
 **Flow:**
 1. Receive `generate_artifact` event
-2. Get agent context + create run (SQL)
-3. Determine modality from `resource_type`
-4. Determine provider from SQL result
-5. Get adapter class from `MODALITY_ADAPTERS`
-6. Instantiate adapter
-7. Call adapter's `generate()` method
-8. For image/video: persist result and emit completion
-9. For audio: handle special WebRTC case
+2. Handle `resource_types` array (or `resource_type` for backward compatibility)
+3. For each resource_type:
+   - Resolve `agent_id` from `domain_id` if provided
+   - Get agent context + create run (SQL)
+   - Determine modality from `resource_type`
+   - Determine provider from SQL result
+   - Get adapter class from `MODALITY_ADAPTERS`
+   - Instantiate adapter
+   - Call adapter's `generate()` method
+   - For image/video: persist result and emit completion
+   - For audio: handle special WebRTC case
 
 **Special Cases:**
 - **Audio (WebRTC)**: Calls `initialize_session()` and returns `AudioSessionConfig` to frontend
@@ -327,7 +481,7 @@ MODALITY_ADAPTERS = {
 
 ### Architecture Pattern
 
-The artifacts system is **server-to-server only** - adapters emit internal events via `internal_sio.emit()` and never interact directly with clients. Resource-specific folders (e.g., `rubric/`, `scenario/`, `document/`) bridge the gap between artifacts and clients.
+The artifacts system is **server-to-server only** - adapters emit internal events via `internal_sio.emit()` and never interact directly with clients. Resource-specific folders (e.g., `rubric/`, `scenario/`, `document/`, `personas/`) bridge the gap between artifacts and clients.
 
 **Key Principle**: Artifacts = Infrastructure, Resources = Client Communication
 
@@ -358,12 +512,42 @@ rubric/error.py
 
 ### Resource Handler Structure
 
-Each resource folder (e.g., `rubric/`) contains:
+Each resource folder (e.g., `rubric/`, `personas/`) contains:
 
 - **`progress.py`**: Listens to `generate_text_progress`, filters by `resource_type`, emits `artifact_generation_progress`
 - **`complete.py`**: Listens to `{resource}_end`, fetches tool results from DB, formats them, emits `artifact_tool_call_complete` and `artifact_generation_complete`
 - **`error.py`**: Listens to `{resource}_error`, emits `artifact_generation_error`
-- **`generate.py`**: Entry point (client → server), formats context, routes to `generate_start`
+- **`generate.py`**: Entry point (client → server), gets domain_id from SQL (if needed), routes to `generate_artifact`
+
+### Personas Handler Pattern
+
+**`personas/generate.py`:**
+```python
+# Get domain_id from SQL function
+result = await execute_sql_typed(
+    conn,
+    "app/sql/v4/personas/get_persona_generation_context_complete.sql",
+    params=GetPersonaGenerationContextSqlParams(
+        persona_id=persona_id,
+        draft_id=draft_id,
+        profile_id=profile_id,
+    )
+)
+domain_id = result.domain_id
+
+# Emit generate_artifact with domain_id and resource_types array
+await internal_sio.emit("generate_artifact", {
+    "domain_id": str(domain_id),
+    "resource_id": resource_id,
+    "resource_types": ["names", "descriptions"],  # Array
+    ...
+})
+```
+
+**Benefits:**
+- Domain encapsulates agent + artifact context
+- SQL function handles department/domain resolution logic
+- Clean separation: handler doesn't need to know agent_id
 
 ### Unified Client Events
 
@@ -414,282 +598,6 @@ if data["type"] == "tool_call_complete":
 4. **Tool Result Retrieval**: Handlers fetch actual results from DB, not just arguments
 5. **Reduced Abstraction**: Resources own their client communication logic
 
-### Example: Rubric Handler
-
-**`rubric/progress.py`:**
-```python
-@internal_sio.on("generate_text_progress")
-async def handle_rubric_progress(data: dict[str, Any]) -> None:
-    if data.get("resource_type") != "rubric":
-        return
-    await sio.emit("artifact_generation_progress", {
-        "resource_type": "rubric",
-        "resource_id": data.get("resource_id"),
-        "type": "tool_call" if "tool_call" in data.get("progress_type", "") else "start",
-        ...
-    }, room=data.get("sid"))
-```
-
-**`rubric/complete.py`:**
-```python
-@internal_sio.on("rubric_end")
-async def handle_rubric_complete(data: dict[str, Any]) -> None:
-    if data["type"] == "tool_call_complete":
-        # Fetch tool results from DB
-        result = await execute_sql_typed(...)
-        # Format descriptions
-        formatted = format_rubric_descriptions(result.descriptions)
-        # Emit to client
-        await sio.emit("artifact_tool_call_complete", {
-            "resource_type": "rubric",
-            "tool_name": "standard_description",
-            "descriptions": formatted,
-            ...
-        })
-```
-
-**`rubric/error.py`:**
-```python
-@internal_sio.on("rubric_error")
-async def handle_rubric_error(data: dict[str, Any]) -> None:
-    await sio.emit("artifact_generation_error", {
-        "resource_type": "rubric",
-        "resource_id": data.get("resource_id"),
-        "message": data.get("message"),
-        ...
-    }, room=data.get("sid"))
-```
-
-## Audio Endpoints
-
-### Unified Audio Start (`audio/start.py`)
-
-**Event:** `audio_session_start`
-
-**DHH-Style Pattern:**
-- Frontend sends minimal data: `{agent_id, resource_id, resource_type}`
-- Backend gets agent config from database (via SQL function)
-- Routes to appropriate adapter's `initialize_session()`
-- Adapter fetches additional data it needs (personas, history, tools) from DB
-- Adapter formats data for provider and returns unified `AudioSessionConfig`
-
-**Response:**
-```python
-{
-    "success": True,
-    "type": "webrtc" | "websocket",
-    "run_id": str,
-    "ephemeral_key": str,  # For WebRTC
-    "expires_in": int,      # For WebRTC
-    "model": str,
-    "tools": list[dict],    # Provider-formatted tools
-    "instructions": str,    # Provider-formatted instructions
-    "history": list[dict],  # Provider-formatted history
-    "websocket_url": str,   # For WebSocket
-    "auth_token": str,      # For WebSocket
-}
-```
-
-### WebRTC Event Forwarding (`audio/events.py`)
-
-**Unified Audio Event Interface - 14 Event Types:**
-
-**User Events:**
-1. `audio_user_start` - User speech started (with item_id, audio_start_ms)
-2. `audio_user_progress` - User speech transcription delta (incremental transcript)
-3. `audio_user_complete` - User speech completed (final transcript, upload_id for audio file)
-
-**Assistant Events:**
-1. `audio_assistant_start` - Assistant speech/tool call started (with call_id, item_id)
-2. `audio_assistant_progress` - Assistant tool call delta (incremental arguments)
-3. `audio_assistant_complete` - Assistant tool call completed (final arguments, upload_id for audio file)
-
-**Tool Call Events:**
-1. `audio_tool_call_start` - Tool call started (call_id, tool_name)
-2. `audio_tool_call_progress` - Tool call arguments delta (incremental)
-3. `audio_tool_call_complete` - Tool call completed (final arguments)
-
-**Audio Linking Events:**
-1. `audio_user_audio_link` - Link user audio upload to message (upload_id, item_id, message_id)
-2. `audio_assistant_audio_link` - Link assistant audio upload to message (upload_id, call_id, message_id)
-
-**Session Events:**
-1. `audio_session_usage` - Token/pricing usage data (run_id, input_tokens, output_tokens, etc.)
-2. `audio_session_interrupt` - Session interrupted/cancelled (run_id, reason)
-
-**Error Events:**
-1. `audio_error` - Generic error event (error_message, context)
-
-**Event Routing:**
-- All events route to adapter's `handle_webrtc_event()` method
-- Adapter handles provider-specific persistence logic
-- Unified persistence via `persist_audio_message()` helper
-
-### Unified Audio Stop (`audio/stop.py`)
-
-**Event:** `audio_session_stop`
-
-**Flow:**
-1. Receive stop request with `run_id`
-2. Emit `audio_session_stopped` event to frontend
-3. Cleanup handled by adapter if needed
-
-## Backward Compatibility
-
-### Old Event Mapping
-
-The system maintains backward compatibility by mapping old `simulation_voice_*` events to new `audio_webrtc_*` events:
-
-```python
-OLD_TO_NEW_EVENT_MAPPING = {
-    "simulation_voice_user_start": "audio_user_start",
-    "simulation_voice_user_progress": "audio_user_progress",
-    "simulation_voice_user_complete": "audio_user_complete",
-    "simulation_voice_assistant_start": "audio_assistant_start",
-    "simulation_voice_assistant_delta": "audio_assistant_progress",
-    "simulation_voice_assistant_done": "audio_assistant_complete",
-    "simulation_voice_tool_call_start": "audio_tool_call_start",
-    "simulation_voice_tool_call_progress": "audio_tool_call_progress",
-    "simulation_voice_tool_call_complete": "audio_tool_call_complete",
-    "simulation_voice_user_audio_link": "audio_user_audio_link",
-    "simulation_voice_assistant_audio_link": "audio_assistant_audio_link",
-    "simulation_voice_usage": "audio_session_usage",
-    "simulation_voice_interrupt": "audio_session_interrupt",
-    "simulation_voice_error": "audio_error",
-}
-```
-
-All old events are automatically routed to the new adapter system.
-
-## Usage Examples
-
-### Text Generation
-
-```python
-# Frontend sends:
-{
-    "agent_id": "uuid",
-    "resource_id": "uuid",
-    "resource_type": "simulation",
-    "message_ids": ["uuid1", "uuid2"],
-}
-
-# Router:
-# 1. Gets context + creates run (SQL)
-# 2. Routes to OpenAITextAdapter
-# 3. Adapter generates text with tool calls
-# 4. Adapter emits events directly
-```
-
-### Image Generation
-
-```python
-# Frontend sends:
-{
-    "agent_id": "uuid",
-    "resource_id": "uuid",  # image_id
-    "resource_type": "image",
-    "name": "My Image",
-    "prompt": "A beautiful sunset",
-}
-
-# Router:
-# 1. Gets context + creates run (SQL)
-# 2. Routes to OpenAIImageAdapter
-# 3. Adapter generates image, returns ImageGenerationResult
-# 4. Router calls persist_image()
-# 5. Router emits generate_image_complete
-```
-
-### Video Generation
-
-```python
-# Frontend sends:
-{
-    "agent_id": "uuid",
-    "resource_id": "uuid",  # video_id
-    "resource_type": "video",
-    "prompt": "A cat playing piano",
-    "imageReferenceId": "uuid",  # Optional
-}
-
-# Router:
-# 1. Gets context + creates run (SQL)
-# 2. Routes to OpenAIVideoAdapter
-# 3. Adapter polls for completion, returns VideoGenerationResult
-# 4. Router calls persist_video()
-# 5. Router emits generate_video_complete
-```
-
-### Audio Generation (WebRTC)
-
-```python
-# Frontend sends:
-{
-    "agent_id": "uuid",
-    "resource_id": "uuid",  # chat_id for voice, upload_id for audio
-    "resource_type": "voice",  # or "audio"
-}
-
-# Router:
-# 1. Gets context + creates run (SQL)
-# 2. Routes to OpenAIAudioAdapter
-# 3. Adapter calls initialize_session()
-# 4. Adapter fetches personas, tools, history from DB
-# 5. Adapter formats for OpenAI Realtime
-# 6. Adapter generates ephemeral key
-# 7. Returns AudioSessionConfig
-# 8. Router emits audio_session_started with config
-
-# Frontend then forwards WebRTC events:
-{
-    "event_type": "audio_user_start",
-    "event_data": {"item_id": "...", "audio_start_ms": 0},
-    "run_id": "uuid",
-}
-
-# Router:
-# 1. Routes to adapter's handle_webrtc_event()
-# 2. Adapter handles persistence
-```
-
-## Adding a New Provider
-
-To add a new provider (e.g., Anthropic), implement the base interfaces:
-
-1. **Create adapter files:**
-   ```
-   adapters/text/anthropic.py
-   adapters/image/anthropic.py
-   adapters/video/anthropic.py
-   adapters/audio/anthropic_webrtc.py  # or _websocket.py
-   adapters/tool_call/anthropic.py
-   ```
-
-2. **Implement base interfaces:**
-   ```python
-   class AnthropicTextAdapter(BaseTextAdapter):
-       async def generate(self, sid, data, profile_id, conn):
-           # Provider-specific implementation
-           pass
-   ```
-
-3. **Add to MODALITY_ADAPTERS mapping:**
-   ```python
-   MODALITY_ADAPTERS = {
-       "text": {
-           "openai": OpenAITextAdapter,
-           "gemini": None,
-           "anthropic": AnthropicTextAdapter,  # Add here
-       },
-       # ... other modalities
-   }
-   ```
-
-4. **Use unified persistence:**
-   - All adapters use `persist_image()`, `persist_video()`, etc.
-   - No need to implement persistence logic
-
 ## Database Integration
 
 ### SQL Functions
@@ -700,14 +608,43 @@ The system relies on SQL functions for:
 - **Run Creation**: Atomic with context fetching
 - **Tool Call Persistence**: `text_tool_progress_update_complete.sql`
 - **Message Linking**: Various message linking functions
+- **Domain Resolution**: `get_persona_generation_context_complete.sql` (for personas)
 
 ### Key SQL Functions
 
-- `socket_get_generation_run_context_and_create_run_v4()` - Creates run and returns context
+- `socket_get_generation_run_context_and_create_run_v4()` - Creates run and returns context (no developer_message_contentss parameter)
+- `socket_get_text_run_context_and_create_run_v4()` - Text context with instructions appended to system_prompt
+- `socket_get_text_run_context_for_existing_run_v4()` - Text context for existing run with instructions appended to system_prompt
+- `api_get_persona_generation_context_v4()` - Gets domain_id and agent_id for persona generation
 - `socket_get_audio_run_context_and_create_run_v4()` - Audio-specific context
 - `socket_text_tool_progress_update_v4()` - Tool call persistence
 - `socket_complete_image_generation_v4()` - Image persistence
 - `api_create_generation_and_link_v4()` - Video persistence
+
+### Instruction Fetching Pattern
+
+Instructions are fetched from `agent_instructions` table in SQL:
+
+```sql
+-- In developer_instruction_data CTE:
+LEFT JOIN agent_instructions ai ON ai.agent_id = a.id
+LEFT JOIN instructions i ON i.id = ai.instruction_id AND i.active = true
+```
+
+Instructions are appended to system_prompt:
+
+```sql
+-- In context_data CTE:
+COALESCE(
+    CASE 
+        WHEN did.developer_instruction_template IS NOT NULL 
+         AND did.developer_instruction_template != ''
+        THEN COALESCE(pr_prompt.system_prompt, '') || E'\n\n' || did.developer_instruction_template
+        ELSE COALESCE(pr_prompt.system_prompt, '')
+    END,
+    ''
+) as system_prompt
+```
 
 ## Error Handling
 
@@ -732,58 +669,40 @@ Error events include:
 - Test base interfaces with mock implementations
 
 ### Integration Tests
-- Test full flow from `generate_start` → adapter → persistence → `generate_end`
+- Test full flow from `generate_artifact` → adapter → persistence → completion
 - Test routing logic with different providers/modalities
 - Test error handling and rate limiting
+- Test resource_types array handling
+- Test domain_id resolution
 
 ### Audio Tests
 - Test WebRTC forwarding events route correctly through adapters
 - Test backward compatibility event mapping
 - Test session initialization and cleanup
 
-## Future Enhancements
-
-### TODO Items
-
-1. **Audio Adapter Enhancements:**
-   - Implement persona fetching and formatting for OpenAI Realtime
-   - Implement tool fetching and formatting for OpenAI Realtime
-   - Implement history fetching and formatting for OpenAI Realtime
-   - Implement `handle_webrtc_event()` for all 14 event types
-
-2. **Gemini Adapters:**
-   - Implement Gemini text adapter
-   - Implement Gemini image adapter
-   - Implement Gemini video adapter
-   - Implement Gemini audio adapters (WebRTC and WebSocket)
-
-3. **Additional Providers:**
-   - Anthropic adapters
-   - xAI adapters
-   - Other providers as needed
-
-4. **Persistence Enhancements:**
-   - Implement `persist_user_audio()` helper
-   - Implement `persist_assistant_audio()` helper
-   - Enhance tool call persistence helpers
-
 ## Migration Notes
-
-### From Old Structure
-
-The old provider-first structure has been completely migrated:
-- ✅ All adapters moved to modality-first structure
-- ✅ All imports updated
-- ✅ Old folders removed
-- ✅ Backward compatibility maintained for events
 
 ### Breaking Changes
 
-None - backward compatibility is maintained through event mapping.
+**Removed Parameter:**
+- `developer_message_contents` parameter removed from `generate_artifact` endpoint
+- No longer passed to SQL functions
+- No longer used in resource handlers
+
+**New Parameters:**
+- `resource_types` array added (backward compatible with `resource_type`)
+- `domain_id` added (backward compatible with `agent_id`)
+
+### Backward Compatibility
+
+- Single `resource_type` parameter still works (converted to array internally)
+- `agent_id` parameter still works (preferred: use `domain_id`)
+- Existing handlers continue to work without changes
 
 ### Deprecations
 
-Old `simulation_voice_*` events are deprecated but still work. New code should use `audio_*` events.
+- `developer_message_contents` parameter is deprecated (removed)
+- Direct `agent_id` usage is deprecated (preferred: use `domain_id`)
 
 ## Key Design Decisions
 
@@ -792,7 +711,10 @@ Old `simulation_voice_*` events are deprecated but still work. New code should u
 3. **DHH-Style**: Database is source of truth, frontend stays simple
 4. **Base Interfaces**: Type safety and predictable behavior
 5. **Event-Based**: Uses Socket.IO events for real-time communication
-6. **SQL Functions**: Database handles complex logic (rate limiting, run creation)
+6. **SQL Functions**: Database handles complex logic (rate limiting, run creation, instruction fetching)
+7. **Domain-Based Resolution**: Resources link to agents via domains for cleaner architecture
+8. **Instructions in System Prompt**: Simpler message structure, instructions part of system context
+9. **Resource Types Array**: Batch generation support with backward compatibility
 
 ## References
 
@@ -801,4 +723,4 @@ Old `simulation_voice_*` events are deprecated but still work. New code should u
 - Main router: `generate.py`
 - Audio endpoints: `audio/start.py`, `audio/events.py`, `audio/stop.py`
 - End handler: `end.py`
-
+- Personas SQL: `app/sql/v4/personas/get_persona_generation_context_complete.sql`

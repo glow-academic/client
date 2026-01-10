@@ -80,9 +80,7 @@ async def _generate_rubric_impl(
         )
 
         # Step 2: Route to generate_artifact (which will create run and handle generation)
-        # The developer message will include the formatted rubric context
-        developer_message_contents = [rubric_context_text]
-
+        # Note: Rubric context should be handled via instructions linked to agent, not developer_message_contents
         await internal_sio.emit(
             "generate_artifact",
             {
@@ -93,7 +91,6 @@ async def _generate_rubric_impl(
                 "group_id": None,  # Will be created by generate_artifact
                 "user_instructions": None,
                 "message_ids": None,
-                "developer_message_contents": developer_message_contents,
             },
         )
 

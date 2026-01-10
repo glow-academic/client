@@ -382,7 +382,14 @@ context_data AS (
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
-        COALESCE(pr_prompt.system_prompt, '') as system_prompt,
+        COALESCE(
+            CASE 
+                WHEN did.developer_instruction_template IS NOT NULL AND did.developer_instruction_template != ''
+                THEN COALESCE(pr_prompt.system_prompt, '') || E'\n\n' || did.developer_instruction_template
+                ELSE COALESCE(pr_prompt.system_prompt, '')
+            END,
+            ''
+        ) as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
         
@@ -484,80 +491,6 @@ link_group AS (
     FROM link_profile lp
     CROSS JOIN group_data gd
     RETURNING run_id
-),
--- Create and link developer message if template exists
-developer_message_content AS (
-    SELECT 
-        cd.developer_instruction_template as content,
-        lg.run_id
-    FROM context_data cd
-    CROSS JOIN link_group lg
-    WHERE cd.developer_instruction_template IS NOT NULL
-    LIMIT 1
-),
-developer_message_hash AS (
-    SELECT 
-        dmc.content,
-        dmc.run_id,
-        message_content_hash(dmc.content, 'developer') as hash
-    FROM developer_message_content dmc
-),
-existing_developer_message AS (
-    SELECT 
-        m.id, 
-        m.created_at,
-        dmh.run_id
-    FROM messages m
-    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
-        JOIN contents cnt ON cnt.id = mc.content_id
-    JOIN developer_message_hash dmh ON message_content_hash(cnt.content, 'developer') = dmh.hash
-    WHERE m.role = 'developer'
-    LIMIT 1
-),
-new_developer_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
-    SELECT 'developer'::message_role, false, false, NOW(), NOW()
-    FROM developer_message_hash dmh
-    WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)
-    RETURNING id, created_at, updated_at
-),
-insert_developer_content AS (
-    INSERT INTO contents (content, created_at, updated_at)
-    SELECT 
-        (SELECT content FROM developer_message_hash LIMIT 1),
-        nm.created_at,
-        nm.updated_at
-    FROM new_developer_message nm
-    WHERE EXISTS (SELECT 1 FROM developer_message_content)
-    RETURNING id as content_id, created_at, updated_at
-),
-insert_developer_message_content AS (
-    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
-    SELECT 
-        nm.id,
-        ic.content_id,
-        0,
-        ic.created_at,
-        ic.updated_at
-    FROM new_developer_message nm
-    CROSS JOIN insert_developer_content ic
-    WHERE EXISTS (SELECT 1 FROM developer_message_content)
-),
-developer_message_final AS (
-    SELECT id, run_id FROM existing_developer_message
-    UNION ALL
-    SELECT 
-        nm.id, 
-        (SELECT run_id FROM developer_message_hash LIMIT 1) as run_id
-    FROM new_developer_message nm
-),
-link_developer_message_to_run AS (
-    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT dmf.id, dmf.run_id, NOW(), NOW()
-    FROM developer_message_final dmf
-    ON CONFLICT (message_id, run_id) 
-    DO UPDATE SET updated_at = NOW()
-    RETURNING message_id, run_id
 )
 SELECT 
     -- Context data
@@ -583,13 +516,13 @@ SELECT
     gd.trace_id::text as trace_id,
     -- Tools array
     cd.tools,
-    -- Developer instruction
+    -- Developer instruction (kept for backward compatibility but not used separately)
     cd.developer_instruction_template,
     cd.developer_instruction_schema_id,
     -- Department name
     cd.department_name,
-    -- Developer message ID (if created/linked)
-    ldm.message_id as developer_message_id,
+    -- Developer message ID (removed - instructions now in system_prompt)
+    NULL::uuid as developer_message_id,
     -- Upload info (for audio input, when upload_id is provided)
     ui.upload_id,
     ui.file_path,
@@ -597,7 +530,6 @@ SELECT
 FROM context_data cd
 CROSS JOIN create_run cr
 CROSS JOIN group_data gd
-LEFT JOIN link_developer_message_to_run ldm ON true
 LEFT JOIN upload_info ui ON true
 $$;
 

@@ -100,13 +100,7 @@ async def _generate_agent_impl(
                 input_items.append(msg)
 
             # Step 2: Route to generate_artifact (which will create run and handle generation)
-            # Convert input items to developer_message_contents
-            developer_message_contents = [
-                item["content"]
-                for item in input_items
-                if item.get("role") in ["system", "user", "developer"]
-            ]
-
+            # Note: Context should be handled via instructions linked to agent, not developer_message_contents
             await internal_sio.emit(
                 "generate_artifact",
                 {
@@ -117,7 +111,6 @@ async def _generate_agent_impl(
                     "group_id": data.group_id,  # May be None for new group
                     "user_instructions": None,
                     "message_ids": None,
-                    "developer_message_contents": developer_message_contents,
                 },
             )
 

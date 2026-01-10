@@ -343,23 +343,6 @@ async def _generate_scenario_impl(
                 scenario_domain_id,
             )
 
-            developer_message_contents: list[str] | None = None
-            if agent_id:
-                try:
-                    # Use new renderer with resource-schema-based context
-                    # Pass scenario_id to get scenario-specific context (parameters, fields, documents)
-                    developer_message_content = await render_developer_instruction(
-                        conn, uuid.UUID(agent_id), scenario_id=scenario_id_uuid
-                    )
-                    if developer_message_content:
-                        developer_message_contents = [developer_message_content]
-                except Exception as e:
-                    # Log error but continue - developer instruction is optional
-                    import logging
-                    logging.getLogger(__name__).warning(
-                        f"Failed to render developer instruction for scenario: {e}"
-                    )
-
             # Step 3: Route to generate_artifact (which will create run and handle generation)
             resource_id = str(scenario_id_uuid) if scenario_id_uuid else str(uuid.uuid4())
 
@@ -373,7 +356,6 @@ async def _generate_scenario_impl(
                     "group_id": None,  # Will be created by generate_artifact
                     "user_instructions": None,
                     "message_ids": None,
-                    "developer_message_contents": developer_message_contents,
                 },
             )
 

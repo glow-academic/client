@@ -279,6 +279,17 @@ agent_tools_data AS (
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     GROUP BY sa.agent_id
 ),
+-- Get developer instruction using agent role
+developer_instruction_data AS (
+    SELECT 
+        sa.agent_id,
+        i.template as developer_instruction_template
+    FROM selected_agent sa
+    INNER JOIN agents a ON a.id = sa.agent_id
+    LEFT JOIN agent_instructions ai ON ai.agent_id = a.id
+    LEFT JOIN instructions i ON i.id = ai.instruction_id AND i.active = true
+    LIMIT 1
+),
 -- Get department name (from agent_departments or profile primary department)
 department_data AS (
     SELECT 
@@ -314,7 +325,14 @@ context_data AS (
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
-        COALESCE(pr_prompt.system_prompt, '') as system_prompt,
+        COALESCE(
+            CASE 
+                WHEN did.developer_instruction_template IS NOT NULL AND did.developer_instruction_template != ''
+                THEN COALESCE(pr_prompt.system_prompt, '') || E'\n\n' || did.developer_instruction_template
+                ELSE COALESCE(pr_prompt.system_prompt, '')
+            END,
+            ''
+        ) as system_prompt,
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
         
@@ -375,6 +393,8 @@ context_data AS (
     CROSS JOIN runs_today rt
     -- Join tools data
     LEFT JOIN agent_tools_data atd ON atd.agent_id = sa.agent_id
+    -- Join developer instruction data
+    LEFT JOIN developer_instruction_data did ON did.agent_id = sa.agent_id
     -- Join department data
     CROSS JOIN department_name_data dnd
 )

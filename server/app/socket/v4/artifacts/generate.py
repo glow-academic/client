@@ -88,170 +88,191 @@ async def _generate_artifact_impl(
     """Unified entry point for all artifact generation - handles ALL logic inline."""
     try:
         async with get_db_connection() as conn:
-            # Always create run via SQL (no longer supports pre-created runs)
-            try:
-                # Convert message_ids to UUID array if provided
-                message_ids_uuid = (
-                    [uuid.UUID(mid) for mid in data.get("message_ids", [])]
-                    if data.get("message_ids")
-                    else None
-                )
+            # Handle resource_types array (new) or resource_type (legacy) for backward compatibility
+            resource_types = data.get("resource_types")
+            if not resource_types:
+                # Backward compatibility: single resource_type
+                resource_type = data.get("resource_type")
+                if resource_type:
+                    resource_types = [resource_type]
+                else:
+                    raise ValueError("Either resource_types or resource_type must be provided")
+            
+            # Convert message_ids to UUID array if provided (shared across all resource_types)
+            message_ids_uuid = (
+                [uuid.UUID(mid) for mid in data.get("message_ids", [])]
+                if data.get("message_ids")
+                else None
+            )
 
-                # Handle both domain_id (new) and agent_id (legacy) for backward compatibility
-                domain_id = data.get("domain_id")
-                agent_id = data.get("agent_id")
-                if domain_id:
-                    # Look up agent_id from domain_id
-                    domain_lookup_sql = "SELECT agent_id FROM domains WHERE id = $1"
-                    agent_id_from_domain = await conn.fetchval(domain_lookup_sql, uuid.UUID(domain_id))
-                    if not agent_id_from_domain:
-                        raise ValueError(f"Domain not found: {domain_id}")
-                    agent_id = str(agent_id_from_domain)
-                elif not agent_id:
-                    raise ValueError("Either domain_id or agent_id must be provided")
-                
-                params = GetGenerationRunContextAndCreateRunSqlParams(
-                    agent_id=uuid.UUID(agent_id),
-                    resource_id=uuid.UUID(data["resource_id"]),
-                    resource_type=data["resource_type"],
-                    profile_id=profile_id,
-                    message_ids=message_ids_uuid,
-                    department_id=None,  # Can be NULL, modality handlers will get it
-                    group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
-                    user_instructions=data.get("user_instructions"),
-                    developer_message_contentss=data.get("developer_message_contents"),
-                )
-                result = cast(
-                    GetGenerationRunContextAndCreateRunSqlRow,
-                    await execute_sql_typed(conn, SQL_PATH, params=params),
-                )
-            except Exception as e:
-                import asyncpg  # type: ignore
-
-                error_msg = str(e)
-                # Check if it's a rate limit error from SQL
-                if (
-                    isinstance(e, asyncpg.PostgresError)
-                    and "RATE_LIMIT_EXCEEDED" in error_msg
-                ):
-                    user_msg = (
-                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                        if "RATE_LIMIT_EXCEEDED: " in error_msg
-                        else error_msg
+            # Handle both domain_id (new) and agent_id (legacy) for backward compatibility
+            domain_id = data.get("domain_id")
+            agent_id = data.get("agent_id")
+            if domain_id:
+                # Look up agent_id from domain_id
+                domain_lookup_sql = "SELECT agent_id FROM domains WHERE id = $1"
+                agent_id_from_domain = await conn.fetchval(domain_lookup_sql, uuid.UUID(domain_id))
+                if not agent_id_from_domain:
+                    raise ValueError(f"Domain not found: {domain_id}")
+                agent_id = str(agent_id_from_domain)
+            elif not agent_id:
+                raise ValueError("Either domain_id or agent_id must be provided")
+            
+            # Process each resource_type
+            for resource_type in resource_types:
+                try:
+                    params = GetGenerationRunContextAndCreateRunSqlParams(
+                        agent_id=uuid.UUID(agent_id),
+                        resource_id=uuid.UUID(data["resource_id"]),
+                        resource_type=resource_type,
+                        profile_id=profile_id,
+                        message_ids=message_ids_uuid,
+                        department_id=None,  # Can be NULL, modality handlers will get it
+                        group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
+                        user_instructions=data.get("user_instructions"),
                     )
+                    result = cast(
+                        GetGenerationRunContextAndCreateRunSqlRow,
+                        await execute_sql_typed(conn, SQL_PATH, params=params),
+                    )
+                except Exception as e:
+                    import asyncpg  # type: ignore
+
+                    error_msg = str(e)
+                    # Check if it's a rate limit error from SQL
+                    if (
+                        isinstance(e, asyncpg.PostgresError)
+                        and "RATE_LIMIT_EXCEEDED" in error_msg
+                    ):
+                        user_msg = (
+                            error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                            if "RATE_LIMIT_EXCEEDED: " in error_msg
+                            else error_msg
+                        )
+                        await emit_to_internal(
+                            "generate_error",
+                            GenerateErrorApiRequest(
+                                sid=sid,
+                                error_message=user_msg,
+                                resource_id=data.get("resource_id"),
+                                group_id=data.get("group_id"),
+                                resource_type=resource_type,
+                            ),
+                            sid=sid,
+                        )
+                        continue  # Continue to next resource_type instead of returning
+                    # Other errors
                     await emit_to_internal(
                         "generate_error",
                         GenerateErrorApiRequest(
                             sid=sid,
-                            error_message=user_msg,
+                            error_message=f"Failed to start generation for {resource_type}: {str(e)}",
                             resource_id=data.get("resource_id"),
                             group_id=data.get("group_id"),
-                            resource_type=data.get("resource_type"),
+                            resource_type=resource_type,
                         ),
                         sid=sid,
                     )
-                    return
-                # Other errors
-                await emit_to_internal(
-                    "generate_error",
-                    GenerateErrorApiRequest(
-                        sid=sid,
-                        error_message=f"Failed to start generation: {str(e)}",
-                        resource_id=data.get("resource_id"),
-                        group_id=data.get("group_id"),
-                        resource_type=data.get("resource_type"),
-                    ),
-                    sid=sid,
-                )
-                return
+                    continue  # Continue to next resource_type instead of returning
 
-            if not result:
-                await emit_to_internal(
-                    "generate_error",
-                    GenerateErrorApiRequest(
+                if not result:
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message=f"Failed to create run for {resource_type}",
+                            resource_id=data.get("resource_id"),
+                            group_id=data.get("group_id"),
+                            resource_type=resource_type,
+                        ),
                         sid=sid,
-                        error_message="Failed to create run",
-                        resource_id=data.get("resource_id"),
-                        group_id=data.get("group_id"),
-                        resource_type=data.get("resource_type"),
-                    ),
-                    sid=sid,
-                )
-                return
+                    )
+                    continue  # Continue to next resource_type instead of returning
 
-            modality = determine_modality_from_output_modalities(result.output_modalities)
-            run_id = result.run_id
-            group_id = str(result.group_id) if result.group_id else None
-            trace_id = result.trace_id
-            message_ids = [str(mid) for mid in (result.message_ids or [])]
-            if not agent_id:
-                # If your SQL row includes agent_id, prefer that (if available on result)
-                agent_id_from_sql = getattr(result, "agent_id", None)
-                if agent_id_from_sql:
-                    agent_id = str(agent_id_from_sql)
+                modality = determine_modality_from_output_modalities(result.output_modalities)
+                run_id = result.run_id
+                group_id = str(result.group_id) if result.group_id else None
+                trace_id = result.trace_id
+                message_ids = [str(mid) for mid in (result.message_ids or [])]
+                if not agent_id:
+                    # If your SQL row includes agent_id, prefer that (if available on result)
+                    agent_id_from_sql = getattr(result, "agent_id", None)
+                    if agent_id_from_sql:
+                        agent_id = str(agent_id_from_sql)
+                    else:
+                        await emit_to_internal(
+                            "generate_error",
+                            GenerateErrorApiRequest(
+                                sid=sid,
+                                error_message=f"agent_id missing for {resource_type}",
+                                resource_id=data.get("resource_id"),
+                                group_id=data.get("group_id"),
+                                resource_type=resource_type,
+                            ),
+                            sid=sid,
+                        )
+                        continue  # Continue to next resource_type instead of returning
+
+                # Route to appropriate modality handler
+                if modality == "text" or modality == "call" or modality == "document":
+                    await _handle_text_generation(
+                        sid=sid,
+                        data=data,
+                        profile_id=profile_id,
+                        conn=conn,
+                        run_id=uuid.UUID(run_id),
+                        agent_id=uuid.UUID(agent_id) if agent_id else None,
+                        resource_id=uuid.UUID(data["resource_id"]),
+                        resource_type=resource_type,
+                        message_ids=[uuid.UUID(mid) for mid in message_ids] if message_ids else None,
+                        group_id=uuid.UUID(group_id) if group_id else None,
+                        trace_id=trace_id,
+                        tool_choice="required" if modality == "call" else "auto",
+                    )
+                elif modality == "image":
+                    await _handle_image_generation(
+                        sid=sid,
+                        data=data,
+                        profile_id=profile_id,
+                        conn=conn,
+                        run_id=uuid.UUID(run_id),
+                        agent_id=uuid.UUID(agent_id) if agent_id else None,
+                        resource_id=uuid.UUID(data["resource_id"]),
+                        trace_id=trace_id,
+                    )
+                elif modality == "video":
+                    await _handle_video_generation(
+                        sid=sid,
+                        data=data,
+                        profile_id=profile_id,
+                        conn=conn,
+                        run_id=uuid.UUID(run_id),
+                        resource_id=uuid.UUID(data["resource_id"]),
+                        trace_id=trace_id,
+                    )
+                elif modality == "audio":
+                    await _handle_audio_generation(
+                        sid=sid,
+                        data=data,
+                        profile_id=profile_id,
+                        conn=conn,
+                        run_id=uuid.UUID(run_id),
+                        agent_id=uuid.UUID(agent_id) if agent_id else None,
+                        resource_id=uuid.UUID(data["resource_id"]),
+                        resource_type=resource_type,
+                    )
                 else:
-                    raise ValueError("agent_id missing: cannot proceed with generation")
-
-            # Route to appropriate modality handler
-            if modality == "text" or modality == "call" or modality == "document":
-                await _handle_text_generation(
-                    sid=sid,
-                    data=data,
-                    profile_id=profile_id,
-                    conn=conn,
-                    run_id=uuid.UUID(run_id),
-                    agent_id=uuid.UUID(agent_id) if agent_id else None,
-                    resource_id=uuid.UUID(data["resource_id"]),
-                    resource_type=data["resource_type"],
-                    message_ids=[uuid.UUID(mid) for mid in message_ids] if message_ids else None,
-                    group_id=uuid.UUID(group_id) if group_id else None,
-                    trace_id=trace_id,
-                    tool_choice="required" if modality == "call" else "auto",
-                )
-            elif modality == "image":
-                await _handle_image_generation(
-                    sid=sid,
-                    data=data,
-                    profile_id=profile_id,
-                    conn=conn,
-                    run_id=uuid.UUID(run_id),
-                    agent_id=uuid.UUID(agent_id) if agent_id else None,
-                    resource_id=uuid.UUID(data["resource_id"]),
-                    trace_id=trace_id,
-                )
-            elif modality == "video":
-                await _handle_video_generation(
-                    sid=sid,
-                    data=data,
-                    profile_id=profile_id,
-                    conn=conn,
-                    run_id=uuid.UUID(run_id),
-                    resource_id=uuid.UUID(data["resource_id"]),
-                    trace_id=trace_id,
-                )
-            elif modality == "audio":
-                await _handle_audio_generation(
-                    sid=sid,
-                    data=data,
-                    profile_id=profile_id,
-                    conn=conn,
-                    run_id=uuid.UUID(run_id),
-                    agent_id=uuid.UUID(agent_id) if agent_id else None,
-                    resource_id=uuid.UUID(data["resource_id"]),
-                    resource_type=data["resource_type"],
-                )
-            else:
-                await emit_to_internal(
-                    "generate_error",
-                    GenerateErrorApiRequest(
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message=f"Modality {modality} not yet supported",
+                            resource_id=data.get("resource_id"),
+                            group_id=group_id,
+                            resource_type=resource_type,
+                        ),
                         sid=sid,
-                        error_message=f"Modality {modality} not yet supported",
-                        resource_id=data.get("resource_id"),
-                        group_id=group_id,
-                        resource_type=data.get("resource_type"),
-                    ),
-                    sid=sid,
-                )
+                    )
 
     except Exception as e:
         await emit_to_internal(
