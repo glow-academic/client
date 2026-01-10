@@ -1,6 +1,9 @@
 """Resources v4 API routes."""
 
+from app.api.v4.resources.agents import router as agents_router
 from app.api.v4.resources.analyses import router as analyses_router
+from app.api.v4.resources.audios import router as audios_router
+from app.api.v4.resources.cohorts import router as cohorts_router
 from app.api.v4.resources.colors import router as colors_router
 from app.api.v4.resources.content import router as content_router
 from app.api.v4.resources.conversations import router as conversations_router
@@ -8,6 +11,7 @@ from app.api.v4.resources.debug_info import router as debug_info_router
 from app.api.v4.resources.departments import router as departments_router
 from app.api.v4.resources.descriptions import router as descriptions_router
 from app.api.v4.resources.documents import router as documents_router
+from app.api.v4.resources.evals import router as evals_router
 from app.api.v4.resources.examples import router as examples_router
 from app.api.v4.resources.fields import router as fields_router
 from app.api.v4.resources.feedbacks import router as feedbacks_router
@@ -18,17 +22,26 @@ from app.api.v4.resources.icons import router as icons_router
 from app.api.v4.resources.images import router as images_router
 from app.api.v4.resources.improvements import router as improvements_router
 from app.api.v4.resources.instructions import router as instructions_router
+from app.api.v4.resources.keys import router as keys_router
+from app.api.v4.resources.models import router as models_router
 from app.api.v4.resources.names import router as names_router
 from app.api.v4.resources.objectives import router as objectives_router
 from app.api.v4.resources.options import router as options_router
+from app.api.v4.resources.parameters import router as parameters_router
+from app.api.v4.resources.personas import router as personas_router
 from app.api.v4.resources.points import router as points_router
 from app.api.v4.resources.problem_statements import router as problem_statements_router
+from app.api.v4.resources.profiles import router as profiles_router
 from app.api.v4.resources.prompts import router as prompts_router
 from app.api.v4.resources.questions import router as questions_router
 from app.api.v4.resources.responses import router as responses_router
+from app.api.v4.resources.rubrics import router as rubrics_router
 from app.api.v4.resources.schema_field_items import router as schema_field_items_router
 from app.api.v4.resources.schema_fields import router as schema_fields_router
 from app.api.v4.resources.schemas import router as schemas_router
+from app.api.v4.resources.scenarios import router as scenarios_router
+from app.api.v4.resources.settings import router as settings_router
+from app.api.v4.resources.simulations import router as simulations_router
 from app.api.v4.resources.standard_groups import router as standard_groups_router
 from app.api.v4.resources.strengths import router as strengths_router
 from app.api.v4.resources.template_array_items import (
@@ -44,6 +57,19 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/resources", tags=["resources"])
 
 # Include endpoint routers
+router.include_router(agents_router)
+router.include_router(audios_router)
+router.include_router(cohorts_router)
+router.include_router(evals_router)
+router.include_router(keys_router)
+router.include_router(models_router)
+router.include_router(parameters_router)
+router.include_router(personas_router)
+router.include_router(profiles_router)
+router.include_router(rubrics_router)
+router.include_router(scenarios_router)
+router.include_router(settings_router)
+router.include_router(simulations_router)
 router.include_router(names_router)
 router.include_router(colors_router)
 router.include_router(flags_router)

@@ -320,6 +320,49 @@ def parse_existing_types_file(
     return result
 
 
+def is_types_file_complete(
+    server_root: Path,
+    existing_app_types: dict[str, tuple[str, str, str, str, str, str, str]],
+    existing_test_types: dict[str, tuple[str, str, str, str, str, str, str]],
+) -> bool:
+    """Check if types.py file is complete by comparing registry size to actual SQL files.
+
+    Returns True if types.py appears complete, False if it needs full recompilation.
+
+    Args:
+        server_root: Server root directory
+        existing_app_types: Dictionary of existing app types from types.py
+        existing_test_types: Dictionary of existing test types from types.py
+
+    Returns:
+        True if types.py appears complete, False if it needs full recompilation
+    """
+    # Count SQL files that should be processed
+    app_sql_dir = server_root / "app" / "sql" / VERSION
+    test_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
+
+    expected_app_count = (
+        len(list(app_sql_dir.rglob("*.sql"))) if app_sql_dir.exists() else 0
+    )
+    expected_test_count = (
+        len(list(test_sql_dir.rglob("*.sql"))) if test_sql_dir.exists() else 0
+    )
+
+    actual_app_count = len(existing_app_types)
+    actual_test_count = len(existing_test_types)
+
+    # If we have less than 50% of expected types, consider it incomplete
+    # This handles cases where compilation failed partway through
+    app_complete = expected_app_count == 0 or (
+        actual_app_count >= expected_app_count * 0.5
+    )
+    test_complete = expected_test_count == 0 or (
+        actual_test_count >= expected_test_count * 0.5
+    )
+
+    return app_complete and test_complete
+
+
 def write_consolidated_types_file(
     type_definitions: list[tuple[str, str, str, str, str, str, str]],
     registry_type: str,
@@ -1167,6 +1210,32 @@ async def main() -> int:
             print(
                 f"📚 Loaded {len(existing_app_types)} existing app types and {len(existing_test_types)} existing test types"
             )
+
+            # Check if types.py is complete - if not, fall back to full compilation
+            if not is_types_file_complete(server_root, existing_app_types, existing_test_types):
+                print(
+                    f"\n⚠️  types.py appears incomplete (found {len(existing_app_types)} app types, expected many more)"
+                )
+                print("   Falling back to full compilation to ensure all types are available...")
+                print("   This may take a moment...\n")
+                # Switch to full mode by clearing sql_files and re-finding all files
+                sql_files = []
+                incremental_mode = False
+                # Re-find all SQL files (full mode logic)
+                app_sql_dir = server_root / "app" / "sql" / VERSION
+                if app_sql_dir.exists():
+                    sql_files.extend(app_sql_dir.rglob("*.sql"))
+                tests_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
+                if tests_sql_dir.exists():
+                    sql_files.extend(tests_sql_dir.rglob("*.sql"))
+                if not sql_files:
+                    print(
+                        f"⚠️  No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/"
+                    )
+                    return 0
+                # Re-sort SQL files with analytics routes first
+                sorted_sql_files = sorted(sql_files, key=_sort_sql_files)
+                print(f"🔍 Found {len(sql_files)} SQL files to process (full compilation mode)")
 
         # Process each SQL file
         errors: list[tuple[str, str]] = []  # (sql_path, error_message)

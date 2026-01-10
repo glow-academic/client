@@ -18,3 +18,6 @@ server/.ruff_cache/
 server/.coverage
 server/htmlcov/
 server/dump.rdb
+
+# SQL types compilation flag file
+.sql-types-checked
