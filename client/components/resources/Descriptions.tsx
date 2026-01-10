@@ -49,6 +49,8 @@ export interface DescriptionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
   createDescriptionsAction?:
     | ((
         input: CreateDraftDescriptionsIn
@@ -80,6 +82,8 @@ export function Descriptions({
   id = "description",
   "data-testid": dataTestId,
   helpText,
+  group_id,
+  agent_id,
   createDescriptionsAction,
   // Legacy props for backward compatibility
   descriptionResource,
@@ -163,8 +167,13 @@ export function Descriptions({
       const seq = ++saveSeqRef.current;
       try {
         if (internalValue.trim()) {
+          if (!agent_id || !group_id) {
+            return;
+          }
           const result = await createDescriptionsAction({
             body: {
+              agent_id: agent_id,
+              group_id: group_id,
               description: internalValue,
             },
           });

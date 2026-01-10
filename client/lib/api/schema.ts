@@ -5188,6 +5188,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Content */
             content: string;
         };
@@ -5575,6 +5580,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -5608,6 +5618,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Content */
             content: string;
         };
@@ -5623,6 +5638,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** End Reason */
             end_reason: string;
         };
@@ -6172,6 +6192,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Content */
             content: string;
         };
@@ -6538,6 +6563,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Description */
             description: string;
         };
@@ -6823,6 +6853,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Example */
             example: string;
         };
@@ -6885,6 +6920,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Total */
             total: number;
             /** Feedback */
@@ -6920,6 +6960,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -8529,6 +8574,8 @@ export interface components {
             can_edit?: boolean | null;
             /** Disabled Reason */
             disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Name Id */
             name_id?: string | null;
             name_resource?: components["schemas"]["QGetPersonaV4NameResource"] | null;
@@ -10379,6 +10426,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Hint */
             hint: string;
         };
@@ -10394,6 +10446,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10658,6 +10715,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10677,6 +10739,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10694,6 +10761,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10716,6 +10788,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Template */
             template: string;
         };
@@ -10786,6 +10863,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
         };
@@ -10801,6 +10883,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Objective */
             objective: string;
         };
@@ -10816,6 +10903,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Option Text */
             option_text: string;
             /** Is Correct */
@@ -10870,6 +10962,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Value */
             value: number;
         };
@@ -10885,6 +10982,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Problem Statement */
@@ -10920,6 +11022,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** System Prompt */
             system_prompt: string;
             /** Name */
@@ -17743,6 +17850,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Question Text */
             question_text: string;
             /** Allow Multiple */
@@ -17807,6 +17919,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /**
              * Option Id
              * Format: uuid
@@ -17873,6 +17990,11 @@ export interface components {
              */
             agent_id: string;
             /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
              * Schema Field Id
              * Format: uuid
              */
@@ -17895,6 +18017,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /**
              * Schema Id
              * Format: uuid
@@ -17927,6 +18054,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
         };
         /** SchemasApiResponse */
         SchemasApiResponse: {
@@ -18160,6 +18292,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Short Name */
@@ -18268,6 +18405,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -18290,6 +18432,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /**
              * Template Id
              * Format: uuid
@@ -18321,6 +18468,11 @@ export interface components {
              */
             agent_id: string;
             /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
              * Template Id
              * Format: uuid
              */
@@ -18349,6 +18501,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
         };
@@ -18364,6 +18521,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Value */
             value: number;
         };
@@ -18379,6 +18541,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Time Taken */
             time_taken: number;
         };
@@ -19071,6 +19238,11 @@ export interface components {
              * Format: uuid
              */
             agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
             /** Name */
             name: string;
             /** Length Seconds */

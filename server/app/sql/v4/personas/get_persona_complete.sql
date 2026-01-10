@@ -132,6 +132,8 @@ RETURNS TABLE (
     persona_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    -- Group ID for linking resources
+    group_id uuid,
     -- Single-select resources: name
     name_id uuid,
     name_resource types.q_get_persona_v4_name_resource,
@@ -231,6 +233,15 @@ draft_payload_data AS (
     SELECT 
         NULL::jsonb as payload
     FROM params x
+    WHERE x.draft_id IS NOT NULL
+    LIMIT 1
+),
+-- Get group_id from draft (should always exist after migration, but handle NULL case)
+draft_group_data AS (
+    SELECT 
+        d.group_id
+    FROM params x
+    LEFT JOIN drafts d ON d.id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     LIMIT 1
 ),
@@ -1503,6 +1514,8 @@ SELECT
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
     perm_final.can_edit,
     perm_final.disabled_reason,
+    -- Group ID for linking resources
+    (SELECT group_id FROM draft_group_data) as group_id,
     -- Single-select resources: name
     (SELECT name_id FROM name_resource_data) as name_id,
     nrd.name_resource,

@@ -20,6 +20,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_create_hints_v4(
     agent_id uuid,
+    group_id uuid,
     hint text
 )
 RETURNS TABLE (
@@ -39,6 +40,8 @@ DECLARE
     v_arg_value text;
     v_args_jsonb jsonb := '{}'::jsonb;
     v_params_jsonb jsonb;
+    v_message_id uuid;
+    v_run_id uuid;
 BEGIN
     -- Lookup tool_id from agent_tools + resource_tools
     SELECT t.id, tt.template_id, st.schema_id
@@ -113,6 +116,34 @@ BEGIN
     VALUES (hint, true, v_call_id)
     RETURNING id INTO v_hint_id;
 
+        
+    -- Create message record (assistant role, not completed)
+    v_message_id := uuidv7();
+    INSERT INTO messages (id, role, completed, audio, created_at, updated_at)
+    VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
+    
+    -- Link message to call
+    INSERT INTO message_calls (message_id, call_id, created_at, updated_at)
+    VALUES (v_message_id, v_call_id, NOW(), NOW());
+    
+    -- Create run record
+    v_run_id := uuidv7();
+    INSERT INTO runs (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
+    VALUES (v_run_id, agent_id, 0, 0, 0, NOW(), NOW());
+    
+    -- Link run to message
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    VALUES (v_message_id, v_run_id, NOW(), NOW());
+    
+    -- Link run to group (calculate idx)
+    INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
+    SELECT 
+        group_id,
+        v_run_id,
+        COALESCE((SELECT MAX(idx) FROM group_runs WHERE group_id = api_create_hints_v4.group_id), -1) + 1,
+        NOW(),
+        NOW();
+    
     RETURN QUERY SELECT v_hint_id;
 END;
 $$;

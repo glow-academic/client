@@ -11,14 +11,15 @@ All SQL functions that return data should follow a consistent structure for thei
 - **Type Safety**: Consistent patterns make type generation and validation easier
 - **Clarity**: The structure itself documents the data model
 
-## Required Fields (First 4)
+## Required Fields (First 5)
 
-**All functions must start with these four required fields:**
+**All functions must start with these five required fields:**
 
 1. **`actor_name`** (text) - The name of the actor/user performing the operation (for audit logging)
 2. **`{artifact}_exists`** (boolean) - Whether the artifact exists (e.g., `persona_exists`, `agent_exists`)
 3. **`can_edit`** (boolean) - Whether the current user has edit permissions
 4. **`disabled_reason`** (text, nullable) - Human-readable explanation of why editing is disabled (NULL if `can_edit = true`)
+5. **`group_id`** (uuid, nullable) - The group ID for linking resources to messages/runs/groups (enables traceability and regeneration workflows)
 
 **Example:**
 ```sql
@@ -27,6 +28,7 @@ RETURNS TABLE (
     persona_exists boolean,
     can_edit boolean,
     disabled_reason text,
+    group_id uuid,
     -- ... rest of fields
 )
 ```

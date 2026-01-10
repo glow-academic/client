@@ -34,6 +34,8 @@ export interface FlagsProps {
   helpText?: string;
   icon?: React.ReactNode;
   iconId?: string; // Icon ID to use when creating flag resource (required when value=true)
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
   createFlagsAction?:
     | ((input: CreateDraftFlagsIn) => Promise<CreateDraftFlagsOut>)
     | undefined;
@@ -60,6 +62,8 @@ export function Flags({
   helpText,
   icon,
   iconId,
+  group_id,
+  agent_id,
   createFlagsAction,
   // Legacy props for backward compatibility
   flagResource,
@@ -117,10 +121,12 @@ export function Flags({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        if (internalValue && createFlagsAction && iconId) {
+        if (internalValue && createFlagsAction && iconId && agent_id && group_id) {
           // Create flag resource when active=true
           const result = await createFlagsAction({
             body: {
+              agent_id: agent_id,
+              group_id: group_id,
               name: "active",
               description: "Active flag",
               icon_id: iconId,

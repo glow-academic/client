@@ -1081,6 +1081,8 @@ function PersonaNewComponent({
                   defaultName="New Persona"
                   required={currentPersonaData?.name_required ?? false}
                   hideDescription={true}
+                  group_id={currentPersonaData?.group_id ?? null}
+                  agent_id={currentPersonaData?.name_agent_id ?? null}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1164,6 +1166,8 @@ function PersonaNewComponent({
                   required={currentPersonaData?.description_required ?? false}
                   rows={4}
                   data-testid="input-persona-description"
+                  group_id={currentPersonaData?.group_id ?? null}
+                  agent_id={currentPersonaData?.description_agent_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                 />
 
@@ -1202,6 +1206,8 @@ function PersonaNewComponent({
                   label="Active"
                   helpText="Inactive personas will not be available for scenarios"
                   required={currentPersonaData?.flag_required ?? false}
+                  group_id={currentPersonaData?.group_id ?? null}
+                  agent_id={currentPersonaData?.flag_agent_id ?? null}
                   {...((formState.icon_id ||
                     currentPersonaData?.flag_resource?.icon_id) && {
                     iconId: (formState.icon_id ||
@@ -1388,6 +1394,8 @@ function PersonaNewComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ colorShowSelected: value || null })
                 }
+                group_id={currentPersonaData?.group_id ?? null}
+                agent_id={currentPersonaData?.color_agent_id ?? null}
                 createColorsAction={createColorsAction}
                 required={currentPersonaData?.color_required ?? false}
               />
@@ -1494,6 +1502,8 @@ function PersonaNewComponent({
                 onShowSelectedChange={(value) =>
                   setStepFormData({ iconShowSelected: value || null })
                 }
+                group_id={currentPersonaData?.group_id ?? null}
+                agent_id={currentPersonaData?.icon_agent_id ?? null}
                 createIconsAction={createIconsAction}
                 required={currentPersonaData?.icon_required ?? false}
               />
@@ -1587,6 +1597,8 @@ function PersonaNewComponent({
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
+                group_id={currentPersonaData?.group_id ?? null}
+                agent_id={currentPersonaData?.instructions_agent_id ?? null}
                 createInstructionsAction={createInstructionsAction}
               />
 
@@ -1606,6 +1618,8 @@ function PersonaNewComponent({
                 maxItems={10}
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
+                group_id={currentPersonaData?.group_id ?? null}
+                agent_id={currentPersonaData?.examples_agent_id ?? null}
                 createExamplesAction={createExamplesAction}
                 required={currentPersonaData?.examples_required ?? false}
                 exampleMapping={

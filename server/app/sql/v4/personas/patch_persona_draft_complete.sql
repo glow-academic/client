@@ -44,6 +44,7 @@ DECLARE
     v_new_version int;
     v_draft_exists boolean := false;
     v_profile_id uuid := profile_id;
+    v_group_id uuid;
 BEGIN
     -- Validate resource IDs exist (error if missing and provided)
     IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
@@ -72,9 +73,20 @@ BEGIN
     
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
+        -- Get existing draft's group_id
+        SELECT group_id INTO v_group_id FROM drafts WHERE id = input_draft_id;
+        
+        -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
+        IF v_group_id IS NULL THEN
+            INSERT INTO groups (created_at, updated_at)
+            VALUES (NOW(), NOW())
+            RETURNING id INTO v_group_id;
+        END IF;
+        
         UPDATE drafts
         SET version = drafts.version + 1,
-            updated_at = now()
+            updated_at = now(),
+            group_id = COALESCE(group_id, v_group_id)
         WHERE id = input_draft_id
           AND drafts.profile_id = v_profile_id
           AND drafts.version = expected_version
@@ -179,9 +191,15 @@ BEGIN
         END IF;
     END IF;
     
-    -- Create new draft
-    INSERT INTO drafts (artifact, profile_id)
-    VALUES ('persona'::artifacts, v_profile_id)
+    -- Create new draft with group
+    -- First create a group for this draft
+    INSERT INTO groups (created_at, updated_at)
+    VALUES (NOW(), NOW())
+    RETURNING id INTO v_group_id;
+    
+    -- Create new draft with group_id
+    INSERT INTO drafts (artifact, profile_id, group_id)
+    VALUES ('persona'::artifacts, v_profile_id, v_group_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
     
     -- Link resources to draft

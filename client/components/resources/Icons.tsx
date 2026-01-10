@@ -45,6 +45,8 @@ export interface IconsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
   createIconsAction?:
     | ((input: CreateDraftIconsIn) => Promise<CreateDraftIconsOut>)
     | undefined;
@@ -78,6 +80,8 @@ export function Icons({
   searchPlaceholder = "Search icons...",
   showSelectedFilter = false,
   onShowSelectedChange,
+  group_id,
+  agent_id,
   createIconsAction,
   // Legacy props for backward compatibility
   iconResource,
@@ -204,8 +208,13 @@ export function Icons({
       try {
         // Find index of icon for value (or use 0)
         const iconIndex = allIconsList.indexOf(internalValue);
+        if (!agent_id || !group_id) {
+          return;
+        }
         const result = await createIconsAction({
           body: {
+            agent_id: agent_id,
+            group_id: group_id,
             name: internalValue,
             description: `Icon: ${internalValue}`,
             value: iconIndex >= 0 ? iconIndex : 0,

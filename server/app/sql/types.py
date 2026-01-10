@@ -13633,12 +13633,14 @@ class InsertObjectiveApiResponse(BaseModel):
 class CreateOptionsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     option_text: str
     is_correct: bool
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.option_text,
             self.is_correct,
         )
@@ -13650,6 +13652,7 @@ class CreateOptionsSqlRow(BaseModel):
 class CreateOptionsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     option_text: str
     is_correct: bool
 
@@ -14482,6 +14485,7 @@ class GetPersonaSqlRow(BaseModel):
     persona_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetPersonaV4NameResource | None = None
     show_name: bool | None = None
@@ -14560,6 +14564,7 @@ class GetPersonaApiResponse(BaseModel):
     persona_exists: bool | None = None
     can_edit: bool | None = None
     disabled_reason: str | None = None
+    group_id: UUID | None = None
     name_id: UUID | None = None
     name_resource: QGetPersonaV4NameResource | None = None
     show_name: bool | None = None
@@ -18237,11 +18242,13 @@ class GetReportsOverviewApiResponse(BaseModel):
 class AnalysesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     content: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.content,
         )
 
@@ -18252,6 +18259,7 @@ class AnalysesSqlRow(BaseModel):
 class AnalysesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     content: str
 
 class AnalysesApiResponse(BaseModel):
@@ -18265,6 +18273,7 @@ class AnalysesApiResponse(BaseModel):
 class ColorsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     hex_code: str
@@ -18272,6 +18281,7 @@ class ColorsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.description,
             self.hex_code,
@@ -18284,6 +18294,7 @@ class ColorsSqlRow(BaseModel):
 class ColorsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     hex_code: str
@@ -18299,11 +18310,13 @@ class ColorsApiResponse(BaseModel):
 class ContentSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     content: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.content,
         )
 
@@ -18314,6 +18327,7 @@ class ContentSqlRow(BaseModel):
 class ContentApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     content: str
 
 class ContentApiResponse(BaseModel):
@@ -18327,11 +18341,13 @@ class ContentApiResponse(BaseModel):
 class ConversationsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     end_reason: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.end_reason,
         )
 
@@ -18342,6 +18358,7 @@ class ConversationsSqlRow(BaseModel):
 class ConversationsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     end_reason: str
 
 class ConversationsApiResponse(BaseModel):
@@ -18355,11 +18372,13 @@ class ConversationsApiResponse(BaseModel):
 class DebugInfoSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     content: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.content,
         )
 
@@ -18370,6 +18389,7 @@ class DebugInfoSqlRow(BaseModel):
 class DebugInfoApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     content: str
 
 class DebugInfoApiResponse(BaseModel):
@@ -18383,11 +18403,13 @@ class DebugInfoApiResponse(BaseModel):
 class DescriptionsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     description: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.description,
         )
 
@@ -18398,6 +18420,7 @@ class DescriptionsSqlRow(BaseModel):
 class DescriptionsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     description: str
 
 class DescriptionsApiResponse(BaseModel):
@@ -18411,11 +18434,13 @@ class DescriptionsApiResponse(BaseModel):
 class ExamplesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     example: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.example,
         )
 
@@ -18426,6 +18451,7 @@ class ExamplesSqlRow(BaseModel):
 class ExamplesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     example: str
 
 class ExamplesApiResponse(BaseModel):
@@ -18439,6 +18465,7 @@ class ExamplesApiResponse(BaseModel):
 class FeedbacksSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     total: float
     feedback: str
     standard_id: UUID
@@ -18446,6 +18473,7 @@ class FeedbacksSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.total,
             self.feedback,
             self.standard_id,
@@ -18458,6 +18486,7 @@ class FeedbacksSqlRow(BaseModel):
 class FeedbacksApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     total: float
     feedback: str
     standard_id: UUID
@@ -18473,6 +18502,7 @@ class FeedbacksApiResponse(BaseModel):
 class FlagsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     icon_id: UUID
@@ -18480,6 +18510,7 @@ class FlagsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.description,
             self.icon_id,
@@ -18492,6 +18523,7 @@ class FlagsSqlRow(BaseModel):
 class FlagsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     icon_id: UUID
@@ -18507,11 +18539,13 @@ class FlagsApiResponse(BaseModel):
 class HintsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     hint: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.hint,
         )
 
@@ -18522,6 +18556,7 @@ class HintsSqlRow(BaseModel):
 class HintsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     hint: str
 
 class HintsApiResponse(BaseModel):
@@ -18535,12 +18570,14 @@ class HintsApiResponse(BaseModel):
 class HtmlSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.description,
         )
@@ -18552,6 +18589,7 @@ class HtmlSqlRow(BaseModel):
 class HtmlApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
 
@@ -18566,6 +18604,7 @@ class HtmlApiResponse(BaseModel):
 class IconsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     value: float
@@ -18573,6 +18612,7 @@ class IconsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.description,
             self.value,
@@ -18585,6 +18625,7 @@ class IconsSqlRow(BaseModel):
 class IconsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     value: float
@@ -18600,12 +18641,14 @@ class IconsApiResponse(BaseModel):
 class ImagesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.description,
         )
@@ -18617,6 +18660,7 @@ class ImagesSqlRow(BaseModel):
 class ImagesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
 
@@ -18631,6 +18675,7 @@ class ImagesApiResponse(BaseModel):
 class ImprovementsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     message_id: UUID
@@ -18638,6 +18683,7 @@ class ImprovementsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.description,
             self.message_id,
@@ -18650,6 +18696,7 @@ class ImprovementsSqlRow(BaseModel):
 class ImprovementsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     message_id: UUID
@@ -18665,11 +18712,13 @@ class ImprovementsApiResponse(BaseModel):
 class InstructionsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     template: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.template,
         )
 
@@ -18680,6 +18729,7 @@ class InstructionsSqlRow(BaseModel):
 class InstructionsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     template: str
 
 class InstructionsApiResponse(BaseModel):
@@ -18693,11 +18743,13 @@ class InstructionsApiResponse(BaseModel):
 class NamesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
         )
 
@@ -18708,6 +18760,7 @@ class NamesSqlRow(BaseModel):
 class NamesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
 
 class NamesApiResponse(BaseModel):
@@ -18721,11 +18774,13 @@ class NamesApiResponse(BaseModel):
 class ObjectivesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     objective: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.objective,
         )
 
@@ -18736,6 +18791,7 @@ class ObjectivesSqlRow(BaseModel):
 class ObjectivesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     objective: str
 
 class ObjectivesApiResponse(BaseModel):
@@ -18749,12 +18805,14 @@ class ObjectivesApiResponse(BaseModel):
 class OptionsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     option_text: str
     is_correct: bool
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.option_text,
             self.is_correct,
         )
@@ -18766,6 +18824,7 @@ class OptionsSqlRow(BaseModel):
 class OptionsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     option_text: str
     is_correct: bool
 
@@ -18780,11 +18839,13 @@ class OptionsApiResponse(BaseModel):
 class PointsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     value: float
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.value,
         )
 
@@ -18795,6 +18856,7 @@ class PointsSqlRow(BaseModel):
 class PointsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     value: float
 
 class PointsApiResponse(BaseModel):
@@ -18808,12 +18870,14 @@ class PointsApiResponse(BaseModel):
 class ProblemStatementsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     problem_statement: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.problem_statement,
         )
@@ -18825,6 +18889,7 @@ class ProblemStatementsSqlRow(BaseModel):
 class ProblemStatementsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     problem_statement: str
 
@@ -18839,6 +18904,7 @@ class ProblemStatementsApiResponse(BaseModel):
 class PromptsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     system_prompt: str
     name: str
     description: str
@@ -18846,6 +18912,7 @@ class PromptsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.system_prompt,
             self.name,
             self.description,
@@ -18858,6 +18925,7 @@ class PromptsSqlRow(BaseModel):
 class PromptsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     system_prompt: str
     name: str
     description: str
@@ -18873,6 +18941,7 @@ class PromptsApiResponse(BaseModel):
 class QuestionsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     question_text: str
     allow_multiple: bool
     time_value: int
@@ -18880,6 +18949,7 @@ class QuestionsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.question_text,
             self.allow_multiple,
             self.time_value,
@@ -18892,6 +18962,7 @@ class QuestionsSqlRow(BaseModel):
 class QuestionsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     question_text: str
     allow_multiple: bool
     time_value: int
@@ -18907,12 +18978,14 @@ class QuestionsApiResponse(BaseModel):
 class ResponsesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     option_id: UUID
     question_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.option_id,
             self.question_id,
         )
@@ -18924,6 +18997,7 @@ class ResponsesSqlRow(BaseModel):
 class ResponsesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     option_id: UUID
     question_id: UUID
 
@@ -18938,12 +19012,14 @@ class ResponsesApiResponse(BaseModel):
 class SchemaFieldItemsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     schema_field_id: UUID
     item_schema_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.schema_field_id,
             self.item_schema_id,
         )
@@ -18955,6 +19031,7 @@ class SchemaFieldItemsSqlRow(BaseModel):
 class SchemaFieldItemsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     schema_field_id: UUID
     item_schema_id: UUID
 
@@ -18969,6 +19046,7 @@ class SchemaFieldItemsApiResponse(BaseModel):
 class SchemaFieldsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     schema_id: UUID
     name: str
     field_type: str
@@ -18981,6 +19059,7 @@ class SchemaFieldsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.schema_id,
             self.name,
             self.field_type,
@@ -18998,6 +19077,7 @@ class SchemaFieldsSqlRow(BaseModel):
 class SchemaFieldsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     schema_id: UUID
     name: str
     field_type: str
@@ -19018,10 +19098,12 @@ class SchemaFieldsApiResponse(BaseModel):
 class SchemasSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
         )
 
 class SchemasSqlRow(BaseModel):
@@ -19031,6 +19113,7 @@ class SchemasSqlRow(BaseModel):
 class SchemasApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
 
 class SchemasApiResponse(BaseModel):
 
@@ -19043,6 +19126,7 @@ class SchemasApiResponse(BaseModel):
 class StandardGroupsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     short_name: str
     description: str
@@ -19052,6 +19136,7 @@ class StandardGroupsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.short_name,
             self.description,
@@ -19066,6 +19151,7 @@ class StandardGroupsSqlRow(BaseModel):
 class StandardGroupsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     short_name: str
     description: str
@@ -19083,6 +19169,7 @@ class StandardGroupsApiResponse(BaseModel):
 class StrengthsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     message_id: UUID
@@ -19090,6 +19177,7 @@ class StrengthsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.description,
             self.message_id,
@@ -19102,6 +19190,7 @@ class StrengthsSqlRow(BaseModel):
 class StrengthsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     description: str
     message_id: UUID
@@ -19117,6 +19206,7 @@ class StrengthsApiResponse(BaseModel):
 class TemplateArrayItemsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     template_id: UUID
     schema_field_id: UUID
     item_template_id: UUID
@@ -19125,6 +19215,7 @@ class TemplateArrayItemsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.template_id,
             self.schema_field_id,
             self.item_template_id,
@@ -19138,6 +19229,7 @@ class TemplateArrayItemsSqlRow(BaseModel):
 class TemplateArrayItemsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     template_id: UUID
     schema_field_id: UUID
     item_template_id: UUID
@@ -19154,6 +19246,7 @@ class TemplateArrayItemsApiResponse(BaseModel):
 class TemplateValuesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     template_id: UUID
     schema_field_id: UUID
     string_value: str
@@ -19163,6 +19256,7 @@ class TemplateValuesSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.template_id,
             self.schema_field_id,
             self.string_value,
@@ -19177,6 +19271,7 @@ class TemplateValuesSqlRow(BaseModel):
 class TemplateValuesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     template_id: UUID
     schema_field_id: UUID
     string_value: str
@@ -19194,11 +19289,13 @@ class TemplateValuesApiResponse(BaseModel):
 class TemplatesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
         )
 
@@ -19209,6 +19306,7 @@ class TemplatesSqlRow(BaseModel):
 class TemplatesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
 
 class TemplatesApiResponse(BaseModel):
@@ -19222,11 +19320,13 @@ class TemplatesApiResponse(BaseModel):
 class ThresholdsSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     value: float
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.value,
         )
 
@@ -19237,6 +19337,7 @@ class ThresholdsSqlRow(BaseModel):
 class ThresholdsApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     value: float
 
 class ThresholdsApiResponse(BaseModel):
@@ -19250,11 +19351,13 @@ class ThresholdsApiResponse(BaseModel):
 class TimesSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     time_taken: float
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.time_taken,
         )
 
@@ -19265,6 +19368,7 @@ class TimesSqlRow(BaseModel):
 class TimesApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     time_taken: float
 
 class TimesApiResponse(BaseModel):
@@ -19278,6 +19382,7 @@ class TimesApiResponse(BaseModel):
 class VideosSqlParams(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     length_seconds: float
     description: str
@@ -19285,6 +19390,7 @@ class VideosSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
+            self.group_id,
             self.name,
             self.length_seconds,
             self.description,
@@ -19297,6 +19403,7 @@ class VideosSqlRow(BaseModel):
 class VideosApiRequest(BaseModel):
 
     agent_id: UUID
+    group_id: UUID
     name: str
     length_seconds: float
     description: str

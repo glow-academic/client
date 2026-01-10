@@ -32,9 +32,11 @@ export interface ExamplesProps {
   maxItems?: number;
   addButtonLabel?: string;
   itemPlaceholder?: string;
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
   createExamplesAction?:
     | ((input: {
-        body: { example: string };
+        body: { agent_id: string; group_id: string; example: string };
       }) => Promise<{ example_id?: string | null }>)
     | undefined;
   // Optional: mapping of example_id -> example text (for initial display)
@@ -58,6 +60,8 @@ export function Examples({
   maxItems = 10,
   addButtonLabel = "Add example",
   itemPlaceholder = "Message",
+  group_id,
+  agent_id,
   createExamplesAction,
   exampleMapping = {},
   // Legacy props for backward compatibility
@@ -186,10 +190,10 @@ export function Examples({
 
       // Debounce creation for this text
       const promise = (async () => {
-        if (createExamplesAction) {
+        if (createExamplesAction && agent_id && group_id) {
           try {
             const result = await createExamplesAction({
-              body: { example: text },
+              body: { agent_id: agent_id, group_id: group_id, example: text },
             });
             if (result.example_id) {
               exampleIdMapRef.current.set(text, result.example_id);

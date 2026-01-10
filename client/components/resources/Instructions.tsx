@@ -39,6 +39,8 @@ export interface InstructionsProps {
   id?: string;
   "data-testid"?: string;
   helpText?: string;
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
   createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
   // Legacy props for backward compatibility
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
@@ -62,6 +64,8 @@ export function Instructions({
   id = "instructions",
   "data-testid": dataTestId,
   helpText,
+  group_id,
+  agent_id,
   createInstructionsAction,
   // Legacy props for backward compatibility
   instructionsResource,
@@ -133,8 +137,13 @@ export function Instructions({
     debounceTimerRef.current = setTimeout(async () => {
       try {
         if (internalValue.trim()) {
+          if (!agent_id || !group_id) {
+            return;
+          }
           const result = await createInstructionsAction({
             body: {
+              agent_id: agent_id,
+              group_id: group_id,
               template: internalValue,
             },
           });

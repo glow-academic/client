@@ -19063,6 +19063,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "content": {
             "type": "string",
             "title": "Content"
@@ -19071,6 +19076,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "content"
         ],
         "title": "AnalysesApiRequest"
@@ -20134,6 +20140,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -20150,6 +20161,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "description",
           "hex_code"
@@ -20224,6 +20236,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "content": {
             "type": "string",
             "title": "Content"
@@ -20232,6 +20249,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "content"
         ],
         "title": "ContentApiRequest"
@@ -20261,6 +20279,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "end_reason": {
             "type": "string",
             "title": "End Reason"
@@ -20269,6 +20292,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "end_reason"
         ],
         "title": "ConversationsApiRequest"
@@ -22331,6 +22355,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "content": {
             "type": "string",
             "title": "Content"
@@ -22339,6 +22368,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "content"
         ],
         "title": "DebugInfoApiRequest"
@@ -23575,6 +23605,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "description": {
             "type": "string",
             "title": "Description"
@@ -23583,6 +23618,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "description"
         ],
         "title": "DescriptionsApiRequest"
@@ -24465,6 +24501,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "example": {
             "type": "string",
             "title": "Example"
@@ -24473,6 +24514,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "example"
         ],
         "title": "ExamplesApiRequest"
@@ -24695,6 +24737,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "total": {
             "type": "number",
             "title": "Total"
@@ -24712,6 +24759,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "total",
           "feedback",
           "standard_id"
@@ -24805,6 +24853,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -24822,6 +24875,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "description",
           "icon_id"
@@ -33114,6 +33168,18 @@
               }
             ],
             "title": "Disabled Reason"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           },
           "name_id": {
             "anyOf": [
@@ -43300,6 +43366,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "hint": {
             "type": "string",
             "title": "Hint"
@@ -43308,6 +43379,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "hint"
         ],
         "title": "HintsApiRequest"
@@ -43337,6 +43409,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -43349,6 +43426,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "description"
         ],
@@ -44680,6 +44758,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -44696,6 +44779,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "description",
           "value"
@@ -44727,6 +44811,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -44739,6 +44828,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "description"
         ],
@@ -44769,6 +44859,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -44786,6 +44881,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "description",
           "message_id"
@@ -44817,6 +44913,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "template": {
             "type": "string",
             "title": "Template"
@@ -44825,6 +44926,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "template"
         ],
         "title": "InstructionsApiRequest"
@@ -45014,6 +45116,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -45022,6 +45129,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name"
         ],
         "title": "NamesApiRequest"
@@ -45051,6 +45159,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "objective": {
             "type": "string",
             "title": "Objective"
@@ -45059,6 +45172,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "objective"
         ],
         "title": "ObjectivesApiRequest"
@@ -45088,6 +45202,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "option_text": {
             "type": "string",
             "title": "Option Text"
@@ -45100,6 +45219,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "option_text",
           "is_correct"
         ],
@@ -45317,6 +45437,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "value": {
             "type": "number",
             "title": "Value"
@@ -45325,6 +45450,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "value"
         ],
         "title": "PointsApiRequest"
@@ -45354,6 +45480,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -45366,6 +45497,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "problem_statement"
         ],
@@ -45473,6 +45605,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "system_prompt": {
             "type": "string",
             "title": "System Prompt"
@@ -45489,6 +45626,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "system_prompt",
           "name",
           "description"
@@ -83342,6 +83480,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "question_text": {
             "type": "string",
             "title": "Question Text"
@@ -83358,6 +83501,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "question_text",
           "allow_multiple",
           "time_value"
@@ -83506,6 +83650,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "option_id": {
             "type": "string",
             "format": "uuid",
@@ -83520,6 +83669,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "option_id",
           "question_id"
         ],
@@ -83674,6 +83824,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "schema_field_id": {
             "type": "string",
             "format": "uuid",
@@ -83688,6 +83843,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "schema_field_id",
           "item_schema_id"
         ],
@@ -83717,6 +83873,11 @@
             "type": "string",
             "format": "uuid",
             "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
           },
           "schema_id": {
             "type": "string",
@@ -83755,6 +83916,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "schema_id",
           "name",
           "field_type",
@@ -83790,11 +83952,17 @@
             "type": "string",
             "format": "uuid",
             "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
-          "agent_id"
+          "agent_id",
+          "group_id"
         ],
         "title": "SchemasApiRequest"
       },
@@ -84313,6 +84481,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -84337,6 +84510,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "short_name",
           "description",
@@ -84543,6 +84717,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -84560,6 +84739,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "description",
           "message_id"
@@ -84591,6 +84771,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "template_id": {
             "type": "string",
             "format": "uuid",
@@ -84614,6 +84799,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "template_id",
           "schema_field_id",
           "item_template_id",
@@ -84646,6 +84832,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "template_id": {
             "type": "string",
             "format": "uuid",
@@ -84672,6 +84863,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "template_id",
           "schema_field_id",
           "string_value",
@@ -84705,6 +84897,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -84713,6 +84910,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name"
         ],
         "title": "TemplatesApiRequest"
@@ -84742,6 +84940,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "value": {
             "type": "number",
             "title": "Value"
@@ -84750,6 +84953,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "value"
         ],
         "title": "ThresholdsApiRequest"
@@ -84779,6 +84983,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "time_taken": {
             "type": "number",
             "title": "Time Taken"
@@ -84787,6 +84996,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "time_taken"
         ],
         "title": "TimesApiRequest"
@@ -87311,6 +87521,11 @@
             "format": "uuid",
             "title": "Agent Id"
           },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -87327,6 +87542,7 @@
         "type": "object",
         "required": [
           "agent_id",
+          "group_id",
           "name",
           "length_seconds",
           "description"

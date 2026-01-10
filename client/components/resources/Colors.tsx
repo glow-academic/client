@@ -51,6 +51,8 @@ export interface ColorsProps {
   searchPlaceholder?: string;
   showSelectedFilter?: boolean;
   onShowSelectedChange?: (value: boolean) => void;
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
   createColorsAction?:
     | ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>)
     | undefined;
@@ -82,7 +84,9 @@ export function Colors({
   onSearchChange: _onSearchChange,
   searchPlaceholder: _searchPlaceholder = "Search colors...",
   showSelectedFilter = false,
-  onShowSelectedChange: _onShowSelectedChange,
+  onShowSelectedChange: _  onShowSelectedChange,
+  group_id,
+  agent_id,
   createColorsAction,
   // Legacy props for backward compatibility
   colorResource,
@@ -176,8 +180,13 @@ export function Colors({
       try {
         const hexCode = currentColor;
         const colorName = getColorName(hexCode);
+        if (!agent_id || !group_id) {
+          return;
+        }
         const result = await createColorsAction({
           body: {
+            agent_id: agent_id,
+            group_id: group_id,
             name: colorName,
             description: `Color: ${hexCode}`,
             hex_code: hexCode,

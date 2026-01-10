@@ -40,6 +40,8 @@ export interface NamesProps {
   "data-testid"?: string;
   defaultName?: string; // Default name value (for header style - reverts to this on blur if empty)
   hideDescription?: boolean; // Hide the "Click to edit" description text (useful when parent provides description)
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
   createNamesAction?:
     | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
     | undefined;
@@ -68,6 +70,8 @@ export function Names({
   "data-testid": dataTestId,
   defaultName,
   hideDescription = false,
+  group_id,
+  agent_id,
   createNamesAction,
   // Legacy props for backward compatibility
   nameResource,
@@ -153,9 +157,11 @@ export function Names({
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
       try {
-        if (internalValue.trim()) {
+        if (internalValue.trim() && agent_id && group_id) {
           const result = await createNamesAction({
             body: {
+              agent_id: agent_id,
+              group_id: group_id,
               name: internalValue,
             },
           });
