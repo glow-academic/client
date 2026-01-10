@@ -71,6 +71,12 @@ type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftExamplesIn = InputOf<"/api/v4/resources/examples", "post">;
 type CreateDraftExamplesOut = OutputOf<"/api/v4/resources/examples", "post">;
+type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
+type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
+type CreateDraftDepartmentsIn = InputOf<"/api/v4/resources/departments", "post">;
+type CreateDraftDepartmentsOut = OutputOf<"/api/v4/resources/departments", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 
@@ -107,6 +113,15 @@ export interface PersonaNewProps {
   createExamplesAction?: (
     input: CreateDraftExamplesIn
   ) => Promise<CreateDraftExamplesOut>;
+  createFieldsAction?: (
+    input: CreateDraftFieldsIn
+  ) => Promise<CreateDraftFieldsOut>;
+  createDocumentsAction?: (
+    input: CreateDraftDocumentsIn
+  ) => Promise<CreateDraftDocumentsOut>;
+  createDepartmentsAction?: (
+    input: CreateDraftDepartmentsIn
+  ) => Promise<CreateDraftDepartmentsOut>;
 }
 
 function PersonaNewComponent({
@@ -121,6 +136,9 @@ function PersonaNewComponent({
   createInstructionsAction,
   createFlagsAction,
   createExamplesAction,
+  createFieldsAction,
+  createDocumentsAction,
+  createDepartmentsAction,
 }: PersonaNewProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
@@ -1676,6 +1694,9 @@ function PersonaNewComponent({
       createInstructionsAction,
       createFlagsAction,
       createExamplesAction,
+      createFieldsAction,
+      createDocumentsAction,
+      createDepartmentsAction,
       canRegenerate,
       handleOpenStepCardModal,
     ]
@@ -1778,7 +1799,10 @@ export default React.memo(PersonaNewComponent, (prevProps, nextProps) => {
     prevProps.createIconsAction !== nextProps.createIconsAction ||
     prevProps.createInstructionsAction !== nextProps.createInstructionsAction ||
     prevProps.createFlagsAction !== nextProps.createFlagsAction ||
-    prevProps.createExamplesAction !== nextProps.createExamplesAction
+    prevProps.createExamplesAction !== nextProps.createExamplesAction ||
+    prevProps.createFieldsAction !== nextProps.createFieldsAction ||
+    prevProps.createDocumentsAction !== nextProps.createDocumentsAction ||
+    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction
   ) {
     return false; // Function props changed, re-render
   }

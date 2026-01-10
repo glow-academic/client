@@ -5,8 +5,11 @@ from app.api.v4.resources.colors import router as colors_router
 from app.api.v4.resources.content import router as content_router
 from app.api.v4.resources.conversations import router as conversations_router
 from app.api.v4.resources.debug_info import router as debug_info_router
+from app.api.v4.resources.departments import router as departments_router
 from app.api.v4.resources.descriptions import router as descriptions_router
+from app.api.v4.resources.documents import router as documents_router
 from app.api.v4.resources.examples import router as examples_router
+from app.api.v4.resources.fields import router as fields_router
 from app.api.v4.resources.feedbacks import router as feedbacks_router
 from app.api.v4.resources.flags import router as flags_router
 from app.api.v4.resources.hints import router as hints_router
@@ -44,8 +47,11 @@ router = APIRouter(prefix="/resources", tags=["resources"])
 router.include_router(names_router)
 router.include_router(colors_router)
 router.include_router(flags_router)
+router.include_router(departments_router)
 router.include_router(descriptions_router)
+router.include_router(documents_router)
 router.include_router(examples_router)
+router.include_router(fields_router)
 router.include_router(icons_router)
 router.include_router(points_router)
 router.include_router(thresholds_router)

@@ -1288,6 +1288,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Department
+         * @description Create departments resource (always INSERT).
+         */
+        post: operations["create_department_api_v4_resources_departments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/descriptions": {
         parameters: {
             query?: never;
@@ -1308,6 +1328,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Document
+         * @description Create documents resource (always INSERT).
+         */
+        post: operations["create_document_api_v4_resources_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/examples": {
         parameters: {
             query?: never;
@@ -1322,6 +1362,26 @@ export interface paths {
          * @description Create examples resource (always INSERT).
          */
         post: operations["create_example_api_v4_resources_examples_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/fields": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Field
+         * @description Create fields resource (always INSERT).
+         */
+        post: operations["create_field_api_v4_resources_fields_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6480,6 +6540,29 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** DepartmentsApiRequest */
+        DepartmentsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** DepartmentsApiResponse */
+        DepartmentsApiResponse: {
+            /** Department Id */
+            department_id?: string | null;
+        };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
             /**
@@ -6504,6 +6587,29 @@ export interface components {
         DescriptionsApiResponse: {
             /** Description Id */
             description_id?: string | null;
+        };
+        /** DocumentsApiRequest */
+        DocumentsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** DocumentsApiResponse */
+        DocumentsApiResponse: {
+            /** Document Id */
+            document_id?: string | null;
         };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
@@ -6878,6 +6984,29 @@ export interface components {
         FeedbacksApiResponse: {
             /** Feedback Id */
             feedback_id?: string | null;
+        };
+        /** FieldsApiRequest */
+        FieldsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** FieldsApiResponse */
+        FieldsApiResponse: {
+            /** Field Id */
+            field_id?: string | null;
         };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
@@ -21581,6 +21710,43 @@ export interface operations {
             };
         };
     };
+    create_department_api_v4_resources_departments_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DepartmentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DepartmentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_description_api_v4_resources_descriptions_post: {
         parameters: {
             query?: never;
@@ -21618,6 +21784,43 @@ export interface operations {
             };
         };
     };
+    create_document_api_v4_resources_documents_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_example_api_v4_resources_examples_post: {
         parameters: {
             query?: never;
@@ -21642,6 +21845,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExamplesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_field_api_v4_resources_fields_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FieldsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FieldsApiResponse"];
                 };
             };
             /** @description Validation Error */
