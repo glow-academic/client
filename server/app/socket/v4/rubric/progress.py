@@ -11,10 +11,14 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 
-@internal_sio.on("generate_text_progress")  # type: ignore
+@internal_sio.on("generate_progress")  # type: ignore
 async def handle_rubric_progress(data: dict[str, Any]) -> None:
-    """Handle generate_text_progress internal event - filter by resource_type and emit to client."""
-    # Filter by resource_type
+    """Handle generate_progress internal event - filter by resource_type and emit to client."""
+    # Filter by modality (rubrics are text-based) and resource_type
+    modality = data.get("modality", "text")
+    if modality != "text":
+        return  # Not for us
+    
     if data.get("resource_type") != "rubric":
         return  # Not for us
 
@@ -23,7 +27,7 @@ async def handle_rubric_progress(data: dict[str, Any]) -> None:
         return  # No socket ID, can't emit to client
 
     # Transform internal event format to client format
-    progress_type = data.get("progress_type", "")
+    progress_type = data.get("type", "")
     
     # Map internal progress_type to client type
     if progress_type == "tool_call_start":

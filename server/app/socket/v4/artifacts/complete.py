@@ -12,16 +12,11 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 
-@internal_sio.on("generate_text_complete")  # type: ignore
-@internal_sio.on("generate_image_complete")  # type: ignore
-@internal_sio.on("generate_video_complete")  # type: ignore
-@internal_sio.on("generate_audio_complete")  # type: ignore
-@internal_sio.on("generate_call_complete")  # type: ignore
-@internal_sio.on("generate_document_complete")  # type: ignore
-async def handle_artifact_complete(event_name: str, data: dict[str, Any]) -> None:
+@internal_sio.on("generate_complete")  # type: ignore
+async def handle_artifact_complete(data: dict[str, Any]) -> None:
     """Route completion events by output modality."""
-    # Extract modality from event name
-    modality = event_name.replace("generate_", "").replace("_complete", "")
+    # Extract modality from payload
+    modality = data.get("modality", "text")
     
     sid = data.get("sid", "")
     if not sid:
@@ -64,8 +59,6 @@ async def handle_artifact_complete(event_name: str, data: dict[str, Any]) -> Non
         })
     elif modality == "audio":
         client_payload.update({
-            "ephemeral_key": data.get("ephemeral_key"),
-            "expires_in": data.get("expires_in"),
             "model": data.get("model"),
         })
 

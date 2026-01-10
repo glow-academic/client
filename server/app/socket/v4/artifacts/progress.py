@@ -12,16 +12,11 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 
-@internal_sio.on("generate_text_progress")  # type: ignore
-@internal_sio.on("generate_image_progress")  # type: ignore
-@internal_sio.on("generate_video_progress")  # type: ignore
-@internal_sio.on("generate_audio_progress")  # type: ignore
-@internal_sio.on("generate_call_progress")  # type: ignore
-@internal_sio.on("generate_document_progress")  # type: ignore
-async def handle_artifact_progress(event_name: str, data: dict[str, Any]) -> None:
+@internal_sio.on("generate_progress")  # type: ignore
+async def handle_artifact_progress(data: dict[str, Any]) -> None:
     """Route progress events by output modality."""
-    # Extract modality from event name
-    modality = event_name.replace("generate_", "").replace("_progress", "")
+    # Extract modality from payload
+    modality = data.get("modality", "text")
     
     sid = data.get("sid", "")
     if not sid:
@@ -49,9 +44,15 @@ async def handle_artifact_progress(event_name: str, data: dict[str, Any]) -> Non
     elif progress_type == "polling":
         client_type = "status"
         message = data.get("message", "Processing...")
-    elif progress_type == "session_started":
+    elif progress_type == "session_started" or progress_type == "session_created":
         client_type = "session_started"
         message = "Audio session started"
+    elif progress_type in ("user_speech_started", "user_speech_stopped", "user_transcription_complete",
+                           "response_started", "output_item_added", "output_item_done",
+                           "audio_transcript_delta", "audio_transcript_done", "audio_delta"):
+        # Audio-specific events - pass through with original type
+        client_type = progress_type
+        message = data.get("message")
     else:
         client_type = "progress"
         message = data.get("message", "Processing...")
@@ -74,18 +75,23 @@ async def handle_artifact_progress(event_name: str, data: dict[str, Any]) -> Non
             "arguments_delta": data.get("arguments_delta"),
             "status": data.get("status"),
             "progress": data.get("progress"),
-            "ephemeral_key": data.get("ephemeral_key"),  # For audio session
-            "expires_in": data.get("expires_in"),  # For audio session
+            "ephemeral_key": data.get("ephemeral_key"),  # For audio session (deprecated)
+            "expires_in": data.get("expires_in"),  # For audio session (deprecated)
             "model": data.get("model"),  # For audio session
             "trace_id": data.get("trace_id"),
+            # Audio-specific fields
+            "item_id": data.get("item_id"),
+            "audio_start_ms": data.get("audio_start_ms"),
+            "transcript": data.get("transcript"),
+            "response_id": data.get("response_id"),
+            "output_type": data.get("output_type"),
+            "audio": data.get("audio"),  # Base64 audio data
+            "call_id": data.get("call_id"),
+            "function_call": data.get("function_call"),
         },
         room=sid,
     )
 
 
-register_server_endpoint(
-    server_router,
-    "/artifact_progress",
-    None,
-    "Artifact generation progress handler",
-)
+# Note: register_server_endpoint requires a type, but we handle unified events
+# The endpoint registration is handled by the @internal_sio.on decorator above

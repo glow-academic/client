@@ -208,15 +208,30 @@ async def _generate_end_impl(
         )
 
 
-@internal_sio.on("generate_text_complete")  # type: ignore
-async def generate_text_complete_internal(data: dict[str, Any]) -> None:
-    """Handle generate_text_complete event - routes to generate_end."""
+@internal_sio.on("generate_complete")  # type: ignore
+async def generate_complete_internal(data: dict[str, Any]) -> None:
+    """Handle generate_complete event - routes to generate_end."""
+    # Extract modality from payload
+    modality = data.get("modality", "text")
+    
+    # Map modality to resource_type for end handler
+    modality_to_resource_type = {
+        "text": data.get("resource_type", "text"),
+        "call": data.get("resource_type", "call"),
+        "document": data.get("resource_type", "document"),
+        "image": "image",
+        "video": "video",
+        "audio": "voice",  # Audio maps to voice resource type
+    }
+    
+    resource_type = modality_to_resource_type.get(modality, data.get("resource_type", "text"))
+    
     # Transform to GenerateEndApiRequest format
     payload = GenerateEndApiRequest(
         sid=data.get("sid", ""),
         type=data.get("type", "run_complete"),
         resource_id=data.get("resource_id"),
-        resource_type=data.get("resource_type"),
+        resource_type=resource_type,
         run_id=data.get("run_id", ""),
         group_id=data.get("group_id"),
         department_id=data.get("department_id"),
@@ -226,78 +241,11 @@ async def generate_text_complete_internal(data: dict[str, Any]) -> None:
         tool_type=data.get("tool_type"),
         final_content=data.get("final_content"),
         arguments_raw=data.get("arguments_raw"),
-    )
-    
-    from app.infra.v4.websocket.find_profile_by_socket import \
-        find_profile_by_socket
-    
-    profile_id_str = await find_profile_by_socket(payload.sid)
-    if not profile_id_str:
-        return
-    
-    profile_id = uuid.UUID(profile_id_str)
-    await _generate_end_impl(payload.sid, payload, profile_id)
-
-
-@internal_sio.on("generate_image_complete")  # type: ignore
-async def generate_image_complete_internal(data: dict[str, Any]) -> None:
-    """Handle generate_image_complete event - routes to generate_end."""
-    payload = GenerateEndApiRequest(
-        sid=data.get("sid", ""),
-        type=data.get("type", "run_complete"),
-        resource_id=data.get("resource_id"),
-        resource_type="image",
-        run_id=data.get("run_id", ""),
-        group_id=data.get("group_id"),
-        department_id=data.get("department_id"),
-    )
-    
-    from app.infra.v4.websocket.find_profile_by_socket import \
-        find_profile_by_socket
-    
-    profile_id_str = await find_profile_by_socket(payload.sid)
-    if not profile_id_str:
-        return
-    
-    profile_id = uuid.UUID(profile_id_str)
-    await _generate_end_impl(payload.sid, payload, profile_id)
-
-
-@internal_sio.on("generate_video_complete")  # type: ignore
-async def generate_video_complete_internal(data: dict[str, Any]) -> None:
-    """Handle generate_video_complete event - routes to generate_end."""
-    payload = GenerateEndApiRequest(
-        sid=data.get("sid", ""),
-        type=data.get("type", "run_complete"),
-        resource_id=data.get("resource_id"),
-        resource_type="video",
-        run_id=data.get("run_id", ""),
-        group_id=data.get("group_id"),
-        department_id=data.get("department_id"),
-    )
-    
-    from app.infra.v4.websocket.find_profile_by_socket import \
-        find_profile_by_socket
-    
-    profile_id_str = await find_profile_by_socket(payload.sid)
-    if not profile_id_str:
-        return
-    
-    profile_id = uuid.UUID(profile_id_str)
-    await _generate_end_impl(payload.sid, payload, profile_id)
-
-
-@internal_sio.on("generate_audio_complete")  # type: ignore
-async def generate_audio_complete_internal(data: dict[str, Any]) -> None:
-    """Handle generate_audio_complete event - routes to generate_end."""
-    payload = GenerateEndApiRequest(
-        sid=data.get("sid", ""),
-        type=data.get("type", "run_complete"),
-        resource_id=data.get("resource_id"),
-        resource_type="voice",
-        run_id=data.get("run_id", ""),
-        group_id=data.get("group_id"),
-        department_id=data.get("department_id"),
+        input_text_tokens=data.get("input_text_tokens"),
+        output_text_tokens=data.get("output_text_tokens"),
+        system_prompt=data.get("system_prompt"),
+        input_items=data.get("input_items"),
+        assistant_output=data.get("assistant_output"),
     )
     
     from app.infra.v4.websocket.find_profile_by_socket import \

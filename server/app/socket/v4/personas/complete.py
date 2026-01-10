@@ -24,10 +24,14 @@ PERSONA_RESOURCE_TYPES = [
 ]
 
 
-@internal_sio.on("generate_text_complete")  # type: ignore
+@internal_sio.on("generate_complete")  # type: ignore
 async def handle_personas_complete(data: dict[str, Any]) -> None:
-    """Handle generate_text_complete internal event - filter by persona resource_type and emit to client."""
-    # Filter by resource_type
+    """Handle generate_complete internal event - filter by persona resource_type and emit to client."""
+    # Filter by modality (personas are text-based) and resource_type
+    modality = data.get("modality", "text")
+    if modality != "text":
+        return  # Not for us
+    
     resource_type = data.get("resource_type")
     if resource_type not in PERSONA_RESOURCE_TYPES:
         return  # Not for us

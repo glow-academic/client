@@ -412,12 +412,14 @@ async def _handle_text_generation(
 
     # Emit start event
     await internal_sio.emit(
-        "generate_text_progress",
+        "generate_progress",
         {
+            "modality": "text",
             "sid": sid,
             "resource_id": str(resource_id),
             "resource_type": resource_type,
             "run_id": str(run_id),
+            "group_id": str(group_id) if group_id else None,
             "type": "start",
             "message": f"Starting {result.agent_name or 'text'} generation",
         },
@@ -467,12 +469,14 @@ async def _handle_text_generation(
         # Stream tool calls and text
         async def on_tool_call_start(tool_call_id: str, tool_name: str, call_id: str | None) -> None:
             await internal_sio.emit(
-                "generate_text_progress",
+                "generate_progress",
                 {
+                    "modality": "text",
                     "sid": sid,
                     "resource_id": str(resource_id),
                     "resource_type": resource_type,
                     "run_id": str(run_id),
+                    "group_id": str(group_id) if group_id else None,
                     "type": "tool_call_start",
                     "tool_call_id": tool_call_id,
                     "tool_name": tool_name,
@@ -481,12 +485,14 @@ async def _handle_text_generation(
 
         async def on_tool_call_progress(tool_call_id: str, arguments_delta: str) -> None:
             await internal_sio.emit(
-                "generate_text_progress",
+                "generate_progress",
                 {
+                    "modality": "text",
                     "sid": sid,
                     "resource_id": str(resource_id),
                     "resource_type": resource_type,
                     "run_id": str(run_id),
+                    "group_id": str(group_id) if group_id else None,
                     "type": "tool_call_progress",
                     "tool_call_id": tool_call_id,
                     "arguments_delta": arguments_delta,
@@ -497,12 +503,14 @@ async def _handle_text_generation(
             tool_name = arguments.get("name", "")
             completed_tool_names.add(tool_name)
             await internal_sio.emit(
-                "generate_text_progress",
+                "generate_progress",
                 {
+                    "modality": "text",
                     "sid": sid,
                     "resource_id": str(resource_id),
                     "resource_type": resource_type,
                     "run_id": str(run_id),
+                    "group_id": str(group_id) if group_id else None,
                     "type": "tool_call_complete",
                     "tool_call_id": tool_call_id,
                     "tool_name": tool_name,
@@ -532,12 +540,14 @@ async def _handle_text_generation(
                 delta = getattr(event_data, "delta", "")
                 if delta:
                     await internal_sio.emit(
-                        "generate_text_progress",
+                        "generate_progress",
                         {
+                            "modality": "text",
                             "sid": sid,
                             "resource_id": str(resource_id),
                             "resource_type": resource_type,
                             "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
                             "type": "token",
                             "text": delta,
                         },
@@ -577,8 +587,9 @@ async def _handle_text_generation(
     usage = result_runner.context_wrapper.usage
     assistant_output = getattr(result_runner, "final_output", None) or ""
     await internal_sio.emit(
-        "generate_text_complete",
+        "generate_complete",
         {
+            "modality": "text",
             "sid": sid,
             "type": "run_complete",
             "resource_id": str(resource_id),
@@ -640,10 +651,12 @@ async def _handle_image_generation(
 
     # Emit start event
     await internal_sio.emit(
-        "generate_image_progress",
+        "generate_progress",
         {
+            "modality": "image",
             "sid": sid,
             "resource_id": str(resource_id),
+            "resource_type": "images",
             "run_id": str(run_id),
             "type": "start",
             "message": "Starting image generation",
@@ -669,19 +682,23 @@ async def _handle_image_generation(
                 # Extract base64 data
                 if image_data.startswith("data:image"):
                     base64_data = image_data.split(",")[1]
-                    image_bytes = base64.b64decode(base64_data)
+                    gemini_image_bytes = base64.b64decode(base64_data)
                     mime_type = "image/png"  # Default for Gemini
-                    file_size = len(image_bytes)
+                    file_size = len(gemini_image_bytes)
 
                     # Persist image
                     image_name = data.get("name", "image")
-                    file_path = await _persist_image(conn, image_id, image_bytes, mime_type, file_size, image_name)
+                    file_path = await _persist_image(conn, image_id, gemini_image_bytes, mime_type, file_size, image_name)
 
                     # Emit completion
                     await internal_sio.emit(
-                        "generate_image_complete",
+                        "generate_complete",
                         {
+                            "modality": "image",
                             "sid": sid,
+                            "resource_id": str(resource_id),
+                            "resource_type": "images",
+                            "run_id": str(run_id),
                             "image_id": str(image_id),
                             "file_path": file_path,
                             "mime_type": mime_type,
@@ -749,9 +766,13 @@ async def _handle_image_generation(
 
         # Emit completion
         await internal_sio.emit(
-            "generate_image_complete",
+            "generate_complete",
             {
+                "modality": "image",
                 "sid": sid,
+                "resource_id": str(resource_id),
+                "resource_type": "images",
+                "run_id": str(run_id),
                 "image_id": str(image_id),
                 "file_path": file_path,
                 "mime_type": mime_type,
@@ -827,10 +848,12 @@ async def _handle_video_generation(
 
     # Emit start event
     await internal_sio.emit(
-        "generate_video_progress",
+        "generate_progress",
         {
+            "modality": "video",
             "sid": sid,
             "resource_id": str(resource_id),
+            "resource_type": "videos",
             "run_id": str(run_id),
             "type": "start",
             "message": "Starting video generation",
@@ -880,10 +903,12 @@ async def _handle_video_generation(
                 else None
             )
             await internal_sio.emit(
-                "generate_video_progress",
+                "generate_progress",
                 {
+                    "modality": "video",
                     "sid": sid,
                     "resource_id": str(resource_id),
+                    "resource_type": "videos",
                     "run_id": str(run_id),
                     "type": "polling",
                     "message": f"Video generation in progress: {video_status.status}",
@@ -913,14 +938,17 @@ async def _handle_video_generation(
 
                 # Emit completion
                 await internal_sio.emit(
-                    "generate_video_complete",
+                    "generate_complete",
                     {
+                        "modality": "video",
                         "sid": sid,
+                        "resource_id": str(resource_id),
+                        "resource_type": "videos",
+                        "run_id": str(run_id),
                         "success": True,
                         "message": "Video generated successfully",
                         "videoUrl": f"/api/uploads/download/{upload_id}",
                         "video_id": str(video_id),
-                        "run_id": str(run_id),
                     },
                 )
                 return
@@ -958,10 +986,12 @@ async def _handle_video_generation(
 
                     status = status_resp.status if hasattr(status_resp, "status") else None
                     await internal_sio.emit(
-                        "generate_video_progress",
+                        "generate_progress",
                         {
+                            "modality": "video",
                             "sid": sid,
                             "resource_id": str(resource_id),
+                            "resource_type": "videos",
                             "run_id": str(run_id),
                             "type": "polling",
                             "message": f"Video generation in progress: {status}",
@@ -984,14 +1014,17 @@ async def _handle_video_generation(
 
                         # Emit completion
                         await internal_sio.emit(
-                            "generate_video_complete",
+                            "generate_complete",
                             {
+                                "modality": "video",
                                 "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": "videos",
+                                "run_id": str(run_id),
                                 "success": True,
                                 "message": "Video generated successfully",
                                 "videoUrl": f"/api/uploads/download/{upload_id}",
                                 "video_id": str(video_id),
-                                "run_id": str(run_id),
                             },
                         )
                         return
@@ -1019,7 +1052,7 @@ async def _handle_audio_generation(
     resource_id: uuid.UUID,
     resource_type: str,
 ) -> None:
-    """Handle audio generation using native realtime API WebSocket."""
+    """Handle audio generation using direct WebSocket connection to OpenAI Realtime API."""
     if not agent_id:
         raise ValueError("agent_id is required for audio generation")
 
@@ -1054,51 +1087,283 @@ async def _handle_audio_generation(
 
     model_name = audio_result.model_name or "gpt-4o-realtime-preview-2024-10-01"
 
-    # Generate ephemeral key using OpenAI Realtime API
-    try:
-        async with httpx.AsyncClient() as http_client:
-            response = await http_client.post(
-                "https://api.openai.com/v1/realtime/client_secrets",
-                headers={
-                    "Authorization": f"Bearer {decrypted_api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "session": {
-                        "type": "realtime",
-                        "model": model_name,
-                    }
-                },
-                timeout=30.0,
-            )
-            response.raise_for_status()
-            response_data = response.json()
-            ephemeral_key = response_data.get("value")
-            expires_in = response_data.get("expires_in", 3600)
+    # Connect to OpenAI Realtime API WebSocket
+    from urllib.parse import quote
+    url = f"wss://api.openai.com/v1/realtime?model={quote(model_name)}"
+    headers = {
+        "Authorization": f"Bearer {decrypted_api_key}",
+        "OpenAI-Beta": "realtime=v1",
+    }
 
-            if not ephemeral_key:
-                raise ValueError("No ephemeral key in response")
+    try:
+        async with websockets.connect(url, extra_headers=headers) as ws:
+            # Emit session started event
+            await internal_sio.emit(
+                "generate_progress",
+                {
+                    "modality": "audio",
+                    "sid": sid,
+                    "resource_id": str(resource_id),
+                    "resource_type": resource_type,
+                    "run_id": str(run_id),
+                    "type": "session_started",
+                    "model": model_name,
+                },
+            )
+
+            # Configure session
+            session_config: dict[str, Any] = {
+                "type": "session.update",
+                "session": {
+                    "modalities": ["text", "audio"],
+                    "instructions": audio_result.system_prompt or "Be concise and helpful.",
+                },
+            }
+            
+            # TODO: Add tools and history formatting when needed
+            # For now, send basic session config
+            await ws.send(json.dumps(session_config))
+
+            # Listen for events from OpenAI Realtime API
+            async for message in ws:
+                try:
+                    event = json.loads(message)
+                    event_type = event.get("type")
+
+                    # Handle 14 OpenAI Realtime API events
+                    if event_type == "session.created":
+                        # Session created - ready to start
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "session_created",
+                            },
+                        )
+                    elif event_type == "session.updated":
+                        # Session updated - acknowledge
+                        pass
+                    elif event_type == "input_audio_buffer.speech_started":
+                        # User started speaking
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "user_speech_started",
+                                "item_id": event.get("item_id"),
+                                "audio_start_ms": event.get("audio_start_ms", 0),
+                            },
+                        )
+                    elif event_type == "input_audio_buffer.speech_stopped":
+                        # User stopped speaking
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "user_speech_stopped",
+                                "item_id": event.get("item_id"),
+                            },
+                        )
+                    elif event_type == "conversation.item.input_audio_transcription.completed":
+                        # User transcription completed
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "user_transcription_complete",
+                                "item_id": event.get("item_id"),
+                                "transcript": event.get("transcript"),
+                            },
+                        )
+                    elif event_type == "response.created":
+                        # Response started
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "response_started",
+                                "response_id": event.get("response_id"),
+                            },
+                        )
+                    elif event_type == "response.output_item.added":
+                        # Output item added
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "output_item_added",
+                                "item_id": event.get("item_id"),
+                                "output_type": event.get("output_type"),
+                            },
+                        )
+                    elif event_type == "response.output_item.done":
+                        # Output item done
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "output_item_done",
+                                "item_id": event.get("item_id"),
+                            },
+                        )
+                    elif event_type == "response.audio_transcript.delta":
+                        # Assistant transcription delta
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "audio_transcript_delta",
+                                "delta": event.get("delta"),
+                            },
+                        )
+                    elif event_type == "response.audio_transcript.done":
+                        # Assistant transcription complete
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "audio_transcript_done",
+                                "transcript": event.get("transcript"),
+                            },
+                        )
+                    elif event_type == "response.audio.delta":
+                        # Assistant audio delta - send to client
+                        audio_delta = event.get("delta")
+                        if audio_delta:
+                            await internal_sio.emit(
+                                "generate_progress",
+                                {
+                                    "modality": "audio",
+                                    "sid": sid,
+                                    "resource_id": str(resource_id),
+                                    "resource_type": resource_type,
+                                    "run_id": str(run_id),
+                                    "type": "audio_delta",
+                                    "audio": audio_delta,  # Base64 encoded audio
+                                },
+                            )
+                    elif event_type == "response.function_call_arguments.delta":
+                        # Tool call arguments delta
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "tool_call_progress",
+                                "call_id": event.get("call_id"),
+                                "arguments_delta": event.get("delta"),
+                            },
+                        )
+                    elif event_type == "response.function_call.done":
+                        # Tool call complete
+                        await internal_sio.emit(
+                            "generate_progress",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "tool_call_complete",
+                                "call_id": event.get("call_id"),
+                                "function_call": event.get("function_call"),
+                            },
+                        )
+                    elif event_type == "response.done":
+                        # Response complete
+                        await internal_sio.emit(
+                            "generate_complete",
+                            {
+                                "modality": "audio",
+                                "sid": sid,
+                                "resource_id": str(resource_id),
+                                "resource_type": resource_type,
+                                "run_id": str(run_id),
+                                "type": "run_complete",
+                            },
+                        )
+                        break  # Exit receive loop after completion
+                    elif event_type == "error":
+                        # Error event
+                        error_data = event.get("error", {})
+                        await emit_to_internal(
+                            "generate_error",
+                            GenerateErrorApiRequest(
+                                sid=sid,
+                                error_message=error_data.get("message", "Unknown error"),
+                                resource_id=str(resource_id),
+                                resource_type=resource_type,
+                            ),
+                            sid=sid,
+                        )
+                        break  # Exit on error
+                except json.JSONDecodeError:
+                    # Skip invalid JSON
+                    continue
+                except Exception as e:
+                    # Emit error for unexpected exceptions
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message=f"Error processing WebSocket event: {str(e)}",
+                            resource_id=str(resource_id),
+                            resource_type=resource_type,
+                        ),
+                        sid=sid,
+                    )
+                    break
 
     except Exception as e:
-        raise ValueError(f"Failed to generate ephemeral key: {str(e)}")
-
-    # Emit session started event
-    await internal_sio.emit(
-        "generate_audio_progress",
-        {
-            "sid": sid,
-            "resource_id": str(resource_id),
-            "resource_type": resource_type,
-            "run_id": str(run_id),
-            "type": "session_started",
-            "ephemeral_key": ephemeral_key,
-            "expires_in": expires_in,
-            "model": model_name,
-        },
-    )
-
-    # TODO: For WebSocket-based audio (not WebRTC), connect to realtime API
-    # For now, WebRTC is handled client-side with ephemeral key
+        await emit_to_internal(
+            "generate_error",
+            GenerateErrorApiRequest(
+                sid=sid,
+                error_message=f"WebSocket connection failed: {str(e)}",
+                resource_id=str(resource_id),
+                resource_type=resource_type,
+            ),
+            sid=sid,
+        )
 
 
 async def _persist_image(
