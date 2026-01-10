@@ -28,6 +28,7 @@ export interface ExamplesProps {
   onChange: (ids: string[]) => void; // Update example_ids in form state
   label?: string;
   id?: string;
+  required?: boolean;
   maxItems?: number;
   addButtonLabel?: string;
   itemPlaceholder?: string;
@@ -53,6 +54,7 @@ export function Examples({
   onChange,
   label = "Example Messages",
   id = "examples",
+  required = false,
   maxItems = 10,
   addButtonLabel = "Add example",
   itemPlaceholder = "Message",
@@ -238,7 +240,12 @@ export function Examples({
 
   return (
     <div className="space-y-2">
-      {label && <Label htmlFor={id}>{label}</Label>}
+      {label && (
+        <Label htmlFor={id}>
+          {label}
+          {required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+      )}
       <ReorderableList
         items={internalTexts}
         onItemsChange={handleItemsChange}

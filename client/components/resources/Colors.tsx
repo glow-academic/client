@@ -45,6 +45,7 @@ export interface ColorsProps {
   onColorIdChange: (colorId: string | null) => void; // Update color_id in parent form state
   label?: string;
   id?: string;
+  required?: boolean;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   searchPlaceholder?: string;
@@ -76,6 +77,7 @@ export function Colors({
   onColorIdChange,
   label = "Color",
   id = "color",
+  required = false,
   searchTerm = "",
   onSearchChange: _onSearchChange,
   searchPlaceholder: _searchPlaceholder = "Search colors...",
@@ -245,7 +247,10 @@ export function Colors({
 
   return (
     <div className="space-y-4">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
+      </Label>
 
       {/* Color Grid */}
       {displayColors.length > 0 && (

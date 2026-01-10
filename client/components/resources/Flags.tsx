@@ -30,6 +30,7 @@ export interface FlagsProps {
   onFlagIdChange: (flagId: string | null) => void; // Update flag_id in parent form state
   label?: string;
   id?: string;
+  required?: boolean;
   helpText?: string;
   icon?: React.ReactNode;
   iconId?: string; // Icon ID to use when creating flag resource (required when value=true)
@@ -55,6 +56,7 @@ export function Flags({
   onFlagIdChange,
   label = "Active",
   id = "active",
+  required = false,
   helpText,
   icon,
   iconId,
@@ -160,6 +162,7 @@ export function Flags({
           <Label htmlFor={id} className="text-sm flex items-center gap-1.5">
             {icon || <Power className="h-3.5 w-3.5 text-muted-foreground" />}
             {label}
+            {required && <span className="text-destructive ml-1">*</span>}
           </Label>
           <Switch
             id={id}

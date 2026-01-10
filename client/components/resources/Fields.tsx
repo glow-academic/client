@@ -39,6 +39,7 @@ export interface FieldsProps {
   onChange: (ids: string[]) => void; // Update field_ids in form state
   label?: string;
   id?: string;
+  required?: boolean;
   placeholder?: string;
   description?: string;
   // Legacy props for backward compatibility
@@ -55,6 +56,7 @@ export function Fields({
   onChange,
   label = "Fields",
   id = "fields",
+  required = false,
   placeholder = "Select fields...",
   description,
   // Legacy props for backward compatibility
@@ -100,6 +102,7 @@ export function Fields({
       {label && (
         <Label htmlFor={id}>
           {label}
+          {required && <span className="text-destructive ml-1">*</span>}
           {description && (
             <span className="text-xs text-muted-foreground ml-2">
               {description}

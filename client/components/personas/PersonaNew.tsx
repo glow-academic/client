@@ -653,6 +653,41 @@ function PersonaNewComponent({
         return next;
       });
 
+      // Determine agent_id based on resource types
+      // Multi-resource combinations use specific agent IDs
+      const basicResources: ResourceType[] = ["names", "descriptions", "flags", "departments"];
+      const contentResources: ResourceType[] = ["instructions", "examples"];
+      
+      const isBasicCombo = resourceTypes.length === basicResources.length &&
+        resourceTypes.every((rt) => basicResources.includes(rt));
+      const isContentCombo = resourceTypes.length === contentResources.length &&
+        resourceTypes.every((rt) => contentResources.includes(rt));
+      
+      let agentId: string | null = null;
+      if (isBasicCombo && personaData?.basic_agent_id) {
+        agentId = personaData.basic_agent_id;
+      } else if (isContentCombo && personaData?.content_agent_id) {
+        agentId = personaData.content_agent_id;
+      } else if (resourceTypes.length > 0) {
+        // Use individual agent_id for the first resource type
+        const firstResourceType = resourceTypes[0];
+        const agentIdMap: Record<ResourceType, keyof PersonaData | null> = {
+          names: "name_agent_id",
+          descriptions: "description_agent_id",
+          colors: "color_agent_id",
+          icons: "icon_agent_id",
+          instructions: "instructions_agent_id",
+          flags: "flag_agent_id",
+          departments: "departments_agent_id",
+          fields: "fields_agent_id",
+          examples: "examples_agent_id",
+        };
+        const agentIdKey = agentIdMap[firstResourceType];
+        if (agentIdKey && personaData?.[agentIdKey]) {
+          agentId = personaData[agentIdKey] as string | null;
+        }
+      }
+
       // Emit single event with resource_types array
       // Note: group_ids are fetched server-side from database, not passed from frontend
       socket.emit("persona_generate", {
@@ -660,6 +695,7 @@ function PersonaNewComponent({
         resource_types: resourceTypes,
         persona_id: personaId || null,
         instructions: userInstructions || null, // Renamed from user_instructions
+        agent_id: agentId, // Pass agent_id from personaData
         context: {
           name_id: formState.name_id || null,
           description_id: formState.description_id || null,
@@ -672,7 +708,7 @@ function PersonaNewComponent({
         },
       });
     },
-    [socket, isConnected, draftId, personaId, formState]
+    [socket, isConnected, draftId, personaId, formState, personaData]
   );
 
   // Individual generation handlers - generate directly without modals
@@ -722,25 +758,40 @@ function PersonaNewComponent({
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      // Validate required resource IDs
-      if (!formState.name_id) {
+      // Validate required resource IDs using {resource}_required flags from personaData
+      if (personaData?.name_required && !formState.name_id) {
         toast.error("Persona name is required");
         throw new Error("Persona name is required");
       }
 
-      if (!formState.color_id) {
+      if (personaData?.color_required && !formState.color_id) {
         toast.error("Persona color is required");
         throw new Error("Persona color is required");
       }
 
-      if (!formState.icon_id) {
+      if (personaData?.icon_required && !formState.icon_id) {
         toast.error("Persona icon is required");
         throw new Error("Persona icon is required");
       }
 
-      if (!formState.instructions_id) {
+      if (personaData?.instructions_required && !formState.instructions_id) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
+      }
+
+      if (personaData?.departments_required && (!formState.department_ids || formState.department_ids.length === 0)) {
+        toast.error("Departments are required");
+        throw new Error("Departments are required");
+      }
+
+      if (personaData?.fields_required && (!formState.field_ids || formState.field_ids.length === 0)) {
+        toast.error("Fields are required");
+        throw new Error("Fields are required");
+      }
+
+      if (personaData?.examples_required && (!formState.example_ids || formState.example_ids.length === 0)) {
+        toast.error("Examples are required");
+        throw new Error("Examples are required");
       }
 
       // Pass department_ids directly - SQL handles validation via validate_department_create_permissions/validate_department_update_permissions
@@ -1028,7 +1079,7 @@ function PersonaNewComponent({
                   isGenerating={isGenerating("names")}
                   placeholder="e.g., Enthusiastic Student"
                   defaultName="New Persona"
-                  required
+                  required={currentPersonaData?.name_required ?? false}
                   hideDescription={true}
                   createNamesAction={
                     createNamesAction as
@@ -1110,7 +1161,7 @@ function PersonaNewComponent({
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
                   placeholder="Detailed behavior description and personality traits"
-                  required={false}
+                  required={currentPersonaData?.description_required ?? false}
                   rows={4}
                   data-testid="input-persona-description"
                   createDescriptionsAction={createDescriptionsAction}
@@ -1133,6 +1184,7 @@ function PersonaNewComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
+                  required={currentPersonaData?.departments_required ?? false}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1149,6 +1201,7 @@ function PersonaNewComponent({
                   }
                   label="Active"
                   helpText="Inactive personas will not be available for scenarios"
+                  required={currentPersonaData?.flag_required ?? false}
                   {...((formState.icon_id ||
                     currentPersonaData?.flag_resource?.icon_id) && {
                     iconId: (formState.icon_id ||
@@ -1231,6 +1284,7 @@ function PersonaNewComponent({
                 }
                 label="Fields"
                 description="Select fields for this persona"
+                required={currentPersonaData?.fields_required ?? false}
               />
             </StepCard>
           );
@@ -1335,6 +1389,7 @@ function PersonaNewComponent({
                   setStepFormData({ colorShowSelected: value || null })
                 }
                 createColorsAction={createColorsAction}
+                required={currentPersonaData?.color_required ?? false}
               />
             </StepCard>
           );
@@ -1440,6 +1495,7 @@ function PersonaNewComponent({
                   setStepFormData({ iconShowSelected: value || null })
                 }
                 createIconsAction={createIconsAction}
+                required={currentPersonaData?.icon_required ?? false}
               />
             </StepCard>
           );
@@ -1527,7 +1583,7 @@ function PersonaNewComponent({
                 isGenerating={isGenerating("instructions")}
                 label="Instructions"
                 placeholder="Instructions that define how the persona should behave and respond."
-                required
+                required={currentPersonaData?.instructions_required ?? false}
                 rows={8}
                 helpText="Define the persona's behavior, communication style, and response patterns"
                 data-testid="input-instructions"
@@ -1551,6 +1607,7 @@ function PersonaNewComponent({
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
                 createExamplesAction={createExamplesAction}
+                required={currentPersonaData?.examples_required ?? false}
                 exampleMapping={
                   currentPersonaData?.examples && formState.example_ids
                     ? Object.fromEntries(

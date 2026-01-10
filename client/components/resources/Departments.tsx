@@ -39,6 +39,7 @@ export interface DepartmentsProps {
   onChange: (ids: string[]) => void; // Update department_ids in form state
   label?: string;
   id?: string;
+  required?: boolean;
   placeholder?: string;
   description?: string;
   // Legacy props for backward compatibility
@@ -55,6 +56,7 @@ export function Departments({
   onChange,
   label = "Departments",
   id = "departments",
+  required = false,
   placeholder = "Select departments...",
   description,
   // Legacy props for backward compatibility
@@ -112,6 +114,7 @@ export function Departments({
       {label && (
         <Label htmlFor={id}>
           {label}
+          {required && <span className="text-destructive ml-1">*</span>}
           {description && (
             <span className="text-xs text-muted-foreground ml-2">
               {description}

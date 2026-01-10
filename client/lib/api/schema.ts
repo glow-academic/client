@@ -5183,6 +5183,11 @@ export interface components {
     schemas: {
         /** AnalysesApiRequest */
         AnalysesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Content */
             content: string;
         };
@@ -5565,6 +5570,11 @@ export interface components {
         };
         /** ColorsApiRequest */
         ColorsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -5593,6 +5603,11 @@ export interface components {
         };
         /** ContentApiRequest */
         ContentApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Content */
             content: string;
         };
@@ -5603,6 +5618,11 @@ export interface components {
         };
         /** ConversationsApiRequest */
         ConversationsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** End Reason */
             end_reason: string;
         };
@@ -6147,6 +6167,11 @@ export interface components {
         };
         /** DebugInfoApiRequest */
         DebugInfoApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Content */
             content: string;
         };
@@ -6508,6 +6533,11 @@ export interface components {
         };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Description */
             description: string;
         };
@@ -6788,6 +6818,11 @@ export interface components {
         };
         /** ExamplesApiRequest */
         ExamplesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Example */
             example: string;
         };
@@ -6845,6 +6880,11 @@ export interface components {
         };
         /** FeedbacksApiRequest */
         FeedbacksApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Total */
             total: number;
             /** Feedback */
@@ -6875,6 +6915,11 @@ export interface components {
         };
         /** FlagsApiRequest */
         FlagsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10329,6 +10374,11 @@ export interface components {
         };
         /** HintsApiRequest */
         HintsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Hint */
             hint: string;
         };
@@ -10339,6 +10389,11 @@ export interface components {
         };
         /** HtmlApiRequest */
         HtmlApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10598,6 +10653,11 @@ export interface components {
         };
         /** IconsApiRequest */
         IconsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10612,6 +10672,11 @@ export interface components {
         };
         /** ImagesApiRequest */
         ImagesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10624,6 +10689,11 @@ export interface components {
         };
         /** ImprovementsApiRequest */
         ImprovementsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10641,6 +10711,11 @@ export interface components {
         };
         /** InstructionsApiRequest */
         InstructionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Template */
             template: string;
         };
@@ -10706,6 +10781,11 @@ export interface components {
         };
         /** NamesApiRequest */
         NamesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
         };
@@ -10716,6 +10796,11 @@ export interface components {
         };
         /** ObjectivesApiRequest */
         ObjectivesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Objective */
             objective: string;
         };
@@ -10726,6 +10811,11 @@ export interface components {
         };
         /** OptionsApiRequest */
         OptionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Option Text */
             option_text: string;
             /** Is Correct */
@@ -10775,6 +10865,11 @@ export interface components {
         };
         /** PointsApiRequest */
         PointsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Value */
             value: number;
         };
@@ -10785,6 +10880,11 @@ export interface components {
         };
         /** ProblemStatementsApiRequest */
         ProblemStatementsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Problem Statement */
@@ -10815,6 +10915,11 @@ export interface components {
         };
         /** PromptsApiRequest */
         PromptsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** System Prompt */
             system_prompt: string;
             /** Name */
@@ -17633,6 +17738,11 @@ export interface components {
         };
         /** QuestionsApiRequest */
         QuestionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Question Text */
             question_text: string;
             /** Allow Multiple */
@@ -17692,6 +17802,11 @@ export interface components {
         };
         /** ResponsesApiRequest */
         ResponsesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /**
              * Option Id
              * Format: uuid
@@ -17753,6 +17868,11 @@ export interface components {
         /** SchemaFieldItemsApiRequest */
         SchemaFieldItemsApiRequest: {
             /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
              * Schema Field Id
              * Format: uuid
              */
@@ -17770,6 +17890,11 @@ export interface components {
         };
         /** SchemaFieldsApiRequest */
         SchemaFieldsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /**
              * Schema Id
              * Format: uuid
@@ -17796,7 +17921,13 @@ export interface components {
             schema_field_id?: string | null;
         };
         /** SchemasApiRequest */
-        SchemasApiRequest: Record<string, never>;
+        SchemasApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+        };
         /** SchemasApiResponse */
         SchemasApiResponse: {
             /** Schema Id */
@@ -18024,6 +18155,11 @@ export interface components {
         };
         /** StandardGroupsApiRequest */
         StandardGroupsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Short Name */
@@ -18127,6 +18263,11 @@ export interface components {
         };
         /** StrengthsApiRequest */
         StrengthsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -18144,6 +18285,11 @@ export interface components {
         };
         /** TemplateArrayItemsApiRequest */
         TemplateArrayItemsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /**
              * Template Id
              * Format: uuid
@@ -18170,6 +18316,11 @@ export interface components {
         /** TemplateValuesApiRequest */
         TemplateValuesApiRequest: {
             /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
              * Template Id
              * Format: uuid
              */
@@ -18193,6 +18344,11 @@ export interface components {
         };
         /** TemplatesApiRequest */
         TemplatesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
         };
@@ -18203,6 +18359,11 @@ export interface components {
         };
         /** ThresholdsApiRequest */
         ThresholdsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Value */
             value: number;
         };
@@ -18213,6 +18374,11 @@ export interface components {
         };
         /** TimesApiRequest */
         TimesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Time Taken */
             time_taken: number;
         };
@@ -18900,6 +19066,11 @@ export interface components {
         };
         /** VideosApiRequest */
         VideosApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
             /** Name */
             name: string;
             /** Length Seconds */

@@ -19058,6 +19058,11 @@
     "schemas": {
       "AnalysesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "content": {
             "type": "string",
             "title": "Content"
@@ -19065,6 +19070,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "content"
         ],
         "title": "AnalysesApiRequest"
@@ -20123,6 +20129,11 @@
       },
       "ColorsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -20138,6 +20149,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "description",
           "hex_code"
@@ -20207,6 +20219,11 @@
       },
       "ContentApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "content": {
             "type": "string",
             "title": "Content"
@@ -20214,6 +20231,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "content"
         ],
         "title": "ContentApiRequest"
@@ -20238,6 +20256,11 @@
       },
       "ConversationsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "end_reason": {
             "type": "string",
             "title": "End Reason"
@@ -20245,6 +20268,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "end_reason"
         ],
         "title": "ConversationsApiRequest"
@@ -22302,6 +22326,11 @@
       },
       "DebugInfoApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "content": {
             "type": "string",
             "title": "Content"
@@ -22309,6 +22338,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "content"
         ],
         "title": "DebugInfoApiRequest"
@@ -23540,6 +23570,11 @@
       },
       "DescriptionsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "description": {
             "type": "string",
             "title": "Description"
@@ -23547,6 +23582,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "description"
         ],
         "title": "DescriptionsApiRequest"
@@ -24424,6 +24460,11 @@
       },
       "ExamplesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "example": {
             "type": "string",
             "title": "Example"
@@ -24431,6 +24472,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "example"
         ],
         "title": "ExamplesApiRequest"
@@ -24648,6 +24690,11 @@
       },
       "FeedbacksApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "total": {
             "type": "number",
             "title": "Total"
@@ -24664,6 +24711,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "total",
           "feedback",
           "standard_id"
@@ -24752,6 +24800,11 @@
       },
       "FlagsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -24768,6 +24821,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "description",
           "icon_id"
@@ -43241,6 +43295,11 @@
       },
       "HintsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "hint": {
             "type": "string",
             "title": "Hint"
@@ -43248,6 +43307,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "hint"
         ],
         "title": "HintsApiRequest"
@@ -43272,6 +43332,11 @@
       },
       "HtmlApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -43283,6 +43348,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "description"
         ],
@@ -44609,6 +44675,11 @@
       },
       "IconsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -44624,6 +44695,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "description",
           "value"
@@ -44650,6 +44722,11 @@
       },
       "ImagesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -44661,6 +44738,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "description"
         ],
@@ -44686,6 +44764,11 @@
       },
       "ImprovementsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -44702,6 +44785,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "description",
           "message_id"
@@ -44728,6 +44812,11 @@
       },
       "InstructionsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "template": {
             "type": "string",
             "title": "Template"
@@ -44735,6 +44824,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "template"
         ],
         "title": "InstructionsApiRequest"
@@ -44919,6 +45009,11 @@
       },
       "NamesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -44926,6 +45021,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name"
         ],
         "title": "NamesApiRequest"
@@ -44950,6 +45046,11 @@
       },
       "ObjectivesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "objective": {
             "type": "string",
             "title": "Objective"
@@ -44957,6 +45058,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "objective"
         ],
         "title": "ObjectivesApiRequest"
@@ -44981,6 +45083,11 @@
       },
       "OptionsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "option_text": {
             "type": "string",
             "title": "Option Text"
@@ -44992,6 +45099,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "option_text",
           "is_correct"
         ],
@@ -45204,6 +45312,11 @@
       },
       "PointsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "value": {
             "type": "number",
             "title": "Value"
@@ -45211,6 +45324,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "value"
         ],
         "title": "PointsApiRequest"
@@ -45235,6 +45349,11 @@
       },
       "ProblemStatementsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -45246,6 +45365,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "problem_statement"
         ],
@@ -45348,6 +45468,11 @@
       },
       "PromptsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "system_prompt": {
             "type": "string",
             "title": "System Prompt"
@@ -45363,6 +45488,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "system_prompt",
           "name",
           "description"
@@ -83211,6 +83337,11 @@
       },
       "QuestionsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "question_text": {
             "type": "string",
             "title": "Question Text"
@@ -83226,6 +83357,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "question_text",
           "allow_multiple",
           "time_value"
@@ -83369,6 +83501,11 @@
       },
       "ResponsesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "option_id": {
             "type": "string",
             "format": "uuid",
@@ -83382,6 +83519,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "option_id",
           "question_id"
         ],
@@ -83531,6 +83669,11 @@
       },
       "SchemaFieldItemsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "schema_field_id": {
             "type": "string",
             "format": "uuid",
@@ -83544,6 +83687,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "schema_field_id",
           "item_schema_id"
         ],
@@ -83569,6 +83713,11 @@
       },
       "SchemaFieldsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "schema_id": {
             "type": "string",
             "format": "uuid",
@@ -83605,6 +83754,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "schema_id",
           "name",
           "field_type",
@@ -83635,8 +83785,17 @@
         "title": "SchemaFieldsApiResponse"
       },
       "SchemasApiRequest": {
-        "properties": {},
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          }
+        },
         "type": "object",
+        "required": [
+          "agent_id"
+        ],
         "title": "SchemasApiRequest"
       },
       "SchemasApiResponse": {
@@ -84149,6 +84308,11 @@
       },
       "StandardGroupsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -84172,6 +84336,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "short_name",
           "description",
@@ -84373,6 +84538,11 @@
       },
       "StrengthsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -84389,6 +84559,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "description",
           "message_id"
@@ -84415,6 +84586,11 @@
       },
       "TemplateArrayItemsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "template_id": {
             "type": "string",
             "format": "uuid",
@@ -84437,6 +84613,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "template_id",
           "schema_field_id",
           "item_template_id",
@@ -84464,6 +84641,11 @@
       },
       "TemplateValuesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "template_id": {
             "type": "string",
             "format": "uuid",
@@ -84489,6 +84671,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "template_id",
           "schema_field_id",
           "string_value",
@@ -84517,6 +84700,11 @@
       },
       "TemplatesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -84524,6 +84712,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name"
         ],
         "title": "TemplatesApiRequest"
@@ -84548,6 +84737,11 @@
       },
       "ThresholdsApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "value": {
             "type": "number",
             "title": "Value"
@@ -84555,6 +84749,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "value"
         ],
         "title": "ThresholdsApiRequest"
@@ -84579,6 +84774,11 @@
       },
       "TimesApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "time_taken": {
             "type": "number",
             "title": "Time Taken"
@@ -84586,6 +84786,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "time_taken"
         ],
         "title": "TimesApiRequest"
@@ -87105,6 +87306,11 @@
       },
       "VideosApiRequest": {
         "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -87120,6 +87326,7 @@
         },
         "type": "object",
         "required": [
+          "agent_id",
           "name",
           "length_seconds",
           "description"

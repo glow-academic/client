@@ -39,6 +39,7 @@ export interface IconsProps {
   onIconIdChange: (iconId: string | null) => void; // Update icon_id in parent form state
   label?: string;
   id?: string;
+  required?: boolean;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
   searchPlaceholder?: string;
@@ -71,6 +72,7 @@ export function Icons({
   onIconIdChange,
   label = "Icon",
   id = "icon",
+  required = false,
   searchTerm = "",
   onSearchChange,
   searchPlaceholder = "Search icons...",
@@ -239,7 +241,10 @@ export function Icons({
 
   return (
     <div className="space-y-4">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
+      </Label>
 
       <SelectableGrid
         items={displayIcons}
