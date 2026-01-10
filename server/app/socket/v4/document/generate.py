@@ -182,7 +182,7 @@ async def _generate_document_impl(
                     }
                 )
 
-            # Step 2: Route to generate_start (which will route to artifacts/generate.py)
+            # Step 2: Route to generate_artifact (which will create run and handle generation)
             # Convert context items to developer_message_contents
             developer_message_contents = [
                 item["content"] for item in context_items if item.get("role") == "developer"
@@ -193,7 +193,7 @@ async def _generate_document_impl(
             ]
             developer_message_contents.extend(user_messages)
 
-            # Get agent_id for generate_start from result
+            # Get agent_id for generate_artifact from result
             if not agent_id:
                 # Get agent_id from result (best_agent provides agent_id)
                 if hasattr(result, "agent_id") and result.agent_id:
@@ -215,13 +215,13 @@ async def _generate_document_impl(
                 raise ValueError("Could not determine agent_id for document generation")
 
             await internal_sio.emit(
-                "generate_start",
+                "generate_artifact",
                 {
                     "sid": sid,
                     "agent_id": str(agent_id),
                     "resource_id": data.document_id,
                     "resource_type": "document",
-                    "group_id": None,  # Will be created by generate_start
+                    "group_id": None,  # Will be created by generate_artifact
                     "user_instructions": None,
                     "message_ids": None,
                     "developer_message_contents": developer_message_contents,
@@ -281,12 +281,10 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
 async def document_generate_internal(data: dict[str, Any]) -> None:
     """Handle document_generate event from internal bus (server-to-server).
     
-    This is called by generate_start after run creation. It receives run_id
-    and routes directly to artifacts/generate.py.
+    Routes directly to artifacts/generate.py which will create run and handle generation.
     """
     try:
-        # This is called from generate_start with run_id already created
-        # Just route to artifacts/generate.py
+        # Route to artifacts/generate.py which will create run and handle generation
         await internal_sio.emit("generate_artifact", data)
     except Exception as e:
         sid = data.get("sid", "")

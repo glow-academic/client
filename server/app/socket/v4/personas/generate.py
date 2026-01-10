@@ -45,7 +45,7 @@ class GeneratePersonaPayload(BaseModel):
 async def _persona_generate_impl(
     sid: str, data: GeneratePersonaPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle persona generation - emit generate_start for each resource type, then emit client event."""
+    """Handle persona generation - emit generate_artifact for each resource type, then emit client event."""
     try:
         # Determine resource types to generate
         resource_types: list[str] = []
@@ -83,7 +83,7 @@ async def _persona_generate_impl(
             )
             return
 
-        # For now, emit dummy generate_start events (skeleton implementation)
+        # For now, emit dummy generate_artifact events (skeleton implementation)
         # TODO: Implement actual AI generation logic
         for resource_type in resource_types:
             # Get group_id for this resource type if regenerating
@@ -97,10 +97,10 @@ async def _persona_generate_impl(
                         # Invalid UUID, treat as None
                         group_id = None
 
-            # Emit generate_start internal event for each resource type
+            # Emit generate_artifact internal event for each resource type
             # Note: This is a skeleton - agent_id and other required fields need to be determined
             await internal_sio.emit(
-                "generate_start",
+                "generate_artifact",
                 {
                     "sid": sid,
                     "agent_id": "",  # TODO: Look up agent_id from persona domain/department

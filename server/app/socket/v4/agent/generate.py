@@ -99,7 +99,7 @@ async def _generate_agent_impl(
             for msg in conversation_history:
                 input_items.append(msg)
 
-            # Step 2: Route to generate_start (which will create run and route back to agent_generate)
+            # Step 2: Route to generate_artifact (which will create run and handle generation)
             # Convert input items to developer_message_contents
             developer_message_contents = [
                 item["content"]
@@ -108,7 +108,7 @@ async def _generate_agent_impl(
             ]
 
             await internal_sio.emit(
-                "generate_start",
+                "generate_artifact",
                 {
                     "sid": sid,
                     "agent_id": result.agent_id,
@@ -174,12 +174,10 @@ async def agent_generate(sid: str, data: dict[str, Any]) -> None:
 async def agent_generate_internal(data: dict[str, Any]) -> None:
     """Handle agent_generate event from internal bus (server-to-server).
     
-    This is called by generate_start after run creation. It receives run_id
-    and routes directly to artifacts/generate.py.
+    Routes directly to artifacts/generate.py which will create run and handle generation.
     """
     try:
-        # This is called from generate_start with run_id already created
-        # Just route to artifacts/generate.py
+        # Route to artifacts/generate.py which will create run and handle generation
         await internal_sio.emit("generate_artifact", data)
     except Exception as e:
         sid = data.get("sid", "")

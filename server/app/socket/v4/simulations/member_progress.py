@@ -229,7 +229,7 @@ async def _member_progress_impl(
 
             # Route through artifacts system
             await internal_sio.emit(
-                "generate_start",
+                "generate_artifact",
                 {
                     "sid": sid,
                     "agent_id": agent_id,

@@ -72,25 +72,25 @@ Generate descriptions for ALL combinations of standard groups and standards."""
 async def _generate_rubric_impl(
     sid: str, data: GenerateRubricPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle rubric generation - format context then route to generate_start."""
+    """Handle rubric generation - format context then route to generate_artifact."""
     try:
         # Step 1: Format rubric context (standard groups and standards)
         rubric_context_text = format_rubric_context(
             data.standard_groups, data.standards
         )
 
-        # Step 2: Route to generate_start (which will create run and route back to rubric_generate)
+        # Step 2: Route to generate_artifact (which will create run and handle generation)
         # The developer message will include the formatted rubric context
         developer_message_contents = [rubric_context_text]
 
         await internal_sio.emit(
-            "generate_start",
+            "generate_artifact",
             {
                 "sid": sid,
                 "domain_id": data.rubric_domain_id,
                 "resource_id": data.rubric_id,
                 "resource_type": "rubric",
-                "group_id": None,  # Will be created by generate_start
+                "group_id": None,  # Will be created by generate_artifact
                 "user_instructions": None,
                 "message_ids": None,
                 "developer_message_contents": developer_message_contents,
@@ -166,12 +166,10 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
 async def rubric_generate_internal(data: dict[str, Any]) -> None:
     """Handle rubric_generate event from internal bus (server-to-server).
     
-    This is called by generate_start after run creation. It receives run_id
-    and routes directly to artifacts/generate.py.
+    Routes directly to artifacts/generate.py which will create run and handle generation.
     """
     try:
-        # This is called from generate_start with run_id already created
-        # Just route to artifacts/generate.py
+        # Route to artifacts/generate.py which will create run and handle generation
         await internal_sio.emit("generate_artifact", data)
     except Exception as e:
         sid = data.get("sid", "")

@@ -88,87 +88,62 @@ async def _generate_artifact_impl(
     """Unified entry point for all artifact generation - handles ALL logic inline."""
     try:
         async with get_db_connection() as conn:
-            # Get output_modalities from payload (from generate_start) or query
-            if data.get("run_id") and data.get("output_modalities"):
-                # Use from payload (already created run via generate_start)
-                output_modalities = data.get("output_modalities")
-                modality = determine_modality_from_output_modalities(output_modalities)
-                # Use existing run_id, group_id, trace_id from payload
-                run_id = data["run_id"]
-                group_id = data.get("group_id")
-                trace_id = data.get("trace_id")
-                message_ids = data.get("message_ids", [])
+            # Always create run via SQL (no longer supports pre-created runs)
+            try:
+                # Convert message_ids to UUID array if provided
+                message_ids_uuid = (
+                    [uuid.UUID(mid) for mid in data.get("message_ids", [])]
+                    if data.get("message_ids")
+                    else None
+                )
+
+                # Handle both domain_id (new) and agent_id (legacy) for backward compatibility
+                domain_id = data.get("domain_id")
                 agent_id = data.get("agent_id")
-            else:
-                # Create run via SQL (direct call to generate_artifact)
-                try:
-                    # Convert message_ids to UUID array if provided
-                    message_ids_uuid = (
-                        [uuid.UUID(mid) for mid in data.get("message_ids", [])]
-                        if data.get("message_ids")
-                        else None
-                    )
+                if domain_id:
+                    # Look up agent_id from domain_id
+                    domain_lookup_sql = "SELECT agent_id FROM domains WHERE id = $1"
+                    agent_id_from_domain = await conn.fetchval(domain_lookup_sql, uuid.UUID(domain_id))
+                    if not agent_id_from_domain:
+                        raise ValueError(f"Domain not found: {domain_id}")
+                    agent_id = str(agent_id_from_domain)
+                elif not agent_id:
+                    raise ValueError("Either domain_id or agent_id must be provided")
+                
+                params = GetGenerationRunContextAndCreateRunSqlParams(
+                    agent_id=uuid.UUID(agent_id),
+                    resource_id=uuid.UUID(data["resource_id"]),
+                    resource_type=data["resource_type"],
+                    profile_id=profile_id,
+                    message_ids=message_ids_uuid,
+                    department_id=None,  # Can be NULL, modality handlers will get it
+                    group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
+                    user_instructions=data.get("user_instructions"),
+                    developer_message_contentss=data.get("developer_message_contents"),
+                )
+                result = cast(
+                    GetGenerationRunContextAndCreateRunSqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
+            except Exception as e:
+                import asyncpg  # type: ignore
 
-                    # Handle both domain_id (new) and agent_id (legacy) for backward compatibility
-                    domain_id = data.get("domain_id")
-                    agent_id = data.get("agent_id")
-                    if domain_id:
-                        # Look up agent_id from domain_id
-                        domain_lookup_sql = "SELECT agent_id FROM domains WHERE id = $1"
-                        agent_id_from_domain = await conn.fetchval(domain_lookup_sql, uuid.UUID(domain_id))
-                        if not agent_id_from_domain:
-                            raise ValueError(f"Domain not found: {domain_id}")
-                        agent_id = str(agent_id_from_domain)
-                    elif not agent_id:
-                        raise ValueError("Either domain_id or agent_id must be provided")
-                    
-                    params = GetGenerationRunContextAndCreateRunSqlParams(
-                        agent_id=uuid.UUID(agent_id),
-                        resource_id=uuid.UUID(data["resource_id"]),
-                        resource_type=data["resource_type"],
-                        profile_id=profile_id,
-                        message_ids=message_ids_uuid,
-                        department_id=None,  # Can be NULL, modality handlers will get it
-                        group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
-                        user_instructions=data.get("user_instructions"),
-                        developer_message_contentss=data.get("developer_message_contents"),
+                error_msg = str(e)
+                # Check if it's a rate limit error from SQL
+                if (
+                    isinstance(e, asyncpg.PostgresError)
+                    and "RATE_LIMIT_EXCEEDED" in error_msg
+                ):
+                    user_msg = (
+                        error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
+                        if "RATE_LIMIT_EXCEEDED: " in error_msg
+                        else error_msg
                     )
-                    result = cast(
-                        GetGenerationRunContextAndCreateRunSqlRow,
-                        await execute_sql_typed(conn, SQL_PATH, params=params),
-                    )
-                except Exception as e:
-                    import asyncpg  # type: ignore
-
-                    error_msg = str(e)
-                    # Check if it's a rate limit error from SQL
-                    if (
-                        isinstance(e, asyncpg.PostgresError)
-                        and "RATE_LIMIT_EXCEEDED" in error_msg
-                    ):
-                        user_msg = (
-                            error_msg.split("RATE_LIMIT_EXCEEDED: ", 1)[1]
-                            if "RATE_LIMIT_EXCEEDED: " in error_msg
-                            else error_msg
-                        )
-                        await emit_to_internal(
-                            "generate_error",
-                            GenerateErrorApiRequest(
-                                sid=sid,
-                                error_message=user_msg,
-                                resource_id=data.get("resource_id"),
-                                group_id=data.get("group_id"),
-                                resource_type=data.get("resource_type"),
-                            ),
-                            sid=sid,
-                        )
-                        return
-                    # Other errors
                     await emit_to_internal(
                         "generate_error",
                         GenerateErrorApiRequest(
                             sid=sid,
-                            error_message=f"Failed to start generation: {str(e)}",
+                            error_message=user_msg,
                             resource_id=data.get("resource_id"),
                             group_id=data.get("group_id"),
                             resource_type=data.get("resource_type"),
@@ -176,34 +151,46 @@ async def _generate_artifact_impl(
                         sid=sid,
                     )
                     return
-
-                if not result:
-                    await emit_to_internal(
-                        "generate_error",
-                        GenerateErrorApiRequest(
-                            sid=sid,
-                            error_message="Failed to create run",
-                            resource_id=data.get("resource_id"),
-                            group_id=data.get("group_id"),
-                            resource_type=data.get("resource_type"),
-                        ),
+                # Other errors
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
                         sid=sid,
-                    )
-                    return
+                        error_message=f"Failed to start generation: {str(e)}",
+                        resource_id=data.get("resource_id"),
+                        group_id=data.get("group_id"),
+                        resource_type=data.get("resource_type"),
+                    ),
+                    sid=sid,
+                )
+                return
 
-                modality = determine_modality_from_output_modalities(result.output_modalities)
-                run_id = result.run_id
-                group_id = str(result.group_id) if result.group_id else None
-                trace_id = result.trace_id
-                message_ids = [str(mid) for mid in (result.message_ids or [])]
-                agent_id = data.get("agent_id")
-                if not agent_id:
-                    # If your SQL row includes agent_id, prefer that (if available on result)
-                    agent_id_from_sql = getattr(result, "agent_id", None)
-                    if agent_id_from_sql:
-                        agent_id = str(agent_id_from_sql)
-                    else:
-                        raise ValueError("agent_id missing: cannot proceed with generation")
+            if not result:
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message="Failed to create run",
+                        resource_id=data.get("resource_id"),
+                        group_id=data.get("group_id"),
+                        resource_type=data.get("resource_type"),
+                    ),
+                    sid=sid,
+                )
+                return
+
+            modality = determine_modality_from_output_modalities(result.output_modalities)
+            run_id = result.run_id
+            group_id = str(result.group_id) if result.group_id else None
+            trace_id = result.trace_id
+            message_ids = [str(mid) for mid in (result.message_ids or [])]
+            if not agent_id:
+                # If your SQL row includes agent_id, prefer that (if available on result)
+                agent_id_from_sql = getattr(result, "agent_id", None)
+                if agent_id_from_sql:
+                    agent_id = str(agent_id_from_sql)
+                else:
+                    raise ValueError("agent_id missing: cannot proceed with generation")
 
             # Route to appropriate modality handler
             if modality == "text" or modality == "call" or modality == "document":
