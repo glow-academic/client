@@ -220,8 +220,8 @@ export function StepCard({
         className
       )}
     >
-      <CardHeader className="flex flex-row items-center space-y-0 pb-2 justify-between">
-        <div className="flex items-center space-x-3">
+      <CardHeader className="flex flex-row items-start space-y-0 pb-2 justify-between">
+        <div className="flex items-start space-x-3">
           <div
             className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
@@ -240,7 +240,12 @@ export function StepCard({
           </div>
           <div className="flex-1">
             {customHeader ? (
-              customHeader
+              <>
+                {customHeader}
+                <p className="text-xs text-muted-foreground mt-1 px-2">
+                  {stepDescription}
+                </p>
+              </>
             ) : editableTitle ? (
               <>
                 <input

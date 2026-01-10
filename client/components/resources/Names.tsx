@@ -33,6 +33,7 @@ export interface NamesProps {
   id?: string;
   "data-testid"?: string;
   defaultName?: string; // Default name value (for header style - reverts to this on blur if empty)
+  hideDescription?: boolean; // Hide the "Click to edit" description text (useful when parent provides description)
   createNamesAction?:
     | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
     | undefined;
@@ -60,6 +61,7 @@ export function Names({
   id = "name",
   "data-testid": dataTestId,
   defaultName,
+  hideDescription = false,
   createNamesAction,
   // Legacy props for backward compatibility
   nameResource,
@@ -225,11 +227,13 @@ export function Names({
           </Button>
         )}
       </div>
-      <p className="text-xs text-muted-foreground mt-1 px-2">
-        {internalValue === defaultName || !internalValue
-          ? "Click to edit"
-          : "Click to edit"}
-      </p>
+      {!hideDescription && (
+        <p className="text-xs text-muted-foreground mt-1 px-2">
+          {internalValue === defaultName || !internalValue
+            ? "Click to edit"
+            : "Click to edit"}
+        </p>
+      )}
     </div>
   );
 }

@@ -817,33 +817,29 @@ function PersonaNewComponent({
               isReadonly={disabled}
               isEditMode={isEditMode}
               customHeader={
-                <>
-                  <Names
-                    name_id={formState.name_id ?? null}
-                    name_resource={personaData?.name_resource ?? null}
-                    show_name={personaData?.show_name ?? true}
-                    name_suggestions={personaData?.name_suggestions ?? []}
-                    disabled={disabled}
-                    onNameIdChange={(nameId) =>
-                      setFormState((prev) => ({ ...prev, name_id: nameId }))
-                    }
-                    onGenerate={handleGenerateName}
-                    isGenerating={isGenerating("names")}
-                    placeholder="e.g., Enthusiastic Student"
-                    defaultName="New Persona"
-                    required
-                    createNamesAction={
-                      createNamesAction as
-                        | ((
-                            input: CreateDraftNamesIn
-                          ) => Promise<CreateDraftNamesOut>)
-                        | undefined
-                    }
-                  />
-                  <p className="text-xs text-muted-foreground mt-1 px-2">
-                    {stepDescription}
-                  </p>
-                </>
+                <Names
+                  name_id={formState.name_id ?? null}
+                  name_resource={personaData?.name_resource ?? null}
+                  show_name={personaData?.show_name ?? true}
+                  name_suggestions={personaData?.name_suggestions ?? []}
+                  disabled={disabled}
+                  onNameIdChange={(nameId) =>
+                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                  }
+                  onGenerate={handleGenerateName}
+                  isGenerating={isGenerating("names")}
+                  placeholder="e.g., Enthusiastic Student"
+                  defaultName="New Persona"
+                  required
+                  hideDescription={true}
+                  createNamesAction={
+                    createNamesAction as
+                      | ((
+                          input: CreateDraftNamesIn
+                        ) => Promise<CreateDraftNamesOut>)
+                      | undefined
+                  }
+                />
               }
               resetFields={["name", "description", "department_ids", "active"]}
               actions={
