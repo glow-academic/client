@@ -81,6 +81,8 @@ export function Names({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [inputWidth, setInputWidth] = useState<number>(300); // Default min width
 
   // Use resourceId for validation/debugging
   useEffect(() => {
@@ -93,6 +95,18 @@ export function Names({
   // Use suggestionsList for autocomplete (if needed in future)
   // Currently suggestions are handled by parent, but we track them here
   const _hasSuggestions = suggestionsList.length > 0;
+
+  // Measure text width and update input width dynamically
+  useEffect(() => {
+    if (measureRef.current) {
+      // Use scrollWidth for more accurate measurement
+      const textWidth = measureRef.current.scrollWidth;
+      // Add padding (px-2 = 8px on each side = 16px total)
+      const padding = 16;
+      const minWidth = 300;
+      setInputWidth(Math.max(textWidth + padding, minWidth));
+    }
+  }, [internalValue, placeholder, defaultName]);
 
   // Update internal value when name_resource changes
   useEffect(() => {
@@ -189,9 +203,28 @@ export function Names({
     return null;
   }
 
+  // Get the display value for measurement
+  // When input has value, measure that; otherwise measure placeholder
+  const displayValue =
+    internalValue || placeholder || defaultName || "Enter name";
+
   return (
     <div className="flex-1">
       <div className="flex items-center gap-2">
+        {/* Hidden span to measure text width - positioned off-screen but in normal flow */}
+        <span
+          ref={measureRef}
+          className="absolute text-2xl font-semibold whitespace-pre"
+          style={{
+            visibility: "hidden",
+            position: "absolute",
+            top: "-9999px",
+            left: "-9999px",
+          }}
+          aria-hidden="true"
+        >
+          {displayValue || "\u00A0"}
+        </span>
         <input
           type="text"
           id={id}
@@ -203,7 +236,8 @@ export function Names({
           placeholder={placeholder || defaultName || "Enter name"}
           required={required}
           disabled={disabled}
-          className="w-full text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20 min-w-[300px]"
+          style={{ width: `${inputWidth}px` }}
+          className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
         />
         {onGenerate && (
           <Button
