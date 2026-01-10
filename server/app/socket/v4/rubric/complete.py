@@ -35,13 +35,11 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
         if completion_type == "tool_call_complete":
             # Handle tool call completion - fetch results from DB
             tool_name = data.get("tool_name", "")
-            
+
             if tool_name == "standard_description" and run_id:
                 # Fetch tool call results from database
                 async with get_db_connection() as conn:
-                    params = GetRubricToolCallResultsSqlParams(
-                        run_id=uuid.UUID(run_id)
-                    )
+                    params = GetRubricToolCallResultsSqlParams(run_id=uuid.UUID(run_id))
                     result = cast(
                         GetRubricToolCallResultsSqlRow,
                         await execute_sql_typed(conn, SQL_PATH, params=params),
@@ -52,18 +50,25 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
                         descriptions_list = []
                         if isinstance(result.descriptions, list):
                             descriptions_list = result.descriptions
-                        elif isinstance(result.descriptions, dict) and "descriptions" in result.descriptions:
+                        elif (
+                            isinstance(result.descriptions, dict)
+                            and "descriptions" in result.descriptions
+                        ):
                             descriptions_list = result.descriptions["descriptions"]
-                        
+
                         # Format descriptions for client
                         formatted_descriptions = []
                         for desc in descriptions_list:
                             if isinstance(desc, dict):
-                                formatted_descriptions.append({
-                                    "standard_group_id": str(desc.get("standard_group_id", "")),
-                                    "standard_id": str(desc.get("standard_id", "")),
-                                    "description": str(desc.get("description", "")),
-                                })
+                                formatted_descriptions.append(
+                                    {
+                                        "standard_group_id": str(
+                                            desc.get("standard_group_id", "")
+                                        ),
+                                        "standard_id": str(desc.get("standard_id", "")),
+                                        "description": str(desc.get("description", "")),
+                                    }
+                                )
 
                         # Emit tool call completion event to client
                         await sio.emit(
@@ -150,4 +155,3 @@ async def handle_rubric_complete(data: dict[str, Any]) -> None:
             },
             room=sid,
         )
-

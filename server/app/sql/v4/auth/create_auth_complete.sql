@@ -119,7 +119,7 @@ slug_resource AS (
 ),
 new_auth AS (
     -- Create auth (no columns needed - all data in junction tables)
-    INSERT INTO auth (id)
+    INSERT INTO auths (id)
     SELECT uuidv7()
     FROM params
     RETURNING id as auth_id

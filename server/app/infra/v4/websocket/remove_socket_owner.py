@@ -9,7 +9,7 @@ logger = get_logger(__name__)
 
 async def remove_socket_owner(profile_id: str) -> None:
     """Remove the socket ownership for a profile from Redis.
-    
+
     Removes both:
     - socket_owner:{profile_id} (forward mapping)
     - socket_to_profile:{socket_id} (reverse mapping)
@@ -25,7 +25,7 @@ async def remove_socket_owner(profile_id: str) -> None:
         # First, get the socket_id so we can remove the reverse index
         socket_id_bytes = await redis_client.get(f"socket_owner:{profile_id}")
         socket_id = socket_id_bytes.decode("utf-8") if socket_id_bytes else None
-        
+
         # Use pipeline to remove both keys atomically
         async with redis_client.pipeline() as pipe:
             pipe.delete(f"socket_owner:{profile_id}")

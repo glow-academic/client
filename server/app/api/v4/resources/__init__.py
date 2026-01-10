@@ -19,19 +19,18 @@ from app.api.v4.resources.names import router as names_router
 from app.api.v4.resources.objectives import router as objectives_router
 from app.api.v4.resources.options import router as options_router
 from app.api.v4.resources.points import router as points_router
-from app.api.v4.resources.problem_statements import \
-    router as problem_statements_router
+from app.api.v4.resources.problem_statements import router as problem_statements_router
 from app.api.v4.resources.prompts import router as prompts_router
 from app.api.v4.resources.questions import router as questions_router
 from app.api.v4.resources.responses import router as responses_router
-from app.api.v4.resources.schema_field_items import \
-    router as schema_field_items_router
+from app.api.v4.resources.schema_field_items import router as schema_field_items_router
 from app.api.v4.resources.schema_fields import router as schema_fields_router
 from app.api.v4.resources.schemas import router as schemas_router
 from app.api.v4.resources.standard_groups import router as standard_groups_router
 from app.api.v4.resources.strengths import router as strengths_router
-from app.api.v4.resources.template_array_items import \
-    router as template_array_items_router
+from app.api.v4.resources.template_array_items import (
+    router as template_array_items_router,
+)
 from app.api.v4.resources.template_values import router as template_values_router
 from app.api.v4.resources.templates import router as templates_router
 from app.api.v4.resources.thresholds import router as thresholds_router

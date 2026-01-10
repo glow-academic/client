@@ -112,7 +112,7 @@ SELECT
         ),
         '{}'::types.q_get_auth_list_v4_auth[]
     ) as auths
-FROM auth a
+FROM auths a
 LEFT JOIN auth_item_counts aic ON aic.auth_id = a.id
 LEFT JOIN auth_sample_items asi ON asi.auth_id = a.id
 CROSS JOIN user_profile up

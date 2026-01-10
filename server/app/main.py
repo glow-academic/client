@@ -285,8 +285,7 @@ async def init_db_pool() -> None:
 
     if env_name == "TEST":
         print("🐳 TEST mode detected: starting disposable Postgres with Testcontainers")
-        from testcontainers.postgres import \
-            PostgresContainer  # type: ignore[import]
+        from testcontainers.postgres import PostgresContainer  # type: ignore[import]
 
         _test_container = PostgresContainer("postgres:18")
         _test_container.start()
@@ -530,8 +529,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         pool = get_pool()
         if pool:
             # Setup activity logger
-            from app.infra.v4.activity.logger import \
-                setup_activity_logger  # noqa: E402
+            from app.infra.v4.activity.logger import setup_activity_logger  # noqa: E402
 
             setup_activity_logger(pool)
             logger.info("Activity logger initialized")
@@ -540,8 +538,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             # Sync is triggered via WebSocket events and after auth mutations
 
         # Initialize metrics collector
-        from app.infra.v4.metrics.collector import \
-            initialize_metrics  # noqa: E402
+        from app.infra.v4.metrics.collector import initialize_metrics  # noqa: E402
 
         if pool:
             await initialize_metrics(pool, redis_client)
@@ -551,11 +548,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             )
 
         # Import MCP server for lifespan management
-        from app.mcp import \
-            mcp_server as artifacts_resources_mcp_server  # noqa: E402
+        from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
 
         # Add MCP server session manager to lifespan
-        await stack.enter_async_context(artifacts_resources_mcp_server.session_manager.run())
+        await stack.enter_async_context(
+            artifacts_resources_mcp_server.session_manager.run()
+        )
 
         # Generate OpenAPI schema and write to disk
         schema = get_openapi(
@@ -737,7 +735,11 @@ fastapi_app.include_router(socket_v4_router)
 # Mount artifacts/resources MCP server
 from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
 
-fastapi_app.mount("/mcp", artifacts_resources_mcp_server.streamable_http_app(), name="Artifacts-Resources-MCP")
+fastapi_app.mount(
+    "/mcp",
+    artifacts_resources_mcp_server.streamable_http_app(),
+    name="Artifacts-Resources-MCP",
+)
 
 # Create the combined ASGI app with Socket.IO
 app = socketio.ASGIApp(sio, fastapi_app, socketio_path=socket_path)

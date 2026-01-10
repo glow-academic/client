@@ -79,7 +79,7 @@ WITH params AS (
 auth_exists_check AS (
     -- Check if auth exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM auth WHERE id = (SELECT auth_id FROM params)
+        SELECT 1 FROM auths WHERE id = (SELECT auth_id FROM params)
     )::boolean as auth_exists
 ),
 actor_profile AS (
@@ -149,7 +149,7 @@ slug_resource AS (
 ),
 update_auth AS (
     -- Update auth entry (only updated_at, no other columns)
-    UPDATE auth
+    UPDATE auths
     SET updated_at = NOW()
     WHERE id = (SELECT auth_id FROM auth_id_resolved)
     RETURNING id as auth_id

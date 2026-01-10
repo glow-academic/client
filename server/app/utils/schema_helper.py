@@ -276,7 +276,10 @@ async def create_template_with_values(
                         item_schema_id = field["item_schema_id"]
                         if item_schema_id:
                             item_template_id = await create_template_with_values(
-                                conn, f"{name} - {field_name}[{position}]", item_schema_id, item_value
+                                conn,
+                                f"{name} - {field_name}[{position}]",
+                                item_schema_id,
+                                item_value,
                             )
 
                             # Link array item

@@ -56,7 +56,7 @@ async def _generate_error_impl(
         agent_error_event = AGENT_ERROR_MAPPING.get(
             data.resource_type or "text", "text_error"
         )
-        
+
         # Dispatch to agent-specific error handler
         await internal_sio.emit(
             agent_error_event,
@@ -104,4 +104,3 @@ register_server_endpoint(
     GenerateErrorApiRequest,
     "Top-level error handler for generation errors",
 )
-

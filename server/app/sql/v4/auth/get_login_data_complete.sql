@@ -106,7 +106,7 @@ active_settings AS (
 -- Get auths linked to department settings or default settings
 dept_auths AS (
     SELECT DISTINCT a.id
-    FROM auth a
+    FROM auths a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
     JOIN dept_settings ds ON ds.settings_id = sa.settings_id
     WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
@@ -114,7 +114,7 @@ dept_auths AS (
 -- Get auths linked to default settings
 default_auths AS (
     SELECT DISTINCT a.id
-    FROM auth a
+    FROM auths a
     JOIN setting_auths sa ON sa.auth_id = a.id AND sa.active = true
     JOIN default_settings ds ON ds.settings_id = sa.settings_id
     WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
@@ -129,7 +129,7 @@ providers_data AS (
             ),
             '{}'::types.q_get_login_data_v4_provider[]
         ) as providers
-    FROM auth a
+    FROM auths a
     CROSS JOIN (SELECT guest_login_enabled FROM active_settings LIMIT 1) s
     WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
       AND (

@@ -288,4 +288,3 @@ register_server_endpoint(
     MemberProgressPayload,
     "Upsert user message and run, trigger appropriate generate event via artifacts system",
 )
-

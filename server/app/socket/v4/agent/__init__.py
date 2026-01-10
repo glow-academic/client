@@ -6,4 +6,3 @@ __all__ = ["generate"]
 
 client_router = generate.client_router
 server_router = generate.server_router
-

@@ -3,8 +3,7 @@
 import uuid
 from typing import Any
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
@@ -129,7 +128,7 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
                 sid=sid,
             )
             return
-        
+
         if not profile_id_str:
             await emit_to_internal(
                 "generate_error",
@@ -162,7 +161,7 @@ async def rubric_generate(sid: str, data: dict[str, Any]) -> None:
 @internal_sio.on("rubric_generate")  # type: ignore
 async def rubric_generate_internal(data: dict[str, Any]) -> None:
     """Handle rubric_generate event from internal bus (server-to-server).
-    
+
     Routes directly to artifacts/generate.py which will create run and handle generation.
     """
     try:
@@ -181,4 +180,3 @@ async def rubric_generate_internal(data: dict[str, Any]) -> None:
             ),
             sid=sid,
         )
-

@@ -6,10 +6,13 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (StrengthsApiRequest,
-                           StrengthsApiResponse,
-                           StrengthsSqlParams,
-                           StrengthsSqlRow, load_sql_query)
+from app.sql.types import (
+    StrengthsApiRequest,
+    StrengthsApiResponse,
+    StrengthsSqlParams,
+    StrengthsSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
@@ -56,12 +59,12 @@ async def create_strength(
             # Convert API request to SQL params (use double star pattern)
             # Frontend sends snake_case (name, description, message_id) - auto-generated types match SQL function signature
             # Get mcp flag from header (set by router-level dependency)
-            mcp = getattr(http_request.state, 'mcp', False) or False
-            
+            mcp = getattr(http_request.state, "mcp", False) or False
+
             # Convert API request to SQL params (use double star pattern)
             # Add mcp from header (not in request body)
             request_dict = request.model_dump()
-            request_dict['mcp'] = mcp
+            request_dict["mcp"] = mcp
             params = StrengthsSqlParams(**request_dict)
             sql_params = params.to_tuple()
 

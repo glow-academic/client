@@ -6,10 +6,13 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (CreateDraftConversationsApiRequest,
-                           CreateDraftConversationsApiResponse,
-                           CreateDraftConversationsSqlParams,
-                           CreateDraftConversationsSqlRow, load_sql_query)
+from app.sql.types import (
+    CreateDraftConversationsApiRequest,
+    CreateDraftConversationsApiResponse,
+    CreateDraftConversationsSqlParams,
+    CreateDraftConversationsSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
@@ -80,7 +83,9 @@ async def create_draft_conversations(
             )
 
         # Convert SQL result to API response (auto-generated types)
-        api_response = CreateDraftConversationsApiResponse.model_validate(result.model_dump())
+        api_response = CreateDraftConversationsApiResponse.model_validate(
+            result.model_dump()
+        )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)

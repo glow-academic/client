@@ -79,9 +79,7 @@ async def simulation_voice_start(sid: str, data: dict[str, Any]) -> None:
 
             # Determine agent_id (prefer voice_agent_id, fallback to agent_id)
             agent_id = (
-                result.voice_agent_id
-                if result.voice_agent_id
-                else result.agent_id
+                result.voice_agent_id if result.voice_agent_id else result.agent_id
             )
 
             if not agent_id:
@@ -138,7 +136,9 @@ async def audio_session_started_listener(data: dict[str, Any]) -> None:
     # Build simulation response payload
     response_payload = SimulationVoiceStartResponsePayload(
         success=data.get("success", False),
-        message="Voice session started successfully" if data.get("success") else "Failed to start voice session",
+        message="Voice session started successfully"
+        if data.get("success")
+        else "Failed to start voice session",
         ephemeral_key=data.get("ephemeral_key"),
         persona_tools=data.get("tools", []),
         tool_context_map={},  # TODO: Get from database if needed

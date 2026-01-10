@@ -31,7 +31,7 @@ async def handle_personas_progress(data: dict[str, Any]) -> None:
     modality = data.get("modality", "text")
     if modality != "text":
         return  # Not for us
-    
+
     resource_type = data.get("resource_type")
     if resource_type not in PERSONA_RESOURCE_TYPES:
         return  # Not for us

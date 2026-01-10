@@ -18,19 +18,16 @@ from app.api.v4.drafts.names import router as names_router
 from app.api.v4.drafts.objectives import router as objectives_router
 from app.api.v4.drafts.options import router as options_router
 from app.api.v4.drafts.points import router as points_router
-from app.api.v4.drafts.problem_statements import \
-    router as problem_statements_router
+from app.api.v4.drafts.problem_statements import router as problem_statements_router
 from app.api.v4.drafts.prompts import router as prompts_router
 from app.api.v4.drafts.questions import router as questions_router
 from app.api.v4.drafts.responses import router as responses_router
-from app.api.v4.drafts.schema_field_items import \
-    router as schema_field_items_router
+from app.api.v4.drafts.schema_field_items import router as schema_field_items_router
 from app.api.v4.drafts.schema_fields import router as schema_fields_router
 from app.api.v4.drafts.schemas import router as schemas_router
 from app.api.v4.drafts.standard_groups import router as standard_groups_router
 from app.api.v4.drafts.strengths import router as strengths_router
-from app.api.v4.drafts.template_array_items import \
-    router as template_array_items_router
+from app.api.v4.drafts.template_array_items import router as template_array_items_router
 from app.api.v4.drafts.template_values import router as template_values_router
 from app.api.v4.drafts.templates import router as templates_router
 from app.api.v4.drafts.thresholds import router as thresholds_router

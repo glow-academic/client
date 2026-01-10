@@ -33,7 +33,7 @@ router = APIRouter()
     dependencies=[
         audit_activity(
             "persona.saved",
-            "{{ actor.name }} {% if persona %}updated{% else %}created{% endif %} persona{% if persona %} '{{ persona.name }}'{% endif %}"
+            "{{ actor.name }} {% if persona %}updated{% else %}created{% endif %} persona{% if persona %} '{{ persona.name }}'{% endif %}",
         )
     ],
 )
@@ -85,9 +85,7 @@ async def save_persona(
 
             # Set audit context with data from SQL query
             if result.actor_name:
-                audit_ctx = {
-                    "actor": {"name": result.actor_name, "id": profile_id}
-                }
+                audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
                 # Only add persona to audit context if input_persona_id was provided (update mode)
                 # For create mode, we don't have the name yet, so we'll use the request name if available
                 if request.input_persona_id:

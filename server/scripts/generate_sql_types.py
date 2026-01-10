@@ -85,7 +85,7 @@ def _sql_path_to_route_name(sql_path: str) -> str | None:
 
         # Extract operation name from filename (remove _complete.sql suffix)
         operation = filename[: -len("_complete.sql")]
-        
+
         return operation.replace("-", "_")
 
     # Pattern: tests/sql/{VERSION}/integration/infra/[resource]/[operation].sql

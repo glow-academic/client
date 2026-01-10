@@ -29,7 +29,7 @@ JWKS_TTL = 60  # seconds
 
 def is_mcp_enabled() -> bool:
     """Check if MCP is enabled (hardcoded for now, ready for DB integration).
-    
+
     TODO: Replace with DB check:
         async with get_db() as conn:
             result = await conn.fetchval(
@@ -70,13 +70,13 @@ def bearer_from_request(request: Request) -> str | None:
 
 def verify_token(token: str) -> dict[str, Any]:
     """Verify JWT token from Keycloak.
-    
+
     Args:
         token: JWT token string
-        
+
     Returns:
         Decoded token claims
-        
+
     Raises:
         ValueError: If token is invalid
     """
@@ -85,12 +85,12 @@ def verify_token(token: str) -> dict[str, Any]:
         kid = headers.get("kid")
         if not kid:
             raise ValueError("Token missing kid header")
-            
+
         keys = get_jwks()
         key = next((k for k in keys if k.get("kid") == kid), None)
         if not key:
             raise ValueError("No matching JWK found")
-            
+
         claims = jwt.decode(
             token,
             key,
@@ -112,7 +112,9 @@ def oauth_401() -> Response:
     """Return 401 with WWW-Authenticate header pointing to PRM."""
     return Response(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        headers={"WWW-Authenticate": f'Bearer realm="mcp", authorization_uri="{PRM_URL}"'},
+        headers={
+            "WWW-Authenticate": f'Bearer realm="mcp", authorization_uri="{PRM_URL}"'
+        },
     )
 
 
@@ -122,15 +124,19 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Any) -> Response:
         """Process MCP requests with OAuth and feature flag checks."""
         path = request.url.path
-        
+
         # Build expected MCP paths
         mcp_path = f"{APP_PREFIX}/mcp" if APP_PREFIX else "/mcp"
-        prm_path = f"{APP_PREFIX}/.well-known/oauth-protected-resource" if APP_PREFIX else "/.well-known/oauth-protected-resource"
-        
+        prm_path = (
+            f"{APP_PREFIX}/.well-known/oauth-protected-resource"
+            if APP_PREFIX
+            else "/.well-known/oauth-protected-resource"
+        )
+
         # Only process /mcp paths
         if not path.startswith(mcp_path) and not path.startswith("/mcp"):
             return await call_next(request)
-            
+
         # Handle PRM discovery endpoint (no auth required)
         if path.endswith("/.well-known/oauth-protected-resource") or path == prm_path:
             return JSONResponse(
@@ -139,7 +145,7 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
                     "authorization_servers": [KEYCLOAK_ISSUER],
                 }
             )
-        
+
         # Check feature flag first
         if not is_mcp_enabled():
             return JSONResponse(
@@ -150,12 +156,12 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 headers={"Retry-After": "300"},
             )
-        
+
         # Check for Bearer token
         token = bearer_from_request(request)
         if not token:
             return oauth_401()
-        
+
         # Verify token
         try:
             claims = verify_token(token)
@@ -163,6 +169,6 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
             request.state.mcp_claims = claims
         except ValueError:
             return oauth_401()
-        
+
         # Continue to MCP server
         return await call_next(request)

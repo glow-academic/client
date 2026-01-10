@@ -46,6 +46,7 @@ class TestFind_Profile_By_Socket:
         mock_redis = AsyncMock()
         # Mock direct lookup returns None (not found)
         mock_redis.get = AsyncMock(return_value=None)
+
         # Mock scan_iter to return empty (fallback)
         async def mock_scan_iter(match: str) -> AsyncIterator[bytes]:
             if False:
@@ -124,6 +125,7 @@ class TestFind_Profile_By_Socket:
         # Mock direct lookup returns None (reverse index missing)
         # Then during scan_iter, get() is called again for forward mapping lookup
         get_calls = []
+
         async def mock_get(key: str):
             get_calls.append(key)
             if key == f"socket_to_profile:{socket_id}":
@@ -133,9 +135,9 @@ class TestFind_Profile_By_Socket:
                 # Second call during scan_iter: forward mapping lookup
                 return socket_id.encode("utf-8")
             return None
-        
+
         mock_redis.get = AsyncMock(side_effect=mock_get)
-        
+
         # Mock scan_iter to return one key
         async def mock_scan_iter(match: str) -> AsyncIterator[bytes]:
             yield f"socket_owner:{profile_id}".encode()

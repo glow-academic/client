@@ -51,7 +51,9 @@ async def render_developer_instruction(
         )
 
         if not agent_artifact:
-            logger.warning(f"Agent {agent_id} has no artifact/domain, skipping developer instruction")
+            logger.warning(
+                f"Agent {agent_id} has no artifact/domain, skipping developer instruction"
+            )
             return None
 
         # Get developer instruction template
@@ -69,7 +71,9 @@ async def render_developer_instruction(
         )
 
         if not dev_instruction_result or not dev_instruction_result.template:
-            logger.debug(f"No developer instruction template found for agent {agent_id}")
+            logger.debug(
+                f"No developer instruction template found for agent {agent_id}"
+            )
             return None
 
         template_str = dev_instruction_result.template
@@ -89,7 +93,9 @@ async def render_developer_instruction(
         )
 
         if not context_result:
-            logger.warning(f"Could not get context for agent {agent_id}, scenario {scenario_id}")
+            logger.warning(
+                f"Could not get context for agent {agent_id}, scenario {scenario_id}"
+            )
             # Still try to render template without context
             context_data: dict[str, Any] = {
                 "parameters": [],
@@ -137,7 +143,9 @@ async def render_developer_instruction(
         rendered_content = template.render(**context_data)
 
         if not rendered_content or not rendered_content.strip():
-            logger.debug(f"Rendered developer instruction is empty for agent {agent_id}")
+            logger.debug(
+                f"Rendered developer instruction is empty for agent {agent_id}"
+            )
             return None
 
         logger.info(
@@ -159,4 +167,3 @@ async def render_developer_instruction(
         )
         # Don't raise - return None to allow flow to continue
         return None
-

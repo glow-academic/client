@@ -160,7 +160,7 @@ settings_auths_with_items AS (
         ) as auth_items
     FROM selected_settings ss
     JOIN setting_auths sa ON sa.settings_id = ss.settings_id AND sa.active = true
-    JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
     LEFT JOIN auth_items ai_j ON ai_j.auth_id = a.id
     LEFT JOIN items ai ON ai.id = ai_j.item_id
     GROUP BY a.id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE)

@@ -9,42 +9,53 @@ from typing import Any, cast
 import httpx
 import websockets
 from agents.items import TResponseInputItem
-from app.infra.v4.artifacts import (convert_tools_to_openai_format,
-                                    format_messages_for_litellm,
-                                    stream_litellm_events)
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.artifacts import (
+    convert_tools_to_openai_format,
+    format_messages_for_litellm,
+    stream_litellm_events,
+)
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.remove_active_run import remove_active_run
 from app.infra.v4.websocket.store_active_run import store_active_run
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import IMAGE_FOLDER, VIDEO_FOLDER, get_internal_sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
-                           GetAudioRunContextAndCreateRunSqlRow,
-                           GetGenerationRunContextAndCreateRunSqlParams,
-                           GetGenerationRunContextAndCreateRunSqlRow,
-                           GetImageGenerationContextAndCreateUploadSqlParams,
-                           GetImageGenerationContextAndCreateUploadSqlRow,
-                           GetMessagesByIdsSqlParams, GetMessagesByIdsSqlRow,
-                           GetMessagesByRunIdSqlParams,
-                           GetMessagesByRunIdSqlRow,
-                           GetTextRunContextForExistingRunSqlParams,
-                           GetTextRunContextForExistingRunSqlRow,
-                           GetVideoRunContextAndCreateRunSqlParams,
-                           GetVideoRunContextAndCreateRunSqlRow,
-                           IGetTextRunContextAndCreateRunV4Tool,
-                           InsertUploadSqlParams, InsertUploadSqlRow)
+from app.sql.types import (
+    GetAudioRunContextAndCreateRunSqlParams,
+    GetAudioRunContextAndCreateRunSqlRow,
+    GetGenerationRunContextAndCreateRunSqlParams,
+    GetGenerationRunContextAndCreateRunSqlRow,
+    GetImageGenerationContextAndCreateUploadSqlParams,
+    GetImageGenerationContextAndCreateUploadSqlRow,
+    GetMessagesByIdsSqlParams,
+    GetMessagesByIdsSqlRow,
+    GetMessagesByRunIdSqlParams,
+    GetMessagesByRunIdSqlRow,
+    GetTextRunContextForExistingRunSqlParams,
+    GetTextRunContextForExistingRunSqlRow,
+    GetVideoRunContextAndCreateRunSqlParams,
+    GetVideoRunContextAndCreateRunSqlRow,
+    IGetTextRunContextAndCreateRunV4Tool,
+    InsertUploadSqlParams,
+    InsertUploadSqlRow,
+)
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
 internal_sio = get_internal_sio()
 
-SQL_PATH = "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"
-SQL_PATH_TEXT = "app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql"
+SQL_PATH = (
+    "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"
+)
+SQL_PATH_TEXT = (
+    "app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql"
+)
 SQL_PATH_MESSAGES_BY_IDS = "app/sql/v4/messages/get_messages_by_ids_complete.sql"
 SQL_PATH_MESSAGES_BY_RUN = "app/sql/v4/messages/get_messages_by_run_id_complete.sql"
-SQL_PATH_IMAGE = "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
+SQL_PATH_IMAGE = (
+    "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
+)
 SQL_PATH_VIDEO = "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"
 SQL_PATH_AUDIO = "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"
 
@@ -60,24 +71,22 @@ from app.main import UPLOAD_FOLDER
 
 
 def determine_modality_from_output_modalities(
-    output_modalities: list[str] | None
+    output_modalities: list[str] | None,
 ) -> str:
     """Determine handler modality from model's output_modalities.
-    
+
     Prefers 'text' if available, otherwise uses first modality.
     Falls back to 'text' if no modalities provided.
     """
     if not output_modalities or len(output_modalities) == 0:
         return "text"  # Default fallback
-    
+
     # Prefer text if available (most common)
     if "text" in output_modalities:
         return "text"
-    
+
     # Otherwise use first modality
     return output_modalities[0]
-
-
 
 
 async def _generate_artifact_impl(
@@ -96,8 +105,10 @@ async def _generate_artifact_impl(
                 if resource_type:
                     resource_types = [resource_type]
                 else:
-                    raise ValueError("Either resource_types or resource_type must be provided")
-            
+                    raise ValueError(
+                        "Either resource_types or resource_type must be provided"
+                    )
+
             # Convert message_ids to UUID array if provided (shared across all resource_types)
             message_ids_uuid = (
                 [uuid.UUID(mid) for mid in data.get("message_ids", [])]
@@ -109,7 +120,7 @@ async def _generate_artifact_impl(
             agent_id = data.get("agent_id")
             if not agent_id:
                 raise ValueError("agent_id must be provided")
-            
+
             # Process each resource_type
             for resource_type in resource_types:
                 try:
@@ -120,8 +131,12 @@ async def _generate_artifact_impl(
                         profile_id=profile_id,
                         message_ids=message_ids_uuid,
                         department_id=None,  # Can be NULL, modality handlers will get it
-                        group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
-                        user_instructions=data.get("instructions"),  # Renamed from user_instructions
+                        group_id=uuid.UUID(data["group_id"])
+                        if data.get("group_id")
+                        else None,
+                        user_instructions=data.get(
+                            "instructions"
+                        ),  # Renamed from user_instructions
                     )
                     result = cast(
                         GetGenerationRunContextAndCreateRunSqlRow,
@@ -181,7 +196,9 @@ async def _generate_artifact_impl(
                     )
                     continue  # Continue to next resource_type instead of returning
 
-                modality = determine_modality_from_output_modalities(result.output_modalities)
+                modality = determine_modality_from_output_modalities(
+                    result.output_modalities
+                )
                 run_id = result.run_id
                 group_id = str(result.group_id) if result.group_id else None
                 trace_id = result.trace_id
@@ -216,7 +233,9 @@ async def _generate_artifact_impl(
                         agent_id=uuid.UUID(agent_id) if agent_id else None,
                         resource_id=uuid.UUID(data["resource_id"]),
                         resource_type=resource_type,
-                        message_ids=[uuid.UUID(mid) for mid in message_ids] if message_ids else None,
+                        message_ids=[uuid.UUID(mid) for mid in message_ids]
+                        if message_ids
+                        else None,
                         group_id=uuid.UUID(group_id) if group_id else None,
                         trace_id=trace_id,
                         tool_choice="required" if modality == "call" else "auto",
@@ -297,7 +316,7 @@ async def _handle_text_generation(
     """Handle text generation using litellm directly."""
     if not LITELLM_AVAILABLE:
         raise ValueError("litellm is not available")
-    
+
     if not agent_id:
         raise ValueError("agent_id is required for text generation")
 
@@ -353,17 +372,22 @@ async def _handle_text_generation(
         run_messages_params = GetMessagesByRunIdSqlParams(run_id=run_id)
         run_messages_result = cast(
             GetMessagesByRunIdSqlRow,
-            await execute_sql_typed(conn, SQL_PATH_MESSAGES_BY_RUN, params=run_messages_params),
+            await execute_sql_typed(
+                conn, SQL_PATH_MESSAGES_BY_RUN, params=run_messages_params
+            ),
         )
         if run_messages_result.messages:
             for msg in run_messages_result.messages:
                 if msg.role in ("system", "developer"):
-                    input_items.append({  # type: ignore[arg-type]
-                        "role": msg.role,
-                        "content": msg.content or "",
-                    })
+                    input_items.append(
+                        {  # type: ignore[arg-type]
+                            "role": msg.role,
+                            "content": msg.content or "",
+                        }
+                    )
     except Exception:
         import logging
+
         logging.getLogger(__name__).warning(f"Failed to fetch run messages")
 
     # Get messages from message_ids (user regeneration message + context messages)
@@ -372,28 +396,36 @@ async def _handle_text_generation(
             messages_params = GetMessagesByIdsSqlParams(message_ids=message_ids)
             messages_result = cast(
                 GetMessagesByIdsSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_MESSAGES_BY_IDS, params=messages_params),
+                await execute_sql_typed(
+                    conn, SQL_PATH_MESSAGES_BY_IDS, params=messages_params
+                ),
             )
             if messages_result.messages:
                 for msg in messages_result.messages:
                     if msg.role not in ("system", "developer"):
-                        input_items.append({  # type: ignore[arg-type]
-                            "role": msg.role,
-                            "content": msg.content or "",
-                        })
+                        input_items.append(
+                            {  # type: ignore[arg-type]
+                                "role": msg.role,
+                                "content": msg.content or "",
+                            }
+                        )
         except Exception:
             import logging
+
             logging.getLogger(__name__).warning(f"Failed to fetch messages by IDs")
 
     # Format messages for litellm
     messages = format_messages_for_litellm(input_items)
-    
+
     # Add system prompt if present
     if result.system_prompt:
-        messages.insert(0, {
-            "role": "system",
-            "content": result.system_prompt,
-        })
+        messages.insert(
+            0,
+            {
+                "role": "system",
+                "content": result.system_prompt,
+            },
+        )
 
     # Track completed tool names for verification
     required_tool_names: set[str] = {
@@ -428,14 +460,14 @@ async def _handle_text_generation(
         "api_key": decrypted_api_key,
         "temperature": result.temperature or 0.0,
     }
-    
+
     if result.base_url:
         completion_kwargs["base_url"] = result.base_url
-    
+
     if openai_tools:
         completion_kwargs["tools"] = openai_tools
         completion_kwargs["tool_choice"] = tool_choice
-    
+
     # Handle reasoning if present
     if result.reasoning:
         completion_kwargs["extra_body"] = {"reasoning": result.reasoning}
@@ -449,7 +481,7 @@ async def _handle_text_generation(
     # but we store it for consistency with existing patterns
     await store_active_run(resource_id_str, stream)
 
-    enforce_required_tools = (tool_choice == "required")
+    enforce_required_tools = tool_choice == "required"
 
     completed_tool_names: set[str] = set()
     assistant_output = ""
@@ -546,7 +578,13 @@ async def _handle_text_generation(
                 tool_name = event.get("tool_name")
 
                 st = tool_call_states.setdefault(
-                    tool_call_id, {"tool_index": event.get("tool_index", 0), "call_id": tool_call_id, "tool_name": None, "arguments": ""}
+                    tool_call_id,
+                    {
+                        "tool_index": event.get("tool_index", 0),
+                        "call_id": tool_call_id,
+                        "tool_name": None,
+                        "arguments": "",
+                    },
                 )
                 if tool_name and not st["tool_name"]:
                     st["tool_name"] = tool_name
@@ -571,7 +609,11 @@ async def _handle_text_generation(
 
             elif event_type == "tool_call_complete":
                 tool_call_id = cast(str, event.get("tool_call_id"))
-                tool_name = event.get("name") or tool_call_states.get(tool_call_id, {}).get("tool_name") or ""
+                tool_name = (
+                    event.get("name")
+                    or tool_call_states.get(tool_call_id, {}).get("tool_name")
+                    or ""
+                )
                 arguments_str = event.get("arguments", "") or ""
 
                 # Parse args (best effort)
@@ -582,7 +624,12 @@ async def _handle_text_generation(
 
                 st = tool_call_states.setdefault(
                     tool_call_id,
-                    {"tool_index": event.get("tool_index", 0), "call_id": tool_call_id, "tool_name": None, "arguments": ""}
+                    {
+                        "tool_index": event.get("tool_index", 0),
+                        "call_id": tool_call_id,
+                        "tool_name": None,
+                        "arguments": "",
+                    },
                 )
                 st["tool_name"] = tool_name or st.get("tool_name")
                 st["arguments"] = arguments_str or st.get("arguments", "")
@@ -686,7 +733,9 @@ async def _handle_image_generation(
         image_id=image_id,
         agent_id=agent_id,
         profile_id=profile_id,
-        department_id=uuid.UUID(data["department_id"]) if data.get("department_id") else None,
+        department_id=uuid.UUID(data["department_id"])
+        if data.get("department_id")
+        else None,
     )
     result = cast(
         GetImageGenerationContextAndCreateUploadSqlRow,
@@ -725,6 +774,7 @@ async def _handle_image_generation(
         # Use native image generation via completion
         try:
             import litellm
+
             resp = await litellm.acompletion(
                 model=model_name,
                 messages=[{"role": "user", "content": prompt}],
@@ -744,7 +794,14 @@ async def _handle_image_generation(
 
                     # Persist image
                     image_name = data.get("name", "image")
-                    file_path = await _persist_image(conn, image_id, gemini_image_bytes, mime_type, file_size, image_name)
+                    file_path = await _persist_image(
+                        conn,
+                        image_id,
+                        gemini_image_bytes,
+                        mime_type,
+                        file_size,
+                        image_name,
+                    )
 
                     # Emit completion
                     await internal_sio.emit(
@@ -766,11 +823,15 @@ async def _handle_image_generation(
         except Exception as e:
             # Fall back to image_generation if native fails
             import logging
-            logging.getLogger(__name__).warning(f"Native image generation failed: {e}, falling back to image_generation")
+
+            logging.getLogger(__name__).warning(
+                f"Native image generation failed: {e}, falling back to image_generation"
+            )
 
     # Use litellm.image_generation()
     try:
         import litellm
+
         response = await litellm.aimage_generation(
             prompt=prompt,
             model=model_name,
@@ -794,7 +855,9 @@ async def _handle_image_generation(
             image_url = response
 
         if not image_url and not image_bytes:
-            raise ValueError(f"No image data returned from litellm for image {image_id}")
+            raise ValueError(
+                f"No image data returned from litellm for image {image_id}"
+            )
 
         # Download image if URL provided
         if image_url and not image_bytes:
@@ -816,9 +879,11 @@ async def _handle_image_generation(
         # Persist image (ensure image_bytes is not None)
         if not image_bytes:
             raise ValueError(f"No image data available for image {image_id}")
-        
+
         image_name = data.get("name", "image")
-        file_path = await _persist_image(conn, image_id, image_bytes, mime_type, file_size, image_name)
+        file_path = await _persist_image(
+            conn, image_id, image_bytes, mime_type, file_size, image_name
+        )
 
         # Emit completion
         await internal_sio.emit(
@@ -949,9 +1014,7 @@ async def _handle_video_generation(
         max_polls = 60  # 5 minutes max (5 second intervals)
         poll_count = 0
         while poll_count < max_polls:
-            video_status = await asyncio.to_thread(
-                client.videos.retrieve, video_job_id
-            )
+            video_status = await asyncio.to_thread(client.videos.retrieve, video_job_id)
             # Emit progress update
             progress_value = (
                 video_status.progress / 100.0
@@ -990,7 +1053,9 @@ async def _handle_video_generation(
                 video_bytes = video_content_bytes
 
                 # Persist video
-                file_path = await _persist_video(conn, video_id, video_bytes, upload_id, run_id)
+                file_path = await _persist_video(
+                    conn, video_id, video_bytes, upload_id, run_id
+                )
 
                 # Emit completion
                 await internal_sio.emit(
@@ -1023,13 +1088,16 @@ async def _handle_video_generation(
         if LITELLM_AVAILABLE:
             try:
                 import litellm
+
                 video_resp = await litellm.avideo_generation(
                     model=model_name,
                     prompt=prompt,
                     api_key=decrypted_api_key,
                 )
 
-                video_id_from_resp = video_resp.id if hasattr(video_resp, "id") else None
+                video_id_from_resp = (
+                    video_resp.id if hasattr(video_resp, "id") else None
+                )
                 if not video_id_from_resp:
                     raise ValueError("No video ID in response")
 
@@ -1042,7 +1110,9 @@ async def _handle_video_generation(
                         api_key=decrypted_api_key,
                     )
 
-                    status = status_resp.status if hasattr(status_resp, "status") else None
+                    status = (
+                        status_resp.status if hasattr(status_resp, "status") else None
+                    )
                     await internal_sio.emit(
                         "generate_progress",
                         {
@@ -1065,10 +1135,14 @@ async def _handle_video_generation(
                             video_id=video_id_from_resp,
                             api_key=decrypted_api_key,
                         )
-                        video_bytes = content_resp if isinstance(content_resp, bytes) else b""
+                        video_bytes = (
+                            content_resp if isinstance(content_resp, bytes) else b""
+                        )
 
                         # Persist video
-                        file_path = await _persist_video(conn, video_id, video_bytes, upload_id, run_id)
+                        file_path = await _persist_video(
+                            conn, video_id, video_bytes, upload_id, run_id
+                        )
 
                         # Emit completion
                         await internal_sio.emit(
@@ -1126,7 +1200,9 @@ async def _handle_audio_generation(
         upload_id=upload_id_for_audio,
         agent_id=agent_id,
         profile_id=profile_id,
-        department_id=uuid.UUID(data["department_id"]) if data.get("department_id") else None,
+        department_id=uuid.UUID(data["department_id"])
+        if data.get("department_id")
+        else None,
     )
     audio_result = cast(
         GetAudioRunContextAndCreateRunSqlRow,
@@ -1149,6 +1225,7 @@ async def _handle_audio_generation(
 
     # Connect to OpenAI Realtime API WebSocket
     from urllib.parse import quote
+
     url = f"wss://api.openai.com/v1/realtime?model={quote(model_name)}"
     headers = {
         "Authorization": f"Bearer {decrypted_api_key}",
@@ -1176,10 +1253,11 @@ async def _handle_audio_generation(
                 "type": "session.update",
                 "session": {
                     "modalities": ["text", "audio"],
-                    "instructions": audio_result.system_prompt or "Be concise and helpful.",
+                    "instructions": audio_result.system_prompt
+                    or "Be concise and helpful.",
                 },
             }
-            
+
             # TODO: Add tools and history formatting when needed
             # For now, send basic session config
             await ws.send(json.dumps(session_config))
@@ -1236,7 +1314,10 @@ async def _handle_audio_generation(
                                 "item_id": event.get("item_id"),
                             },
                         )
-                    elif event_type == "conversation.item.input_audio_transcription.completed":
+                    elif (
+                        event_type
+                        == "conversation.item.input_audio_transcription.completed"
+                    ):
                         # User transcription completed
                         await internal_sio.emit(
                             "generate_progress",
@@ -1389,7 +1470,9 @@ async def _handle_audio_generation(
                             "generate_error",
                             GenerateErrorApiRequest(
                                 sid=sid,
-                                error_message=error_data.get("message", "Unknown error"),
+                                error_message=error_data.get(
+                                    "message", "Unknown error"
+                                ),
                                 resource_id=str(resource_id),
                                 resource_type=resource_type,
                             ),

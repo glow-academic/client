@@ -34,7 +34,7 @@ router = APIRouter()
     dependencies=[
         audit_activity(
             "tool.get",
-            "{{ actor.name }} {% if tool %}viewed{% else %}opened new{% endif %} tool{% if tool %} '{{ tool.name }}'{% endif %}"
+            "{{ actor.name }} {% if tool %}viewed{% else %}opened new{% endif %} tool{% if tool %} '{{ tool.name }}'{% endif %}",
         )
     ],
 )
@@ -94,9 +94,7 @@ async def get_tool(
 
         # Set audit context
         if result.actor_name:
-            audit_ctx = {
-                "actor": {"name": result.actor_name, "id": profile_id}
-            }
+            audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
             # Only add tool to audit context if tool_id was provided (detail mode)
             if tool_id and result.name:
                 audit_ctx["tool"] = {
@@ -112,9 +110,7 @@ async def get_tool(
         else:
             # Detail mode: check if tool exists and has access
             if result.tool_exists is False:
-                raise HTTPException(
-                    status_code=404, detail=f"Tool {tool_id} not found"
-                )
+                raise HTTPException(status_code=404, detail=f"Tool {tool_id} not found")
 
         # Convert SQL result to API response
         response_data = GetToolApiResponse.model_validate(result.model_dump())

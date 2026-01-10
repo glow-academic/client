@@ -159,9 +159,11 @@ try:
         """Wrapper for root GLOW docs."""
         return _get_glow_docs()
 except ImportError:
+
     def get_glow_docs() -> dict[str, Any]:
         """Fallback when root docs not available."""
         return {"error": "Root GLOW documentation not available."}
+
 
 # Handler mapping - maps item name to available operations
 HANDLERS: dict[str, dict[str, Any]] = {
@@ -187,8 +189,6 @@ def get_available_operations(name: str) -> list[str]:
     if name not in HANDLERS:
         return []
     return list(HANDLERS[name].keys())
-
-
 
 
 def get_payload_schema(name: str) -> dict[str, Any]:
@@ -260,54 +260,64 @@ def register_endpoints(server: FastMCP) -> None:
     @server.tool()
     def artifacts() -> list[dict[str, str]]:
         """List all available artifacts with descriptions.
-        
+
         Returns:
             List of dictionaries with 'name' and 'description' keys.
         """
         return [
-            {"name": artifact, "description": ARTIFACT_DESCRIPTIONS.get(artifact, "No description available")}
+            {
+                "name": artifact,
+                "description": ARTIFACT_DESCRIPTIONS.get(
+                    artifact, "No description available"
+                ),
+            }
             for artifact in ARTIFACTS
         ]
 
     @server.tool()
     def resources() -> list[dict[str, str]]:
         """List all available resources with descriptions.
-        
+
         Returns:
             List of dictionaries with 'name' and 'description' keys.
         """
         return [
-            {"name": resource, "description": RESOURCE_DESCRIPTIONS.get(resource, "No description available")}
+            {
+                "name": resource,
+                "description": RESOURCE_DESCRIPTIONS.get(
+                    resource, "No description available"
+                ),
+            }
             for resource in RESOURCES
         ]
 
     @server.tool()
     def docs_artifact(name: str) -> dict[str, Any]:
         """Get comprehensive documentation for an artifact.
-        
+
         Args:
             name: The name of the artifact to get documentation for.
-        
+
         Returns:
             Dictionary containing database schema, relationships, API routing,
             resources, frontend information, and GLOW context.
         """
         if name not in ARTIFACTS:
             return {"error": f"'{name}' is not a valid artifact."}
-        
+
         if name not in ARTIFACT_DOCS:
             return {
                 "error": f"Documentation not available for '{name}'",
-                "note": "Documentation may not be implemented yet. Check if docs.py exists for this artifact."
+                "note": "Documentation may not be implemented yet. Check if docs.py exists for this artifact.",
             }
-        
+
         result = ARTIFACT_DOCS[name]()
         return cast(dict[str, Any], result)
 
     @server.tool()
     def docs() -> dict[str, Any]:
         """Get general GLOW documentation.
-        
+
         Returns:
             Dictionary containing general information about GLOW, its architecture,
             concepts, and patterns.
@@ -319,10 +329,10 @@ def register_endpoints(server: FastMCP) -> None:
     @server.tool()
     def payload_artifact(name: str) -> dict[str, Any]:  # type: ignore[return]
         """Get payload schema for an artifact.
-        
+
         Args:
             name: The name of the artifact.
-        
+
         Returns:
             JSON schema for the payload.
         """
@@ -331,10 +341,10 @@ def register_endpoints(server: FastMCP) -> None:
     @server.tool()
     def payload_resource(name: str) -> dict[str, Any]:  # type: ignore[return]
         """Get payload schema for a resource.
-        
+
         Args:
             name: The name of the resource.
-        
+
         Returns:
             JSON schema for the payload.
         """
@@ -343,11 +353,11 @@ def register_endpoints(server: FastMCP) -> None:
     @server.tool()
     async def get_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Get an artifact or resource by name.
-        
+
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing parameters for the get operation.
-        
+
         Returns:
             The artifact/resource data or error message.
         """
@@ -356,11 +366,11 @@ def register_endpoints(server: FastMCP) -> None:
     @server.tool()
     async def save_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Save (create or update) an artifact or resource.
-        
+
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing data to save.
-        
+
         Returns:
             Success response or error message.
         """
@@ -369,26 +379,24 @@ def register_endpoints(server: FastMCP) -> None:
     @server.tool()
     async def list_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """List items for an artifact or resource.
-        
+
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing filter parameters.
-        
+
         Returns:
             List of items or error message.
         """
         return await call_handler(name, "list", payload)
 
     @server.tool()
-    async def duplicate_artifact(
-        name: str, payload: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def duplicate_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Duplicate an artifact or resource.
-        
+
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing the item to duplicate.
-        
+
         Returns:
             Duplicated item data or error message.
         """
@@ -397,11 +405,11 @@ def register_endpoints(server: FastMCP) -> None:
     @server.tool()
     async def delete_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Delete an artifact or resource.
-        
+
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing the item to delete.
-        
+
         Returns:
             Success response or error message.
         """
@@ -411,11 +419,11 @@ def register_endpoints(server: FastMCP) -> None:
     @server.tool()
     async def create_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
         """Create a resource.
-        
+
         Args:
             name: The name of the resource.
             payload: The payload containing data to create the resource.
-        
+
         Returns:
             Success response or error message.
         """
@@ -424,11 +432,11 @@ def register_endpoints(server: FastMCP) -> None:
         if name not in RESOURCES:
             return {
                 "error": f"'{name}' is not a valid resource.",
-                "status": "invalid_resource"
+                "status": "invalid_resource",
             }
-        
+
         return {
             "message": f"Resource creation for '{name}' needs implementation.",
             "status": "not_implemented",
-            "note": "Resources are create-only. Use POST /api/v4/resources/{name} endpoint."
+            "note": "Resources are create-only. Use POST /api/v4/resources/{name} endpoint.",
         }

@@ -3,10 +3,10 @@
 import uuid
 from typing import Any
 
-from app.infra.v4.documents.format_document_template_context import \
-    format_document_template_context
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.documents.format_document_template_context import (
+    format_document_template_context,
+)
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
@@ -42,7 +42,8 @@ async def _generate_document_impl(
             # Get document context from SQL (fields, department, etc.)
             from app.sql.types import (
                 GetDocumentRunContextAndCreateRunSqlParams,
-                GetDocumentRunContextAndCreateRunSqlRow)
+                GetDocumentRunContextAndCreateRunSqlRow,
+            )
 
             # Get department_id from document if not provided
             if not data.department_id:
@@ -54,7 +55,7 @@ async def _generate_document_impl(
                 department_id = dept_id
             else:
                 department_id = uuid.UUID(data.department_id)
-            
+
             params = GetDocumentRunContextAndCreateRunSqlParams(
                 document_id=uuid.UUID(data.document_id),
                 profile_id=profile_id,
@@ -89,7 +90,10 @@ async def _generate_document_impl(
 
             # Extract fields and department from result
             fields_data: list[dict[str, Any]] | None = None
-            if hasattr(result, "template_context_fields") and result.template_context_fields:
+            if (
+                hasattr(result, "template_context_fields")
+                and result.template_context_fields
+            ):
                 fields_data = [
                     {
                         "item_name": field.item_name or "",
@@ -214,7 +218,7 @@ async def document_generate(sid: str, data: dict[str, Any]) -> None:
 @internal_sio.on("document_generate")  # type: ignore
 async def document_generate_internal(data: dict[str, Any]) -> None:
     """Handle document_generate event from internal bus (server-to-server).
-    
+
     Routes directly to artifacts/generate.py which will create run and handle generation.
     """
     try:
@@ -233,4 +237,3 @@ async def document_generate_internal(data: dict[str, Any]) -> None:
             ),
             sid=sid,
         )
-

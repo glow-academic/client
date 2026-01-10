@@ -40,7 +40,9 @@ class GenerateScenarioPayload(BaseModel):
     documentIds: list[str] | None = None
     fieldIds: list[str] | None = None
     profileId: str | None = None
-    randomizeType: str | None = None  # "all", "persona", "document", "parameters", "parameter_{paramId}"
+    randomizeType: str | None = (
+        None  # "all", "persona", "document", "parameters", "parameter_{paramId}"
+    )
     skipGeneration: bool = False  # If True, only randomize, don't generate
     attemptId: str | None = None
     simulationId: str | None = None
@@ -115,7 +117,7 @@ async def _generate_scenario_impl(
                             for row in dept_rows
                             if row.get("department_id")
                         ]
-                
+
                 if not department_ids_list and profile_id:
                     # Fallback to profile departments - fetch all rows
                     profile_dept_params = GetDepartmentsForProfileSqlParams(
@@ -182,7 +184,9 @@ async def _generate_scenario_impl(
                         FROM fields 
                         WHERE id = ANY($1::uuid[]) AND parameter_id IS NOT NULL
                     """
-                    param_rows = await conn.fetch(sql_get_params, [fid for fid in field_ids])
+                    param_rows = await conn.fetch(
+                        sql_get_params, [fid for fid in field_ids]
+                    )
                     parameter_ids = [
                         uuid.UUID(str(row["parameter_id"]))
                         for row in param_rows
@@ -193,9 +197,9 @@ async def _generate_scenario_impl(
                 # SQL function handles NULL scenario_id, but type system requires UUID
                 # Use dummy UUID if None - SQL function will handle it
                 randomize_params = RandomizeScenarioSqlParams(
-                    scenario_id=scenario_id_uuid if scenario_id_uuid else uuid.UUID(
-                        "00000000-0000-0000-0000-000000000000"
-                    ),
+                    scenario_id=scenario_id_uuid
+                    if scenario_id_uuid
+                    else uuid.UUID("00000000-0000-0000-0000-000000000000"),
                     profile_id=profile_id,
                     randomize_type=randomize_type,
                     department_ids=department_ids_list,
@@ -344,7 +348,9 @@ async def _generate_scenario_impl(
             )
 
             # Step 3: Route to generate_artifact (which will create run and handle generation)
-            resource_id = str(scenario_id_uuid) if scenario_id_uuid else str(uuid.uuid4())
+            resource_id = (
+                str(scenario_id_uuid) if scenario_id_uuid else str(uuid.uuid4())
+            )
 
             await internal_sio.emit(
                 "generate_artifact",
@@ -411,7 +417,7 @@ async def scenario_generate(sid: str, data: dict[str, Any]) -> None:
 @internal_sio.on("scenario_generate")  # type: ignore
 async def scenario_generate_internal(data: dict[str, Any]) -> None:
     """Handle scenario_generate event from internal bus (server-to-server).
-    
+
     Routes directly to artifacts/generate.py which will create run and handle generation.
     """
     try:
@@ -430,4 +436,3 @@ async def scenario_generate_internal(data: dict[str, Any]) -> None:
             ),
             sid=sid,
         )
-

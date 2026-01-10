@@ -40,10 +40,10 @@ async def patch_persona_draft(
 ) -> PatchPersonaDraftApiResponse:
     """Patch persona draft - accepts resource IDs and creates/updates draft."""
     tags = ["personas", "drafts"]
-    
+
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
-    
+
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -51,35 +51,32 @@ async def patch_persona_draft(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
-        
+
         async with conn.transaction():
             params = PatchPersonaDraftSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id
+                **request.model_dump(), profile_id=profile_id
             )
             sql_params = params.to_tuple()
-            
+
             result = cast(
                 PatchPersonaDraftSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
-            
+
             if not result:
                 raise ValueError("Failed to patch persona draft")
-            
+
             audit_set(
                 http_request,
                 actor={"id": profile_id},
                 draft={"id": str(result.draft_id)},
             )
-        
-        api_response = PatchPersonaDraftApiResponse.model_validate(
-            result.model_dump()
-        )
-        
+
+        api_response = PatchPersonaDraftApiResponse.model_validate(result.model_dump())
+
         await invalidate_tags(tags)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-        
+
         return api_response
     except HTTPException:
         raise

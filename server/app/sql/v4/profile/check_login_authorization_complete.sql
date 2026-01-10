@@ -126,7 +126,7 @@ department_auth_providers_count AS (
     JOIN department_settings ds ON ds.department_id = d.id AND ds.active = true
     JOIN settings s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
     CROSS JOIN params_normalized pn
     WHERE pn.department_id_uuid IS NOT NULL
       AND d.id = pn.department_id_uuid
@@ -138,7 +138,7 @@ default_settings_auth_providers_count AS (
     FROM default_settings ds
     JOIN settings s ON s.id = ds.settings_id
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
 ),
 departments_without_auth_providers_count AS (
     -- Count departments that have no auth providers configured
@@ -150,7 +150,7 @@ departments_without_auth_providers_count AS (
           FROM department_settings ds
           JOIN settings s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
           JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-          JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
+          JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
           WHERE ds.department_id = d.id
             AND ds.active = true
       )

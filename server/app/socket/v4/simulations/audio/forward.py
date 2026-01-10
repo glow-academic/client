@@ -160,9 +160,7 @@ async def simulation_voice_tool_call_start(sid: str, data: dict[str, Any]) -> No
 
 
 @sio.event  # type: ignore
-async def simulation_voice_tool_call_progress(
-    sid: str, data: dict[str, Any]
-) -> None:
+async def simulation_voice_tool_call_progress(sid: str, data: dict[str, Any]) -> None:
     """Handle simulation_voice_tool_call_progress event from client."""
     await _forward_simulation_event_to_audio(
         "simulation_voice_tool_call_progress", data, sid
@@ -170,9 +168,7 @@ async def simulation_voice_tool_call_progress(
 
 
 @sio.event  # type: ignore
-async def simulation_voice_tool_call_complete(
-    sid: str, data: dict[str, Any]
-) -> None:
+async def simulation_voice_tool_call_complete(sid: str, data: dict[str, Any]) -> None:
     """Handle simulation_voice_tool_call_complete event from client."""
     await _forward_simulation_event_to_audio(
         "simulation_voice_tool_call_complete", data, sid
@@ -188,9 +184,7 @@ async def simulation_voice_user_audio_link(sid: str, data: dict[str, Any]) -> No
 
 
 @sio.event  # type: ignore
-async def simulation_voice_assistant_audio_link(
-    sid: str, data: dict[str, Any]
-) -> None:
+async def simulation_voice_assistant_audio_link(sid: str, data: dict[str, Any]) -> None:
     """Handle simulation_voice_assistant_audio_link event from client."""
     await _forward_simulation_event_to_audio(
         "simulation_voice_assistant_audio_link", data, sid

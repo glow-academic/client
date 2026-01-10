@@ -15,7 +15,7 @@ _recursion_guard: contextvars.ContextVar[bool] = contextvars.ContextVar(
 
 async def find_profile_by_socket(socket_id: str) -> str | None:
     """Find the profile ID owned by a socket ID.
-    
+
     Uses O(1) direct lookup via socket_to_profile:{socket_id} key.
     Falls back to in-memory dict, then scan_iter for backward compatibility.
     """
@@ -26,14 +26,14 @@ async def find_profile_by_socket(socket_id: str) -> str | None:
             if sid == socket_id:
                 return profile_id
         return None
-    
+
     # Set recursion guard
     _recursion_guard.set(True)
-    
+
     try:
         redis_client = get_redis_client()
         socket_owner = get_socket_owner_dict()
-        
+
         if not redis_client:
             # Fallback to in-memory storage
             for profile_id, sid in socket_owner.items():
@@ -46,12 +46,12 @@ async def find_profile_by_socket(socket_id: str) -> str | None:
             profile_id_bytes = await redis_client.get(f"socket_to_profile:{socket_id}")
             if profile_id_bytes:
                 return profile_id_bytes.decode("utf-8")
-            
+
             # Second try: Fallback to in-memory dict (reverse lookup)
             for profile_id, sid in socket_owner.items():
                 if sid == socket_id:
                     return profile_id
-            
+
             # Third try: Fallback to scan_iter (for backward compatibility during migration)
             # This should rarely be needed if reverse index is properly maintained
             count = 0
@@ -65,7 +65,7 @@ async def find_profile_by_socket(socket_id: str) -> str | None:
                     profile_id = key.decode("utf-8").replace("socket_owner:", "")
                     return profile_id  # type: ignore
             return None
-            
+
         except RecursionError:
             # Don't log with logger.error() as it might use Redis and cause more recursion
             # Fallback to in-memory storage

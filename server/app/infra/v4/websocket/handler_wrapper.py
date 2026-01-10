@@ -4,8 +4,7 @@ import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.typed_emit import emit_to_client
 from pydantic import BaseModel, ValidationError
 
@@ -108,6 +107,7 @@ async def handle_internal_event(
             # This prevents infinite recursion while still allowing error propagation
             try:
                 from app.main import get_socket_owner_dict
+
                 socket_owner = get_socket_owner_dict()
                 # Try in-memory fallback (reverse lookup: find profile_id by socket_id)
                 for profile_id, owner_sid in socket_owner.items():
@@ -121,9 +121,11 @@ async def handle_internal_event(
                     try:
                         # Emit error directly to client using sid as room (doesn't require profile lookup)
                         from app.main import sio
+
                         if error_event_name == "generate_error":
                             # For generate_error, emit to internal bus
                             from app.main import get_internal_sio
+
                             internal_sio = get_internal_sio()
                             await internal_sio.emit(
                                 error_event_name,
@@ -149,13 +151,14 @@ async def handle_internal_event(
                         # If emitting also fails, just return silently to prevent infinite recursion
                         pass
                 return
-        
+
         if not profile_id_str:
             if error_event_name and error_response_type:
                 # Special handling for generate_error - emit to internal bus
                 if error_event_name == "generate_error":
                     try:
                         from app.main import get_internal_sio
+
                         internal_sio = get_internal_sio()
                         await internal_sio.emit(
                             error_event_name,
@@ -198,7 +201,7 @@ async def handle_internal_event(
             fields_to_remove.append("sid")
         if "group_id" not in model_fields:
             fields_to_remove.append("group_id")
-        
+
         payload_dict = {k: v for k, v in data.items() if k not in fields_to_remove}
         validated = request_type(**payload_dict)
         await handler(sid, validated, profile_id_uuid, group_id_uuid)
@@ -211,12 +214,14 @@ async def handle_internal_event(
             if sid:
                 try:
                     from app.main import get_internal_sio
-                    from app.socket.v4.artifacts.error import \
-                        AGENT_ERROR_MAPPING
+                    from app.socket.v4.artifacts.error import AGENT_ERROR_MAPPING
+
                     internal_sio = get_internal_sio()
                     resource_type = data.get("resource_type", "text")
                     # Map to resource-specific error event (e.g., "rubric_error")
-                    agent_error_event = AGENT_ERROR_MAPPING.get(resource_type, "text_error")
+                    agent_error_event = AGENT_ERROR_MAPPING.get(
+                        resource_type, "text_error"
+                    )
                     # Emit directly to resource handler, bypassing generate_error to prevent recursion
                     # Provide user-friendly error message instead of Pydantic validation details
                     await internal_sio.emit(
@@ -233,7 +238,7 @@ async def handle_internal_event(
                     # If emitting fails, don't recurse - just return silently
                     pass
             return  # CRITICAL: Return immediately to prevent recursion
-        
+
         if error_event_name and error_response_type:
             # For other error events (not generate_error), try to emit to client
             if error_event_name != "generate_error":
@@ -262,6 +267,7 @@ async def handle_internal_event(
             try:
                 if error_event_name == "generate_error":
                     from app.main import get_internal_sio
+
                     internal_sio = get_internal_sio()
                     await internal_sio.emit(
                         error_event_name,

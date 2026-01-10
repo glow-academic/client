@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 1HzJE9tNhRPIAGl1ICBBoydgx96kyrgfuE8AGrjs05FEtQIfwBfoH5XUceGgLmn
+\restrict fxNKVZT7YQDCmIiTpPf8gcPPDQ4mZOcLhG5ydKmSXOEHMau3Es72j4ttUt7ajBV
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -267,7 +267,8 @@ CREATE TYPE public.schema_field_type AS ENUM (
 --
 
 CREATE TYPE public.type_agent_flags AS ENUM (
-    'active'
+    'active',
+    'mcp'
 );
 
 
@@ -715,6 +716,50 @@ $$;
 
 
 --
+-- Name: build_arguments_raw_for_resource(public.resources, uuid, uuid, jsonb); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.build_arguments_raw_for_resource(p_resource_type public.resources, p_tool_id uuid, p_schema_id uuid, p_resource_data jsonb) RETURNS text
+    LANGUAGE plpgsql STABLE
+    AS $$
+DECLARE
+    v_arg_key text;
+    v_arg_value text;
+    v_args_jsonb jsonb := '{}'::jsonb;
+BEGIN
+    -- For each schema field, extract variable names from template or use field name directly
+    FOR v_arg_key, v_arg_value IN
+        SELECT 
+            CASE 
+                -- If template is empty, use field name as argument name
+                WHEN COALESCE(sf.template, '') = '' THEN sf.name
+                -- If template has variables, extract first variable name (before . or |)
+                -- Pattern: {{ variable }} or {{ variable.property }} or {{ variable|filter }}
+                ELSE COALESCE(
+                    (SELECT regexp_replace(
+                        regexp_replace(sf.template, '.*\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)', '\1'),
+                        '[\.\|].*', ''
+                    )),
+                    sf.name  -- Fallback to field name if extraction fails
+                )
+            END as arg_key,
+            -- Look up value from resource data using schema field name
+            p_resource_data->>sf.name as arg_value
+        FROM schema_fields sf
+        WHERE sf.schema_id = p_schema_id
+        ORDER BY sf.position
+    LOOP
+        IF v_arg_value IS NOT NULL THEN
+            v_args_jsonb := v_args_jsonb || jsonb_build_object(v_arg_key, v_arg_value);
+        END IF;
+    END LOOP;
+    
+    RETURN v_args_jsonb::text;
+END;
+$$;
+
+
+--
 -- Name: gen_trace_id(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -916,7 +961,8 @@ CREATE TABLE public.agent_department_prompts (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     agent_id uuid NOT NULL,
     department_id uuid NOT NULL,
-    prompt_id uuid NOT NULL
+    prompt_id uuid NOT NULL,
+    call_id uuid
 );
 
 
@@ -929,7 +975,10 @@ CREATE TABLE public.agent_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     agent_id uuid NOT NULL,
-    department_id uuid NOT NULL
+    department_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -941,7 +990,10 @@ CREATE TABLE public.agent_descriptions (
     agent_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -967,7 +1019,10 @@ CREATE TABLE public.agent_flags (
     type public.type_agent_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -979,7 +1034,10 @@ CREATE TABLE public.agent_instructions (
     agent_id uuid CONSTRAINT agent_developer_instructions_agent_id_not_null NOT NULL,
     instruction_id uuid CONSTRAINT agent_developer_instructions_developer_instruction_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT agent_developer_instructions_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT agent_developer_instructions_updated_at_not_null NOT NULL
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT agent_developer_instructions_updated_at_not_null NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -991,7 +1049,10 @@ CREATE TABLE public.agent_models (
     agent_id uuid NOT NULL,
     model_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1003,7 +1064,10 @@ CREATE TABLE public.agent_names (
     agent_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1016,7 +1080,10 @@ CREATE TABLE public.agent_prompts (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     agent_id uuid NOT NULL,
-    prompt_id uuid NOT NULL
+    prompt_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1082,7 +1149,7 @@ CREATE TABLE public.agents (
     id uuid DEFAULT uuidv7() CONSTRAINT agents_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1096,7 +1163,8 @@ CREATE TABLE public.analyses (
     content text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1186,21 +1254,8 @@ CREATE TABLE public.audios (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
-);
-
-
---
--- Name: auth; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.auth (
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT auth_id_v7_not_null NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1275,6 +1330,20 @@ CREATE TABLE public.auth_slugs (
     slug_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: auths; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auths (
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_created_at_not_null NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT auth_updated_at_not_null NOT NULL,
+    id uuid DEFAULT uuidv7() CONSTRAINT auth_id_v7_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT auth_active_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT auth_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT auth_mcp_not_null NOT NULL
 );
 
 
@@ -1355,7 +1424,10 @@ CREATE TABLE public.cohort_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cohort_id uuid NOT NULL,
-    department_id uuid NOT NULL
+    department_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1367,7 +1439,10 @@ CREATE TABLE public.cohort_descriptions (
     cohort_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1381,7 +1456,10 @@ CREATE TABLE public.cohort_flags (
     type public.type_cohort_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1393,7 +1471,10 @@ CREATE TABLE public.cohort_names (
     cohort_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1406,7 +1487,10 @@ CREATE TABLE public.cohort_profiles (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cohort_id uuid NOT NULL,
-    profile_id uuid NOT NULL
+    profile_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1420,7 +1504,10 @@ CREATE TABLE public.cohort_simulations (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     "position" integer DEFAULT 1 NOT NULL,
     cohort_id uuid NOT NULL,
-    simulation_id uuid NOT NULL
+    simulation_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1434,7 +1521,7 @@ CREATE TABLE public.cohorts (
     id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1451,7 +1538,8 @@ CREATE TABLE public.colors (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1466,7 +1554,8 @@ CREATE TABLE public.contents (
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT content_updated_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT content_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT content_generated_not_null NOT NULL,
-    call_id uuid CONSTRAINT content_call_id_not_null NOT NULL
+    call_id uuid CONSTRAINT content_call_id_not_null NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1481,7 +1570,8 @@ CREATE TABLE public.conversations (
     end_reason text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1495,7 +1585,8 @@ CREATE TABLE public.debug_info (
     id uuid DEFAULT uuidv7() CONSTRAINT debug_info_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1560,7 +1651,7 @@ CREATE TABLE public.departments (
     id uuid DEFAULT uuidv7() CONSTRAINT departments_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1575,7 +1666,8 @@ CREATE TABLE public.descriptions (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1600,7 +1692,10 @@ CREATE TABLE public.document_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    document_id uuid NOT NULL
+    document_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1612,7 +1707,10 @@ CREATE TABLE public.document_descriptions (
     document_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1625,7 +1723,10 @@ CREATE TABLE public.document_fields (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     document_id uuid NOT NULL,
-    field_id uuid NOT NULL
+    field_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1646,7 +1747,10 @@ CREATE TABLE public.document_flags (
     type public.type_document_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1671,7 +1775,10 @@ CREATE TABLE public.document_html (
     html_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1683,7 +1790,10 @@ CREATE TABLE public.document_names (
     document_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1696,7 +1806,10 @@ CREATE TABLE public.document_schemas (
     schema_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1709,7 +1822,10 @@ CREATE TABLE public.document_templates (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     document_id uuid NOT NULL,
-    template_id uuid NOT NULL
+    template_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -1749,7 +1865,7 @@ CREATE TABLE public.documents (
     id uuid DEFAULT uuidv7() CONSTRAINT documents_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1797,7 +1913,9 @@ CREATE TABLE public.draft_agents (
     agents_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1810,7 +1928,9 @@ CREATE TABLE public.draft_analyses (
     analyses_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1823,7 +1943,9 @@ CREATE TABLE public.draft_auth (
     auth_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1836,7 +1958,9 @@ CREATE TABLE public.draft_cohorts (
     cohorts_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1849,7 +1973,9 @@ CREATE TABLE public.draft_colors (
     colors_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1862,7 +1988,9 @@ CREATE TABLE public.draft_content (
     content_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1875,7 +2003,9 @@ CREATE TABLE public.draft_conversations (
     conversations_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1888,7 +2018,9 @@ CREATE TABLE public.draft_debug_info (
     debug_info_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1901,7 +2033,9 @@ CREATE TABLE public.draft_departments (
     departments_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1914,7 +2048,9 @@ CREATE TABLE public.draft_descriptions (
     descriptions_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1927,7 +2063,9 @@ CREATE TABLE public.draft_documents (
     documents_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1940,7 +2078,9 @@ CREATE TABLE public.draft_endpoints (
     endpoints_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1953,7 +2093,9 @@ CREATE TABLE public.draft_evals (
     evals_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1966,7 +2108,9 @@ CREATE TABLE public.draft_examples (
     examples_id uuid NOT NULL,
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1979,7 +2123,9 @@ CREATE TABLE public.draft_feedbacks (
     feedbacks_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -1992,7 +2138,9 @@ CREATE TABLE public.draft_fields (
     fields_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2005,7 +2153,9 @@ CREATE TABLE public.draft_flags (
     flags_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2018,7 +2168,9 @@ CREATE TABLE public.draft_hints (
     hints_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2031,7 +2183,9 @@ CREATE TABLE public.draft_html (
     html_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2044,7 +2198,9 @@ CREATE TABLE public.draft_icons (
     icons_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2057,7 +2213,9 @@ CREATE TABLE public.draft_images (
     images_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2070,7 +2228,9 @@ CREATE TABLE public.draft_improvements (
     improvements_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2083,7 +2243,9 @@ CREATE TABLE public.draft_instructions (
     instructions_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2096,7 +2258,9 @@ CREATE TABLE public.draft_items (
     items_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2109,7 +2273,9 @@ CREATE TABLE public.draft_keys (
     keys_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2122,7 +2288,9 @@ CREATE TABLE public.draft_models (
     models_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2135,7 +2303,9 @@ CREATE TABLE public.draft_names (
     names_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2148,7 +2318,9 @@ CREATE TABLE public.draft_objectives (
     objectives_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2161,7 +2333,9 @@ CREATE TABLE public.draft_options (
     options_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2174,7 +2348,9 @@ CREATE TABLE public.draft_parameters (
     parameters_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2187,7 +2363,9 @@ CREATE TABLE public.draft_personas (
     personas_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2200,7 +2378,9 @@ CREATE TABLE public.draft_points (
     points_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2213,7 +2393,9 @@ CREATE TABLE public.draft_problem_statements (
     problem_statements_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2226,7 +2408,9 @@ CREATE TABLE public.draft_profiles (
     profiles_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2239,7 +2423,9 @@ CREATE TABLE public.draft_prompts (
     prompts_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2252,7 +2438,9 @@ CREATE TABLE public.draft_protocols (
     protocols_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2265,7 +2453,9 @@ CREATE TABLE public.draft_questions (
     questions_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2278,7 +2468,9 @@ CREATE TABLE public.draft_responses (
     responses_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2291,7 +2483,9 @@ CREATE TABLE public.draft_rubrics (
     rubrics_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2304,7 +2498,9 @@ CREATE TABLE public.draft_scenarios (
     scenarios_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2317,7 +2513,9 @@ CREATE TABLE public.draft_schema_field_items (
     schema_field_items_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2330,7 +2528,9 @@ CREATE TABLE public.draft_schema_fields (
     schema_fields_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2343,7 +2543,9 @@ CREATE TABLE public.draft_schemas (
     schemas_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2356,7 +2558,9 @@ CREATE TABLE public.draft_settings (
     settings_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2369,7 +2573,9 @@ CREATE TABLE public.draft_simulations (
     simulations_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2382,7 +2588,9 @@ CREATE TABLE public.draft_slugs (
     slugs_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2395,7 +2603,9 @@ CREATE TABLE public.draft_standard_groups (
     standard_groups_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2408,7 +2618,9 @@ CREATE TABLE public.draft_strengths (
     strengths_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2421,7 +2633,9 @@ CREATE TABLE public.draft_template_array_items (
     template_array_items_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2434,7 +2648,9 @@ CREATE TABLE public.draft_template_values (
     template_values_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2447,7 +2663,9 @@ CREATE TABLE public.draft_templates (
     templates_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2460,7 +2678,9 @@ CREATE TABLE public.draft_thresholds (
     thresholds_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2473,7 +2693,9 @@ CREATE TABLE public.draft_times (
     times_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2486,7 +2708,9 @@ CREATE TABLE public.draft_videos (
     videos_id uuid NOT NULL,
     version integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2500,7 +2724,8 @@ CREATE TABLE public.drafts (
     version integer DEFAULT 0 NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    artifact public.artifacts NOT NULL
+    artifact public.artifacts NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -2516,6 +2741,7 @@ CREATE TABLE public.endpoints (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
     CONSTRAINT endpoints_base_url_check CHECK ((base_url <> ''::text))
 );
 
@@ -2528,7 +2754,10 @@ CREATE TABLE public.eval_agents (
     eval_id uuid NOT NULL,
     agent_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2554,7 +2783,10 @@ CREATE TABLE public.eval_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    eval_id uuid NOT NULL
+    eval_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2566,7 +2798,10 @@ CREATE TABLE public.eval_descriptions (
     eval_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2580,7 +2815,10 @@ CREATE TABLE public.eval_flags (
     type public.type_eval_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2617,7 +2855,10 @@ CREATE TABLE public.eval_names (
     eval_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2657,7 +2898,7 @@ CREATE TABLE public.evals (
     id uuid DEFAULT uuidv7() CONSTRAINT evals_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2671,7 +2912,8 @@ CREATE TABLE public.examples (
     example text NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT examples_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2687,7 +2929,8 @@ CREATE TABLE public.feedbacks (
     standard_id uuid,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2713,7 +2956,10 @@ CREATE TABLE public.field_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    field_id uuid NOT NULL
+    field_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2725,7 +2971,10 @@ CREATE TABLE public.field_descriptions (
     field_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2739,7 +2988,10 @@ CREATE TABLE public.field_flags (
     type public.type_field_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2751,7 +3003,10 @@ CREATE TABLE public.field_names (
     field_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -2765,7 +3020,7 @@ CREATE TABLE public.fields (
     id uuid DEFAULT uuidv7() CONSTRAINT fields_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2782,7 +3037,8 @@ CREATE TABLE public.flags (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2793,7 +3049,9 @@ CREATE TABLE public.flags (
 CREATE TABLE public.grade_analyses (
     grade_id uuid NOT NULL,
     analysis_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2804,7 +3062,9 @@ CREATE TABLE public.grade_analyses (
 CREATE TABLE public.grade_feedbacks (
     grade_id uuid NOT NULL,
     feedback_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2827,7 +3087,9 @@ CREATE TABLE public.grade_groups (
 CREATE TABLE public.grade_improvements (
     grade_id uuid NOT NULL,
     improvement_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2838,7 +3100,9 @@ CREATE TABLE public.grade_improvements (
 CREATE TABLE public.grade_strengths (
     grade_id uuid NOT NULL,
     strength_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2851,7 +3115,9 @@ CREATE TABLE public.grade_times (
     time_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2932,7 +3198,8 @@ CREATE TABLE public.hints (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2949,7 +3216,8 @@ CREATE TABLE public.html (
     active boolean DEFAULT true NOT NULL,
     completed boolean DEFAULT false NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -2979,7 +3247,8 @@ CREATE TABLE public.icons (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3022,7 +3291,8 @@ CREATE TABLE public.images (
     id uuid DEFAULT uuidv7() CONSTRAINT images_id_v7_not_null NOT NULL,
     description text NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3038,7 +3308,8 @@ CREATE TABLE public.improvements (
     message_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3065,7 +3336,8 @@ CREATE TABLE public.instructions (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT developer_instructions_created_at_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT developer_instructions_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3083,7 +3355,8 @@ CREATE TABLE public.items (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3095,7 +3368,10 @@ CREATE TABLE public.key_descriptions (
     key_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3109,7 +3385,10 @@ CREATE TABLE public.key_flags (
     type public.type_key_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3121,7 +3400,10 @@ CREATE TABLE public.key_names (
     key_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3136,7 +3418,7 @@ CREATE TABLE public.keys (
     id uuid DEFAULT uuidv7() CONSTRAINT keys_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3148,7 +3430,9 @@ CREATE TABLE public.message_audios (
     message_id uuid NOT NULL,
     audio_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3174,6 +3458,8 @@ CREATE TABLE public.message_contents (
     idx integer CONSTRAINT message_content_idx_not_null1 NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT message_content_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT message_content_updated_at_not_null1 NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
     CONSTRAINT message_contents_idx_check1 CHECK ((idx >= 0))
 );
 
@@ -3186,7 +3472,9 @@ CREATE TABLE public.message_documents (
     message_id uuid NOT NULL,
     document_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3225,6 +3513,8 @@ CREATE TABLE public.message_hints (
     idx integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
     CONSTRAINT message_hints_idx_check CHECK ((idx >= 0))
 );
 
@@ -3237,7 +3527,9 @@ CREATE TABLE public.message_images (
     message_id uuid NOT NULL,
     image_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3249,7 +3541,9 @@ CREATE TABLE public.message_personas (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     message_id uuid NOT NULL,
-    persona_id uuid NOT NULL
+    persona_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3273,7 +3567,9 @@ CREATE TABLE public.message_texts (
     message_id uuid NOT NULL,
     text_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3298,7 +3594,9 @@ CREATE TABLE public.message_videos (
     message_id uuid NOT NULL,
     video_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3326,7 +3624,10 @@ CREATE TABLE public.model_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    model_id uuid NOT NULL
+    model_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3338,7 +3639,10 @@ CREATE TABLE public.model_descriptions (
     model_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3362,7 +3666,10 @@ CREATE TABLE public.model_endpoints (
     model_id uuid CONSTRAINT model_endpoints_new_model_id_not_null NOT NULL,
     endpoint_id uuid CONSTRAINT model_endpoints_new_endpoint_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_endpoints_new_created_at_not_null NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() CONSTRAINT model_endpoints_new_updated_at_not_null NOT NULL
+    updated_at timestamp with time zone DEFAULT now() CONSTRAINT model_endpoints_new_updated_at_not_null NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3376,7 +3683,10 @@ CREATE TABLE public.model_flags (
     type public.type_model_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3388,7 +3698,10 @@ CREATE TABLE public.model_keys (
     model_id uuid NOT NULL,
     key_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3414,7 +3727,10 @@ CREATE TABLE public.model_names (
     model_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3501,7 +3817,7 @@ CREATE TABLE public.models (
     id uuid DEFAULT uuidv7() CONSTRAINT models_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3516,7 +3832,8 @@ CREATE TABLE public.names (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3544,7 +3861,8 @@ CREATE TABLE public.objectives (
     id uuid DEFAULT uuidv7() CONSTRAINT objectives_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3560,7 +3878,8 @@ CREATE TABLE public.options (
     id uuid DEFAULT uuidv7() CONSTRAINT options_id_v7_not_null NOT NULL,
     is_correct boolean DEFAULT false NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3573,7 +3892,10 @@ CREATE TABLE public.parameter_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    parameter_id uuid NOT NULL
+    parameter_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3585,7 +3907,10 @@ CREATE TABLE public.parameter_descriptions (
     parameter_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3597,7 +3922,10 @@ CREATE TABLE public.parameter_fields (
     parameter_id uuid NOT NULL,
     field_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3611,7 +3939,10 @@ CREATE TABLE public.parameter_flags (
     type public.type_parameter_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3623,7 +3954,10 @@ CREATE TABLE public.parameter_names (
     parameter_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3637,7 +3971,7 @@ CREATE TABLE public.parameters (
     id uuid DEFAULT uuidv7() CONSTRAINT parameters_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3649,7 +3983,10 @@ CREATE TABLE public.persona_colors (
     persona_id uuid NOT NULL,
     color_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3662,7 +3999,10 @@ CREATE TABLE public.persona_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    persona_id uuid NOT NULL
+    persona_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3674,7 +4014,10 @@ CREATE TABLE public.persona_descriptions (
     persona_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3687,7 +4030,10 @@ CREATE TABLE public.persona_examples (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     example_id uuid NOT NULL,
     persona_id uuid NOT NULL,
-    active boolean DEFAULT true NOT NULL
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3700,7 +4046,10 @@ CREATE TABLE public.persona_fields (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     field_id uuid NOT NULL,
-    persona_id uuid NOT NULL
+    persona_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3714,7 +4063,10 @@ CREATE TABLE public.persona_flags (
     type public.type_persona_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3726,7 +4078,10 @@ CREATE TABLE public.persona_icons (
     persona_id uuid NOT NULL,
     icon_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3738,7 +4093,10 @@ CREATE TABLE public.persona_instructions (
     persona_id uuid NOT NULL,
     instruction_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3750,7 +4108,10 @@ CREATE TABLE public.persona_names (
     persona_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3764,7 +4125,7 @@ CREATE TABLE public.personas (
     id uuid DEFAULT uuidv7() CONSTRAINT personas_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3779,7 +4140,8 @@ CREATE TABLE public.points (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3808,7 +4170,8 @@ CREATE TABLE public.problem_statements (
     id uuid DEFAULT uuidv7() CONSTRAINT problem_statements_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3848,7 +4211,10 @@ CREATE TABLE public.profile_departments (
     active boolean DEFAULT true NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    profile_id uuid NOT NULL
+    profile_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3876,7 +4242,10 @@ CREATE TABLE public.profile_flags (
     type public.type_profile_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3889,7 +4258,10 @@ CREATE TABLE public.profile_names (
     name_id uuid NOT NULL,
     type public.type_profile_names NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -3926,7 +4298,7 @@ CREATE TABLE public.profiles (
     id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3956,7 +4328,8 @@ CREATE TABLE public.prompts (
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT prompts_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -3970,7 +4343,8 @@ CREATE TABLE public.protocols (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4000,7 +4374,8 @@ CREATE TABLE public.questions (
     id uuid DEFAULT uuidv7() CONSTRAINT questions_id_v7_not_null NOT NULL,
     "time" integer NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4053,7 +4428,8 @@ CREATE TABLE public.responses (
     question_id uuid,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4078,7 +4454,10 @@ CREATE TABLE public.rubric_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    rubric_id uuid NOT NULL
+    rubric_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4090,7 +4469,10 @@ CREATE TABLE public.rubric_descriptions (
     rubric_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4116,7 +4498,10 @@ CREATE TABLE public.rubric_flags (
     type public.type_rubric_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4166,7 +4551,10 @@ CREATE TABLE public.rubric_names (
     rubric_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4179,7 +4567,10 @@ CREATE TABLE public.rubric_points (
     point_id uuid NOT NULL,
     type public.type_rubric_points NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4193,7 +4584,10 @@ CREATE TABLE public.rubric_standard_groups (
     "position" integer DEFAULT 1 NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4208,7 +4602,7 @@ CREATE TABLE public.rubrics (
     rubric_domain_id uuid,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4288,7 +4682,9 @@ CREATE TABLE public.runs (
     cached_input_tokens integer DEFAULT 0 NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT runs_id_v7_not_null NOT NULL,
     agent_id uuid,
-    key_id uuid
+    key_id uuid,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4314,7 +4710,10 @@ CREATE TABLE public.scenario_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4326,7 +4725,10 @@ CREATE TABLE public.scenario_descriptions (
     scenario_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4353,7 +4755,10 @@ CREATE TABLE public.scenario_documents (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     document_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4381,7 +4786,10 @@ CREATE TABLE public.scenario_fields (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     field_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4395,7 +4803,10 @@ CREATE TABLE public.scenario_flags (
     type public.type_scenario_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4420,7 +4831,10 @@ CREATE TABLE public.scenario_images (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     image_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4432,7 +4846,10 @@ CREATE TABLE public.scenario_names (
     scenario_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4444,7 +4861,10 @@ CREATE TABLE public.scenario_objectives (
     idx integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     objective_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4457,7 +4877,10 @@ CREATE TABLE public.scenario_options (
     option_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4484,7 +4907,10 @@ CREATE TABLE public.scenario_parameters (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     parameter_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4511,7 +4937,10 @@ CREATE TABLE public.scenario_personas (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     persona_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4524,7 +4953,10 @@ CREATE TABLE public.scenario_problem_statements (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     problem_statement_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4537,7 +4969,10 @@ CREATE TABLE public.scenario_questions (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     question_id uuid NOT NULL,
-    scenario_id uuid NOT NULL
+    scenario_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4550,7 +4985,10 @@ CREATE TABLE public.scenario_templates (
     template_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4606,7 +5044,10 @@ CREATE TABLE public.scenario_videos (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     scenario_id uuid NOT NULL,
-    video_id uuid NOT NULL
+    video_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4620,7 +5061,7 @@ CREATE TABLE public.scenarios (
     id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4636,7 +5077,8 @@ CREATE TABLE public.schema_field_items (
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4658,7 +5100,8 @@ CREATE TABLE public.schema_fields (
     default_value text DEFAULT ''::text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4684,7 +5127,8 @@ CREATE TABLE public.schemas (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4739,7 +5183,10 @@ CREATE TABLE public.setting_auths (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     auth_id uuid NOT NULL,
-    settings_id uuid NOT NULL
+    settings_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4752,7 +5199,10 @@ CREATE TABLE public.setting_colors (
     color_id uuid NOT NULL,
     type public.type_setting_colors NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4764,7 +5214,10 @@ CREATE TABLE public.setting_descriptions (
     setting_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4778,7 +5231,10 @@ CREATE TABLE public.setting_flags (
     type public.type_setting_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4790,7 +5246,10 @@ CREATE TABLE public.setting_names (
     setting_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4830,7 +5289,10 @@ CREATE TABLE public.setting_thresholds (
     threshold_id uuid NOT NULL,
     type public.type_setting_thresholds NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4844,7 +5306,7 @@ CREATE TABLE public.settings (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -4922,7 +5384,10 @@ CREATE TABLE public.simulation_departments (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     department_id uuid NOT NULL,
-    simulation_id uuid NOT NULL
+    simulation_id uuid NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4934,7 +5399,10 @@ CREATE TABLE public.simulation_descriptions (
     simulation_id uuid NOT NULL,
     description_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4948,7 +5416,10 @@ CREATE TABLE public.simulation_flags (
     type public.type_simulation_flags NOT NULL,
     value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4960,7 +5431,10 @@ CREATE TABLE public.simulation_names (
     simulation_id uuid NOT NULL,
     name_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -4981,7 +5455,10 @@ CREATE TABLE public.simulation_scenarios (
     simulation_id uuid NOT NULL,
     show_problem_statement boolean DEFAULT true NOT NULL,
     show_objectives boolean DEFAULT true NOT NULL,
-    show_images boolean DEFAULT true NOT NULL
+    show_images boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
 );
 
 
@@ -5008,7 +5485,7 @@ CREATE TABLE public.simulations (
     id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5022,7 +5499,8 @@ CREATE TABLE public.slugs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5040,7 +5518,8 @@ CREATE TABLE public.standard_groups (
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT standard_groups_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5070,7 +5549,8 @@ CREATE TABLE public.strengths (
     message_id uuid NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5088,7 +5568,8 @@ CREATE TABLE public.template_array_items (
     active boolean DEFAULT true NOT NULL,
     id uuid DEFAULT uuidv7() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5107,7 +5588,8 @@ CREATE TABLE public.template_values (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid,
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
     CONSTRAINT template_values_check CHECK ((((((string_value IS NOT NULL))::integer + ((number_value IS NOT NULL))::integer) + ((boolean_value IS NOT NULL))::integer) = 1))
 );
 
@@ -5123,7 +5605,8 @@ CREATE TABLE public.templates (
     id uuid DEFAULT uuidv7() CONSTRAINT templates_id_v7_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5165,7 +5648,8 @@ CREATE TABLE public.texts (
     content text NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5180,7 +5664,8 @@ CREATE TABLE public.thresholds (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5195,7 +5680,8 @@ CREATE TABLE public.times (
     time_taken integer NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5219,7 +5705,9 @@ CREATE TABLE public.tool_schemas (
     tool_id uuid NOT NULL,
     schema_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5231,7 +5719,9 @@ CREATE TABLE public.tool_templates (
     tool_id uuid NOT NULL,
     template_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -5318,7 +5808,8 @@ CREATE TABLE public.videos (
     id uuid DEFAULT uuidv7() CONSTRAINT videos_id_v7_not_null NOT NULL,
     description text NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    call_id uuid,
+    call_id uuid NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
     CONSTRAINT videos_length_seconds_check CHECK ((length_seconds > 0))
 );
 
@@ -5548,14 +6039,6 @@ ALTER TABLE ONLY public.auth_names
 
 
 --
--- Name: auth auth_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.auth
-    ADD CONSTRAINT auth_pkey PRIMARY KEY (id);
-
-
---
 -- Name: auth_protocols auth_protocols_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5569,6 +6052,14 @@ ALTER TABLE ONLY public.auth_protocols
 
 ALTER TABLE ONLY public.auth_slugs
     ADD CONSTRAINT auth_slugs_pkey PRIMARY KEY (auth_id, slug_id);
+
+
+--
+-- Name: auths auths_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auths
+    ADD CONSTRAINT auths_pkey PRIMARY KEY (id);
 
 
 --
@@ -7981,6 +8472,13 @@ CREATE INDEX agent_department_prompts_agent_id_v7_idx ON public.agent_department
 
 
 --
+-- Name: agent_department_prompts_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_department_prompts_call_id_idx ON public.agent_department_prompts USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: agent_department_prompts_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8009,6 +8507,13 @@ CREATE INDEX agent_departments_agent_id_v7_idx ON public.agent_departments USING
 
 
 --
+-- Name: agent_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_departments_call_id_idx ON public.agent_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: agent_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8020,6 +8525,13 @@ CREATE INDEX agent_departments_department_id_v7_idx ON public.agent_departments 
 --
 
 CREATE INDEX agent_descriptions_agent_id_idx ON public.agent_descriptions USING btree (agent_id);
+
+
+--
+-- Name: agent_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_descriptions_call_id_idx ON public.agent_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8051,6 +8563,13 @@ CREATE INDEX agent_flags_agent_id_idx ON public.agent_flags USING btree (agent_i
 
 
 --
+-- Name: agent_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_flags_call_id_idx ON public.agent_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: agent_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8072,6 +8591,13 @@ CREATE INDEX agent_instructions_agent_id_idx ON public.agent_instructions USING 
 
 
 --
+-- Name: agent_instructions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_instructions_call_id_idx ON public.agent_instructions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: agent_instructions_instruction_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8083,6 +8609,13 @@ CREATE INDEX agent_instructions_instruction_id_idx ON public.agent_instructions 
 --
 
 CREATE INDEX agent_models_agent_id_idx ON public.agent_models USING btree (agent_id);
+
+
+--
+-- Name: agent_models_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_models_call_id_idx ON public.agent_models USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8100,6 +8633,13 @@ CREATE INDEX agent_names_agent_id_idx ON public.agent_names USING btree (agent_i
 
 
 --
+-- Name: agent_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_names_call_id_idx ON public.agent_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: agent_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8111,6 +8651,13 @@ CREATE INDEX agent_names_name_id_idx ON public.agent_names USING btree (name_id)
 --
 
 CREATE INDEX agent_prompts_agent_id_v7_idx ON public.agent_prompts USING btree (agent_id);
+
+
+--
+-- Name: agent_prompts_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_prompts_call_id_idx ON public.agent_prompts USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8209,13 +8756,6 @@ CREATE INDEX agent_voices_agent_id_v7_idx ON public.agent_voices USING btree (ag
 --
 
 CREATE INDEX agent_voices_model_voice_id_v7_idx ON public.agent_voices USING btree (model_voice_id);
-
-
---
--- Name: agents_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX agents_call_id_idx ON public.agents USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8349,13 +8889,6 @@ CREATE INDEX audios_call_id_idx ON public.audios USING btree (call_id) WHERE (ca
 --
 
 CREATE INDEX audios_created_at_idx ON public.audios USING btree (created_at);
-
-
---
--- Name: auth_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX auth_call_id_idx ON public.auth USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8541,6 +9074,13 @@ CREATE INDEX chats_scenario_id_v7_idx ON public.chats USING btree (scenario_id);
 
 
 --
+-- Name: cohort_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cohort_departments_call_id_idx ON public.cohort_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: cohort_departments_cohort_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8555,6 +9095,13 @@ CREATE INDEX cohort_departments_department_id_v7_idx ON public.cohort_department
 
 
 --
+-- Name: cohort_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cohort_descriptions_call_id_idx ON public.cohort_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: cohort_descriptions_cohort_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8566,6 +9113,13 @@ CREATE INDEX cohort_descriptions_cohort_id_idx ON public.cohort_descriptions USI
 --
 
 CREATE INDEX cohort_descriptions_description_id_idx ON public.cohort_descriptions USING btree (description_id);
+
+
+--
+-- Name: cohort_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cohort_flags_call_id_idx ON public.cohort_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8590,6 +9144,13 @@ CREATE INDEX cohort_flags_type_idx ON public.cohort_flags USING btree (type);
 
 
 --
+-- Name: cohort_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cohort_names_call_id_idx ON public.cohort_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: cohort_names_cohort_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8601,6 +9162,13 @@ CREATE INDEX cohort_names_cohort_id_idx ON public.cohort_names USING btree (coho
 --
 
 CREATE INDEX cohort_names_name_id_idx ON public.cohort_names USING btree (name_id);
+
+
+--
+-- Name: cohort_profiles_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cohort_profiles_call_id_idx ON public.cohort_profiles USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8618,6 +9186,13 @@ CREATE INDEX cohort_profiles_profile_id_v7_idx ON public.cohort_profiles USING b
 
 
 --
+-- Name: cohort_simulations_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cohort_simulations_call_id_idx ON public.cohort_simulations USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: cohort_simulations_cohort_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8629,13 +9204,6 @@ CREATE INDEX cohort_simulations_cohort_id_v7_idx ON public.cohort_simulations US
 --
 
 CREATE INDEX cohort_simulations_simulation_id_v7_idx ON public.cohort_simulations USING btree (simulation_id);
-
-
---
--- Name: cohorts_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX cohorts_call_id_idx ON public.cohorts USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8758,13 +9326,6 @@ CREATE INDEX department_settings_settings_id_v7_idx ON public.department_setting
 
 
 --
--- Name: departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX departments_call_id_idx ON public.departments USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
 -- Name: descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8786,6 +9347,13 @@ CREATE INDEX document_agent_domains_document_id_idx ON public.document_agent_dom
 
 
 --
+-- Name: document_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_departments_call_id_idx ON public.document_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: document_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8797,6 +9365,13 @@ CREATE INDEX document_departments_department_id_v7_idx ON public.document_depart
 --
 
 CREATE INDEX document_departments_document_id_v7_idx ON public.document_departments USING btree (document_id);
+
+
+--
+-- Name: document_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_descriptions_call_id_idx ON public.document_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8814,6 +9389,13 @@ CREATE INDEX document_descriptions_document_id_idx ON public.document_descriptio
 
 
 --
+-- Name: document_fields_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_fields_call_id_idx ON public.document_fields USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: document_fields_document_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8825,6 +9407,13 @@ CREATE INDEX document_fields_document_id_v7_idx ON public.document_fields USING 
 --
 
 CREATE INDEX document_fields_field_id_v7_idx ON public.document_fields USING btree (field_id);
+
+
+--
+-- Name: document_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_flags_call_id_idx ON public.document_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8870,6 +9459,13 @@ CREATE INDEX document_html_active_idx ON public.document_html USING btree (activ
 
 
 --
+-- Name: document_html_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_html_call_id_idx ON public.document_html USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: document_html_document_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8881,6 +9477,13 @@ CREATE INDEX document_html_document_id_idx ON public.document_html USING btree (
 --
 
 CREATE INDEX document_html_html_id_idx ON public.document_html USING btree (html_id);
+
+
+--
+-- Name: document_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_names_call_id_idx ON public.document_names USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8905,6 +9508,13 @@ CREATE INDEX document_schemas_active_idx ON public.document_schemas USING btree 
 
 
 --
+-- Name: document_schemas_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_schemas_call_id_idx ON public.document_schemas USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: document_schemas_document_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8916,6 +9526,13 @@ CREATE INDEX document_schemas_document_id_idx ON public.document_schemas USING b
 --
 
 CREATE INDEX document_schemas_schema_id_idx ON public.document_schemas USING btree (schema_id);
+
+
+--
+-- Name: document_templates_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_templates_call_id_idx ON public.document_templates USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -8958,13 +9575,6 @@ CREATE INDEX document_uploads_document_id_v7_idx ON public.document_uploads USIN
 --
 
 CREATE INDEX document_uploads_upload_id_v7_idx ON public.document_uploads USING btree (upload_id);
-
-
---
--- Name: documents_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX documents_call_id_idx ON public.documents USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9031,6 +9641,13 @@ CREATE INDEX eval_agents_agent_id_idx ON public.eval_agents USING btree (agent_i
 
 
 --
+-- Name: eval_agents_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_agents_call_id_idx ON public.eval_agents USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: eval_agents_eval_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9059,6 +9676,13 @@ CREATE INDEX eval_attempts_infinite_mode_idx ON public.eval_attempts USING btree
 
 
 --
+-- Name: eval_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_departments_call_id_idx ON public.eval_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: eval_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9073,6 +9697,13 @@ CREATE INDEX eval_departments_eval_id_v7_idx ON public.eval_departments USING bt
 
 
 --
+-- Name: eval_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_descriptions_call_id_idx ON public.eval_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: eval_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9084,6 +9715,13 @@ CREATE INDEX eval_descriptions_description_id_idx ON public.eval_descriptions US
 --
 
 CREATE INDEX eval_descriptions_eval_id_idx ON public.eval_descriptions USING btree (eval_id);
+
+
+--
+-- Name: eval_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_flags_call_id_idx ON public.eval_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9143,6 +9781,13 @@ CREATE INDEX eval_groups_rubric_grade_agents_rubric_grade_agent_id_idx ON public
 
 
 --
+-- Name: eval_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_names_call_id_idx ON public.eval_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: eval_names_eval_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9189,13 +9834,6 @@ CREATE INDEX eval_runs_rubric_grade_agents_run_id_idx ON public.eval_runs_rubric
 --
 
 CREATE INDEX eval_runs_run_id_v7_idx ON public.eval_runs USING btree (run_id);
-
-
---
--- Name: evals_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX evals_call_id_idx ON public.evals USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9248,6 +9886,13 @@ CREATE INDEX field_conditional_parameters_field_id_v7_idx ON public.field_condit
 
 
 --
+-- Name: field_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX field_departments_call_id_idx ON public.field_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: field_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9262,6 +9907,13 @@ CREATE INDEX field_departments_field_id_v7_idx ON public.field_departments USING
 
 
 --
+-- Name: field_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX field_descriptions_call_id_idx ON public.field_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: field_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9273,6 +9925,13 @@ CREATE INDEX field_descriptions_description_id_idx ON public.field_descriptions 
 --
 
 CREATE INDEX field_descriptions_field_id_idx ON public.field_descriptions USING btree (field_id);
+
+
+--
+-- Name: field_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX field_flags_call_id_idx ON public.field_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9297,6 +9956,13 @@ CREATE INDEX field_flags_type_idx ON public.field_flags USING btree (type);
 
 
 --
+-- Name: field_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX field_names_call_id_idx ON public.field_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: field_names_field_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9308,13 +9974,6 @@ CREATE INDEX field_names_field_id_idx ON public.field_names USING btree (field_i
 --
 
 CREATE INDEX field_names_name_id_idx ON public.field_names USING btree (name_id);
-
-
---
--- Name: fields_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX fields_call_id_idx ON public.fields USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -9605,6 +10264,188 @@ CREATE INDEX icons_value_idx ON public.icons USING btree (value);
 
 
 --
+-- Name: idx_agent_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_departments_generated ON public.agent_departments USING btree (generated);
+
+
+--
+-- Name: idx_agent_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_departments_mcp ON public.agent_departments USING btree (mcp);
+
+
+--
+-- Name: idx_agent_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_descriptions_generated ON public.agent_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_agent_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_descriptions_mcp ON public.agent_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_agent_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_flags_generated ON public.agent_flags USING btree (generated);
+
+
+--
+-- Name: idx_agent_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_flags_mcp ON public.agent_flags USING btree (mcp);
+
+
+--
+-- Name: idx_agent_instructions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_instructions_generated ON public.agent_instructions USING btree (generated);
+
+
+--
+-- Name: idx_agent_instructions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_instructions_mcp ON public.agent_instructions USING btree (mcp);
+
+
+--
+-- Name: idx_agent_models_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_models_generated ON public.agent_models USING btree (generated);
+
+
+--
+-- Name: idx_agent_models_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_models_mcp ON public.agent_models USING btree (mcp);
+
+
+--
+-- Name: idx_agent_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_names_generated ON public.agent_names USING btree (generated);
+
+
+--
+-- Name: idx_agent_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_names_mcp ON public.agent_names USING btree (mcp);
+
+
+--
+-- Name: idx_agent_prompts_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_prompts_generated ON public.agent_prompts USING btree (generated);
+
+
+--
+-- Name: idx_agent_prompts_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_prompts_mcp ON public.agent_prompts USING btree (mcp);
+
+
+--
+-- Name: idx_agents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agents_mcp ON public.agents USING btree (mcp);
+
+
+--
+-- Name: idx_analyses_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_analyses_mcp ON public.analyses USING btree (mcp);
+
+
+--
+-- Name: idx_audios_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_audios_mcp ON public.audios USING btree (mcp);
+
+
+--
+-- Name: idx_auth_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_auth_mcp ON public.auths USING btree (mcp);
+
+
+--
+-- Name: idx_cohort_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_departments_generated ON public.cohort_departments USING btree (generated);
+
+
+--
+-- Name: idx_cohort_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_departments_mcp ON public.cohort_departments USING btree (mcp);
+
+
+--
+-- Name: idx_cohort_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_descriptions_generated ON public.cohort_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_cohort_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_descriptions_mcp ON public.cohort_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_cohort_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_flags_generated ON public.cohort_flags USING btree (generated);
+
+
+--
+-- Name: idx_cohort_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_flags_mcp ON public.cohort_flags USING btree (mcp);
+
+
+--
+-- Name: idx_cohort_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_names_generated ON public.cohort_names USING btree (generated);
+
+
+--
+-- Name: idx_cohort_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_names_mcp ON public.cohort_names USING btree (mcp);
+
+
+--
 -- Name: idx_cohort_profiles_active; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9612,10 +10453,213 @@ CREATE INDEX idx_cohort_profiles_active ON public.cohort_profiles USING btree (a
 
 
 --
+-- Name: idx_cohort_profiles_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_profiles_generated ON public.cohort_profiles USING btree (generated);
+
+
+--
+-- Name: idx_cohort_profiles_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_profiles_mcp ON public.cohort_profiles USING btree (mcp);
+
+
+--
 -- Name: idx_cohort_simulations_active; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_cohort_simulations_active ON public.cohort_simulations USING btree (active) WHERE (active = true);
+
+
+--
+-- Name: idx_cohort_simulations_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_simulations_generated ON public.cohort_simulations USING btree (generated);
+
+
+--
+-- Name: idx_cohort_simulations_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohort_simulations_mcp ON public.cohort_simulations USING btree (mcp);
+
+
+--
+-- Name: idx_cohorts_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_cohorts_mcp ON public.cohorts USING btree (mcp);
+
+
+--
+-- Name: idx_colors_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_colors_mcp ON public.colors USING btree (mcp);
+
+
+--
+-- Name: idx_contents_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_contents_generated ON public.contents USING btree (generated);
+
+
+--
+-- Name: idx_contents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_contents_mcp ON public.contents USING btree (mcp);
+
+
+--
+-- Name: idx_conversations_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_conversations_mcp ON public.conversations USING btree (mcp);
+
+
+--
+-- Name: idx_debug_info_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_debug_info_mcp ON public.debug_info USING btree (mcp);
+
+
+--
+-- Name: idx_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_departments_mcp ON public.departments USING btree (mcp);
+
+
+--
+-- Name: idx_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_descriptions_mcp ON public.descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_document_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_departments_generated ON public.document_departments USING btree (generated);
+
+
+--
+-- Name: idx_document_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_departments_mcp ON public.document_departments USING btree (mcp);
+
+
+--
+-- Name: idx_document_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_descriptions_generated ON public.document_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_document_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_descriptions_mcp ON public.document_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_document_fields_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_fields_generated ON public.document_fields USING btree (generated);
+
+
+--
+-- Name: idx_document_fields_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_fields_mcp ON public.document_fields USING btree (mcp);
+
+
+--
+-- Name: idx_document_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_flags_generated ON public.document_flags USING btree (generated);
+
+
+--
+-- Name: idx_document_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_flags_mcp ON public.document_flags USING btree (mcp);
+
+
+--
+-- Name: idx_document_html_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_html_generated ON public.document_html USING btree (generated);
+
+
+--
+-- Name: idx_document_html_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_html_mcp ON public.document_html USING btree (mcp);
+
+
+--
+-- Name: idx_document_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_names_generated ON public.document_names USING btree (generated);
+
+
+--
+-- Name: idx_document_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_names_mcp ON public.document_names USING btree (mcp);
+
+
+--
+-- Name: idx_document_schemas_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_schemas_generated ON public.document_schemas USING btree (generated);
+
+
+--
+-- Name: idx_document_schemas_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_schemas_mcp ON public.document_schemas USING btree (mcp);
+
+
+--
+-- Name: idx_document_templates_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_templates_generated ON public.document_templates USING btree (generated);
+
+
+--
+-- Name: idx_document_templates_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_document_templates_mcp ON public.document_templates USING btree (mcp);
+
+
+--
+-- Name: idx_documents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_documents_mcp ON public.documents USING btree (mcp);
 
 
 --
@@ -9630,6 +10674,20 @@ CREATE INDEX idx_draft_agents_agents_id ON public.draft_agents USING btree (agen
 --
 
 CREATE INDEX idx_draft_agents_draft_id ON public.draft_agents USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_agents_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_agents_generated ON public.draft_agents USING btree (generated);
+
+
+--
+-- Name: idx_draft_agents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_agents_mcp ON public.draft_agents USING btree (mcp);
 
 
 --
@@ -9654,6 +10712,20 @@ CREATE INDEX idx_draft_analyses_draft_id ON public.draft_analyses USING btree (d
 
 
 --
+-- Name: idx_draft_analyses_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_analyses_generated ON public.draft_analyses USING btree (generated);
+
+
+--
+-- Name: idx_draft_analyses_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_analyses_mcp ON public.draft_analyses USING btree (mcp);
+
+
+--
 -- Name: idx_draft_analyses_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9672,6 +10744,20 @@ CREATE INDEX idx_draft_auth_auth_id ON public.draft_auth USING btree (auth_id);
 --
 
 CREATE INDEX idx_draft_auth_draft_id ON public.draft_auth USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_auth_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_auth_generated ON public.draft_auth USING btree (generated);
+
+
+--
+-- Name: idx_draft_auth_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_auth_mcp ON public.draft_auth USING btree (mcp);
 
 
 --
@@ -9696,6 +10782,20 @@ CREATE INDEX idx_draft_cohorts_draft_id ON public.draft_cohorts USING btree (dra
 
 
 --
+-- Name: idx_draft_cohorts_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_cohorts_generated ON public.draft_cohorts USING btree (generated);
+
+
+--
+-- Name: idx_draft_cohorts_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_cohorts_mcp ON public.draft_cohorts USING btree (mcp);
+
+
+--
 -- Name: idx_draft_cohorts_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9714,6 +10814,20 @@ CREATE INDEX idx_draft_colors_colors_id ON public.draft_colors USING btree (colo
 --
 
 CREATE INDEX idx_draft_colors_draft_id ON public.draft_colors USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_colors_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_colors_generated ON public.draft_colors USING btree (generated);
+
+
+--
+-- Name: idx_draft_colors_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_colors_mcp ON public.draft_colors USING btree (mcp);
 
 
 --
@@ -9738,6 +10852,20 @@ CREATE INDEX idx_draft_content_draft_id ON public.draft_content USING btree (dra
 
 
 --
+-- Name: idx_draft_content_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_content_generated ON public.draft_content USING btree (generated);
+
+
+--
+-- Name: idx_draft_content_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_content_mcp ON public.draft_content USING btree (mcp);
+
+
+--
 -- Name: idx_draft_content_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9756,6 +10884,20 @@ CREATE INDEX idx_draft_conversations_conversations_id ON public.draft_conversati
 --
 
 CREATE INDEX idx_draft_conversations_draft_id ON public.draft_conversations USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_conversations_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_conversations_generated ON public.draft_conversations USING btree (generated);
+
+
+--
+-- Name: idx_draft_conversations_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_conversations_mcp ON public.draft_conversations USING btree (mcp);
 
 
 --
@@ -9780,6 +10922,20 @@ CREATE INDEX idx_draft_debug_info_draft_id ON public.draft_debug_info USING btre
 
 
 --
+-- Name: idx_draft_debug_info_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_debug_info_generated ON public.draft_debug_info USING btree (generated);
+
+
+--
+-- Name: idx_draft_debug_info_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_debug_info_mcp ON public.draft_debug_info USING btree (mcp);
+
+
+--
 -- Name: idx_draft_debug_info_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9798,6 +10954,20 @@ CREATE INDEX idx_draft_departments_departments_id ON public.draft_departments US
 --
 
 CREATE INDEX idx_draft_departments_draft_id ON public.draft_departments USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_departments_generated ON public.draft_departments USING btree (generated);
+
+
+--
+-- Name: idx_draft_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_departments_mcp ON public.draft_departments USING btree (mcp);
 
 
 --
@@ -9822,6 +10992,20 @@ CREATE INDEX idx_draft_descriptions_draft_id ON public.draft_descriptions USING 
 
 
 --
+-- Name: idx_draft_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_descriptions_generated ON public.draft_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_draft_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_descriptions_mcp ON public.draft_descriptions USING btree (mcp);
+
+
+--
 -- Name: idx_draft_descriptions_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9840,6 +11024,20 @@ CREATE INDEX idx_draft_documents_documents_id ON public.draft_documents USING bt
 --
 
 CREATE INDEX idx_draft_documents_draft_id ON public.draft_documents USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_documents_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_documents_generated ON public.draft_documents USING btree (generated);
+
+
+--
+-- Name: idx_draft_documents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_documents_mcp ON public.draft_documents USING btree (mcp);
 
 
 --
@@ -9864,6 +11062,20 @@ CREATE INDEX idx_draft_endpoints_endpoints_id ON public.draft_endpoints USING bt
 
 
 --
+-- Name: idx_draft_endpoints_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_endpoints_generated ON public.draft_endpoints USING btree (generated);
+
+
+--
+-- Name: idx_draft_endpoints_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_endpoints_mcp ON public.draft_endpoints USING btree (mcp);
+
+
+--
 -- Name: idx_draft_endpoints_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9882,6 +11094,20 @@ CREATE INDEX idx_draft_evals_draft_id ON public.draft_evals USING btree (draft_i
 --
 
 CREATE INDEX idx_draft_evals_evals_id ON public.draft_evals USING btree (evals_id);
+
+
+--
+-- Name: idx_draft_evals_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_evals_generated ON public.draft_evals USING btree (generated);
+
+
+--
+-- Name: idx_draft_evals_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_evals_mcp ON public.draft_evals USING btree (mcp);
 
 
 --
@@ -9906,6 +11132,20 @@ CREATE INDEX idx_draft_examples_examples_id ON public.draft_examples USING btree
 
 
 --
+-- Name: idx_draft_examples_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_examples_generated ON public.draft_examples USING btree (generated);
+
+
+--
+-- Name: idx_draft_examples_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_examples_mcp ON public.draft_examples USING btree (mcp);
+
+
+--
 -- Name: idx_draft_examples_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9924,6 +11164,20 @@ CREATE INDEX idx_draft_feedbacks_draft_id ON public.draft_feedbacks USING btree 
 --
 
 CREATE INDEX idx_draft_feedbacks_feedbacks_id ON public.draft_feedbacks USING btree (feedbacks_id);
+
+
+--
+-- Name: idx_draft_feedbacks_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_feedbacks_generated ON public.draft_feedbacks USING btree (generated);
+
+
+--
+-- Name: idx_draft_feedbacks_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_feedbacks_mcp ON public.draft_feedbacks USING btree (mcp);
 
 
 --
@@ -9948,6 +11202,20 @@ CREATE INDEX idx_draft_fields_fields_id ON public.draft_fields USING btree (fiel
 
 
 --
+-- Name: idx_draft_fields_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_fields_generated ON public.draft_fields USING btree (generated);
+
+
+--
+-- Name: idx_draft_fields_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_fields_mcp ON public.draft_fields USING btree (mcp);
+
+
+--
 -- Name: idx_draft_fields_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9969,6 +11237,20 @@ CREATE INDEX idx_draft_flags_flags_id ON public.draft_flags USING btree (flags_i
 
 
 --
+-- Name: idx_draft_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_flags_generated ON public.draft_flags USING btree (generated);
+
+
+--
+-- Name: idx_draft_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_flags_mcp ON public.draft_flags USING btree (mcp);
+
+
+--
 -- Name: idx_draft_flags_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9983,10 +11265,24 @@ CREATE INDEX idx_draft_hints_draft_id ON public.draft_hints USING btree (draft_i
 
 
 --
+-- Name: idx_draft_hints_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_hints_generated ON public.draft_hints USING btree (generated);
+
+
+--
 -- Name: idx_draft_hints_hints_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_draft_hints_hints_id ON public.draft_hints USING btree (hints_id);
+
+
+--
+-- Name: idx_draft_hints_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_hints_mcp ON public.draft_hints USING btree (mcp);
 
 
 --
@@ -10004,10 +11300,24 @@ CREATE INDEX idx_draft_html_draft_id ON public.draft_html USING btree (draft_id)
 
 
 --
+-- Name: idx_draft_html_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_html_generated ON public.draft_html USING btree (generated);
+
+
+--
 -- Name: idx_draft_html_html_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_draft_html_html_id ON public.draft_html USING btree (html_id);
+
+
+--
+-- Name: idx_draft_html_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_html_mcp ON public.draft_html USING btree (mcp);
 
 
 --
@@ -10025,10 +11335,24 @@ CREATE INDEX idx_draft_icons_draft_id ON public.draft_icons USING btree (draft_i
 
 
 --
+-- Name: idx_draft_icons_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_icons_generated ON public.draft_icons USING btree (generated);
+
+
+--
 -- Name: idx_draft_icons_icons_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_draft_icons_icons_id ON public.draft_icons USING btree (icons_id);
+
+
+--
+-- Name: idx_draft_icons_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_icons_mcp ON public.draft_icons USING btree (mcp);
 
 
 --
@@ -10046,10 +11370,24 @@ CREATE INDEX idx_draft_images_draft_id ON public.draft_images USING btree (draft
 
 
 --
+-- Name: idx_draft_images_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_images_generated ON public.draft_images USING btree (generated);
+
+
+--
 -- Name: idx_draft_images_images_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_draft_images_images_id ON public.draft_images USING btree (images_id);
+
+
+--
+-- Name: idx_draft_images_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_images_mcp ON public.draft_images USING btree (mcp);
 
 
 --
@@ -10067,10 +11405,24 @@ CREATE INDEX idx_draft_improvements_draft_id ON public.draft_improvements USING 
 
 
 --
+-- Name: idx_draft_improvements_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_improvements_generated ON public.draft_improvements USING btree (generated);
+
+
+--
 -- Name: idx_draft_improvements_improvements_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_draft_improvements_improvements_id ON public.draft_improvements USING btree (improvements_id);
+
+
+--
+-- Name: idx_draft_improvements_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_improvements_mcp ON public.draft_improvements USING btree (mcp);
 
 
 --
@@ -10088,10 +11440,24 @@ CREATE INDEX idx_draft_instructions_draft_id ON public.draft_instructions USING 
 
 
 --
+-- Name: idx_draft_instructions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_instructions_generated ON public.draft_instructions USING btree (generated);
+
+
+--
 -- Name: idx_draft_instructions_instructions_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_draft_instructions_instructions_id ON public.draft_instructions USING btree (instructions_id);
+
+
+--
+-- Name: idx_draft_instructions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_instructions_mcp ON public.draft_instructions USING btree (mcp);
 
 
 --
@@ -10109,10 +11475,24 @@ CREATE INDEX idx_draft_items_draft_id ON public.draft_items USING btree (draft_i
 
 
 --
+-- Name: idx_draft_items_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_items_generated ON public.draft_items USING btree (generated);
+
+
+--
 -- Name: idx_draft_items_items_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_draft_items_items_id ON public.draft_items USING btree (items_id);
+
+
+--
+-- Name: idx_draft_items_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_items_mcp ON public.draft_items USING btree (mcp);
 
 
 --
@@ -10130,10 +11510,24 @@ CREATE INDEX idx_draft_keys_draft_id ON public.draft_keys USING btree (draft_id)
 
 
 --
+-- Name: idx_draft_keys_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_keys_generated ON public.draft_keys USING btree (generated);
+
+
+--
 -- Name: idx_draft_keys_keys_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_draft_keys_keys_id ON public.draft_keys USING btree (keys_id);
+
+
+--
+-- Name: idx_draft_keys_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_keys_mcp ON public.draft_keys USING btree (mcp);
 
 
 --
@@ -10148,6 +11542,20 @@ CREATE INDEX idx_draft_keys_version ON public.draft_keys USING btree (version);
 --
 
 CREATE INDEX idx_draft_models_draft_id ON public.draft_models USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_models_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_models_generated ON public.draft_models USING btree (generated);
+
+
+--
+-- Name: idx_draft_models_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_models_mcp ON public.draft_models USING btree (mcp);
 
 
 --
@@ -10172,6 +11580,20 @@ CREATE INDEX idx_draft_names_draft_id ON public.draft_names USING btree (draft_i
 
 
 --
+-- Name: idx_draft_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_names_generated ON public.draft_names USING btree (generated);
+
+
+--
+-- Name: idx_draft_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_names_mcp ON public.draft_names USING btree (mcp);
+
+
+--
 -- Name: idx_draft_names_names_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10190,6 +11612,20 @@ CREATE INDEX idx_draft_names_version ON public.draft_names USING btree (version)
 --
 
 CREATE INDEX idx_draft_objectives_draft_id ON public.draft_objectives USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_objectives_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_objectives_generated ON public.draft_objectives USING btree (generated);
+
+
+--
+-- Name: idx_draft_objectives_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_objectives_mcp ON public.draft_objectives USING btree (mcp);
 
 
 --
@@ -10214,6 +11650,20 @@ CREATE INDEX idx_draft_options_draft_id ON public.draft_options USING btree (dra
 
 
 --
+-- Name: idx_draft_options_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_options_generated ON public.draft_options USING btree (generated);
+
+
+--
+-- Name: idx_draft_options_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_options_mcp ON public.draft_options USING btree (mcp);
+
+
+--
 -- Name: idx_draft_options_options_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10232,6 +11682,20 @@ CREATE INDEX idx_draft_options_version ON public.draft_options USING btree (vers
 --
 
 CREATE INDEX idx_draft_parameters_draft_id ON public.draft_parameters USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_parameters_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_parameters_generated ON public.draft_parameters USING btree (generated);
+
+
+--
+-- Name: idx_draft_parameters_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_parameters_mcp ON public.draft_parameters USING btree (mcp);
 
 
 --
@@ -10256,6 +11720,20 @@ CREATE INDEX idx_draft_personas_draft_id ON public.draft_personas USING btree (d
 
 
 --
+-- Name: idx_draft_personas_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_personas_generated ON public.draft_personas USING btree (generated);
+
+
+--
+-- Name: idx_draft_personas_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_personas_mcp ON public.draft_personas USING btree (mcp);
+
+
+--
 -- Name: idx_draft_personas_personas_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10274,6 +11752,20 @@ CREATE INDEX idx_draft_personas_version ON public.draft_personas USING btree (ve
 --
 
 CREATE INDEX idx_draft_points_draft_id ON public.draft_points USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_points_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_points_generated ON public.draft_points USING btree (generated);
+
+
+--
+-- Name: idx_draft_points_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_points_mcp ON public.draft_points USING btree (mcp);
 
 
 --
@@ -10298,6 +11790,20 @@ CREATE INDEX idx_draft_problem_statements_draft_id ON public.draft_problem_state
 
 
 --
+-- Name: idx_draft_problem_statements_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_problem_statements_generated ON public.draft_problem_statements USING btree (generated);
+
+
+--
+-- Name: idx_draft_problem_statements_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_problem_statements_mcp ON public.draft_problem_statements USING btree (mcp);
+
+
+--
 -- Name: idx_draft_problem_statements_problem_statements_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10316,6 +11822,20 @@ CREATE INDEX idx_draft_problem_statements_version ON public.draft_problem_statem
 --
 
 CREATE INDEX idx_draft_profiles_draft_id ON public.draft_profiles USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_profiles_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_profiles_generated ON public.draft_profiles USING btree (generated);
+
+
+--
+-- Name: idx_draft_profiles_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_profiles_mcp ON public.draft_profiles USING btree (mcp);
 
 
 --
@@ -10340,6 +11860,20 @@ CREATE INDEX idx_draft_prompts_draft_id ON public.draft_prompts USING btree (dra
 
 
 --
+-- Name: idx_draft_prompts_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_prompts_generated ON public.draft_prompts USING btree (generated);
+
+
+--
+-- Name: idx_draft_prompts_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_prompts_mcp ON public.draft_prompts USING btree (mcp);
+
+
+--
 -- Name: idx_draft_prompts_prompts_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10358,6 +11892,20 @@ CREATE INDEX idx_draft_prompts_version ON public.draft_prompts USING btree (vers
 --
 
 CREATE INDEX idx_draft_protocols_draft_id ON public.draft_protocols USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_protocols_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_protocols_generated ON public.draft_protocols USING btree (generated);
+
+
+--
+-- Name: idx_draft_protocols_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_protocols_mcp ON public.draft_protocols USING btree (mcp);
 
 
 --
@@ -10382,6 +11930,20 @@ CREATE INDEX idx_draft_questions_draft_id ON public.draft_questions USING btree 
 
 
 --
+-- Name: idx_draft_questions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_questions_generated ON public.draft_questions USING btree (generated);
+
+
+--
+-- Name: idx_draft_questions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_questions_mcp ON public.draft_questions USING btree (mcp);
+
+
+--
 -- Name: idx_draft_questions_questions_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10400,6 +11962,20 @@ CREATE INDEX idx_draft_questions_version ON public.draft_questions USING btree (
 --
 
 CREATE INDEX idx_draft_responses_draft_id ON public.draft_responses USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_responses_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_responses_generated ON public.draft_responses USING btree (generated);
+
+
+--
+-- Name: idx_draft_responses_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_responses_mcp ON public.draft_responses USING btree (mcp);
 
 
 --
@@ -10424,6 +12000,20 @@ CREATE INDEX idx_draft_rubrics_draft_id ON public.draft_rubrics USING btree (dra
 
 
 --
+-- Name: idx_draft_rubrics_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_rubrics_generated ON public.draft_rubrics USING btree (generated);
+
+
+--
+-- Name: idx_draft_rubrics_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_rubrics_mcp ON public.draft_rubrics USING btree (mcp);
+
+
+--
 -- Name: idx_draft_rubrics_rubrics_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10442,6 +12032,20 @@ CREATE INDEX idx_draft_rubrics_version ON public.draft_rubrics USING btree (vers
 --
 
 CREATE INDEX idx_draft_scenarios_draft_id ON public.draft_scenarios USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_scenarios_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_scenarios_generated ON public.draft_scenarios USING btree (generated);
+
+
+--
+-- Name: idx_draft_scenarios_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_scenarios_mcp ON public.draft_scenarios USING btree (mcp);
 
 
 --
@@ -10466,6 +12070,20 @@ CREATE INDEX idx_draft_schema_field_items_draft_id ON public.draft_schema_field_
 
 
 --
+-- Name: idx_draft_schema_field_items_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_field_items_generated ON public.draft_schema_field_items USING btree (generated);
+
+
+--
+-- Name: idx_draft_schema_field_items_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_field_items_mcp ON public.draft_schema_field_items USING btree (mcp);
+
+
+--
 -- Name: idx_draft_schema_field_items_schema_field_items_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10484,6 +12102,20 @@ CREATE INDEX idx_draft_schema_field_items_version ON public.draft_schema_field_i
 --
 
 CREATE INDEX idx_draft_schema_fields_draft_id ON public.draft_schema_fields USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_schema_fields_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_fields_generated ON public.draft_schema_fields USING btree (generated);
+
+
+--
+-- Name: idx_draft_schema_fields_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schema_fields_mcp ON public.draft_schema_fields USING btree (mcp);
 
 
 --
@@ -10508,6 +12140,20 @@ CREATE INDEX idx_draft_schemas_draft_id ON public.draft_schemas USING btree (dra
 
 
 --
+-- Name: idx_draft_schemas_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schemas_generated ON public.draft_schemas USING btree (generated);
+
+
+--
+-- Name: idx_draft_schemas_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_schemas_mcp ON public.draft_schemas USING btree (mcp);
+
+
+--
 -- Name: idx_draft_schemas_schemas_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10526,6 +12172,20 @@ CREATE INDEX idx_draft_schemas_version ON public.draft_schemas USING btree (vers
 --
 
 CREATE INDEX idx_draft_settings_draft_id ON public.draft_settings USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_settings_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_settings_generated ON public.draft_settings USING btree (generated);
+
+
+--
+-- Name: idx_draft_settings_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_settings_mcp ON public.draft_settings USING btree (mcp);
 
 
 --
@@ -10550,6 +12210,20 @@ CREATE INDEX idx_draft_simulations_draft_id ON public.draft_simulations USING bt
 
 
 --
+-- Name: idx_draft_simulations_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_simulations_generated ON public.draft_simulations USING btree (generated);
+
+
+--
+-- Name: idx_draft_simulations_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_simulations_mcp ON public.draft_simulations USING btree (mcp);
+
+
+--
 -- Name: idx_draft_simulations_simulations_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10568,6 +12242,20 @@ CREATE INDEX idx_draft_simulations_version ON public.draft_simulations USING btr
 --
 
 CREATE INDEX idx_draft_slugs_draft_id ON public.draft_slugs USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_slugs_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_slugs_generated ON public.draft_slugs USING btree (generated);
+
+
+--
+-- Name: idx_draft_slugs_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_slugs_mcp ON public.draft_slugs USING btree (mcp);
 
 
 --
@@ -10592,6 +12280,20 @@ CREATE INDEX idx_draft_standard_groups_draft_id ON public.draft_standard_groups 
 
 
 --
+-- Name: idx_draft_standard_groups_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_standard_groups_generated ON public.draft_standard_groups USING btree (generated);
+
+
+--
+-- Name: idx_draft_standard_groups_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_standard_groups_mcp ON public.draft_standard_groups USING btree (mcp);
+
+
+--
 -- Name: idx_draft_standard_groups_standard_groups_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10610,6 +12312,20 @@ CREATE INDEX idx_draft_standard_groups_version ON public.draft_standard_groups U
 --
 
 CREATE INDEX idx_draft_strengths_draft_id ON public.draft_strengths USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_strengths_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_strengths_generated ON public.draft_strengths USING btree (generated);
+
+
+--
+-- Name: idx_draft_strengths_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_strengths_mcp ON public.draft_strengths USING btree (mcp);
 
 
 --
@@ -10634,6 +12350,20 @@ CREATE INDEX idx_draft_template_array_items_draft_id ON public.draft_template_ar
 
 
 --
+-- Name: idx_draft_template_array_items_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_array_items_generated ON public.draft_template_array_items USING btree (generated);
+
+
+--
+-- Name: idx_draft_template_array_items_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_array_items_mcp ON public.draft_template_array_items USING btree (mcp);
+
+
+--
 -- Name: idx_draft_template_array_items_template_array_items_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10652,6 +12382,20 @@ CREATE INDEX idx_draft_template_array_items_version ON public.draft_template_arr
 --
 
 CREATE INDEX idx_draft_template_values_draft_id ON public.draft_template_values USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_template_values_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_values_generated ON public.draft_template_values USING btree (generated);
+
+
+--
+-- Name: idx_draft_template_values_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_template_values_mcp ON public.draft_template_values USING btree (mcp);
 
 
 --
@@ -10676,6 +12420,20 @@ CREATE INDEX idx_draft_templates_draft_id ON public.draft_templates USING btree 
 
 
 --
+-- Name: idx_draft_templates_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_templates_generated ON public.draft_templates USING btree (generated);
+
+
+--
+-- Name: idx_draft_templates_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_templates_mcp ON public.draft_templates USING btree (mcp);
+
+
+--
 -- Name: idx_draft_templates_templates_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10694,6 +12452,20 @@ CREATE INDEX idx_draft_templates_version ON public.draft_templates USING btree (
 --
 
 CREATE INDEX idx_draft_thresholds_draft_id ON public.draft_thresholds USING btree (draft_id);
+
+
+--
+-- Name: idx_draft_thresholds_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_thresholds_generated ON public.draft_thresholds USING btree (generated);
+
+
+--
+-- Name: idx_draft_thresholds_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_thresholds_mcp ON public.draft_thresholds USING btree (mcp);
 
 
 --
@@ -10718,6 +12490,20 @@ CREATE INDEX idx_draft_times_draft_id ON public.draft_times USING btree (draft_i
 
 
 --
+-- Name: idx_draft_times_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_times_generated ON public.draft_times USING btree (generated);
+
+
+--
+-- Name: idx_draft_times_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_times_mcp ON public.draft_times USING btree (mcp);
+
+
+--
 -- Name: idx_draft_times_times_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10739,6 +12525,20 @@ CREATE INDEX idx_draft_videos_draft_id ON public.draft_videos USING btree (draft
 
 
 --
+-- Name: idx_draft_videos_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_videos_generated ON public.draft_videos USING btree (generated);
+
+
+--
+-- Name: idx_draft_videos_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_draft_videos_mcp ON public.draft_videos USING btree (mcp);
+
+
+--
 -- Name: idx_draft_videos_version; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10753,6 +12553,13 @@ CREATE INDEX idx_draft_videos_videos_id ON public.draft_videos USING btree (vide
 
 
 --
+-- Name: idx_drafts_group_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_drafts_group_id ON public.drafts USING btree (group_id);
+
+
+--
 -- Name: idx_drafts_profile_artifact; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10760,10 +12567,1480 @@ CREATE INDEX idx_drafts_profile_artifact ON public.drafts USING btree (profile_i
 
 
 --
+-- Name: idx_endpoints_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_endpoints_mcp ON public.endpoints USING btree (mcp);
+
+
+--
+-- Name: idx_eval_agents_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_agents_generated ON public.eval_agents USING btree (generated);
+
+
+--
+-- Name: idx_eval_agents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_agents_mcp ON public.eval_agents USING btree (mcp);
+
+
+--
+-- Name: idx_eval_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_departments_generated ON public.eval_departments USING btree (generated);
+
+
+--
+-- Name: idx_eval_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_departments_mcp ON public.eval_departments USING btree (mcp);
+
+
+--
+-- Name: idx_eval_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_descriptions_generated ON public.eval_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_eval_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_descriptions_mcp ON public.eval_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_eval_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_flags_generated ON public.eval_flags USING btree (generated);
+
+
+--
+-- Name: idx_eval_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_flags_mcp ON public.eval_flags USING btree (mcp);
+
+
+--
+-- Name: idx_eval_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_names_generated ON public.eval_names USING btree (generated);
+
+
+--
+-- Name: idx_eval_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_eval_names_mcp ON public.eval_names USING btree (mcp);
+
+
+--
+-- Name: idx_evals_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_evals_mcp ON public.evals USING btree (mcp);
+
+
+--
+-- Name: idx_examples_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_examples_mcp ON public.examples USING btree (mcp);
+
+
+--
+-- Name: idx_feedbacks_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_feedbacks_mcp ON public.feedbacks USING btree (mcp);
+
+
+--
+-- Name: idx_field_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_field_departments_generated ON public.field_departments USING btree (generated);
+
+
+--
+-- Name: idx_field_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_field_departments_mcp ON public.field_departments USING btree (mcp);
+
+
+--
+-- Name: idx_field_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_field_descriptions_generated ON public.field_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_field_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_field_descriptions_mcp ON public.field_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_field_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_field_flags_generated ON public.field_flags USING btree (generated);
+
+
+--
+-- Name: idx_field_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_field_flags_mcp ON public.field_flags USING btree (mcp);
+
+
+--
+-- Name: idx_field_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_field_names_generated ON public.field_names USING btree (generated);
+
+
+--
+-- Name: idx_field_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_field_names_mcp ON public.field_names USING btree (mcp);
+
+
+--
+-- Name: idx_fields_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_fields_mcp ON public.fields USING btree (mcp);
+
+
+--
+-- Name: idx_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_flags_mcp ON public.flags USING btree (mcp);
+
+
+--
+-- Name: idx_grade_analyses_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_analyses_generated ON public.grade_analyses USING btree (generated);
+
+
+--
+-- Name: idx_grade_analyses_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_analyses_mcp ON public.grade_analyses USING btree (mcp);
+
+
+--
+-- Name: idx_grade_feedbacks_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_feedbacks_generated ON public.grade_feedbacks USING btree (generated);
+
+
+--
+-- Name: idx_grade_feedbacks_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_feedbacks_mcp ON public.grade_feedbacks USING btree (mcp);
+
+
+--
+-- Name: idx_grade_improvements_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_improvements_generated ON public.grade_improvements USING btree (generated);
+
+
+--
+-- Name: idx_grade_improvements_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_improvements_mcp ON public.grade_improvements USING btree (mcp);
+
+
+--
+-- Name: idx_grade_strengths_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_strengths_generated ON public.grade_strengths USING btree (generated);
+
+
+--
+-- Name: idx_grade_strengths_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_strengths_mcp ON public.grade_strengths USING btree (mcp);
+
+
+--
+-- Name: idx_grade_times_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_times_generated ON public.grade_times USING btree (generated);
+
+
+--
+-- Name: idx_grade_times_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_grade_times_mcp ON public.grade_times USING btree (mcp);
+
+
+--
+-- Name: idx_hints_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_hints_mcp ON public.hints USING btree (mcp);
+
+
+--
+-- Name: idx_html_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_html_mcp ON public.html USING btree (mcp);
+
+
+--
+-- Name: idx_icons_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_icons_mcp ON public.icons USING btree (mcp);
+
+
+--
+-- Name: idx_images_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_images_mcp ON public.images USING btree (mcp);
+
+
+--
+-- Name: idx_improvements_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_improvements_mcp ON public.improvements USING btree (mcp);
+
+
+--
+-- Name: idx_instructions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_instructions_mcp ON public.instructions USING btree (mcp);
+
+
+--
+-- Name: idx_items_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_items_mcp ON public.items USING btree (mcp);
+
+
+--
+-- Name: idx_key_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_key_descriptions_generated ON public.key_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_key_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_key_descriptions_mcp ON public.key_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_key_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_key_flags_generated ON public.key_flags USING btree (generated);
+
+
+--
+-- Name: idx_key_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_key_flags_mcp ON public.key_flags USING btree (mcp);
+
+
+--
+-- Name: idx_key_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_key_names_generated ON public.key_names USING btree (generated);
+
+
+--
+-- Name: idx_key_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_key_names_mcp ON public.key_names USING btree (mcp);
+
+
+--
+-- Name: idx_keys_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_keys_mcp ON public.keys USING btree (mcp);
+
+
+--
+-- Name: idx_message_audios_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_audios_generated ON public.message_audios USING btree (generated);
+
+
+--
+-- Name: idx_message_audios_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_audios_mcp ON public.message_audios USING btree (mcp);
+
+
+--
+-- Name: idx_message_contents_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_contents_generated ON public.message_contents USING btree (generated);
+
+
+--
+-- Name: idx_message_contents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_contents_mcp ON public.message_contents USING btree (mcp);
+
+
+--
+-- Name: idx_message_documents_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_documents_generated ON public.message_documents USING btree (generated);
+
+
+--
+-- Name: idx_message_documents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_documents_mcp ON public.message_documents USING btree (mcp);
+
+
+--
+-- Name: idx_message_hints_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_hints_generated ON public.message_hints USING btree (generated);
+
+
+--
+-- Name: idx_message_hints_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_hints_mcp ON public.message_hints USING btree (mcp);
+
+
+--
+-- Name: idx_message_images_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_images_generated ON public.message_images USING btree (generated);
+
+
+--
+-- Name: idx_message_images_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_images_mcp ON public.message_images USING btree (mcp);
+
+
+--
+-- Name: idx_message_personas_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_personas_generated ON public.message_personas USING btree (generated);
+
+
+--
+-- Name: idx_message_personas_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_personas_mcp ON public.message_personas USING btree (mcp);
+
+
+--
+-- Name: idx_message_texts_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_texts_generated ON public.message_texts USING btree (generated);
+
+
+--
+-- Name: idx_message_texts_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_texts_mcp ON public.message_texts USING btree (mcp);
+
+
+--
+-- Name: idx_message_videos_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_videos_generated ON public.message_videos USING btree (generated);
+
+
+--
+-- Name: idx_message_videos_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_message_videos_mcp ON public.message_videos USING btree (mcp);
+
+
+--
+-- Name: idx_model_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_departments_generated ON public.model_departments USING btree (generated);
+
+
+--
+-- Name: idx_model_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_departments_mcp ON public.model_departments USING btree (mcp);
+
+
+--
+-- Name: idx_model_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_descriptions_generated ON public.model_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_model_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_descriptions_mcp ON public.model_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_model_endpoints_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_endpoints_generated ON public.model_endpoints USING btree (generated);
+
+
+--
+-- Name: idx_model_endpoints_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_endpoints_mcp ON public.model_endpoints USING btree (mcp);
+
+
+--
+-- Name: idx_model_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_flags_generated ON public.model_flags USING btree (generated);
+
+
+--
+-- Name: idx_model_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_flags_mcp ON public.model_flags USING btree (mcp);
+
+
+--
+-- Name: idx_model_keys_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_keys_generated ON public.model_keys USING btree (generated);
+
+
+--
+-- Name: idx_model_keys_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_keys_mcp ON public.model_keys USING btree (mcp);
+
+
+--
+-- Name: idx_model_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_names_generated ON public.model_names USING btree (generated);
+
+
+--
+-- Name: idx_model_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_model_names_mcp ON public.model_names USING btree (mcp);
+
+
+--
+-- Name: idx_models_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_models_mcp ON public.models USING btree (mcp);
+
+
+--
+-- Name: idx_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_names_mcp ON public.names USING btree (mcp);
+
+
+--
+-- Name: idx_objectives_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_objectives_mcp ON public.objectives USING btree (mcp);
+
+
+--
+-- Name: idx_options_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_options_mcp ON public.options USING btree (mcp);
+
+
+--
+-- Name: idx_parameter_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_departments_generated ON public.parameter_departments USING btree (generated);
+
+
+--
+-- Name: idx_parameter_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_departments_mcp ON public.parameter_departments USING btree (mcp);
+
+
+--
+-- Name: idx_parameter_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_descriptions_generated ON public.parameter_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_parameter_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_descriptions_mcp ON public.parameter_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_parameter_fields_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_fields_generated ON public.parameter_fields USING btree (generated);
+
+
+--
+-- Name: idx_parameter_fields_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_fields_mcp ON public.parameter_fields USING btree (mcp);
+
+
+--
+-- Name: idx_parameter_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_flags_generated ON public.parameter_flags USING btree (generated);
+
+
+--
+-- Name: idx_parameter_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_flags_mcp ON public.parameter_flags USING btree (mcp);
+
+
+--
+-- Name: idx_parameter_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_names_generated ON public.parameter_names USING btree (generated);
+
+
+--
+-- Name: idx_parameter_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameter_names_mcp ON public.parameter_names USING btree (mcp);
+
+
+--
+-- Name: idx_parameters_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_parameters_mcp ON public.parameters USING btree (mcp);
+
+
+--
+-- Name: idx_persona_colors_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_colors_generated ON public.persona_colors USING btree (generated);
+
+
+--
+-- Name: idx_persona_colors_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_colors_mcp ON public.persona_colors USING btree (mcp);
+
+
+--
+-- Name: idx_persona_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_departments_generated ON public.persona_departments USING btree (generated);
+
+
+--
+-- Name: idx_persona_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_departments_mcp ON public.persona_departments USING btree (mcp);
+
+
+--
+-- Name: idx_persona_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_descriptions_generated ON public.persona_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_persona_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_descriptions_mcp ON public.persona_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_persona_examples_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_examples_generated ON public.persona_examples USING btree (generated);
+
+
+--
+-- Name: idx_persona_examples_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_examples_mcp ON public.persona_examples USING btree (mcp);
+
+
+--
+-- Name: idx_persona_fields_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_fields_generated ON public.persona_fields USING btree (generated);
+
+
+--
+-- Name: idx_persona_fields_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_fields_mcp ON public.persona_fields USING btree (mcp);
+
+
+--
+-- Name: idx_persona_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_flags_generated ON public.persona_flags USING btree (generated);
+
+
+--
+-- Name: idx_persona_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_flags_mcp ON public.persona_flags USING btree (mcp);
+
+
+--
+-- Name: idx_persona_icons_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_icons_generated ON public.persona_icons USING btree (generated);
+
+
+--
+-- Name: idx_persona_icons_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_icons_mcp ON public.persona_icons USING btree (mcp);
+
+
+--
+-- Name: idx_persona_instructions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_instructions_generated ON public.persona_instructions USING btree (generated);
+
+
+--
+-- Name: idx_persona_instructions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_instructions_mcp ON public.persona_instructions USING btree (mcp);
+
+
+--
+-- Name: idx_persona_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_names_generated ON public.persona_names USING btree (generated);
+
+
+--
+-- Name: idx_persona_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_persona_names_mcp ON public.persona_names USING btree (mcp);
+
+
+--
+-- Name: idx_personas_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_personas_mcp ON public.personas USING btree (mcp);
+
+
+--
+-- Name: idx_points_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_points_mcp ON public.points USING btree (mcp);
+
+
+--
+-- Name: idx_problem_statements_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_problem_statements_mcp ON public.problem_statements USING btree (mcp);
+
+
+--
+-- Name: idx_profile_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_profile_departments_generated ON public.profile_departments USING btree (generated);
+
+
+--
+-- Name: idx_profile_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_profile_departments_mcp ON public.profile_departments USING btree (mcp);
+
+
+--
+-- Name: idx_profile_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_profile_flags_generated ON public.profile_flags USING btree (generated);
+
+
+--
+-- Name: idx_profile_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_profile_flags_mcp ON public.profile_flags USING btree (mcp);
+
+
+--
+-- Name: idx_profile_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_profile_names_generated ON public.profile_names USING btree (generated);
+
+
+--
+-- Name: idx_profile_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_profile_names_mcp ON public.profile_names USING btree (mcp);
+
+
+--
+-- Name: idx_profiles_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_profiles_mcp ON public.profiles USING btree (mcp);
+
+
+--
+-- Name: idx_prompts_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_prompts_mcp ON public.prompts USING btree (mcp);
+
+
+--
+-- Name: idx_protocols_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_protocols_mcp ON public.protocols USING btree (mcp);
+
+
+--
+-- Name: idx_questions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_questions_mcp ON public.questions USING btree (mcp);
+
+
+--
+-- Name: idx_responses_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_responses_mcp ON public.responses USING btree (mcp);
+
+
+--
+-- Name: idx_rubric_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_departments_generated ON public.rubric_departments USING btree (generated);
+
+
+--
+-- Name: idx_rubric_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_departments_mcp ON public.rubric_departments USING btree (mcp);
+
+
+--
+-- Name: idx_rubric_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_descriptions_generated ON public.rubric_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_rubric_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_descriptions_mcp ON public.rubric_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_rubric_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_flags_generated ON public.rubric_flags USING btree (generated);
+
+
+--
+-- Name: idx_rubric_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_flags_mcp ON public.rubric_flags USING btree (mcp);
+
+
+--
+-- Name: idx_rubric_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_names_generated ON public.rubric_names USING btree (generated);
+
+
+--
+-- Name: idx_rubric_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_names_mcp ON public.rubric_names USING btree (mcp);
+
+
+--
+-- Name: idx_rubric_points_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_points_generated ON public.rubric_points USING btree (generated);
+
+
+--
+-- Name: idx_rubric_points_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_points_mcp ON public.rubric_points USING btree (mcp);
+
+
+--
+-- Name: idx_rubric_standard_groups_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_standard_groups_generated ON public.rubric_standard_groups USING btree (generated);
+
+
+--
+-- Name: idx_rubric_standard_groups_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubric_standard_groups_mcp ON public.rubric_standard_groups USING btree (mcp);
+
+
+--
+-- Name: idx_rubrics_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rubrics_mcp ON public.rubrics USING btree (mcp);
+
+
+--
+-- Name: idx_runs_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_runs_generated ON public.runs USING btree (generated);
+
+
+--
+-- Name: idx_runs_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_runs_mcp ON public.runs USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_departments_generated ON public.scenario_departments USING btree (generated);
+
+
+--
+-- Name: idx_scenario_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_departments_mcp ON public.scenario_departments USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_descriptions_generated ON public.scenario_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_scenario_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_descriptions_mcp ON public.scenario_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_documents_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_documents_generated ON public.scenario_documents USING btree (generated);
+
+
+--
+-- Name: idx_scenario_documents_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_documents_mcp ON public.scenario_documents USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_fields_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_fields_generated ON public.scenario_fields USING btree (generated);
+
+
+--
+-- Name: idx_scenario_fields_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_fields_mcp ON public.scenario_fields USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_flags_generated ON public.scenario_flags USING btree (generated);
+
+
+--
+-- Name: idx_scenario_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_flags_mcp ON public.scenario_flags USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_images_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_images_generated ON public.scenario_images USING btree (generated);
+
+
+--
+-- Name: idx_scenario_images_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_images_mcp ON public.scenario_images USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_names_generated ON public.scenario_names USING btree (generated);
+
+
+--
+-- Name: idx_scenario_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_names_mcp ON public.scenario_names USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_objectives_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_objectives_generated ON public.scenario_objectives USING btree (generated);
+
+
+--
+-- Name: idx_scenario_objectives_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_objectives_mcp ON public.scenario_objectives USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_options_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_options_generated ON public.scenario_options USING btree (generated);
+
+
+--
+-- Name: idx_scenario_options_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_options_mcp ON public.scenario_options USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_parameters_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_parameters_generated ON public.scenario_parameters USING btree (generated);
+
+
+--
+-- Name: idx_scenario_parameters_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_parameters_mcp ON public.scenario_parameters USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_personas_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_personas_generated ON public.scenario_personas USING btree (generated);
+
+
+--
+-- Name: idx_scenario_personas_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_personas_mcp ON public.scenario_personas USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_problem_statements_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_problem_statements_generated ON public.scenario_problem_statements USING btree (generated);
+
+
+--
+-- Name: idx_scenario_problem_statements_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_problem_statements_mcp ON public.scenario_problem_statements USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_questions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_questions_generated ON public.scenario_questions USING btree (generated);
+
+
+--
+-- Name: idx_scenario_questions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_questions_mcp ON public.scenario_questions USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_templates_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_templates_generated ON public.scenario_templates USING btree (generated);
+
+
+--
+-- Name: idx_scenario_templates_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_templates_mcp ON public.scenario_templates USING btree (mcp);
+
+
+--
+-- Name: idx_scenario_videos_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_videos_generated ON public.scenario_videos USING btree (generated);
+
+
+--
+-- Name: idx_scenario_videos_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenario_videos_mcp ON public.scenario_videos USING btree (mcp);
+
+
+--
+-- Name: idx_scenarios_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_scenarios_mcp ON public.scenarios USING btree (mcp);
+
+
+--
+-- Name: idx_schema_field_items_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_schema_field_items_mcp ON public.schema_field_items USING btree (mcp);
+
+
+--
+-- Name: idx_schema_fields_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_schema_fields_mcp ON public.schema_fields USING btree (mcp);
+
+
+--
+-- Name: idx_schemas_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_schemas_mcp ON public.schemas USING btree (mcp);
+
+
+--
+-- Name: idx_setting_auths_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_auths_generated ON public.setting_auths USING btree (generated);
+
+
+--
+-- Name: idx_setting_auths_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_auths_mcp ON public.setting_auths USING btree (mcp);
+
+
+--
+-- Name: idx_setting_colors_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_colors_generated ON public.setting_colors USING btree (generated);
+
+
+--
+-- Name: idx_setting_colors_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_colors_mcp ON public.setting_colors USING btree (mcp);
+
+
+--
+-- Name: idx_setting_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_descriptions_generated ON public.setting_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_setting_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_descriptions_mcp ON public.setting_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_setting_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_flags_generated ON public.setting_flags USING btree (generated);
+
+
+--
+-- Name: idx_setting_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_flags_mcp ON public.setting_flags USING btree (mcp);
+
+
+--
+-- Name: idx_setting_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_names_generated ON public.setting_names USING btree (generated);
+
+
+--
+-- Name: idx_setting_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_names_mcp ON public.setting_names USING btree (mcp);
+
+
+--
+-- Name: idx_setting_thresholds_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_thresholds_generated ON public.setting_thresholds USING btree (generated);
+
+
+--
+-- Name: idx_setting_thresholds_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_setting_thresholds_mcp ON public.setting_thresholds USING btree (mcp);
+
+
+--
+-- Name: idx_settings_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_settings_mcp ON public.settings USING btree (mcp);
+
+
+--
+-- Name: idx_simulation_departments_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_departments_generated ON public.simulation_departments USING btree (generated);
+
+
+--
+-- Name: idx_simulation_departments_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_departments_mcp ON public.simulation_departments USING btree (mcp);
+
+
+--
+-- Name: idx_simulation_descriptions_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_descriptions_generated ON public.simulation_descriptions USING btree (generated);
+
+
+--
+-- Name: idx_simulation_descriptions_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_descriptions_mcp ON public.simulation_descriptions USING btree (mcp);
+
+
+--
+-- Name: idx_simulation_flags_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_flags_generated ON public.simulation_flags USING btree (generated);
+
+
+--
+-- Name: idx_simulation_flags_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_flags_mcp ON public.simulation_flags USING btree (mcp);
+
+
+--
+-- Name: idx_simulation_names_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_names_generated ON public.simulation_names USING btree (generated);
+
+
+--
+-- Name: idx_simulation_names_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_names_mcp ON public.simulation_names USING btree (mcp);
+
+
+--
 -- Name: idx_simulation_scenarios_active; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_simulation_scenarios_active ON public.simulation_scenarios USING btree (active) WHERE (active = true);
+
+
+--
+-- Name: idx_simulation_scenarios_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_scenarios_generated ON public.simulation_scenarios USING btree (generated);
+
+
+--
+-- Name: idx_simulation_scenarios_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulation_scenarios_mcp ON public.simulation_scenarios USING btree (mcp);
+
+
+--
+-- Name: idx_simulations_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_simulations_mcp ON public.simulations USING btree (mcp);
+
+
+--
+-- Name: idx_slugs_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_slugs_mcp ON public.slugs USING btree (mcp);
+
+
+--
+-- Name: idx_standard_groups_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_standard_groups_mcp ON public.standard_groups USING btree (mcp);
+
+
+--
+-- Name: idx_strengths_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_strengths_mcp ON public.strengths USING btree (mcp);
+
+
+--
+-- Name: idx_template_array_items_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_template_array_items_mcp ON public.template_array_items USING btree (mcp);
+
+
+--
+-- Name: idx_template_values_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_template_values_mcp ON public.template_values USING btree (mcp);
+
+
+--
+-- Name: idx_templates_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_templates_mcp ON public.templates USING btree (mcp);
+
+
+--
+-- Name: idx_texts_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_texts_mcp ON public.texts USING btree (mcp);
+
+
+--
+-- Name: idx_thresholds_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_thresholds_mcp ON public.thresholds USING btree (mcp);
+
+
+--
+-- Name: idx_times_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_times_mcp ON public.times USING btree (mcp);
+
+
+--
+-- Name: idx_tool_schemas_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tool_schemas_generated ON public.tool_schemas USING btree (generated);
+
+
+--
+-- Name: idx_tool_schemas_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tool_schemas_mcp ON public.tool_schemas USING btree (mcp);
+
+
+--
+-- Name: idx_tool_templates_generated; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tool_templates_generated ON public.tool_templates USING btree (generated);
+
+
+--
+-- Name: idx_tool_templates_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tool_templates_mcp ON public.tool_templates USING btree (mcp);
+
+
+--
+-- Name: idx_videos_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_videos_mcp ON public.videos USING btree (mcp);
 
 
 --
@@ -10900,6 +14177,13 @@ CREATE INDEX items_name_idx ON public.items USING btree (name);
 
 
 --
+-- Name: key_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX key_descriptions_call_id_idx ON public.key_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: key_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10911,6 +14195,13 @@ CREATE INDEX key_descriptions_description_id_idx ON public.key_descriptions USIN
 --
 
 CREATE INDEX key_descriptions_key_id_idx ON public.key_descriptions USING btree (key_id);
+
+
+--
+-- Name: key_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX key_flags_call_id_idx ON public.key_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -10935,6 +14226,13 @@ CREATE INDEX key_flags_type_idx ON public.key_flags USING btree (type);
 
 
 --
+-- Name: key_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX key_names_call_id_idx ON public.key_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: key_names_key_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10946,13 +14244,6 @@ CREATE INDEX key_names_key_id_idx ON public.key_names USING btree (key_id);
 --
 
 CREATE INDEX key_names_name_id_idx ON public.key_names USING btree (name_id);
-
-
---
--- Name: keys_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX keys_call_id_idx ON public.keys USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11159,6 +14450,13 @@ CREATE INDEX model_departments_active_idx ON public.model_departments USING btre
 
 
 --
+-- Name: model_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_departments_call_id_idx ON public.model_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: model_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11170,6 +14468,13 @@ CREATE INDEX model_departments_department_id_v7_idx ON public.model_departments 
 --
 
 CREATE INDEX model_departments_model_id_v7_idx ON public.model_departments USING btree (model_id);
+
+
+--
+-- Name: model_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_descriptions_call_id_idx ON public.model_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11201,6 +14506,13 @@ CREATE INDEX model_domains_model_id_idx ON public.model_domains USING btree (mod
 
 
 --
+-- Name: model_endpoints_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_endpoints_call_id_idx ON public.model_endpoints USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: model_endpoints_endpoint_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11212,6 +14524,13 @@ CREATE INDEX model_endpoints_endpoint_id_idx ON public.model_endpoints USING btr
 --
 
 CREATE INDEX model_endpoints_model_id_idx ON public.model_endpoints USING btree (model_id);
+
+
+--
+-- Name: model_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_flags_call_id_idx ON public.model_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11233,6 +14552,13 @@ CREATE INDEX model_flags_model_id_idx ON public.model_flags USING btree (model_i
 --
 
 CREATE INDEX model_flags_type_idx ON public.model_flags USING btree (type);
+
+
+--
+-- Name: model_keys_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_keys_call_id_idx ON public.model_keys USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11275,6 +14601,13 @@ CREATE INDEX model_modalities_modality_idx ON public.model_modalities USING btre
 --
 
 CREATE INDEX model_modalities_model_id_v7_idx ON public.model_modalities USING btree (model_id);
+
+
+--
+-- Name: model_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_names_call_id_idx ON public.model_names USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11411,13 +14744,6 @@ CREATE INDEX model_voices_voice_idx ON public.model_voices USING btree (voice);
 
 
 --
--- Name: models_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX models_call_id_idx ON public.models USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
 -- Name: names_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11474,6 +14800,13 @@ CREATE INDEX options_call_id_idx ON public.options USING btree (call_id) WHERE (
 
 
 --
+-- Name: parameter_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX parameter_departments_call_id_idx ON public.parameter_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: parameter_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11485,6 +14818,13 @@ CREATE INDEX parameter_departments_department_id_v7_idx ON public.parameter_depa
 --
 
 CREATE INDEX parameter_departments_parameter_id_v7_idx ON public.parameter_departments USING btree (parameter_id);
+
+
+--
+-- Name: parameter_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX parameter_descriptions_call_id_idx ON public.parameter_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11502,6 +14842,13 @@ CREATE INDEX parameter_descriptions_parameter_id_idx ON public.parameter_descrip
 
 
 --
+-- Name: parameter_fields_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX parameter_fields_call_id_idx ON public.parameter_fields USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: parameter_fields_field_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11513,6 +14860,13 @@ CREATE INDEX parameter_fields_field_id_idx ON public.parameter_fields USING btre
 --
 
 CREATE INDEX parameter_fields_parameter_id_idx ON public.parameter_fields USING btree (parameter_id);
+
+
+--
+-- Name: parameter_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX parameter_flags_call_id_idx ON public.parameter_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11537,6 +14891,13 @@ CREATE INDEX parameter_flags_type_idx ON public.parameter_flags USING btree (typ
 
 
 --
+-- Name: parameter_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX parameter_names_call_id_idx ON public.parameter_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: parameter_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11551,10 +14912,10 @@ CREATE INDEX parameter_names_parameter_id_idx ON public.parameter_names USING bt
 
 
 --
--- Name: parameters_call_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: persona_colors_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX parameters_call_id_idx ON public.parameters USING btree (call_id) WHERE (call_id IS NOT NULL);
+CREATE INDEX persona_colors_call_id_idx ON public.persona_colors USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11579,6 +14940,13 @@ CREATE INDEX persona_departments_active_idx ON public.persona_departments USING 
 
 
 --
+-- Name: persona_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_departments_call_id_idx ON public.persona_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: persona_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11590,6 +14958,13 @@ CREATE INDEX persona_departments_department_id_v7_idx ON public.persona_departme
 --
 
 CREATE INDEX persona_departments_persona_id_v7_idx ON public.persona_departments USING btree (persona_id);
+
+
+--
+-- Name: persona_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_descriptions_call_id_idx ON public.persona_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11614,6 +14989,13 @@ CREATE INDEX persona_examples_active_idx ON public.persona_examples USING btree 
 
 
 --
+-- Name: persona_examples_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_examples_call_id_idx ON public.persona_examples USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: persona_examples_example_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11628,6 +15010,13 @@ CREATE INDEX persona_examples_persona_id_v7_idx ON public.persona_examples USING
 
 
 --
+-- Name: persona_fields_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_fields_call_id_idx ON public.persona_fields USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: persona_fields_field_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11639,6 +15028,13 @@ CREATE INDEX persona_fields_field_id_v7_idx ON public.persona_fields USING btree
 --
 
 CREATE INDEX persona_fields_persona_id_v7_idx ON public.persona_fields USING btree (persona_id);
+
+
+--
+-- Name: persona_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_flags_call_id_idx ON public.persona_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11663,6 +15059,13 @@ CREATE INDEX persona_flags_type_idx ON public.persona_flags USING btree (type);
 
 
 --
+-- Name: persona_icons_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_icons_call_id_idx ON public.persona_icons USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: persona_icons_icon_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11674,6 +15077,13 @@ CREATE INDEX persona_icons_icon_id_idx ON public.persona_icons USING btree (icon
 --
 
 CREATE INDEX persona_icons_persona_id_idx ON public.persona_icons USING btree (persona_id);
+
+
+--
+-- Name: persona_instructions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_instructions_call_id_idx ON public.persona_instructions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11691,6 +15101,13 @@ CREATE INDEX persona_instructions_persona_id_idx ON public.persona_instructions 
 
 
 --
+-- Name: persona_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_names_call_id_idx ON public.persona_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: persona_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11702,13 +15119,6 @@ CREATE INDEX persona_names_name_id_idx ON public.persona_names USING btree (name
 --
 
 CREATE INDEX persona_names_persona_id_idx ON public.persona_names USING btree (persona_id);
-
-
---
--- Name: personas_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX personas_call_id_idx ON public.personas USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11803,6 +15213,13 @@ CREATE INDEX profile_activity_profile_id_v7_idx ON public.profile_activity USING
 
 
 --
+-- Name: profile_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profile_departments_call_id_idx ON public.profile_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: profile_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11838,6 +15255,13 @@ CREATE INDEX profile_emails_profile_id_v7_idx ON public.profile_emails USING btr
 
 
 --
+-- Name: profile_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profile_flags_call_id_idx ON public.profile_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: profile_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -11856,6 +15280,13 @@ CREATE INDEX profile_flags_profile_id_idx ON public.profile_flags USING btree (p
 --
 
 CREATE INDEX profile_flags_type_idx ON public.profile_flags USING btree (type);
+
+
+--
+-- Name: profile_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profile_names_call_id_idx ON public.profile_names USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -11884,13 +15315,6 @@ CREATE INDEX profile_names_type_idx ON public.profile_names USING btree (type);
 --
 
 CREATE INDEX profile_request_limits_profile_id_v7_idx ON public.profile_request_limits USING btree (profile_id);
-
-
---
--- Name: profiles_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX profiles_call_id_idx ON public.profiles USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12041,6 +15465,13 @@ CREATE INDEX rubric_artifacts_rubric_id_idx ON public.rubric_artifacts USING btr
 
 
 --
+-- Name: rubric_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_departments_call_id_idx ON public.rubric_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: rubric_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12052,6 +15483,13 @@ CREATE INDEX rubric_departments_department_id_v7_idx ON public.rubric_department
 --
 
 CREATE INDEX rubric_departments_rubric_id_v7_idx ON public.rubric_departments USING btree (rubric_id);
+
+
+--
+-- Name: rubric_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_descriptions_call_id_idx ON public.rubric_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12080,6 +15518,13 @@ CREATE INDEX rubric_domains_domain_id_idx ON public.rubric_domains USING btree (
 --
 
 CREATE INDEX rubric_domains_rubric_id_idx ON public.rubric_domains USING btree (rubric_id);
+
+
+--
+-- Name: rubric_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_flags_call_id_idx ON public.rubric_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12153,6 +15598,13 @@ CREATE INDEX rubric_groups_rubric_id_v7_idx ON public.rubric_groups USING btree 
 
 
 --
+-- Name: rubric_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_names_call_id_idx ON public.rubric_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: rubric_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12164,6 +15616,13 @@ CREATE INDEX rubric_names_name_id_idx ON public.rubric_names USING btree (name_i
 --
 
 CREATE INDEX rubric_names_rubric_id_idx ON public.rubric_names USING btree (rubric_id);
+
+
+--
+-- Name: rubric_points_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_points_call_id_idx ON public.rubric_points USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12188,6 +15647,13 @@ CREATE INDEX rubric_points_type_idx ON public.rubric_points USING btree (type);
 
 
 --
+-- Name: rubric_standard_groups_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_standard_groups_call_id_idx ON public.rubric_standard_groups USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: rubric_standard_groups_rubric_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12206,13 +15672,6 @@ CREATE UNIQUE INDEX rubric_standard_groups_rubric_position_uniq ON public.rubric
 --
 
 CREATE INDEX rubric_standard_groups_standard_group_id_idx ON public.rubric_standard_groups USING btree (standard_group_id);
-
-
---
--- Name: rubrics_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX rubrics_call_id_idx ON public.rubrics USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12342,6 +15801,13 @@ CREATE INDEX scenario_agent_domains_type_idx ON public.scenario_agent_domains US
 
 
 --
+-- Name: scenario_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_departments_call_id_idx ON public.scenario_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: scenario_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12353,6 +15819,13 @@ CREATE INDEX scenario_departments_department_id_v7_idx ON public.scenario_depart
 --
 
 CREATE INDEX scenario_departments_scenario_id_v7_idx ON public.scenario_departments USING btree (scenario_id);
+
+
+--
+-- Name: scenario_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_descriptions_call_id_idx ON public.scenario_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12374,6 +15847,13 @@ CREATE INDEX scenario_descriptions_scenario_id_idx ON public.scenario_descriptio
 --
 
 CREATE INDEX scenario_document_ranges_scenario_id_v7_idx ON public.scenario_document_ranges USING btree (scenario_id);
+
+
+--
+-- Name: scenario_documents_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_documents_call_id_idx ON public.scenario_documents USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12405,6 +15885,13 @@ CREATE INDEX scenario_field_ranges_scenario_id_v7_idx ON public.scenario_field_r
 
 
 --
+-- Name: scenario_fields_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_fields_call_id_idx ON public.scenario_fields USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: scenario_fields_field_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12416,6 +15903,13 @@ CREATE INDEX scenario_fields_field_id_v7_idx ON public.scenario_fields USING btr
 --
 
 CREATE INDEX scenario_fields_scenario_id_v7_idx ON public.scenario_fields USING btree (scenario_id);
+
+
+--
+-- Name: scenario_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_flags_call_id_idx ON public.scenario_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12454,6 +15948,13 @@ CREATE INDEX scenario_groups_scenario_id_v7_idx ON public.scenario_groups USING 
 
 
 --
+-- Name: scenario_images_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_images_call_id_idx ON public.scenario_images USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: scenario_images_image_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12465,6 +15966,13 @@ CREATE INDEX scenario_images_image_id_v7_idx ON public.scenario_images USING btr
 --
 
 CREATE INDEX scenario_images_scenario_id_v7_idx ON public.scenario_images USING btree (scenario_id);
+
+
+--
+-- Name: scenario_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_names_call_id_idx ON public.scenario_names USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12482,6 +15990,13 @@ CREATE INDEX scenario_names_scenario_id_idx ON public.scenario_names USING btree
 
 
 --
+-- Name: scenario_objectives_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_objectives_call_id_idx ON public.scenario_objectives USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: scenario_objectives_objective_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12493,6 +16008,13 @@ CREATE INDEX scenario_objectives_objective_id_v7_idx ON public.scenario_objectiv
 --
 
 CREATE INDEX scenario_objectives_scenario_id_v7_idx ON public.scenario_objectives USING btree (scenario_id);
+
+
+--
+-- Name: scenario_options_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_options_call_id_idx ON public.scenario_options USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12524,6 +16046,13 @@ CREATE INDEX scenario_parameter_ranges_scenario_id_v7_idx ON public.scenario_par
 
 
 --
+-- Name: scenario_parameters_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_parameters_call_id_idx ON public.scenario_parameters USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: scenario_parameters_parameter_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12542,6 +16071,13 @@ CREATE INDEX scenario_parameters_scenario_id_v7_idx ON public.scenario_parameter
 --
 
 CREATE INDEX scenario_persona_ranges_scenario_id_v7_idx ON public.scenario_persona_ranges USING btree (scenario_id);
+
+
+--
+-- Name: scenario_personas_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_personas_call_id_idx ON public.scenario_personas USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12566,6 +16102,13 @@ CREATE INDEX scenario_personas_scenario_id_v7_idx ON public.scenario_personas US
 
 
 --
+-- Name: scenario_problem_statements_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_problem_statements_call_id_idx ON public.scenario_problem_statements USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: scenario_problem_statements_problem_statement_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12577,6 +16120,13 @@ CREATE INDEX scenario_problem_statements_problem_statement_id_v7_idx ON public.s
 --
 
 CREATE INDEX scenario_problem_statements_scenario_id_v7_idx ON public.scenario_problem_statements USING btree (scenario_id);
+
+
+--
+-- Name: scenario_questions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_questions_call_id_idx ON public.scenario_questions USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12619,6 +16169,13 @@ CREATE INDEX scenario_questions_scenario_id_v7_idx ON public.scenario_questions 
 --
 
 CREATE INDEX scenario_templates_active_idx ON public.scenario_templates USING btree (active);
+
+
+--
+-- Name: scenario_templates_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_templates_call_id_idx ON public.scenario_templates USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12685,6 +16242,13 @@ CREATE INDEX scenario_video_images_video_id_v7_idx ON public.scenario_video_imag
 
 
 --
+-- Name: scenario_videos_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_videos_call_id_idx ON public.scenario_videos USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: scenario_videos_scenario_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12696,13 +16260,6 @@ CREATE INDEX scenario_videos_scenario_id_v7_idx ON public.scenario_videos USING 
 --
 
 CREATE INDEX scenario_videos_video_id_v7_idx ON public.scenario_videos USING btree (video_id);
-
-
---
--- Name: scenarios_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX scenarios_call_id_idx ON public.scenarios USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12860,10 +16417,24 @@ CREATE INDEX setting_auths_auth_id_v7_idx ON public.setting_auths USING btree (a
 
 
 --
+-- Name: setting_auths_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX setting_auths_call_id_idx ON public.setting_auths USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: setting_auths_settings_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX setting_auths_settings_id_v7_idx ON public.setting_auths USING btree (settings_id);
+
+
+--
+-- Name: setting_colors_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX setting_colors_call_id_idx ON public.setting_colors USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12888,6 +16459,13 @@ CREATE INDEX setting_colors_type_idx ON public.setting_colors USING btree (type)
 
 
 --
+-- Name: setting_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX setting_descriptions_call_id_idx ON public.setting_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: setting_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12899,6 +16477,13 @@ CREATE INDEX setting_descriptions_description_id_idx ON public.setting_descripti
 --
 
 CREATE INDEX setting_descriptions_setting_id_idx ON public.setting_descriptions USING btree (setting_id);
+
+
+--
+-- Name: setting_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX setting_flags_call_id_idx ON public.setting_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12920,6 +16505,13 @@ CREATE INDEX setting_flags_setting_id_idx ON public.setting_flags USING btree (s
 --
 
 CREATE INDEX setting_flags_type_idx ON public.setting_flags USING btree (type);
+
+
+--
+-- Name: setting_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX setting_names_call_id_idx ON public.setting_names USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -12972,6 +16564,13 @@ CREATE INDEX setting_providers_settings_id_v7_idx ON public.setting_providers US
 
 
 --
+-- Name: setting_thresholds_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX setting_thresholds_call_id_idx ON public.setting_thresholds USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: setting_thresholds_setting_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -12990,13 +16589,6 @@ CREATE INDEX setting_thresholds_threshold_id_idx ON public.setting_thresholds US
 --
 
 CREATE INDEX setting_thresholds_type_idx ON public.setting_thresholds USING btree (type);
-
-
---
--- Name: settings_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX settings_call_id_idx ON public.settings USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -13119,6 +16711,13 @@ CREATE INDEX simulation_attempts_simulation_id_v7_idx ON public.simulation_attem
 
 
 --
+-- Name: simulation_departments_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX simulation_departments_call_id_idx ON public.simulation_departments USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: simulation_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -13133,6 +16732,13 @@ CREATE INDEX simulation_departments_simulation_id_v7_idx ON public.simulation_de
 
 
 --
+-- Name: simulation_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX simulation_descriptions_call_id_idx ON public.simulation_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: simulation_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -13144,6 +16750,13 @@ CREATE INDEX simulation_descriptions_description_id_idx ON public.simulation_des
 --
 
 CREATE INDEX simulation_descriptions_simulation_id_idx ON public.simulation_descriptions USING btree (simulation_id);
+
+
+--
+-- Name: simulation_flags_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX simulation_flags_call_id_idx ON public.simulation_flags USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -13168,6 +16781,13 @@ CREATE INDEX simulation_flags_type_idx ON public.simulation_flags USING btree (t
 
 
 --
+-- Name: simulation_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX simulation_names_call_id_idx ON public.simulation_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
 -- Name: simulation_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -13179,6 +16799,13 @@ CREATE INDEX simulation_names_name_id_idx ON public.simulation_names USING btree
 --
 
 CREATE INDEX simulation_names_simulation_id_idx ON public.simulation_names USING btree (simulation_id);
+
+
+--
+-- Name: simulation_scenarios_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX simulation_scenarios_call_id_idx ON public.simulation_scenarios USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -13214,13 +16841,6 @@ CREATE INDEX simulation_scenarios_scenario_id_v7_idx ON public.simulation_scenar
 --
 
 CREATE INDEX simulation_scenarios_simulation_id_v7_idx ON public.simulation_scenarios USING btree (simulation_id);
-
-
---
--- Name: simulations_call_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX simulations_call_id_idx ON public.simulations USING btree (call_id) WHERE (call_id IS NOT NULL);
 
 
 --
@@ -13758,6 +17378,14 @@ ALTER TABLE ONLY public.agent_department_prompts
 
 
 --
+-- Name: agent_department_prompts agent_department_prompts_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_department_prompts
+    ADD CONSTRAINT agent_department_prompts_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: agent_department_prompts agent_department_prompts_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13782,6 +17410,14 @@ ALTER TABLE ONLY public.agent_departments
 
 
 --
+-- Name: agent_departments agent_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_departments
+    ADD CONSTRAINT agent_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: agent_departments agent_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13795,6 +17431,14 @@ ALTER TABLE ONLY public.agent_departments
 
 ALTER TABLE ONLY public.agent_descriptions
     ADD CONSTRAINT agent_descriptions_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
+
+
+--
+-- Name: agent_descriptions agent_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_descriptions
+    ADD CONSTRAINT agent_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13838,11 +17482,27 @@ ALTER TABLE ONLY public.agent_flags
 
 
 --
+-- Name: agent_flags agent_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_flags
+    ADD CONSTRAINT agent_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: agent_flags agent_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.agent_flags
     ADD CONSTRAINT agent_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags(id) ON DELETE CASCADE;
+
+
+--
+-- Name: agent_instructions agent_instructions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_instructions
+    ADD CONSTRAINT agent_instructions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13862,6 +17522,14 @@ ALTER TABLE ONLY public.agent_models
 
 
 --
+-- Name: agent_models agent_models_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_models
+    ADD CONSTRAINT agent_models_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: agent_models agent_models_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13878,6 +17546,14 @@ ALTER TABLE ONLY public.agent_names
 
 
 --
+-- Name: agent_names agent_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_names
+    ADD CONSTRAINT agent_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: agent_names agent_names_name_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13891,6 +17567,14 @@ ALTER TABLE ONLY public.agent_names
 
 ALTER TABLE ONLY public.agent_prompts
     ADD CONSTRAINT agent_prompts_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agents(id);
+
+
+--
+-- Name: agent_prompts agent_prompts_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_prompts
+    ADD CONSTRAINT agent_prompts_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -13963,14 +17647,6 @@ ALTER TABLE ONLY public.agent_voices
 
 ALTER TABLE ONLY public.agent_voices
     ADD CONSTRAINT agent_voices_model_voice_id_fkey FOREIGN KEY (model_voice_id) REFERENCES public.model_voices(id);
-
-
---
--- Name: agents agents_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.agents
-    ADD CONSTRAINT agents_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14054,19 +17730,11 @@ ALTER TABLE ONLY public.audios
 
 
 --
--- Name: auth auth_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.auth
-    ADD CONSTRAINT auth_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
 -- Name: auth_descriptions auth_descriptions_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_descriptions
-    ADD CONSTRAINT auth_descriptions_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_descriptions_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id) ON DELETE CASCADE;
 
 
 --
@@ -14082,7 +17750,7 @@ ALTER TABLE ONLY public.auth_descriptions
 --
 
 ALTER TABLE ONLY public.auth_flags
-    ADD CONSTRAINT auth_flags_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_flags_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id) ON DELETE CASCADE;
 
 
 --
@@ -14098,7 +17766,7 @@ ALTER TABLE ONLY public.auth_flags
 --
 
 ALTER TABLE ONLY public.auth_items
-    ADD CONSTRAINT auth_items_new_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_items_new_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id) ON DELETE CASCADE;
 
 
 --
@@ -14114,7 +17782,7 @@ ALTER TABLE ONLY public.auth_items
 --
 
 ALTER TABLE ONLY public.auth_names
-    ADD CONSTRAINT auth_names_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_names_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id) ON DELETE CASCADE;
 
 
 --
@@ -14130,7 +17798,7 @@ ALTER TABLE ONLY public.auth_names
 --
 
 ALTER TABLE ONLY public.auth_protocols
-    ADD CONSTRAINT auth_protocols_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_protocols_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id) ON DELETE CASCADE;
 
 
 --
@@ -14146,7 +17814,7 @@ ALTER TABLE ONLY public.auth_protocols
 --
 
 ALTER TABLE ONLY public.auth_slugs
-    ADD CONSTRAINT auth_slugs_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_slugs_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id) ON DELETE CASCADE;
 
 
 --
@@ -14230,6 +17898,14 @@ ALTER TABLE ONLY public.chats
 
 
 --
+-- Name: cohort_departments cohort_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cohort_departments
+    ADD CONSTRAINT cohort_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: cohort_departments cohort_departments_cohort_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14243,6 +17919,14 @@ ALTER TABLE ONLY public.cohort_departments
 
 ALTER TABLE ONLY public.cohort_departments
     ADD CONSTRAINT cohort_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id);
+
+
+--
+-- Name: cohort_descriptions cohort_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cohort_descriptions
+    ADD CONSTRAINT cohort_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14262,6 +17946,14 @@ ALTER TABLE ONLY public.cohort_descriptions
 
 
 --
+-- Name: cohort_flags cohort_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cohort_flags
+    ADD CONSTRAINT cohort_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: cohort_flags cohort_flags_cohort_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14275,6 +17967,14 @@ ALTER TABLE ONLY public.cohort_flags
 
 ALTER TABLE ONLY public.cohort_flags
     ADD CONSTRAINT cohort_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags(id) ON DELETE CASCADE;
+
+
+--
+-- Name: cohort_names cohort_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cohort_names
+    ADD CONSTRAINT cohort_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14294,6 +17994,14 @@ ALTER TABLE ONLY public.cohort_names
 
 
 --
+-- Name: cohort_profiles cohort_profiles_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cohort_profiles
+    ADD CONSTRAINT cohort_profiles_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: cohort_profiles cohort_profiles_cohort_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14310,6 +18018,14 @@ ALTER TABLE ONLY public.cohort_profiles
 
 
 --
+-- Name: cohort_simulations cohort_simulations_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cohort_simulations
+    ADD CONSTRAINT cohort_simulations_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: cohort_simulations cohort_simulations_cohort_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14323,14 +18039,6 @@ ALTER TABLE ONLY public.cohort_simulations
 
 ALTER TABLE ONLY public.cohort_simulations
     ADD CONSTRAINT cohort_simulations_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations(id);
-
-
---
--- Name: cohorts cohorts_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cohorts
-    ADD CONSTRAINT cohorts_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14430,14 +18138,6 @@ ALTER TABLE ONLY public.department_settings
 
 
 --
--- Name: departments departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.departments
-    ADD CONSTRAINT departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
 -- Name: descriptions descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14470,6 +18170,14 @@ ALTER TABLE ONLY public.document_agent_domains
 
 
 --
+-- Name: document_departments document_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_departments
+    ADD CONSTRAINT document_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: document_departments document_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14483,6 +18191,14 @@ ALTER TABLE ONLY public.document_departments
 
 ALTER TABLE ONLY public.document_departments
     ADD CONSTRAINT document_departments_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id);
+
+
+--
+-- Name: document_descriptions document_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_descriptions
+    ADD CONSTRAINT document_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14502,6 +18218,14 @@ ALTER TABLE ONLY public.document_descriptions
 
 
 --
+-- Name: document_fields document_fields_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_fields
+    ADD CONSTRAINT document_fields_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: document_fields document_fields_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14515,6 +18239,14 @@ ALTER TABLE ONLY public.document_fields
 
 ALTER TABLE ONLY public.document_fields
     ADD CONSTRAINT document_fields_field_id_fkey FOREIGN KEY (field_id) REFERENCES public.fields(id);
+
+
+--
+-- Name: document_flags document_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_flags
+    ADD CONSTRAINT document_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14550,6 +18282,14 @@ ALTER TABLE ONLY public.document_groups
 
 
 --
+-- Name: document_html document_html_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_html
+    ADD CONSTRAINT document_html_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: document_html document_html_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14563,6 +18303,14 @@ ALTER TABLE ONLY public.document_html
 
 ALTER TABLE ONLY public.document_html
     ADD CONSTRAINT document_html_html_id_fkey FOREIGN KEY (html_id) REFERENCES public.html(id) ON DELETE CASCADE;
+
+
+--
+-- Name: document_names document_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_names
+    ADD CONSTRAINT document_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14582,6 +18330,14 @@ ALTER TABLE ONLY public.document_names
 
 
 --
+-- Name: document_schemas document_schemas_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_schemas
+    ADD CONSTRAINT document_schemas_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: document_schemas document_schemas_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -14595,6 +18351,14 @@ ALTER TABLE ONLY public.document_schemas
 
 ALTER TABLE ONLY public.document_schemas
     ADD CONSTRAINT document_schemas_schema_id_fkey FOREIGN KEY (schema_id) REFERENCES public.schemas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: document_templates document_templates_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document_templates
+    ADD CONSTRAINT document_templates_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14643,14 +18407,6 @@ ALTER TABLE ONLY public.document_uploads
 
 ALTER TABLE ONLY public.document_uploads
     ADD CONSTRAINT document_uploads_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads(id);
-
-
---
--- Name: documents documents_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.documents
-    ADD CONSTRAINT documents_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -14706,7 +18462,7 @@ ALTER TABLE ONLY public.draft_analyses
 --
 
 ALTER TABLE ONLY public.draft_auth
-    ADD CONSTRAINT draft_auth_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id) ON DELETE CASCADE;
+    ADD CONSTRAINT draft_auth_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id) ON DELETE CASCADE;
 
 
 --
@@ -15534,6 +19290,14 @@ ALTER TABLE ONLY public.draft_videos
 
 
 --
+-- Name: drafts drafts_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.drafts
+    ADD CONSTRAINT drafts_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: drafts drafts_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15558,6 +19322,14 @@ ALTER TABLE ONLY public.eval_agents
 
 
 --
+-- Name: eval_agents eval_agents_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_agents
+    ADD CONSTRAINT eval_agents_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: eval_agents eval_agents_eval_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15571,6 +19343,14 @@ ALTER TABLE ONLY public.eval_agents
 
 ALTER TABLE ONLY public.eval_attempts
     ADD CONSTRAINT eval_attempts_eval_id_fkey FOREIGN KEY (eval_id) REFERENCES public.evals(id);
+
+
+--
+-- Name: eval_departments eval_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_departments
+    ADD CONSTRAINT eval_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -15590,6 +19370,14 @@ ALTER TABLE ONLY public.eval_departments
 
 
 --
+-- Name: eval_descriptions eval_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_descriptions
+    ADD CONSTRAINT eval_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: eval_descriptions eval_descriptions_description_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15603,6 +19391,14 @@ ALTER TABLE ONLY public.eval_descriptions
 
 ALTER TABLE ONLY public.eval_descriptions
     ADD CONSTRAINT eval_descriptions_eval_id_fkey FOREIGN KEY (eval_id) REFERENCES public.evals(id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval_flags eval_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_flags
+    ADD CONSTRAINT eval_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -15654,6 +19450,14 @@ ALTER TABLE ONLY public.eval_groups_rubric_grade_agents
 
 
 --
+-- Name: eval_names eval_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval_names
+    ADD CONSTRAINT eval_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: eval_names eval_names_eval_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15702,14 +19506,6 @@ ALTER TABLE ONLY public.eval_runs
 
 
 --
--- Name: evals evals_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.evals
-    ADD CONSTRAINT evals_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
 -- Name: examples examples_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15750,6 +19546,14 @@ ALTER TABLE ONLY public.field_conditional_parameters
 
 
 --
+-- Name: field_departments field_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.field_departments
+    ADD CONSTRAINT field_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: field_departments field_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15763,6 +19567,14 @@ ALTER TABLE ONLY public.field_departments
 
 ALTER TABLE ONLY public.field_departments
     ADD CONSTRAINT field_departments_field_id_fkey FOREIGN KEY (field_id) REFERENCES public.fields(id);
+
+
+--
+-- Name: field_descriptions field_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.field_descriptions
+    ADD CONSTRAINT field_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -15782,6 +19594,14 @@ ALTER TABLE ONLY public.field_descriptions
 
 
 --
+-- Name: field_flags field_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.field_flags
+    ADD CONSTRAINT field_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: field_flags field_flags_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15798,6 +19618,14 @@ ALTER TABLE ONLY public.field_flags
 
 
 --
+-- Name: field_names field_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.field_names
+    ADD CONSTRAINT field_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: field_names field_names_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -15811,14 +19639,6 @@ ALTER TABLE ONLY public.field_names
 
 ALTER TABLE ONLY public.field_names
     ADD CONSTRAINT field_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names(id) ON DELETE CASCADE;
-
-
---
--- Name: fields fields_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.fields
-    ADD CONSTRAINT fields_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16118,6 +19938,14 @@ ALTER TABLE ONLY public.items
 
 
 --
+-- Name: key_descriptions key_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.key_descriptions
+    ADD CONSTRAINT key_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: key_descriptions key_descriptions_description_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16131,6 +19959,14 @@ ALTER TABLE ONLY public.key_descriptions
 
 ALTER TABLE ONLY public.key_descriptions
     ADD CONSTRAINT key_descriptions_key_id_fkey FOREIGN KEY (key_id) REFERENCES public.keys(id) ON DELETE CASCADE;
+
+
+--
+-- Name: key_flags key_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.key_flags
+    ADD CONSTRAINT key_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16150,6 +19986,14 @@ ALTER TABLE ONLY public.key_flags
 
 
 --
+-- Name: key_names key_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.key_names
+    ADD CONSTRAINT key_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: key_names key_names_key_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16163,14 +20007,6 @@ ALTER TABLE ONLY public.key_names
 
 ALTER TABLE ONLY public.key_names
     ADD CONSTRAINT key_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names(id) ON DELETE CASCADE;
-
-
---
--- Name: keys keys_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.keys
-    ADD CONSTRAINT keys_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16366,6 +20202,14 @@ ALTER TABLE ONLY public.message_videos
 
 
 --
+-- Name: model_departments model_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_departments
+    ADD CONSTRAINT model_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: model_departments model_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16379,6 +20223,14 @@ ALTER TABLE ONLY public.model_departments
 
 ALTER TABLE ONLY public.model_departments
     ADD CONSTRAINT model_departments_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id);
+
+
+--
+-- Name: model_descriptions model_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_descriptions
+    ADD CONSTRAINT model_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16414,6 +20266,14 @@ ALTER TABLE ONLY public.model_domains
 
 
 --
+-- Name: model_endpoints model_endpoints_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_endpoints
+    ADD CONSTRAINT model_endpoints_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: model_endpoints model_endpoints_new_endpoint_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16430,6 +20290,14 @@ ALTER TABLE ONLY public.model_endpoints
 
 
 --
+-- Name: model_flags model_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_flags
+    ADD CONSTRAINT model_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: model_flags model_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16443,6 +20311,14 @@ ALTER TABLE ONLY public.model_flags
 
 ALTER TABLE ONLY public.model_flags
     ADD CONSTRAINT model_flags_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
+
+
+--
+-- Name: model_keys model_keys_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_keys
+    ADD CONSTRAINT model_keys_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16467,6 +20343,14 @@ ALTER TABLE ONLY public.model_keys
 
 ALTER TABLE ONLY public.model_modalities
     ADD CONSTRAINT model_modalities_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id);
+
+
+--
+-- Name: model_names model_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_names
+    ADD CONSTRAINT model_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16534,14 +20418,6 @@ ALTER TABLE ONLY public.model_voices
 
 
 --
--- Name: models models_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.models
-    ADD CONSTRAINT models_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
 -- Name: names names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16582,6 +20458,14 @@ ALTER TABLE ONLY public.options
 
 
 --
+-- Name: parameter_departments parameter_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parameter_departments
+    ADD CONSTRAINT parameter_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: parameter_departments parameter_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16595,6 +20479,14 @@ ALTER TABLE ONLY public.parameter_departments
 
 ALTER TABLE ONLY public.parameter_departments
     ADD CONSTRAINT parameter_departments_parameter_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameters(id);
+
+
+--
+-- Name: parameter_descriptions parameter_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parameter_descriptions
+    ADD CONSTRAINT parameter_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16614,6 +20506,14 @@ ALTER TABLE ONLY public.parameter_descriptions
 
 
 --
+-- Name: parameter_fields parameter_fields_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parameter_fields
+    ADD CONSTRAINT parameter_fields_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: parameter_fields parameter_fields_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16627,6 +20527,14 @@ ALTER TABLE ONLY public.parameter_fields
 
 ALTER TABLE ONLY public.parameter_fields
     ADD CONSTRAINT parameter_fields_parameter_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameters(id) ON DELETE CASCADE;
+
+
+--
+-- Name: parameter_flags parameter_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parameter_flags
+    ADD CONSTRAINT parameter_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16646,6 +20554,14 @@ ALTER TABLE ONLY public.parameter_flags
 
 
 --
+-- Name: parameter_names parameter_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parameter_names
+    ADD CONSTRAINT parameter_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: parameter_names parameter_names_name_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16662,11 +20578,11 @@ ALTER TABLE ONLY public.parameter_names
 
 
 --
--- Name: parameters parameters_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: persona_colors persona_colors_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.parameters
-    ADD CONSTRAINT parameters_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+ALTER TABLE ONLY public.persona_colors
+    ADD CONSTRAINT persona_colors_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16686,6 +20602,14 @@ ALTER TABLE ONLY public.persona_colors
 
 
 --
+-- Name: persona_departments persona_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona_departments
+    ADD CONSTRAINT persona_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: persona_departments persona_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16699,6 +20623,14 @@ ALTER TABLE ONLY public.persona_departments
 
 ALTER TABLE ONLY public.persona_departments
     ADD CONSTRAINT persona_departments_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.personas(id);
+
+
+--
+-- Name: persona_descriptions persona_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona_descriptions
+    ADD CONSTRAINT persona_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16718,6 +20650,14 @@ ALTER TABLE ONLY public.persona_descriptions
 
 
 --
+-- Name: persona_examples persona_examples_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona_examples
+    ADD CONSTRAINT persona_examples_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: persona_examples persona_examples_example_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16731,6 +20671,14 @@ ALTER TABLE ONLY public.persona_examples
 
 ALTER TABLE ONLY public.persona_examples
     ADD CONSTRAINT persona_examples_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.personas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: persona_fields persona_fields_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona_fields
+    ADD CONSTRAINT persona_fields_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16750,6 +20698,14 @@ ALTER TABLE ONLY public.persona_fields
 
 
 --
+-- Name: persona_flags persona_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona_flags
+    ADD CONSTRAINT persona_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: persona_flags persona_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16763,6 +20719,14 @@ ALTER TABLE ONLY public.persona_flags
 
 ALTER TABLE ONLY public.persona_flags
     ADD CONSTRAINT persona_flags_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.personas(id) ON DELETE CASCADE;
+
+
+--
+-- Name: persona_icons persona_icons_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona_icons
+    ADD CONSTRAINT persona_icons_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16782,6 +20746,14 @@ ALTER TABLE ONLY public.persona_icons
 
 
 --
+-- Name: persona_instructions persona_instructions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona_instructions
+    ADD CONSTRAINT persona_instructions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: persona_instructions persona_instructions_instruction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16798,6 +20770,14 @@ ALTER TABLE ONLY public.persona_instructions
 
 
 --
+-- Name: persona_names persona_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona_names
+    ADD CONSTRAINT persona_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: persona_names persona_names_name_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16811,14 +20791,6 @@ ALTER TABLE ONLY public.persona_names
 
 ALTER TABLE ONLY public.persona_names
     ADD CONSTRAINT persona_names_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.personas(id) ON DELETE CASCADE;
-
-
---
--- Name: personas personas_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.personas
-    ADD CONSTRAINT personas_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16870,6 +20842,14 @@ ALTER TABLE ONLY public.profile_activity
 
 
 --
+-- Name: profile_departments profile_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_departments
+    ADD CONSTRAINT profile_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: profile_departments profile_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16894,6 +20874,14 @@ ALTER TABLE ONLY public.profile_emails
 
 
 --
+-- Name: profile_flags profile_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_flags
+    ADD CONSTRAINT profile_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: profile_flags profile_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -16907,6 +20895,14 @@ ALTER TABLE ONLY public.profile_flags
 
 ALTER TABLE ONLY public.profile_flags
     ADD CONSTRAINT profile_flags_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: profile_names profile_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile_names
+    ADD CONSTRAINT profile_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -16931,14 +20927,6 @@ ALTER TABLE ONLY public.profile_names
 
 ALTER TABLE ONLY public.profile_request_limits
     ADD CONSTRAINT profile_request_limits_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id);
-
-
---
--- Name: profiles profiles_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.profiles
-    ADD CONSTRAINT profiles_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17046,6 +21034,14 @@ ALTER TABLE ONLY public.rubric_artifacts
 
 
 --
+-- Name: rubric_departments rubric_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_departments
+    ADD CONSTRAINT rubric_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: rubric_departments rubric_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17059,6 +21055,14 @@ ALTER TABLE ONLY public.rubric_departments
 
 ALTER TABLE ONLY public.rubric_departments
     ADD CONSTRAINT rubric_departments_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics(id);
+
+
+--
+-- Name: rubric_descriptions rubric_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_descriptions
+    ADD CONSTRAINT rubric_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17091,6 +21095,14 @@ ALTER TABLE ONLY public.rubric_domains
 
 ALTER TABLE ONLY public.rubric_domains
     ADD CONSTRAINT rubric_domains_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics(id) ON DELETE CASCADE;
+
+
+--
+-- Name: rubric_flags rubric_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_flags
+    ADD CONSTRAINT rubric_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17166,6 +21178,14 @@ ALTER TABLE ONLY public.rubric_groups
 
 
 --
+-- Name: rubric_names rubric_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_names
+    ADD CONSTRAINT rubric_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: rubric_names rubric_names_name_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17179,6 +21199,14 @@ ALTER TABLE ONLY public.rubric_names
 
 ALTER TABLE ONLY public.rubric_names
     ADD CONSTRAINT rubric_names_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics(id) ON DELETE CASCADE;
+
+
+--
+-- Name: rubric_points rubric_points_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_points
+    ADD CONSTRAINT rubric_points_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17198,6 +21226,14 @@ ALTER TABLE ONLY public.rubric_points
 
 
 --
+-- Name: rubric_standard_groups rubric_standard_groups_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric_standard_groups
+    ADD CONSTRAINT rubric_standard_groups_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: rubric_standard_groups rubric_standard_groups_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17211,14 +21247,6 @@ ALTER TABLE ONLY public.rubric_standard_groups
 
 ALTER TABLE ONLY public.rubric_standard_groups
     ADD CONSTRAINT rubric_standard_groups_standard_group_id_fkey FOREIGN KEY (standard_group_id) REFERENCES public.standard_groups(id) ON DELETE CASCADE;
-
-
---
--- Name: rubrics rubrics_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.rubrics
-    ADD CONSTRAINT rubrics_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17334,6 +21362,14 @@ ALTER TABLE ONLY public.scenario_agent_domains
 
 
 --
+-- Name: scenario_departments scenario_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_departments
+    ADD CONSTRAINT scenario_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: scenario_departments scenario_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17347,6 +21383,14 @@ ALTER TABLE ONLY public.scenario_departments
 
 ALTER TABLE ONLY public.scenario_departments
     ADD CONSTRAINT scenario_departments_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios(id);
+
+
+--
+-- Name: scenario_descriptions scenario_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_descriptions
+    ADD CONSTRAINT scenario_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17371,6 +21415,14 @@ ALTER TABLE ONLY public.scenario_descriptions
 
 ALTER TABLE ONLY public.scenario_document_ranges
     ADD CONSTRAINT scenario_document_ranges_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios(id);
+
+
+--
+-- Name: scenario_documents scenario_documents_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_documents
+    ADD CONSTRAINT scenario_documents_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17414,6 +21466,14 @@ ALTER TABLE ONLY public.scenario_field_ranges
 
 
 --
+-- Name: scenario_fields scenario_fields_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_fields
+    ADD CONSTRAINT scenario_fields_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: scenario_fields scenario_fields_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17427,6 +21487,14 @@ ALTER TABLE ONLY public.scenario_fields
 
 ALTER TABLE ONLY public.scenario_fields
     ADD CONSTRAINT scenario_fields_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios(id);
+
+
+--
+-- Name: scenario_flags scenario_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_flags
+    ADD CONSTRAINT scenario_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17462,6 +21530,14 @@ ALTER TABLE ONLY public.scenario_groups
 
 
 --
+-- Name: scenario_images scenario_images_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_images
+    ADD CONSTRAINT scenario_images_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: scenario_images scenario_images_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17475,6 +21551,14 @@ ALTER TABLE ONLY public.scenario_images
 
 ALTER TABLE ONLY public.scenario_images
     ADD CONSTRAINT scenario_images_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios(id);
+
+
+--
+-- Name: scenario_names scenario_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_names
+    ADD CONSTRAINT scenario_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17494,6 +21578,14 @@ ALTER TABLE ONLY public.scenario_names
 
 
 --
+-- Name: scenario_objectives scenario_objectives_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_objectives
+    ADD CONSTRAINT scenario_objectives_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: scenario_objectives scenario_objectives_objective_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17507,6 +21599,14 @@ ALTER TABLE ONLY public.scenario_objectives
 
 ALTER TABLE ONLY public.scenario_objectives
     ADD CONSTRAINT scenario_objectives_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios(id);
+
+
+--
+-- Name: scenario_options scenario_options_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_options
+    ADD CONSTRAINT scenario_options_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17534,6 +21634,14 @@ ALTER TABLE ONLY public.scenario_parameter_ranges
 
 
 --
+-- Name: scenario_parameters scenario_parameters_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_parameters
+    ADD CONSTRAINT scenario_parameters_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: scenario_parameters scenario_parameters_parameter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17558,6 +21666,14 @@ ALTER TABLE ONLY public.scenario_persona_ranges
 
 
 --
+-- Name: scenario_personas scenario_personas_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_personas
+    ADD CONSTRAINT scenario_personas_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: scenario_personas scenario_personas_persona_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17571,6 +21687,14 @@ ALTER TABLE ONLY public.scenario_personas
 
 ALTER TABLE ONLY public.scenario_personas
     ADD CONSTRAINT scenario_personas_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios(id);
+
+
+--
+-- Name: scenario_problem_statements scenario_problem_statements_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_problem_statements
+    ADD CONSTRAINT scenario_problem_statements_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17590,6 +21714,14 @@ ALTER TABLE ONLY public.scenario_problem_statements
 
 
 --
+-- Name: scenario_questions scenario_questions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_questions
+    ADD CONSTRAINT scenario_questions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: scenario_questions scenario_questions_question_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17603,6 +21735,14 @@ ALTER TABLE ONLY public.scenario_questions
 
 ALTER TABLE ONLY public.scenario_questions
     ADD CONSTRAINT scenario_questions_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios(id);
+
+
+--
+-- Name: scenario_templates scenario_templates_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_templates
+    ADD CONSTRAINT scenario_templates_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17662,6 +21802,14 @@ ALTER TABLE ONLY public.scenario_video_images
 
 
 --
+-- Name: scenario_videos scenario_videos_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario_videos
+    ADD CONSTRAINT scenario_videos_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: scenario_videos scenario_videos_scenario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17675,14 +21823,6 @@ ALTER TABLE ONLY public.scenario_videos
 
 ALTER TABLE ONLY public.scenario_videos
     ADD CONSTRAINT scenario_videos_video_id_fkey FOREIGN KEY (video_id) REFERENCES public.videos(id);
-
-
---
--- Name: scenarios scenarios_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenarios
-    ADD CONSTRAINT scenarios_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17754,7 +21894,7 @@ ALTER TABLE ONLY public.schemas
 --
 
 ALTER TABLE ONLY public.setting_auth_keys
-    ADD CONSTRAINT setting_auth_keys_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id);
+    ADD CONSTRAINT setting_auth_keys_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id);
 
 
 --
@@ -17786,7 +21926,7 @@ ALTER TABLE ONLY public.setting_auth_keys
 --
 
 ALTER TABLE ONLY public.setting_auth_values
-    ADD CONSTRAINT setting_auth_values_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id);
+    ADD CONSTRAINT setting_auth_values_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id);
 
 
 --
@@ -17810,7 +21950,15 @@ ALTER TABLE ONLY public.setting_auth_values
 --
 
 ALTER TABLE ONLY public.setting_auths
-    ADD CONSTRAINT setting_auths_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id);
+    ADD CONSTRAINT setting_auths_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id);
+
+
+--
+-- Name: setting_auths setting_auths_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_auths
+    ADD CONSTRAINT setting_auths_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17819,6 +21967,14 @@ ALTER TABLE ONLY public.setting_auths
 
 ALTER TABLE ONLY public.setting_auths
     ADD CONSTRAINT setting_auths_settings_id_fkey FOREIGN KEY (settings_id) REFERENCES public.settings(id);
+
+
+--
+-- Name: setting_colors setting_colors_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_colors
+    ADD CONSTRAINT setting_colors_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17838,6 +21994,14 @@ ALTER TABLE ONLY public.setting_colors
 
 
 --
+-- Name: setting_descriptions setting_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_descriptions
+    ADD CONSTRAINT setting_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: setting_descriptions setting_descriptions_description_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17854,6 +22018,14 @@ ALTER TABLE ONLY public.setting_descriptions
 
 
 --
+-- Name: setting_flags setting_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_flags
+    ADD CONSTRAINT setting_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: setting_flags setting_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17867,6 +22039,14 @@ ALTER TABLE ONLY public.setting_flags
 
 ALTER TABLE ONLY public.setting_flags
     ADD CONSTRAINT setting_flags_setting_id_fkey FOREIGN KEY (setting_id) REFERENCES public.settings(id) ON DELETE CASCADE;
+
+
+--
+-- Name: setting_names setting_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_names
+    ADD CONSTRAINT setting_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17910,6 +22090,14 @@ ALTER TABLE ONLY public.setting_providers
 
 
 --
+-- Name: setting_thresholds setting_thresholds_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_thresholds
+    ADD CONSTRAINT setting_thresholds_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: setting_thresholds setting_thresholds_setting_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -17923,14 +22111,6 @@ ALTER TABLE ONLY public.setting_thresholds
 
 ALTER TABLE ONLY public.setting_thresholds
     ADD CONSTRAINT setting_thresholds_threshold_id_fkey FOREIGN KEY (threshold_id) REFERENCES public.thresholds(id) ON DELETE CASCADE;
-
-
---
--- Name: settings settings_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.settings
-    ADD CONSTRAINT settings_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -17998,6 +22178,14 @@ ALTER TABLE ONLY public.simulation_attempts
 
 
 --
+-- Name: simulation_departments simulation_departments_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_departments
+    ADD CONSTRAINT simulation_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: simulation_departments simulation_departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18011,6 +22199,14 @@ ALTER TABLE ONLY public.simulation_departments
 
 ALTER TABLE ONLY public.simulation_departments
     ADD CONSTRAINT simulation_departments_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations(id);
+
+
+--
+-- Name: simulation_descriptions simulation_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_descriptions
+    ADD CONSTRAINT simulation_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -18038,6 +22234,14 @@ ALTER TABLE ONLY public.simulation_agent_domains
 
 
 --
+-- Name: simulation_flags simulation_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_flags
+    ADD CONSTRAINT simulation_flags_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: simulation_flags simulation_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18054,6 +22258,14 @@ ALTER TABLE ONLY public.simulation_flags
 
 
 --
+-- Name: simulation_names simulation_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_names
+    ADD CONSTRAINT simulation_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
 -- Name: simulation_names simulation_names_name_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18067,6 +22279,14 @@ ALTER TABLE ONLY public.simulation_names
 
 ALTER TABLE ONLY public.simulation_names
     ADD CONSTRAINT simulation_names_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: simulation_scenarios simulation_scenarios_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation_scenarios
+    ADD CONSTRAINT simulation_scenarios_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -18099,14 +22319,6 @@ ALTER TABLE ONLY public.simulation_scenarios
 
 ALTER TABLE ONLY public.simulation_scenarios
     ADD CONSTRAINT simulation_scenarios_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations(id);
-
-
---
--- Name: simulations simulations_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulations
-    ADD CONSTRAINT simulations_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
 
 
 --
@@ -18353,5 +22565,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 1HzJE9tNhRPIAGl1ICBBoydgx96kyrgfuE8AGrjs05FEtQIfwBfoH5XUceGgLmn
+\unrestrict fxNKVZT7YQDCmIiTpPf8gcPPDQ4mZOcLhG5ydKmSXOEHMau3Es72j4ttUt7ajBV
 

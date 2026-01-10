@@ -3,8 +3,7 @@
 import uuid
 from typing import Any
 
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
@@ -19,7 +18,9 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/personas/get_best_agent_for_persona_resources_v4_complete.sql"
-GET_GROUP_IDS_SQL_PATH = "app/sql/v4/personas/get_persona_resource_group_ids_complete.sql"
+GET_GROUP_IDS_SQL_PATH = (
+    "app/sql/v4/personas/get_persona_resource_group_ids_complete.sql"
+)
 
 # Persona resource types
 PERSONA_RESOURCE_TYPES = [
@@ -40,12 +41,20 @@ class GeneratePersonaPayload(BaseModel):
 
     draft_id: str
     resource_types: list[str] | None = None  # Array of resource types to generate
-    resource_type: str | None = None  # Single resource type (for backward compatibility)
+    resource_type: str | None = (
+        None  # Single resource type (for backward compatibility)
+    )
     persona_id: str | None = None
     context: dict[str, Any] | None = None  # Additional context for generation
-    instructions: str | None = None  # Optional: For regeneration (renamed from user_instructions)
-    group_ids: dict[str, str | None] | None = None  # Optional: resource_type -> group_id mapping for regeneration
-    agent_id: str | None = None  # Optional: Agent ID from GET endpoint (frontend passes based on resource type)
+    instructions: str | None = (
+        None  # Optional: For regeneration (renamed from user_instructions)
+    )
+    group_ids: dict[str, str | None] | None = (
+        None  # Optional: resource_type -> group_id mapping for regeneration
+    )
+    agent_id: str | None = (
+        None  # Optional: Agent ID from GET endpoint (frontend passes based on resource type)
+    )
 
 
 async def _persona_generate_impl(
@@ -74,7 +83,9 @@ async def _persona_generate_impl(
             return
 
         # Validate resource types
-        invalid_types = [rt for rt in resource_types if rt not in PERSONA_RESOURCE_TYPES]
+        invalid_types = [
+            rt for rt in resource_types if rt not in PERSONA_RESOURCE_TYPES
+        ]
         if invalid_types:
             await emit_to_internal(
                 "generate_error",
@@ -115,7 +126,9 @@ async def _persona_generate_impl(
                 params = {
                     "profile_id": profile_id,
                     "resource_types": resource_types,
-                    "persona_id": uuid.UUID(data.persona_id) if data.persona_id else None,
+                    "persona_id": uuid.UUID(data.persona_id)
+                    if data.persona_id
+                    else None,
                     "draft_id": uuid.UUID(data.draft_id) if data.draft_id else None,
                 }
                 result = await execute_sql_typed(conn, SQL_PATH, params=params)
@@ -164,7 +177,7 @@ async def _persona_generate_impl(
                 uuid.UUID(data.draft_id) if data.draft_id else None,
                 resource_types,
             )
-            
+
             # Build group_ids map from result rows
             for row in rows:
                 resource_type = row["resource_type"]
@@ -199,7 +212,9 @@ async def _persona_generate_impl(
                     "agent_id": str(selected_agent_id),  # Use agent_id directly
                     "resource_id": data.persona_id or data.draft_id,
                     "resource_types": [resource_type],  # Use resource_types array
-                    "group_id": str(group_id) if group_id else None,  # Pass group_id (string or None)
+                    "group_id": str(group_id)
+                    if group_id
+                    else None,  # Pass group_id (string or None)
                     "instructions": data.instructions,  # Renamed from user_instructions
                     "message_ids": message_ids,
                 },

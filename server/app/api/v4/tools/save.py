@@ -33,7 +33,7 @@ router = APIRouter()
     dependencies=[
         audit_activity(
             "tool.saved",
-            "{{ actor.name }} {% if tool %}updated{% else %}created{% endif %} tool{% if tool %} '{{ tool.name }}'{% endif %}"
+            "{{ actor.name }} {% if tool %}updated{% else %}created{% endif %} tool{% if tool %} '{{ tool.name }}'{% endif %}",
         )
     ],
 )
@@ -84,9 +84,7 @@ async def save_tool(
 
             # Set audit context with data from SQL query
             if result.actor_name:
-                audit_ctx = {
-                    "actor": {"name": result.actor_name, "id": profile_id}
-                }
+                audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
                 # Only add tool to audit context if input_tool_id was provided (update mode)
                 if request.input_tool_id:
                     audit_ctx["tool"] = {

@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 
 async def set_socket_owner(profile_id: str, socket_id: str) -> None:
     """Set the socket ID that owns a profile in Redis.
-    
+
     Sets both:
     - socket_owner:{profile_id} → socket_id (forward mapping)
     - socket_to_profile:{socket_id} → profile_id (reverse mapping for O(1) lookup)

@@ -4,8 +4,7 @@ import uuid
 from typing import Any, cast
 
 from app.infra.v4.chat.format_chat_scenario import format_chat_scenario
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
@@ -19,7 +18,9 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH_CONTEXT = "app/sql/v4/prompt/get_prompt_run_context_and_create_run_complete.sql"
+SQL_PATH_CONTEXT = (
+    "app/sql/v4/prompt/get_prompt_run_context_and_create_run_complete.sql"
+)
 SQL_PATH_MESSAGES = "app/sql/v4/simulations/get_simulation_messages_complete.sql"
 
 
@@ -40,7 +41,9 @@ async def _generate_agent_impl(
             from app.sql.types import (
                 GetPromptRunContextAndCreateRunSqlParams,
                 GetPromptRunContextAndCreateRunSqlRow,
-                GetSimulationMessagesSqlParams, GetSimulationMessagesSqlRow)
+                GetSimulationMessagesSqlParams,
+                GetSimulationMessagesSqlRow,
+            )
 
             chat_id_uuid = uuid.UUID(data.chat_id)
             group_id_uuid = uuid.UUID(data.group_id) if data.group_id else None
@@ -74,7 +77,9 @@ async def _generate_agent_impl(
             messages_params = GetSimulationMessagesSqlParams(chat_id=chat_id_uuid)
             messages_result = cast(
                 GetSimulationMessagesSqlRow,
-                await execute_sql_typed(conn, SQL_PATH_MESSAGES, params=messages_params),
+                await execute_sql_typed(
+                    conn, SQL_PATH_MESSAGES, params=messages_params
+                ),
             )
             conversation_history = (
                 messages_result.messages if messages_result.messages else []
@@ -166,7 +171,7 @@ async def agent_generate(sid: str, data: dict[str, Any]) -> None:
 @internal_sio.on("agent_generate")  # type: ignore
 async def agent_generate_internal(data: dict[str, Any]) -> None:
     """Handle agent_generate event from internal bus (server-to-server).
-    
+
     Routes directly to artifacts/generate.py which will create run and handle generation.
     """
     try:
@@ -185,4 +190,3 @@ async def agent_generate_internal(data: dict[str, Any]) -> None:
             ),
             sid=sid,
         )
-

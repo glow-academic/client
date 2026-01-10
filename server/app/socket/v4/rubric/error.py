@@ -27,14 +27,14 @@ async def handle_rubric_error(data: dict[str, Any]) -> None:
         "message": error_message,
         "trace_id": data.get("trace_id"),
     }
-    
+
     # Emit unified error event to client (new architecture)
     await sio.emit(
         "artifact_generation_error",
         error_payload,
         room=sid,
     )
-    
+
     # Also emit legacy event name for backward compatibility with frontend
     await sio.emit(
         "rubrics_generation_error",
@@ -45,4 +45,3 @@ async def handle_rubric_error(data: dict[str, Any]) -> None:
         },
         room=sid,
     )
-

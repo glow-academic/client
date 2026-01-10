@@ -88,7 +88,7 @@ draft_payload_data AS (
 auth_exists_check AS (
     -- Check if auth exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM auth WHERE id = (SELECT auth_id FROM params)
+        SELECT 1 FROM auths WHERE id = (SELECT auth_id FROM params)
     )::boolean as auth_exists
 ),
 user_profile AS (
@@ -118,7 +118,7 @@ auth_data AS (
             ELSE false
         END as can_edit
     FROM params x
-    JOIN auth a ON a.id = x.auth_id
+    JOIN auths a ON a.id = x.auth_id
     CROSS JOIN user_profile up
 ),
 auth_items_data AS (

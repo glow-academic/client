@@ -239,7 +239,7 @@ settings_auths_with_items AS (
         ) as auth_items
     FROM settings s
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auth a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
     LEFT JOIN auth_items ai_j ON ai_j.auth_id = a.id
     LEFT JOIN items ai ON ai.id = ai_j.item_id
     WHERE s.id = (SELECT settings_id FROM params)
@@ -301,7 +301,7 @@ all_auths_with_items AS (
             ) FILTER (WHERE ai.id IS NOT NULL),
             '{}'::types.q_get_settings_detail_v4_auth_item[]
         ) as auth_items
-    FROM auth a
+    FROM auths a
     LEFT JOIN auth_items ai_j ON ai_j.auth_id = a.id
     LEFT JOIN items ai ON ai.id = ai_j.item_id
     WHERE EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)

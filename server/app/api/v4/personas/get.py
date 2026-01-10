@@ -8,9 +8,13 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (GetPersonaApiRequest, GetPersonaApiResponse,
-                           GetPersonaSqlParams, GetPersonaSqlRow,
-                           load_sql_query)
+from app.sql.types import (
+    GetPersonaApiRequest,
+    GetPersonaApiResponse,
+    GetPersonaSqlParams,
+    GetPersonaSqlRow,
+    load_sql_query,
+)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
@@ -30,7 +34,7 @@ router = APIRouter()
     dependencies=[
         audit_activity(
             "persona.get",
-            "{{ actor.name }} {% if persona %}viewed{% else %}opened new{% endif %} persona{% if persona %} '{{ persona.name }}'{% endif %}"
+            "{{ actor.name }} {% if persona %}viewed{% else %}opened new{% endif %} persona{% if persona %} '{{ persona.name }}'{% endif %}",
         )
     ],
 )
@@ -76,9 +80,9 @@ async def get_persona(
         current_icon = request.current_icon
         draft_id = request.draft_id
         persona_id = request.persona_id  # Can be NULL for new mode
-        
+
         # Get mcp flag from header (set by router-level dependency)
-        mcp = getattr(http_request.state, 'mcp', False) or False
+        mcp = getattr(http_request.state, "mcp", False) or False
 
         # Convert API request to SQL params (add profile_id and mcp from header)
         params = GetPersonaSqlParams(
@@ -107,9 +111,7 @@ async def get_persona(
 
         # Set audit context
         if result.actor_name:
-            audit_ctx = {
-                "actor": {"name": result.actor_name, "id": profile_id}
-            }
+            audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
             # Only add persona to audit context if persona_id was provided (detail mode)
             if persona_id and result.name_resource and result.name_resource.name:
                 audit_ctx["persona"] = {

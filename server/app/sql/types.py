@@ -4635,43 +4635,6 @@ class DeleteAuthApiResponse(BaseModel):
 
 
 
-# Generated from: duplicate_auth
-
-class DuplicateAuthSqlParams(BaseModel):
-
-    auth_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.auth_id,
-            self.profile_id,
-        )
-
-class DuplicateAuthSqlRow(BaseModel):
-
-    auth_exists: bool | None = None
-    success: bool | None = None
-    auth_id: UUID | None = None
-    original_name: str | None = None
-    message: str | None = None
-    actor_name: str | None = None
-
-class DuplicateAuthApiRequest(BaseModel):
-
-    auth_id: UUID
-
-class DuplicateAuthApiResponse(BaseModel):
-
-    auth_exists: bool | None = None
-    success: bool | None = None
-    auth_id: UUID | None = None
-    original_name: str | None = None
-    message: str | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: get_auth_detail
 
 class GetAuthDetailSqlParams(BaseModel):
@@ -14432,43 +14395,6 @@ class GetPersonaGenerationContextApiResponse(BaseModel):
 
     domain_id: UUID | None = None
     agent_id: UUID | None = None
-
-
-
-# Generated from: get_persona_resource_group_ids
-
-class GetPersonaResourceGroupIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-    resource_types: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.draft_id,
-            self.resource_types,
-        )
-
-class GetPersonaResourceGroupIdsSqlRow(BaseModel):
-
-    resource_type: str | None = None
-    resource_id: UUID | None = None
-    group_id: UUID | None = None
-
-class GetPersonaResourceGroupIdsApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-    resource_types: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetPersonaResourceGroupIdsApiResponse(BaseModel):
-
-    resource_type: str | None = None
-    resource_id: UUID | None = None
-    group_id: UUID | None = None
 
 
 
@@ -27902,12 +27828,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeleteAuthApiRequest",
         "DeleteAuthApiResponse",
     ),
-    "app/sql/v4/auth/duplicate_auth_complete.sql": (
-        "DuplicateAuthSqlParams",
-        "DuplicateAuthSqlRow",
-        "DuplicateAuthApiRequest",
-        "DuplicateAuthApiResponse",
-    ),
     "app/sql/v4/auth/get_auth_detail_complete.sql": (
         "GetAuthDetailSqlParams",
         "GetAuthDetailSqlRow",
@@ -28879,12 +28799,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaGenerationContextSqlRow",
         "GetPersonaGenerationContextApiRequest",
         "GetPersonaGenerationContextApiResponse",
-    ),
-    "app/sql/v4/personas/get_persona_resource_group_ids_complete.sql": (
-        "GetPersonaResourceGroupIdsSqlParams",
-        "GetPersonaResourceGroupIdsSqlRow",
-        "GetPersonaResourceGroupIdsApiRequest",
-        "GetPersonaResourceGroupIdsApiResponse",
     ),
     "app/sql/v4/personas/get_personas_list_complete.sql": (
         "GetPersonasListSqlParams",
@@ -30568,11 +30482,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/auth/duplicate_auth_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/auth/get_auth_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -31379,11 +31288,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/personas/get_persona_generation_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_persona_resource_group_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload

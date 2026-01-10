@@ -39,7 +39,7 @@ WITH params AS (
 auth_exists_check AS (
     -- Check if auth exists before deletion
     SELECT EXISTS(
-        SELECT 1 FROM auth WHERE id = (SELECT auth_id FROM params)
+        SELECT 1 FROM auths WHERE id = (SELECT auth_id FROM params)
     )::boolean as auth_exists
 ),
 actor_profile AS (
@@ -50,12 +50,12 @@ actor_profile AS (
     JOIN profiles p ON p.id = x.profile_id
 ),
 auth_info AS (
-    SELECT id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = auth.id LIMIT 1) as name
+    SELECT id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = auths.id LIMIT 1) as name
     FROM params x
-    JOIN auth ON auth.id = x.auth_id
+    JOIN auths ON auths.id = x.auth_id
 ),
 delete_result AS (
-    DELETE FROM auth
+    DELETE FROM auths
     WHERE id = (SELECT auth_id FROM params)
     RETURNING id
 )

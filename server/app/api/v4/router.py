@@ -83,7 +83,11 @@ from app.api.v4.uploads import router as uploads_router
 router: APIRouter = APIRouter(
     prefix="/api/v4",
     tags=["v4"],
-    dependencies=[Depends(get_profile_id), Depends(get_effective_profile_id), Depends(get_mcp)],
+    dependencies=[
+        Depends(get_profile_id),
+        Depends(get_effective_profile_id),
+        Depends(get_mcp),
+    ],
 )
 
 # Batch B: Profile Routes

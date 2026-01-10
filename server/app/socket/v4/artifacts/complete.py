@@ -53,20 +53,20 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     """Route completion events by output modality and handle SQL operations."""
     # Extract modality from payload
     modality = data.get("modality", "text")
-    
+
     sid = data.get("sid", "")
     if not sid:
         return  # No socket ID, can't emit to client
 
     completion_type = data.get("type", "run_complete")
-    
+
     # Handle tool_call_complete template rendering if applicable
     rendered_values: dict[str, Any] | None = None
     if completion_type == "tool_call_complete":
         call_id = data.get("call_id")
         if call_id:
             rendered_values = await _handle_tool_call_template_rendering(call_id)
-    
+
     # Handle SQL operations based on modality
     if completion_type == "run_complete":
         if modality == "image":
@@ -75,7 +75,7 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
             await _handle_video_complete(data)
         elif modality in ("text", "call", "document"):
             await _handle_text_complete(data, sid)
-    
+
     # Dispatch to agent-specific end handlers
     resource_type = data.get("resource_type", "text")
     # Map modality to resource_type for end handler
@@ -88,9 +88,9 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
         "audio": "voice",  # Audio maps to voice resource type
     }
     final_resource_type = modality_to_resource_type.get(modality, resource_type)
-    
+
     agent_end_event = AGENT_END_MAPPING.get(final_resource_type, "text_end")
-    
+
     # Build payload for agent-specific end handler
     emit_payload: dict[str, Any] = {
         "sid": sid,
@@ -106,17 +106,17 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
         "final_content": data.get("final_content"),
         "arguments_raw": data.get("arguments_raw"),
     }
-    
+
     # Include rendered template values if available
     if rendered_values is not None:
         emit_payload["rendered_template_values"] = rendered_values
-    
+
     # Dispatch to agent-specific end handler
     await internal_sio.emit(agent_end_event, emit_payload)
-    
+
     # Transform internal event format to client format
     client_payload = _build_client_payload(modality, completion_type, data)
-    
+
     # Emit unified client event
     await sio.emit(
         "artifact_generation_complete",
@@ -140,31 +140,39 @@ def _build_client_payload(
 
     # Add modality-specific fields
     if modality == "text" or modality == "call" or modality == "document":
-        client_payload.update({
-            "input_text_tokens": data.get("input_text_tokens"),
-            "output_text_tokens": data.get("output_text_tokens"),
-            "system_prompt": data.get("system_prompt"),
-            "assistant_output": data.get("assistant_output"),
-        })
+        client_payload.update(
+            {
+                "input_text_tokens": data.get("input_text_tokens"),
+                "output_text_tokens": data.get("output_text_tokens"),
+                "system_prompt": data.get("system_prompt"),
+                "assistant_output": data.get("assistant_output"),
+            }
+        )
     elif modality == "image":
-        client_payload.update({
-            "image_id": data.get("image_id"),
-            "file_path": data.get("file_path"),
-            "mime_type": data.get("mime_type"),
-            "file_size": data.get("file_size"),
-        })
+        client_payload.update(
+            {
+                "image_id": data.get("image_id"),
+                "file_path": data.get("file_path"),
+                "mime_type": data.get("mime_type"),
+                "file_size": data.get("file_size"),
+            }
+        )
     elif modality == "video":
-        client_payload.update({
-            "success": data.get("success", True),
-            "message": data.get("message"),
-            "videoUrl": data.get("videoUrl"),
-            "video_id": data.get("video_id"),
-        })
+        client_payload.update(
+            {
+                "success": data.get("success", True),
+                "message": data.get("message"),
+                "videoUrl": data.get("videoUrl"),
+                "video_id": data.get("video_id"),
+            }
+        )
     elif modality == "audio":
-        client_payload.update({
-            "model": data.get("model"),
-        })
-    
+        client_payload.update(
+            {
+                "model": data.get("model"),
+            }
+        )
+
     return client_payload
 
 
@@ -175,12 +183,12 @@ async def _handle_image_complete(data: dict[str, Any]) -> None:
         file_path = data.get("file_path")
         mime_type = data.get("mime_type")
         file_size = data.get("file_size")
-        
+
         if not image_id_str or not file_path or not mime_type or file_size is None:
             return
-        
+
         image_id = uuid.UUID(image_id_str)
-        
+
         async with get_db_connection() as conn:
             params = CompleteImageGenerationSqlParams(
                 image_id=image_id,
@@ -191,6 +199,7 @@ async def _handle_image_complete(data: dict[str, Any]) -> None:
             await execute_sql_typed(conn, SQL_PATH_IMAGE_COMPLETE, params=params)
     except Exception:
         import logging
+
         logging.getLogger(__name__).warning("Failed to complete image generation")
 
 
@@ -202,14 +211,14 @@ async def _handle_video_complete(data: dict[str, Any]) -> None:
         mime_type = data.get("mime_type", "video/mp4")
         upload_id_str = data.get("upload_id")
         run_id_str = data.get("run_id")
-        
+
         if not video_id_str or not file_path or not upload_id_str or not run_id_str:
             return
-        
+
         video_id = uuid.UUID(video_id_str)
         upload_id = uuid.UUID(upload_id_str)
         run_id = uuid.UUID(run_id_str)
-        
+
         async with get_db_connection() as conn:
             params = CreateGenerationAndLinkSqlParams(
                 video_id=video_id,
@@ -222,6 +231,7 @@ async def _handle_video_complete(data: dict[str, Any]) -> None:
             await execute_sql_typed(conn, SQL_PATH_VIDEO_COMPLETE, params=params)
     except Exception:
         import logging
+
         logging.getLogger(__name__).warning("Failed to complete video generation")
 
 
@@ -236,13 +246,13 @@ async def _handle_text_complete(data: dict[str, Any], sid: str) -> None:
         input_items = data.get("input_items")
         assistant_output = data.get("assistant_output")
         department_id_str = data.get("department_id")
-        
+
         if not run_id_str or input_text_tokens is None or output_text_tokens is None:
             return
-        
+
         run_id = uuid.UUID(run_id_str)
         department_id = uuid.UUID(department_id_str) if department_id_str else None
-        
+
         # Extract developer message contents from input_items
         developer_contents: list[str] = []
         if input_items:
@@ -255,7 +265,7 @@ async def _handle_text_complete(data: dict[str, Any], sid: str) -> None:
                             stripped = content.strip()
                             if stripped:
                                 developer_contents.append(stripped)
-        
+
         async with get_db_connection() as conn:
             # Use execute_sql_typed() with auto-generated types
             params_dict = {
@@ -277,7 +287,7 @@ async def _handle_text_complete(data: dict[str, Any], sid: str) -> None:
                 LogRunSqlRow,
                 await execute_sql_typed(conn, SQL_PATH_LOG_RUN, params=params),
             )
-            
+
             # Log activity (only for client-to-server events, not internal)
             if sid and sid != "" and sid != "internal":
                 try:
@@ -294,15 +304,15 @@ async def _handle_text_complete(data: dict[str, Any], sid: str) -> None:
                     )
                 except Exception:
                     pass
-            
+
             # Always save OpenAI messages as JSON file
             try:
                 messages: list[dict[str, str]] = []
-                
+
                 # Add system message if provided
                 if system_prompt:
                     messages.append({"role": "system", "content": system_prompt})
-                
+
                 # Add developer messages from input_items
                 if input_items:
                     for item in input_items:
@@ -312,15 +322,18 @@ async def _handle_text_complete(data: dict[str, Any], sid: str) -> None:
                                 content = item.get("content")
                                 if isinstance(content, str) and content.strip():
                                     messages.append(
-                                        {"role": "developer", "content": content.strip()}
+                                        {
+                                            "role": "developer",
+                                            "content": content.strip(),
+                                        }
                                     )
-                
+
                 # Add assistant message if provided
                 if assistant_output and assistant_output.strip():
                     messages.append(
                         {"role": "assistant", "content": assistant_output.strip()}
                     )
-                
+
                 # Save to JSON file
                 if messages:
                     json_file_path = UPLOAD_FOLDER / f"{run_id}.json"
@@ -332,6 +345,7 @@ async def _handle_text_complete(data: dict[str, Any], sid: str) -> None:
     except Exception:
         # Don't emit error to client - pricing is async and failures are logged
         import logging
+
         logging.getLogger(__name__).warning("Failed to log run for text completion")
 
 
@@ -349,13 +363,13 @@ async def _handle_tool_call_template_rendering(call_id: str) -> dict[str, Any] |
                 """,
                 call_id,
             )
-            
+
             if not tool_call_record or not tool_call_record["tool_id"]:
                 return None
-            
+
             tool_id = tool_call_record["tool_id"]
             tool_call_id_uuid = tool_call_record["tool_call_id"]
-            
+
             # Get tool arguments from tool_call_arguments
             arguments_record = await conn.fetchrow(
                 """
@@ -367,19 +381,17 @@ async def _handle_tool_call_template_rendering(call_id: str) -> dict[str, Any] |
                 """,
                 tool_call_id_uuid,
             )
-            
+
             if not arguments_record or not arguments_record["arguments_json"]:
                 return None
-            
+
             tool_arguments = arguments_record["arguments_json"]
             if isinstance(tool_arguments, str):
                 tool_arguments = json.loads(tool_arguments)
-            
+
             # Render templates
-            rendered_values = await render_tool_template(
-                conn, tool_id, tool_arguments
-            )
-            
+            rendered_values = await render_tool_template(conn, tool_id, tool_arguments)
+
             # Store rendered values in tool_call_results if any were rendered
             if rendered_values:
                 # Delete existing result if any, then insert new one
@@ -404,12 +416,12 @@ async def _handle_tool_call_template_rendering(call_id: str) -> dict[str, Any] |
                     json.dumps(rendered_values),
                     json.dumps(rendered_values),
                 )
-            
+
             return rendered_values
     except Exception as template_error:
         # Log error but don't fail the completion flow
         from utils.logging.db_logger import get_logger
-        
+
         logger = get_logger(__name__)
         logger.warning(
             f"Failed to render tool templates for call_id {call_id}: {str(template_error)}"

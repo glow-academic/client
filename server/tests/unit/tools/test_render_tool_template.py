@@ -254,9 +254,7 @@ class TestGetRenderedTemplateValues:
         rendered_data = {"name": "John", "age": 25}
 
         conn = AsyncMock()
-        conn.fetchrow = AsyncMock(
-            return_value=MagicMock(result_json=rendered_data)
-        )
+        conn.fetchrow = AsyncMock(return_value=MagicMock(result_json=rendered_data))
 
         result = await get_rendered_template_values(conn, tool_call_id)
 
@@ -284,11 +282,8 @@ class TestGetRenderedTemplateValues:
         json_string = json.dumps(rendered_data)
 
         conn = AsyncMock()
-        conn.fetchrow = AsyncMock(
-            return_value=MagicMock(result_json=json_string)
-        )
+        conn.fetchrow = AsyncMock(return_value=MagicMock(result_json=json_string))
 
         result = await get_rendered_template_values(conn, tool_call_id)
 
         assert result == rendered_data
-

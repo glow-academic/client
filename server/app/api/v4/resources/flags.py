@@ -58,12 +58,12 @@ async def create_flag(
             # Convert API request to SQL params (use double star pattern)
             # Frontend sends snake_case (name, description, icon_id) - auto-generated types match SQL function signature
             # Get mcp flag from header (set by router-level dependency)
-            mcp = getattr(http_request.state, 'mcp', False) or False
-            
+            mcp = getattr(http_request.state, "mcp", False) or False
+
             # Convert API request to SQL params (use double star pattern)
             # Add mcp from header (not in request body)
             request_dict = request.model_dump()
-            request_dict['mcp'] = mcp
+            request_dict["mcp"] = mcp
             params = FlagsSqlParams(**request_dict)
             sql_params = params.to_tuple()
 

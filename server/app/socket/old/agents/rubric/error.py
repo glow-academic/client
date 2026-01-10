@@ -32,8 +32,26 @@ async def _rubric_error_impl(
     """Internal implementation using typed SQL execution."""
     # #region agent log
     import json
-    with open('/Users/ashoksaravanan/Coding/glow/.cursor/debug.log', 'a') as f:
-        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"old/agents/rubric/error.py:35","message":"Creating SQL params","data":{"data_fields":list(data.model_dump().keys()),"group_id":str(group_id) if group_id else None,"profile_id":str(profile_id)},"timestamp":int(__import__('time').time()*1000)})+"\n")
+
+    with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+        f.write(
+            json.dumps(
+                {
+                    "sessionId": "debug-session",
+                    "runId": "run1",
+                    "hypothesisId": "B",
+                    "location": "old/agents/rubric/error.py:35",
+                    "message": "Creating SQL params",
+                    "data": {
+                        "data_fields": list(data.model_dump().keys()),
+                        "group_id": str(group_id) if group_id else None,
+                        "profile_id": str(profile_id),
+                    },
+                    "timestamp": int(__import__("time").time() * 1000),
+                }
+            )
+            + "\n"
+        )
     # #endregion
     try:
         async with get_db_connection() as conn:

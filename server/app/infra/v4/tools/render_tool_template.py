@@ -74,7 +74,9 @@ async def render_tool_template(
     )
 
     if not tool_record or not tool_record["template_id"]:
-        logger.warning(f"Tool {tool_id} has no template_id, skipping template rendering")
+        logger.warning(
+            f"Tool {tool_id} has no template_id, skipping template rendering"
+        )
         return {}
 
     template_id = tool_record["template_id"]
@@ -227,4 +229,3 @@ async def get_rendered_template_values(
                 return parsed  # type: ignore[return-value]
 
     return None
-

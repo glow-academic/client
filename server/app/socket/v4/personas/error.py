@@ -29,15 +29,14 @@ async def handle_personas_error(data: dict[str, Any]) -> None:
     """Handle generate_error internal event - filter by persona resource_type and emit to client."""
     # Filter by resource_type
     resource_type = data.get("resource_type")
-    
+
     # Check if resource_type is a persona resource type
     # Also check if resource_types array contains any persona resource types
     resource_types = data.get("resource_types", [])
-    is_persona_resource = (
-        resource_type in PERSONA_RESOURCE_TYPES
-        or any(rt in PERSONA_RESOURCE_TYPES for rt in resource_types)
+    is_persona_resource = resource_type in PERSONA_RESOURCE_TYPES or any(
+        rt in PERSONA_RESOURCE_TYPES for rt in resource_types
     )
-    
+
     if not is_persona_resource:
         return  # Not for us
 
@@ -45,7 +44,9 @@ async def handle_personas_error(data: dict[str, Any]) -> None:
     if not sid:
         return  # No socket ID, can't emit to client
 
-    error_message = data.get("error_message") or data.get("message", "An error occurred during persona generation")
+    error_message = data.get("error_message") or data.get(
+        "message", "An error occurred during persona generation"
+    )
     error_payload = {
         "resource_type": resource_type,
         "resource_id": data.get("resource_id"),
