@@ -9,9 +9,13 @@
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Label } from "@/components/ui/label";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { useCallback, useMemo } from "react";
+
+type CreateDraftDepartmentsIn = InputOf<"/api/v4/resources/departments", "post">;
+type CreateDraftDepartmentsOut = OutputOf<"/api/v4/resources/departments", "post">;
 
 export interface DepartmentItem {
   id: string;
@@ -42,6 +46,11 @@ export interface DepartmentsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
+  createDepartmentsAction?:
+    | ((input: CreateDraftDepartmentsIn) => Promise<CreateDraftDepartmentsOut>)
+    | undefined;
   // Legacy props for backward compatibility
   departmentIds?: string[];
 }
@@ -59,6 +68,9 @@ export function Departments({
   required = false,
   placeholder = "Select departments...",
   description,
+  group_id,
+  agent_id,
+  createDepartmentsAction,
   // Legacy props for backward compatibility
   departmentIds,
 }: DepartmentsProps) {

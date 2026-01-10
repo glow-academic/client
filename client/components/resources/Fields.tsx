@@ -9,9 +9,13 @@
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Label } from "@/components/ui/label";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
+
+type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
 
 export interface FieldItem {
   id: string;
@@ -42,6 +46,11 @@ export interface FieldsProps {
   required?: boolean;
   placeholder?: string;
   description?: string;
+  group_id?: string | null; // Group ID for linking resources
+  agent_id?: string | null; // Agent ID for resource creation
+  createFieldsAction?:
+    | ((input: CreateDraftFieldsIn) => Promise<CreateDraftFieldsOut>)
+    | undefined;
   // Legacy props for backward compatibility
   fieldIds?: string[];
 }
@@ -59,6 +68,9 @@ export function Fields({
   required = false,
   placeholder = "Select fields...",
   description,
+  group_id,
+  agent_id,
+  createFieldsAction,
   // Legacy props for backward compatibility
   fieldIds,
 }: FieldsProps) {

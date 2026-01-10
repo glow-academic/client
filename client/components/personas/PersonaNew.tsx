@@ -1209,6 +1209,9 @@ function PersonaNewComponent({
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
                   required={currentPersonaData?.departments_required ?? false}
+                  group_id={currentPersonaData?.group_id ?? null}
+                  agent_id={currentPersonaData?.departments_agent_id ?? null}
+                  createDepartmentsAction={createDepartmentsAction}
                 />
 
                 {/* Active Switch - using Flags resource component */}
@@ -1311,6 +1314,9 @@ function PersonaNewComponent({
                 label="Fields"
                 description="Select fields for this persona"
                 required={currentPersonaData?.fields_required ?? false}
+                group_id={currentPersonaData?.group_id ?? null}
+                agent_id={currentPersonaData?.fields_agent_id ?? null}
+                createFieldsAction={createFieldsAction}
               />
             </StepCard>
           );
