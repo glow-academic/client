@@ -358,6 +358,68 @@ RETURNS TABLE (
   - Contributes to `can_edit = false`
   - Adds to `disabled_reason`: "No tool configured for {resource1}, {resource2}, and {resource3}. Therefore we cannot proceed ahead."
 - If `{resource}_required = false`, missing tools do not affect `can_edit` or `disabled_reason`
+- **This applies in both new and edit modes** - when no agents are found, `can_edit` becomes `false` and `disabled_reason` explains why
+- Frontend must check `can_edit` in both modes to display `disabled_reason` via `ReadOnlyBanner` component
+
+## SQL CTE Patterns for CROSS JOIN Safety
+
+**⚠️ CRITICAL: CTEs used in CROSS JOINs must always return at least one row**
+
+When using `CROSS JOIN` in SQL, if any CTE in the chain returns 0 rows, the entire result set becomes empty. This can cause endpoints to return no data even when resources exist.
+
+**Pattern for Suggestion CTEs:**
+```sql
+-- ✅ CORRECT: Always returns at least one row
+name_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pn.name_id, MAX(pn.created_at) as created_at
+                 FROM persona_names pn
+                 WHERE pn.generated = true
+                   AND pn.name_id IS NOT NULL
+                 GROUP BY pn.name_id
+                 ORDER BY MAX(pn.created_at) DESC
+                 LIMIT 20
+             ) pn),
+            ARRAY[]::uuid[]
+        ) as name_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+)
+```
+
+**Pattern for Suggestion Objects CTEs:**
+```sql
+-- ✅ CORRECT: Always returns at least one row
+names_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (n.id, n.name, COALESCE(n.generated, false))::types.q_get_persona_v4_name_resource
+                    ORDER BY array_position(nsd.name_suggestions, n.id)
+                )
+                FROM name_suggestions_data nsd
+                CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
+                JOIN names n ON n.id = suggestion_id
+                WHERE n.name IS NOT NULL AND n.name != ''
+            ),
+            ARRAY[]::types.q_get_persona_v4_name_resource[]
+        ) as names
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+)
+```
+
+**Key Points:**
+- Wrap subqueries in `COALESCE` with empty arrays as fallback
+- Add `FROM params LIMIT 1` to ensure at least one row is returned
+- This pattern applies to: `*_suggestions_data`, `*_suggestions_objects`, `field_ids_data`, `persona_examples_data`
+- Without this pattern, empty suggestion lists cause the entire query to return 0 rows
 
 ## MCP (Model Context Protocol) Support
 
@@ -405,12 +467,14 @@ END IF;
 **Key Points:**
 - MCP validation happens in SQL functions, not Python endpoints (consistent with profile_id pattern)
 - Agent filtering only applies when `mcp=true` (backward compatible)
+- **MCP filtering is scoped to agent selection CTEs only** - resource lists (colors, icons, departments, fields) are always returned regardless of MCP flag
+- When `mcp = true` and no MCP agents exist, `{resource}_agent_id` will be `NULL` for all resources, causing `can_edit = false` and `disabled_reason` to explain missing tools
 - Resource `mcp` field defaults to `false` (backward compatible)
 - All existing resources will have `mcp=false` after migration
 
 ## Key Principles Summary
 
-1. **Required fields first**: `actor_name`, `{artifact}_exists`, `can_edit`, `disabled_reason`
+1. **Required fields first**: `actor_name`, `{artifact}_exists`, `can_edit`, `disabled_reason`, `group_id`
 2. **Consistent resource patterns**: Single-select vs multi-select follow their respective patterns
 3. **Show flags for all**: Every resource has a `show_{resource}` boolean (affected by tool availability for required resources)
 4. **Agent IDs after show flags**: Each resource has `{resource}_agent_id` and `{resource}_required` after `show_{resource}`
@@ -421,7 +485,10 @@ END IF;
 9. **Arrays come last**: For resources with option arrays, the array comes last in that resource's group
 10. **Multi-select arrays last**: The full `{resource}` array comes last in multi-select resource groups
 11. **SELECT matches RETURN**: SELECT clause order must match RETURN TABLE order exactly
-12. **Tool availability checks**: Required resources without tools disable editing with appropriate error messages
+12. **Tool availability checks**: Required resources without tools disable editing with appropriate error messages (applies in both new and edit modes)
+13. **CROSS JOIN safety**: CTEs used in CROSS JOINs must always return at least one row (use `FROM params LIMIT 1` pattern)
+14. **MCP scoping**: MCP filtering only affects agent selection, not resource lists
+15. **Disabled state in both modes**: Frontend must check `can_edit` in both new and edit modes to display `disabled_reason`
 
 ## Migration Checklist
 
@@ -556,10 +623,12 @@ The standardized SQL return structure directly maps to standardized component pr
 
 ```typescript
 // In top-level component (e.g., PersonaNew.tsx)
+// ⚠️ IMPORTANT: Check can_edit in BOTH new and edit modes
+// This ensures disabled_reason is shown when agents/tools are missing
 const disabled = useMemo(() => {
-  if (!isEditMode || !personaData) return false;
+  if (!personaData) return false;
   return !personaData.can_edit;
-}, [isEditMode, personaData]);
+}, [personaData]);
 
 // Pass to all resource components
 <Names disabled={disabled} ... />
@@ -569,9 +638,11 @@ const disabled = useMemo(() => {
 
 **Key Points:**
 - `disabled` is computed once at the top level from `can_edit`
+- **Check `can_edit` in both new and edit modes** - not just edit mode
+- This ensures `disabled_reason` is displayed when agents/tools are missing (e.g., "No tool configured for name, color, icon, instructions")
 - All resource components receive the same `disabled` value
 - Components apply `disabled` to all interactive elements
-- In create mode (`!isEditMode`), `disabled` is always `false`
+- When `can_edit = false`, the `ReadOnlyBanner` component displays `disabled_reason` to explain why editing is disabled
 
 ### Top-Level Component Pattern
 
