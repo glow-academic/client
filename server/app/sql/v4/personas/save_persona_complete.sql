@@ -129,17 +129,17 @@ BEGIN
     object_current_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
         FROM persona_departments
-        WHERE persona_id = (SELECT persona_id FROM params) AND active = true
+        WHERE persona_departments.persona_id = (SELECT p.persona_id FROM params p LIMIT 1) AND active = true
     ),
     user_departments AS (
         SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
         FROM profile_departments
-        WHERE profile_id = (SELECT profile_id FROM params) AND active = true
+        WHERE profile_departments.profile_id = (SELECT p.profile_id FROM params p LIMIT 1) AND active = true
     ),
     validate_permissions AS (
         SELECT 
             CASE 
-                WHEN (SELECT persona_id FROM params) IS NULL THEN
+                WHEN (SELECT p.persona_id FROM params p) IS NULL THEN
                     -- Validate create permissions
                     (SELECT validate_department_create_permissions(
                         up.role::text,
@@ -173,7 +173,7 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.name_id IS NOT NULL
-        ON CONFLICT (persona_id, name_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_names_pkey DO UPDATE SET updated_at = NOW()
     ),
     -- Link persona to description
     link_persona_description AS (
@@ -185,7 +185,7 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.description_id IS NOT NULL
-        ON CONFLICT (persona_id, description_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_descriptions_pkey DO UPDATE SET updated_at = NOW()
     ),
     -- Link persona to color
     link_persona_color AS (
@@ -197,7 +197,7 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.color_id IS NOT NULL
-        ON CONFLICT (persona_id, color_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_colors_pkey DO UPDATE SET updated_at = NOW()
     ),
     -- Link persona to icon
     link_persona_icon AS (
@@ -209,7 +209,7 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.icon_id IS NOT NULL
-        ON CONFLICT (persona_id, icon_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_icons_pkey DO UPDATE SET updated_at = NOW()
     ),
     -- Link persona to instructions
     link_persona_instruction AS (
@@ -221,7 +221,7 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.instructions_id IS NOT NULL
-        ON CONFLICT (persona_id, instruction_id) DO UPDATE SET updated_at = NOW()
+        ON CONFLICT ON CONSTRAINT persona_instructions_pkey DO UPDATE SET updated_at = NOW()
     ),
     -- Insert or update persona active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_persona_active_flag AS (
@@ -236,7 +236,7 @@ BEGIN
         FROM params x
         CROSS JOIN flags f
         WHERE f.name = 'active'
-        ON CONFLICT (persona_id, flag_id, type) DO UPDATE SET 
+        ON CONFLICT ON CONSTRAINT persona_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, persona_flags.flag_id),
             value = EXCLUDED.value,
             updated_at = NOW()
@@ -253,7 +253,7 @@ BEGIN
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-        ON CONFLICT (persona_id, department_id) DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT persona_departments_pkey DO UPDATE SET
             active = true,
             updated_at = NOW()
     ),
@@ -269,7 +269,7 @@ BEGIN
         FROM params x
         CROSS JOIN UNNEST(x.field_ids) as field_id
         WHERE COALESCE(array_length(x.field_ids, 1), 0) > 0
-        ON CONFLICT (persona_id, field_id) DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT persona_fields_pkey DO UPDATE SET
             active = true,
             updated_at = NOW()
     ),
@@ -292,14 +292,14 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN examples_with_index ewi
-        ON CONFLICT (persona_id, example_id) DO UPDATE SET
+        ON CONFLICT ON CONSTRAINT persona_examples_pkey DO UPDATE SET
             idx = EXCLUDED.idx,
             active = true,
             created_at = EXCLUDED.created_at
     )
     SELECT 
-        x.persona_id,
-        ap.actor_name
+        x.persona_id AS persona_id,
+        ap.actor_name AS actor_name
     FROM params x
     CROSS JOIN actor_profile ap;
 END;

@@ -60,10 +60,9 @@ async def save_persona(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            # Map persona_id from API request to input_persona_id for SQL function
+            # Map input_persona_id from API request (already correct field name)
             params = SavePersonaSqlParams(
-                input_persona_id=request.persona_id,  # Can be NULL for create
-                **{k: v for k, v in request.model_dump().items() if k != "persona_id"},
+                **request.model_dump(),
                 profile_id=profile_id,
             )
             sql_params = params.to_tuple()
@@ -79,8 +78,8 @@ async def save_persona(
             )
 
             if not result or not result.persona_id:
-                if request.persona_id:
-                    raise ValueError(f"Persona not found: {request.persona_id}")
+                if request.input_persona_id:
+                    raise ValueError(f"Persona not found: {request.input_persona_id}")
                 else:
                     raise ValueError("Failed to create persona")
 
@@ -89,9 +88,9 @@ async def save_persona(
                 audit_ctx = {
                     "actor": {"name": result.actor_name, "id": profile_id}
                 }
-                # Only add persona to audit context if persona_id was provided (update mode)
+                # Only add persona to audit context if input_persona_id was provided (update mode)
                 # For create mode, we don't have the name yet, so we'll use the request name if available
-                if request.persona_id:
+                if request.input_persona_id:
                     # Update mode: use request name (from request body)
                     # Note: In update mode, request should have name field
                     audit_ctx["persona"] = {
@@ -103,11 +102,8 @@ async def save_persona(
         # Convert SQL result to API response
         api_response = SavePersonaApiResponse.model_validate(
             {
-                "success": True,
-                "personaId": str(result.persona_id),
-                "message": (
-                    f"Persona '{getattr(request, 'name', '')}' {'updated' if request.persona_id else 'created'} successfully"
-                ),
+                "persona_id": str(result.persona_id),
+                "actor_name": result.actor_name,
             }
         )
 

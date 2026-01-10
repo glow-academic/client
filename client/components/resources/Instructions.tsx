@@ -14,6 +14,12 @@ type CreateDraftInstructionsOut = OutputOf<"/api/v4/resources/instructions", "po
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Loader2, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
@@ -169,25 +175,28 @@ export function Instructions({
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
         {onGenerate && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onGenerate}
-            disabled={disabled || isGenerating}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate
-              </>
-            )}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={onGenerate}
+                  disabled={disabled || isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {resource?.generated ? "Regenerate" : "Generate"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
       <Textarea

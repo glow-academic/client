@@ -8,6 +8,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -103,7 +109,7 @@ export function Names({
       const textWidth = measureRef.current.scrollWidth;
       // Add padding (px-2 = 8px on each side = 16px total)
       const padding = 16;
-      const minWidth = 300;
+      const minWidth = 50; // Much smaller minimum to allow text-width matching
       setInputWidth(Math.max(textWidth + padding, minWidth));
     }
   }, [internalValue, placeholder, defaultName]);
@@ -240,25 +246,28 @@ export function Names({
           className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
         />
         {onGenerate && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onGenerate}
-            disabled={disabled || isGenerating}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate
-              </>
-            )}
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={onGenerate}
+                  disabled={disabled || isGenerating}
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {resource?.generated ? "Regenerate" : "Generate"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
       {!hideDescription && (
