@@ -436,25 +436,6 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
   // nuqs expects partial updates, not merged full state
   const handleSetFormData = React.useCallback(
     (updates: Partial<Values<T>>) => {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "GenericForm.tsx:425",
-            message: "handleSetFormData called",
-            data: { updates },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "ALL",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion agent log
-
       const current = formDataRef.current;
 
       // Only forward changes that actually differ
@@ -471,45 +452,8 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
       }
 
       if (!changed) {
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "GenericForm.tsx:425",
-              message: "handleSetFormData no-op (no changes)",
-              data: { updates, current },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "ALL",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion agent log
         return;
       }
-
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "GenericForm.tsx:425",
-            message: "handleSetFormData forwarding changes",
-            data: { filtered },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "ALL",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion agent log
 
       setFormData(filtered);
     },

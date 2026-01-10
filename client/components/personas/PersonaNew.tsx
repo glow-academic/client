@@ -117,25 +117,6 @@ function PersonaNewComponent({
   createFlagsAction,
   createExamplesAction,
 }: PersonaNewProps) {
-  // #region agent log
-  fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      location: "PersonaNew.tsx:112",
-      message: "PersonaNewComponent render",
-      data: {
-        personaId,
-        hasPersonaData: !!personaData,
-        personaExists: personaData?.persona_exists || false,
-      },
-      timestamp: Date.now(),
-      sessionId: "debug-session",
-      runId: "run1",
-      hypothesisId: "ALL",
-    }),
-  }).catch(() => {});
-  // #endregion
   const router = useRouter();
   const isEditMode = !!personaId;
   const {
@@ -269,27 +250,6 @@ function PersonaNewComponent({
   // Use stablePersonaDataFields to prevent callback recreation when personaData object reference changes
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "PersonaNew.tsx:157",
-            message: "canRegenerate called",
-            data: {
-              resourceType,
-              hasPersonaData: !!stablePersonaDataFields,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "C",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       if (!stablePersonaDataFields) return false;
       switch (resourceType) {
         case "names":
@@ -333,25 +293,6 @@ function PersonaNewComponent({
   );
 
   const getInitialFormState = useCallback(() => {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "PersonaNew.tsx:205",
-        message: "getInitialFormState called",
-        data: {
-          hasPersonaData: !!personaDataRef.current,
-          personaExists: personaDataRef.current?.persona_exists || false,
-          nameId: personaDataRef.current?.name_id || null,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "C",
-      }),
-    }).catch(() => {});
-    // #endregion
     const data = personaDataRef.current;
     if (!data) {
       return {
@@ -420,48 +361,7 @@ function PersonaNewComponent({
   // Update form state when server data changes
   // Use personaData directly in dependency array, not getInitialFormState
   useEffect(() => {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "PersonaNew.tsx:238",
-        message: "formState sync effect triggered",
-        data: {
-          hasPersonaData: !!personaData,
-          personaExists: personaData?.persona_exists || false,
-          nameId: personaData?.name_id || null,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "A",
-      }),
-    }).catch(() => {});
-    // #endregion
     const newState = getInitialFormState();
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "PersonaNew.tsx:240",
-        message: "comparing formState",
-        data: {
-          prevNameId: formState.name_id,
-          newNameId: newState.name_id,
-          prevColorId: formState.color_id,
-          newColorId: newState.color_id,
-          prevDeptIds: formState.department_ids.length,
-          newDeptIds: newState.department_ids.length,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "A",
-      }),
-    }).catch(() => {});
-    // #endregion
     setFormState((prev) => {
       // Only update if resource IDs actually changed
       if (
@@ -477,47 +377,8 @@ function PersonaNewComponent({
         JSON.stringify(prev.example_ids) !==
           JSON.stringify(newState.example_ids)
       ) {
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "PersonaNew.tsx:255",
-              message: "formState updated",
-              data: {
-                nameIdChanged: prev.name_id !== newState.name_id,
-                colorIdChanged: prev.color_id !== newState.color_id,
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "A",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion
         return newState;
       }
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "PersonaNew.tsx:257",
-            message: "formState unchanged",
-            data: {},
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "A",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       return prev;
     });
     // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
@@ -557,44 +418,7 @@ function PersonaNewComponent({
 
   // Sync URL draftId to profile context
   useEffect(() => {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "PersonaNew.tsx:280",
-        message: "draftId sync effect triggered",
-        data: {
-          draftId,
-          selectedDraftId,
-          willUpdate: draftId !== selectedDraftId,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "D",
-      }),
-    }).catch(() => {});
-    // #endregion
     if (draftId !== selectedDraftId) {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "PersonaNew.tsx:282",
-            message: "updating selectedDraftId in profile context",
-            data: { newDraftId: draftId },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "D",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       setSelectedDraftId(draftId);
     }
   }, [draftId, selectedDraftId, setSelectedDraftId]);
@@ -640,27 +464,6 @@ function PersonaNewComponent({
   // Draft change listener - watches resource IDs and patches draft
   // Only triggers when the payload actually changes, not when version changes
   useEffect(() => {
-    // #region agent log
-    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        location: "PersonaNew.tsx:287",
-        message: "draft listener effect triggered",
-        data: {
-          draftId,
-          draftPatchKey,
-          lastPatchedKey: lastPatchedKeyRef.current,
-          willPatch: lastPatchedKeyRef.current !== draftPatchKey,
-          hasPatchAction: !!patchPersonaDraftActionRef.current,
-        },
-        timestamp: Date.now(),
-        sessionId: "debug-session",
-        runId: "run1",
-        hypothesisId: "B",
-      }),
-    }).catch(() => {});
-    // #endregion
     const hasResourceIds =
       formState.name_id ||
       formState.description_id ||
@@ -673,72 +476,15 @@ function PersonaNewComponent({
       formState.example_ids.length > 0;
 
     if (!hasResourceIds || !patchPersonaDraftActionRef.current) {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "PersonaNew.tsx:299",
-            message: "draft listener early return",
-            data: {
-              hasResourceIds,
-              hasPatchAction: !!patchPersonaDraftActionRef.current,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "B",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       return;
     }
 
     // ✅ If nothing changed since the last successful patch, do nothing.
     if (lastPatchedKeyRef.current === draftPatchKey) {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "PersonaNew.tsx:303",
-            message: "draft listener skipping - payload unchanged",
-            data: { draftPatchKey },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "B",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       return;
     }
 
     const timer = setTimeout(async () => {
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "PersonaNew.tsx:303",
-            message: "calling patchPersonaDraftAction",
-            data: { draftId, expectedVersion: lastSavedVersionRef.current },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "B",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
       try {
         if (!patchPersonaDraftActionRef.current) return;
         const result = await patchPersonaDraftActionRef.current({
@@ -756,53 +502,12 @@ function PersonaNewComponent({
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "PersonaNew.tsx:320",
-              message: "patchPersonaDraftAction completed",
-              data: {
-                resultDraftId: result.draft_id,
-                newVersion: result.new_version,
-                currentDraftId: draftId,
-                willUpdateDraftId: !draftId && !!result.draft_id,
-              },
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "B",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion
 
         // Mark this payload as patched so we don't loop
         lastPatchedKeyRef.current = draftPatchKey;
 
         if (!draftId && result.draft_id) {
           // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
-          // #region agent log
-          fetch(
-            "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                location: "PersonaNew.tsx:322",
-                message: "updating draftId in URL via bridge",
-                data: { newDraftId: result.draft_id },
-                timestamp: Date.now(),
-                sessionId: "debug-session",
-                runId: "run1",
-                hypothesisId: "B",
-              }),
-            }
-          ).catch(() => {});
-          // #endregion
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
 
@@ -815,24 +520,6 @@ function PersonaNewComponent({
       } catch {
         // Failed to save draft - error already logged by API
         // Don't update lastPatchedKeyRef on failure so we retry on next change
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              location: "PersonaNew.tsx:325",
-              message: "patchPersonaDraftAction failed",
-              data: {},
-              timestamp: Date.now(),
-              sessionId: "debug-session",
-              runId: "run1",
-              hypothesisId: "B",
-            }),
-          }
-        ).catch(() => {});
-        // #endregion
       }
     }, 1000);
 
