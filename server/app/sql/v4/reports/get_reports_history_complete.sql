@@ -133,12 +133,12 @@ WITH params AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 -- Expanded cohort list: union of provided cohortIds + profileId cohorts (reports always filters by profile)
 expanded_history_cohort_ids AS (
@@ -166,8 +166,8 @@ history_attempts AS (
         COALESCE(sdd.department_ids, NULL) as department_ids
     FROM simulation_attempts sa
     JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
-    JOIN simulations sim ON sim.id = sa.simulation_id
-    JOIN profiles p_attempt ON p_attempt.id = ap.profile_id
+    JOIN simulation sim ON sim.id = sa.simulation_id
+    JOIN profile p_attempt ON p_attempt.id = ap.profile_id
     LEFT JOIN (
         SELECT 
             sd.simulation_id,
@@ -235,7 +235,7 @@ profile_options_cte AS (
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') AS profile_name,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
-    JOIN profiles p ON p.id = haf.profile_id
+    JOIN profile p ON p.id = haf.profile_id
     GROUP BY haf.profile_id, p.id
     ORDER BY profile_name
 ),
@@ -246,7 +246,7 @@ simulation_options_cte AS (
         (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_name,
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
-    JOIN simulations s ON s.id = haf.simulation_id
+    JOIN simulation s ON s.id = haf.simulation_id
     GROUP BY haf.simulation_id, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
     ORDER BY simulation_name
 ),
@@ -258,7 +258,7 @@ scenario_options_cte AS (
         COUNT(DISTINCT haf.attempt_id) AS count
     FROM history_attempts_filtered haf
     JOIN attempt_chats ac ON ac.attempt_id = haf.attempt_id
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chat sc ON sc.id = ac.chat_id
     JOIN scenarios s ON s.id = sc.scenario_id
     WHERE sc.scenario_id IS NOT NULL
     GROUP BY sc.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
@@ -282,7 +282,7 @@ attempt_scenario_ids AS (
         ac.attempt_id,
         ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
     FROM attempt_chats ac
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chat sc ON sc.id = ac.chat_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
     GROUP BY ac.attempt_id
 ),
@@ -305,7 +305,7 @@ history_chat_rollup AS (
         MAX(sc.created_at) AS last_activity_at,
         array_agg(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids_seen
     FROM attempt_chats ac
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chat sc ON sc.id = ac.chat_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY ac.attempt_id
 ),
@@ -315,22 +315,22 @@ history_chat_grades AS (
         c.id AS chat_id,
         scg.score,
         rga.rubric_id
-    FROM grades scg
+    FROM grade scg
     LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-    JOIN runs r ON r.id = scg.run_id
+    JOIN run r ON r.id = scg.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN grade_groups gg ON gg.group_id = gr.group_id
-    JOIN chats c ON c.id = gg.chat_id
+    JOIN chat c ON c.id = gg.chat_id
     WHERE EXISTS (
-        SELECT 1 FROM runs r_check
+        SELECT 1 FROM run r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
         JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-        JOIN chats c_check ON c_check.id = gg_check.chat_id
+        JOIN chat c_check ON c_check.id = gg_check.chat_id
         WHERE r_check.id = scg.run_id
     )
       AND c.id IN (
         SELECT sc.id FROM attempt_chats ac
-        JOIN chats sc ON sc.id = ac.chat_id
+        JOIN chat sc ON sc.id = ac.chat_id
         WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     )
     ORDER BY c.id, scg.created_at DESC
@@ -360,7 +360,7 @@ history_grade_rollup AS (
             THEN (hcg.score / COALESCE(p_r.value, p_fallback_scenario.value, p_fallback_first.value, 1)::numeric * 100.0)
             ELSE 0 END) AS sum_grade_percent
     FROM attempt_chats ac
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chat sc ON sc.id = ac.chat_id
     JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback_scenario ON ssrga_fallback_scenario.simulation_id = sa.simulation_id
@@ -392,35 +392,35 @@ history_elapsed_time AS (
             SUM(
                 CASE 
                     WHEN sc.completed AND hcg.chat_id IS NOT NULL THEN
-                        (SELECT COALESCE(t.time_taken, 0) FROM grades scg 
+                        (SELECT COALESCE(t.time_taken, 0) FROM grade scg 
                          LEFT JOIN grade_times gt ON gt.grade_id = scg.id AND gt.active = TRUE
                          LEFT JOIN times t ON t.id = gt.time_id
-                         JOIN runs r ON r.id = scg.run_id
+                         JOIN run r ON r.id = scg.run_id
                          JOIN group_runs gr ON gr.run_id = r.id
                          JOIN grade_groups gg ON gg.group_id = gr.group_id
-                         JOIN chats c ON c.id = gg.chat_id
+                         JOIN chat c ON c.id = gg.chat_id
                          WHERE c.id = sc.id 
                            AND EXISTS (
-                               SELECT 1 FROM runs r_check
+                               SELECT 1 FROM run r_check
                                JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                                JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                               JOIN chats c_check ON c_check.id = gg_check.chat_id
+                               JOIN chat c_check ON c_check.id = gg_check.chat_id
                                WHERE r_check.id = scg.run_id
                            )
                          ORDER BY scg.created_at DESC LIMIT 1)
                     WHEN sc.completed THEN
                         EXTRACT(EPOCH FROM (
-                            (SELECT scg.created_at FROM grades scg 
-                             JOIN runs r ON r.id = scg.run_id
+                            (SELECT scg.created_at FROM grade scg 
+                             JOIN run r ON r.id = scg.run_id
                              JOIN group_runs gr ON gr.run_id = r.id
                              JOIN grade_groups gg ON gg.group_id = gr.group_id
-                             JOIN chats c ON c.id = gg.chat_id
+                             JOIN chat c ON c.id = gg.chat_id
                              WHERE c.id = sc.id 
                                AND EXISTS (
-                                   SELECT 1 FROM runs r_check
+                                   SELECT 1 FROM run r_check
                                    JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                                    JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                                   JOIN chats c_check ON c_check.id = gg_check.chat_id
+                                   JOIN chat c_check ON c_check.id = gg_check.chat_id
                                    WHERE r_check.id = scg.run_id
                                )
                              ORDER BY scg.created_at DESC LIMIT 1) - sc.created_at
@@ -432,7 +432,7 @@ history_elapsed_time AS (
             0
         ) AS elapsed_seconds
     FROM attempt_chats ac
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chat sc ON sc.id = ac.chat_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     GROUP BY ac.attempt_id
@@ -443,7 +443,7 @@ history_personas AS (
         ac.attempt_id,
         array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
     FROM attempt_chats ac
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chat sc ON sc.id = ac.chat_id
     JOIN scenarios scn ON scn.id = sc.scenario_id
     LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
@@ -454,7 +454,7 @@ history_sim_scenario_count AS (
     SELECT
         s.id AS simulation_id,
         COUNT(ss.scenario_id)::int AS scenario_count
-    FROM simulations s
+    FROM simulation s
     LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
     WHERE s.id IN (SELECT simulation_id FROM history_attempts_final)
     GROUP BY s.id
@@ -464,7 +464,7 @@ history_scenario_ids AS (
     SELECT
         s.id AS simulation_id,
         ARRAY_AGG(ss.scenario_id ORDER BY ss.position)::uuid[] AS scenario_ids_assigned
-    FROM simulations s
+    FROM simulation s
     LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
     WHERE s.id IN (SELECT simulation_id FROM history_attempts_final)
     GROUP BY s.id
@@ -475,7 +475,7 @@ history_first_scenario AS (
         ac.attempt_id,
         sc.scenario_id AS practice_scenario_id
     FROM attempt_chats ac
-    JOIN chats sc ON sc.id = ac.chat_id
+    JOIN chat sc ON sc.id = ac.chat_id
     WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
     ORDER BY ac.attempt_id, sc.created_at ASC
 ),
@@ -555,10 +555,10 @@ attempt_joined AS (
             0
         ) as time_limit_seconds
     FROM attempt_rollup ar
-    JOIN simulations s ON s.id = ar.simulation_id
+    JOIN simulation s ON s.id = ar.simulation_id
     LEFT JOIN history_scenario_ids hsi ON hsi.simulation_id = ar.simulation_id
     LEFT JOIN simulation_rubrics sr ON sr.simulation_id = s.id
-    JOIN profiles p ON p.id = ar.profile_id
+    JOIN profile p ON p.id = ar.profile_id
 ),
 attempt_cohort_names AS (
     SELECT

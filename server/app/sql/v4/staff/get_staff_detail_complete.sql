@@ -99,13 +99,13 @@ resolve_current_profile_id AS (
 ),
 current_user_role AS (
     SELECT role FROM resolve_current_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    JOIN profile p ON p.id = rpi.resolved_profile_id
 ),
 actor_profile AS (
     SELECT 
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM resolve_current_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    JOIN profile p ON p.id = rpi.resolved_profile_id
     WHERE rpi.resolved_profile_id IS NOT NULL
 ),
 target_profile AS (
@@ -119,7 +119,7 @@ target_profile AS (
         EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE),
         prl.requests_per_day,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), '') as name
-    FROM profiles p
+    FROM profile p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     WHERE p.id = (SELECT target_profile_id FROM params)
@@ -127,7 +127,7 @@ target_profile AS (
 ),
 staff_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM profiles WHERE id = (SELECT target_profile_id FROM params)
+        SELECT 1 FROM profile WHERE id = (SELECT target_profile_id FROM params)
     )::boolean as staff_exists
 ),
 role_visibility_check AS (
@@ -170,7 +170,7 @@ target_profile_departments AS (
 ),
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
-    FROM cohorts c
+    FROM cohort c
     WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
 ),
 cohorts_data AS (
@@ -178,7 +178,7 @@ cohorts_data AS (
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
-    FROM cohorts c
+    FROM cohort c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 departments_data AS (

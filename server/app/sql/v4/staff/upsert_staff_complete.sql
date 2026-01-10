@@ -87,11 +87,11 @@ user_profile AS (
     SELECT 
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.current_profile_id
+    JOIN profile p ON p.id = x.current_profile_id
 ),
 current_user_role AS (
     -- Get current user's role for validation
-    SELECT p.role FROM params x JOIN profiles p ON p.id = x.current_profile_id
+    SELECT p.role FROM params x JOIN profile p ON p.id = x.current_profile_id
 ),
 role_validation AS (
     -- Validate role hierarchy for each profile
@@ -165,8 +165,8 @@ last_names_resources AS (
     RETURNING id as name_id, name
 ),
 profile_upsert AS (
-    -- Insert or update profiles without first_name, last_name, active columns
-    INSERT INTO profiles (
+    -- Insert or UPDATE profile without first_name, last_name, active columns
+    INSERT INTO profile (
         id, role, updated_at
     )
     SELECT
@@ -176,9 +176,9 @@ profile_upsert AS (
     FROM profile_upsert_with_idx pwi
     ON CONFLICT (id) DO UPDATE SET
         role = CASE 
-            WHEN EXISTS (SELECT 1 FROM role_validation rv JOIN profile_upsert_with_idx pwi2 ON pwi2.profile_idx = rv.profile_idx WHERE pwi2.profile_id = profiles.id AND rv.can_assign = true) 
+            WHEN EXISTS (SELECT 1 FROM role_validation rv JOIN profile_upsert_with_idx pwi2 ON pwi2.profile_idx = rv.profile_idx WHERE pwi2.profile_id = profile.id AND rv.can_assign = true) 
             THEN EXCLUDED.role::profile_role
-            ELSE profiles.role::profile_role
+            ELSE profile.role::profile_role
         END,
         updated_at = NOW()
     RETURNING id

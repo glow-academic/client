@@ -28,7 +28,7 @@ AS $$
                         CASE 
                             WHEN department_id IS NOT NULL AND department_id != '' THEN
                                 (SELECT sdg.profile_id
-                                 FROM settings s
+                                 FROM setting s
                                  JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                                  JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
                                  WHERE ds.department_id = department_id::uuid AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
@@ -37,7 +37,7 @@ AS $$
                         END,
                         -- Fallback to default settings (no department links) - always try this
                         (SELECT sdg.profile_id
-                         FROM settings s
+                         FROM setting s
                          JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
                          WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
                            AND NOT EXISTS (
@@ -52,7 +52,7 @@ AS $$
                         CASE 
                             WHEN department_id IS NOT NULL AND department_id != '' THEN
                                 (SELECT sda.profile_id
-                                 FROM settings s
+                                 FROM setting s
                                  JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                                  JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
                                  WHERE ds.department_id = department_id::uuid AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
@@ -61,7 +61,7 @@ AS $$
                         END,
                         -- Fallback to default settings (no department links) - always try this
                         (SELECT sda.profile_id
-                         FROM settings s
+                         FROM setting s
                          JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
                          WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
                            AND NOT EXISTS (

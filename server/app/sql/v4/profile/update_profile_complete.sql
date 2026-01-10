@@ -68,7 +68,7 @@ WITH params AS (
 ),
 profile_exists_check AS (
     -- Check if profile exists
-    SELECT EXISTS(SELECT 1 FROM profiles WHERE id = (SELECT target_profile_id FROM params))::boolean as profile_exists
+    SELECT EXISTS(SELECT 1 FROM profile WHERE id = (SELECT target_profile_id FROM params))::boolean as profile_exists
 ),
 actor_profile AS (
     SELECT 
@@ -78,7 +78,7 @@ actor_profile AS (
             ''
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 -- Insert/update first_name in names table if provided
 first_name_resource AS (
@@ -100,7 +100,7 @@ last_name_resource AS (
 ),
 profile_update AS (
     -- Update profile fields (only update non-NULL parameters, keep existing values for NULL)
-    UPDATE profiles
+    UPDATE profile
     SET 
         last_login = COALESCE((SELECT last_login FROM params), last_login),
         role = COALESCE((SELECT role FROM params)::profile_role, role),

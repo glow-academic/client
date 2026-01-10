@@ -292,28 +292,28 @@ cohort_simulation_stats AS (
         ) as success_rate,
         MAX(sa.created_at) as last_used
     FROM all_simulation_ids asi
-    JOIN simulations s ON s.id = asi.simulation_id
+    JOIN simulation s ON s.id = asi.simulation_id
     LEFT JOIN simulation_attempts sa ON sa.simulation_id = asi.simulation_id 
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     LEFT JOIN cohort_profile_ids cp ON cp.profile_id = ap.profile_id
     LEFT JOIN attempt_chats ac ON ac.attempt_id = sa.id
-    LEFT JOIN chats sc ON sc.id = ac.chat_id
-    LEFT JOIN grades scg ON EXISTS (
-        SELECT 1 FROM runs r_check
+    LEFT JOIN chat sc ON sc.id = ac.chat_id
+    LEFT JOIN grade scg ON EXISTS (
+        SELECT 1 FROM run r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
         JOIN groups g_check ON g_check.id = gr_check.group_id
         JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chats c_check ON c_check.id = cg_check.chat_id
+        JOIN chat c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    LEFT JOIN runs r_cohort_new ON r_cohort_new.id = scg.run_id
+    LEFT JOIN run r_cohort_new ON r_cohort_new.id = scg.run_id
     LEFT JOIN LATERAL (
         SELECT DISTINCT c.id AS chat_id
-        FROM runs r
+        FROM run r
         JOIN group_runs gr ON gr.run_id = r.id
         JOIN groups g ON g.id = gr.group_id
         JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chats c ON c.id = cg.chat_id
+        JOIN chat c ON c.id = cg.chat_id
         WHERE r.id = r_cohort_new.id AND c.id = sc.id
         LIMIT 1
     ) chat_lookup_cohort ON true
@@ -376,7 +376,7 @@ valid_profiles AS (
 ),
 cross_dept_simulations AS (
     SELECT DISTINCT s.id::text as simulation_id
-    FROM simulations s
+    FROM simulation s
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
         AND NOT EXISTS (
             SELECT 1 FROM simulation_departments sd2 
@@ -389,7 +389,7 @@ department_simulation_ids AS (
         ARRAY_AGG(DISTINCT s.id::text) FILTER (WHERE s.id IS NOT NULL) as simulation_ids
     FROM valid_departments d
     LEFT JOIN simulation_departments sd ON sd.department_id = d.id AND sd.active = true
-    LEFT JOIN simulations s ON s.id = sd.simulation_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    LEFT JOIN simulation s ON s.id = sd.simulation_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     GROUP BY d.id
 ),
 department_simulation_ids_with_cross AS (
@@ -405,7 +405,7 @@ department_profile_ids AS (
         ARRAY_AGG(DISTINCT p.id::text) FILTER (WHERE p.id IS NOT NULL) as staff_ids
     FROM valid_departments d
     LEFT JOIN profile_departments pd ON pd.department_id = d.id
-    LEFT JOIN profiles p ON p.id = pd.profile_id AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+    LEFT JOIN profile p ON p.id = pd.profile_id AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     GROUP BY d.id
 ),
 simulation_mapping_data AS (
@@ -476,7 +476,7 @@ profile_mapping_data AS (
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
         COALESCE((SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1), '') as description
     FROM params x
-    JOIN profiles p ON p.id IN (SELECT profile_id FROM cohort_profile_ids)
+    JOIN profile p ON p.id IN (SELECT profile_id FROM cohort_profile_ids)
 ),
 profile_active_cohort_links AS (
     SELECT 
@@ -522,7 +522,7 @@ recent_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as run_count
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY mrp.profile_id
@@ -547,7 +547,7 @@ cohort_mapping_data AS (
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
-    FROM cohorts c
+    FROM cohort c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids_for_staff)
 ),
 department_mapping_for_staff_data AS (
@@ -555,12 +555,12 @@ department_mapping_for_staff_data AS (
         d.id::text as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM departments d
+    FROM department d
     WHERE d.id IN (SELECT department_id FROM all_department_ids_for_staff)
     AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 user_profile_for_staff AS (
-    SELECT role FROM params x JOIN profiles p ON p.id = x.profile_id
+    SELECT role FROM params x JOIN profile p ON p.id = x.profile_id
 ),
 user_profile_for_cohort AS (
     SELECT 
@@ -571,7 +571,7 @@ user_profile_for_cohort AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 primary_department_id AS (
     SELECT department_id

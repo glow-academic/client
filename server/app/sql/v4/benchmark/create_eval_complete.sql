@@ -50,9 +50,9 @@ WITH params AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 validate_create_permissions AS (
     SELECT validate_department_create_permissions(
@@ -81,7 +81,7 @@ description_resource AS (
 ),
 new_eval AS (
     -- Create eval (without name/description/active/dynamic/use_groups columns)
-    INSERT INTO evals (created_at, updated_at)
+    INSERT INTO eval (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM params
     RETURNING id as eval_id

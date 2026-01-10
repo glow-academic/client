@@ -164,7 +164,7 @@ previous_messages_all_runs AS (
     FROM previous_runs_in_group prig
     JOIN group_runs gr ON gr.run_id = prig.run_id
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     ORDER BY gr.idx ASC, m.created_at ASC  -- Order by run idx first, then message created_at
@@ -189,7 +189,7 @@ chat_info AS (
         gd.trace_id,
         sc.created_at,
         sc.completed
-    FROM chats sc
+    FROM chat sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     CROSS JOIN group_data gd
     WHERE sc.id = (SELECT chat_id FROM params)
@@ -231,7 +231,7 @@ simulation_info AS (
              WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
             0
         ) as time_limit
-    FROM simulations s
+    FROM simulation s
     CROSS JOIN scenario_rubric_grade_agent srga
     WHERE s.id = (SELECT simulation_id FROM attempt_info)
 ),
@@ -255,7 +255,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -271,7 +271,7 @@ profile_primary_department AS (
 ),
 default_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -281,7 +281,7 @@ default_settings AS (
 ),
 dept_specific_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
@@ -297,7 +297,7 @@ settings_with_keys AS (
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -307,7 +307,7 @@ dept_specific_settings_with_keys AS (
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
@@ -324,7 +324,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT s.id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
+            (SELECT s.id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
         ) as settings_id
 ),
 standard_groups_data AS (
@@ -488,7 +488,7 @@ standards_aggregated AS (
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO run (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id
@@ -528,7 +528,7 @@ link_existing_messages AS (
     FROM previous_runs_in_group prig
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     WHERE m.role IN ('system'::message_role, 'developer'::message_role)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()

@@ -1,6 +1,6 @@
 -- Create eval grade record
 -- Converted to PostgreSQL function
--- Note: eval_id removed from grades table - derive from test_runs → tests → attempt_tests → eval_attempts → evals
+-- Note: eval_id removed FROM grade table - derive from test_runs → tests → attempt_tests → eval_attempts → evals
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -42,7 +42,7 @@ BEGIN
     -- Get chat title if run is linked to a chat
     SELECT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) INTO v_chat_title
     FROM chat_runs cr
-    JOIN chats c ON c.id = cr.chat_id
+    JOIN chat c ON c.id = cr.chat_id
     WHERE cr.run_id = run_id
     LIMIT 1;
     
@@ -71,8 +71,8 @@ BEGIN
         END IF;
     END IF;
     
-    -- Create grade (time_taken removed from grades table)
-    INSERT INTO grades (run_id, rubric_grade_agent_id, description, passed, score, created_at)
+    -- Create grade (time_taken removed FROM grade table)
+    INSERT INTO grade (run_id, rubric_grade_agent_id, description, passed, score, created_at)
     VALUES (run_id, rubric_grade_agent_id, description, passed, score::integer, NOW())
     RETURNING id INTO v_grade_id;
     

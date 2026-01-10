@@ -33,7 +33,7 @@ DECLARE
     v_conversation_id uuid;
 BEGIN
     -- Update grade
-    UPDATE grades 
+    UPDATE grade 
     SET description = description_param,
         passed = passed_param,
         score = score_param

@@ -213,14 +213,14 @@ draft_payload_data AS (
 ),
 settings_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM settings WHERE id = (SELECT settings_id FROM params)
+        SELECT 1 FROM setting WHERE id = (SELECT settings_id FROM params)
     )::boolean as settings_exists
 ),
 user_profile AS (
     SELECT 
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 settings_auths_with_items AS (
     -- Get linked auths for this settings with nested auth_items
@@ -237,7 +237,7 @@ settings_auths_with_items AS (
             ) FILTER (WHERE ai.id IS NOT NULL),
             '{}'::types.q_get_settings_detail_v4_auth_item[]
         ) as auth_items
-    FROM settings s
+    FROM setting s
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
     JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
     LEFT JOIN auth_items ai_j ON ai_j.auth_id = a.id
@@ -269,7 +269,7 @@ settings_providers_data AS (
             '{}'::types.q_get_settings_detail_v4_provider[]
         ) as providers,
         ARRAY_AGG(sp.provider::text ORDER BY sp.provider::text) as provider_ids
-    FROM settings s
+    FROM setting s
     JOIN setting_providers sp ON sp.settings_id = s.id AND sp.active = true
     WHERE s.id = (SELECT settings_id FROM params)
 ),
@@ -394,7 +394,7 @@ user_departments AS (
 user_profile_role AS (
     SELECT role
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 -- Get department_ids via setting_provider_keys -> settings -> department_settings
 key_departments_data AS (
@@ -402,7 +402,7 @@ key_departments_data AS (
         spk.key_id,
         ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
     FROM setting_provider_keys spk
-    JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE spk.active = true
     GROUP BY spk.key_id
@@ -426,14 +426,14 @@ settings_keys_data AS (
             ),
             '{}'::types.q_get_settings_detail_v4_key[]
         ) as keys
-    FROM keys k
+    FROM key k
     LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
     CROSS JOIN user_profile_role upr
     WHERE 
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
         EXISTS (
             SELECT 1 FROM setting_provider_keys spk
-            JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+            JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
             WHERE spk.key_id = k.id AND spk.active = true
@@ -447,7 +447,7 @@ settings_default_account_data AS (
         sda.profile_id as default_admin_profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as default_admin_name
     FROM settings_default_account sda
-    JOIN profiles p ON p.id = sda.profile_id
+    JOIN profile p ON p.id = sda.profile_id
     WHERE sda.settings_id = (SELECT settings_id FROM params) AND sda.active = true
     LIMIT 1
 ),
@@ -457,7 +457,7 @@ settings_default_guest_data AS (
         sdg.profile_id as default_guest_profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as default_guest_name
     FROM settings_default_guest sdg
-    JOIN profiles p ON p.id = sdg.profile_id
+    JOIN profile p ON p.id = sdg.profile_id
     WHERE sdg.settings_id = (SELECT settings_id FROM params) AND sdg.active = true
     LIMIT 1
 ),
@@ -647,7 +647,7 @@ SELECT
     ) as auth_value_mapping
 FROM settings_exists_check sec
 CROSS JOIN params p
-LEFT JOIN settings s ON s.id = p.settings_id
+LEFT JOIN setting s ON s.id = p.settings_id
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
 LEFT JOIN settings_provider_keys_data spkd ON true

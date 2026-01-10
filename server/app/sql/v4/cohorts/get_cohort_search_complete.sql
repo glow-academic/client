@@ -74,9 +74,9 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT role FROM params x JOIN profiles p ON p.id = x.profile_id), 'guest') as role,
+        COALESCE((SELECT role FROM params x JOIN profile p ON p.id = x.profile_id), 'guest') as role,
         COALESCE(
-            (SELECT (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) FROM params x JOIN profiles p ON p.id = x.profile_id),
+            (SELECT (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) FROM params x JOIN profile p ON p.id = x.profile_id),
             'System'
         ) as actor_name
     FROM params
@@ -108,7 +108,7 @@ recent_runs AS (
     SELECT
         rp.profile_id,
         COUNT(*) as run_count
-    FROM runs r
+    FROM run r
     JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     WHERE r.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY rp.profile_id
@@ -123,7 +123,7 @@ profile_total_runs AS (
 ),
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
-    FROM cohorts c
+    FROM cohort c
     WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
 ),
 cohorts_data AS (
@@ -131,7 +131,7 @@ cohorts_data AS (
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
-    FROM cohorts c
+    FROM cohort c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 departments_data AS (
@@ -139,7 +139,7 @@ departments_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM departments d
+    FROM department d
     WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 staff_data AS (

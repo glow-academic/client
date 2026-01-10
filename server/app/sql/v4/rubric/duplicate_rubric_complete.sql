@@ -37,7 +37,7 @@ actor_profile AS (
         x.profile_id,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 original_rubric AS (
     SELECT 
@@ -46,7 +46,7 @@ original_rubric AS (
         (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) as description,
         (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
         (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points
-    FROM rubrics r
+    FROM rubric r
     WHERE r.id = (SELECT original_rubric_id FROM params)
 ),
 original_departments AS (
@@ -138,7 +138,7 @@ all_pass_points AS (
 ),
 new_rubric AS (
     -- Insert rubric without name/description/active/points/pass_points columns
-    INSERT INTO rubrics (created_at, updated_at)
+    INSERT INTO rubric (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM original_rubric
     RETURNING id as rubric_id

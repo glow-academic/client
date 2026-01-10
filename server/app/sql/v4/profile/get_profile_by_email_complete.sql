@@ -76,7 +76,7 @@ target_profile AS (
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
-    FROM profiles p
+    FROM profile p
     JOIN profile_emails pe_match ON pe_match.profile_id = p.id AND pe_match.email = (SELECT email FROM params) AND pe_match.active = true
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE AND pd.active = true

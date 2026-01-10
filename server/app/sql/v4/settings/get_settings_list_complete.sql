@@ -70,7 +70,7 @@ actor_profile AS (
     SELECT 
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 settings_departments_data AS (
     SELECT 
@@ -88,7 +88,7 @@ user_departments AS (
 user_profile AS (
     SELECT role
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 -- Get department_ids via setting_provider_keys -> settings -> department_settings
 key_departments_data AS (
@@ -96,7 +96,7 @@ key_departments_data AS (
         spk.key_id,
         ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
     FROM setting_provider_keys spk
-    JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE spk.active = true
     GROUP BY spk.key_id
@@ -120,14 +120,14 @@ settings_keys_data AS (
             ),
             '{}'::types.q_get_settings_list_v4_key[]
         ) as keys
-    FROM keys k
+    FROM key k
     LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
     CROSS JOIN user_profile up
     WHERE 
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
         EXISTS (
             SELECT 1 FROM setting_provider_keys spk
-            JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+            JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
             WHERE spk.key_id = k.id AND spk.active = true
@@ -147,7 +147,7 @@ SELECT
         '{}'::types.q_get_settings_list_v4_setting[]
     ) as settings,
     COALESCE(skd.keys, '{}'::types.q_get_settings_list_v4_key[]) as keys
-FROM settings s
+FROM setting s
 CROSS JOIN actor_profile ap
 LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
 LEFT JOIN settings_keys_data skd ON true

@@ -75,7 +75,7 @@ WITH params AS (
 get_tool_id AS (
     SELECT id as tool_id
     FROM params p
-    JOIN tools t ON t.name = p.tool_name AND t.active = true
+    JOIN tool t ON t.name = p.tool_name AND t.active = true
     WHERE p.tool_name IS NOT NULL
     LIMIT 1
 ),
@@ -132,12 +132,12 @@ finalize_tool_call AS (
 get_existing_message AS (
     SELECT m.id as message_id
     FROM params p
-    JOIN messages m ON m.id = p.message_id
+    JOIN message m ON m.id = p.message_id
     WHERE p.message_id IS NOT NULL
     LIMIT 1
 ),
 create_message_if_needed AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO message (role, completed, audio, created_at, updated_at)
     SELECT 'assistant'::message_role, p.is_complete, true, NOW(), NOW()
     FROM params p
     WHERE p.message_id IS NULL
@@ -203,7 +203,7 @@ update_message_content AS (
 ),
 -- Mark message as completed if is_complete
 complete_message AS (
-    UPDATE messages m
+    UPDATE message m
     SET completed = p_params.is_complete,
         updated_at = NOW()
     FROM params p_params

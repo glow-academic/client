@@ -145,14 +145,14 @@ profile_primary_department AS (
 ),
 valid_department_ids_data AS (
     SELECT array_agg(d.id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as valid_department_ids
-    FROM departments d
+    FROM department d
     WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 recent_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as run_count
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY mrp.profile_id
@@ -169,7 +169,7 @@ user_profile AS (
         role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 all_cohort_ids AS (
     SELECT DISTINCT unnest(cohort_ids)::uuid as cohort_id
@@ -184,7 +184,7 @@ cohorts_data AS (
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
-    FROM cohorts c
+    FROM cohort c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 departments_data AS (
@@ -192,14 +192,14 @@ departments_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM departments d
+    FROM department d
     WHERE (d.id IN (SELECT department_id FROM user_departments) OR d.id IN (SELECT department_id FROM all_department_ids))
     AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 -- Trend data CTEs
 active_users_count AS (
     SELECT COUNT(DISTINCT p.id) as count
-    FROM profiles p
+    FROM profile p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
     AND EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = true)
@@ -208,7 +208,7 @@ admin_users_by_date AS (
     SELECT 
         DATE(p.created_at) as date,
         COUNT(DISTINCT p.id) as count
-    FROM profiles p
+    FROM profile p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
     AND p.role IN ('admin'::profile_role, 'superadmin'::profile_role)
@@ -225,7 +225,7 @@ instructional_users_by_date AS (
     SELECT 
         DATE(p.created_at) as date,
         COUNT(DISTINCT p.id) as count
-    FROM profiles p
+    FROM profile p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
     AND p.role = 'instructional'::profile_role
@@ -242,7 +242,7 @@ member_users_by_date AS (
     SELECT 
         DATE(p.created_at) as date,
         COUNT(DISTINCT p.id) as count
-    FROM profiles p
+    FROM profile p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
     AND p.role = 'member'::profile_role
@@ -259,7 +259,7 @@ total_requests_by_date AS (
     SELECT 
         DATE(mr.created_at) as date,
         COUNT(*) as count
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
@@ -274,7 +274,7 @@ total_requests_cumulative AS (
 ),
 earliest_date AS (
     SELECT MIN(DATE(p.created_at)) as date
-    FROM profiles p
+    FROM profile p
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)
 ),
@@ -316,7 +316,7 @@ staff_rows AS (
         COALESCE(pacl.active_cohort_count, 0) as active_cohort_count,
         COALESCE(pacl_all.total_cohort_links, 0) as total_cohort_links,
         up.role as current_user_role_for_permissions
-    FROM profiles p
+    FROM profile p
     LEFT JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id

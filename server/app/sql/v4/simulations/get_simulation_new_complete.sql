@@ -211,7 +211,7 @@ user_profile AS (
         role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 primary_department_id AS (
     SELECT department_id
@@ -226,7 +226,7 @@ cohort_usage AS (
 ),
 user_department_ids AS (
     SELECT ARRAY_AGG(id) as ids
-    FROM departments d
+    FROM department d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -236,7 +236,7 @@ valid_scenarios_list AS (
         s.id,
         (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description
-    FROM scenarios s
+    FROM scenario s
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
@@ -279,7 +279,7 @@ valid_rubrics_data AS (
         r.id,
         (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
         COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description
-    FROM rubrics r
+    FROM rubric r
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
     WHERE EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
@@ -305,7 +305,7 @@ parameters_data AS (
         COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
         EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter
-    FROM parameters p
+    FROM parameter p
     JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_department_ids udi
@@ -333,7 +333,7 @@ parameter_items_data AS (
         (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
         COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
         (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as parameter_name
-    FROM fields f
+    FROM field f
     JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     WHERE p.id IN (SELECT id FROM parameters_data)
 ),
@@ -450,7 +450,7 @@ scenarios_full_data AS (
 ),
 user_departments_for_mapping AS (
     SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
-    FROM departments d
+    FROM department d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -506,7 +506,7 @@ agents_data AS (
         ARRAY_AGG(filtered_agents.id ORDER BY filtered_agents.name) as agent_ids
     FROM (
         SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
-        FROM agents a
+        FROM agent a
         JOIN agent_domains adom ON adom.agent_id = a.id
         JOIN domain_artifacts da ON da.domain_id = adom.domain_id
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -519,7 +519,7 @@ agents_data AS (
         UNION
         -- Get rubric agents (member role) from rubric_domains
         SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
-        FROM rubrics r
+        FROM rubric r
         JOIN rubric_domains rd_link ON rd_link.rubric_id = r.id
         JOIN agent_domains adom ON adom.domain_id = rd_link.domain_id
         JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
@@ -530,7 +530,7 @@ agents_data AS (
 -- Auto-select default agents when there's only one option for each role
 valid_hint_agents AS (
     SELECT DISTINCT a.id
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)
@@ -542,7 +542,7 @@ valid_hint_agents AS (
 ),
 valid_simulation_agents AS (
     SELECT DISTINCT a.id
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('scenario' AS artifacts)
@@ -554,7 +554,7 @@ valid_simulation_agents AS (
 ),
 valid_voice_agents AS (
     SELECT DISTINCT a.id
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)
@@ -566,7 +566,7 @@ valid_voice_agents AS (
 ),
 valid_member_agents AS (
     SELECT DISTINCT a.id
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
@@ -578,7 +578,7 @@ valid_member_agents AS (
     UNION
     -- Get rubric agents (member role) from rubric_domains
     SELECT DISTINCT a.id
-    FROM rubrics r
+    FROM rubric r
     JOIN rubric_domains rd_link ON rd_link.rubric_id = r.id
     JOIN agent_domains adom ON adom.domain_id = rd_link.domain_id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)

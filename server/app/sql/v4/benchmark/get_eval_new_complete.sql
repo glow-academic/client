@@ -156,9 +156,9 @@ draft_payload_data AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 user_departments_for_agents AS (
     SELECT DISTINCT pd.department_id
@@ -288,7 +288,7 @@ runs_base AS (
         rp.profile_id,
         r.agent_id,
         rper.persona_id
-    FROM runs r
+    FROM run r
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
@@ -310,7 +310,7 @@ runs_with_names AS (
         END as actor_type
     FROM runs_base rb
     LEFT JOIN models m ON m.id = rb.model_id
-    LEFT JOIN profiles p ON p.id = rb.profile_id
+    LEFT JOIN profile p ON p.id = rb.profile_id
     LEFT JOIN agents a ON a.id = rb.agent_id
     LEFT JOIN personas per ON per.id = rb.persona_id
 ),

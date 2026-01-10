@@ -68,7 +68,7 @@ link_rubric_name AS (
     WHERE gocn.name_id IS NOT NULL
 ),
 update_rubric AS (
-    UPDATE rubrics
+    UPDATE rubric
     SET updated_at = NOW()
     WHERE id = socket_update_rubric_name_v4.rubric_id
     RETURNING id as rubric_id

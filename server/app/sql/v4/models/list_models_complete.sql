@@ -83,7 +83,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 -- Pre-aggregate simulation usage counts for all models
 -- Simulations are linked to models via simulation_text_domain_id/simulation_voice_domain_id -> domains -> agents -> model_id
@@ -93,13 +93,13 @@ simulation_usage AS (
         COUNT(*) as usage_count
     FROM (
         SELECT adom_text.agent_id
-        FROM simulations sim
+        FROM simulation sim
         LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
         LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
         WHERE sd_text.agent_domain_id IS NOT NULL
         UNION ALL
         SELECT adom_voice.agent_id
-        FROM simulations sim
+        FROM simulation sim
         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
         WHERE sd_voice.agent_domain_id IS NOT NULL
@@ -113,7 +113,7 @@ agent_usage AS (
     SELECT 
         am.model_id,
         COUNT(*) as usage_count
-    FROM agents a
+    FROM agent a
     JOIN agent_models am ON am.agent_id = a.id
     GROUP BY am.model_id
 ),
@@ -140,7 +140,7 @@ models_with_usage AS (
         COALESCE((SELECT e.base_url FROM model_endpoints me_j JOIN endpoints e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
         COALESCE(su.usage_count, 0) as simulation_usage_count,
         COALESCE(au.usage_count, 0) as agent_usage_count
-    FROM models m
+    FROM model m
     LEFT JOIN simulation_usage su ON su.model_id = m.id
     LEFT JOIN agent_usage au ON au.model_id = m.id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id

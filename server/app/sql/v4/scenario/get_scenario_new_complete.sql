@@ -309,16 +309,16 @@ extracted_params AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1),
             'System'
         ) as actor_name,
         role as user_role
-    FROM profiles WHERE id = (SELECT profile_id FROM extracted_params)
+    FROM profile WHERE id = (SELECT profile_id FROM extracted_params)
 ),
 user_departments AS (
     SELECT DISTINCT d.id
-    FROM departments d
+    FROM department d
     JOIN profile_departments pd ON pd.department_id = d.id
     CROSS JOIN params p
     WHERE pd.profile_id = p.profile_id AND pd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -327,7 +327,7 @@ department_persona_ids AS (
     SELECT 
         d.id as department_id,
         COALESCE(ARRAY_AGG(p.id ORDER BY p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::uuid[]) as persona_ids
-    FROM departments d
+    FROM department d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN personas p ON EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
@@ -341,7 +341,7 @@ department_document_ids AS (
     SELECT 
         d.id as department_id,
         COALESCE(ARRAY_AGG(doc.id ORDER BY doc.id) FILTER (WHERE doc.id IS NOT NULL), ARRAY[]::uuid[]) as document_ids
-    FROM departments d
+    FROM department d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN documents doc ON EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = doc.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE)
     LEFT JOIN document_departments dd ON dd.document_id = doc.id AND dd.active = true
@@ -352,7 +352,7 @@ department_parameter_ids AS (
     SELECT 
         d.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT p.id) FILTER (WHERE p.id IS NOT NULL), ARRAY[]::uuid[]) as parameter_ids
-    FROM departments d
+    FROM department d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN parameters p ON EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     LEFT JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
@@ -366,7 +366,7 @@ department_field_ids AS (
     SELECT 
         d.id as department_id,
         COALESCE(ARRAY_AGG(f.id ORDER BY f.id) FILTER (WHERE f.id IS NOT NULL), ARRAY[]::uuid[]) as field_ids
-    FROM departments d
+    FROM department d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN fields f ON true
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
@@ -385,7 +385,7 @@ all_departments_array AS (
         COALESCE(ddi.document_ids, ARRAY[]::uuid[]) as document_ids,
         COALESCE(dparami.parameter_ids, ARRAY[]::uuid[]) as parameter_ids,
         COALESCE(dfi.field_ids, ARRAY[]::uuid[]) as field_ids
-    FROM departments d
+    FROM department d
     INNER JOIN user_departments ud ON d.id = ud.id
     LEFT JOIN department_persona_ids dpi ON dpi.department_id = d.id
     LEFT JOIN department_document_ids ddi ON ddi.department_id = d.id
@@ -400,7 +400,7 @@ persona_data AS (
         (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
         (SELECT i.name FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
         false as image_model
-    FROM personas p
+    FROM persona p
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1)
@@ -591,7 +591,7 @@ document_data_base AS (
         d.id,
         (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         ''::text as description
-    FROM documents d
+    FROM document d
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     GROUP BY d.id, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
@@ -665,7 +665,7 @@ document_data_base AS (
         d.id,
         (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         ''::text as description
-    FROM documents d
+    FROM document d
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     AND (SELECT document_ids FROM extracted_params LIMIT 1) IS NOT NULL
     AND array_length((SELECT document_ids FROM extracted_params LIMIT 1), 1) > 0
@@ -735,7 +735,7 @@ document_data_base AS (
         d.id,
         (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         ''::text as description
-    FROM documents d
+    FROM document d
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
     AND (SELECT template_document_ids FROM extracted_params LIMIT 1) IS NOT NULL
     AND array_length((SELECT template_document_ids FROM extracted_params LIMIT 1), 1) > 0
@@ -928,12 +928,12 @@ available_scenario_parameters AS (
         EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE) as scenario_parameter,
         EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'video_parameter' AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE) as video_parameter,
         false as numerical
-    FROM parameters p
+    FROM parameter p
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
     AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE)
     AND (
         EXISTS (
-            SELECT 1 FROM fields f
+            SELECT 1 FROM field f
             LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
             WHERE (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id
             AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
@@ -951,7 +951,7 @@ parameter_data AS (
         COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
         EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter
-    FROM parameters p
+    FROM parameter p
     JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_departments ud
@@ -967,7 +967,7 @@ parameter_data AS (
             (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) IS NULL
             OR (SELECT array_length(filter_department_ids, 1) FROM params LIMIT 1) = 0
             OR EXISTS (
-                SELECT 1 FROM fields f_dept_filter
+                SELECT 1 FROM field f_dept_filter
                 JOIN field_departments fd_dept_filter ON fd_dept_filter.field_id = f_dept_filter.id
                 WHERE (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f_dept_filter.id LIMIT 1) = p.id
                 AND EXISTS (SELECT 1 FROM field_flags ff_dept_filter JOIN flags fl_dept_filter ON ff_dept_filter.flag_id = fl_dept_filter.id WHERE ff_dept_filter.field_id = f_dept_filter.id AND fl_dept_filter.name = 'active' AND ff_dept_filter.type = 'active'::type_field_flags AND ff_dept_filter.value = TRUE)
@@ -1009,7 +1009,7 @@ parameter_item_data AS (
         COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
         (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as parameter_name
-    FROM fields f
+    FROM field f
     JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true) AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
@@ -1099,7 +1099,7 @@ all_parameters_detail_array AS (
         ARRAY[]::uuid[] as selected_items,
         COALESCE((
             SELECT ARRAY_AGG(f.id ORDER BY f.id)
-            FROM fields f
+            FROM field f
             WHERE (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = pd.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
         ), ARRAY[]::uuid[]) as valid_items
     FROM parameter_data pd
@@ -1127,7 +1127,7 @@ expected_agent_role AS (
 ),
 default_scenario_agent AS (
     SELECT a.id::text as agent_id
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
     CROSS JOIN expected_agent_role ear
@@ -1145,7 +1145,7 @@ default_scenario_agent AS (
 ),
 default_image_agent AS (
     SELECT a.id::text as agent_id
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
     JOIN agent_domains adom_image ON adom_image.agent_id = a.id
@@ -1162,7 +1162,7 @@ default_image_agent AS (
 ),
 default_video_agent AS (
     SELECT a.id::text as agent_id
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
     JOIN agent_domains adom_video ON adom_video.agent_id = a.id
@@ -1179,7 +1179,7 @@ default_video_agent AS (
 ),
 agent_filtered AS (
     SELECT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
-    FROM agents a
+    FROM agent a
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -1204,7 +1204,7 @@ all_agents_array AS (
 ),
 accessible_scenarios_default AS (
     SELECT DISTINCT s.id as scenario_id
-    FROM scenarios s
+    FROM scenario s
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     AND (
@@ -1347,7 +1347,7 @@ all_document_details_array AS (
             ELSE false
         END as is_template,
         dtd.parent_id as parent_document_id
-    FROM documents d
+    FROM document d
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     LEFT JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
@@ -1407,7 +1407,7 @@ SELECT
     COALESCE((SELECT ARRAY_AGG(agent_id::text ORDER BY name) FROM all_agents_array), ARRAY[]::text[]) as valid_agent_ids,
     COALESCE(
         (SELECT ARRAY_AGG(d.id::text)
-         FROM documents d
+         FROM document d
          WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
          AND (SELECT template_document_ids FROM extracted_params) IS NOT NULL
          AND array_length((SELECT template_document_ids FROM extracted_params), 1) > 0

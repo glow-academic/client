@@ -47,7 +47,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 email_check AS (
     -- Check if any emails already exist in profile_emails
@@ -96,7 +96,7 @@ last_names_resources AS (
 ),
 profile_insert AS (
     -- Insert all profiles without first_name, last_name, active columns
-    INSERT INTO profiles (
+    INSERT INTO profile (
         id, role
     )
     SELECT 

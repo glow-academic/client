@@ -74,21 +74,21 @@ WITH params AS (
 ),
 target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, cnt.content, m.created_at
-    FROM messages m
+    FROM message m
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     JOIN message_runs mr ON mr.message_id = m.id
-    JOIN runs r ON r.id = mr.run_id
+    JOIN run r ON r.id = mr.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chats c ON c.id = cg.chat_id
+    JOIN chat c ON c.id = cg.chat_id
     CROSS JOIN params p
     WHERE m.id = p.message_id AND c.id = p.chat_id
 ),
 chat_info AS (
     SELECT sc.id, ac.attempt_id, sc.scenario_id, g.trace_id, sc.title
-    FROM chats sc
+    FROM chat sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
     LEFT JOIN groups g ON g.id = cg.group_id
@@ -101,7 +101,7 @@ attempt_info AS (
 ),
 scenario_info AS (
     SELECT s.id, ps.problem_statement
-    FROM scenarios s
+    FROM scenario s
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     JOIN chat_info ci ON ci.scenario_id = s.id
@@ -116,7 +116,7 @@ profile_info AS (
 ),
 best_agent AS (
     SELECT a.id as agent_id
-    FROM agents a
+    FROM agent a
     INNER JOIN agent_domains adom ON adom.agent_id = a.id
     INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)  -- hint maps to message artifact
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -136,7 +136,7 @@ profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles p
+    FROM profile p
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     WHERE p.id = profile_id
 ),
@@ -145,7 +145,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = profile_id
       AND mrp.active = true
@@ -154,7 +154,7 @@ runs_today AS (
 -- Get active settings for profile (for key lookup via setting_provider_keys)
 default_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -172,7 +172,7 @@ profile_primary_department AS (
 ),
 dept_specific_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
@@ -188,7 +188,7 @@ settings_with_keys AS (
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -198,7 +198,7 @@ dept_specific_settings_with_keys AS (
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
@@ -215,7 +215,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 -- Document data for composite type aggregation
@@ -332,7 +332,7 @@ tool_schema_data AS (
             ) FILTER (WHERE sf.name IS NOT NULL AND sf.default_value != ''),
             '{}'::jsonb
         ) as argument_defaults
-    FROM tools t
+    FROM tool t
     LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
     LEFT JOIN schemas s ON s.id = ts.schema_id
     LEFT JOIN schema_fields sf ON sf.schema_id = s.id
@@ -351,7 +351,7 @@ agent_tools_data AS (
         ) as tools
     FROM best_agent ba
     LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
-    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN agent_domains adom ON adom.agent_id = ba.agent_id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id

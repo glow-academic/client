@@ -48,7 +48,7 @@ BEGIN
     SELECT t.id, tt.template_id, st.schema_id
     INTO v_tool_id, v_template_id, v_schema_id
     FROM agent_tools at
-    JOIN tools t ON t.id = at.tool_id
+    JOIN tool t ON t.id = at.tool_id
     JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN tool_templates tt ON tt.tool_id = t.id
     LEFT JOIN schema_templates st ON st.template_id = tt.template_id
@@ -137,7 +137,7 @@ BEGIN
         
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
-    INSERT INTO messages (id, role, completed, audio, created_at, updated_at)
+    INSERT INTO message (id, role, completed, audio, created_at, updated_at)
     VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
     
     -- Link message to call
@@ -146,7 +146,7 @@ BEGIN
     
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO runs (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
+    INSERT INTO run (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
     VALUES (v_run_id, agent_id, 0, 0, 0, NOW(), NOW());
     
     -- Link run to message

@@ -40,7 +40,7 @@ SELECT
         json_agg(DISTINCT sf.field_id::text) FILTER (WHERE sf.field_id IS NOT NULL),
         '[]'::json
     ) as parameter_item_ids
-FROM scenarios s
+FROM scenario s
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
 LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id AND sf.active = true
 WHERE s.id = api_get_scenario_ids_for_regeneration_v4.scenario_id

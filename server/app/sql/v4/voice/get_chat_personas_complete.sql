@@ -29,7 +29,7 @@ AS $$
 SELECT 
     p.id::text as persona_id,
     (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name
-FROM chats c
+FROM chat c
 JOIN scenario_personas sp ON sp.scenario_id = c.scenario_id AND sp.active = true
 JOIN personas p ON p.id = sp.persona_id
 WHERE c.id = chat_id

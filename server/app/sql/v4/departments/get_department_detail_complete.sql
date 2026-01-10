@@ -123,26 +123,26 @@ draft_payload_data AS (
 department_exists_check AS (
     -- Check if department exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM departments WHERE id = (SELECT department_id FROM params)
+        SELECT 1 FROM department WHERE id = (SELECT department_id FROM params)
     )::boolean as department_exists
 ),
 -- First, find runs for this department (filter first, then calculate costs)
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
-    FROM runs mr
+    FROM run mr
     JOIN agent_departments ad ON ad.agent_id = mr.agent_id AND ad.active = true
     WHERE ad.department_id = (SELECT department_id FROM params) AND mr.agent_id IS NOT NULL
 ),
 runs_for_department_via_personas AS (
     SELECT DISTINCT mr.id as run_id
-    FROM runs mr
+    FROM run mr
     JOIN run_personas mrp ON mrp.run_id = mr.id AND mrp.active = true
     JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
 ),
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
@@ -203,7 +203,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 user_department_access AS (
     -- Check if user has access to this department
@@ -211,7 +211,7 @@ user_department_access AS (
         SELECT 1 FROM profile_departments pd
         WHERE pd.profile_id = (SELECT profile_id FROM params) AND pd.department_id = (SELECT department_id FROM params) AND pd.active = true
     ) OR EXISTS(
-        SELECT 1 FROM profiles p WHERE p.id = (SELECT profile_id FROM params) AND p.role = 'superadmin'
+        SELECT 1 FROM profile p WHERE p.id = (SELECT profile_id FROM params) AND p.role = 'superadmin'
     ) as has_access
 ),
 -- Only get cohorts/departments for the current user's profile (much faster)
@@ -249,7 +249,7 @@ department_current_settings AS (
          LIMIT 1),
         -- Fallback to default settings (no department links)
         (SELECT s.id
-         FROM settings s
+         FROM setting s
          WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
          AND NOT EXISTS (
              SELECT 1 FROM department_settings ds2 
@@ -279,7 +279,7 @@ settings_data AS (
         s.created_at,
         EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) as active,
         COALESCE(sdd.department_ids, ARRAY[]::uuid[]) as department_ids
-    FROM settings s
+    FROM setting s
     LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
     AND (
@@ -304,7 +304,7 @@ cohorts_data AS (
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
-    FROM cohorts c
+    FROM cohort c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 departments_data AS (
@@ -312,7 +312,7 @@ departments_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM departments d
+    FROM department d
     WHERE (d.id = (SELECT department_id FROM params) OR EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id))
     AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
@@ -330,9 +330,9 @@ keys_data AS (
             ELSE '****'
         END as description,
         EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active
-    FROM keys k
+    FROM key k
     JOIN setting_provider_keys spk ON spk.key_id = k.id AND spk.active = true
-    JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND ds.department_id = (SELECT department_id FROM params)
@@ -351,7 +351,7 @@ keys_data AS (
             ELSE '****'
         END as description,
         EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active
-    FROM keys k
+    FROM key k
     WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 -- Get model-key associations using JOIN instead of correlated subquery (much faster)
@@ -368,7 +368,7 @@ department_models AS (
         COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE),
         NULL::uuid as provider_id  -- Provider is now enum, not UUID
-    FROM models m
+    FROM model m
     LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
     WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
     AND (

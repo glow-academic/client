@@ -114,14 +114,14 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 cohort_profiles_agg AS (
     SELECT 
         cp.cohort_id,
         ARRAY_AGG(cp.profile_id ORDER BY (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last'::type_profile_names LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first'::type_profile_names LIMIT 1)) as profile_ids
     FROM cohort_profiles cp
-    JOIN profiles p ON p.id = cp.profile_id
+    JOIN profile p ON p.id = cp.profile_id
     WHERE cp.active = true
     GROUP BY cp.cohort_id
 ),
@@ -137,7 +137,7 @@ cohort_profiles_role_filtered AS (
                 (up.role = 'guest'::profile_role AND p.role = 'guest'::profile_role)
         ) as profile_ids
     FROM cohort_profiles cp
-    JOIN profiles p ON p.id = cp.profile_id
+    JOIN profile p ON p.id = cp.profile_id
     CROSS JOIN user_profile up
     WHERE cp.active = true
     GROUP BY cp.cohort_id
@@ -147,7 +147,7 @@ cohort_simulations_agg AS (
         cs.cohort_id,
         ARRAY_AGG(cs.simulation_id ORDER BY (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)) as simulation_ids
     FROM cohort_simulations cs
-    JOIN simulations s ON s.id = cs.simulation_id
+    JOIN simulation s ON s.id = cs.simulation_id
     WHERE cs.active = true
     GROUP BY cs.cohort_id
 ),
@@ -253,7 +253,7 @@ department_mapping_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM departments d
+    FROM department d
     WHERE d.id IN (SELECT department_id FROM all_department_ids)
 ),
 cohorts_data AS (
@@ -309,7 +309,7 @@ profile_mapping_data AS (
         p.id as profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
         COALESCE((SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1), '') as description
-    FROM profiles p
+    FROM profile p
     WHERE p.id IN (SELECT profile_id FROM all_profile_ids)
 ),
 simulation_mapping_data AS (
@@ -326,7 +326,7 @@ simulation_mapping_data AS (
         ) as time_limit,
         COALESCE(sdd.department_ids, ARRAY[]::text[]) as department_ids,
         COALESCE(ssa.scenario_ids, ARRAY[]::uuid[])::text[] as scenario_ids
-    FROM simulations s
+    FROM simulation s
     LEFT JOIN (
         SELECT 
             sd.simulation_id,

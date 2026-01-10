@@ -49,14 +49,14 @@ self_emulation_check AS (
 requester_role AS (
     -- Get requester's role for permission check
     SELECT role
-    FROM profiles p
+    FROM profile p
     WHERE p.id = (SELECT requester_profile_id FROM params)
 ),
 simulatable_profiles AS (
     -- Get simulatable profiles for the requester based on role hierarchy
     SELECT 
         p.id
-    FROM profiles p
+    FROM profile p
     CROSS JOIN requester_role rr
     WHERE p.id != (SELECT requester_profile_id FROM params)
       AND CASE 
@@ -78,7 +78,7 @@ actor_name_computed AS (
     -- Compute actor_name from requester profile
     SELECT 
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
-    FROM profiles p
+    FROM profile p
     WHERE p.id = (SELECT requester_profile_id FROM params)
 )
 SELECT 

@@ -52,7 +52,7 @@ WITH params AS (
 -- Validate agent exists
 selected_agent AS (
     SELECT a.id as agent_id
-    FROM agents a
+    FROM agent a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
       AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
@@ -62,7 +62,7 @@ selected_agent AS (
 agent_model_modalities AS (
     SELECT 
         array_agg(mm.modality::text ORDER BY mm.modality) as output_modalities
-    FROM agents a
+    FROM agent a
     JOIN agent_models am ON am.agent_id = a.id
     JOIN model_modalities mm ON mm.model_id = am.model_id
     CROSS JOIN params p
@@ -74,7 +74,7 @@ agent_model_modalities AS (
 profile_rate_limit AS (
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles prof
+    FROM profile prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
     WHERE prof.id = (SELECT profile_id FROM params)
 ),
@@ -83,7 +83,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -131,7 +131,7 @@ rate_limit_check AS (
 ),
 -- Create run
 create_run AS (
-    INSERT INTO runs (input_tokens, output_tokens, agent_id)
+    INSERT INTO run (input_tokens, output_tokens, agent_id)
     SELECT 0, 0, sa.agent_id
     FROM selected_agent sa
     CROSS JOIN rate_limit_check rlc
@@ -164,7 +164,7 @@ link_group AS (
 ),
 -- Create user message if user_instructions provided (for regeneration)
 create_user_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO message (role, completed, audio, created_at, updated_at)
     SELECT 'user'::message_role, false, false, NOW(), NOW()
     FROM params p
     CROSS JOIN link_group lg
@@ -224,7 +224,7 @@ link_existing_messages AS (
     FROM previous_runs_in_group prig
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     WHERE m.role IN ('system'::message_role, 'developer'::message_role)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()

@@ -82,7 +82,7 @@ DECLARE
     updated_model_name text;
 BEGIN
     -- Check if model exists
-    SELECT EXISTS(SELECT 1 FROM models WHERE id = model_id) INTO model_exists_check;
+    SELECT EXISTS(SELECT 1 FROM model WHERE id = model_id) INTO model_exists_check;
     
     IF NOT model_exists_check THEN
         RETURN QUERY SELECT false::boolean, ''::text, ''::text;
@@ -91,7 +91,7 @@ BEGIN
 
     -- Validate permissions
     IF NOT validate_department_update_permissions(
-        (SELECT role::text FROM profiles WHERE id = profile_id),
+        (SELECT role::text FROM profile WHERE id = profile_id),
         ARRAY(SELECT department_id::text FROM model_departments WHERE model_id = api_update_model_v4.model_id AND active = true),
         ARRAY(SELECT department_id::text FROM profile_departments WHERE profile_id = api_update_model_v4.profile_id AND active = true)
     ) THEN
@@ -99,7 +99,7 @@ BEGIN
     END IF;
 
     -- Update model
-    UPDATE models SET
+    UPDATE model SET
         provider_id = api_update_model_v4.provider_id,
         name = api_update_model_v4.name,
         description = api_update_model_v4.description,
@@ -254,7 +254,7 @@ BEGIN
         true::boolean as model_exists,
         updated_model_name as model_name,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
-    FROM profiles p
+    FROM profile p
     WHERE p.id = profile_id;
 END;
 $$;

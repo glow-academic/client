@@ -70,13 +70,13 @@ WITH RECURSIVE message_path AS (
         m.audio,
         0 as depth,
         m.id as path_root_id
-    FROM chats c
+    FROM chat c
     JOIN chat_groups cg ON cg.chat_id = c.id
     JOIN groups g ON g.id = cg.group_id
     JOIN group_runs gr ON gr.group_id = g.id
-    JOIN runs r ON r.id = gr.run_id
+    JOIN run r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     WHERE c.id = $1::uuid
@@ -99,17 +99,17 @@ WITH RECURSIVE message_path AS (
         m.audio,
         mp.depth + 1 as depth,
         mp.path_root_id
-    FROM messages m
+    FROM message m
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     JOIN message_tree mt ON mt.child_id = m.id AND mt.active = true
     JOIN message_path mp ON mp.id = mt.parent_id
     JOIN message_runs mr ON mr.message_id = m.id
-    JOIN runs r ON r.id = mr.run_id
+    JOIN run r ON r.id = mr.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chats c ON c.id = cg.chat_id
+    JOIN chat c ON c.id = cg.chat_id
     
     -- Prevent infinite loops (safety limit)
     WHERE mp.depth < 1000
@@ -128,13 +128,13 @@ messages_without_parents AS (
         m.audio,
         -1 as depth,  -- Negative depth to sort before tree messages
         m.id as path_root_id
-    FROM chats c
+    FROM chat c
     JOIN chat_groups cg ON cg.chat_id = c.id
     JOIN groups g ON g.id = cg.group_id
     JOIN group_runs gr ON gr.group_id = g.id
-    JOIN runs r ON r.id = gr.run_id
+    JOIN run r ON r.id = gr.run_id
     JOIN message_runs mr ON mr.run_id = r.id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     WHERE c.id = $1::uuid

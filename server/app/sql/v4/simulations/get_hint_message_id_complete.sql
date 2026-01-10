@@ -45,14 +45,14 @@ STABLE
 AS $$
     SELECT m.id as message_id
     FROM message_runs mr
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN chat_groups cg ON cg.group_id IN (
         SELECT gr.group_id 
         FROM group_runs gr 
         WHERE gr.run_id = $1
     )
-    JOIN chats c ON c.id = cg.chat_id
+    JOIN chat c ON c.id = cg.chat_id
     WHERE mr.run_id = $1
       AND c.id = $2
       AND m.role = 'user'::message_role

@@ -110,7 +110,7 @@ actor_profile AS (
         p.id as profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 attempt_exists_check AS (
     SELECT EXISTS(
@@ -155,7 +155,7 @@ eval_info AS (
         COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
         EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'dynamic' AND ef.type = 'dynamic'::type_eval_flags AND ef.value = true) AS dynamic,
         -- Get first rubric and eval_agent from junction table
-        -- Get first rubric from runs (when use_groups = false) or groups (when use_groups = true)
+        -- Get first rubric FROM run (when use_groups = false) or groups (when use_groups = true)
         (SELECT rga.rubric_id 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
@@ -320,7 +320,7 @@ runs_with_details AS (
         -- Grade is on the eval_agent run (test.run_id), not original run
         (
             SELECT g.score
-            FROM grades g
+            FROM grade g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
@@ -328,7 +328,7 @@ runs_with_details AS (
         ) as grade_score,
         (
             SELECT g.passed
-            FROM grades g
+            FROM grade g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
@@ -336,21 +336,21 @@ runs_with_details AS (
         ) as grade_passed,
         (
             SELECT g.created_at
-            FROM grades g
+            FROM grade g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_created_at
     FROM runs_with_status rws
-    JOIN runs r ON r.id = rws.run_id
+    JOIN run r ON r.id = rws.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN models m ON m.id = rm.model_id
     LEFT JOIN agents a ON a.id = r.agent_id
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
     LEFT JOIN personas per ON per.id = rper.persona_id
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-    LEFT JOIN profiles p ON p.id = rp.profile_id
+    LEFT JOIN profile p ON p.id = rp.profile_id
     ORDER BY rws.eval_run_assigned_at DESC
 ),
 -- Calculate status summary

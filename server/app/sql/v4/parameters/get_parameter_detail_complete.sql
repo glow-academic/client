@@ -126,7 +126,7 @@ draft_payload_data AS (
 parameter_exists_check AS (
     -- Check if parameter exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM parameters WHERE id = (SELECT parameter_id FROM params)
+        SELECT 1 FROM parameter WHERE id = (SELECT parameter_id FROM params)
     )::boolean as parameter_exists
 ),
 user_profile AS (
@@ -135,7 +135,7 @@ user_profile AS (
         up.role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = up.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = up.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles up ON up.id = x.profile_id
+    JOIN profile up ON up.id = x.profile_id
 ),
 parameter_active_scenario_links AS (
     SELECT 
@@ -187,7 +187,7 @@ user_has_parameter_access AS (
         AND pd.active = true
     ) OR EXISTS(
         SELECT 1 FROM params x
-        JOIN profiles p ON p.id = x.profile_id
+        JOIN profile p ON p.id = x.profile_id
         WHERE p.role = 'superadmin'::profile_role
     ) OR (
         (SELECT COUNT(*) FROM parameter_departments pd
@@ -231,7 +231,7 @@ all_fields_data AS (
     SELECT 
         f.id as field_id,
         COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
-    FROM fields f
+    FROM field f
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     GROUP BY f.id
@@ -243,7 +243,7 @@ all_fields_with_usage AS (
         (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
         COALESCE(COUNT(sf.scenario_id), 0) as usage_count,
         COALESCE(afd.department_ids, ARRAY[]::text[]) as department_ids
-    FROM fields f
+    FROM field f
     LEFT JOIN all_fields_data afd ON afd.field_id = f.id
     LEFT JOIN scenario_fields sf ON sf.field_id = f.id AND sf.active = true
     WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
@@ -285,7 +285,7 @@ parameter_department_ids AS (
 ),
 filtered_personas AS (
     SELECT DISTINCT p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
-    FROM personas p
+    FROM persona p
     LEFT JOIN persona_departments pd ON pd.persona_id = p.id
     CROSS JOIN parameter_departments_aggregated pda
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
@@ -300,7 +300,7 @@ filtered_personas AS (
 ),
 filtered_documents AS (
     SELECT DISTINCT d.id, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM documents d
+    FROM document d
     LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
     CROSS JOIN parameter_departments_aggregated pda
     WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)

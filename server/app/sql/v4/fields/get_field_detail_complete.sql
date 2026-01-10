@@ -77,7 +77,7 @@ draft_payload_data AS (
 field_exists_check AS (
     -- Check if field exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM fields WHERE id = (SELECT field_id FROM params)
+        SELECT 1 FROM field WHERE id = (SELECT field_id FROM params)
     )::boolean as field_exists
 ),
 user_profile AS (
@@ -86,7 +86,7 @@ user_profile AS (
         up.role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = up.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = up.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profiles up ON up.id = x.profile_id
+    JOIN profile up ON up.id = x.profile_id
 ),
 field_parameters_data AS (
     SELECT 
@@ -125,7 +125,7 @@ valid_departments_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM departments d
+    FROM department d
     WHERE d.id IN (SELECT department_id FROM user_departments)
        OR EXISTS (SELECT 1 FROM user_profile WHERE role = 'superadmin'::profile_role)
 ),
@@ -134,7 +134,7 @@ valid_parameters_data AS (
         p.id as parameter_id,
         (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
         COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
-    FROM parameters p
+    FROM parameter p
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 user_has_field_access AS (
@@ -147,7 +147,7 @@ user_has_field_access AS (
         AND pd.active = true
     ) OR EXISTS(
         SELECT 1 FROM params x
-        JOIN profiles p ON p.id = x.profile_id
+        JOIN profile p ON p.id = x.profile_id
         WHERE p.role = 'superadmin'::profile_role
     ) OR (
         SELECT NOT EXISTS(

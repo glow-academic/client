@@ -85,14 +85,14 @@ valid_departments_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM departments d
+    FROM department d
     JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = rpi.resolved_profile_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
-    FROM cohorts c
+    FROM cohort c
     WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
 ),
 all_cohorts_data AS (
@@ -100,13 +100,13 @@ all_cohorts_data AS (
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
-    FROM cohorts c
+    FROM cohort c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 profile_data AS (
     SELECT role as user_role 
     FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    JOIN profile p ON p.id = rpi.resolved_profile_id
 ),
 primary_department_id AS (
     SELECT department_id
@@ -119,7 +119,7 @@ actor_profile AS (
     SELECT 
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    JOIN profile p ON p.id = rpi.resolved_profile_id
 ),
 valid_departments_agg AS (
     SELECT 

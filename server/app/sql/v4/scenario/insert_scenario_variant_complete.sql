@@ -70,7 +70,7 @@ get_flag_ids AS (
         (SELECT id FROM flags WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id
 ),
 new_scenario AS (
-    INSERT INTO scenarios (
+    INSERT INTO scenario (
         created_at,
         updated_at
     )
@@ -117,8 +117,8 @@ SELECT
     ''::text as description,
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as root_scenario_id,
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as parent_scenario_id,
-    (SELECT created_at FROM scenarios WHERE id = ns.id LIMIT 1) as created_at,
-    (SELECT updated_at FROM scenarios WHERE id = ns.id LIMIT 1) as updated_at,
+    (SELECT created_at FROM scenario WHERE id = ns.id LIMIT 1) as created_at,
+    (SELECT updated_at FROM scenario WHERE id = ns.id LIMIT 1) as updated_at,
     NULL::uuid as profile_id,
     (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = ns.id AND sd.active = true LIMIT 1) as department_id
 FROM new_scenario ns

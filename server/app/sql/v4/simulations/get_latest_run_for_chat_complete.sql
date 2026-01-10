@@ -26,11 +26,11 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT gr.run_id::text as run_id
-FROM chats c
+FROM chat c
 JOIN chat_groups cg ON cg.chat_id = c.id
 JOIN groups g ON g.id = cg.group_id
 JOIN group_runs gr ON gr.group_id = g.id
-JOIN runs r ON r.id = gr.run_id
+JOIN run r ON r.id = gr.run_id
 WHERE c.id = chat_id
 ORDER BY r.created_at DESC
 LIMIT 1

@@ -1,4 +1,4 @@
--- Get default department from settings
+-- Get default department FROM setting
 -- Converted to PostgreSQL function
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -24,7 +24,7 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT sdd.department_id::text
-FROM settings s
+FROM setting s
 JOIN settings_default_department sdd ON sdd.settings_id = s.id
 WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
   AND sdd.active = true

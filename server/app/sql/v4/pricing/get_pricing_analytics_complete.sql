@@ -124,7 +124,7 @@ profile_role_check AS (
         (SELECT profile_id FROM params) as raw_profile_id,
         CASE 
             WHEN (SELECT profile_id FROM params) IS NULL THEN NULL::uuid
-            WHEN (SELECT role FROM profiles WHERE id = (SELECT profile_id FROM params)) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
+            WHEN (SELECT role FROM profile WHERE id = (SELECT profile_id FROM params)) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
             ELSE (SELECT profile_id FROM params)
         END as effective_profile_id
 ),
@@ -136,7 +136,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
     WHERE x.profile_id IS NOT NULL
 ),
 runs_base AS (
@@ -151,7 +151,7 @@ runs_base AS (
         mrper.persona_id,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         sa.archived
-    FROM runs mr
+    FROM run mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
@@ -162,14 +162,14 @@ runs_base AS (
         SELECT DISTINCT c.id AS chat_id
         FROM groups g2
         JOIN chat_groups cg ON cg.group_id = g2.id
-        JOIN chats c ON c.id = cg.chat_id
+        JOIN chat c ON c.id = cg.chat_id
         WHERE g2.id = g.id
         LIMIT 1
     ) chat_lookup ON true
-    LEFT JOIN chats c ON c.id = chat_lookup.chat_id
+    LEFT JOIN chat c ON c.id = chat_lookup.chat_id
     LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
     LEFT JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    LEFT JOIN simulations sim ON sim.id = sa.simulation_id
+    LEFT JOIN simulation sim ON sim.id = sa.simulation_id
     CROSS JOIN params p
     WHERE 
         -- Date filters (always required)
@@ -198,7 +198,7 @@ runs_base AS (
             OR p.roles IS NULL
             OR COALESCE(array_length(p.roles, 1), 0) = 0
             OR mrp.profile_id IN (
-                SELECT id FROM profiles WHERE role::text = ANY(p.roles)
+                SELECT id FROM profile WHERE role::text = ANY(p.roles)
             )
         )
         -- Cohort filter (via cohort_profiles)
@@ -318,7 +318,7 @@ SELECT
 FROM runs_with_debug mrb
 LEFT JOIN models m ON m.id = mrb.model_id
 LEFT JOIN model_pricing_aggregated mpa ON mpa.model_id = m.id
-LEFT JOIN profiles p ON p.id = mrb.profile_id
+LEFT JOIN profile p ON p.id = mrb.profile_id
 LEFT JOIN agents a ON a.id = mrb.agent_id
 LEFT JOIN personas per ON per.id = mrb.persona_id
 GROUP BY (SELECT actor_name FROM user_profile LIMIT 1)

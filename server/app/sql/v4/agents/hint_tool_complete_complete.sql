@@ -57,14 +57,14 @@ BEGIN
     -- Get message_id from run_id and chat_id (same logic as get_hint_message_id_complete.sql)
     SELECT m.id INTO v_message_id
     FROM message_runs mr
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN chat_groups cg ON cg.group_id IN (
         SELECT gr.group_id 
         FROM group_runs gr 
         WHERE gr.run_id = run_id
     )
-    JOIN chats c ON c.id = cg.chat_id
+    JOIN chat c ON c.id = cg.chat_id
     WHERE mr.run_id = run_id
       AND c.id = chat_id
       AND m.role = 'user'::message_role

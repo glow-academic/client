@@ -54,7 +54,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 role_param AS (
     -- Use role to help PostgreSQL infer type (even if NULL)
@@ -62,7 +62,7 @@ role_param AS (
 ),
 current_user_role AS (
     -- Get current user's role for validation
-    SELECT p.role FROM params x JOIN profiles p ON p.id = x.profile_id
+    SELECT p.role FROM params x JOIN profile p ON p.id = x.profile_id
 ),
 profile_validation AS (
     -- Validate each profile and check permissions
@@ -97,7 +97,7 @@ profile_validation AS (
     CROSS JOIN unnest(pr.profile_ids) as profile_id_val
     CROSS JOIN current_user_role cur
     CROSS JOIN role_param rp
-    JOIN profiles p ON p.id = profile_id_val
+    JOIN profile p ON p.id = profile_id_val
 ),
 validated_profiles AS (
     -- Filter to only profiles that pass validation
@@ -106,8 +106,8 @@ validated_profiles AS (
     WHERE can_assign_role = true AND role_level_ok = true AND can_edit_default = true
 ),
 profile_update AS (
-    -- Update profiles table with dynamic SET clauses (without active column)
-    UPDATE profiles p
+    -- UPDATE profile table with dynamic SET clauses (without active column)
+    UPDATE profile p
     SET 
         role = COALESCE((SELECT CAST(rp.role_value AS profile_role) FROM role_param rp WHERE rp.role_value IS NOT NULL LIMIT 1), p.role),
         updated_at = NOW()

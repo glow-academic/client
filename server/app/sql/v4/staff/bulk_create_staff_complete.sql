@@ -71,7 +71,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 profiles_expanded AS (
     -- Expand composite type array into rows with generated profile IDs
@@ -155,7 +155,7 @@ last_names_resources AS (
 ),
 profile_insert AS (
     -- Insert all profiles without first_name, last_name, active columns
-    INSERT INTO profiles (
+    INSERT INTO profile (
         id, role
     )
     SELECT 

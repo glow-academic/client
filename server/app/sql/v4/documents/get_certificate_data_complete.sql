@@ -71,7 +71,7 @@ profile_info AS (
             'Unknown'
         ) AS profile_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 -- Get all cohorts the profile belongs to
 profile_cohorts AS (
@@ -106,7 +106,7 @@ cohort_sims AS (
          LIMIT 1) as rubric_id
     FROM profile_cohorts pc
     JOIN cohort_simulations cs ON cs.cohort_id = pc.cohort_id
-    JOIN simulations s ON s.id = cs.simulation_id
+    JOIN simulation s ON s.id = cs.simulation_id
     WHERE cs.active = TRUE
       AND EXISTS (
         SELECT 1 FROM simulation_flags sf
@@ -175,7 +175,7 @@ user_sim_status AS (
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
             (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
-             FROM simulations s
+             FROM simulation s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
              LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
              LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id

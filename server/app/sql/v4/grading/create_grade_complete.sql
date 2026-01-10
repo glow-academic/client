@@ -65,7 +65,7 @@ BEGIN
     -- Get chat title if run is linked to a chat
     SELECT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) INTO v_chat_title
     FROM chat_runs cr
-    JOIN chats c ON c.id = cr.chat_id
+    JOIN chat c ON c.id = cr.chat_id
     WHERE cr.run_id = run_id
     LIMIT 1;
     
@@ -97,7 +97,7 @@ BEGIN
     END IF;
     
     -- Create grade
-    INSERT INTO grades (run_id, rubric_grade_agent_id, description, passed, score, created_at)
+    INSERT INTO grade (run_id, rubric_grade_agent_id, description, passed, score, created_at)
     VALUES (run_id, rubric_grade_agent_id, description, passed, score, NOW())
     RETURNING id INTO v_grade_id;
     

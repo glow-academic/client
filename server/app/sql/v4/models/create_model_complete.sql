@@ -96,14 +96,14 @@ BEGIN
 
     -- Validate permissions
     IF NOT validate_department_create_permissions(
-        (SELECT role::text FROM profiles WHERE id = profile_id),
+        (SELECT role::text FROM profile WHERE id = profile_id),
         ARRAY(SELECT unnest(department_ids)::text)
     ) THEN
         RAISE EXCEPTION 'Insufficient permissions to create model';
     END IF;
 
     -- Create model
-    INSERT INTO models (provider_id, name, description, active, value)
+    INSERT INTO model (provider_id, name, description, active, value)
     VALUES (provider_id, name, description, active, value)
     RETURNING id INTO new_model_id;
 
@@ -187,7 +187,7 @@ BEGIN
     SELECT 
         new_model_id as model_id,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
-    FROM profiles p
+    FROM profile p
     WHERE p.id = profile_id;
 END;
 $$;

@@ -38,7 +38,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH inserted_chat AS (
-    INSERT INTO chats (created_at, title, scenario_id, completed, updated_at)
+    INSERT INTO chat (created_at, title, scenario_id, completed, updated_at)
     VALUES (created_at, title, scenario_id, completed, NOW())
     RETURNING id, created_at, updated_at, title, scenario_id, completed
 ),

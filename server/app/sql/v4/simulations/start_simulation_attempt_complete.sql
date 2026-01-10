@@ -141,7 +141,7 @@ simulation_data AS (
          ORDER BY ss.position 
          LIMIT 1) as rubric_id
     FROM params p
-    JOIN simulations s ON s.id = p.simulation_id
+    JOIN simulation s ON s.id = p.simulation_id
 ),
 -- Get simulation scenarios in order
 simulation_scenarios AS (
@@ -168,7 +168,7 @@ chosen_scenario_id AS (
                  ORDER BY position LIMIT 1)
             ELSE (
                 SELECT s.id 
-                FROM scenarios s 
+                FROM scenario s 
                 ORDER BY random() 
                 LIMIT 1
             )
@@ -196,7 +196,7 @@ profile_dept AS (
 any_active_dept AS (
     -- Get any active department as last resort
     SELECT d.id as department_id
-    FROM departments d
+    FROM department d
     WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
     LIMIT 1
 ),
@@ -212,7 +212,7 @@ resolved_dept AS (
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -232,7 +232,7 @@ profile_primary_department AS (
 dept_specific_settings AS (
     -- Get department-specific settings (if primary_department_id exists)
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
@@ -246,7 +246,7 @@ active_settings AS (
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 -- Document data for composite type aggregation
@@ -257,7 +257,7 @@ document_data AS (
         (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         u.file_path,
         u.mime_type
-    FROM scenarios s
+    FROM scenario s
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN documents d ON d.id = sd.document_id
@@ -274,7 +274,7 @@ parameter_item_data AS (
         (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p_param.id LIMIT 1) as parameter_name
-    FROM scenarios s
+    FROM scenario s
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_fields sf ON sf.scenario_id = s.id AND sf.active = true
     LEFT JOIN fields f ON f.id = sf.field_id
@@ -314,7 +314,7 @@ scenario_full_data_raw AS (
             WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true
             ELSE false
         END as needs_generation
-    FROM scenarios s
+    FROM scenario s
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     CROSS JOIN chosen_scenario_id csi
@@ -363,7 +363,7 @@ scenario_full_data AS (
 ),
 -- Create simulation chat (only for scenarios, not videos)
 new_chat AS (
-    INSERT INTO chats (
+    INSERT INTO chat (
         created_at, title, scenario_id, completed, updated_at
     )
     SELECT 

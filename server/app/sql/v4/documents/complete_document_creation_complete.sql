@@ -33,7 +33,7 @@ description_resource AS (
 ),
 create_child_document AS (
     -- Create child document (without name/description/active/template/document_domain_id columns)
-    INSERT INTO documents (
+    INSERT INTO document (
         id, created_at, updated_at
     )
     VALUES (gen_random_uuid(), NOW(), NOW())

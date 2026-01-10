@@ -33,7 +33,7 @@ WITH actor_profile AS (
         (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = api_create_analytics_view_v4.profile_id AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
         'System'
     ) as actor_name
-    FROM profiles
+    FROM profile
     WHERE id = api_create_analytics_view_v4.profile_id
 )
 SELECT 

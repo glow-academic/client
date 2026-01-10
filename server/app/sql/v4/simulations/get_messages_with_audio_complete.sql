@@ -37,16 +37,16 @@ AS $$
         u.file_path,
         u.mime_type,
         u.size
-    FROM messages m
+    FROM message m
     JOIN message_audios ma ON ma.message_id = m.id
     JOIN audio_uploads au ON au.audio_id = ma.audio_id AND au.active = true
     JOIN uploads u ON u.id = au.upload_id
     JOIN message_runs mr ON mr.message_id = m.id
-    JOIN runs r ON r.id = mr.run_id
+    JOIN run r ON r.id = mr.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chats c ON c.id = cg.chat_id
+    JOIN chat c ON c.id = cg.chat_id
     WHERE c.id = chat_id
       AND m.id = ANY(message_ids)
 $$;

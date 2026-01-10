@@ -38,7 +38,7 @@ AS $$
 WITH user_profile AS (
     SELECT 
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
-    FROM profiles p
+    FROM profile p
     WHERE p.id = profile_id
 ),
 -- Insert name into names table and get ID
@@ -59,7 +59,7 @@ description_resource AS (
 ),
 insert_doc AS (
     -- Create document (without name/description/active/template columns)
-    INSERT INTO documents (
+    INSERT INTO document (
         id, 
         created_at, 
         updated_at

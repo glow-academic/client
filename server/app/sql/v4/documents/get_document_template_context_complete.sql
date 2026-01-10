@@ -61,7 +61,7 @@ SELECT COALESCE(
     ),
     '{}'::types.q_get_document_template_context_v4_field[]
 ) as fields
-FROM fields f
+FROM field f
 JOIN parameter_fields pf ON pf.field_id = f.id
 JOIN parameters pa ON pa.id = pf.parameter_id AND EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = pa.id AND fl.name = 'active' AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
 WHERE f.id = ANY($1)

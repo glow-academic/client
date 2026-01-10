@@ -47,7 +47,7 @@ WITH params AS (
 -- Get tool_id from tool_name
 get_tool_id AS (
     SELECT t.id as tool_id
-    FROM tools t
+    FROM tool t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id
     WHERE t.name = (SELECT tool_name FROM params LIMIT 1)
       AND t.active = true
@@ -98,7 +98,7 @@ link_call_to_message AS (
     FROM params p
     CROSS JOIN selected_tool_call stc
     JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     WHERE m.role = 'assistant'
     ORDER BY m.created_at
     LIMIT 1
@@ -124,12 +124,12 @@ existing_message AS (
     JOIN selected_tool_call stc ON true
     JOIN calls tc ON tc.id = uuid(stc.tool_call_id)
     JOIN message_calls mc ON mc.call_id = tc.id
-    JOIN messages m ON m.id = mc.message_id
+    JOIN message m ON m.id = mc.message_id
     WHERE p.message_id IS NULL
     LIMIT 1
 ),
 create_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO message (role, completed, audio, created_at, updated_at)
     SELECT 
         mr.role,
         false,

@@ -63,7 +63,7 @@ video_department AS (
 ),
 best_agent AS (
     SELECT a.id as agent_id
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN video_department vd
     JOIN agent_domains adom ON adom.agent_id = a.id
@@ -87,7 +87,7 @@ profile_rate_limit AS (
     SELECT 
         prl.requests_per_day as req_per_day
     FROM params p
-    LEFT JOIN profiles prof ON prof.id = p.profile_id
+    LEFT JOIN profile prof ON prof.id = p.profile_id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
     WHERE p.profile_id IS NOT NULL
 ),
@@ -97,7 +97,7 @@ runs_today AS (
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
     FROM params p
-    LEFT JOIN runs mr ON TRUE
+    LEFT JOIN run mr ON TRUE
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.profile_id = p.profile_id
     WHERE p.profile_id IS NOT NULL
       AND mrp.active = true
@@ -116,7 +116,7 @@ profile_primary_department AS (
 ),
 default_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -126,7 +126,7 @@ default_settings AS (
 ),
 dept_specific_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
@@ -142,7 +142,7 @@ settings_with_keys AS (
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -152,7 +152,7 @@ dept_specific_settings_with_keys AS (
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
@@ -169,7 +169,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 context_data AS (
@@ -247,7 +247,7 @@ context_data AS (
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO run (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id

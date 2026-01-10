@@ -26,7 +26,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    UPDATE chats
+    UPDATE chat
     SET completed = true,
         updated_at = NOW()
     WHERE id = chat_id

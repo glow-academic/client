@@ -71,7 +71,7 @@ existing_run AS (
         r.agent_id,
         gd.group_id,
         gd.trace_id
-    FROM runs r
+    FROM run r
     CROSS JOIN params p
     LEFT JOIN group_runs gr ON gr.run_id = r.id
     LEFT JOIN groups g ON g.id = gr.group_id
@@ -93,7 +93,7 @@ group_data AS (
 -- Get agent
 selected_agent AS (
     SELECT a.id as agent_id
-    FROM agents a
+    FROM agent a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
       AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
@@ -119,7 +119,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     CROSS JOIN run_profile rp
     WHERE mrp.profile_id = rp.profile_id
@@ -137,7 +137,7 @@ profile_primary_department AS (
 ),
 default_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -147,7 +147,7 @@ default_settings AS (
 ),
 dept_specific_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
@@ -163,7 +163,7 @@ settings_with_keys AS (
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -173,7 +173,7 @@ dept_specific_settings_with_keys AS (
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
@@ -190,7 +190,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM settings WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = settings.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = setting.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 -- Build tool arguments from schemas
@@ -253,7 +253,7 @@ tool_schema_data AS (
             ) FILTER (WHERE sf.name IS NOT NULL AND sf.default_value != ''),
             '{}'::jsonb
         ) as argument_defaults
-    FROM tools t
+    FROM tool t
     LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
     LEFT JOIN schemas s ON s.id = ts.schema_id
     LEFT JOIN schema_fields sf ON sf.schema_id = s.id
@@ -272,7 +272,7 @@ agent_tools_data AS (
         ) as tools
     FROM selected_agent sa
     LEFT JOIN agent_tools at ON at.agent_id = sa.agent_id AND at.active = true
-    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN agent_domains adom ON adom.agent_id = sa.agent_id
@@ -305,7 +305,7 @@ department_name_data AS (
     FROM department_data dd
     LEFT JOIN departments d ON d.id = dd.department_id
 ),
--- Get upload info if exists (for audio input) - get from messages linked to run
+-- Get upload info if exists (for audio input) - get FROM message linked to run
 upload_info AS (
     SELECT DISTINCT
         u.id as upload_id,

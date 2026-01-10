@@ -55,7 +55,7 @@ DECLARE
 BEGIN
     -- Get actor name
     SELECT first_name || ' ' || last_name INTO v_actor_name
-    FROM profiles
+    FROM profile
     WHERE id = profile_id;
 
     -- Determine mode: use attempt_ids if provided and non-empty
@@ -99,7 +99,7 @@ BEGIN
                             WHEN 'member'::profile_role = ANY(roles) THEN 'member'::text
                             ELSE 'guest'::text
                         END
-                    ELSE COALESCE((SELECT role::text FROM profiles WHERE id = profile_id), 'guest'::text)
+                    ELSE COALESCE((SELECT role::text FROM profile WHERE id = profile_id), 'guest'::text)
                 END::profile_role as role
         ),
         expanded_history_cohort_ids AS (
@@ -126,8 +126,8 @@ BEGIN
                 COALESCE(sdd.department_ids, NULL) as department_ids
             FROM simulation_attempts sa
             JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
-            JOIN simulations sim ON sim.id = sa.simulation_id
-            JOIN profiles p_attempt ON p_attempt.id = ap.profile_id
+            JOIN simulation sim ON sim.id = sa.simulation_id
+            JOIN profile p_attempt ON p_attempt.id = ap.profile_id
             CROSS JOIN history_viewer_role hvr
             LEFT JOIN (
                 SELECT 
@@ -197,7 +197,7 @@ BEGIN
                 ac.attempt_id,
                 ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
             FROM attempt_chats ac
-            JOIN chats sc ON sc.id = ac.chat_id
+            JOIN chat sc ON sc.id = ac.chat_id
             WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
             GROUP BY ac.attempt_id
         ),
@@ -213,7 +213,7 @@ BEGIN
                 ac.attempt_id,
                 array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
             FROM attempt_chats ac
-            JOIN chats sc ON sc.id = ac.chat_id
+            JOIN chat sc ON sc.id = ac.chat_id
             JOIN scenarios scn ON scn.id = sc.scenario_id
             LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
             WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
@@ -222,7 +222,7 @@ BEGIN
         final_filtered_attempts AS (
             SELECT haf.attempt_id
             FROM history_attempts_final haf
-            LEFT JOIN profiles p ON p.id = haf.profile_id
+            LEFT JOIN profile p ON p.id = haf.profile_id
             LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
             WHERE 
                 (search IS NULL OR search = '' OR

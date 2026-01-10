@@ -58,12 +58,12 @@ user_profile AS (
     SELECT 
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    LEFT JOIN profiles p ON p.id = x.current_profile_id
+    LEFT JOIN profile p ON p.id = x.current_profile_id
     WHERE x.current_profile_id IS NOT NULL
 ),
 current_user_role AS (
     -- Get current user's role for validation (if provided)
-    SELECT p.role FROM params x JOIN profiles p ON p.id = x.current_profile_id WHERE x.current_profile_id IS NOT NULL
+    SELECT p.role FROM params x JOIN profile p ON p.id = x.current_profile_id WHERE x.current_profile_id IS NOT NULL
 ),
 role_validation AS (
     -- Validate role hierarchy: check if current user can assign target role (if current_profile_id provided)
@@ -114,7 +114,7 @@ last_name_resource AS (
 ),
 profile_upsert AS (
     -- Insert or update profile without first_name, last_name, active columns
-    INSERT INTO profiles (
+    INSERT INTO profile (
         id, role, updated_at
     )
     SELECT
@@ -126,7 +126,7 @@ profile_upsert AS (
         role = CASE 
             WHEN EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true) 
             THEN EXCLUDED.role::profile_role
-            ELSE profiles.role::profile_role
+            ELSE profile.role::profile_role
         END,
         updated_at = NOW()
     RETURNING id, NOT EXISTS(SELECT 1 FROM existing_profile) as created

@@ -23,7 +23,7 @@ actor_profile AS (
         x.profile_id,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 agent_info AS (
     SELECT 
@@ -38,11 +38,11 @@ usage_check AS (
     JOIN agent_departments ON agent_departments.agent_id = x.agent_id AND agent_departments.active = true
 ),
 delete_result AS (
-    DELETE FROM agents 
+    DELETE FROM agent 
     USING params x
-    WHERE agents.id = x.agent_id 
+    WHERE agent.id = x.agent_id 
       AND (SELECT usage_count FROM usage_check) = 0
-    RETURNING agents.id
+    RETURNING agent.id
 )
 SELECT 
     (SELECT usage_count FROM usage_check) as usage_count,

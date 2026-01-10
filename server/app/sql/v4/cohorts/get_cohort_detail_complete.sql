@@ -139,11 +139,11 @@ draft_payload_data AS (
 cohort_exists_check AS (
     -- Check if cohort exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM cohorts WHERE id = (SELECT cohort_id FROM params)
+        SELECT 1 FROM cohort WHERE id = (SELECT cohort_id FROM params)
     )::boolean as cohort_exists
 ),
 user_profile AS (
-    SELECT role FROM params x JOIN profiles p ON p.id = x.profile_id
+    SELECT role FROM params x JOIN profile p ON p.id = x.profile_id
 ),
 cohort_departments_data AS (
     SELECT 
@@ -237,28 +237,28 @@ cohort_simulation_stats AS (
         ) as success_rate,
         MAX(ca.created_at) as last_used
     FROM cohort_simulation_ids cs
-    JOIN simulations s ON s.id = cs.simulation_id
+    JOIN simulation s ON s.id = cs.simulation_id
     LEFT JOIN cohort_attempts ca ON ca.simulation_id = cs.simulation_id
     LEFT JOIN attempt_chats ac ON ac.attempt_id = ca.attempt_id
-    LEFT JOIN chats sc ON sc.id = ac.chat_id
+    LEFT JOIN chat sc ON sc.id = ac.chat_id
     LEFT JOIN LATERAL (
         SELECT DISTINCT sc.id AS chat_id, r2.id AS run_id
-        FROM chats c
+        FROM chat c
         JOIN chat_groups cg ON cg.chat_id = c.id
         JOIN groups g ON g.id = cg.group_id
         JOIN group_runs gr ON gr.group_id = g.id
-        JOIN runs r2 ON r2.id = gr.run_id
+        JOIN run r2 ON r2.id = gr.run_id
         WHERE c.id = sc.id
         LIMIT 1
     ) chat_run_lookup ON true
-    LEFT JOIN runs r ON r.id = chat_run_lookup.run_id
-    LEFT JOIN grades scg ON scg.run_id = r.id 
+    LEFT JOIN run r ON r.id = chat_run_lookup.run_id
+    LEFT JOIN grade scg ON scg.run_id = r.id 
         AND EXISTS (
-            SELECT 1 FROM runs r_check
+            SELECT 1 FROM run r_check
             JOIN group_runs gr_check ON gr_check.run_id = r_check.id
             JOIN groups g_check ON g_check.id = gr_check.group_id
             JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-            JOIN chats c_check ON c_check.id = cg_check.chat_id
+            JOIN chat c_check ON c_check.id = cg_check.chat_id
             WHERE r_check.id = scg.run_id
         )
     GROUP BY cs.simulation_id, cs.active, cs.position, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1)
@@ -296,7 +296,7 @@ valid_simulations AS (
 ),
 cross_dept_simulations AS (
     SELECT DISTINCT s.id::text as simulation_id
-    FROM simulations s
+    FROM simulation s
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
         AND NOT EXISTS (
             SELECT 1 FROM simulation_departments sd2 
@@ -309,7 +309,7 @@ department_simulation_ids AS (
         ARRAY_AGG(DISTINCT s.id::text) FILTER (WHERE s.id IS NOT NULL) as simulation_ids
     FROM valid_departments d
     LEFT JOIN simulation_departments sd ON sd.department_id = d.id AND sd.active = true
-    LEFT JOIN simulations s ON s.id = sd.simulation_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    LEFT JOIN simulation s ON s.id = sd.simulation_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     GROUP BY d.id
 ),
 department_simulation_ids_with_cross AS (
@@ -412,7 +412,7 @@ user_profile_for_cohort AS (
         role,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 )
 SELECT 
     -- Cohort existence check (always returned)

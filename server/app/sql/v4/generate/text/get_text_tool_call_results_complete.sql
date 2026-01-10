@@ -52,7 +52,7 @@ WITH tool_call_results AS (
             CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb ELSE NULL END
         ) as tool_results
     FROM calls tc
-    JOIN tools t ON t.id = tc.tool_id
+    JOIN tool t ON t.id = tc.tool_id
     JOIN message_calls mc ON mc.call_id = tc.id
     JOIN message_runs mr ON mr.message_id = mc.message_id
     WHERE mr.run_id = $1

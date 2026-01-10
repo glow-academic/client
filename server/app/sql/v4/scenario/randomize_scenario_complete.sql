@@ -103,7 +103,7 @@ BEGIN
     -- Get user's accessible departments
     WITH user_departments AS (
         SELECT DISTINCT d.id
-        FROM departments d
+        FROM department d
         JOIN profile_departments pd ON pd.department_id = d.id
         WHERE pd.profile_id = api_randomize_scenario_v4.profile_id 
           AND pd.active = true 
@@ -112,7 +112,7 @@ BEGIN
     -- Get valid persona IDs (filtered by departments if provided)
     filtered_personas AS (
         SELECT DISTINCT p.id
-        FROM personas p
+        FROM persona p
         LEFT JOIN persona_departments pd ON pd.persona_id = p.id AND pd.active = true
         WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
         AND (
@@ -141,7 +141,7 @@ BEGIN
     -- Get valid document IDs
     filtered_documents AS (
         SELECT DISTINCT d.id
-        FROM documents d
+        FROM document d
         INNER JOIN document_uploads du ON du.document_id = d.id AND du.active = true
         LEFT JOIN document_departments dd ON dd.document_id = d.id AND dd.active = true
         WHERE EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)
@@ -168,7 +168,7 @@ BEGIN
     -- Get valid parameter IDs
     filtered_parameters AS (
         SELECT DISTINCT p.id
-        FROM parameters p
+        FROM parameter p
         JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
         LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
         WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
@@ -197,7 +197,7 @@ BEGIN
     -- Get valid field IDs (filtered by departments and parameters)
     filtered_fields AS (
         SELECT DISTINCT f.id
-        FROM fields f
+        FROM field f
         LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
         WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
         AND (
@@ -341,7 +341,7 @@ BEGIN
             -- Get valid fields for this parameter
             SELECT ARRAY_AGG(f.id)
             INTO valid_items_for_param
-            FROM fields f
+            FROM field f
             WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
               AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
               AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = param_id
@@ -424,7 +424,7 @@ BEGIN
         -- Get valid fields for this parameter
         SELECT ARRAY_AGG(f.id)
         INTO valid_items_for_param
-        FROM fields f
+        FROM field f
         WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
           AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = param_id
           AND f.id = ANY(valid_field_ids);

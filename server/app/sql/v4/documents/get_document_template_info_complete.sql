@@ -35,7 +35,7 @@ SELECT
     (SELECT dad.agent_domain_id::text FROM document_agent_domains dad WHERE dad.document_id = d.id LIMIT 1),
     (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
     (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
-FROM documents d
+FROM document d
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
 INNER JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
 INNER JOIN html h ON h.id = dh.html_id

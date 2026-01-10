@@ -131,7 +131,7 @@ settings_colors AS (
     SELECT 
         COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'primary'::type_setting_colors LIMIT 1), '#171717') AS primary_color,
         COALESCE((SELECT c.hex_code FROM setting_colors sc JOIN colors c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND sc.type = 'accent'::type_setting_colors LIMIT 1), '#f5f5f5') AS accent
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (
         SELECT 1 FROM setting_flags sf
         JOIN flags f ON sf.flag_id = f.id
@@ -178,7 +178,7 @@ filt AS (
       AND (cardinality((SELECT roles FROM params)::text[]) = 0 OR a.profile_role::text = ANY((SELECT roles FROM params)::text[]))
       AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (
           SELECT DISTINCT s.id
-          FROM simulations s
+          FROM simulation s
           WHERE EXISTS (
             SELECT 1 FROM simulation_flags sf
             JOIN flags f ON sf.flag_id = f.id
@@ -329,7 +329,7 @@ simulation_data AS (
             ARRAY[]::text[]
         ) as department_ids
     FROM all_simulation_ids asi
-    LEFT JOIN simulations s ON s.id = asi.simulation_id
+    LEFT JOIN simulation s ON s.id = asi.simulation_id
     WHERE EXISTS (
         SELECT 1 FROM simulation_flags sf
         JOIN flags f ON sf.flag_id = f.id

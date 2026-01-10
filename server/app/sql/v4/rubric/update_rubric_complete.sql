@@ -100,7 +100,7 @@ user_profile AS (
         p.role,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
@@ -173,7 +173,7 @@ get_or_create_pass_points AS (
     RETURNING id as pass_point_id, value as pass_point_value
 ),
 update_rubric AS (
-    UPDATE rubrics r SET
+    UPDATE rubric r SET
         rubric_domain_id = x.rubric_domain_id,
         updated_at = NOW()
     FROM params x

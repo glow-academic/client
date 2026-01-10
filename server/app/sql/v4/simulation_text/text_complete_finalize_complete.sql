@@ -50,7 +50,7 @@ get_message_from_tool_call AS (
     FROM get_tool_call gtc
     JOIN calls tc ON tc.id = gtc.tool_call_id
     JOIN message_calls mc ON mc.call_id = tc.id
-    JOIN messages m ON m.id = mc.message_id
+    JOIN message m ON m.id = mc.message_id
     WHERE m.role = 'assistant'::message_role
     ORDER BY m.id, m.created_at DESC
     LIMIT 1
@@ -75,7 +75,7 @@ update_message_content_final AS (
 ),
 -- Mark message as completed
 complete_message AS (
-    UPDATE messages
+    UPDATE message
     SET completed = true,
         updated_at = NOW()
     WHERE id = (SELECT message_id FROM selected_message LIMIT 1)

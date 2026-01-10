@@ -169,27 +169,27 @@ profile_role_lookup AS (
     SELECT 
         CASE 
             WHEN rpi.resolved_profile_id IS NULL THEN 'instructional'
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'member' THEN 'member'
+            WHEN (SELECT role FROM profile WHERE id = rpi.resolved_profile_id) = 'member' THEN 'member'
             ELSE 'instructional'
         END AS mode,
         CASE
             WHEN rpi.resolved_profile_id IS NULL THEN false
-            ELSE COALESCE((SELECT role = 'member'::profile_role FROM profiles WHERE id = rpi.resolved_profile_id), false)
+            ELSE COALESCE((SELECT role = 'member'::profile_role FROM profile WHERE id = rpi.resolved_profile_id), false)
         END AS is_member_mode,
         -- Compute role hierarchy array based on profile's role
         CASE
             WHEN rpi.resolved_profile_id IS NULL THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'member' THEN ARRAY['member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profiles WHERE id = rpi.resolved_profile_id) = 'guest' THEN ARRAY['guest']::profile_role[]
+            WHEN (SELECT role FROM profile WHERE id = rpi.resolved_profile_id) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profile WHERE id = rpi.resolved_profile_id) = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profile WHERE id = rpi.resolved_profile_id) = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profile WHERE id = rpi.resolved_profile_id) = 'member' THEN ARRAY['member', 'guest']::profile_role[]
+            WHEN (SELECT role FROM profile WHERE id = rpi.resolved_profile_id) = 'guest' THEN ARRAY['guest']::profile_role[]
             ELSE ARRAY['instructional', 'member', 'guest']::profile_role[]  -- Default fallback
         END AS role_hierarchy
     FROM resolve_profile_id rpi
 ),
 -- Filter analytics for items: for member mode include profileId filter
--- Also filter by simulation_ids from cohorts (new filtering order)
+-- Also filter by simulation_ids FROM cohort (new filtering order)
 filt AS (
     SELECT a.* 
     FROM params p
@@ -200,7 +200,7 @@ filt AS (
       AND a.attempt_created_at < p.end_date 
       AND a.is_general = TRUE
       AND (NOT prl.is_member_mode OR a.profile_id = rpi.resolved_profile_id)
-      -- Filter by simulation_ids from cohorts (new filtering order)
+      -- Filter by simulation_ids FROM cohort (new filtering order)
       AND (cardinality(p.cohort_ids) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
 ),
 -- Get cohort-simulation pairs (includes empty cohorts)
@@ -222,7 +222,7 @@ cohort_sim AS (
 sim_expected AS (
     SELECT s.id AS simulation_id,
            COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS expected_scenarios
-    FROM simulations s
+    FROM simulation s
 ),
 -- Per attempt: sum grade_percent over completed root scenarios (one grade per root scenario per attempt)
 attempt_scores AS (
@@ -271,7 +271,7 @@ user_sim_status AS (
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         COALESCE(BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
             (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
-             FROM simulations s
+             FROM simulation s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
              LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
              LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
@@ -296,7 +296,7 @@ cohort_membership AS (
     CROSS JOIN cohort_profiles cp
     JOIN cohorts c ON c.id = cp.cohort_id
     JOIN cohort_simulations cs ON cs.cohort_id = c.id
-    JOIN profiles prof ON prof.id = cp.profile_id
+    JOIN profile prof ON prof.id = cp.profile_id
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     CROSS JOIN profile_role_lookup prl
     CROSS JOIN resolve_profile_id rpi
@@ -332,7 +332,7 @@ sim_meta AS (
         COALESCE((SELECT COUNT(*)::int FROM simulation_scenarios ss WHERE ss.simulation_id = s.id), 0) AS num_scenarios,
         COALESCE((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0) AS rubric_points,
         COALESCE((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1), 0) AS rubric_pass_points
-    FROM simulations s
+    FROM simulation s
     LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
     LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
@@ -349,7 +349,7 @@ sim_persona_meta AS (
             s.id AS simulation_id,
             sp.persona_id,
             COUNT(*) AS cnt
-        FROM simulations s
+        FROM simulation s
         LEFT JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
         LEFT JOIN scenarios sc ON sc.id = ss_link.scenario_id
         LEFT JOIN scenario_personas sp ON sp.scenario_id = sc.id AND sp.active = TRUE
@@ -583,7 +583,7 @@ simulation_array AS (
          ),
          COALESCE(sdd.department_ids, ARRAY[]::text[])
         )::types.q_get_home_overview_v4_simulation AS simulation
-    FROM simulations sim
+    FROM simulation sim
     LEFT JOIN (
         SELECT 
             sd.simulation_id,

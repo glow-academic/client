@@ -138,7 +138,7 @@ draft_payload_data AS (
     LIMIT 1
 ),
 model_exists_check AS (
-    SELECT EXISTS(SELECT 1 FROM models WHERE id = (SELECT model_id FROM params))::boolean as model_exists
+    SELECT EXISTS(SELECT 1 FROM model WHERE id = (SELECT model_id FROM params))::boolean as model_exists
 ),
 resolve_profile_id AS (
     SELECT 
@@ -151,7 +151,7 @@ actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params)::uuid as profile_id,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
-    FROM profiles p
+    FROM profile p
     WHERE p.id = (SELECT profile_id FROM params)::uuid
 ),
 model_data AS (
@@ -163,7 +163,7 @@ model_data AS (
         (SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider,
         NULL::uuid as provider_id,  -- Provider is now enum, not UUID
         (SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider_name
-    FROM models m
+    FROM model m
     WHERE m.id = (SELECT model_id FROM params)
 ),
 -- Determine if model is an image model (has 'image' output modality)
@@ -176,7 +176,7 @@ image_model_check AS (
 model_endpoint_data AS (
     SELECT 
         COALESCE(e.base_url, '') as base_url
-    FROM models m
+    FROM model m
     LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
     LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
     WHERE m.id = (SELECT model_id FROM params)
@@ -202,7 +202,7 @@ user_departments AS (
 ),
 user_departments_data AS (
     SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
-    FROM departments d
+    FROM department d
     JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -229,13 +229,13 @@ model_all_keys AS (
         COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         ARRAY_AGG(DISTINCT ds.department_id) FILTER (WHERE ds.department_id IS NOT NULL) as department_ids
-    FROM models m
+    FROM model m
     LEFT JOIN model_domains md_j ON md_j.model_id = m.id
     LEFT JOIN domains d ON d.id = md_j.domain_id
     LEFT JOIN domain_providers dp ON dp.domain_id = d.id
     JOIN setting_provider_keys spk ON spk.provider = dp.provider AND spk.active = true
     JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
-    JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND ds.active = true
@@ -251,12 +251,12 @@ model_all_keys AS (
         COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
         NULL::uuid[] as department_ids
-    FROM keys k
+    FROM key k
     CROSS JOIN resolve_profile_id rpi
     WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND NOT EXISTS (
         -- Exclude keys already included via setting_provider_keys for this model's provider
-        SELECT 1 FROM models m2
+        SELECT 1 FROM model m2
         JOIN model_domains md_j2 ON md_j2.model_id = m2.id
         JOIN domains d2 ON d2.id = md_j2.domain_id
         JOIN domain_providers dp2 ON dp2.domain_id = d2.id
@@ -273,14 +273,14 @@ model_all_keys AS (
         -- Include keys with settings links that match user's departments
         EXISTS (
             SELECT 1 FROM setting_provider_keys spk4
-            JOIN settings s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s4.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+            JOIN setting s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s4.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
             JOIN department_settings ds4 ON ds4.settings_id = s4.id AND ds4.active = true
             JOIN user_departments ud ON ud.department_id = ds4.department_id
             WHERE spk4.key_id = k.id AND spk4.active = true
         )
         OR
         -- Superadmin can see all keys
-        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profiles p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND p.role = 'superadmin'::profile_role)
+        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profile p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND p.role = 'superadmin'::profile_role)
     )
 ),
 keys_data AS (

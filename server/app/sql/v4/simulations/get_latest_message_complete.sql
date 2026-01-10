@@ -39,13 +39,13 @@ SELECT
     m.created_at,
     m.completed,
     m.updated_at
-FROM chats c
+FROM chat c
 JOIN chat_groups cg ON cg.chat_id = c.id
 JOIN groups g ON g.id = cg.group_id
 JOIN group_runs gr ON gr.group_id = g.id
-JOIN runs r ON r.id = gr.run_id
+JOIN run r ON r.id = gr.run_id
 JOIN message_runs mr ON mr.run_id = r.id
-JOIN messages m ON m.id = mr.message_id
+JOIN message m ON m.id = mr.message_id
 LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
 WHERE c.id = chat_id

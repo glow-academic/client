@@ -59,7 +59,7 @@ name_resource AS (
 ),
 -- Update document (without name column)
 document_update AS (
-    UPDATE documents
+    UPDATE document
     SET updated_at = NOW()
     WHERE id = (SELECT document_id FROM params)
     RETURNING id as document_id

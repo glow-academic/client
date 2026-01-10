@@ -39,7 +39,7 @@ actor_profile AS (
         x.profile_id,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 rubric_info AS (
     SELECT 
@@ -49,11 +49,11 @@ rubric_info AS (
          JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
          JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
          WHERE rga.rubric_id = r.id AND ss.active = true) as usage_count
-    FROM rubrics r
+    FROM rubric r
     WHERE r.id = (SELECT rubric_id FROM params)
 ),
 delete_rubric AS (
-    DELETE FROM rubrics
+    DELETE FROM rubric
     WHERE id IN (
         SELECT id FROM rubric_info WHERE usage_count = 0
     )

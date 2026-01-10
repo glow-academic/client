@@ -67,7 +67,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 )
 SELECT 
     up.actor_name::text as actor_name,

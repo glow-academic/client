@@ -48,11 +48,11 @@ WITH run_info AS (
         COALESCE(
             department_id,
             -- Try to get department from chat
-            (SELECT sd.department_id FROM runs r2
+            (SELECT sd.department_id FROM run r2
              JOIN group_runs gr ON gr.run_id = r2.id
              JOIN groups g ON g.id = gr.group_id
              JOIN chat_groups cg ON cg.group_id = g.id
-             JOIN chats c ON c.id = cg.chat_id
+             JOIN chat c ON c.id = cg.chat_id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
              WHERE r2.id = r.id LIMIT 1),
             -- Try to get department from profile
@@ -60,9 +60,9 @@ WITH run_info AS (
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
              WHERE rpf.run_id = r.id AND rpf.active = true LIMIT 1),
             -- Fallback to any active department
-            (SELECT id FROM departments d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
+            (SELECT id FROM department d WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
         ) as department_id
-    FROM runs r
+    FROM run r
     WHERE r.id = run_id
 ),
 -- Get system prompt for persona runs
@@ -120,7 +120,7 @@ system_message_hash AS (
 ),
 existing_system_message AS (
     SELECT m.id as system_message_id
-    FROM messages m
+    FROM message m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         JOIN contents cnt ON cnt.id = mc.content_id
     JOIN system_message_hash smh ON message_content_hash(cnt.content, 'system') = smh.hash
@@ -128,7 +128,7 @@ existing_system_message AS (
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO message (role, completed, audio, created_at, updated_at)
     SELECT 'system'::message_role, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
@@ -228,7 +228,7 @@ scenario_developer_content AS (
     JOIN group_runs gr ON gr.run_id = ri.run_id
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chats c ON c.id = cg.chat_id
+    JOIN chat c ON c.id = cg.chat_id
     JOIN scenario_problem_statements sps ON sps.scenario_id = c.scenario_id AND sps.active = true
     JOIN problem_statements ps ON ps.id = sps.problem_statement_id
     CROSS JOIN LATERAL (SELECT template FROM scenario_developer_template LIMIT 1) sdt
@@ -244,7 +244,7 @@ scenario_developer_hash AS (
 ),
 existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
-    FROM messages m
+    FROM message m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         JOIN contents cnt ON cnt.id = mc.content_id
     JOIN scenario_developer_hash sdh ON message_content_hash(cnt.content, 'developer') = sdh.hash
@@ -252,7 +252,7 @@ existing_scenario_developer_message AS (
     LIMIT 1
 ),
 new_scenario_developer_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO message (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM scenario_developer_content sdc
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)

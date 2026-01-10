@@ -178,7 +178,7 @@ actor_profile AS (
     SELECT 
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    JOIN profile p ON p.id = rpi.resolved_profile_id
     WHERE rpi.resolved_profile_id IS NOT NULL
 ),
 user_departments AS (
@@ -191,7 +191,7 @@ user_profile AS (
         role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM resolve_profile_id rpi
-    JOIN profiles p ON p.id = rpi.resolved_profile_id
+    JOIN profile p ON p.id = rpi.resolved_profile_id
     WHERE rpi.resolved_profile_id IS NOT NULL
 ),
 eval_status_summary AS (
@@ -262,7 +262,7 @@ eval_data AS (
             WHEN ess.completed_runs = ess.total_runs THEN 'completed'
             ELSE 'pending'
         END as status
-    FROM evals e
+    FROM eval e
     LEFT JOIN eval_status_summary ess ON ess.eval_id = e.id
 ),
 rubric_departments_data AS (

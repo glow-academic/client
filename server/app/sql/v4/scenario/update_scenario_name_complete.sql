@@ -34,7 +34,7 @@ WITH params AS (
 ),
 scenario_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM scenarios WHERE id = (SELECT scenario_id FROM params)
+        SELECT 1 FROM scenario WHERE id = (SELECT scenario_id FROM params)
     ) as scenario_exists
 ),
 get_or_create_name AS (
@@ -46,7 +46,7 @@ get_or_create_name AS (
     RETURNING id as name_id, name as name_value
 ),
 update_scenario_updated_at AS (
-    UPDATE scenarios
+    UPDATE scenario
     SET updated_at = NOW()
     WHERE id = (SELECT scenario_id FROM params)
       AND EXISTS (SELECT 1 FROM scenario_exists_check WHERE scenario_exists = true)

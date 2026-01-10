@@ -47,9 +47,9 @@ WITH params AS (
 get_tool_info AS (
     SELECT t.id as tool_id, COALESCE(rt.resource::text, '') as tool_type, t.name as tool_name
     FROM params p
-    JOIN tools t ON t.name = p.tool_name
+    JOIN tool t ON t.name = p.tool_name
     JOIN agent_tools at ON at.tool_id = t.id
-    JOIN runs r_run ON r_run.id = p.run_id
+    JOIN run r_run ON r_run.id = p.run_id
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     WHERE at.agent_id = r_run.agent_id
       AND at.active = true
@@ -97,7 +97,7 @@ link_call_to_message AS (
     FROM params p
     CROSS JOIN selected_tool_call stc
     JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     WHERE m.role = 'assistant'
     ORDER BY m.created_at
     LIMIT 1

@@ -43,13 +43,13 @@ WITH params AS (
 ),
 profile_exists_check AS (
     -- Check if profile exists independently of deletion
-    SELECT EXISTS(SELECT 1 FROM profiles WHERE id = (SELECT target_profile_id FROM params))::boolean as profile_exists
+    SELECT EXISTS(SELECT 1 FROM profile WHERE id = (SELECT target_profile_id FROM params))::boolean as profile_exists
 ),
 actor_profile AS (
     SELECT 
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.current_profile_id
+    JOIN profile p ON p.id = x.current_profile_id
 ),
 profile_check AS (
     -- Check if profile exists and get details
@@ -58,12 +58,12 @@ profile_check AS (
         (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
         (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name
-    FROM profiles p
+    FROM profile p
     WHERE p.id = (SELECT target_profile_id FROM params)
 ),
 profile_delete AS (
     -- Delete profile (only if exists)
-    DELETE FROM profiles
+    DELETE FROM profile
     WHERE id = (SELECT target_profile_id FROM params)
         AND EXISTS (SELECT 1 FROM profile_check)
     RETURNING id

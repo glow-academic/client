@@ -85,7 +85,7 @@ user_profile AS (
         p.role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
@@ -138,12 +138,12 @@ description_resource AS (
     RETURNING id as description_id
 ),
 update_simulation AS (
-    UPDATE simulations SET
+    UPDATE simulation SET
         updated_at = NOW()
     FROM params x
     JOIN assert_permissions ap ON TRUE
-    WHERE simulations.id = x.simulation_id
-    RETURNING simulations.id as simulation_id
+    WHERE simulation.id = x.simulation_id
+    RETURNING simulation.id as simulation_id
 ),
 -- Update simulation name
 update_simulation_name AS (

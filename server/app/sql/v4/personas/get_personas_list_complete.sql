@@ -110,7 +110,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 persona_active_scenario_links AS (
     SELECT 
@@ -163,7 +163,7 @@ persona_data_base AS (
         COALESCE(pasl.active_scenario_count, 0) as active_scenario_count,
         COALESCE(pasl_all.total_scenario_links, 0) as total_scenario_links,
         CASE WHEN COUNT(pd.persona_id) > 0 THEN true ELSE false END as has_dept_links
-    FROM personas p
+    FROM persona p
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
     LEFT JOIN persona_active_scenario_links pasl ON pasl.persona_id = p.id
     LEFT JOIN persona_all_scenario_links pasl_all ON pasl_all.persona_id = p.id
@@ -205,7 +205,7 @@ scenario_department_check AS (
     AND sd.active = true
     UNION
     SELECT DISTINCT s.id::text
-    FROM scenarios s
+    FROM scenario s
     WHERE s.id::text = ANY(SELECT scenario_id::text FROM all_scenario_ids)
     AND NOT EXISTS (
         SELECT 1 FROM scenario_departments sd2 
@@ -236,7 +236,7 @@ department_mapping_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM departments d
+    FROM department d
     WHERE d.id IN (SELECT department_id FROM user_departments)
 ),
 assigned_agent_ids AS (
@@ -250,7 +250,7 @@ agent_mapping_data AS (
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
         ARRAY[COALESCE(da.artifact::text, '')] as roles
-    FROM agents a
+    FROM agent a
     LEFT JOIN agent_domains adom ON adom.agent_id = a.id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     WHERE a.id IN (SELECT agent_id FROM assigned_agent_ids)

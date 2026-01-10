@@ -184,7 +184,7 @@ draft_payload_data AS (
     LIMIT 1
 ),
 eval_exists_check AS (
-    SELECT EXISTS(SELECT 1 FROM evals WHERE id = (SELECT eval_id FROM params))::boolean as eval_exists
+    SELECT EXISTS(SELECT 1 FROM eval WHERE id = (SELECT eval_id FROM params))::boolean as eval_exists
 ),
 resolve_profile_id AS (
     SELECT 
@@ -308,15 +308,15 @@ runs_list AS (
         ) as rubric_grade_agents
     FROM params x
     JOIN eval_runs er ON er.eval_id = x.eval_id
-    JOIN runs r ON r.id = er.run_id
+    JOIN run r ON r.id = er.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN models m ON m.id = rm.model_id
     LEFT JOIN agents a ON a.id = r.agent_id
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
     LEFT JOIN personas per ON per.id = rper.persona_id
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-    LEFT JOIN profiles p ON p.id = rp.profile_id
-    LEFT JOIN grades g ON g.run_id = er.run_id 
+    LEFT JOIN profile p ON p.id = rp.profile_id
+    LEFT JOIN grade g ON g.run_id = er.run_id 
         AND EXISTS (
             SELECT 1 FROM test_runs tr
             JOIN tests t ON t.id = tr.test_id
@@ -350,7 +350,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 valid_departments_for_eval AS (
     SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
@@ -497,7 +497,7 @@ runs_base AS (
         rp.profile_id,
         r.agent_id,
         rper.persona_id
-    FROM runs r
+    FROM run r
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
@@ -523,7 +523,7 @@ runs_with_names AS (
         END as actor_type
     FROM runs_base rb
     LEFT JOIN models m ON m.id = rb.model_id
-    LEFT JOIN profiles p ON p.id = rb.profile_id
+    LEFT JOIN profile p ON p.id = rb.profile_id
     LEFT JOIN agents a ON a.id = rb.agent_id
     LEFT JOIN personas per ON per.id = rb.persona_id
 ),

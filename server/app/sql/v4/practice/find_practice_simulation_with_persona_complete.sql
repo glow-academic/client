@@ -37,7 +37,7 @@ WITH practice_simulations AS (
         (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) as simulation_title,
         ss.scenario_id,
         ss.position as position_val
-    FROM simulations sim
+    FROM simulation sim
     JOIN simulation_scenarios ss ON ss.simulation_id = sim.id AND ss.active = true
     JOIN scenarios s ON s.id = ss.scenario_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true

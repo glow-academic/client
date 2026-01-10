@@ -29,7 +29,7 @@ AS $$
 SELECT m.id as message_id
 FROM calls tc
 JOIN message_calls mc ON mc.call_id = tc.id
-JOIN messages m ON m.id = mc.message_id
+JOIN message m ON m.id = mc.message_id
 JOIN message_runs mr ON mr.message_id = m.id
 WHERE tc.id = api_get_message_id_from_tool_call_v4.tool_call_id
   AND mr.run_id = api_get_message_id_from_tool_call_v4.run_id

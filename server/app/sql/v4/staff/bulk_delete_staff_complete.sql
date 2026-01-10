@@ -46,18 +46,18 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 deletable_profiles AS (
     -- Get list of profiles that can be deleted
     SELECT array_agg(p.id) as deletable_ids
-    FROM profiles p
+    FROM profile p
     CROSS JOIN params pr
     WHERE p.id = ANY(pr.profile_ids)
 ),
 profile_delete AS (
     -- Delete profiles
-    DELETE FROM profiles p
+    DELETE FROM profile p
     WHERE EXISTS (
         SELECT 1 FROM params pr WHERE p.id = ANY(pr.profile_ids)
     )

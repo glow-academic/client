@@ -154,7 +154,7 @@ draft_payload_data AS (
 agent_exists_check AS (
     -- Check if agent exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM agents WHERE id = (SELECT agent_id FROM params)
+        SELECT 1 FROM agent WHERE id = (SELECT agent_id FROM params)
     )::boolean as agent_exists
 ),
 agent_info AS (
@@ -273,7 +273,7 @@ debug_data AS (
         mrm.model_id::text,
         di.content
     FROM params x
-    JOIN runs mr ON mr.agent_id = x.agent_id
+    JOIN run mr ON mr.agent_id = x.agent_id
     JOIN run_debug_info rdi ON rdi.run_id = mr.id
     JOIN debug_info di ON di.id = rdi.debug_info_id
     JOIN run_models mrm ON mrm.run_id = mr.id
@@ -284,10 +284,10 @@ debug_data AS (
 all_models AS (
     SELECT 
         id::text as model_id,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = models.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = models.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = models.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
-    FROM models
+        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = model.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = model.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = model.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
+    FROM model
 ),
 model_modalities_data AS (
     SELECT 
@@ -306,7 +306,7 @@ user_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 user_departments AS (
     SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
@@ -322,7 +322,7 @@ user_has_agent_access AS (
         JOIN user_departments ud ON ud.id = ad.department_id::uuid
     ) OR EXISTS(
         SELECT 1 FROM params x
-        JOIN profiles p ON p.id = x.profile_id AND p.role = 'superadmin'::profile_role
+        JOIN profile p ON p.id = x.profile_id AND p.role = 'superadmin'::profile_role
     ) OR (
         -- Default agents (no department links) are accessible to all
         SELECT COUNT(*) FROM params x

@@ -27,7 +27,7 @@ actor_profile AS (
         (SELECT profile_id FROM params) as profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 original_parameter AS (
     SELECT 
@@ -61,7 +61,7 @@ new_description_resource AS (
 ),
 new_parameter AS (
     -- Insert parameter without name/description/active/flag columns
-    INSERT INTO parameters (created_at, updated_at)
+    INSERT INTO parameter (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM original_parameter
     RETURNING id as parameter_id
@@ -221,7 +221,7 @@ field_descriptions_resources AS (
 ),
 new_fields AS (
     -- Create all fields (without name/description/parameter_id columns)
-    INSERT INTO fields (created_at, updated_at)
+    INSERT INTO field (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM original_fields of
     CROSS JOIN new_parameter np

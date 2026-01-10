@@ -69,7 +69,7 @@ user_departments AS (
 -- Get eligible agents (active, available to user's departments, have persona artifact)
 eligible_agents AS (
     SELECT DISTINCT a.id as agent_id
-    FROM agents a
+    FROM agent a
     CROSS JOIN params p
     CROSS JOIN selected_department sd
     -- Must be active
@@ -113,7 +113,7 @@ agent_tool_resources AS (
         ) as tool_resources
     FROM eligible_agents ea
     LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
-    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     GROUP BY ea.agent_id
 ),

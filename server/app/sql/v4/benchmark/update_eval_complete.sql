@@ -55,7 +55,7 @@ user_profile AS (
         role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
@@ -117,11 +117,11 @@ get_groups_flag AS (
     LIMIT 1
 ),
 update_eval AS (
-    UPDATE evals SET
+    UPDATE eval SET
         updated_at = NOW()
     FROM params p
-    WHERE evals.id = p.eval_id
-    RETURNING evals.id as eval_id
+    WHERE eval.id = p.eval_id
+    RETURNING eval.id as eval_id
 ),
 update_eval_groups_flag AS (
     -- Update groups flag

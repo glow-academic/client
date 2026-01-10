@@ -256,7 +256,7 @@ default_settings_for_auth AS (
     SELECT 
         s.id as settings_id,
         EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'guest_login_enabled' AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -269,7 +269,7 @@ dept_specific_settings_for_auth AS (
     SELECT 
         s.id as settings_id,
         EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'guest_login_enabled' AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
-    FROM settings s
+    FROM setting s
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     CROSS JOIN params_normalized pn
     WHERE pn.department_id_uuid IS NOT NULL
@@ -283,7 +283,7 @@ selected_settings_for_auth AS (
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings_for_auth),
             (SELECT settings_id FROM default_settings_for_auth),
-            (SELECT id FROM settings WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = settings.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = setting.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id,
         COALESCE(
             (SELECT guest_login_enabled FROM dept_specific_settings_for_auth),
@@ -294,8 +294,8 @@ selected_settings_for_auth AS (
 active_departments_count AS (
     -- Count all active departments
     SELECT COUNT(*) as count
-    FROM departments
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = departments.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE)
+    FROM department
+    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = department.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = TRUE)
 ),
 department_exists_check AS (
     -- Check if the specified department exists and is active (if department_id provided)
@@ -303,7 +303,7 @@ department_exists_check AS (
         CASE 
             WHEN pn.department_id_uuid IS NOT NULL THEN
                 EXISTS(
-                    SELECT 1 FROM departments d
+                    SELECT 1 FROM department d
                     WHERE d.id = pn.department_id_uuid
                     AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
                 )
@@ -314,9 +314,9 @@ department_exists_check AS (
 department_auth_providers_count AS (
     -- Count auth providers for specific department (if department_id provided)
     SELECT COUNT(DISTINCT a.id) as count
-    FROM departments d
+    FROM department d
     JOIN department_settings ds ON ds.department_id = d.id AND ds.active = true
-    JOIN settings s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    JOIN setting s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
     JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
     CROSS JOIN params_normalized pn
@@ -328,19 +328,19 @@ default_settings_auth_providers_count AS (
     -- Count auth providers for default settings (no department links)
     SELECT COUNT(DISTINCT a.id) as count
     FROM default_settings_for_auth ds
-    JOIN settings s ON s.id = ds.settings_id
+    JOIN setting s ON s.id = ds.settings_id
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
     JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
 ),
 departments_without_auth_providers_count AS (
     -- Count departments that have no auth providers configured
     SELECT COUNT(DISTINCT d.id) as count
-    FROM departments d
+    FROM department d
     WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
       AND NOT EXISTS (
           SELECT 1
           FROM department_settings ds
-          JOIN settings s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+          JOIN setting s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
           JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
           JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
           WHERE ds.department_id = d.id
@@ -353,7 +353,7 @@ resolve_profile_from_department AS (
     -- department-id can be NULL for default settings (no department-specific settings)
     SELECT 
         CASE 
-            -- If both profile IDs are null and we have auth_mode, resolve from settings
+            -- If both profile IDs are null and we have auth_mode, resolve FROM setting
             WHEN (SELECT actual_profile_id FROM params) IS NULL 
                  AND (SELECT effective_profile_id FROM params) IS NULL 
                  AND (SELECT auth_mode FROM params) IN ('default-guest', 'default-account') THEN
@@ -365,14 +365,14 @@ resolve_profile_from_department AS (
                             CASE 
                                 WHEN (SELECT auth_mode FROM params) = 'default-guest' THEN
                                     (SELECT sdg.profile_id
-                                     FROM settings s
+                                     FROM setting s
                                      JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                                      JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
                                      WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
                                      LIMIT 1)
                                 WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
                                     (SELECT sda.profile_id
-                                     FROM settings s
+                                     FROM setting s
                                      JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
                                      JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
                                      WHERE ds.department_id = (SELECT department_id FROM params)::uuid AND EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
@@ -384,7 +384,7 @@ resolve_profile_from_department AS (
                     CASE 
                         WHEN (SELECT auth_mode FROM params) = 'default-guest' THEN
                             (SELECT sdg.profile_id
-                             FROM settings s
+                             FROM setting s
                              JOIN settings_default_guest sdg ON sdg.settings_id = s.id AND sdg.active = true
                              WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
                                AND NOT EXISTS (
@@ -394,7 +394,7 @@ resolve_profile_from_department AS (
                              LIMIT 1)
                         WHEN (SELECT auth_mode FROM params) = 'default-account' THEN
                             (SELECT sda.profile_id
-                             FROM settings s
+                             FROM setting s
                              JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
                              WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
                                AND NOT EXISTS (
@@ -424,7 +424,7 @@ emulation_validation AS (
                 -- Check if effective profile is in simulatable list based on actual user's role
                 SELECT EXISTS (
                     SELECT 1
-                    FROM profiles p_actual
+                    FROM profile p_actual
                     CROSS JOIN profiles p_effective
                     WHERE p_actual.id = (SELECT actual_profile_id FROM resolved_profile_ids)
                       AND p_effective.id = (SELECT effective_profile_id FROM resolved_profile_ids)
@@ -441,14 +441,14 @@ emulation_validation AS (
 ),
 actual_profile_role AS (
     -- Use actual (logged-in) user's role for emulation permissions
-    SELECT role FROM profiles p WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
+    SELECT role FROM profile p WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
 ),
 effective_profile_role AS (
     -- Use effective profile's role for UI permissions filtering
     -- Return NULL role when profile ID is NULL (for settings-only requests)
     SELECT 
         COALESCE(
-            (SELECT role FROM profiles p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids) LIMIT 1),
+            (SELECT role FROM profile p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids) LIMIT 1),
             NULL::profile_role
         ) as role
 ),
@@ -481,7 +481,7 @@ actual_profile_data AS (
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
-    FROM profiles p
+    FROM profile p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
@@ -531,7 +531,7 @@ effective_profile_data AS (
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
-    FROM profiles p
+    FROM profile p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
@@ -616,7 +616,7 @@ sim_data AS (
         ) as time_limit,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE),
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
-    FROM simulations s
+    FROM simulation s
     JOIN cohort_simulations cs ON cs.simulation_id = s.id
     JOIN cohort_data cd ON cd.id = cs.cohort_id
     LEFT JOIN (
@@ -687,7 +687,7 @@ settings_resolution AS (
     WITH default_settings AS (
         -- Get settings with no department links (cross-department/default)
         SELECT s.id as settings_id
-        FROM settings s
+        FROM setting s
         WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
           AND NOT EXISTS (
               SELECT 1 FROM department_settings sd 
@@ -719,7 +719,7 @@ settings_resolution AS (
     dept_specific_settings AS (
         -- Get department-specific settings (if department exists from profile OR parameter)
         SELECT s.id as settings_id
-        FROM settings s
+        FROM setting s
         JOIN department_settings sd ON sd.settings_id = s.id
         CROSS JOIN resolved_department_id rdi
         WHERE rdi.department_id IS NOT NULL
@@ -734,7 +734,7 @@ settings_resolution AS (
             COALESCE(
                 (SELECT settings_id FROM dept_specific_settings),
                 (SELECT settings_id FROM default_settings),
-                (SELECT id FROM settings WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = settings.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+                (SELECT id FROM setting WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = setting.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
             ) as settings_id
     ),
     settings_auths_data AS (
@@ -825,7 +825,7 @@ settings_resolution AS (
         sdgd.default_guest_profile_id,
         sdad.default_account_profile_id
     FROM selected_settings ss
-    JOIN settings s ON s.id = ss.settings_id::uuid
+    JOIN setting s ON s.id = ss.settings_id::uuid
     LEFT JOIN settings_auths_data sad ON true
     LEFT JOIN settings_providers_data spd ON true
     LEFT JOIN settings_default_guest_data sdgd ON true
@@ -839,10 +839,10 @@ actor_name_computed AS (
     SELECT 
         COALESCE(
             (SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')
-             FROM profiles p
+             FROM profile p
              WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids) LIMIT 1),
             (SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')
-             FROM profiles p
+             FROM profile p
              WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids) LIMIT 1),
             NULL::text
         ) as actor_name

@@ -127,7 +127,7 @@ filtered_objective_ids AS (
     CROSS JOIN UNNEST(COALESCE(rp.objective_ids, ARRAY[]::text[])) as obj_id
     WHERE NOT (obj_id LIKE '%_%' AND array_length(string_to_array(obj_id, '_'), 1) = 2)
 ),
--- Preprocessing: Extract parameter_item_ids and parameter_ids from parameters composite type array
+-- Preprocessing: Extract parameter_item_ids and parameter_ids FROM parameter composite type array
 parameter_preprocessing AS (
     SELECT
         COALESCE(
@@ -207,7 +207,7 @@ user_profile AS (
         p.role,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     -- Get scenario's current active department links
@@ -241,13 +241,13 @@ actor_profile AS (
 scenario_exists_check AS (
     -- Check if scenario exists
     SELECT EXISTS(
-        SELECT 1 FROM scenarios WHERE id = (SELECT scenario_id FROM params)
+        SELECT 1 FROM scenario WHERE id = (SELECT scenario_id FROM params)
     )::boolean as scenario_exists
 ),
 scenario_exists AS (
     -- Get scenario info if exists
     SELECT id
-    FROM scenarios
+    FROM scenario
     WHERE id = (SELECT scenario_id FROM params)
 ),
 get_or_create_name AS (
@@ -278,7 +278,7 @@ get_flag_ids AS (
 ),
 update_scenario AS (
     -- Update scenario basic fields (only updated_at)
-    UPDATE scenarios
+    UPDATE scenario
     SET 
         updated_at = NOW()
     WHERE id IN (SELECT id FROM scenario_exists)

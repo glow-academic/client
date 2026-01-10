@@ -130,12 +130,12 @@ user_profile AS (
     SELECT 
         role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profiles.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profiles.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles ON profiles.id = x.profile_id
+    JOIN profile ON profile.id = x.profile_id
 ),
 eval_status_summary AS (
     SELECT 
@@ -155,7 +155,7 @@ eval_data AS (
         EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'dynamic' AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE),
         e.created_at,
         e.updated_at,
-        -- Get first rubric from junction table for display (from runs or groups based on use_groups)
+        -- Get first rubric from junction table for display (FROM run or groups based on use_groups)
         (SELECT rga.rubric_id 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
@@ -206,7 +206,7 @@ eval_data AS (
             WHEN ess.completed_runs = ess.total_runs THEN 'completed'
             ELSE 'pending'
         END as status
-    FROM evals e
+    FROM eval e
     LEFT JOIN eval_status_summary ess ON ess.eval_id = e.id
 ),
 rubric_departments_data AS (

@@ -45,6 +45,6 @@ SELECT
     EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE),
     NULL::uuid as profile_id,
     (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
-FROM scenarios s
+FROM scenario s
 WHERE s.id = api_get_scenario_by_id_v4.scenario_id
 $$;

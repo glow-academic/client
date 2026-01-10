@@ -40,7 +40,7 @@ WITH params AS (
 -- Get tool_id for HTML tool (resource='html', artifact='document')
 get_tool_id AS (
     SELECT t.id as tool_id
-    FROM tools t
+    FROM tool t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id
     WHERE rt.resource = 'html'::resources
       AND t.active = true
@@ -87,7 +87,7 @@ link_call_to_message AS (
     FROM params p
     CROSS JOIN selected_tool_call stc
     JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN messages m ON m.id = mr.message_id
+    JOIN message m ON m.id = mr.message_id
     WHERE m.role = 'assistant'
     ORDER BY m.created_at
     LIMIT 1

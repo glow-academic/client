@@ -175,7 +175,7 @@ group_data AS (
 selected_agent AS (
     -- Use provided agent_id directly
     SELECT a.id as agent_id
-    FROM agents a
+    FROM agent a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
       AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
@@ -185,7 +185,7 @@ profile_rate_limit AS (
     -- Get rate limit for the profile
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profiles prof
+    FROM profile prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
     WHERE prof.id = (SELECT profile_id FROM params)
 ),
@@ -194,7 +194,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM runs mr
+    FROM run mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -212,7 +212,7 @@ profile_primary_department AS (
 ),
 default_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -222,7 +222,7 @@ default_settings AS (
 ),
 dept_specific_settings AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
@@ -238,7 +238,7 @@ settings_with_keys AS (
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -248,7 +248,7 @@ dept_specific_settings_with_keys AS (
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
@@ -265,7 +265,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT s.id FROM settings s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
+            (SELECT s.id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
         ) as settings_id
 ),
 -- Build tool arguments from schemas
@@ -328,7 +328,7 @@ tool_schema_data AS (
             ) FILTER (WHERE sf.name IS NOT NULL AND sf.default_value != ''),
             '{}'::jsonb
         ) as argument_defaults
-    FROM tools t
+    FROM tool t
     LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
     LEFT JOIN schemas s ON s.id = ts.schema_id
     LEFT JOIN schema_fields sf ON sf.schema_id = s.id
@@ -347,7 +347,7 @@ agent_tools_data AS (
         ) as tools
     FROM selected_agent sa
     LEFT JOIN agent_tools at ON at.agent_id = sa.agent_id AND at.active = true
-    LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN agent_domains adom ON adom.agent_id = sa.agent_id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
@@ -463,7 +463,7 @@ context_data AS (
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO run (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id

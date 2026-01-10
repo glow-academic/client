@@ -69,14 +69,14 @@ name_resource AS (
 ),
 -- Update document (without name column)
 update_document AS (
-    UPDATE documents
+    UPDATE document
     SET updated_at = NOW()
     FROM extract_title et
     CROSS JOIN params p
-    WHERE documents.id = p.document_id
+    WHERE document.id = p.document_id
       AND et.title IS NOT NULL
       AND et.title != ''
-    RETURNING documents.id as document_id
+    RETURNING document.id as document_id
 ),
 -- Remove old name links
 remove_old_name AS (

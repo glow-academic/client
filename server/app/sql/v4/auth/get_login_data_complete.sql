@@ -67,7 +67,7 @@ WITH params AS (
 -- Get default department from settings_default_department table
 default_department_from_settings AS (
     SELECT sdd.department_id
-    FROM settings s
+    FROM setting s
     JOIN settings_default_department sdd ON sdd.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true) AND sdd.active = true
     LIMIT 1
@@ -76,7 +76,7 @@ default_department_from_settings AS (
 -- Note: Include department-specific settings even if inactive (they're linked via department_settings)
 dept_settings AS (
     SELECT DISTINCT s.id as settings_id, EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'guest_login_enabled' AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
-    FROM settings s
+    FROM setting s
     JOIN department_settings ds ON ds.settings_id = s.id
     WHERE ds.active = true
       AND ((SELECT department_id FROM params) IS NULL OR ds.department_id = (SELECT department_id FROM params))
@@ -84,7 +84,7 @@ dept_settings AS (
 -- Get default settings (no department links)
 default_settings AS (
     SELECT s.id as settings_id, EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'guest_login_enabled' AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings ds 
@@ -164,7 +164,7 @@ departments_data AS (
             ),
             '{}'::types.q_get_login_data_v4_department[]
         ) as departments
-    FROM departments d
+    FROM department d
     WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 -- Ensure departments_data always returns a row
@@ -184,14 +184,14 @@ realm_name_calc AS (
             WHEN EXISTS (
                 SELECT 1 
                 FROM department_settings ds
-                JOIN settings s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+                JOIN setting s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
                 JOIN setting_auth_keys sak ON sak.settings_id = s.id AND sak.active = true
                 WHERE ds.department_id = (SELECT department_id FROM params) AND ds.active = true
             ) THEN (
                 -- Department settings has keys → use settings_id as realm
                 SELECT s.id::text
                 FROM department_settings ds
-                JOIN settings s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+                JOIN setting s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
                 WHERE ds.department_id = (SELECT department_id FROM params) AND ds.active = true
                 LIMIT 1
             )
@@ -203,7 +203,7 @@ realm_name_calc AS (
 dept_default_account_check AS (
     SELECT EXISTS (
         SELECT 1
-        FROM settings s
+        FROM setting s
         JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
         JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
         WHERE ds.department_id = (SELECT department_id FROM params)
@@ -215,7 +215,7 @@ dept_default_account_check AS (
 default_settings_default_account_check AS (
     SELECT EXISTS (
         SELECT 1
-        FROM settings s
+        FROM setting s
         JOIN settings_default_account sda ON sda.settings_id = s.id AND sda.active = true
         WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
           AND NOT EXISTS (

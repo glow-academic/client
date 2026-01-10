@@ -67,7 +67,7 @@ WITH params AS (
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -109,7 +109,7 @@ resolve_department_id AS (
 dept_specific_settings AS (
     -- Get department-specific settings (if resolved_department_id exists)
     SELECT s.id as settings_id
-    FROM settings s
+    FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN resolve_department_id rdi ON sd.department_id = rdi.resolved_department_id
     WHERE rdi.resolved_department_id IS NOT NULL
@@ -126,20 +126,20 @@ selected_settings AS (
                 COALESCE(
                     (SELECT settings_id FROM dept_specific_settings),
                     (SELECT settings_id FROM default_settings),
-                    (SELECT id FROM settings WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = settings.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
+                    (SELECT id FROM setting WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = setting.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
                 )
             -- For guest requests (no department): return default settings only
             WHEN (SELECT is_guest_flag FROM is_guest) THEN
                 COALESCE(
                     (SELECT settings_id FROM default_settings),
-                    (SELECT id FROM settings WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = settings.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
+                    (SELECT id FROM setting WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = setting.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
                 )
             -- Fallback: prefer department-specific, then default, then any active
             ELSE
                 COALESCE(
                     (SELECT settings_id FROM dept_specific_settings),
                     (SELECT settings_id FROM default_settings),
-                    (SELECT id FROM settings WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = settings.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
+                    (SELECT id FROM setting WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = setting.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
                 )
         END as settings_id
 ),
@@ -251,7 +251,7 @@ SELECT
     sdgd.default_guest_profile_id,
     sdad.default_account_profile_id
 FROM selected_settings ss
-JOIN settings s ON s.id = ss.settings_id
+JOIN setting s ON s.id = ss.settings_id
 LEFT JOIN settings_auths_data sad ON true
 LEFT JOIN settings_providers_data spd ON true
 LEFT JOIN settings_default_guest_data sdgd ON true

@@ -50,7 +50,7 @@ actor_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 -- Insert/update name in names table
 name_resource AS (
@@ -72,7 +72,7 @@ description_resource AS (
 ),
 department_update AS (
     -- Update department (without title/description/active columns)
-    UPDATE departments SET
+    UPDATE department SET
         updated_at = NOW()
     WHERE id = (SELECT department_id FROM params)
     RETURNING id

@@ -82,7 +82,7 @@ WITH tool_schema_data AS (
             '{}'::jsonb
         ) as argument_defaults
     FROM agent_tools at
-    JOIN tools t ON t.id = at.tool_id
+    JOIN tool t ON t.id = at.tool_id
     LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
     LEFT JOIN schemas s ON s.id = ts.schema_id
     LEFT JOIN schema_fields sf ON sf.schema_id = s.id
@@ -102,7 +102,7 @@ SELECT DISTINCT ON (t.id)
     COALESCE(tsd.argument_defaults, '{}'::jsonb) as argument_defaults,
     t.active
 FROM agent_tools at
-JOIN tools t ON t.id = at.tool_id
+JOIN tool t ON t.id = at.tool_id
 LEFT JOIN resource_tools rt ON rt.tool_id = t.id
 LEFT JOIN agent_domains adom ON adom.agent_id = at.agent_id
 LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id

@@ -230,7 +230,7 @@ settings_thresholds AS (
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1), 85) AS success_threshold,
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1), 80) AS warning_threshold,
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1), 70) AS danger_threshold
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (
         SELECT 1 FROM setting_flags sf
         JOIN flags f ON sf.flag_id = f.id
@@ -241,7 +241,7 @@ settings_thresholds AS (
     )
     LIMIT 1
 ),
--- Start from profiles to include all matching profiles, even without attempts
+-- Start FROM profile to include all matching profiles, even without attempts
 filtered_profiles AS (
     SELECT 
         p.id, 
@@ -251,7 +251,7 @@ filtered_profiles AS (
         (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
         p.role,
         p.created_at
-    FROM profiles p
+    FROM profile p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     WHERE 
         (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR p.role = ANY((SELECT roles FROM params)::profile_role[]))
@@ -285,7 +285,7 @@ filt AS (
           cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR
           a.simulation_id IN (
               SELECT DISTINCT s.id
-              FROM simulations s
+              FROM simulation s
               WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)
                 AND (
                     EXISTS (
@@ -430,7 +430,7 @@ chat_scenario_info_bundle AS (
         c.id AS chat_id,
         c.scenario_id,
         sa.simulation_id
-    FROM chats c
+    FROM chat c
     JOIN attempt_chats ac ON ac.chat_id = c.id
     JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     WHERE c.id IN (SELECT chat_id FROM profile_chats)
@@ -456,12 +456,12 @@ grade_stream_per_profile AS (
         c_bundle.id AS simulation_chat_id,
         sg.created_at,
         (sg.score::numeric / NULLIF(COALESCE((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_first.id AND rp.type = 'total' LIMIT 1), 0), 0)) * 100.0 AS norm
-    FROM grades sg
+    FROM grade sg
     LEFT JOIN rubric_grade_agents rga ON rga.id = sg.rubric_grade_agent_id
-    JOIN runs r_bundle ON r_bundle.id = sg.run_id
+    JOIN run r_bundle ON r_bundle.id = sg.run_id
     JOIN group_runs gr_bundle ON gr_bundle.run_id = r_bundle.id
     JOIN grade_groups gg_bundle ON gg_bundle.group_id = gr_bundle.group_id
-    JOIN chats c_bundle ON c_bundle.id = gg_bundle.chat_id
+    JOIN chat c_bundle ON c_bundle.id = gg_bundle.chat_id
     JOIN profile_chats pc ON pc.chat_id = c_bundle.id
     LEFT JOIN chat_scenario_info_bundle csi ON csi.chat_id = c_bundle.id
     LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = csi.simulation_id
@@ -475,10 +475,10 @@ grade_stream_per_profile AS (
       AND (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1) IS NULL
     LEFT JOIN rubrics r_fallback_first ON r_fallback_first.id = sfsr.rubric_id
     WHERE EXISTS (
-        SELECT 1 FROM runs r_check
+        SELECT 1 FROM run r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
         JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-        JOIN chats c_check ON c_check.id = gg_check.chat_id
+        JOIN chat c_check ON c_check.id = gg_check.chat_id
         WHERE r_check.id = sg.run_id
     )
       AND COALESCE((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_first.id AND rp.type = 'total' LIMIT 1), 0) > 0
@@ -822,7 +822,7 @@ simulation_options_cte AS (
         COUNT(DISTINCT am.profile_id) AS count
     FROM all_metrics am
     CROSS JOIN LATERAL UNNEST(am.simulation_ids) AS sim_id
-    JOIN simulations sim ON sim.id::text = sim_id
+    JOIN simulation sim ON sim.id::text = sim_id
     WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
     GROUP BY sim.id, (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1)
     ORDER BY simulation_name
@@ -1377,7 +1377,7 @@ scenarios_final AS (
             ),
             ARRAY[]::types.q_reports_bundle_v4_scenario[]
         ) AS scenarios_array
-    FROM scenarios s
+    FROM scenario s
     JOIN scenario_tree st_root ON st_root.parent_id = s.id AND st_root.child_id = s.id
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
       AND EXISTS (
@@ -1429,7 +1429,7 @@ simulations_final AS (
             ),
             ARRAY[]::types.q_reports_bundle_v4_simulation[]
         ) AS simulations_array
-    FROM simulations sim
+    FROM simulation sim
     WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
       AND sim.id IN (SELECT DISTINCT simulation_id FROM filt WHERE simulation_id IS NOT NULL)
 ),

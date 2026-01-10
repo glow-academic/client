@@ -37,18 +37,18 @@ CREATE MATERIALIZED VIEW analytics AS
 WITH RECURSIVE scenario_roots AS (
   -- Map every scenario.id to its root_id using scenario_tree (self-edge = root)
   SELECT s.id, st.parent_id, s.id AS root_id
-  FROM scenarios s
+  FROM scenario s
   JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id = s.id -- self-edge = root
   UNION ALL
   SELECT s1.id, st.parent_id, sr.root_id
-  FROM scenarios s1
+  FROM scenario s1
   JOIN scenario_tree st ON st.child_id = s1.id AND st.parent_id <> s1.id
   JOIN scenario_roots sr ON st.parent_id = sr.id
 ),
 root_map AS (
   SELECT s.id AS leaf_scenario_id,
          COALESCE(sr.root_id, s.id) AS root_scenario_id
-  FROM scenarios s
+  FROM scenario s
   LEFT JOIN scenario_roots sr ON s.id = sr.id
 ),
 latest_grade AS (
@@ -58,20 +58,20 @@ latest_grade AS (
          COALESCE(t.time_taken, 0)::numeric AS time_taken_seconds,
          rga.rubric_id,
          g.created_at
-  FROM grades g
+  FROM grade g
   LEFT JOIN rubric_grade_agents rga ON rga.id = g.rubric_grade_agent_id
   LEFT JOIN grade_times gt ON gt.grade_id = g.id AND gt.active = TRUE
   LEFT JOIN times t ON t.id = gt.time_id
-  JOIN runs r ON r.id = g.run_id
+  JOIN run r ON r.id = g.run_id
   JOIN group_runs gr ON gr.run_id = r.id
   JOIN grade_groups gg ON gg.group_id = gr.group_id
-  JOIN chats c ON c.id = gg.chat_id
+  JOIN chat c ON c.id = gg.chat_id
   -- Simulation grades only (derive from relationship via grade_groups → groups → group_runs → runs)
   ORDER BY c.id, g.created_at DESC
 ),
 -- only ACTIVE simulations
 active_sims AS (
-  SELECT s.* FROM simulations s
+  SELECT s.* FROM simulation s
   WHERE EXISTS (
     SELECT 1 FROM simulation_flags sf
     JOIN flags f ON sf.flag_id = f.id
@@ -83,7 +83,7 @@ active_sims AS (
 ),
 -- only ACTIVE scenarios
 active_scenarios AS (
-  SELECT s.* FROM scenarios s
+  SELECT s.* FROM scenario s
   WHERE EXISTS (
     SELECT 1 FROM scenario_flags sf
     JOIN flags f ON sf.flag_id = f.id
@@ -104,12 +104,12 @@ cohorts_expanded AS (
         AND cf.type = 'active'::type_cohort_flags
         AND cf.value = TRUE
     ) AS active
-  FROM cohorts c
+  FROM cohort c
 ),
 -- sims -> active cohorts using junction table
 cohorts_by_sim AS (
   SELECT s.id AS simulation_id,
-         ARRAY(SELECT DISTINCT c.id FROM cohorts c
+         ARRAY(SELECT DISTINCT c.id FROM cohort c
                JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
                WHERE EXISTS (
                  SELECT 1 FROM cohort_flags cf
@@ -126,7 +126,7 @@ profile_cohorts_for_sim AS (
   SELECT sa.id AS attempt_id, ap.profile_id, sa.simulation_id,
          ARRAY(
            SELECT c.id
-           FROM cohorts c
+           FROM cohort c
            JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
            JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
            WHERE EXISTS (
@@ -161,13 +161,13 @@ message_counts AS (
     COUNT(*)::int                                AS num_messages_total,
     COUNT(*) FILTER (WHERE m.role = 'user')::int    AS num_query_messages,
     COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
-  FROM chats c
+  FROM chat c
   JOIN chat_groups cg ON cg.chat_id = c.id
   JOIN groups g ON g.id = cg.group_id
   JOIN group_runs gr ON gr.group_id = g.id
-  JOIN runs r ON r.id = gr.run_id
+  JOIN run r ON r.id = gr.run_id
   JOIN message_runs mr ON mr.run_id = r.id
-  JOIN messages m ON m.id = mr.message_id
+  JOIN message m ON m.id = mr.message_id
   GROUP BY c.id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
@@ -185,13 +185,13 @@ message_deltas AS (
       ELSE NULL
     END AS delta_seconds,
     m.created_at
-  FROM chats c
+  FROM chat c
   JOIN chat_groups cg ON cg.chat_id = c.id
   JOIN groups g ON g.id = cg.group_id
   JOIN group_runs gr ON gr.group_id = g.id
-  JOIN runs r ON r.id = gr.run_id
+  JOIN run r ON r.id = gr.run_id
   JOIN message_runs mr ON mr.run_id = r.id
-  JOIN messages m ON m.id = mr.message_id
+  JOIN message m ON m.id = mr.message_id
 ),
 message_deltas_agg AS (
   SELECT chat_id,
@@ -334,12 +334,12 @@ SELECT
     scfd.department_id,
     pfd.department_id
   ) AS department_id
-FROM chats sc
+FROM chat sc
 JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
 JOIN simulation_attempts sa ON sa.id = cfa.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
-JOIN profiles pr              ON pr.id = ap.profile_id
+JOIN profile pr ON pr.id = ap.profile_id
 JOIN active_scenarios s       ON s.id = sc.scenario_id           -- enforce active scenario
 JOIN root_map rm              ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
@@ -423,7 +423,7 @@ CREATE INDEX analytics_attempt_created_at_idx
 
 -- Latest grade per chat fast path (via grade_groups → groups → group_runs → runs)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
-  ON grades (run_id, created_at DESC);
+  ON grade (run_id, created_at DESC);
 
 -- Feedback lookup by grade (via grade_feedbacks junction table)
 -- Note: grade_id column removed from feedbacks table, use grade_feedbacks junction table instead
@@ -452,7 +452,7 @@ CREATE INDEX analytics_simulation_idx
 -- Additional indexes for skill performance optimization
 -- Latest grade per (run, rubric_grade_agent) fast path
 CREATE INDEX IF NOT EXISTS grades_run_rubric_grade_agent_created_idx
-  ON grades (run_id, rubric_grade_agent_id, created_at DESC);
+  ON grade (run_id, rubric_grade_agent_id, created_at DESC);
 
 -- Group id + rubric (via junction table - we filter rsg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
@@ -473,12 +473,12 @@ CREATE INDEX analytics_is_practice_true_idx
 CREATE INDEX analytics_is_archived_true_idx
   ON analytics (attempt_created_at) WHERE is_archived = true;
 
--- Index for message_runs (replaces old messages.run_id index)
+-- Index for message_runs (replaces old message.run_id index)
 CREATE INDEX IF NOT EXISTS message_runs_run_created_idx
   ON message_runs (run_id, created_at);
 
 CREATE INDEX IF NOT EXISTS chats_id_created_idx
-  ON chats (id, created_at);
+  ON chat (id, created_at);
 
 CREATE INDEX IF NOT EXISTS group_runs_group_id_idx
   ON group_runs (group_id);

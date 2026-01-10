@@ -47,7 +47,7 @@ actor_profile AS (
             'System'
         ) as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.profile_id
+    JOIN profile p ON p.id = x.profile_id
 ),
 -- Insert name into names table and get ID
 name_resource AS (
@@ -69,7 +69,7 @@ description_resource AS (
 ),
 new_department AS (
     -- Create department (without title/description columns)
-    INSERT INTO departments (
+    INSERT INTO department (
         created_at,
         updated_at
     )

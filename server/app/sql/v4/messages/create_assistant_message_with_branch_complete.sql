@@ -30,7 +30,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH assistant_message AS (
-    INSERT INTO messages (role, completed, audio, created_at, updated_at)
+    INSERT INTO message (role, completed, audio, created_at, updated_at)
     VALUES ('assistant'::message_role, true, false, NOW(), NOW())
     RETURNING id, created_at, updated_at
 ),

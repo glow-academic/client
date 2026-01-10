@@ -597,7 +597,7 @@ settings_thresholds AS (
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1), 85) AS success_threshold,
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1), 80) AS warning_threshold,
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1), 70) AS danger_threshold
-    FROM settings s
+    FROM setting s
     WHERE EXISTS (
         SELECT 1 FROM setting_flags sf
         JOIN flags f ON sf.flag_id = f.id
@@ -612,7 +612,7 @@ settings_thresholds AS (
 -- Gets simulations linked to cohorts + practice simulations without cohorts
 filtered_simulation_ids AS (
     SELECT DISTINCT s.id AS simulation_id
-    FROM simulations s
+    FROM simulation s
     WHERE EXISTS (
         SELECT 1 FROM simulation_flags sf
         JOIN flags f ON sf.flag_id = f.id
@@ -669,7 +669,7 @@ filt AS (
         )
         -- Dashboard never filters by profile - always filter by roles
                     AND a.profile_role = ANY((SELECT roles FROM params)::profile_role[])
-        -- Filter by simulation_ids from cohorts (new filtering order)
+        -- Filter by simulation_ids FROM cohort (new filtering order)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Filter by department_ids (empty array = all departments)
                     AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
@@ -743,7 +743,7 @@ filt AS (
                 )
                 -- Dashboard never filters by profile - always filter by roles
                 AND a.profile_role = ANY((SELECT roles FROM params)::profile_role[])
-                -- Filter by simulation_ids from cohorts (new filtering order)
+                -- Filter by simulation_ids FROM cohort (new filtering order)
                 AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 -- Filter by department_ids (empty array = all departments)
                 AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
@@ -813,21 +813,21 @@ filt AS (
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
                     (sg.score::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0)) * 100.0 AS norm
-                FROM grades sg
+                FROM grade sg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = sg.rubric_grade_agent_id
-                JOIN runs r_stag ON r_stag.id = sg.run_id
+                JOIN run r_stag ON r_stag.id = sg.run_id
                 JOIN group_runs gr_stag ON gr_stag.run_id = r_stag.id
                 JOIN groups g_stag ON g_stag.id = gr_stag.group_id
                 JOIN chat_groups cg_stag ON cg_stag.group_id = g_stag.id
-                JOIN chats c_stag ON c_stag.id = cg_stag.chat_id
+                JOIN chat c_stag ON c_stag.id = cg_stag.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN rubrics r ON r.id = rga.rubric_id
                 WHERE EXISTS (
-                    SELECT 1 FROM runs r_check
+                    SELECT 1 FROM run r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN groups g_check ON g_check.id = gr_check.group_id
                     JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-                    JOIN chats c_check ON c_check.id = cg_check.chat_id
+                    JOIN chat c_check ON c_check.id = cg_check.chat_id
                     WHERE r_check.id = sg.run_id
                 )
             ),
@@ -1313,11 +1313,11 @@ filt AS (
             -- Get all chats that have grades in the date range (not filtered by analytics attempt_created_at)
             filtered_chats AS (
                 SELECT DISTINCT c.id AS chat_id
-                FROM grades scg
-                JOIN runs r ON r.id = scg.run_id
+                FROM grade scg
+                JOIN run r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chats c ON c.id = gg.chat_id
+                JOIN chat c ON c.id = gg.chat_id
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE scg.created_at >= (SELECT start_date FROM params)
@@ -1348,7 +1348,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chats c
+                FROM chat c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats)
@@ -1374,12 +1374,12 @@ filt AS (
                         rga_fallback_scenario.rubric_id,
                         sfsr.rubric_id
                     ) AS rubric_id
-                FROM grades scg
+                FROM grade scg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-                JOIN runs r ON r.id = scg.run_id
+                JOIN run r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chats c ON c.id = gg.chat_id
+                JOIN chat c ON c.id = gg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN chat_scenario_info csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = csi.simulation_id
@@ -1390,10 +1390,10 @@ filt AS (
                   AND rga.rubric_id IS NULL
                   AND rga_fallback_scenario.rubric_id IS NULL
                 WHERE EXISTS (
-                    SELECT 1 FROM runs r_check
+                    SELECT 1 FROM run r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chats c_check ON c_check.id = gg_check.chat_id
+                    JOIN chat c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = scg.run_id
                 )
                   AND COALESCE(
@@ -1599,7 +1599,7 @@ filt AS (
                         ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) FILTER (WHERE sd.department_id IS NOT NULL),
                         ARRAY[]::text[]
                     ) AS dept_ids
-                FROM simulations s
+                FROM simulation s
                 LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
                   AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
@@ -1631,7 +1631,7 @@ filt AS (
                     ),
                     '{}'::types.q_get_dashboard_bundle_v4_rubric[]
                 ) AS rubrics_array
-                FROM rubrics r
+                FROM rubric r
                 WHERE r.id IN (SELECT rubric_id FROM rubric_ids)
                   AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
             ),
@@ -1663,7 +1663,7 @@ filt AS (
                     ),
                     '{}'::types.q_get_dashboard_bundle_v4_parameter[]
                 ) AS parameters_array
-                FROM parameters p
+                FROM parameter p
                 WHERE EXISTS (
                     SELECT 1 FROM parameter_flags pf
                     JOIN flags f ON pf.flag_id = f.id
@@ -1676,14 +1676,14 @@ filt AS (
                       cardinality((SELECT department_ids FROM params)) = 0 
                       OR EXISTS (
                           SELECT 1 
-                          FROM fields f
+                          FROM field f
                           JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.field_id = f.id
                           JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
                           WHERE fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
                       )
                       OR NOT EXISTS (
                           SELECT 1 
-                          FROM fields f
+                          FROM field f
                           JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.field_id = f.id
                           JOIN field_departments fd2 ON fd2.field_id = f.id AND fd2.active = true
                       )
@@ -1702,7 +1702,7 @@ filt AS (
                     ),
                     '{}'::types.q_get_dashboard_bundle_v4_field[]
                 ) AS fields_array
-                FROM fields f
+                FROM field f
                 LEFT JOIN parameter_fields pf_link ON pf_link.field_id = f.id
                 LEFT JOIN parameters p ON p.id = pf_link.parameter_id
                 LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
@@ -2254,13 +2254,13 @@ filt AS (
                     ARRAY(
                         SELECT cp.profile_id 
                         FROM cohort_profiles cp
-                        JOIN profiles p ON p.id = cp.profile_id
+                        JOIN profile p ON p.id = cp.profile_id
                         WHERE cp.cohort_id = c.id
                             AND cp.active = true
                             AND p.role = ANY((SELECT roles FROM params)::profile_role[])
                     ) AS profile_ids,
                     ARRAY(SELECT cs.simulation_id FROM cohort_simulations cs WHERE cs.cohort_id = c.id AND cs.active = true) AS simulation_ids
-                FROM cohorts c
+                FROM cohort c
                 JOIN (SELECT DISTINCT c_id FROM filt_with_cohorts) fc ON fc.c_id = c.id
             ),
             cohort_attempts AS (
@@ -2430,7 +2430,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chats c
+                FROM chat c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filt_for_skills)
@@ -2457,12 +2457,12 @@ filt AS (
                            sfsr.rubric_id
                        ) AS rubric_id,
                        scg.created_at
-                FROM grades scg
+                FROM grade scg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-                JOIN runs r ON r.id = scg.run_id
+                JOIN run r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chats c ON c.id = gg.chat_id
+                JOIN chat c ON c.id = gg.chat_id
                 LEFT JOIN chat_scenario_info_skills csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = csi.simulation_id
                   AND ssrga_fallback.scenario_id = csi.scenario_id
@@ -2471,10 +2471,10 @@ filt AS (
                   AND rga.rubric_id IS NULL
                   AND ssrga_fallback.rubric_grade_agent_id IS NULL
                 WHERE EXISTS (
-                    SELECT 1 FROM runs r_check
+                    SELECT 1 FROM run r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chats c_check ON c_check.id = gg_check.chat_id
+                    JOIN chat c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = scg.run_id
                 )
                   AND c.id IN (SELECT chat_id FROM filt_for_skills)
@@ -2609,7 +2609,7 @@ filt AS (
             -- Scenario Performance (FULL IMPLEMENTATION with categorical parameters)
             param_ids_categorical AS (
                 SELECT id
-                FROM parameters p
+                FROM parameter p
                 WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
             ),
             cat_map AS (
@@ -2617,7 +2617,7 @@ filt AS (
                     f.id AS parameter_item_id,
                     (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
                     s.id AS scenario_id
-                FROM fields f
+                FROM field f
                 JOIN param_ids_categorical p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
                 JOIN scenario_fields sf ON sf.field_id = f.id
                 JOIN scenarios s ON s.id = sf.scenario_id
@@ -2692,7 +2692,7 @@ filt AS (
             ),
             
             -- Scenario Stats (NUMERICAL PARAMETERS - mostly empty as functionality disabled)
-            nums AS (SELECT id FROM parameters WHERE false),
+            nums AS (SELECT id FROM parameter WHERE false),
             num_map AS (SELECT NULL::uuid AS scenario_id, NULL::uuid AS parameter_id, NULL::numeric AS level WHERE false),
             num_map_seen AS (
                 SELECT nm.*
@@ -2857,7 +2857,7 @@ filt AS (
                 SELECT 
                     s.id AS simulation_id,
                     COUNT(DISTINCT sc.id)::int AS scenario_count
-                FROM simulations s
+                FROM simulation s
                 JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
                 JOIN scenarios sc ON sc.id = ss_link.scenario_id
                 JOIN scen_seen ss ON ss.scenario_id = sc.id
@@ -2870,7 +2870,7 @@ filt AS (
                     p.id AS parameter_id,
                     f.id AS parameter_item_id,
                     COUNT(a.chat_id)::int AS cnt
-                FROM simulations s
+                FROM simulation s
                 JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
                 JOIN scenarios sc ON sc.id = ss_link.scenario_id
                 JOIN scen_seen ss ON ss.scenario_id = sc.id
@@ -2890,7 +2890,7 @@ filt AS (
                     COALESCE(ROUND(ss.completion_rate), 0)::int AS completion_rate,
                     COALESCE(ss.attempts, 0) AS total_attempts,
                     COALESCE(sc_seen.scenario_count, 0) AS scenario_count
-                FROM simulations s
+                FROM simulation s
                 LEFT JOIN sim_summary ss ON ss.simulation_id = s.id
                 LEFT JOIN sim_scenarios_seen sc_seen ON sc_seen.simulation_id = s.id
                 WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)

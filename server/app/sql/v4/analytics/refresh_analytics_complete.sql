@@ -35,7 +35,7 @@ BEGIN
     
     -- Get actor_name from profile
     SELECT COALESCE(first_name || ' ' || last_name, 'System') INTO actor_name_val
-    FROM profiles
+    FROM profile
     WHERE id = profile_id;
     
     -- Return response

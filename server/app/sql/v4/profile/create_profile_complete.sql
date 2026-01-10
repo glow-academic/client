@@ -62,7 +62,7 @@ actor_profile AS (
     SELECT 
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profiles p ON p.id = x.current_profile_id
+    JOIN profile p ON p.id = x.current_profile_id
 ),
 primary_email AS (
     SELECT 
@@ -95,7 +95,7 @@ last_name_resource AS (
 ),
 profile_insert AS (
     -- Insert profile without first_name, last_name, active columns
-    INSERT INTO profiles (
+    INSERT INTO profile (
         id, role
     )
     SELECT 
