@@ -137,9 +137,9 @@ BEGIN
     -- Link run to group (calculate idx)
     INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
     SELECT 
-        group_id,
+        api_create_names_v4.group_id,
         v_run_id,
-        COALESCE((SELECT MAX(idx) FROM group_runs WHERE group_id = api_create_names_v4.group_id), -1) + 1,
+        COALESCE((SELECT MAX(gr.idx) FROM group_runs gr WHERE gr.group_id = api_create_names_v4.group_id), -1) + 1,
         NOW(),
         NOW();
     

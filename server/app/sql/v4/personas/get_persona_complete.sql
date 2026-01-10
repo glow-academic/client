@@ -239,10 +239,14 @@ draft_payload_data AS (
 -- Get group_id from draft (should always exist after migration, but handle NULL case)
 draft_group_data AS (
     SELECT 
-        d.group_id
+        COALESCE(
+            d.group_id,
+            (SELECT id FROM groups ORDER BY created_at DESC LIMIT 1)
+        ) as group_id
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
-    WHERE x.draft_id IS NOT NULL
+    -- Always return at least one row (use COALESCE to handle NULL draft_id case)
+    WHERE TRUE
     LIMIT 1
 ),
 user_profile AS (
@@ -1515,7 +1519,7 @@ SELECT
     perm_final.can_edit,
     perm_final.disabled_reason,
     -- Group ID for linking resources
-    (SELECT group_id FROM draft_group_data) as group_id,
+    dgd.group_id,
     -- Single-select resources: name
     (SELECT name_id FROM name_resource_data) as name_id,
     nrd.name_resource,
@@ -1713,6 +1717,7 @@ FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
 LEFT JOIN persona_departments_data pdd ON true
+CROSS JOIN draft_group_data dgd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN color_resource_data crd
