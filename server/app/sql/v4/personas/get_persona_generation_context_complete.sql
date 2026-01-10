@@ -18,9 +18,9 @@ END $$;
 
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_get_persona_generation_context_v4(
+    profile_id uuid,
     persona_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL,
-    profile_id uuid
+    draft_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     domain_id uuid,
@@ -74,11 +74,11 @@ final_domain AS (
     SELECT 
         (SELECT domain_id FROM default_persona_domain) as domain_id
 ),
--- Get agent_id from domain (domains have agent_id)
+-- Get agent_id from domain via agent_domains junction table
 domain_agent AS (
-    SELECT d.agent_id
+    SELECT ad.agent_id
     FROM final_domain fd
-    JOIN domains d ON d.id = fd.domain_id
+    JOIN agent_domains ad ON ad.domain_id = fd.domain_id
     WHERE fd.domain_id IS NOT NULL
     LIMIT 1
 )

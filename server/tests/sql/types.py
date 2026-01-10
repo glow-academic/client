@@ -520,6 +520,30 @@ class GetFirstDepartmentApiResponse(BaseModel):
 
 
 
+# Generated from: get_first_model
+
+class GetFirstModelSqlParams(BaseModel):
+
+    pass
+
+class GetFirstModelSqlRow(BaseModel):
+
+    model_id: UUID | None = None
+    name: str | None = None
+    provider_id: UUID | None = None
+
+class GetFirstModelApiRequest(BaseModel):
+
+    pass
+
+class GetFirstModelApiResponse(BaseModel):
+
+    model_id: UUID | None = None
+    name: str | None = None
+    provider_id: UUID | None = None
+
+
+
 # Generated from: create_cohort_department_link
 
 class CreateCohortDepartmentLinkSqlParams(BaseModel):
@@ -3008,6 +3032,35 @@ class GetOrCreateTestDepartmentApiResponse(BaseModel):
 
 
 
+# Generated from: get_or_create_test_model
+
+class GetOrCreateTestModelSqlParams(BaseModel):
+
+    name: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+        )
+
+class GetOrCreateTestModelSqlRow(BaseModel):
+
+    model_id: UUID | None = None
+    name: str | None = None
+    provider_id: UUID | None = None
+
+class GetOrCreateTestModelApiRequest(BaseModel):
+
+    name: str | None = None
+
+class GetOrCreateTestModelApiResponse(BaseModel):
+
+    model_id: UUID | None = None
+    name: str | None = None
+    provider_id: UUID | None = None
+
+
+
 # Generated from: get_or_create_test_profile
 
 class GetOrCreateTestProfileSqlParams(BaseModel):
@@ -3528,6 +3581,31 @@ class Helpers/testGetChatByIdV4CompleteApiResponse(BaseModel):
 
 
 
+# Generated from: helpers/test_get_developer_messages_by_run_v4_complete
+
+class Helpers/testGetDeveloperMessagesByRunV4CompleteSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class Helpers/testGetDeveloperMessagesByRunV4CompleteSqlRow(BaseModel):
+
+    message_count: int | None = None
+
+class Helpers/testGetDeveloperMessagesByRunV4CompleteApiRequest(BaseModel):
+
+    run_id: UUID
+
+class Helpers/testGetDeveloperMessagesByRunV4CompleteApiResponse(BaseModel):
+
+    message_count: int | None = None
+
+
+
 # Generated from: helpers/test_get_eval_by_active_v4_complete
 
 class Helpers/testGetEvalByActiveV4CompleteSqlParams(BaseModel):
@@ -3807,6 +3885,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFirstDepartmentSqlRow",
         "GetFirstDepartmentApiRequest",
         "GetFirstDepartmentApiResponse",
+    ),
+    "tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql": (
+        "GetFirstModelSqlParams",
+        "GetFirstModelSqlRow",
+        "GetFirstModelApiRequest",
+        "GetFirstModelApiResponse",
     ),
     "tests/sql/v4/integration/api/cohorts/test_create_cohort_department_link_v4_complete.sql": (
         "CreateCohortDepartmentLinkSqlParams",
@@ -4252,6 +4336,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetOrCreateTestDepartmentApiRequest",
         "GetOrCreateTestDepartmentApiResponse",
     ),
+    "tests/sql/v4/integration/helpers/test_get_or_create_test_model_v4_complete.sql": (
+        "GetOrCreateTestModelSqlParams",
+        "GetOrCreateTestModelSqlRow",
+        "GetOrCreateTestModelApiRequest",
+        "GetOrCreateTestModelApiResponse",
+    ),
     "tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql": (
         "GetOrCreateTestProfileSqlParams",
         "GetOrCreateTestProfileSqlRow",
@@ -4353,6 +4443,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "Helpers/testGetChatByIdV4CompleteSqlRow",
         "Helpers/testGetChatByIdV4CompleteApiRequest",
         "Helpers/testGetChatByIdV4CompleteApiResponse",
+    ),
+    "tests/sql/v4/integration/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql": (
+        "Helpers/testGetDeveloperMessagesByRunV4CompleteSqlParams",
+        "Helpers/testGetDeveloperMessagesByRunV4CompleteSqlRow",
+        "Helpers/testGetDeveloperMessagesByRunV4CompleteApiRequest",
+        "Helpers/testGetDeveloperMessagesByRunV4CompleteApiResponse",
     ),
     "tests/sql/v4/integration/socket/helpers/test_get_eval_by_active_v4_complete.sql": (
         "Helpers/testGetEvalByActiveV4CompleteSqlParams",
@@ -4531,6 +4627,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/agents/test_get_first_department_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/agents/test_get_first_model_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -4905,6 +5006,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/helpers/test_get_or_create_test_model_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/helpers/test_get_or_create_test_profile_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4986,6 +5092,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_chat_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/socket/helpers/test_get_developer_messages_by_run_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

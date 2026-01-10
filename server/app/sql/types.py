@@ -11158,7 +11158,6 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
     department_id: UUID | None = None
     group_id: UUID | None = None
     user_instructions: str | None = None
-    developer_message_contentss: list[str] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -11170,7 +11169,6 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.department_id,
             self.group_id,
             self.user_instructions,
-            self.developer_message_contentss,
         )
 
 class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
@@ -11190,7 +11188,6 @@ class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
     department_id: UUID | None = None
     group_id: UUID | None = None
     user_instructions: str | None = None
-    developer_message_contentss: list[str] | None = None
 
 class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -15671,6 +15668,38 @@ class GetPersonaApiResponse(BaseModel):
     show_examples: bool | None = None
     example_suggestions: list[UUID] | None = None
     examples: list[QGetPersonaV4Example] | None = None
+
+
+
+# Generated from: get_persona_generation_context
+
+class GetPersonaGenerationContextSqlParams(BaseModel):
+
+    profile_id: UUID
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.persona_id,
+            self.draft_id,
+        )
+
+class GetPersonaGenerationContextSqlRow(BaseModel):
+
+    domain_id: UUID | None = None
+    agent_id: UUID | None = None
+
+class GetPersonaGenerationContextApiRequest(BaseModel):
+
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetPersonaGenerationContextApiResponse(BaseModel):
+
+    domain_id: UUID | None = None
+    agent_id: UUID | None = None
 
 
 
@@ -24266,6 +24295,31 @@ class GetChatBasicApiResponse(BaseModel):
 
 
 
+# Generated from: get_chat_id_from_run_id
+
+class GetChatIdFromRunIdSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class GetChatIdFromRunIdSqlRow(BaseModel):
+
+    chat_id: str | None = None
+
+class GetChatIdFromRunIdApiRequest(BaseModel):
+
+    run_id: UUID
+
+class GetChatIdFromRunIdApiResponse(BaseModel):
+
+    chat_id: str | None = None
+
+
+
 # Generated from: get_hint_message_id
 
 class GetHintMessageIdSqlParams(BaseModel):
@@ -28968,6 +29022,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaApiRequest",
         "GetPersonaApiResponse",
     ),
+    "app/sql/v4/personas/get_persona_generation_context_complete.sql": (
+        "GetPersonaGenerationContextSqlParams",
+        "GetPersonaGenerationContextSqlRow",
+        "GetPersonaGenerationContextApiRequest",
+        "GetPersonaGenerationContextApiResponse",
+    ),
     "app/sql/v4/personas/get_personas_list_complete.sql": (
         "GetPersonasListSqlParams",
         "GetPersonasListSqlRow",
@@ -29879,6 +29939,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetChatBasicSqlRow",
         "GetChatBasicApiRequest",
         "GetChatBasicApiResponse",
+    ),
+    "app/sql/v4/simulations/get_chat_id_from_run_id_complete.sql": (
+        "GetChatIdFromRunIdSqlParams",
+        "GetChatIdFromRunIdSqlRow",
+        "GetChatIdFromRunIdApiRequest",
+        "GetChatIdFromRunIdApiResponse",
     ),
     "app/sql/v4/simulations/get_hint_message_id_complete.sql": (
         "GetHintMessageIdSqlParams",
@@ -31611,6 +31677,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/get_persona_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/personas/get_personas_list_complete.sql"]
     ) -> SqlString: ...
 
@@ -32367,6 +32438,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_chat_basic_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_chat_id_from_run_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
