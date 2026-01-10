@@ -33094,6 +33094,29 @@
             ],
             "title": "Show Name"
           },
+          "name_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Agent Id"
+          },
+          "name_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Required"
+          },
           "name_suggestions": {
             "anyOf": [
               {
@@ -33142,6 +33165,29 @@
             ],
             "title": "Show Description"
           },
+          "description_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Agent Id"
+          },
+          "description_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Required"
+          },
           "description_suggestions": {
             "anyOf": [
               {
@@ -33189,6 +33235,29 @@
               }
             ],
             "title": "Show Color"
+          },
+          "color_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Agent Id"
+          },
+          "color_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Required"
           },
           "color_suggestions": {
             "anyOf": [
@@ -33252,6 +33321,29 @@
             ],
             "title": "Show Icon"
           },
+          "icon_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Agent Id"
+          },
+          "icon_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Required"
+          },
           "icon_suggestions": {
             "anyOf": [
               {
@@ -33314,6 +33406,29 @@
             ],
             "title": "Show Instructions"
           },
+          "instructions_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions Agent Id"
+          },
+          "instructions_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions Required"
+          },
           "instructions_suggestions": {
             "anyOf": [
               {
@@ -33362,6 +33477,29 @@
             ],
             "title": "Show Flag"
           },
+          "flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Agent Id"
+          },
+          "flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Required"
+          },
           "department_ids": {
             "anyOf": [
               {
@@ -33401,6 +33539,29 @@
               }
             ],
             "title": "Show Departments"
+          },
+          "departments_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments Agent Id"
+          },
+          "departments_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments Required"
           },
           "department_suggestions": {
             "anyOf": [
@@ -33471,6 +33632,29 @@
             ],
             "title": "Show Fields"
           },
+          "fields_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields Agent Id"
+          },
+          "fields_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields Required"
+          },
           "field_suggestions": {
             "anyOf": [
               {
@@ -33540,6 +33724,29 @@
             ],
             "title": "Show Examples"
           },
+          "examples_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Examples Agent Id"
+          },
+          "examples_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Examples Required"
+          },
           "example_suggestions": {
             "anyOf": [
               {
@@ -33568,6 +33775,30 @@
               }
             ],
             "title": "Examples"
+          },
+          "basic_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basic Agent Id"
+          },
+          "content_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Agent Id"
           }
         },
         "type": "object",

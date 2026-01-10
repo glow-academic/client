@@ -45,6 +45,7 @@ class GeneratePersonaPayload(BaseModel):
     context: dict[str, Any] | None = None  # Additional context for generation
     instructions: str | None = None  # Optional: For regeneration (renamed from user_instructions)
     group_ids: dict[str, str | None] | None = None  # Optional: resource_type -> group_id mapping for regeneration
+    agent_id: str | None = None  # Optional: Agent ID from GET endpoint (frontend passes based on resource type)
 
 
 async def _persona_generate_impl(
@@ -88,27 +89,17 @@ async def _persona_generate_impl(
             )
             return
 
-        # Get best agent_id based on tool-to-resource matching
-        async with get_db_connection() as conn:
-            # Types will be auto-generated from SQL introspection
-            # For now, use dict-based params until types are generated
-            params = {
-                "profile_id": profile_id,
-                "resource_types": resource_types,
-                "persona_id": uuid.UUID(data.persona_id) if data.persona_id else None,
-                "draft_id": uuid.UUID(data.draft_id) if data.draft_id else None,
-            }
-            result = await execute_sql_typed(conn, SQL_PATH, params=params)
-
-            # Extract agent_id from result
-            # execute_sql_typed returns a typed object with attributes
-            agent_id_value = getattr(result, "agent_id", None) if result else None
-            if not agent_id_value:
+        # Use agent_id from payload if provided (from GET endpoint), otherwise fall back to SQL lookup
+        selected_agent_id: uuid.UUID | None = None
+        if data.agent_id:
+            try:
+                selected_agent_id = uuid.UUID(data.agent_id)
+            except ValueError:
                 await emit_to_internal(
                     "generate_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Could not find suitable agent for persona generation",
+                        error_message="Invalid agent_id format",
                         resource_id=data.persona_id or data.draft_id,
                         group_id=None,
                         resource_type="persona",
@@ -116,8 +107,51 @@ async def _persona_generate_impl(
                     sid=sid,
                 )
                 return
+        else:
+            # Fallback: Get best agent_id based on tool-to-resource matching (for backward compatibility)
+            async with get_db_connection() as conn:
+                # Types will be auto-generated from SQL introspection
+                # For now, use dict-based params until types are generated
+                params = {
+                    "profile_id": profile_id,
+                    "resource_types": resource_types,
+                    "persona_id": uuid.UUID(data.persona_id) if data.persona_id else None,
+                    "draft_id": uuid.UUID(data.draft_id) if data.draft_id else None,
+                }
+                result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-            selected_agent_id = agent_id_value
+                # Extract agent_id from result
+                # execute_sql_typed returns a typed object with attributes
+                agent_id_value = getattr(result, "agent_id", None) if result else None
+                if not agent_id_value:
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message="Could not find suitable agent for persona generation",
+                            resource_id=data.persona_id or data.draft_id,
+                            group_id=None,
+                            resource_type="persona",
+                        ),
+                        sid=sid,
+                    )
+                    return
+
+                selected_agent_id = agent_id_value
+
+        if not selected_agent_id:
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="No agent_id provided and could not find suitable agent",
+                    resource_id=data.persona_id or data.draft_id,
+                    group_id=None,
+                    resource_type="persona",
+                ),
+                sid=sid,
+            )
+            return
 
         # Fetch group_ids from database for all resource types
         group_ids_map: dict[str, str | None] = {}

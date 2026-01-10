@@ -37,14 +37,16 @@ After the required fields, resources follow consistent patterns based on whether
 
 ### Single-Select Resources
 
-**Pattern:** `{resource}_id`, `{resource}_resource`, `show_{resource}`, `{resource}_suggestions`, `{resource}` (optional array)
+**Pattern:** `{resource}_id`, `{resource}_resource`, `show_{resource}`, `{resource}_agent_id`, `{resource}_required`, `{resource}_suggestions`, `{resource}` (optional array)
 
 **Order:**
 1. `{resource}_id` (uuid) - The selected resource ID
 2. `{resource}_resource` (composite type) - The selected resource object (includes `generated` boolean field and `group_id` uuid field)
-3. `show_{resource}` (boolean) - Whether to show this resource picker (based on whether options exist)
-4. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs, never text)
-5. `{resource}` (array, optional) - All available options array (only for resources with options like colors/icons; each option includes `generated` boolean and `group_id` uuid)
+3. `show_{resource}` (boolean) - Whether to show this resource picker (based on whether options exist AND tool availability for required resources)
+4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no tool available)
+5. `{resource}_required` (boolean) - Whether this resource is required (affects `can_edit` and `disabled_reason` if no tool available)
+6. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs, never text)
+7. `{resource}` (array, optional) - All available options array (only for resources with options like colors/icons; each option includes `generated` boolean and `group_id` uuid)
 
 **Note:** The `{resource}_resource` composite type includes:
 - `generated` boolean field - Indicates if the resource was AI-generated
@@ -53,25 +55,27 @@ After the required fields, resources follow consistent patterns based on whether
 This enables regeneration workflows where users can regenerate resources with custom instructions. See the "Regeneration Support" section below for details.
 
 **Examples:**
-- **name**: `name_id`, `name_resource`, `show_name`, `name_suggestions`
-- **description**: `description_id`, `description_resource`, `show_description`, `description_suggestions`
-- **color**: `color_id`, `color_resource`, `show_color`, `color_suggestions`, `colors` (all available colors)
-- **icon**: `icon_id`, `icon_resource`, `show_icon`, `icon_suggestions`, `icons` (all available icons)
-- **instructions**: `instructions_id`, `instructions_resource`, `show_instructions`, `instructions_suggestions`
-- **flag**: `active_flag_id`, `flag_resource`, `show_flag` (can be false for consistency), (no suggestions)
+- **name**: `name_id`, `name_resource`, `show_name`, `name_agent_id`, `name_required`, `name_suggestions`
+- **description**: `description_id`, `description_resource`, `show_description`, `description_agent_id`, `description_required`, `description_suggestions`
+- **color**: `color_id`, `color_resource`, `show_color`, `color_agent_id`, `color_required`, `color_suggestions`, `colors` (all available colors)
+- **icon**: `icon_id`, `icon_resource`, `show_icon`, `icon_agent_id`, `icon_required`, `icon_suggestions`, `icons` (all available icons)
+- **instructions**: `instructions_id`, `instructions_resource`, `show_instructions`, `instructions_agent_id`, `instructions_required`, `instructions_suggestions`
+- **flag**: `active_flag_id`, `flag_resource`, `show_flag`, `flag_agent_id`, `flag_required` (can be false for consistency), (no suggestions)
 
 **Note:** For resources with options arrays (like `colors`, `icons`), the array comes **last** in that resource's group.
 
 ### Multi-Select Resources
 
-**Pattern:** `{resource}_ids`, `{resource}_resources`, `show_{resource}`, `{resource}_suggestions`, `{resource}` (array comes last)
+**Pattern:** `{resource}_ids`, `{resource}_resources`, `show_{resource}`, `{resource}_agent_id`, `{resource}_required`, `{resource}_suggestions`, `{resource}` (array comes last)
 
 **Order:**
 1. `{resource}_ids` (uuid[]) - Array of selected resource IDs
 2. `{resource}_resources` (composite_type[]) - Array of selected resource objects (each includes `generated` boolean and `group_id` uuid)
-3. `show_{resource}` (boolean) - Whether to show this resource picker
-4. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs)
-5. `{resource}` (composite_type[]) - **All available options array (comes last; each includes `generated` boolean and `group_id` uuid)**
+3. `show_{resource}` (boolean) - Whether to show this resource picker (based on business logic AND tool availability for required resources)
+4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no tool available)
+5. `{resource}_required` (boolean) - Whether this resource is required (affects `can_edit` and `disabled_reason` if no tool available)
+6. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs)
+7. `{resource}` (composite_type[]) - **All available options array (comes last; each includes `generated` boolean and `group_id` uuid)**
 
 **Note:** Each resource object in the arrays includes:
 - `generated` boolean field - Indicates if that specific resource was AI-generated
@@ -80,9 +84,9 @@ This enables regeneration workflows where users can regenerate resources with cu
 This provides a single standard pattern for both single-select and multi-select resources. See the "Regeneration Support" section below for details.
 
 **Examples:**
-- **departments**: `department_ids`, `department_resources`, `show_departments`, `department_suggestions`, `departments` (all available)
-- **fields**: `field_ids`, `field_resources`, `show_fields`, `field_suggestions`, `fields` (all available)
-- **examples**: `example_ids`, `example_resources`, `show_examples`, `example_suggestions`, `examples` (all available)
+- **departments**: `department_ids`, `department_resources`, `show_departments`, `departments_agent_id`, `departments_required`, `department_suggestions`, `departments` (all available)
+- **fields**: `field_ids`, `field_resources`, `show_fields`, `fields_agent_id`, `fields_required`, `field_suggestions`, `fields` (all available)
+- **examples**: `example_ids`, `example_resources`, `show_examples`, `examples_agent_id`, `examples_required`, `example_suggestions`, `examples` (all available)
 
 **Key Point:** The full array (`{resource}`) always comes **last** in the multi-select resource group, after IDs, resources, show flag, and suggestions.
 
@@ -148,18 +152,20 @@ ROW(resource.id, resource.name, resource.generated, gr.group_id)::types.q_get_pe
 
 **Purpose:**
 - Indicates whether the UI should display the resource picker/selector
-- For single-select resources: Based on whether options exist (e.g., `show_color = colors.length > 0`)
-- For multi-select resources: Based on business logic (e.g., `show_departments = user has multiple departments`)
+- For single-select resources: Based on whether options exist AND tool availability (e.g., `show_color = colors.length > 0 AND color_agent_id IS NOT NULL` for required resources)
+- For multi-select resources: Based on business logic AND tool availability (e.g., `show_departments = user has multiple departments AND departments_agent_id IS NOT NULL` for required resources)
 - For flag resource: Can be `false` for consistency (as it's just a boolean toggle)
+- **For required resources**: If `{resource}_required = true` AND `{resource}_agent_id IS NULL`, then `show_{resource} = false`
+- **For optional resources**: `show_{resource}` is not affected by tool availability
 
 **Implementation:**
 ```sql
--- Single-select: Based on options array
-show_color boolean,  -- true if colors array has items
+-- Single-select: Based on options array and tool availability
+show_color boolean,  -- true if colors array has items AND (color_agent_id IS NOT NULL OR color_required = false)
 
--- Multi-select: Based on business logic
-show_departments boolean,  -- true if user has multiple departments
-show_fields boolean,  -- true if fields exist
+-- Multi-select: Based on business logic and tool availability
+show_departments boolean,  -- true if user has multiple departments AND (departments_agent_id IS NOT NULL OR departments_required = false)
+show_fields boolean,  -- true if fields exist AND (fields_agent_id IS NOT NULL OR fields_required = false)
 ```
 
 ## Complete Example Structure
@@ -176,18 +182,24 @@ RETURNS TABLE (
     name_id uuid,
     name_resource types.q_get_persona_v4_name_resource,  -- Includes: id, name, generated, group_id
     show_name boolean,
+    name_agent_id uuid,  -- Agent ID for generating names (NULL if no tool available)
+    name_required boolean,  -- true (required resource)
     name_suggestions uuid[],
     
     -- Single-select resources: description
     description_id uuid,
     description_resource types.q_get_persona_v4_description_resource,  -- Includes: id, description, generated, group_id
     show_description boolean,
+    description_agent_id uuid,  -- Agent ID for generating descriptions (NULL if no tool available)
+    description_required boolean,  -- false (optional resource)
     description_suggestions uuid[],
     
     -- Single-select resources: color
     color_id uuid,
     color_resource types.q_get_persona_v4_color_resource,  -- Includes: id, name, description, hex_code, generated, group_id
     show_color boolean,
+    color_agent_id uuid,  -- Agent ID for generating colors (NULL if no tool available)
+    color_required boolean,  -- true (required resource)
     color_suggestions uuid[],
     colors types.q_get_persona_v4_color_option[],  -- Array comes last; each includes generated, group_id
     
@@ -195,6 +207,8 @@ RETURNS TABLE (
     icon_id uuid,
     icon_resource types.q_get_persona_v4_icon_resource,  -- Includes: id, name, description, value, generated, group_id
     show_icon boolean,
+    icon_agent_id uuid,  -- Agent ID for generating icons (NULL if no tool available)
+    icon_required boolean,  -- true (required resource)
     icon_suggestions uuid[],
     icons types.q_get_persona_v4_icon_option[],  -- Array comes last; each includes generated, group_id
     
@@ -202,17 +216,23 @@ RETURNS TABLE (
     instructions_id uuid,
     instructions_resource types.q_get_persona_v4_instructions_resource,  -- Includes: id, template, generated, group_id
     show_instructions boolean,
+    instructions_agent_id uuid,  -- Agent ID for generating instructions (NULL if no tool available)
+    instructions_required boolean,  -- true (required resource)
     instructions_suggestions uuid[],
     
     -- Single-select resources: flag
     active_flag_id uuid,
     flag_resource types.q_get_persona_v4_flag_resource,  -- Includes: id, name, description, icon_id, generated, group_id
     show_flag boolean,
+    flag_agent_id uuid,  -- Agent ID for generating flags (NULL if no tool available)
+    flag_required boolean,  -- false (optional resource)
     
     -- Multi-select resources: departments
     department_ids uuid[],
     department_resources types.q_get_persona_v4_department[],  -- Each includes: department_id, name, description, generated, group_id
     show_departments boolean,
+    departments_agent_id uuid,  -- Agent ID for generating departments (NULL if no tool available)
+    departments_required boolean,  -- true if show_departments is true
     department_suggestions uuid[],
     departments types.q_get_persona_v4_department[],  -- Array comes last; each includes generated, group_id
     
@@ -220,6 +240,8 @@ RETURNS TABLE (
     field_ids uuid[],
     field_resources types.q_get_persona_v4_field[],  -- Each includes: field_id, name, description, generated, group_id
     show_fields boolean,
+    fields_agent_id uuid,  -- Agent ID for generating fields (NULL if no tool available)
+    fields_required boolean,  -- true if show_fields is true
     field_suggestions uuid[],
     fields types.q_get_persona_v4_field[],  -- Array comes last; each includes generated, group_id
     
@@ -227,8 +249,14 @@ RETURNS TABLE (
     example_ids uuid[],
     example_resources types.q_get_persona_v4_example[],  -- Each includes: example, idx, generated, group_id
     show_examples boolean,
+    examples_agent_id uuid,  -- Agent ID for generating examples (NULL if no tool available)
+    examples_required boolean,  -- true if show_examples is true
     example_suggestions uuid[],
-    examples types.q_get_persona_v4_example[]  -- Array comes last; each includes generated, group_id
+    examples types.q_get_persona_v4_example[],  -- Array comes last; each includes generated, group_id
+    
+    -- Multi-resource combination agent IDs (after all individual resources)
+    basic_agent_id uuid,  -- Agent ID for generating names + descriptions + flags + departments together
+    content_agent_id uuid  -- Agent ID for generating instructions + examples together
 )
 ```
 
@@ -240,17 +268,47 @@ RETURNS TABLE (
 - This ensures consistency and makes debugging easier
 - Type generation relies on field order matching
 
+## Agent IDs and Required Flags
+
+**Agent IDs:**
+- Each resource has a `{resource}_agent_id` (uuid, nullable) field placed after `show_{resource}`
+- Agent IDs are determined at GET time using inline agent selection logic
+- Agent selection finds the best agent with tools for the resource, preferring:
+  1. Most specific/narrow agent (smallest set difference)
+  2. Department-specific over cross-department
+  3. Most recently updated (`updated_at DESC`)
+  4. Deterministic tie-breaker (`agent_id ASC`)
+- Multi-resource combinations have dedicated agent IDs:
+  - `basic_agent_id`: For names + descriptions + flags + departments
+  - `content_agent_id`: For instructions + examples
+
+**Required Flags:**
+- Each resource has a `{resource}_required` (boolean) field placed after `{resource}_agent_id`
+- Required resources: name, color, icon, instructions (always true)
+- Optional resources: description, active_flag (always false)
+- Conditional required: departments, fields, examples (true if `show_{resource}` is true)
+
+**Tool Availability Impact:**
+- If `{resource}_required = true` AND `{resource}_agent_id IS NULL`:
+  - `show_{resource} = false`
+  - Contributes to `can_edit = false`
+  - Adds to `disabled_reason`: "No tool configured for {resource1}, {resource2}, and {resource3}. Therefore we cannot proceed ahead."
+- If `{resource}_required = false`, missing tools do not affect `can_edit` or `disabled_reason`
+
 ## Key Principles Summary
 
 1. **Required fields first**: `actor_name`, `{artifact}_exists`, `can_edit`, `disabled_reason`
 2. **Consistent resource patterns**: Single-select vs multi-select follow their respective patterns
-3. **Show flags for all**: Every resource has a `show_{resource}` boolean
-4. **Generated field in resources**: All resource composite types include a `generated` boolean field to track AI generation
-5. **Group ID for regeneration**: All resource composite types include a `group_id uuid` field (nullable) for regeneration support
-6. **Suggestions are UUIDs**: All `{resource}_suggestions` fields are `uuid[]`, never `text[]`
-7. **Arrays come last**: For resources with option arrays, the array comes last in that resource's group
-8. **Multi-select arrays last**: The full `{resource}` array comes last in multi-select resource groups
-9. **SELECT matches RETURN**: SELECT clause order must match RETURN TABLE order exactly
+3. **Show flags for all**: Every resource has a `show_{resource}` boolean (affected by tool availability for required resources)
+4. **Agent IDs after show flags**: Each resource has `{resource}_agent_id` and `{resource}_required` after `show_{resource}`
+5. **Multi-resource agent IDs**: `basic_agent_id` and `content_agent_id` come after all individual resources
+6. **Generated field in resources**: All resource composite types include a `generated` boolean field to track AI generation
+7. **Group ID for regeneration**: All resource composite types include a `group_id uuid` field (nullable) for regeneration support
+8. **Suggestions are UUIDs**: All `{resource}_suggestions` fields are `uuid[]`, never `text[]`
+9. **Arrays come last**: For resources with option arrays, the array comes last in that resource's group
+10. **Multi-select arrays last**: The full `{resource}` array comes last in multi-select resource groups
+11. **SELECT matches RETURN**: SELECT clause order must match RETURN TABLE order exactly
+12. **Tool availability checks**: Required resources without tools disable editing with appropriate error messages
 
 ## Migration Checklist
 
@@ -258,13 +316,19 @@ When updating an existing SQL function to follow these guidelines:
 
 - [ ] Move required fields (`actor_name`, `{artifact}_exists`, `can_edit`, `disabled_reason`) to the top
 - [ ] Add `show_{resource}` flags for all resources
+- [ ] Add `{resource}_agent_id` fields after each `show_{resource}` flag
+- [ ] Add `{resource}_required` fields after each `{resource}_agent_id` field
+- [ ] Add multi-resource agent IDs (`basic_agent_id`, `content_agent_id`) after all individual resources
+- [ ] Add inline agent selection CTEs for each resource type and multi-resource combinations
+- [ ] Update `show_{resource}` logic to check tool availability for required resources
+- [ ] Update `can_edit` and `disabled_reason` logic to check required resources for missing tools
 - [ ] Convert text-based suggestions to UUID arrays
 - [ ] Reorder fields to follow single-select/multi-select patterns
 - [ ] Move option arrays to come last in their resource groups
 - [ ] Move multi-select full arrays to come last in their groups
 - [ ] Update SELECT clause to match RETURN TABLE order
 - [ ] Test SQL compilation with `make sql-compile`
-- [ ] Update frontend code if needed for UUID-based suggestions
+- [ ] Update frontend code if needed for UUID-based suggestions and agent IDs
 
 ## Frontend Component Props Standards
 

@@ -8489,6 +8489,10 @@ export interface components {
             name_resource?: components["schemas"]["QGetPersonaV4NameResource"] | null;
             /** Show Name */
             show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
             /** Description Id */
@@ -8496,6 +8500,10 @@ export interface components {
             description_resource?: components["schemas"]["QGetPersonaV4DescriptionResource"] | null;
             /** Show Description */
             show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
             /** Color Id */
@@ -8503,6 +8511,10 @@ export interface components {
             color_resource?: components["schemas"]["QGetPersonaV4ColorResource"] | null;
             /** Show Color */
             show_color?: boolean | null;
+            /** Color Agent Id */
+            color_agent_id?: string | null;
+            /** Color Required */
+            color_required?: boolean | null;
             /** Color Suggestions */
             color_suggestions?: string[] | null;
             /** Colors */
@@ -8512,6 +8524,10 @@ export interface components {
             icon_resource?: components["schemas"]["QGetPersonaV4IconResource"] | null;
             /** Show Icon */
             show_icon?: boolean | null;
+            /** Icon Agent Id */
+            icon_agent_id?: string | null;
+            /** Icon Required */
+            icon_required?: boolean | null;
             /** Icon Suggestions */
             icon_suggestions?: string[] | null;
             /** Icons */
@@ -8521,6 +8537,10 @@ export interface components {
             instructions_resource?: components["schemas"]["QGetPersonaV4InstructionsResource"] | null;
             /** Show Instructions */
             show_instructions?: boolean | null;
+            /** Instructions Agent Id */
+            instructions_agent_id?: string | null;
+            /** Instructions Required */
+            instructions_required?: boolean | null;
             /** Instructions Suggestions */
             instructions_suggestions?: string[] | null;
             /** Active Flag Id */
@@ -8528,12 +8548,20 @@ export interface components {
             flag_resource?: components["schemas"]["QGetPersonaV4FlagResource"] | null;
             /** Show Flag */
             show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Department Resources */
             department_resources?: components["schemas"]["QGetPersonaV4Department"][] | null;
             /** Show Departments */
             show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
             /** Department Suggestions */
             department_suggestions?: string[] | null;
             /** Departments */
@@ -8544,6 +8572,10 @@ export interface components {
             field_resources?: components["schemas"]["QGetPersonaV4Field"][] | null;
             /** Show Fields */
             show_fields?: boolean | null;
+            /** Fields Agent Id */
+            fields_agent_id?: string | null;
+            /** Fields Required */
+            fields_required?: boolean | null;
             /** Field Suggestions */
             field_suggestions?: string[] | null;
             /** Fields */
@@ -8554,10 +8586,18 @@ export interface components {
             example_resources?: components["schemas"]["QGetPersonaV4Example"][] | null;
             /** Show Examples */
             show_examples?: boolean | null;
+            /** Examples Agent Id */
+            examples_agent_id?: string | null;
+            /** Examples Required */
+            examples_required?: boolean | null;
             /** Example Suggestions */
             example_suggestions?: string[] | null;
             /** Examples */
             examples?: components["schemas"]["QGetPersonaV4Example"][] | null;
+            /** Basic Agent Id */
+            basic_agent_id?: string | null;
+            /** Content Agent Id */
+            content_agent_id?: string | null;
         };
         /** GetPersonasListApiRequest */
         GetPersonasListApiRequest: Record<string, never>;

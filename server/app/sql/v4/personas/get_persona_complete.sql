@@ -136,51 +136,72 @@ RETURNS TABLE (
     name_id uuid,
     name_resource types.q_get_persona_v4_name_resource,
     show_name boolean,
+    name_agent_id uuid,
+    name_required boolean,
     name_suggestions uuid[],
     -- Single-select resources: description
     description_id uuid,
     description_resource types.q_get_persona_v4_description_resource,
     show_description boolean,
+    description_agent_id uuid,
+    description_required boolean,
     description_suggestions uuid[],
     -- Single-select resources: color
     color_id uuid,
     color_resource types.q_get_persona_v4_color_resource,
     show_color boolean,
+    color_agent_id uuid,
+    color_required boolean,
     color_suggestions uuid[],
     colors types.q_get_persona_v4_color_option[],
     -- Single-select resources: icon
     icon_id uuid,
     icon_resource types.q_get_persona_v4_icon_resource,
     show_icon boolean,
+    icon_agent_id uuid,
+    icon_required boolean,
     icon_suggestions uuid[],
     icons types.q_get_persona_v4_icon_option[],
     -- Single-select resources: instructions
     instructions_id uuid,
     instructions_resource types.q_get_persona_v4_instructions_resource,
     show_instructions boolean,
+    instructions_agent_id uuid,
+    instructions_required boolean,
     instructions_suggestions uuid[],
     -- Single-select resources: flag
     active_flag_id uuid,
     flag_resource types.q_get_persona_v4_flag_resource,
     show_flag boolean,
+    flag_agent_id uuid,
+    flag_required boolean,
     -- Multi-select resources: departments
     department_ids uuid[],
     department_resources types.q_get_persona_v4_department[],
     show_departments boolean,
+    departments_agent_id uuid,
+    departments_required boolean,
     department_suggestions uuid[],
     departments types.q_get_persona_v4_department[],
     -- Multi-select resources: fields
     field_ids uuid[],
     field_resources types.q_get_persona_v4_field[],
     show_fields boolean,
+    fields_agent_id uuid,
+    fields_required boolean,
     field_suggestions uuid[],
     fields types.q_get_persona_v4_field[],
     -- Multi-select resources: examples
     example_ids uuid[],
     example_resources types.q_get_persona_v4_example[],
     show_examples boolean,
+    examples_agent_id uuid,
+    examples_required boolean,
     example_suggestions uuid[],
-    examples types.q_get_persona_v4_example[]
+    examples types.q_get_persona_v4_example[],
+    -- Multi-resource combination agent IDs
+    basic_agent_id uuid,
+    content_agent_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -395,47 +416,6 @@ example_suggestions_data AS (
             ARRAY[]::uuid[]
         ) as example_suggestions
 ),
-permissions_data AS (
-    SELECT 
-        pdd.department_ids,
-        CASE 
-            WHEN (SELECT persona_id FROM params) IS NULL THEN
-                -- New mode permissions
-                CASE 
-                    WHEN up.role = 'superadmin' THEN true
-                    WHEN (SELECT department_id FROM primary_department_id_data) IS NOT NULL THEN true
-                    ELSE false
-                END
-            ELSE
-                -- Detail mode permissions
-                CASE 
-                    WHEN pdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
-                    WHEN EXISTS (SELECT 1 FROM scenario_personas sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN false
-                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
-                    ELSE false
-                END
-        END as can_edit,
-        CASE 
-            WHEN (SELECT persona_id FROM params) IS NULL THEN
-                -- New mode: always editable if can_edit is true
-                NULL::text
-            ELSE
-                -- Detail mode: compute disabled_reason
-                CASE 
-                    WHEN pdd.department_ids IS NULL AND up.role != 'superadmin' THEN 
-                        'This is a default persona that cannot be edited. You can view the details but cannot make changes.'::text
-                    WHEN EXISTS (SELECT 1 FROM scenario_personas sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN 
-                        'This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes.'::text
-                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 
-                        NULL::text
-                    ELSE 
-                        'This persona cannot be edited. You can view the details but cannot make changes.'::text
-                END
-        END as disabled_reason
-    FROM params x
-    LEFT JOIN persona_departments_data pdd ON true
-    CROSS JOIN user_profile up
-),
 -- Colors (all available color options)
 colors_data AS (
     SELECT 
@@ -639,30 +619,917 @@ department_suggestions_data AS (
 -- Field suggestions (empty for now, can be populated with AI recommendations later)
 field_suggestions_data AS (
     SELECT ARRAY[]::uuid[] as field_suggestions
+),
+-- Agent selection helper CTEs (shared across all agent selections)
+persona_department_for_agents AS (
+    SELECT pd.department_id
+    FROM params p
+    JOIN persona_departments pd ON pd.persona_id = p.persona_id AND pd.active = true
+    WHERE p.persona_id IS NOT NULL
+    LIMIT 1
+),
+profile_primary_department_for_agents AS (
+    SELECT pd.department_id
+    FROM params p
+    JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
+    WHERE p.persona_id IS NULL
+    LIMIT 1
+),
+selected_department_for_agents AS (
+    SELECT 
+        COALESCE(
+            (SELECT department_id FROM persona_department_for_agents),
+            (SELECT department_id FROM profile_primary_department_for_agents)
+        ) as department_id
+),
+user_departments_for_agents AS (
+    SELECT pd.department_id
+    FROM params p
+    JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.active = true
+),
+-- Agent selection for 'names' resource
+name_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'names'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'descriptions' resource
+description_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'descriptions'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'colors' resource
+color_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'colors'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'icons' resource
+icon_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'icons'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'instructions' resource
+instructions_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'instructions'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'flags' resource
+flag_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'flags'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'departments' resource
+departments_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'departments'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'fields' resource
+fields_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'fields'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'examples' resource
+examples_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tools t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'examples'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'basic' multi-resource combination (names + descriptions + flags + departments)
+basic_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+    ),
+    agent_tool_resources AS (
+        SELECT 
+            ea.agent_id,
+            COALESCE(
+                ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
+                ARRAY[]::text[]
+            ) as tool_resources,
+            ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT 
+            atr.agent_id,
+            atr.tool_resources,
+            ARRAY_LENGTH(
+                ARRAY(
+                    SELECT unnest(atr.tool_resources)
+                    EXCEPT
+                    SELECT unnest(ARRAY['names', 'descriptions', 'flags', 'departments']::text[])
+                ),
+                1
+            ) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['names', 'descriptions', 'flags', 'departments']::text[] <@ atr.tool_resources
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ascores.agent_id,
+            ascores.unmatched_count,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ascores.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.unmatched_count ASC,
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'content' multi-resource combination (instructions + examples)
+content_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agents a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+    ),
+    agent_tool_resources AS (
+        SELECT 
+            ea.agent_id,
+            COALESCE(
+                ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
+                ARRAY[]::text[]
+            ) as tool_resources,
+            ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tools t ON t.id = at.tool_id AND t.active = true
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT 
+            atr.agent_id,
+            atr.tool_resources,
+            ARRAY_LENGTH(
+                ARRAY(
+                    SELECT unnest(atr.tool_resources)
+                    EXCEPT
+                    SELECT unnest(ARRAY['instructions', 'examples']::text[])
+                ),
+                1
+            ) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['instructions', 'examples']::text[] <@ atr.tool_resources
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ascores.agent_id,
+            ascores.unmatched_count,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ascores.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.unmatched_count ASC,
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Check for missing tools on required resources (after all agent selection CTEs and ui_flags)
+missing_tools_check AS (
+    SELECT 
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN (SELECT agent_id FROM name_agent_data) IS NULL AND true THEN 'name' ELSE NULL END,
+            CASE WHEN (SELECT agent_id FROM color_agent_data) IS NULL AND true THEN 'color' ELSE NULL END,
+            CASE WHEN (SELECT agent_id FROM icon_agent_data) IS NULL AND true THEN 'icon' ELSE NULL END,
+            CASE WHEN (SELECT agent_id FROM instructions_agent_data) IS NULL AND true THEN 'instructions' ELSE NULL END,
+            CASE WHEN (SELECT agent_id FROM departments_agent_data) IS NULL AND uf.show_departments THEN 'departments' ELSE NULL END,
+            CASE WHEN (SELECT agent_id FROM fields_agent_data) IS NULL AND uf.show_fields THEN 'fields' ELSE NULL END,
+            CASE WHEN (SELECT agent_id FROM examples_agent_data) IS NULL AND (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN 'examples' ELSE NULL END
+        ]::text[], NULL) as missing_resources
+    FROM params x
+    CROSS JOIN ui_flags uf
+),
+permissions_data_with_tools AS (
+    SELECT 
+        pdd.department_ids,
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN
+                -- New mode permissions
+                CASE 
+                    WHEN up.role = 'superadmin' THEN true
+                    WHEN (SELECT department_id FROM primary_department_id_data) IS NOT NULL THEN true
+                    ELSE false
+                END
+            ELSE
+                -- Detail mode permissions
+                CASE 
+                    WHEN pdd.department_ids IS NULL AND up.role != 'superadmin' THEN false
+                    WHEN EXISTS (SELECT 1 FROM scenario_personas sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN false
+                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
+                    ELSE false
+                END
+        END as base_can_edit,
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN
+                -- New mode: always editable if can_edit is true
+                NULL::text
+            ELSE
+                -- Detail mode: compute disabled_reason
+                CASE 
+                    WHEN pdd.department_ids IS NULL AND up.role != 'superadmin' THEN 
+                        'This is a default persona that cannot be edited. You can view the details but cannot make changes.'::text
+                    WHEN EXISTS (SELECT 1 FROM scenario_personas sp WHERE sp.persona_id = (SELECT persona_id FROM params) AND sp.active = true) THEN 
+                        'This persona is currently in use by scenarios and cannot be edited. You can view the details but cannot make changes.'::text
+                    WHEN up.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 
+                        NULL::text
+                    ELSE 
+                        'This persona cannot be edited. You can view the details but cannot make changes.'::text
+                END
+        END as base_disabled_reason
+    FROM params x
+    LEFT JOIN persona_departments_data pdd ON true
+    CROSS JOIN user_profile up
+),
+permissions_final AS (
+    SELECT 
+        pd.department_ids,
+        mtc.missing_resources,
+        CASE 
+            WHEN array_length(mtc.missing_resources, 1) > 0 THEN false
+            ELSE pd.base_can_edit
+        END as can_edit,
+        CASE 
+            WHEN array_length(mtc.missing_resources, 1) > 0 THEN
+                'No tool configured for ' || 
+                array_to_string(mtc.missing_resources, ', ') || 
+                '. Therefore we cannot proceed ahead.'::text
+            ELSE pd.base_disabled_reason
+        END as disabled_reason
+    FROM permissions_data_with_tools pd
+    CROSS JOIN missing_tools_check mtc
 )
 SELECT
     -- Required fields (first 4)
     up.actor_name::text as actor_name,
     (SELECT persona_exists FROM persona_exists_check) as persona_exists,
-    perm.can_edit,
-    perm.disabled_reason,
+    perm_final.can_edit,
+    perm_final.disabled_reason,
     -- Single-select resources: name
     (SELECT name_id FROM name_resource_data) as name_id,
     nrd.name_resource,
-    uf.show_name,
+    CASE 
+        WHEN (SELECT agent_id FROM name_agent_data) IS NULL AND true THEN false
+        ELSE uf.show_name
+    END as show_name,
+    (SELECT agent_id FROM name_agent_data) as name_agent_id,
+    true as name_required,
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     -- Single-select resources: description
     (SELECT description_id FROM description_resource_data) as description_id,
     (SELECT desc_res FROM (SELECT drd.draft_description_resource as desc_res UNION ALL SELECT drd.persona_description_resource LIMIT 1) sub WHERE desc_res IS NOT NULL LIMIT 1) as description_resource,
     uf.show_description,
+    (SELECT agent_id FROM description_agent_data) as description_agent_id,
+    false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
     -- Single-select resources: color
     (SELECT color_id FROM color_resource_data) as color_id,
     (SELECT color_res FROM (SELECT crd.draft_color_resource as color_res UNION ALL SELECT crd.persona_color_resource LIMIT 1) sub WHERE color_res IS NOT NULL LIMIT 1) as color_resource,
     CASE 
+        WHEN (SELECT agent_id FROM color_agent_data) IS NULL AND true THEN false
         WHEN (SELECT COUNT(*) FROM colors_data) > 0 THEN true
         ELSE false
     END as show_color,
+    (SELECT agent_id FROM color_agent_data) as color_agent_id,
+    true as color_required,
     ARRAY[]::uuid[] as color_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -675,9 +1542,12 @@ SELECT
     (SELECT icon_id FROM icon_resource_data) as icon_id,
     (SELECT icon_res FROM (SELECT ird.draft_icon_resource as icon_res UNION ALL SELECT ird.persona_icon_resource LIMIT 1) sub WHERE icon_res IS NOT NULL LIMIT 1) as icon_resource,
     CASE 
+        WHEN (SELECT agent_id FROM icon_agent_data) IS NULL AND true THEN false
         WHEN (SELECT COUNT(*) FROM icons_data) > 0 THEN true
         ELSE false
     END as show_icon,
+    (SELECT agent_id FROM icon_agent_data) as icon_agent_id,
+    true as icon_required,
     COALESCE((SELECT icon_suggestions FROM icon_suggestions_data), ARRAY[]::uuid[]) as icon_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -689,12 +1559,19 @@ SELECT
     -- Single-select resources: instructions
     (SELECT instructions_id FROM instructions_resource_data) as instructions_id,
     (SELECT inst_res FROM (SELECT instrd.draft_instructions_resource as inst_res UNION ALL SELECT instrd.persona_instructions_resource LIMIT 1) sub WHERE inst_res IS NOT NULL LIMIT 1) as instructions_resource,
-    uf.show_instructions,
+    CASE 
+        WHEN (SELECT agent_id FROM instructions_agent_data) IS NULL AND true THEN false
+        ELSE uf.show_instructions
+    END as show_instructions,
+    (SELECT agent_id FROM instructions_agent_data) as instructions_agent_id,
+    true as instructions_required,
     COALESCE((SELECT instructions_suggestions FROM instructions_suggestions_data), ARRAY[]::uuid[]) as instructions_suggestions,
     -- Single-select resources: flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.persona_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,
     uf.show_flag,
+    (SELECT agent_id FROM flag_agent_data) as flag_agent_id,
+    false as flag_required,
     -- Multi-select resources: departments
     COALESCE(
         (SELECT 
@@ -741,7 +1618,15 @@ SELECT
         )),
         '{}'::types.q_get_persona_v4_department[]
     ) as department_resources,
-    uf.show_departments,
+    CASE 
+        WHEN (SELECT agent_id FROM departments_agent_data) IS NULL AND uf.show_departments THEN false
+        ELSE uf.show_departments
+    END as show_departments,
+    (SELECT agent_id FROM departments_agent_data) as departments_agent_id,
+    CASE 
+        WHEN uf.show_departments THEN true
+        ELSE false
+    END as departments_required,
     dsd_dept.department_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -762,7 +1647,15 @@ SELECT
         WHERE fmd.field_id = ANY(fid.field_ids)),
         '{}'::types.q_get_persona_v4_field[]
     ) as field_resources,
-    uf.show_fields,
+    CASE 
+        WHEN (SELECT agent_id FROM fields_agent_data) IS NULL AND uf.show_fields THEN false
+        ELSE uf.show_fields
+    END as show_fields,
+    (SELECT agent_id FROM fields_agent_data) as fields_agent_id,
+    CASE 
+        WHEN uf.show_fields THEN true
+        ELSE false
+    END as fields_required,
     fsd.field_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -783,9 +1676,15 @@ SELECT
         '{}'::types.q_get_persona_v4_example[]
     ) as example_resources,
     CASE 
+        WHEN (SELECT agent_id FROM examples_agent_data) IS NULL AND (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN false
         WHEN (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN true
         ELSE false
     END as show_examples,
+    (SELECT agent_id FROM examples_agent_data) as examples_agent_id,
+    CASE 
+        WHEN (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN true
+        ELSE false
+    END as examples_required,
     COALESCE(esd.example_suggestions, ARRAY[]::uuid[]) as example_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
@@ -793,9 +1692,12 @@ SELECT
             ORDER BY emd.idx
         ) FROM example_mapping_data emd),
         '{}'::types.q_get_persona_v4_example[]
-    ) as examples
+    ) as examples,
+    -- Multi-resource combination agent IDs
+    (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
+    (SELECT agent_id FROM content_agent_data) as content_agent_id
 FROM user_profile up
-CROSS JOIN permissions_data perm
+CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
 LEFT JOIN persona_departments_data pdd ON true
 CROSS JOIN name_resource_data nrd
