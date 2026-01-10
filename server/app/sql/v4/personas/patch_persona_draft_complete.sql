@@ -43,6 +43,7 @@ DECLARE
     v_draft_id uuid;
     v_new_version int;
     v_draft_exists boolean := false;
+    v_profile_id uuid := profile_id;
 BEGIN
     -- Validate resource IDs exist (error if missing and provided)
     IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
@@ -72,103 +73,103 @@ BEGIN
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         UPDATE drafts
-        SET version = version + 1,
+        SET version = drafts.version + 1,
             updated_at = now()
         WHERE id = input_draft_id
-          AND profile_id = profile_id
-          AND version = expected_version
+          AND drafts.profile_id = v_profile_id
+          AND drafts.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
         IF v_draft_id IS NOT NULL THEN
             v_draft_exists := true;
             
             -- Delete old resource links
-            DELETE FROM draft_names WHERE draft_id = v_draft_id;
-            DELETE FROM draft_descriptions WHERE draft_id = v_draft_id;
-            DELETE FROM draft_colors WHERE draft_id = v_draft_id;
-            DELETE FROM draft_icons WHERE draft_id = v_draft_id;
-            DELETE FROM draft_instructions WHERE draft_id = v_draft_id;
-            DELETE FROM draft_flags WHERE draft_id = v_draft_id;
-            DELETE FROM draft_departments WHERE draft_id = v_draft_id;
-            DELETE FROM draft_fields WHERE draft_id = v_draft_id;
-            DELETE FROM draft_examples WHERE draft_id = v_draft_id;
+            DELETE FROM draft_names WHERE draft_names.draft_id = v_draft_id;
+            DELETE FROM draft_descriptions WHERE draft_descriptions.draft_id = v_draft_id;
+            DELETE FROM draft_colors WHERE draft_colors.draft_id = v_draft_id;
+            DELETE FROM draft_icons WHERE draft_icons.draft_id = v_draft_id;
+            DELETE FROM draft_instructions WHERE draft_instructions.draft_id = v_draft_id;
+            DELETE FROM draft_flags WHERE draft_flags.draft_id = v_draft_id;
+            DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
+            DELETE FROM draft_fields WHERE draft_fields.draft_id = v_draft_id;
+            DELETE FROM draft_examples WHERE draft_examples.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF name_id IS NOT NULL THEN
-                INSERT INTO draft_names (draft_id, name_id, version)
+                INSERT INTO draft_names (draft_id, names_id, version)
                 VALUES (v_draft_id, name_id, v_new_version)
-                ON CONFLICT (draft_id, name_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_names_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF description_id IS NOT NULL THEN
-                INSERT INTO draft_descriptions (draft_id, description_id, version)
+                INSERT INTO draft_descriptions (draft_id, descriptions_id, version)
                 VALUES (v_draft_id, description_id, v_new_version)
-                ON CONFLICT (draft_id, description_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_descriptions_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF color_id IS NOT NULL THEN
-                INSERT INTO draft_colors (draft_id, color_id, version)
+                INSERT INTO draft_colors (draft_id, colors_id, version)
                 VALUES (v_draft_id, color_id, v_new_version)
-                ON CONFLICT (draft_id, color_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_colors_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF icon_id IS NOT NULL THEN
-                INSERT INTO draft_icons (draft_id, icon_id, version)
+                INSERT INTO draft_icons (draft_id, icons_id, version)
                 VALUES (v_draft_id, icon_id, v_new_version)
-                ON CONFLICT (draft_id, icon_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_icons_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF instructions_id IS NOT NULL THEN
-                INSERT INTO draft_instructions (draft_id, instruction_id, version)
+                INSERT INTO draft_instructions (draft_id, instructions_id, version)
                 VALUES (v_draft_id, instructions_id, v_new_version)
-                ON CONFLICT (draft_id, instruction_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_instructions_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF active_flag_id IS NOT NULL THEN
-                INSERT INTO draft_flags (draft_id, flag_id, version)
+                INSERT INTO draft_flags (draft_id, flags_id, version)
                 VALUES (v_draft_id, active_flag_id, v_new_version)
-                ON CONFLICT (draft_id, flag_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             -- Handle array resources (departments, fields, examples)
             IF department_ids IS NOT NULL THEN
-                DELETE FROM draft_departments WHERE draft_id = v_draft_id;
-                INSERT INTO draft_departments (draft_id, department_id, version)
+                DELETE FROM draft_departments WHERE draft_departments.draft_id = v_draft_id;
+                INSERT INTO draft_departments (draft_id, departments_id, version)
                 SELECT v_draft_id, dept_id, v_new_version
                 FROM UNNEST(department_ids) as dept_id
-                ON CONFLICT (draft_id, department_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF field_ids IS NOT NULL THEN
-                DELETE FROM draft_fields WHERE draft_id = v_draft_id;
-                INSERT INTO draft_fields (draft_id, field_id, version)
+                DELETE FROM draft_fields WHERE draft_fields.draft_id = v_draft_id;
+                INSERT INTO draft_fields (draft_id, fields_id, version)
                 SELECT v_draft_id, field_id, v_new_version
                 FROM UNNEST(field_ids) as field_id
-                ON CONFLICT (draft_id, field_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_fields_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
             
             IF example_ids IS NOT NULL THEN
-                DELETE FROM draft_examples WHERE draft_id = v_draft_id;
+                DELETE FROM draft_examples WHERE draft_examples.draft_id = v_draft_id;
                 INSERT INTO draft_examples (draft_id, examples_id, version)
                 SELECT v_draft_id, ex_id, v_new_version
                 FROM UNNEST(example_ids) as ex_id
-                ON CONFLICT (draft_id, examples_id) DO UPDATE
+                ON CONFLICT ON CONSTRAINT draft_examples_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
@@ -180,73 +181,73 @@ BEGIN
     
     -- Create new draft
     INSERT INTO drafts (artifact, profile_id)
-    VALUES ('persona'::artifacts, profile_id)
+    VALUES ('persona'::artifacts, v_profile_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
     
     -- Link resources to draft
     IF name_id IS NOT NULL THEN
-        INSERT INTO draft_names (draft_id, name_id, version)
+        INSERT INTO draft_names (draft_id, names_id, version)
         VALUES (v_draft_id, name_id, v_new_version)
-        ON CONFLICT (draft_id, name_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_names_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF description_id IS NOT NULL THEN
-        INSERT INTO draft_descriptions (draft_id, description_id, version)
+        INSERT INTO draft_descriptions (draft_id, descriptions_id, version)
         VALUES (v_draft_id, description_id, v_new_version)
-        ON CONFLICT (draft_id, description_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_descriptions_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF color_id IS NOT NULL THEN
-        INSERT INTO draft_colors (draft_id, color_id, version)
+        INSERT INTO draft_colors (draft_id, colors_id, version)
         VALUES (v_draft_id, color_id, v_new_version)
-        ON CONFLICT (draft_id, color_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_colors_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF icon_id IS NOT NULL THEN
-        INSERT INTO draft_icons (draft_id, icon_id, version)
+        INSERT INTO draft_icons (draft_id, icons_id, version)
         VALUES (v_draft_id, icon_id, v_new_version)
-        ON CONFLICT (draft_id, icon_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_icons_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF instructions_id IS NOT NULL THEN
-        INSERT INTO draft_instructions (draft_id, instruction_id, version)
+        INSERT INTO draft_instructions (draft_id, instructions_id, version)
         VALUES (v_draft_id, instructions_id, v_new_version)
-        ON CONFLICT (draft_id, instruction_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_instructions_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF active_flag_id IS NOT NULL THEN
-        INSERT INTO draft_flags (draft_id, flag_id, version)
+        INSERT INTO draft_flags (draft_id, flags_id, version)
         VALUES (v_draft_id, active_flag_id, v_new_version)
-        ON CONFLICT (draft_id, flag_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_flags_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     -- Handle array resources
     IF department_ids IS NOT NULL THEN
-        INSERT INTO draft_departments (draft_id, department_id, version)
+        INSERT INTO draft_departments (draft_id, departments_id, version)
         SELECT v_draft_id, dept_id, v_new_version
         FROM UNNEST(department_ids) as dept_id
-        ON CONFLICT (draft_id, department_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_departments_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
     
     IF field_ids IS NOT NULL THEN
-        INSERT INTO draft_fields (draft_id, field_id, version)
+        INSERT INTO draft_fields (draft_id, fields_id, version)
         SELECT v_draft_id, field_id, v_new_version
         FROM UNNEST(field_ids) as field_id
-        ON CONFLICT (draft_id, field_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_fields_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;
@@ -255,7 +256,7 @@ BEGIN
         INSERT INTO draft_examples (draft_id, examples_id, version)
         SELECT v_draft_id, ex_id, v_new_version
         FROM UNNEST(example_ids) as ex_id
-        ON CONFLICT (draft_id, examples_id) DO UPDATE
+        ON CONFLICT ON CONSTRAINT draft_examples_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;

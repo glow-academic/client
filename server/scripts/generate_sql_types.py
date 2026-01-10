@@ -1028,7 +1028,7 @@ async def main() -> int:
                     execution_errors.append((sql_path, execute_message))
                     print(f"❌ {execute_message}")
             elif "Executed" in execute_message:
-                print(f"✅ {execute_message}")
+                pass  # Success - no logging needed
 
         # Ensure connection is in clean state before introspection
         await _recover_from_transaction_abort(conn)
@@ -1066,7 +1066,7 @@ async def main() -> int:
             if success:
                 if "Skipping" not in message:
                     successes.append(message)
-                    print(f"✅ {message}")
+                    # Success - no logging needed
                     # Collect type definition if available
                     if type_definition:
                         type_definitions.append(type_definition)
@@ -1094,20 +1094,15 @@ async def main() -> int:
         # Write app consolidated types file if we have entries
         if app_type_definitions:
             write_consolidated_types_file(app_type_definitions, "app", server_root)
-            print(
-                f"✅ Generated app/sql/types.py with {len(app_type_definitions)} type definitions"
-            )
+            # Success - no logging needed
 
         # Write test consolidated types file if we have entries
         if test_type_definitions:
             write_consolidated_types_file(test_type_definitions, "test", server_root)
-            print(
-                f"✅ Generated tests/sql/types.py with {len(test_type_definitions)} type definitions"
-            )
+            # Success - no logging needed
 
         # Summary
         print("\n📊 Summary:")
-        print(f"   ✅ Generated: {len(successes)}")
         print(f"   ⏭️  Skipped: {len(skipped)}")
         print(f"   ❌ Errors: {len(errors)}")
 
@@ -1175,7 +1170,6 @@ async def main() -> int:
 
             return 1
 
-        print("\n✅ SQL compilation complete!")
         return 0
 
     finally:
