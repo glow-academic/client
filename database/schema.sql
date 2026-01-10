@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict fxNKVZT7YQDCmIiTpPf8gcPPDQ4mZOcLhG5ydKmSXOEHMau3Es72j4ttUt7ajBV
+\restrict WRIPy8wKlfiw8ehL5io0ZbDIzpXBhEplXcsDGKm2nTX94633e8Xb6SZ3UyN45aq
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -193,7 +193,7 @@ CREATE TYPE public.reasoning_effort AS ENUM (
 CREATE TYPE public.resources AS ENUM (
     'agents',
     'analyses',
-    'auth',
+    'auths',
     'cohorts',
     'colors',
     'content',
@@ -22565,5 +22565,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict fxNKVZT7YQDCmIiTpPf8gcPPDQ4mZOcLhG5ydKmSXOEHMau3Es72j4ttUt7ajBV
+\unrestrict WRIPy8wKlfiw8ehL5io0ZbDIzpXBhEplXcsDGKm2nTX94633e8Xb6SZ3UyN45aq
 
