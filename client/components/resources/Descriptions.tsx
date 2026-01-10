@@ -86,12 +86,19 @@ export function Descriptions({
   const show = show_description ?? true;
   const suggestionsList = description_suggestions ?? suggestions ?? [];
 
-  // Handle nullable resource properties
-  const resourceDescription = resource?.description ?? null;
-  const [internalValue, setInternalValue] = useState(resourceDescription || "");
+  // Handle nullable resource properties - normalize to string
+  const resourceDescription = resource?.description ?? "";
+  const [internalValue, setInternalValue] = useState(resourceDescription);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSavedValueRef = useRef<string>(resourceDescription || "");
+  const lastSavedValueRef = useRef<string>(resourceDescription);
   const isInitialMountRef = useRef(true);
+  const saveSeqRef = useRef(0);
+
+  // Track whether user has diverged from last saved value
+  const isDirtyRef = useRef(false);
+
+  // Keep a stable "server identity" for when we should accept server as source of truth
+  const lastServerTextRef = useRef<string>(resourceDescription);
 
   // Use resourceId for validation/debugging
   useEffect(() => {
@@ -106,11 +113,19 @@ export function Descriptions({
   const _hasSuggestions = suggestionsList.length > 0;
 
   // Update internal value when description_resource changes
+  // Only sync if server text actually changed AND user is not actively editing
   useEffect(() => {
-    if (resourceDescription) {
+    // If server is pushing the same text again, ignore.
+    if (resourceDescription === lastServerTextRef.current) return;
+
+    // If user is editing (dirty), do NOT clobber their input.
+    // Only sync if we are not dirty.
+    if (!isDirtyRef.current) {
       setInternalValue(resourceDescription);
       lastSavedValueRef.current = resourceDescription;
     }
+
+    lastServerTextRef.current = resourceDescription;
   }, [resourceDescription]);
 
   // Debounced resource creation
@@ -139,6 +154,7 @@ export function Descriptions({
 
     // Set new timer
     debounceTimerRef.current = setTimeout(async () => {
+      const seq = ++saveSeqRef.current;
       try {
         if (internalValue.trim()) {
           const result = await createDescriptionsAction({
@@ -146,14 +162,19 @@ export function Descriptions({
               description: internalValue,
             },
           });
+          // Ignore stale response if user typed more
+          if (seq !== saveSeqRef.current) return;
           if (result.description_id) {
             onDescriptionIdChange(result.description_id);
           }
         } else {
+          // Ignore stale response if user typed more
+          if (seq !== saveSeqRef.current) return;
           // Clear resource ID if value is empty
           onDescriptionIdChange(null);
         }
         lastSavedValueRef.current = internalValue;
+        isDirtyRef.current = false;
       } catch (error) {
         console.error("Failed to create description resource:", error);
       }
@@ -168,6 +189,7 @@ export function Descriptions({
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
+    isDirtyRef.current = newValue !== lastSavedValueRef.current;
   }, []);
 
   // Don't render if show_description is false (AFTER all hooks)

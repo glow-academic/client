@@ -35,12 +35,7 @@ import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
 import { Loader2, Sparkles } from "lucide-react";
-import {
-  parseAsBoolean,
-  parseAsString,
-  useQueryStates,
-  type Parser,
-} from "nuqs";
+import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type SavePersonaIn = InputOf<"/api/v4/personas/save", "post">;
@@ -122,6 +117,25 @@ function PersonaNewComponent({
   createFlagsAction,
   createExamplesAction,
 }: PersonaNewProps) {
+  // #region agent log
+  fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      location: "PersonaNew.tsx:112",
+      message: "PersonaNewComponent render",
+      data: {
+        personaId,
+        hasPersonaData: !!personaData,
+        personaExists: personaData?.persona_exists || false,
+      },
+      timestamp: Date.now(),
+      sessionId: "debug-session",
+      runId: "run1",
+      hypothesisId: "ALL",
+    }),
+  }).catch(() => {});
+  // #endregion
   const router = useRouter();
   const isEditMode = !!personaId;
   const {
@@ -153,57 +167,192 @@ function PersonaNewComponent({
     [generatingResources]
   );
 
+  // nuqs parsers for URL-backed state (will be passed to GenericForm)
+  // Memoize to prevent new object reference on every render
+  const personaSearchParamsClient = useMemo(
+    () => ({
+      // Draft ID (URL-backed, updated when draft is created)
+      draftId: parseAsString,
+      // Search params (URL-backed, updated via debounced callback in StepCard)
+      colorSearch: parseAsString,
+      iconSearch: parseAsString,
+      // Filter params (URL-backed)
+      colorShowSelected: parseAsBoolean,
+      iconShowSelected: parseAsBoolean,
+    }),
+    []
+  );
+
+  // Local form state (not in URL) - stores only resource IDs
+  // Display values are managed inside resource components
+  // Use ref to store personaData to prevent callback recreation on every render
+  const personaDataRef = React.useRef(personaData);
+  React.useEffect(() => {
+    personaDataRef.current = personaData;
+  }, [personaData]);
+
+  // Memoize personaData fields used in renderStep to prevent callback recreation
+  // when only object reference changes (but content is same)
+  const stablePersonaDataFields = React.useMemo(() => {
+    if (!personaData) return null;
+    return {
+      name_resource: personaData.name_resource,
+      show_name: personaData.show_name,
+      name_suggestions: personaData.name_suggestions,
+      description_resource: personaData.description_resource,
+      show_description: personaData.show_description,
+      description_suggestions: personaData.description_suggestions,
+      department_resources: personaData.department_resources,
+      show_departments: personaData.show_departments,
+      department_suggestions: personaData.department_suggestions,
+      departments: personaData.departments,
+      flag_resource: personaData.flag_resource,
+      show_flag: personaData.show_flag,
+      field_resources: personaData.field_resources,
+      show_fields: personaData.show_fields,
+      field_suggestions: personaData.field_suggestions,
+      fields: personaData.fields,
+      color_resource: personaData.color_resource,
+      show_color: personaData.show_color,
+      color_suggestions: personaData.color_suggestions,
+      colors: personaData.colors,
+      icon_resource: personaData.icon_resource,
+      show_icon: personaData.show_icon,
+      icon_suggestions: personaData.icon_suggestions,
+      icons: personaData.icons,
+      instructions_resource: personaData.instructions_resource,
+      show_instructions: personaData.show_instructions,
+      instructions_suggestions: personaData.instructions_suggestions,
+      example_resources: personaData.example_resources,
+      show_examples: personaData.show_examples,
+      example_suggestions: personaData.example_suggestions,
+      examples: personaData.examples,
+    };
+    // Intentionally depend on individual fields, not whole personaData object
+    // to prevent recreation when only object reference changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    personaData?.name_resource,
+    personaData?.show_name,
+    personaData?.name_suggestions,
+    personaData?.description_resource,
+    personaData?.show_description,
+    personaData?.description_suggestions,
+    personaData?.department_resources,
+    personaData?.show_departments,
+    personaData?.department_suggestions,
+    personaData?.departments,
+    personaData?.flag_resource,
+    personaData?.show_flag,
+    personaData?.field_resources,
+    personaData?.show_fields,
+    personaData?.field_suggestions,
+    personaData?.fields,
+    personaData?.color_resource,
+    personaData?.show_color,
+    personaData?.color_suggestions,
+    personaData?.colors,
+    personaData?.icon_resource,
+    personaData?.show_icon,
+    personaData?.icon_suggestions,
+    personaData?.icons,
+    personaData?.instructions_resource,
+    personaData?.show_instructions,
+    personaData?.instructions_suggestions,
+    personaData?.example_resources,
+    personaData?.show_examples,
+    personaData?.example_suggestions,
+    personaData?.examples,
+  ]);
+
   // Helper to check if a resource type can be regenerated
+  // Use stablePersonaDataFields to prevent callback recreation when personaData object reference changes
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "PersonaNew.tsx:157",
+            message: "canRegenerate called",
+            data: {
+              resourceType,
+              hasPersonaData: !!stablePersonaDataFields,
+            },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "C",
+          }),
+        }
+      ).catch(() => {});
+      // #endregion
+      if (!stablePersonaDataFields) return false;
       switch (resourceType) {
         case "names":
-          return personaData?.name_resource?.generated ?? false;
+          return stablePersonaDataFields.name_resource?.generated ?? false;
         case "descriptions":
-          return personaData?.description_resource?.generated ?? false;
+          return (
+            stablePersonaDataFields.description_resource?.generated ?? false
+          );
         case "colors":
-          return personaData?.color_resource?.generated ?? false;
+          return stablePersonaDataFields.color_resource?.generated ?? false;
         case "icons":
-          return personaData?.icon_resource?.generated ?? false;
+          return stablePersonaDataFields.icon_resource?.generated ?? false;
         case "instructions":
-          return personaData?.instructions_resource?.generated ?? false;
+          return (
+            stablePersonaDataFields.instructions_resource?.generated ?? false
+          );
         case "flags":
-          return personaData?.flag_resource?.generated ?? false;
+          return stablePersonaDataFields.flag_resource?.generated ?? false;
         case "departments":
           return (
-            personaData?.department_resources?.some((d) => d.generated) ?? false
+            stablePersonaDataFields.department_resources?.some(
+              (d) => d.generated
+            ) ?? false
           );
         case "fields":
           return (
-            personaData?.field_resources?.some((f) => f.generated) ?? false
+            stablePersonaDataFields.field_resources?.some((f) => f.generated) ??
+            false
           );
         case "examples":
           return (
-            personaData?.example_resources?.some((e) => e.generated) ?? false
+            stablePersonaDataFields.example_resources?.some(
+              (e) => e.generated
+            ) ?? false
           );
         default:
           return false;
       }
     },
-    [personaData]
+    [stablePersonaDataFields]
   );
 
-  // nuqs parsers for URL-backed state (will be passed to GenericForm)
-  const personaSearchParamsClient = {
-    // Draft ID (URL-backed, updated when draft is created)
-    draftId: parseAsString,
-    // Search params (URL-backed, updated via debounced callback in StepCard)
-    colorSearch: parseAsString,
-    iconSearch: parseAsString,
-    // Filter params (URL-backed)
-    colorShowSelected: parseAsBoolean,
-    iconShowSelected: parseAsBoolean,
-  } as const;
-
-  // Local form state (not in URL) - stores only resource IDs
-  // Display values are managed inside resource components
   const getInitialFormState = useCallback(() => {
-    const data = personaData;
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "PersonaNew.tsx:205",
+        message: "getInitialFormState called",
+        data: {
+          hasPersonaData: !!personaDataRef.current,
+          personaExists: personaDataRef.current?.persona_exists || false,
+          nameId: personaDataRef.current?.name_id || null,
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run1",
+        hypothesisId: "C",
+      }),
+    }).catch(() => {});
+    // #endregion
+    const data = personaDataRef.current;
     if (!data) {
       return {
         name_id: null as string | null,
@@ -230,13 +379,89 @@ function PersonaNewComponent({
       field_ids: data.field_ids ?? [],
       example_ids: data.example_ids ?? [],
     };
-  }, [personaData]);
+    // Remove personaData from dependencies - use ref instead to prevent callback recreation
+  }, []);
 
   const [formState, setFormState] = useState(getInitialFormState);
+  // Use ref to access formState in renderStep without depending on it
+  const formStateRef = React.useRef(formState);
+  React.useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
+
+  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
+  const departmentIdsStr = React.useMemo(
+    () => JSON.stringify(personaData?.department_ids ?? []),
+    [personaData?.department_ids]
+  );
+  const fieldIdsStr = React.useMemo(
+    () => JSON.stringify(personaData?.field_ids ?? []),
+    [personaData?.field_ids]
+  );
+  const exampleIdsStr = React.useMemo(
+    () => JSON.stringify(personaData?.example_ids ?? []),
+    [personaData?.example_ids]
+  );
+
+  // Memoize stringified formState arrays for draft listener effect dependencies
+  const formStateDepartmentIdsStr = React.useMemo(
+    () => JSON.stringify(formState.department_ids),
+    [formState.department_ids]
+  );
+  const formStateFieldIdsStr = React.useMemo(
+    () => JSON.stringify(formState.field_ids),
+    [formState.field_ids]
+  );
+  const formStateExampleIdsStr = React.useMemo(
+    () => JSON.stringify(formState.example_ids),
+    [formState.example_ids]
+  );
 
   // Update form state when server data changes
+  // Use personaData directly in dependency array, not getInitialFormState
   useEffect(() => {
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "PersonaNew.tsx:238",
+        message: "formState sync effect triggered",
+        data: {
+          hasPersonaData: !!personaData,
+          personaExists: personaData?.persona_exists || false,
+          nameId: personaData?.name_id || null,
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run1",
+        hypothesisId: "A",
+      }),
+    }).catch(() => {});
+    // #endregion
     const newState = getInitialFormState();
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "PersonaNew.tsx:240",
+        message: "comparing formState",
+        data: {
+          prevNameId: formState.name_id,
+          newNameId: newState.name_id,
+          prevColorId: formState.color_id,
+          newColorId: newState.color_id,
+          prevDeptIds: formState.department_ids.length,
+          newDeptIds: newState.department_ids.length,
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run1",
+        hypothesisId: "A",
+      }),
+    }).catch(() => {});
+    // #endregion
     setFormState((prev) => {
       // Only update if resource IDs actually changed
       if (
@@ -252,39 +477,190 @@ function PersonaNewComponent({
         JSON.stringify(prev.example_ids) !==
           JSON.stringify(newState.example_ids)
       ) {
+        // #region agent log
+        fetch(
+          "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: "PersonaNew.tsx:255",
+              message: "formState updated",
+              data: {
+                nameIdChanged: prev.name_id !== newState.name_id,
+                colorIdChanged: prev.color_id !== newState.color_id,
+              },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              runId: "run1",
+              hypothesisId: "A",
+            }),
+          }
+        ).catch(() => {});
+        // #endregion
         return newState;
       }
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "PersonaNew.tsx:257",
+            message: "formState unchanged",
+            data: {},
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "A",
+          }),
+        }
+      ).catch(() => {});
+      // #endregion
       return prev;
     });
-  }, [getInitialFormState]);
+    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
+    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    personaData?.name_id,
+    personaData?.description_id,
+    personaData?.color_id,
+    personaData?.icon_id,
+    personaData?.instructions_id,
+    personaData?.active_flag_id,
+    departmentIdsStr,
+    fieldIdsStr,
+    exampleIdsStr,
+  ]);
 
   // Draft version tracking for optimistic concurrency control
+  // Keep version in a ref so updating it doesn't retrigger the effect
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
+  const lastSavedVersionRef = React.useRef(0);
+  React.useEffect(() => {
+    lastSavedVersionRef.current = lastSavedVersion;
+  }, [lastSavedVersion]);
 
-  // Get draftId from URL for draft change listener and profile sync
-  // GenericForm also manages this via nuqs, but we need it here for the draft listener
-  const [draftIdState, setDraftIdState] = useQueryStates(
-    { draftId: parseAsString },
-    {
-      history: "replace",
-      shallow: true,
-    }
-  );
-  const draftId = draftIdState.draftId || null;
-  const setDraftId = useCallback(
-    (value: string | null) => setDraftIdState({ draftId: value }),
-    [setDraftIdState]
-  );
+  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const setUrlFormDataRef = React.useRef<
+    null | ((updates: Record<string, unknown>) => void)
+  >(null);
+
+  // Memoized callback to sync draftId from GenericForm - only update if value changed
+  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
+    const next = (fd["draftId"] as string | undefined) ?? null;
+    setDraftId((prev) => (prev === next ? prev : next));
+  }, []);
 
   // Sync URL draftId to profile context
   useEffect(() => {
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "PersonaNew.tsx:280",
+        message: "draftId sync effect triggered",
+        data: {
+          draftId,
+          selectedDraftId,
+          willUpdate: draftId !== selectedDraftId,
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run1",
+        hypothesisId: "D",
+      }),
+    }).catch(() => {});
+    // #endregion
     if (draftId !== selectedDraftId) {
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "PersonaNew.tsx:282",
+            message: "updating selectedDraftId in profile context",
+            data: { newDraftId: draftId },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "D",
+          }),
+        }
+      ).catch(() => {});
+      // #endregion
       setSelectedDraftId(draftId);
     }
   }, [draftId, selectedDraftId, setSelectedDraftId]);
 
+  // Use ref to stabilize patchPersonaDraftAction to prevent effect recreation when prop reference changes
+  const patchPersonaDraftActionRef = React.useRef(patchPersonaDraftAction);
+  React.useEffect(() => {
+    patchPersonaDraftActionRef.current = patchPersonaDraftAction;
+  }, [patchPersonaDraftAction]);
+
+  // Build a stable key for "what would we patch" - only changes when form data actually changes
+  const draftPatchKey = React.useMemo(() => {
+    return JSON.stringify({
+      draftId: draftId || null,
+      name_id: formState.name_id,
+      description_id: formState.description_id,
+      color_id: formState.color_id,
+      icon_id: formState.icon_id,
+      instructions_id: formState.instructions_id,
+      active_flag_id: formState.active_flag_id,
+      department_ids: formState.department_ids,
+      field_ids: formState.field_ids,
+      example_ids: formState.example_ids,
+    });
+    // Use stringified arrays to prevent recreation when array references change but content is same
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    draftId,
+    formState.name_id,
+    formState.description_id,
+    formState.color_id,
+    formState.icon_id,
+    formState.instructions_id,
+    formState.active_flag_id,
+    formStateDepartmentIdsStr,
+    formStateFieldIdsStr,
+    formStateExampleIdsStr,
+  ]);
+
+  // Track last patched payload so we don't repatch identical state
+  const lastPatchedKeyRef = React.useRef<string | null>(null);
+
   // Draft change listener - watches resource IDs and patches draft
+  // Only triggers when the payload actually changes, not when version changes
   useEffect(() => {
+    // #region agent log
+    fetch("http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        location: "PersonaNew.tsx:287",
+        message: "draft listener effect triggered",
+        data: {
+          draftId,
+          draftPatchKey,
+          lastPatchedKey: lastPatchedKeyRef.current,
+          willPatch: lastPatchedKeyRef.current !== draftPatchKey,
+          hasPatchAction: !!patchPersonaDraftActionRef.current,
+        },
+        timestamp: Date.now(),
+        sessionId: "debug-session",
+        runId: "run1",
+        hypothesisId: "B",
+      }),
+    }).catch(() => {});
+    // #endregion
     const hasResourceIds =
       formState.name_id ||
       formState.description_id ||
@@ -296,13 +672,76 @@ function PersonaNewComponent({
       formState.field_ids.length > 0 ||
       formState.example_ids.length > 0;
 
-    if (!hasResourceIds || !patchPersonaDraftAction) {
+    if (!hasResourceIds || !patchPersonaDraftActionRef.current) {
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "PersonaNew.tsx:299",
+            message: "draft listener early return",
+            data: {
+              hasResourceIds,
+              hasPatchAction: !!patchPersonaDraftActionRef.current,
+            },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "B",
+          }),
+        }
+      ).catch(() => {});
+      // #endregion
+      return;
+    }
+
+    // ✅ If nothing changed since the last successful patch, do nothing.
+    if (lastPatchedKeyRef.current === draftPatchKey) {
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "PersonaNew.tsx:303",
+            message: "draft listener skipping - payload unchanged",
+            data: { draftPatchKey },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "B",
+          }),
+        }
+      ).catch(() => {});
+      // #endregion
       return;
     }
 
     const timer = setTimeout(async () => {
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "PersonaNew.tsx:303",
+            message: "calling patchPersonaDraftAction",
+            data: { draftId, expectedVersion: lastSavedVersionRef.current },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "B",
+          }),
+        }
+      ).catch(() => {});
+      // #endregion
       try {
-        const result = await patchPersonaDraftAction({
+        if (!patchPersonaDraftActionRef.current) return;
+        const result = await patchPersonaDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
             name_id: formState.name_id,
@@ -314,34 +753,99 @@ function PersonaNewComponent({
             department_ids: formState.department_ids,
             field_ids: formState.field_ids,
             example_ids: formState.example_ids,
-            expected_version: lastSavedVersion,
+            expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
+        // #region agent log
+        fetch(
+          "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: "PersonaNew.tsx:320",
+              message: "patchPersonaDraftAction completed",
+              data: {
+                resultDraftId: result.draft_id,
+                newVersion: result.new_version,
+                currentDraftId: draftId,
+                willUpdateDraftId: !draftId && !!result.draft_id,
+              },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              runId: "run1",
+              hypothesisId: "B",
+            }),
+          }
+        ).catch(() => {});
+        // #endregion
+
+        // Mark this payload as patched so we don't loop
+        lastPatchedKeyRef.current = draftPatchKey;
+
         if (!draftId && result.draft_id) {
-          // Update URL when draft is created (GenericForm will also sync this)
-          setDraftId(result.draft_id);
+          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
+          // #region agent log
+          fetch(
+            "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                location: "PersonaNew.tsx:322",
+                message: "updating draftId in URL via bridge",
+                data: { newDraftId: result.draft_id },
+                timestamp: Date.now(),
+                sessionId: "debug-session",
+                runId: "run1",
+                hypothesisId: "B",
+              }),
+            }
+          ).catch(() => {});
+          // #endregion
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
-        setLastSavedVersion(result.new_version ?? 0);
+
+        // This can stay as state (for UI), but it won't re-trigger patching
+        // because the effect is gated by payload changes.
+        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
+          setLastSavedVersion(result.new_version ?? 0);
+          lastSavedVersionRef.current = result.new_version ?? 0;
+        }
       } catch {
         // Failed to save draft - error already logged by API
+        // Don't update lastPatchedKeyRef on failure so we retry on next change
+        // #region agent log
+        fetch(
+          "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: "PersonaNew.tsx:325",
+              message: "patchPersonaDraftAction failed",
+              data: {},
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              runId: "run1",
+              hypothesisId: "B",
+            }),
+          }
+        ).catch(() => {});
+        // #endregion
       }
     }, 1000);
 
     return () => clearTimeout(timer);
+    // ✅ Trigger only when payload changes, not when version changes
+    // patchPersonaDraftAction and setDraftId are accessed via refs to prevent effect recreation
+    // when prop/function references change but functionality is the same
+    // We access formState fields and draftId inside the effect, but depend on draftPatchKey
+    // to prevent unnecessary effect recreation when individual fields change but payload is same
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    formState.name_id,
-    formState.description_id,
-    formState.color_id,
-    formState.icon_id,
-    formState.instructions_id,
-    formState.active_flag_id,
-    formState.department_ids,
-    formState.field_ids,
-    formState.example_ids,
-    draftId,
-    lastSavedVersion,
-    patchPersonaDraftAction,
-    setDraftId,
+    draftPatchKey, // ✅ trigger only when payload changes
+    // patchPersonaDraftAction and setDraftId are accessed via refs
   ]);
 
   // WebSocket handlers for AI generation - unified handler for all resource types
@@ -806,6 +1310,8 @@ function PersonaNewComponent({
       }>;
       onReset?: () => void;
     }) => {
+      // Use memoized fields to avoid dependency on personaData object reference
+      const currentPersonaData = stablePersonaDataFields;
       switch (stepId) {
         case "basic":
           return (
@@ -819,9 +1325,9 @@ function PersonaNewComponent({
               customHeader={
                 <Names
                   name_id={formState.name_id ?? null}
-                  name_resource={personaData?.name_resource ?? null}
-                  show_name={personaData?.show_name ?? true}
-                  name_suggestions={personaData?.name_suggestions ?? []}
+                  name_resource={currentPersonaData?.name_resource ?? null}
+                  show_name={currentPersonaData?.show_name ?? true}
+                  name_suggestions={currentPersonaData?.name_suggestions ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
@@ -884,11 +1390,13 @@ function PersonaNewComponent({
                 <Descriptions
                   description_id={formState.description_id ?? null}
                   description_resource={
-                    personaData?.description_resource ?? null
+                    currentPersonaData?.description_resource ?? null
                   }
-                  show_description={personaData?.show_description ?? true}
+                  show_description={
+                    currentPersonaData?.show_description ?? true
+                  }
                   description_suggestions={
-                    personaData?.description_suggestions ?? []
+                    currentPersonaData?.description_suggestions ?? []
                   }
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
@@ -910,12 +1418,16 @@ function PersonaNewComponent({
                 {/* Department Selection */}
                 <Departments
                   department_ids={formState.department_ids ?? []}
-                  department_resources={personaData?.department_resources ?? []}
-                  show_departments={personaData?.show_departments ?? false}
-                  department_suggestions={
-                    personaData?.department_suggestions ?? []
+                  department_resources={
+                    currentPersonaData?.department_resources ?? []
                   }
-                  departments={personaData?.departments ?? []}
+                  show_departments={
+                    currentPersonaData?.show_departments ?? false
+                  }
+                  department_suggestions={
+                    currentPersonaData?.department_suggestions ?? []
+                  }
+                  departments={currentPersonaData?.departments ?? []}
                   disabled={disabled}
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
@@ -925,8 +1437,8 @@ function PersonaNewComponent({
                 {/* Active Switch - using Flags resource component */}
                 <Flags
                   active_flag_id={formState.active_flag_id ?? null}
-                  flag_resource={personaData?.flag_resource ?? null}
-                  show_flag={personaData?.show_flag ?? false}
+                  flag_resource={currentPersonaData?.flag_resource ?? null}
+                  show_flag={currentPersonaData?.show_flag ?? false}
                   disabled={disabled}
                   onFlagIdChange={(flagId) =>
                     setFormState((prev) => ({
@@ -937,9 +1449,9 @@ function PersonaNewComponent({
                   label="Active"
                   helpText="Inactive personas will not be available for scenarios"
                   {...((formState.icon_id ||
-                    personaData?.flag_resource?.icon_id) && {
+                    currentPersonaData?.flag_resource?.icon_id) && {
                     iconId: (formState.icon_id ||
-                      personaData?.flag_resource?.icon_id) as string,
+                      currentPersonaData?.flag_resource?.icon_id) as string,
                   })}
                   createFlagsAction={createFlagsAction}
                 />
@@ -997,10 +1509,10 @@ function PersonaNewComponent({
             >
               <Fields
                 field_ids={formState.field_ids ?? []}
-                field_resources={personaData?.field_resources ?? []}
-                show_fields={personaData?.show_fields ?? false}
-                field_suggestions={personaData?.field_suggestions ?? []}
-                fields={personaData?.fields ?? []}
+                field_resources={currentPersonaData?.field_resources ?? []}
+                show_fields={currentPersonaData?.show_fields ?? false}
+                field_suggestions={currentPersonaData?.field_suggestions ?? []}
+                fields={currentPersonaData?.fields ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, field_ids: ids }))
@@ -1082,10 +1594,10 @@ function PersonaNewComponent({
               {/* Color picker - using Colors resource component */}
               <Colors
                 color_id={formState.color_id ?? null}
-                color_resource={personaData?.color_resource ?? null}
-                show_color={personaData?.show_color ?? false}
-                color_suggestions={personaData?.color_suggestions ?? []}
-                colors={personaData?.colors ?? []}
+                color_resource={currentPersonaData?.color_resource ?? null}
+                show_color={currentPersonaData?.show_color ?? false}
+                color_suggestions={currentPersonaData?.color_suggestions ?? []}
+                colors={currentPersonaData?.colors ?? []}
                 disabled={disabled}
                 onColorIdChange={(colorId) =>
                   setFormState((prev) => ({ ...prev, color_id: colorId }))
@@ -1178,10 +1690,10 @@ function PersonaNewComponent({
               {/* Icon picker - using Icons resource component */}
               <Icons
                 icon_id={formState.icon_id ?? null}
-                icon_resource={personaData?.icon_resource ?? null}
-                show_icon={personaData?.show_icon ?? false}
-                icon_suggestions={personaData?.icon_suggestions ?? []}
-                icons={personaData?.icons ?? []}
+                icon_resource={currentPersonaData?.icon_resource ?? null}
+                show_icon={currentPersonaData?.show_icon ?? false}
+                icon_suggestions={currentPersonaData?.icon_suggestions ?? []}
+                icons={currentPersonaData?.icons ?? []}
                 disabled={disabled}
                 onIconIdChange={(iconId) =>
                   setFormState((prev) => ({ ...prev, icon_id: iconId }))
@@ -1257,11 +1769,13 @@ function PersonaNewComponent({
               <Instructions
                 instructions_id={formState.instructions_id ?? null}
                 instructions_resource={
-                  personaData?.instructions_resource ?? null
+                  currentPersonaData?.instructions_resource ?? null
                 }
-                show_instructions={personaData?.show_instructions ?? true}
+                show_instructions={
+                  currentPersonaData?.show_instructions ?? true
+                }
                 instructions_suggestions={
-                  personaData?.instructions_suggestions ?? []
+                  currentPersonaData?.instructions_suggestions ?? []
                 }
                 disabled={disabled}
                 onInstructionsIdChange={(instructionsId) =>
@@ -1284,10 +1798,12 @@ function PersonaNewComponent({
               {/* Examples Section */}
               <Examples
                 example_ids={formState.example_ids ?? []}
-                example_resources={personaData?.example_resources ?? []}
-                show_examples={personaData?.show_examples ?? false}
-                example_suggestions={personaData?.example_suggestions ?? []}
-                examples={personaData?.examples ?? []}
+                example_resources={currentPersonaData?.example_resources ?? []}
+                show_examples={currentPersonaData?.show_examples ?? false}
+                example_suggestions={
+                  currentPersonaData?.example_suggestions ?? []
+                }
+                examples={currentPersonaData?.examples ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, example_ids: ids }))
@@ -1297,9 +1813,9 @@ function PersonaNewComponent({
                 itemPlaceholder="Message"
                 createExamplesAction={createExamplesAction}
                 exampleMapping={
-                  personaData?.examples && formState.example_ids
+                  currentPersonaData?.examples && formState.example_ids
                     ? Object.fromEntries(
-                        personaData.examples
+                        currentPersonaData.examples
                           .map((ex, idx) => [
                             formState.example_ids?.[idx] || "",
                             ex.example || "",
@@ -1317,7 +1833,9 @@ function PersonaNewComponent({
       }
     },
     [
-      personaData,
+      // Use stablePersonaDataFields instead of personaData to prevent callback recreation
+      // when only object reference changes (but content is same)
+      stablePersonaDataFields,
       disabled,
       isEditMode,
       handleGenerateName,
@@ -1325,7 +1843,19 @@ function PersonaNewComponent({
       handleGenerateInstructions,
       isGenerating,
       stepResources,
-      formState,
+      // Depend on individual formState fields instead of whole object to prevent callback recreation
+      // when object reference changes but values are same
+      formState.name_id,
+      formState.description_id,
+      formState.color_id,
+      formState.icon_id,
+      formState.instructions_id,
+      formState.active_flag_id,
+      // Include arrays - they're used in the callback, but the formState sync effect ensures
+      // they only change when content actually changes (not just reference)
+      formState.department_ids,
+      formState.field_ids,
+      formState.example_ids,
       createNamesAction,
       createDescriptionsAction,
       createColorsAction,
@@ -1364,6 +1894,10 @@ function PersonaNewComponent({
           isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
         />
 
         {/* Generate/Regenerate Modal */}
@@ -1388,4 +1922,54 @@ function PersonaNewComponent({
 }
 
 // Memoize component to prevent re-renders when only prop references change (content is same)
-export default React.memo(PersonaNewComponent);
+export default React.memo(PersonaNewComponent, (prevProps, nextProps) => {
+  // Compare personaData by resource IDs, not object reference
+  const prevIds = {
+    name_id: prevProps.personaData?.name_id,
+    description_id: prevProps.personaData?.description_id,
+    color_id: prevProps.personaData?.color_id,
+    icon_id: prevProps.personaData?.icon_id,
+    instructions_id: prevProps.personaData?.instructions_id,
+    active_flag_id: prevProps.personaData?.active_flag_id,
+    department_ids: prevProps.personaData?.department_ids,
+    field_ids: prevProps.personaData?.field_ids,
+    example_ids: prevProps.personaData?.example_ids,
+  };
+  const nextIds = {
+    name_id: nextProps.personaData?.name_id,
+    description_id: nextProps.personaData?.description_id,
+    color_id: nextProps.personaData?.color_id,
+    icon_id: nextProps.personaData?.icon_id,
+    instructions_id: nextProps.personaData?.instructions_id,
+    active_flag_id: nextProps.personaData?.active_flag_id,
+    department_ids: nextProps.personaData?.department_ids,
+    field_ids: nextProps.personaData?.field_ids,
+    example_ids: nextProps.personaData?.example_ids,
+  };
+
+  // Compare primitive props
+  if (
+    prevProps.personaId !== nextProps.personaId ||
+    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
+  ) {
+    return false; // Props changed, re-render
+  }
+
+  // Compare function props by reference (should be stable from server actions)
+  if (
+    prevProps.savePersonaAction !== nextProps.savePersonaAction ||
+    prevProps.patchPersonaDraftAction !== nextProps.patchPersonaDraftAction ||
+    prevProps.createNamesAction !== nextProps.createNamesAction ||
+    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
+    prevProps.createColorsAction !== nextProps.createColorsAction ||
+    prevProps.createIconsAction !== nextProps.createIconsAction ||
+    prevProps.createInstructionsAction !== nextProps.createInstructionsAction ||
+    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
+    prevProps.createExamplesAction !== nextProps.createExamplesAction
+  ) {
+    return false; // Function props changed, re-render
+  }
+
+  // All props are equivalent, skip re-render
+  return true;
+});

@@ -104,6 +104,16 @@ export interface GenericFormProps<T extends Record<string, Parser<unknown>>> {
   isReadonly?: boolean;
   isEditMode?: boolean;
   className?: string;
+
+  // Optional bridge for parent side-effects (draft patching, websocket, etc.)
+  onFormDataChange?: (formData: Values<T>) => void;
+
+  // Optional bridge so parent can imperatively update URL-backed state
+  registerSetFormData?: (
+    setFormData: (
+      updates: Partial<Values<T>> | ((prev: Values<T>) => Partial<Values<T>>)
+    ) => void
+  ) => void;
 }
 
 // Hook for form initialization from server data
@@ -171,11 +181,10 @@ function useFormInitialization<T extends Record<string, Parser<unknown>>>({
           : serverData["suggested_icons"];
       }
       if ("valid_department_ids" in serverData) {
-        keyFields["valid_department_ids"] = Array.isArray(
-          serverData["valid_department_ids"]
-        )
-          ? serverData["valid_department_ids"].sort().join(",")
-          : serverData["valid_department_ids"];
+        const ids = serverData["valid_department_ids"];
+        keyFields["valid_department_ids"] = Array.isArray(ids)
+          ? [...ids].sort().join(",") // ✅ copy first to avoid mutation
+          : ids;
       }
       // Create a stable hash from sorted keys and values
       const sortedKeys = Object.keys(keyFields).sort();
@@ -271,6 +280,8 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
   isReadonly: _isReadonly = false,
   isEditMode: _isEditMode = false,
   className,
+  onFormDataChange,
+  registerSetFormData,
 }: GenericFormProps<T>) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const router = useRouter();
@@ -284,6 +295,66 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
 
   const formData = externalFormData ?? internalFormData;
   const setFormData = externalSetFormData ?? internalSetFormData;
+
+  // Keep ref of current formData for diff checking in handleSetFormData
+  const formDataRef = React.useRef(formData);
+  React.useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
+
+  // Bridge API: notify parent whenever URL-backed state changes
+  const onFormDataChangeRef = React.useRef(onFormDataChange);
+  React.useEffect(() => {
+    onFormDataChangeRef.current = onFormDataChange;
+  }, [onFormDataChange]);
+
+  const registerSetFormDataRef = React.useRef(registerSetFormData);
+  React.useEffect(() => {
+    registerSetFormDataRef.current = registerSetFormData;
+  }, [registerSetFormData]);
+
+  // Compute stable key of URL fields parent cares about (not object identity)
+  // Only include fields you actually want the parent to react to
+  const draftIdValue = formData["draftId"] ?? null;
+  const colorSearchValue = formData["colorSearch"] ?? null;
+  const iconSearchValue = formData["iconSearch"] ?? null;
+  const colorShowSelectedValue = formData["colorShowSelected"] ?? null;
+  const iconShowSelectedValue = formData["iconShowSelected"] ?? null;
+
+  const formDataKey = React.useMemo(() => {
+    return JSON.stringify({
+      draftId: draftIdValue,
+      colorSearch: colorSearchValue,
+      iconSearch: iconSearchValue,
+      colorShowSelected: colorShowSelectedValue,
+      iconShowSelected: iconShowSelectedValue,
+    });
+  }, [
+    draftIdValue,
+    colorSearchValue,
+    iconSearchValue,
+    colorShowSelectedValue,
+    iconShowSelectedValue,
+  ]);
+
+  // Keep ref of latest formData for onFormDataChange effect (avoids stale reads)
+  const formDataLatestRef = React.useRef(formData);
+  React.useEffect(() => {
+    formDataLatestRef.current = formData;
+  }, [formData]);
+
+  // Notify parent whenever URL-backed state changes (keyed on stable key, not object identity)
+  React.useEffect(() => {
+    onFormDataChangeRef.current?.(formDataLatestRef.current);
+  }, [formDataKey]); // Only depend on formDataKey, not formData object identity
+
+  // Give parent access to the setter (once, gated to prevent constant re-registration)
+  const lastSetterRef = React.useRef<typeof setFormData | null>(null);
+  React.useEffect(() => {
+    if (lastSetterRef.current === setFormData) return;
+    lastSetterRef.current = setFormData;
+    registerSetFormDataRef.current?.(setFormData);
+  }, [setFormData]);
 
   // Stabilize serverData prop reference to prevent unnecessary re-renders
   // Generate stable ID from serverData content (same logic as in useFormInitialization)
@@ -312,11 +383,10 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
           : serverData["suggested_icons"];
       }
       if ("valid_department_ids" in serverData) {
-        keyFields["valid_department_ids"] = Array.isArray(
-          serverData["valid_department_ids"]
-        )
-          ? serverData["valid_department_ids"].sort().join(",")
-          : serverData["valid_department_ids"];
+        const ids = serverData["valid_department_ids"];
+        keyFields["valid_department_ids"] = Array.isArray(ids)
+          ? [...ids].sort().join(",") // ✅ copy first to avoid mutation
+          : ids;
       }
       const sortedKeys = Object.keys(keyFields).sort();
       const hash = sortedKeys
@@ -362,13 +432,86 @@ function GenericFormComponent<T extends Record<string, Parser<unknown>>>({
     return statuses;
   }, [steps, getStepStatus, formData]);
 
-  // Helper to update form data (merges with existing data)
+  // Helper to update form data - pass updates directly to nuqs setter
+  // nuqs expects partial updates, not merged full state
   const handleSetFormData = React.useCallback(
     (updates: Partial<Values<T>>) => {
-      setFormData((prev) => ({
-        ...prev,
-        ...updates,
-      }));
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "GenericForm.tsx:425",
+            message: "handleSetFormData called",
+            data: { updates },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "ALL",
+          }),
+        }
+      ).catch(() => {});
+      // #endregion agent log
+
+      const current = formDataRef.current;
+
+      // Only forward changes that actually differ
+      const filtered: Partial<Values<T>> = {};
+      let changed = false;
+
+      for (const [k, v] of Object.entries(updates) as Array<
+        [keyof Values<T>, Values<T>[keyof Values<T>]]
+      >) {
+        if (current[k] !== v) {
+          filtered[k] = v;
+          changed = true;
+        }
+      }
+
+      if (!changed) {
+        // #region agent log
+        fetch(
+          "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              location: "GenericForm.tsx:425",
+              message: "handleSetFormData no-op (no changes)",
+              data: { updates, current },
+              timestamp: Date.now(),
+              sessionId: "debug-session",
+              runId: "run1",
+              hypothesisId: "ALL",
+            }),
+          }
+        ).catch(() => {});
+        // #endregion agent log
+        return;
+      }
+
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/c8b3b631-8d97-43e2-acb2-6df2c63b5121",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "GenericForm.tsx:425",
+            message: "handleSetFormData forwarding changes",
+            data: { filtered },
+            timestamp: Date.now(),
+            sessionId: "debug-session",
+            runId: "run1",
+            hypothesisId: "ALL",
+          }),
+        }
+      ).catch(() => {});
+      // #endregion agent log
+
+      setFormData(filtered);
     },
     [setFormData]
   );
@@ -558,9 +701,23 @@ export const GenericForm = React.memo(
       return false; // Props changed, re-render
     }
 
-    // Compare formData by reference (it's from nuqs and should be stable)
-    if (prevProps.formData !== nextProps.formData) {
-      return false; // FormData changed, re-render
+    // Compare formData by key values, not object reference (nuqs returns new objects frequently)
+    const prevKey = JSON.stringify({
+      draftId: prevProps.formData?.["draftId"] ?? null,
+      colorSearch: prevProps.formData?.["colorSearch"] ?? null,
+      iconSearch: prevProps.formData?.["iconSearch"] ?? null,
+      colorShowSelected: prevProps.formData?.["colorShowSelected"] ?? null,
+      iconShowSelected: prevProps.formData?.["iconShowSelected"] ?? null,
+    });
+    const nextKey = JSON.stringify({
+      draftId: nextProps.formData?.["draftId"] ?? null,
+      colorSearch: nextProps.formData?.["colorSearch"] ?? null,
+      iconSearch: nextProps.formData?.["iconSearch"] ?? null,
+      colorShowSelected: nextProps.formData?.["colorShowSelected"] ?? null,
+      iconShowSelected: nextProps.formData?.["iconShowSelected"] ?? null,
+    });
+    if (prevKey !== nextKey) {
+      return false; // FormData key values changed, re-render
     }
 
     // Compare steps array by reference (should be memoized in parent)

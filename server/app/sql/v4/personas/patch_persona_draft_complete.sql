@@ -179,8 +179,8 @@ BEGIN
     END IF;
     
     -- Create new draft
-    INSERT INTO drafts (artifact, profile_id, payload)
-    VALUES ('persona'::artifacts, profile_id, '{}'::jsonb)
+    INSERT INTO drafts (artifact, profile_id)
+    VALUES ('persona'::artifacts, profile_id)
     RETURNING id, version INTO v_draft_id, v_new_version;
     
     -- Link resources to draft
