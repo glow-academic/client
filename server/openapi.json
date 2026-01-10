@@ -58290,18 +58290,6 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58310,8 +58298,7 @@
           "name",
           "description",
           "hex_code",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4ColorOption"
       },
@@ -58372,18 +58359,6 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58392,8 +58367,7 @@
           "name",
           "description",
           "hex_code",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4ColorResource"
       },
@@ -58443,18 +58417,6 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58462,8 +58424,7 @@
           "department_id",
           "name",
           "description",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4Department"
       },
@@ -58502,26 +58463,13 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "id",
           "description",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4DescriptionResource"
       },
@@ -58559,26 +58507,13 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "example",
           "idx",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4Example"
       },
@@ -58628,18 +58563,6 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58647,8 +58570,7 @@
           "field_id",
           "name",
           "description",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4Field"
       },
@@ -58710,18 +58632,6 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58730,8 +58640,7 @@
           "name",
           "description",
           "icon_id",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4FlagResource"
       },
@@ -58792,18 +58701,6 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58812,8 +58709,7 @@
           "name",
           "description",
           "value",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4IconOption"
       },
@@ -58874,18 +58770,6 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58894,8 +58778,7 @@
           "name",
           "description",
           "value",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4IconResource"
       },
@@ -58934,26 +58817,13 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "id",
           "template",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4InstructionsResource"
       },
@@ -58992,26 +58862,13 @@
               }
             ],
             "title": "Generated"
-          },
-          "group_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "id",
           "name",
-          "generated",
-          "group_id"
+          "generated"
         ],
         "title": "QGetPersonaV4NameResource"
       },

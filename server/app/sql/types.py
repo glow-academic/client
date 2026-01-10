@@ -4561,7 +4561,7 @@ class CreateAuthSqlParams(BaseModel):
         # Convert auth_items composite array to tuples for asyncpg
         auth_items_tuples = [
             (conn.name, conn.description, conn.encrypted, conn.position, conn.active, conn.key_id)
-            for conn in self.auth_items
+            for conn in (self.auth_items or [])
         ]
         return (
             self.name,
@@ -4912,7 +4912,7 @@ class UpdateAuthSqlParams(BaseModel):
         # Convert auth_items composite array to tuples for asyncpg
         auth_items_tuples = [
             (conn.name, conn.description, conn.encrypted, conn.position, conn.active, conn.key_id)
-            for conn in self.auth_items
+            for conn in (self.auth_items or [])
         ]
         return (
             self.auth_id,
@@ -4975,7 +4975,7 @@ class AddEvalGroupsSqlParams(BaseModel):
         # Convert groups composite array to tuples for asyncpg
         groups_tuples = [
             (conn.group_id, conn.rubric_grade_agents)
-            for conn in self.groups
+            for conn in (self.groups or [])
         ]
         return (
             self.eval_id,
@@ -5022,7 +5022,7 @@ class AddEvalRunsSqlParams(BaseModel):
         # Convert runs composite array to tuples for asyncpg
         runs_tuples = [
             (conn.run_id, conn.rubric_grade_agents)
-            for conn in self.runs
+            for conn in (self.runs or [])
         ]
         return (
             self.eval_id,
@@ -11572,7 +11572,7 @@ class CreateMessageFeedbackHighlightSqlParams(BaseModel):
         # Convert highlights composite array to tuples for asyncpg
         highlights_tuples = [
             (conn.section)
-            for conn in self.highlights
+            for conn in (self.highlights or [])
         ]
         return (
             self.message_feedback_id,
@@ -11647,7 +11647,7 @@ class CreateMessageFeedbackReplaceSqlParams(BaseModel):
         # Convert replaces composite array to tuples for asyncpg
         replaces_tuples = [
             (conn.section, conn.replace)
-            for conn in self.replaces
+            for conn in (self.replaces or [])
         ]
         return (
             self.message_feedback_id,
@@ -14188,7 +14188,7 @@ class CreateModelSqlParams(BaseModel):
         # Convert pricing composite array to tuples for asyncpg
         pricing_tuples = [
             (conn.pricing_type, conn.unit_id, conn.price)
-            for conn in self.pricing
+            for conn in (self.pricing or [])
         ]
         return (
             self.provider_id,
@@ -14657,7 +14657,7 @@ class UpdateModelSqlParams(BaseModel):
         # Convert pricing composite array to tuples for asyncpg
         pricing_tuples = [
             (conn.pricing_type, conn.unit_id, conn.price)
-            for conn in self.pricing
+            for conn in (self.pricing or [])
         ]
         return (
             self.model_id,
@@ -14795,7 +14795,7 @@ class CreateParameterSqlParams(BaseModel):
         # Convert field_connections composite array to tuples for asyncpg
         field_connections_tuples = [
             (conn.field_id, conn.default, conn.active)
-            for conn in self.field_connections
+            for conn in (self.field_connections or [])
         ]
         return (
             self.name,
@@ -15309,7 +15309,7 @@ class UpdateParameterSqlParams(BaseModel):
         # Convert field_connections composite array to tuples for asyncpg
         field_connections_tuples = [
             (conn.field_id, conn.default, conn.active)
-            for conn in self.field_connections
+            for conn in (self.field_connections or [])
         ]
         return (
             self.parameter_id,
@@ -15485,7 +15485,6 @@ class QGetPersonaV4ColorOption(BaseModel):
     description: str | None
     hex_code: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15497,7 +15496,6 @@ class QGetPersonaV4ColorResource(BaseModel):
     description: str | None
     hex_code: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15508,7 +15506,6 @@ class QGetPersonaV4Department(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15518,7 +15515,6 @@ class QGetPersonaV4DescriptionResource(BaseModel):
     id: UUID | None
     description: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15528,7 +15524,6 @@ class QGetPersonaV4Example(BaseModel):
     example: str | None
     idx: int | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15539,7 +15534,6 @@ class QGetPersonaV4Field(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15551,7 +15545,6 @@ class QGetPersonaV4FlagResource(BaseModel):
     description: str | None
     icon_id: UUID | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15563,7 +15556,6 @@ class QGetPersonaV4IconOption(BaseModel):
     description: str | None
     value: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15575,7 +15567,6 @@ class QGetPersonaV4IconResource(BaseModel):
     description: str | None
     value: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15585,7 +15576,6 @@ class QGetPersonaV4InstructionsResource(BaseModel):
     id: UUID | None
     template: str | None
     generated: bool | None
-    group_id: UUID | None
 
 
 
@@ -15595,7 +15585,6 @@ class QGetPersonaV4NameResource(BaseModel):
     id: UUID | None
     name: str | None
     generated: bool | None
-    group_id: UUID | None
 
 class GetPersonaSqlRow(BaseModel):
 
@@ -15733,6 +15722,43 @@ class GetPersonaGenerationContextApiResponse(BaseModel):
 
     domain_id: UUID | None = None
     agent_id: UUID | None = None
+
+
+
+# Generated from: get_persona_resource_group_ids
+
+class GetPersonaResourceGroupIdsSqlParams(BaseModel):
+
+    profile_id: UUID
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    resource_types: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.persona_id,
+            self.draft_id,
+            self.resource_types,
+        )
+
+class GetPersonaResourceGroupIdsSqlRow(BaseModel):
+
+    resource_type: str | None = None
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+
+class GetPersonaResourceGroupIdsApiRequest(BaseModel):
+
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+    resource_types: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetPersonaResourceGroupIdsApiResponse(BaseModel):
+
+    resource_type: str | None = None
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 
@@ -17461,7 +17487,7 @@ class ProfileStaffBulkCreateProfileSqlParams(BaseModel):
         # Convert profiles composite array to tuples for asyncpg
         profiles_tuples = [
             (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.department_ids, conn.primary_department_index)
-            for conn in self.profiles
+            for conn in (self.profiles or [])
         ]
         return (
             profiles_tuples,
@@ -17578,7 +17604,7 @@ class ProfileStaffCreateOrUpdateStaffSqlParams(BaseModel):
         # Convert profiles composite array to tuples for asyncpg
         profiles_tuples = [
             (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids, conn.cohort_ids)
-            for conn in self.profiles
+            for conn in (self.profiles or [])
         ]
         return (
             profiles_tuples,
@@ -19435,7 +19461,7 @@ class CreateRubricSqlParams(BaseModel):
         # Convert standard_groups composite array to tuples for asyncpg
         standard_groups_tuples = [
             (conn.name, conn.short_name, conn.description, conn.points, conn.pass_points, conn.position, conn.active, conn.standards)
-            for conn in self.standard_groups
+            for conn in (self.standard_groups or [])
         ]
         return (
             self.name,
@@ -19896,12 +19922,12 @@ class GetRubricRunContextAndCreateRunSqlParams(BaseModel):
         # Convert standard_groups composite array to tuples for asyncpg
         standard_groups_tuples = [
             (conn.id, conn.name, conn.description, conn.points, conn.pass_points)
-            for conn in self.standard_groups
+            for conn in (self.standard_groups or [])
         ]
         # Convert standards composite array to tuples for asyncpg
         standards_tuples = [
             (conn.id, conn.name, conn.points, conn.standard_group_id)
-            for conn in self.standards
+            for conn in (self.standards or [])
         ]
         return (
             self.department_id,
@@ -20240,7 +20266,7 @@ class UpdateRubricSqlParams(BaseModel):
         # Convert standard_groups composite array to tuples for asyncpg
         standard_groups_tuples = [
             (conn.name, conn.short_name, conn.description, conn.points, conn.pass_points, conn.position, conn.active, conn.standards)
-            for conn in self.standard_groups
+            for conn in (self.standard_groups or [])
         ]
         return (
             self.rubric_id,
@@ -20335,7 +20361,7 @@ class StandardGroupDescriptionsCompleteSqlParams(BaseModel):
         # Convert descriptions composite array to tuples for asyncpg
         descriptions_tuples = [
             (conn.standard_group_id, conn.standard_id, conn.description)
-            for conn in self.descriptions
+            for conn in (self.descriptions or [])
         ]
         return (
             self.success,
@@ -20474,7 +20500,7 @@ class UpdateStandardDescriptionsSqlParams(BaseModel):
         # Convert descriptions composite array to tuples for asyncpg
         descriptions_tuples = [
             (conn.standard_group_id, conn.standard_id, conn.description)
-            for conn in self.descriptions
+            for conn in (self.descriptions or [])
         ]
         return (
             self.rubric_id,
@@ -20560,12 +20586,12 @@ class CreateScenarioSqlParams(BaseModel):
         # Convert parameters composite array to tuples for asyncpg
         parameters_tuples = [
             (conn.parameter_id, conn.field_ids)
-            for conn in self.parameters
+            for conn in (self.parameters or [])
         ]
         # Convert question_timestamps composite array to tuples for asyncpg
         question_timestamps_tuples = [
             (conn.question_id, conn.video_id, conn.timestamps)
-            for conn in self.question_timestamps
+            for conn in (self.question_timestamps or [])
         ]
         return (
             self.name,
@@ -20956,7 +20982,7 @@ class GetScenarioDetailSqlParams(BaseModel):
         # Convert field_show_selected_by_param composite array to tuples for asyncpg
         field_show_selected_by_param_tuples = [
             (conn.parameter_id, conn.show_selected)
-            for conn in self.field_show_selected_by_param
+            for conn in (self.field_show_selected_by_param or [])
         ]
         return (
             self.scenario_id,
@@ -21428,7 +21454,7 @@ class GetScenarioNewSqlParams(BaseModel):
         # Convert field_show_selected_by_param composite array to tuples for asyncpg
         field_show_selected_by_param_tuples = [
             (conn.parameter_id, conn.show_selected)
-            for conn in self.field_show_selected_by_param
+            for conn in (self.field_show_selected_by_param or [])
         ]
         return (
             self.profile_id,
@@ -22798,12 +22824,12 @@ class UpdateScenarioSqlParams(BaseModel):
         # Convert parameters composite array to tuples for asyncpg
         parameters_tuples = [
             (conn.parameter_id, conn.field_ids)
-            for conn in self.parameters
+            for conn in (self.parameters or [])
         ]
         # Convert question_timestamps composite array to tuples for asyncpg
         question_timestamps_tuples = [
             (conn.question_id, conn.video_id, conn.timestamps)
-            for conn in self.question_timestamps
+            for conn in (self.question_timestamps or [])
         ]
         return (
             self.scenario_id,
@@ -23422,27 +23448,27 @@ class UpdateSettingsSqlParams(BaseModel):
         # Convert provider_keys composite array to tuples for asyncpg
         provider_keys_tuples = [
             (conn.provider, conn.key_id)
-            for conn in self.provider_keys
+            for conn in (self.provider_keys or [])
         ]
         # Convert auth_keys composite array to tuples for asyncpg
         auth_keys_tuples = [
             (conn.auth_id, conn.items)
-            for conn in self.auth_keys
+            for conn in (self.auth_keys or [])
         ]
         # Convert provider_enabled composite array to tuples for asyncpg
         provider_enabled_tuples = [
             (conn.provider, conn.enabled)
-            for conn in self.provider_enabled
+            for conn in (self.provider_enabled or [])
         ]
         # Convert auth_enabled composite array to tuples for asyncpg
         auth_enabled_tuples = [
             (conn.auth_id, conn.enabled)
-            for conn in self.auth_enabled
+            for conn in (self.auth_enabled or [])
         ]
         # Convert auth_values composite array to tuples for asyncpg
         auth_values_tuples = [
             (conn.auth_id, conn.items)
-            for conn in self.auth_values
+            for conn in (self.auth_values or [])
         ]
         return (
             self.name,
@@ -24139,7 +24165,7 @@ class CreateSimulationSqlParams(BaseModel):
         # Convert scenario_rubric_grade_agents composite array to tuples for asyncpg
         scenario_rubric_grade_agents_tuples = [
             (conn.scenario_id, conn.rubric_id, conn.grade_agent_id, conn.audio_agent_id)
-            for conn in self.scenario_rubric_grade_agents
+            for conn in (self.scenario_rubric_grade_agents or [])
         ]
         return (
             self.title,
@@ -26084,7 +26110,7 @@ class UpdateSimulationSqlParams(BaseModel):
         # Convert scenario_rubric_grade_agents composite array to tuples for asyncpg
         scenario_rubric_grade_agents_tuples = [
             (conn.scenario_id, conn.rubric_id, conn.grade_agent_id, conn.audio_agent_id)
-            for conn in self.scenario_rubric_grade_agents
+            for conn in (self.scenario_rubric_grade_agents or [])
         ]
         return (
             self.simulation_id,
@@ -26182,7 +26208,7 @@ class BulkCreateStaffSqlParams(BaseModel):
         # Convert profiles composite array to tuples for asyncpg
         profiles_tuples = [
             (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.department_ids, conn.primary_department_index)
-            for conn in self.profiles
+            for conn in (self.profiles or [])
         ]
         return (
             profiles_tuples,
@@ -26712,7 +26738,7 @@ class ProcessCsvSqlParams(BaseModel):
         # Convert column_mappings composite array to tuples for asyncpg
         column_mappings_tuples = [
             (conn.csv_column, conn.target_field)
-            for conn in self.column_mappings
+            for conn in (self.column_mappings or [])
         ]
         return (
             self.csv_content,
@@ -26770,7 +26796,7 @@ class UpsertStaffSqlParams(BaseModel):
         # Convert profiles composite array to tuples for asyncpg
         profiles_tuples = [
             (conn.first_name, conn.last_name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids, conn.cohort_ids)
-            for conn in self.profiles
+            for conn in (self.profiles or [])
         ]
         return (
             profiles_tuples,
@@ -29066,6 +29092,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaGenerationContextSqlRow",
         "GetPersonaGenerationContextApiRequest",
         "GetPersonaGenerationContextApiResponse",
+    ),
+    "app/sql/v4/personas/get_persona_resource_group_ids_complete.sql": (
+        "GetPersonaResourceGroupIdsSqlParams",
+        "GetPersonaResourceGroupIdsSqlRow",
+        "GetPersonaResourceGroupIdsApiRequest",
+        "GetPersonaResourceGroupIdsApiResponse",
     ),
     "app/sql/v4/personas/get_personas_list_complete.sql": (
         "GetPersonasListSqlParams",
@@ -31722,6 +31754,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/personas/get_persona_generation_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/get_persona_resource_group_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload

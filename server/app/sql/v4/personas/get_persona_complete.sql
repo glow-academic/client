@@ -38,8 +38,7 @@ CREATE TYPE types.q_get_persona_v4_department AS (
     department_id uuid,
     name text,
     description text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 
@@ -47,23 +46,20 @@ CREATE TYPE types.q_get_persona_v4_field AS (
     field_id uuid,
     name text,
     description text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_persona_v4_example AS (
     example text,
     idx integer,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 
 CREATE TYPE types.q_get_persona_v4_name_resource AS (
     id uuid,
     name text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_persona_v4_color_resource AS (
@@ -71,8 +67,7 @@ CREATE TYPE types.q_get_persona_v4_color_resource AS (
     name text,
     description text,
     hex_code text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_persona_v4_flag_resource AS (
@@ -80,8 +75,7 @@ CREATE TYPE types.q_get_persona_v4_flag_resource AS (
     name text,
     description text,
     icon_id uuid,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_persona_v4_icon_resource AS (
@@ -89,22 +83,19 @@ CREATE TYPE types.q_get_persona_v4_icon_resource AS (
     name text,
     description text,
     value text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_persona_v4_description_resource AS (
     id uuid,
     description text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_persona_v4_instructions_resource AS (
     id uuid,
     template text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_persona_v4_color_option AS (
@@ -112,8 +103,7 @@ CREATE TYPE types.q_get_persona_v4_color_option AS (
     name text,
     description text,
     hex_code text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 CREATE TYPE types.q_get_persona_v4_icon_option AS (
@@ -121,8 +111,7 @@ CREATE TYPE types.q_get_persona_v4_icon_option AS (
     name text,
     description text,
     value text,
-    generated boolean,
-    group_id uuid
+    generated boolean
 );
 
 -- 4) Recreate function
@@ -274,15 +263,10 @@ department_mapping_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
-        COALESCE(d.generated, false) as generated,
-        gr.group_id
+        COALESCE(d.generated, false) as generated
     FROM params x
     JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
-    LEFT JOIN calls c ON c.id = d.call_id
-    LEFT JOIN message_calls mc ON mc.call_id = c.id
-    LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
-    LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
 ),
 primary_department_id_data AS (
     SELECT department_id
@@ -312,13 +296,10 @@ field_mapping_data AS (
         COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = pmd.parameter_id LIMIT 1) as parameter_name,
-        COALESCE(f.generated, false) as generated,
-        gr.group_id
+        COALESCE(f.generated, false) as generated
     FROM parameter_mapping_data pmd
     JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
-    LEFT JOIN calls c ON c.id = f.call_id
-    LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 ui_flags AS (
@@ -373,13 +354,10 @@ example_mapping_data AS (
     SELECT 
         e.example,
         pe.idx,
-        COALESCE(e.generated, false) as generated,
-        gr.group_id
+        COALESCE(e.generated, false) as generated
     FROM params x
     LEFT JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
     LEFT JOIN examples e ON e.id = pe.example_id
-    LEFT JOIN calls c ON c.id = e.call_id
-    LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id
     WHERE x.persona_id IS NOT NULL AND e.example IS NOT NULL
     ORDER BY pe.idx
 ),
@@ -465,14 +443,9 @@ colors_data AS (
         c.name,
         c.description,
         c.hex_code,
-        COALESCE(c.generated, false) as generated,
-        gr.group_id
+        COALESCE(c.generated, false) as generated
     FROM colors c
     CROSS JOIN params p
-    LEFT JOIN calls call ON call.id = c.call_id
-    LEFT JOIN message_calls mc3 ON mc3.call_id = call.id
-    LEFT JOIN message_runs mr3 ON mr3.message_id = mc3.message_id
-    LEFT JOIN group_runs gr ON gr.run_id = mr3.run_id
     WHERE 
         -- Search filter: if color_search provided, match name or hex_code
         (p.color_search IS NULL OR p.color_search = '' OR
@@ -493,14 +466,9 @@ icons_data AS (
         i.name,
         i.description,
         i.value,
-        COALESCE(i.generated, false) as generated,
-        gr.group_id
+        COALESCE(i.generated, false) as generated
     FROM icons i
     CROSS JOIN params p
-    LEFT JOIN calls call ON call.id = i.call_id
-    LEFT JOIN message_calls mc4 ON mc4.call_id = call.id
-    LEFT JOIN message_runs mr4 ON mr4.message_id = mc4.message_id
-    LEFT JOIN group_runs gr ON gr.run_id = mr4.run_id
     WHERE 
         -- Search filter: if icon_search provided, match name or value
         (p.icon_search IS NULL OR p.icon_search = '' OR
@@ -597,20 +565,16 @@ name_resource_data AS (
             (SELECT pn.name_id FROM persona_names pn WHERE pn.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as name_id,
         (
-            SELECT ROW(n.id, n.name, n.generated, n.group_id)::types.q_get_persona_v4_name_resource 
+            SELECT ROW(n.id, n.name, n.generated)::types.q_get_persona_v4_name_resource 
             FROM (
-                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, gr.group_id, 1 as priority
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
                 FROM draft_names dn 
                 JOIN names n ON dn.names_id = n.id 
-                LEFT JOIN calls c ON c.id = n.call_id
-                LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
-                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, gr.group_id, 2 as priority
+                SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
                 FROM persona_names pn 
                 JOIN names n ON pn.name_id = n.id 
-                LEFT JOIN calls c ON c.id = n.call_id
-                LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id
                 WHERE pn.persona_id = (SELECT persona_id FROM params)
             ) n
             ORDER BY priority
@@ -625,8 +589,8 @@ description_resource_data AS (
             (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pd.description_id FROM persona_descriptions pd WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false), gr.group_id)::types.q_get_persona_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id LEFT JOIN calls c ON c.id = d.call_id LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false), gr.group_id)::types.q_get_persona_v4_description_resource FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id LEFT JOIN calls c ON c.id = d.call_id LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_description_resource
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_description_resource
     FROM params
     WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
@@ -636,8 +600,8 @@ color_resource_data AS (
             (SELECT dc.colors_id FROM draft_colors dc WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pc.color_id FROM persona_colors pc WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as color_id,
-        (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false), gr.group_id)::types.q_get_persona_v4_color_resource FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id LEFT JOIN calls call ON call.id = c.call_id LEFT JOIN message_calls mc5 ON mc5.call_id = call.id LEFT JOIN message_runs mr5 ON mr5.message_id = mc5.message_id LEFT JOIN group_runs gr ON gr.run_id = mr5.run_id WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_color_resource,
-        (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false), gr.group_id)::types.q_get_persona_v4_color_resource FROM persona_colors pc JOIN colors c ON pc.color_id = c.id LEFT JOIN calls call ON call.id = c.call_id LEFT JOIN message_calls mc6 ON mc6.call_id = call.id LEFT JOIN message_runs mr6 ON mr6.message_id = mc6.message_id LEFT JOIN group_runs gr ON gr.run_id = mr6.run_id WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_color_resource
+        (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_color_resource,
+        (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_color_resource
     FROM params
     WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
@@ -647,8 +611,8 @@ icon_resource_data AS (
             (SELECT di.icons_id FROM draft_icons di WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pi.icon_id FROM persona_icons pi WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as icon_id,
-        (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false), gr.group_id)::types.q_get_persona_v4_icon_resource FROM draft_icons di JOIN icons i ON di.icons_id = i.id LEFT JOIN calls call ON call.id = i.call_id LEFT JOIN message_calls mc7 ON mc7.call_id = call.id LEFT JOIN message_runs mr7 ON mr7.message_id = mc7.message_id LEFT JOIN group_runs gr ON gr.run_id = mr7.run_id WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_icon_resource,
-        (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false), gr.group_id)::types.q_get_persona_v4_icon_resource FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id LEFT JOIN calls call ON call.id = i.call_id LEFT JOIN message_calls mc8 ON mc8.call_id = call.id LEFT JOIN message_runs mr8 ON mr8.message_id = mc8.message_id LEFT JOIN group_runs gr ON gr.run_id = mr8.run_id WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_icon_resource
+        (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM draft_icons di JOIN icons i ON di.icons_id = i.id WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_icon_resource,
+        (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_icon_resource
     FROM params
     WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
@@ -658,8 +622,8 @@ instructions_resource_data AS (
             (SELECT dinst.instructions_id FROM draft_instructions dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pinst.instruction_id FROM persona_instructions pinst WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as instructions_id,
-        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false), gr.group_id)::types.q_get_persona_v4_instructions_resource FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id LEFT JOIN calls c ON c.id = inst.call_id LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_instructions_resource,
-        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false), gr.group_id)::types.q_get_persona_v4_instructions_resource FROM persona_instructions pinst JOIN instructions inst ON pinst.instruction_id = inst.id LEFT JOIN calls c ON c.id = inst.call_id LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_instructions_resource
+        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_persona_v4_instructions_resource FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_instructions_resource,
+        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_persona_v4_instructions_resource FROM persona_instructions pinst JOIN instructions inst ON pinst.instruction_id = inst.id WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_instructions_resource
     FROM params
     WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
@@ -669,8 +633,8 @@ flag_resource_data AS (
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pf.flag_id FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false), gr.group_id)::types.q_get_persona_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id LEFT JOIN calls c ON c.id = f.call_id LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false), gr.group_id)::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id LEFT JOIN calls c ON c.id = f.call_id LEFT JOIN message_calls mc2 ON mc2.call_id = c.id LEFT JOIN message_runs mr2 ON mr2.message_id = mc2.message_id LEFT JOIN group_runs gr ON gr.run_id = mr2.run_id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
     FROM params
     WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
@@ -708,7 +672,7 @@ SELECT
     ARRAY[]::uuid[] as color_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (cod.id, cod.name, cod.description, cod.hex_code, cod.generated, cod.group_id)::types.q_get_persona_v4_color_option
+            (cod.id, cod.name, cod.description, cod.hex_code, cod.generated)::types.q_get_persona_v4_color_option
             ORDER BY cod.name
         ) FROM colors_data cod),
         '{}'::types.q_get_persona_v4_color_option[]
@@ -723,7 +687,7 @@ SELECT
     COALESCE((SELECT icon_suggestions FROM icon_suggestions_data), ARRAY[]::uuid[]) as icon_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (iod.id, iod.name, iod.description, iod.value, iod.generated, iod.group_id)::types.q_get_persona_v4_icon_option
+            (iod.id, iod.name, iod.description, iod.value, iod.generated)::types.q_get_persona_v4_icon_option
             ORDER BY iod.name
         ) FROM icons_data iod),
         '{}'::types.q_get_persona_v4_icon_option[]
@@ -758,7 +722,7 @@ SELECT
     -- Department resources (selected departments filtered by department_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description, dmd.generated, dmd.group_id)::types.q_get_persona_v4_department
+            (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_persona_v4_department
             ORDER BY dmd.name
         )
         FROM department_mapping_data dmd
@@ -787,7 +751,7 @@ SELECT
     dsd_dept.department_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (dmd.department_id, dmd.name, dmd.description, dmd.generated, dmd.group_id)::types.q_get_persona_v4_department
+            (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_persona_v4_department
             ORDER BY dmd.name
         ) FROM department_mapping_data dmd),
         '{}'::types.q_get_persona_v4_department[]
@@ -797,7 +761,7 @@ SELECT
     -- Field resources (selected fields filtered by field_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.generated, fmd.group_id)::types.q_get_persona_v4_field
+            (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
             ORDER BY fmd.name
         )
         FROM field_mapping_data fmd
@@ -808,7 +772,7 @@ SELECT
     fsd.field_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.generated, fmd.group_id)::types.q_get_persona_v4_field
+            (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
             ORDER BY fmd.name
         ) FROM field_mapping_data fmd),
         '{}'::types.q_get_persona_v4_field[]
@@ -818,7 +782,7 @@ SELECT
     -- Example resources (selected examples - same as examples array)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (emd.example, emd.idx, emd.generated, emd.group_id)::types.q_get_persona_v4_example
+            (emd.example, emd.idx, emd.generated)::types.q_get_persona_v4_example
             ORDER BY emd.idx
         )
         FROM example_mapping_data emd),
@@ -831,7 +795,7 @@ SELECT
     COALESCE(esd.example_suggestions, ARRAY[]::uuid[]) as example_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (emd.example, emd.idx, emd.generated, emd.group_id)::types.q_get_persona_v4_example
+            (emd.example, emd.idx, emd.generated)::types.q_get_persona_v4_example
             ORDER BY emd.idx
         ) FROM example_mapping_data emd),
         '{}'::types.q_get_persona_v4_example[]

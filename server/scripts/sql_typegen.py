@@ -533,7 +533,7 @@ async def generate_request_model(
                 )
                 lines.append(f"        {field_name}_tuples = [")
                 lines.append(f"            ({field_accessors})")
-                lines.append(f"            for conn in self.{field_name}")
+                lines.append(f"            for conn in (self.{field_name} or [])")
                 lines.append("        ]")
 
         lines.append("        return (")

@@ -111,19 +111,27 @@ name_suggestions uuid[]
 ## Regeneration Support
 
 **Group ID Tracking:**
-- All resource composite types include a `group_id uuid` field (nullable)
+- **⚠️ IMPORTANT: `group_id` is NOT included in GET endpoint responses**
+- `group_id` is fetched separately before generation via websocket handler using `api_get_persona_resource_group_ids_v4` SQL function
 - `group_id` is obtained by following the relationship chain:
-  - Resource → `call_id` → `calls.run_id` → `group_runs.group_id`
+  - Resource → `call_id` → `calls.id` → `message_calls.call_id` → `message_calls.message_id` → `message_runs.message_id` → `message_runs.run_id` → `group_runs.run_id` → `group_runs.group_id`
 - `group_id` is only present when:
   - Resource is generated (`generated = true`)
   - Resource has a `call_id` that links to a call
-  - The call has a `run_id` that links to a run
+  - The call is linked to a message via `message_calls`
+  - The message is linked to a run via `message_runs`
   - The run is linked to a group via `group_runs` junction table
 - If any step in the chain is missing, `group_id` will be `NULL`
 
+**Performance Optimization:**
+- GET endpoints no longer perform expensive `group_id` lookups (removed LEFT JOINs to `group_runs`)
+- Group IDs are only fetched when needed (before regeneration via websocket)
+- This reduces query complexity and improves GET endpoint performance
+
 **Frontend Usage:**
-- Check if regeneration is possible: `resource?.generated === true && resource?.group_id !== null`
-- Pass `group_id` to server when regenerating: `socket.emit("persona_generate", { group_ids: { [resource_type]: resource.group_id }, user_instructions: "...", ... })`
+- **Do NOT rely on `group_id` from GET endpoint** - it is not included in responses
+- Server automatically fetches `group_id` before generation via websocket handler
+- Frontend can send empty `group_ids: {}` - server will fetch from database as source of truth
 
 **SQL Pattern:**
 ```sql
@@ -272,10 +280,10 @@ The standardized SQL return structure directly maps to standardized component pr
 
 **Props Pattern:**
 - `{resource}_id`: `string | null` - Current resource ID (from SQL `{resource}_id`)
-- `{resource}_resource`: `{ id: string; ...; generated: boolean; group_id: string | null } | null` - Resource object (from SQL `{resource}_resource`; includes `generated` and `group_id` fields)
+- `{resource}_resource`: `{ id: string; ...; generated: boolean } | null` - Resource object (from SQL `{resource}_resource`; includes `generated` field, but NOT `group_id`)
 - `show_{resource}`: `boolean` - Whether to show picker (from SQL `show_{resource}`)
 - `{resource}_suggestions`: `string[]` - Suggested resource IDs (from SQL `{resource}_suggestions`)
-- `{resource}`?: `Array<{ ...; generated: boolean; group_id: string | null }>` - All available options (from SQL `{resource}` array, for color/icon; each includes `generated` and `group_id`)
+- `{resource}`?: `Array<{ ...; generated: boolean }>` - All available options (from SQL `{resource}` array, for color/icon; each includes `generated` but NOT `group_id`)
 - `disabled`: `boolean` - Based on `can_edit` flag (inverted: `disabled = !can_edit`)
 - `onChange`: `(id: string | null) => void` - Callback to update resource ID
 - `onGenerate?`: `() => Promise<void>` - Optional AI generation handler
@@ -287,9 +295,10 @@ The standardized SQL return structure directly maps to standardized component pr
 - Options arrays: `colors.find(c => c.id === color_id)?.generated ?? false` - Check if a specific option was generated
 
 **Accessing Group ID for Regeneration:**
-- Single-select: `name_resource?.group_id ?? null` - Get group ID for regeneration (null if not generated or missing chain)
-- Options arrays: `colors.find(c => c.id === color_id)?.group_id ?? null` - Get group ID for a specific option
-- Check if regeneration is possible: `resource?.generated === true && resource?.group_id !== null`
+- **⚠️ IMPORTANT: `group_id` is NOT available in GET endpoint responses**
+- Server automatically fetches `group_id` before generation via websocket handler
+- Frontend should not attempt to access `group_id` from GET endpoint responses
+- Regeneration is handled entirely server-side - frontend sends empty `group_ids: {}` and server fetches from database
 
 **Example - Names Component:**
 ```typescript
@@ -324,10 +333,10 @@ The standardized SQL return structure directly maps to standardized component pr
 
 **Props Pattern:**
 - `{resource}_ids`: `string[]` - Current resource IDs (from SQL `{resource}_ids`)
-- `{resource}_resources`: `Array<{ id: string; ...; generated: boolean; group_id: string | null }>` - Selected resources (from SQL `{resource}_resources`; each includes `generated` and `group_id`)
+- `{resource}_resources`: `Array<{ id: string; ...; generated: boolean }>` - Selected resources (from SQL `{resource}_resources`; each includes `generated` but NOT `group_id`)
 - `show_{resource}`: `boolean` - Whether to show picker (from SQL `show_{resource}`)
 - `{resource}_suggestions`: `string[]` - Suggested resource IDs (from SQL `{resource}_suggestions`)
-- `{resource}`: `Array<{ id: string; ...; generated: boolean; group_id: string | null }>` - All available options (from SQL `{resource}` array; each includes `generated` and `group_id`)
+- `{resource}`: `Array<{ id: string; ...; generated: boolean }>` - All available options (from SQL `{resource}` array; each includes `generated` but NOT `group_id`)
 - `disabled`: `boolean` - Based on `can_edit` flag (inverted: `disabled = !can_edit`)
 - `onChange`: `(ids: string[]) => void` - Callback to update resource IDs array
 
@@ -336,8 +345,10 @@ The standardized SQL return structure directly maps to standardized component pr
 - Individual check: `department_resources.find(d => d.department_id === id)?.generated ?? false` - Check if a specific resource was generated
 
 **Accessing Group ID for Regeneration:**
-- Multi-select: `department_resources.find(d => d.department_id === id)?.group_id ?? null` - Get group ID for a specific resource
-- Check if regeneration is possible: `department_resources.some(d => d.generated && d.group_id !== null)` - Check if any resource can be regenerated
+- **⚠️ IMPORTANT: `group_id` is NOT available in GET endpoint responses**
+- Server automatically fetches `group_id` before generation via websocket handler
+- Frontend should not attempt to access `group_id` from GET endpoint responses
+- Regeneration is handled entirely server-side - frontend sends empty `group_ids: {}` and server fetches from database
 
 **Example - Departments Component:**
 ```typescript

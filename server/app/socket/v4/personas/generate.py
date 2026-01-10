@@ -19,6 +19,7 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/personas/get_best_agent_for_persona_resources_v4_complete.sql"
+GET_GROUP_IDS_SQL_PATH = "app/sql/v4/personas/get_persona_resource_group_ids_complete.sql"
 
 # Persona resource types
 PERSONA_RESOURCE_TYPES = [
@@ -118,18 +119,36 @@ async def _persona_generate_impl(
 
             selected_agent_id = agent_id_value
 
+        # Fetch group_ids from database for all resource types
+        group_ids_map: dict[str, str | None] = {}
+        async with get_db_connection() as conn:
+            # Execute SQL function - returns multiple rows, use fetch() directly
+            rows = await conn.fetch(
+                "SELECT * FROM api_get_persona_resource_group_ids_v4($1, $2, $3, $4)",
+                profile_id,
+                uuid.UUID(data.persona_id) if data.persona_id else None,
+                uuid.UUID(data.draft_id) if data.draft_id else None,
+                resource_types,
+            )
+            
+            # Build group_ids map from result rows
+            for row in rows:
+                resource_type = row["resource_type"]
+                group_id = row["group_id"]
+                if group_id:
+                    group_ids_map[resource_type] = str(group_id)
+
         # Emit generate_artifact events for each resource type
         for resource_type in resource_types:
-            # Get group_id for this resource type if regenerating
+            # Get group_id from database lookup (source of truth)
+            group_id_str = group_ids_map.get(resource_type)
             group_id = None
-            if data.group_ids and resource_type in data.group_ids:
-                group_id_str = data.group_ids[resource_type]
-                if group_id_str:
-                    try:
-                        group_id = uuid.UUID(group_id_str)
-                    except ValueError:
-                        # Invalid UUID, treat as None
-                        group_id = None
+            if group_id_str:
+                try:
+                    group_id = uuid.UUID(group_id_str)
+                except ValueError:
+                    # Invalid UUID, treat as None
+                    group_id = None
 
             # Get message_ids from previous runs if regenerating (group_id exists)
             message_ids: list[str] | None = None

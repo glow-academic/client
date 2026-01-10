@@ -13248,8 +13248,6 @@ export interface components {
             hex_code: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4ColorResource */
         QGetPersonaV4ColorResource: {
@@ -13263,8 +13261,6 @@ export interface components {
             hex_code: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4Department */
         QGetPersonaV4Department: {
@@ -13276,8 +13272,6 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4DescriptionResource */
         QGetPersonaV4DescriptionResource: {
@@ -13287,8 +13281,6 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4Example */
         QGetPersonaV4Example: {
@@ -13298,8 +13290,6 @@ export interface components {
             idx: number | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4Field */
         QGetPersonaV4Field: {
@@ -13311,8 +13301,6 @@ export interface components {
             description: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4FlagResource */
         QGetPersonaV4FlagResource: {
@@ -13326,8 +13314,6 @@ export interface components {
             icon_id: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4IconOption */
         QGetPersonaV4IconOption: {
@@ -13341,8 +13327,6 @@ export interface components {
             value: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4IconResource */
         QGetPersonaV4IconResource: {
@@ -13356,8 +13340,6 @@ export interface components {
             value: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4InstructionsResource */
         QGetPersonaV4InstructionsResource: {
@@ -13367,8 +13349,6 @@ export interface components {
             template: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPersonaV4NameResource */
         QGetPersonaV4NameResource: {
@@ -13378,8 +13358,6 @@ export interface components {
             name: string | null;
             /** Generated */
             generated: boolean | null;
-            /** Group Id */
-            group_id: string | null;
         };
         /** QGetPracticeHistoryV4Attempt */
         QGetPracticeHistoryV4Attempt: {
