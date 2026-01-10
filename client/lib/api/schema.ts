@@ -5195,6 +5195,11 @@ export interface components {
             group_id: string;
             /** Content */
             content: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** AnalysesApiResponse */
         AnalysesApiResponse: {
@@ -5591,6 +5596,11 @@ export interface components {
             description: string;
             /** Hex Code */
             hex_code: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ColorsApiResponse */
         ColorsApiResponse: {
@@ -5625,6 +5635,11 @@ export interface components {
             group_id: string;
             /** Content */
             content: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ContentApiResponse */
         ContentApiResponse: {
@@ -5645,6 +5660,11 @@ export interface components {
             group_id: string;
             /** End Reason */
             end_reason: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ConversationsApiResponse */
         ConversationsApiResponse: {
@@ -6199,6 +6219,11 @@ export interface components {
             group_id: string;
             /** Content */
             content: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** DebugInfoApiResponse */
         DebugInfoApiResponse: {
@@ -6570,6 +6595,11 @@ export interface components {
             group_id: string;
             /** Description */
             description: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** DescriptionsApiResponse */
         DescriptionsApiResponse: {
@@ -6860,6 +6890,11 @@ export interface components {
             group_id: string;
             /** Example */
             example: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ExamplesApiResponse */
         ExamplesApiResponse: {
@@ -6934,6 +6969,11 @@ export interface components {
              * Format: uuid
              */
             standard_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** FeedbacksApiResponse */
         FeedbacksApiResponse: {
@@ -6974,6 +7014,11 @@ export interface components {
              * Format: uuid
              */
             icon_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** FlagsApiResponse */
         FlagsApiResponse: {
@@ -8563,6 +8608,11 @@ export interface components {
             current_icon?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** GetPersonaApiResponse */
         GetPersonaApiResponse: {
@@ -8587,6 +8637,8 @@ export interface components {
             name_required?: boolean | null;
             /** Name Suggestions */
             name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetPersonaV4NameResource"][] | null;
             /** Description Id */
             description_id?: string | null;
             description_resource?: components["schemas"]["QGetPersonaV4DescriptionResource"] | null;
@@ -8598,6 +8650,8 @@ export interface components {
             description_required?: boolean | null;
             /** Description Suggestions */
             description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetPersonaV4DescriptionResource"][] | null;
             /** Color Id */
             color_id?: string | null;
             color_resource?: components["schemas"]["QGetPersonaV4ColorResource"] | null;
@@ -8635,6 +8689,8 @@ export interface components {
             instructions_required?: boolean | null;
             /** Instructions Suggestions */
             instructions_suggestions?: string[] | null;
+            /** Instructions */
+            instructions?: components["schemas"]["QGetPersonaV4InstructionsResource"][] | null;
             /** Active Flag Id */
             active_flag_id?: string | null;
             flag_resource?: components["schemas"]["QGetPersonaV4FlagResource"] | null;
@@ -10433,6 +10489,11 @@ export interface components {
             group_id: string;
             /** Hint */
             hint: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** HintsApiResponse */
         HintsApiResponse: {
@@ -10455,6 +10516,11 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** HtmlApiResponse */
         HtmlApiResponse: {
@@ -10726,6 +10792,11 @@ export interface components {
             description: string;
             /** Value */
             value: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** IconsApiResponse */
         IconsApiResponse: {
@@ -10748,6 +10819,11 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ImagesApiResponse */
         ImagesApiResponse: {
@@ -10775,6 +10851,11 @@ export interface components {
              * Format: uuid
              */
             message_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ImprovementsApiResponse */
         ImprovementsApiResponse: {
@@ -10795,6 +10876,11 @@ export interface components {
             group_id: string;
             /** Template */
             template: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** InstructionsApiResponse */
         InstructionsApiResponse: {
@@ -10870,6 +10956,11 @@ export interface components {
             group_id: string;
             /** Name */
             name: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** NamesApiResponse */
         NamesApiResponse: {
@@ -10890,6 +10981,11 @@ export interface components {
             group_id: string;
             /** Objective */
             objective: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ObjectivesApiResponse */
         ObjectivesApiResponse: {
@@ -10912,6 +11008,11 @@ export interface components {
             option_text: string;
             /** Is Correct */
             is_correct: boolean;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** OptionsApiResponse */
         OptionsApiResponse: {
@@ -10969,6 +11070,11 @@ export interface components {
             group_id: string;
             /** Value */
             value: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** PointsApiResponse */
         PointsApiResponse: {
@@ -10991,6 +11097,11 @@ export interface components {
             name: string;
             /** Problem Statement */
             problem_statement: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ProblemStatementsApiResponse */
         ProblemStatementsApiResponse: {
@@ -11033,6 +11144,11 @@ export interface components {
             name: string;
             /** Description */
             description: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** PromptsApiResponse */
         PromptsApiResponse: {
@@ -17861,6 +17977,11 @@ export interface components {
             allow_multiple: boolean;
             /** Time Value */
             time_value: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** QuestionsApiResponse */
         QuestionsApiResponse: {
@@ -17934,6 +18055,11 @@ export interface components {
              * Format: uuid
              */
             question_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ResponsesApiResponse */
         ResponsesApiResponse: {
@@ -18004,6 +18130,11 @@ export interface components {
              * Format: uuid
              */
             item_schema_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** SchemaFieldItemsApiResponse */
         SchemaFieldItemsApiResponse: {
@@ -18041,6 +18172,11 @@ export interface components {
             description: string;
             /** Default Value */
             default_value: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** SchemaFieldsApiResponse */
         SchemaFieldsApiResponse: {
@@ -18059,6 +18195,11 @@ export interface components {
              * Format: uuid
              */
             group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** SchemasApiResponse */
         SchemasApiResponse: {
@@ -18307,6 +18448,11 @@ export interface components {
             points: number;
             /** Pass Points */
             pass_points: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** StandardGroupsApiResponse */
         StandardGroupsApiResponse: {
@@ -18419,6 +18565,11 @@ export interface components {
              * Format: uuid
              */
             message_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** StrengthsApiResponse */
         StrengthsApiResponse: {
@@ -18454,6 +18605,11 @@ export interface components {
             item_template_id: string;
             /** Position Value */
             position_value: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** TemplateArrayItemsApiResponse */
         TemplateArrayItemsApiResponse: {
@@ -18488,6 +18644,11 @@ export interface components {
             number_value: string;
             /** Boolean Value */
             boolean_value: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** TemplateValuesApiResponse */
         TemplateValuesApiResponse: {
@@ -18508,6 +18669,11 @@ export interface components {
             group_id: string;
             /** Name */
             name: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** TemplatesApiResponse */
         TemplatesApiResponse: {
@@ -18528,6 +18694,11 @@ export interface components {
             group_id: string;
             /** Value */
             value: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** ThresholdsApiResponse */
         ThresholdsApiResponse: {
@@ -18548,6 +18719,11 @@ export interface components {
             group_id: string;
             /** Time Taken */
             time_taken: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** TimesApiResponse */
         TimesApiResponse: {
@@ -19249,6 +19425,11 @@ export interface components {
             length_seconds: number;
             /** Description */
             description: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
         /** VideosApiResponse */
         VideosApiResponse: {
@@ -19270,6 +19451,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19306,6 +19488,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19342,6 +19525,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19378,6 +19562,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19414,6 +19599,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19450,6 +19636,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19486,6 +19673,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19522,6 +19710,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19558,6 +19747,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19594,6 +19784,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19630,6 +19821,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19666,6 +19858,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19702,6 +19895,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19738,6 +19932,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19774,6 +19969,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19810,6 +20006,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19846,6 +20043,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19882,6 +20080,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19918,6 +20117,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19954,6 +20154,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -19990,6 +20191,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20026,6 +20228,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20062,6 +20265,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20098,6 +20302,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20134,6 +20339,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20170,6 +20376,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20206,6 +20413,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20242,6 +20450,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20278,6 +20487,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20314,6 +20524,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20350,6 +20561,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20386,6 +20598,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20422,6 +20635,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20458,6 +20672,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20494,6 +20709,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20530,6 +20746,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20566,6 +20783,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20602,6 +20820,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20638,6 +20857,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20674,6 +20894,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20710,6 +20931,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20746,6 +20968,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20782,6 +21005,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20818,6 +21042,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20854,6 +21079,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20890,6 +21116,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20926,6 +21153,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20962,6 +21190,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -20998,6 +21227,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21034,6 +21264,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21070,6 +21301,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21106,6 +21338,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21142,6 +21375,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21178,6 +21412,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21214,6 +21449,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21250,6 +21486,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21288,6 +21525,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21324,6 +21562,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21360,6 +21599,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21396,6 +21636,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21432,6 +21673,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21470,6 +21712,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21506,6 +21749,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21542,6 +21786,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21578,6 +21823,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21614,6 +21860,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21650,6 +21897,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21686,6 +21934,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21722,6 +21971,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21758,6 +22008,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21794,6 +22045,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21830,6 +22082,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21866,6 +22119,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21902,6 +22156,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21938,6 +22193,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -21974,6 +22230,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22010,6 +22267,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22046,6 +22304,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22082,6 +22341,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22118,6 +22378,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22154,6 +22415,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22190,6 +22452,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22226,6 +22489,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22262,6 +22526,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22298,6 +22563,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22334,6 +22600,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22370,6 +22637,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22406,6 +22674,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22442,6 +22711,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22478,6 +22748,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22514,6 +22785,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22550,6 +22822,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22586,6 +22859,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22622,6 +22896,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22658,6 +22933,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22694,6 +22970,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22730,6 +23007,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22766,6 +23044,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22802,6 +23081,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22838,6 +23118,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22874,6 +23155,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22910,6 +23192,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22946,6 +23229,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -22982,6 +23266,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23018,6 +23303,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23054,6 +23340,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23090,6 +23377,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23126,6 +23414,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23162,6 +23451,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23198,6 +23488,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23234,6 +23525,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23270,6 +23562,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23306,6 +23599,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23342,6 +23636,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23378,6 +23673,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23414,6 +23710,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23450,6 +23747,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23486,6 +23784,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23522,6 +23821,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23558,6 +23858,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23594,6 +23895,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23630,6 +23932,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23666,6 +23969,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23702,6 +24006,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23738,6 +24043,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23774,6 +24080,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23810,6 +24117,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23846,6 +24154,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23882,6 +24191,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23918,6 +24228,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23954,6 +24265,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -23990,6 +24302,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24026,6 +24339,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24062,6 +24376,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24098,6 +24413,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24134,6 +24450,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24170,6 +24487,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24206,6 +24524,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24242,6 +24561,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24278,6 +24598,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24314,6 +24635,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24350,6 +24672,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24386,6 +24709,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24422,6 +24746,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24458,6 +24783,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24494,6 +24820,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24530,6 +24857,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24566,6 +24894,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24602,6 +24931,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24638,6 +24968,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24674,6 +25005,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24710,6 +25042,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24746,6 +25079,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24782,6 +25116,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24818,6 +25153,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24854,6 +25190,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24890,6 +25227,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24926,6 +25264,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24962,6 +25301,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -24998,6 +25338,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25034,6 +25375,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25070,6 +25412,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25106,6 +25449,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25142,6 +25486,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25178,6 +25523,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25214,6 +25560,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25250,6 +25597,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25286,6 +25634,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25322,6 +25671,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25358,6 +25708,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25394,6 +25745,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25430,6 +25782,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25466,6 +25819,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25502,6 +25856,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25538,6 +25893,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25574,6 +25930,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25610,6 +25967,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25646,6 +26004,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25682,6 +26041,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25718,6 +26078,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25754,6 +26115,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25790,6 +26152,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25826,6 +26189,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25862,6 +26226,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25898,6 +26263,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25934,6 +26300,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -25970,6 +26337,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -26006,6 +26374,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -26042,6 +26411,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -26078,6 +26448,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -26110,6 +26481,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path?: never;
             cookie?: never;
@@ -26142,6 +26514,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path: {
                 upload_id: string;
@@ -26176,6 +26549,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path: {
                 upload_id: string;
@@ -26210,6 +26584,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path: {
                 upload_id: string;
@@ -26244,6 +26619,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path: {
                 upload_id: string;
@@ -26281,6 +26657,7 @@ export interface operations {
             header?: {
                 "X-Profile-Id"?: string | null;
                 "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
             };
             path: {
                 upload_id: string;

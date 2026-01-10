@@ -48,7 +48,7 @@ After the required fields, resources follow consistent patterns based on whether
 4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no tool available)
 5. `{resource}_required` (boolean) - Whether this resource is required (affects `can_edit` and `disabled_reason` if no tool available)
 6. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs, never text)
-7. `{resource}` (array, optional) - All available options array (only for resources with options like colors/icons; each option includes `generated` boolean and `group_id` uuid)
+7. `{resource}` (array, optional) - Options array (see "Option Arrays" section below for details on two types: all available vs. suggested only)
 
 **Note:** The `{resource}_resource` composite type includes:
 - `generated` boolean field - Indicates if the resource was AI-generated
@@ -57,14 +57,14 @@ After the required fields, resources follow consistent patterns based on whether
 This enables regeneration workflows where users can regenerate resources with custom instructions. See the "Regeneration Support" section below for details.
 
 **Examples:**
-- **name**: `name_id`, `name_resource`, `show_name`, `name_agent_id`, `name_required`, `name_suggestions`
-- **description**: `description_id`, `description_resource`, `show_description`, `description_agent_id`, `description_required`, `description_suggestions`
+- **name**: `name_id`, `name_resource`, `show_name`, `name_agent_id`, `name_required`, `name_suggestions`, `names` (suggested options only)
+- **description**: `description_id`, `description_resource`, `show_description`, `description_agent_id`, `description_required`, `description_suggestions`, `descriptions` (suggested options only)
 - **color**: `color_id`, `color_resource`, `show_color`, `color_agent_id`, `color_required`, `color_suggestions`, `colors` (all available colors)
 - **icon**: `icon_id`, `icon_resource`, `show_icon`, `icon_agent_id`, `icon_required`, `icon_suggestions`, `icons` (all available icons)
-- **instructions**: `instructions_id`, `instructions_resource`, `show_instructions`, `instructions_agent_id`, `instructions_required`, `instructions_suggestions`
-- **flag**: `active_flag_id`, `flag_resource`, `show_flag`, `flag_agent_id`, `flag_required` (can be false for consistency), (no suggestions)
+- **instructions**: `instructions_id`, `instructions_resource`, `show_instructions`, `instructions_agent_id`, `instructions_required`, `instructions_suggestions`, `instructions` (suggested options only)
+- **flag**: `active_flag_id`, `flag_resource`, `show_flag`, `flag_agent_id`, `flag_required` (can be false for consistency), (no suggestions or options array)
 
-**Note:** For resources with options arrays (like `colors`, `icons`), the array comes **last** in that resource's group.
+**Note:** For resources with options arrays, the array comes **last** in that resource's group.
 
 ### Multi-Select Resources
 
@@ -92,6 +92,48 @@ This provides a single standard pattern for both single-select and multi-select 
 
 **Key Point:** The full array (`{resource}`) always comes **last** in the multi-select resource group, after IDs, resources, show flag, and suggestions.
 
+## Option Arrays
+
+**Single-select resources can have option arrays, but they come in two types:**
+
+### 1. All Available Options (Colors, Icons)
+
+**Resources:** `colors`, `icons`
+
+**Behavior:**
+- Contains **every valid option** available in the system
+- Used for resources with predefined option sets
+- Examples: All color options, all icon options
+- These arrays are always populated (unless filtered by search/filter params)
+
+**Use Case:** GenericPicker components that need to show all possible choices
+
+### 2. Suggested Options Only (Names, Descriptions, Instructions)
+
+**Resources:** `names`, `descriptions`, `instructions`
+
+**Behavior:**
+- Contains **only** the resources matching IDs in `{resource}_suggestions`
+- If there are 5 suggestions, the array contains exactly 5 items
+- Maintains the same order as `{resource}_suggestions` (most recent first)
+- Empty array `[]` if no suggestions exist
+
+**Use Case:** GenericPicker components that show previously AI-generated resources for quick selection
+
+**Why This Distinction:**
+- Colors and icons have finite, predefined sets that users should see all of
+- Names, descriptions, and instructions are dynamically generated - showing only suggestions prevents overwhelming the UI with potentially thousands of options
+- Suggested-only arrays enable users to quickly access previously generated content
+
+**Example:**
+```sql
+-- Colors: All available options
+colors types.q_get_persona_v4_color_option[]  -- All colors in system
+
+-- Descriptions: Only suggested options
+descriptions types.q_get_persona_v4_description_resource[]  -- Only descriptions matching description_suggestions IDs
+```
+
 ## Suggestions Standardization
 
 **⚠️ CRITICAL: All suggestions must be UUID arrays, never text arrays.**
@@ -100,18 +142,38 @@ This provides a single standard pattern for both single-select and multi-select 
 - **Never return text values**: Do not return text arrays with names, descriptions, or other text values
 - **Consistent type**: All `{resource}_suggestions` fields must be `uuid[]` type
 
+**Suggestions Logic:**
+- **Based on `generated` flag**: Suggestions are determined by querying junction tables (e.g., `persona_colors`, `persona_descriptions`) for resources where `generated = true`
+- **Junction table pattern**: Each junction table (e.g., `persona_colors`, `persona_descriptions`, `persona_instructions`) has a `generated` boolean column
+- **Ordering**: Suggestions are ordered by `created_at DESC` to show most recently generated resources first
+- **Limits**: Typically limited to 20 suggestions per resource type
+- **Purpose**: Enables users to quickly access previously AI-generated resources
+
 **Why:**
 - Frontend can look up full resource objects using IDs
 - Consistent type makes type generation and validation easier
 - IDs are stable identifiers, text values may change
+- `generated` flag provides a clear signal for AI-generated content that users may want to reuse
 
 **Example:**
 ```sql
 -- ❌ WRONG: Returns text array
 name_suggestions text[]
 
--- ✅ CORRECT: Returns UUID array
-name_suggestions uuid[]
+-- ✅ CORRECT: Returns UUID array based on generated flag
+name_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC),
+            ARRAY[]::uuid[]
+        ) as name_suggestions
+    FROM persona_names pn
+    WHERE pn.generated = true
+      AND pn.name_id IS NOT NULL
+    GROUP BY pn.name_id
+    ORDER BY MAX(pn.created_at) DESC
+    LIMIT 20
+)
 ```
 
 ## Regeneration Support

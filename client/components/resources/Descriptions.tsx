@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 
 type CreateDraftDescriptionsIn = InputOf<
   "/api/v4/resources/descriptions",
@@ -38,6 +39,11 @@ export interface DescriptionsProps {
   } | null; // Resource data from server (standardized prop name; includes generated field)
   show_description?: boolean; // Whether to show this resource picker
   description_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  descriptions?: Array<{
+    id: string;
+    description: string | null;
+    generated?: boolean | null;
+  }>; // Array of suggested description resources (only suggested options, not all)
   disabled?: boolean; // Based on can_edit flag
   onDescriptionIdChange: (descriptionId: string | null) => void; // Update description_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -71,6 +77,7 @@ export function Descriptions({
   description_resource,
   show_description = true,
   description_suggestions,
+  descriptions,
   disabled = false,
   onDescriptionIdChange,
   onGenerate,
@@ -207,6 +214,36 @@ export function Descriptions({
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
   }, []);
 
+  // Use descriptions array if available, otherwise create placeholder mapping
+  const suggestionsMapping = useMemo(() => {
+    if (descriptions && descriptions.length > 0) {
+      const mapping: Record<string, { id: string; description: string }> = {};
+      descriptions.forEach((desc) => {
+        if (desc.id) {
+          mapping[desc.id] = {
+            id: desc.id,
+            description: desc.description || `Description ${desc.id.slice(0, 8)}...`,
+          };
+        }
+      });
+      return mapping;
+    }
+    // Fallback: create placeholder mapping from suggestion IDs
+    const mapping: Record<string, { id: string; description: string }> = {};
+    suggestionsList.forEach((suggestionId) => {
+      mapping[suggestionId] = {
+        id: suggestionId,
+        description: `Description ${suggestionId.slice(0, 8)}...`,
+      };
+    });
+    return mapping;
+  }, [descriptions, suggestionsList]);
+  
+  // Use descriptions array for GenericPicker items if available
+  const pickerItems = descriptions && descriptions.length > 0 
+    ? descriptions 
+    : Object.values(suggestionsMapping);
+
   // Don't render if show_description is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -219,41 +256,73 @@ export function Descriptions({
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
+      </div>
+      {/* GenericPicker for suggestions */}
+      {(suggestionsList.length > 0 || (descriptions && descriptions.length > 0)) && (
+        <div className="flex justify-end">
+          <GenericPicker
+            items={pickerItems}
+            selectedIds={resourceId ? [resourceId] : []}
+            onSelect={(ids) => {
+              onDescriptionIdChange(ids[0] || null);
+            }}
+            getId={(item) => (typeof item === 'string' ? item : item.id)}
+            getLabel={(item) => {
+              if (typeof item === 'string') {
+                return `Description ${item.slice(0, 8)}...`;
+              }
+              return item.description || `Description ${item.id.slice(0, 8)}...`;
+            }}
+            placeholder="Descriptions"
+            disabled={disabled}
+            multiSelect={false}
+            compact={true}
+            buttonClassName="h-8"
+            showLabel={false}
+          />
+        </div>
+      )}
+      {/* Textarea with generate button inside */}
+      <div className="relative">
+        <Textarea
+          id={id}
+          data-testid={dataTestId}
+          value={internalValue || ""}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          disabled={disabled}
+          rows={rows}
+          className={onGenerate ? "pr-10" : ""}
+        />
         {onGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={onGenerate}
-                  disabled={disabled || isGenerating}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {resource?.generated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="absolute top-2 right-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {resource?.generated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         )}
       </div>
-      <Textarea
-        id={id}
-        data-testid={dataTestId}
-        value={internalValue || ""}
-        onChange={(e) => handleChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        disabled={disabled}
-        rows={rows}
-      />
       {helpText && <p className="text-xs text-muted-foreground">{helpText}</p>}
     </div>
   );

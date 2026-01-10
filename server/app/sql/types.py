@@ -14497,12 +14497,14 @@ class GetPersonaSqlRow(BaseModel):
     name_agent_id: UUID | None = None
     name_required: bool | None = None
     name_suggestions: list[UUID] | None = None
+    names: list[QGetPersonaV4NameResource] | None = None
     description_id: UUID | None = None
     description_resource: QGetPersonaV4DescriptionResource | None = None
     show_description: bool | None = None
     description_agent_id: UUID | None = None
     description_required: bool | None = None
     description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetPersonaV4DescriptionResource] | None = None
     color_id: UUID | None = None
     color_resource: QGetPersonaV4ColorResource | None = None
     show_color: bool | None = None
@@ -14523,6 +14525,7 @@ class GetPersonaSqlRow(BaseModel):
     instructions_agent_id: UUID | None = None
     instructions_required: bool | None = None
     instructions_suggestions: list[UUID] | None = None
+    instructions: list[QGetPersonaV4InstructionsResource] | None = None
     active_flag_id: UUID | None = None
     flag_resource: QGetPersonaV4FlagResource | None = None
     show_flag: bool | None = None
@@ -14577,12 +14580,14 @@ class GetPersonaApiResponse(BaseModel):
     name_agent_id: UUID | None = None
     name_required: bool | None = None
     name_suggestions: list[UUID] | None = None
+    names: list[QGetPersonaV4NameResource] | None = None
     description_id: UUID | None = None
     description_resource: QGetPersonaV4DescriptionResource | None = None
     show_description: bool | None = None
     description_agent_id: UUID | None = None
     description_required: bool | None = None
     description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetPersonaV4DescriptionResource] | None = None
     color_id: UUID | None = None
     color_resource: QGetPersonaV4ColorResource | None = None
     show_color: bool | None = None
@@ -14603,6 +14608,7 @@ class GetPersonaApiResponse(BaseModel):
     instructions_agent_id: UUID | None = None
     instructions_required: bool | None = None
     instructions_suggestions: list[UUID] | None = None
+    instructions: list[QGetPersonaV4InstructionsResource] | None = None
     active_flag_id: UUID | None = None
     flag_resource: QGetPersonaV4FlagResource | None = None
     show_flag: bool | None = None

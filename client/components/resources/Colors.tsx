@@ -84,7 +84,7 @@ export function Colors({
   onSearchChange: _onSearchChange,
   searchPlaceholder: _searchPlaceholder = "Search colors...",
   showSelectedFilter = false,
-  onShowSelectedChange: _  onShowSelectedChange,
+  onShowSelectedChange: _onShowSelectedChange,
   group_id,
   agent_id,
   createColorsAction,

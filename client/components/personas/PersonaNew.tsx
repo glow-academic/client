@@ -731,10 +731,11 @@ function PersonaNewComponent({
   // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
 
   // Disabled logic based on can_edit flag - standardized for all resource components
+  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
   const disabled = useMemo(() => {
-    if (!isEditMode || !personaData) return false;
+    if (!personaData) return false;
     return !personaData.can_edit;
-  }, [isEditMode, personaData]);
+  }, [personaData]);
 
   // Set breadcrumb context when persona data is loaded
   useEffect(() => {
@@ -1152,6 +1153,7 @@ function PersonaNewComponent({
                   description_suggestions={
                     currentPersonaData?.description_suggestions ?? []
                   }
+                  descriptions={currentPersonaData?.descriptions ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
                     setFormState((prev) => ({
@@ -1582,6 +1584,7 @@ function PersonaNewComponent({
                 instructions_suggestions={
                   currentPersonaData?.instructions_suggestions ?? []
                 }
+                instructions={currentPersonaData?.instructions ?? []}
                 disabled={disabled}
                 onInstructionsIdChange={(instructionsId) =>
                   setFormState((prev) => ({

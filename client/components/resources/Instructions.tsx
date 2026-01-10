@@ -21,13 +21,19 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Loader2, Sparkles } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 
 export interface InstructionsProps {
   instructions_id?: string | null; // Current instructions_id (standardized prop name)
   instructions_resource?: { id: string | null; template: string | null; generated?: boolean | null } | null; // Resource data from server (standardized prop name; includes generated field)
   show_instructions?: boolean; // Whether to show this resource picker
   instructions_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  instructions?: Array<{
+    id: string;
+    template: string | null;
+    generated?: boolean | null;
+  }>; // Array of suggested instruction resources (only suggested options, not all)
   disabled?: boolean; // Based on can_edit flag
   onInstructionsIdChange: (instructionsId: string | null) => void; // Update instructions_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -53,6 +59,7 @@ export function Instructions({
   instructions_resource,
   show_instructions = true,
   instructions_suggestions,
+  instructions,
   disabled = false,
   onInstructionsIdChange,
   onGenerate,
@@ -171,6 +178,36 @@ export function Instructions({
     setInternalValue(newValue);
   }, []);
 
+  // Use instructions array if available, otherwise create placeholder mapping
+  const suggestionsMapping = useMemo(() => {
+    if (instructions && instructions.length > 0) {
+      const mapping: Record<string, { id: string; template: string }> = {};
+      instructions.forEach((inst) => {
+        if (inst.id) {
+          mapping[inst.id] = {
+            id: inst.id,
+            template: inst.template || `Instructions ${inst.id.slice(0, 8)}...`,
+          };
+        }
+      });
+      return mapping;
+    }
+    // Fallback: create placeholder mapping from suggestion IDs
+    const mapping: Record<string, { id: string; template: string }> = {};
+    suggestionsList.forEach((suggestionId) => {
+      mapping[suggestionId] = {
+        id: suggestionId,
+        template: `Instructions ${suggestionId.slice(0, 8)}...`,
+      };
+    });
+    return mapping;
+  }, [instructions, suggestionsList]);
+  
+  // Use instructions array for GenericPicker items if available
+  const pickerItems = instructions && instructions.length > 0 
+    ? instructions 
+    : Object.values(suggestionsMapping);
+
   // Don't render if show_instructions is false (AFTER all hooks)
   if (!show) {
     return null;
@@ -183,41 +220,73 @@ export function Instructions({
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
+      </div>
+      {/* GenericPicker for suggestions */}
+      {(suggestionsList.length > 0 || (instructions && instructions.length > 0)) && (
+        <div className="flex justify-end">
+          <GenericPicker
+            items={pickerItems}
+            selectedIds={resourceId ? [resourceId] : []}
+            onSelect={(ids) => {
+              onInstructionsIdChange(ids[0] || null);
+            }}
+            getId={(item) => (typeof item === 'string' ? item : item.id)}
+            getLabel={(item) => {
+              if (typeof item === 'string') {
+                return `Instructions ${item.slice(0, 8)}...`;
+              }
+              return item.template || `Instructions ${item.id.slice(0, 8)}...`;
+            }}
+            placeholder="Instructions"
+            disabled={disabled}
+            multiSelect={false}
+            compact={true}
+            buttonClassName="h-8"
+            showLabel={false}
+          />
+        </div>
+      )}
+      {/* Textarea with generate button inside */}
+      <div className="relative">
+        <Textarea
+          id={id}
+          data-testid={dataTestId}
+          value={internalValue || ""}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder={placeholder}
+          required={required}
+          disabled={disabled}
+          rows={rows}
+          className={onGenerate ? "pr-10" : ""}
+        />
         {onGenerate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={onGenerate}
-                  disabled={disabled || isGenerating}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {resource?.generated ? "Regenerate" : "Generate"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="absolute top-2 right-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {resource?.generated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         )}
       </div>
-      <Textarea
-        id={id}
-        data-testid={dataTestId}
-        value={internalValue || ""}
-        onChange={(e) => handleChange(e.target.value)}
-        placeholder={placeholder}
-        required={required}
-        disabled={disabled}
-        rows={rows}
-      />
       {helpText && (
         <p className="text-xs text-muted-foreground">{helpText}</p>
       )}

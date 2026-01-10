@@ -142,6 +142,7 @@ RETURNS TABLE (
     name_agent_id uuid,
     name_required boolean,
     name_suggestions uuid[],
+    names types.q_get_persona_v4_name_resource[],
     -- Single-select resources: description
     description_id uuid,
     description_resource types.q_get_persona_v4_description_resource,
@@ -149,6 +150,7 @@ RETURNS TABLE (
     description_agent_id uuid,
     description_required boolean,
     description_suggestions uuid[],
+    descriptions types.q_get_persona_v4_description_resource[],
     -- Single-select resources: color
     color_id uuid,
     color_resource types.q_get_persona_v4_color_resource,
@@ -172,6 +174,7 @@ RETURNS TABLE (
     instructions_agent_id uuid,
     instructions_required boolean,
     instructions_suggestions uuid[],
+    instructions types.q_get_persona_v4_instructions_resource[],
     -- Single-select resources: flag
     active_flag_id uuid,
     flag_resource types.q_get_persona_v4_flag_resource,
@@ -369,23 +372,35 @@ field_ids_data AS (
     SELECT 
         CASE 
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE ARRAY_AGG(pf.field_id ORDER BY pf.created_at)
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at)
+                 FROM persona_fields pf
+                 WHERE pf.persona_id = (SELECT persona_id FROM params)
+                   AND pf.active = true),
+                ARRAY[]::uuid[]
+            )
         END as field_ids
-    FROM params x
-    LEFT JOIN persona_fields pf ON pf.persona_id = x.persona_id AND pf.active = true
-    WHERE x.persona_id IS NOT NULL
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Example IDs (selected example IDs for persona)
 persona_examples_data AS (
     SELECT 
         CASE 
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
-            ELSE ARRAY_AGG(e.id ORDER BY pe.idx)
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(e.id ORDER BY pe.idx)
+                 FROM persona_examples pe
+                 JOIN examples e ON e.id = pe.example_id
+                 WHERE pe.persona_id = (SELECT persona_id FROM params)
+                   AND pe.active = true),
+                ARRAY[]::uuid[]
+            )
         END as example_ids
-    FROM params x
-    LEFT JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
-    LEFT JOIN examples e ON e.id = pe.example_id
-    WHERE x.persona_id IS NOT NULL
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Example mapping (for examples array - available for both new and detail)
 example_mapping_data AS (
@@ -412,26 +427,29 @@ accessible_personas AS (
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
       )
 ),
+-- Example suggestions based on generated flag from junction table (returns UUIDs)
 example_suggestions_data AS (
     SELECT 
         COALESCE(
             (
-                SELECT ARRAY_AGG(e.id ORDER BY max_created_at DESC)
-                FROM (
-                    SELECT 
-                        e.id,
-                        MAX(pe.created_at) as max_created_at
-                    FROM persona_examples pe
-                    JOIN examples e ON e.id = pe.example_id
-                    JOIN accessible_personas ap ON ap.persona_id = pe.persona_id
-                    WHERE pe.active = true AND e.example IS NOT NULL AND e.example != ''
-                    GROUP BY e.id
-                    ORDER BY max_created_at DESC
-                    LIMIT 20
-                ) e
+                SELECT ARRAY_AGG(pe.example_id ORDER BY pe.created_at DESC)
+                FROM persona_examples pe
+                JOIN examples e ON e.id = pe.example_id
+                JOIN accessible_personas ap ON ap.persona_id = pe.persona_id
+                WHERE pe.generated = true
+                  AND pe.active = true
+                  AND pe.example_id IS NOT NULL
+                  AND e.example IS NOT NULL
+                  AND e.example != ''
+                GROUP BY pe.example_id
+                ORDER BY MAX(pe.created_at) DESC
+                LIMIT 20
             ),
             ARRAY[]::uuid[]
         ) as example_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Colors (all available color options)
 colors_data AS (
@@ -479,80 +497,167 @@ icons_data AS (
         )
     ORDER BY i.name
 ),
--- Icon suggestions based on historical usage (most frequently used icons)
+-- Color suggestions based on generated flag from junction table (returns UUIDs)
+color_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pc.color_id ORDER BY pc.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pc.color_id, MAX(pc.created_at) as created_at
+                 FROM persona_colors pc
+                 WHERE pc.generated = true
+                   AND pc.color_id IS NOT NULL
+                 GROUP BY pc.color_id
+                 ORDER BY MAX(pc.created_at) DESC
+                 LIMIT 20
+             ) pc),
+            ARRAY[]::uuid[]
+        ) as color_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Icon suggestions based on generated flag from junction table (returns UUIDs)
 icon_suggestions_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(icon_id ORDER BY usage_count DESC),
+            (SELECT ARRAY_AGG(pi.icon_id ORDER BY pi.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pi.icon_id, MAX(pi.created_at) as created_at
+                 FROM persona_icons pi
+                 WHERE pi.generated = true
+                   AND pi.icon_id IS NOT NULL
+                 GROUP BY pi.icon_id
+                 ORDER BY MAX(pi.created_at) DESC
+                 LIMIT 20
+             ) pi),
             ARRAY[]::uuid[]
         ) as icon_suggestions
-    FROM (
-        SELECT 
-            pi.icon_id,
-            COUNT(*) as usage_count
-        FROM persona_icons pi
-        WHERE pi.icon_id IS NOT NULL
-        GROUP BY pi.icon_id
-        ORDER BY usage_count DESC
-        LIMIT 10
-    ) icon_usage
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
--- Name suggestions based on historical usage (returns UUIDs)
+-- Name suggestions based on generated flag from junction table (returns UUIDs)
 name_suggestions_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(name_usage.id ORDER BY name_usage.max_created_at DESC),
+            (SELECT ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pn.name_id, MAX(pn.created_at) as created_at
+                 FROM persona_names pn
+                 WHERE pn.generated = true
+                   AND pn.name_id IS NOT NULL
+                 GROUP BY pn.name_id
+                 ORDER BY MAX(pn.created_at) DESC
+                 LIMIT 20
+             ) pn),
             ARRAY[]::uuid[]
         ) as name_suggestions
-    FROM (
-        SELECT DISTINCT
-            n.id,
-            MAX(pn.created_at) as max_created_at
-        FROM persona_names pn
-        JOIN names n ON pn.name_id = n.id
-        WHERE n.name IS NOT NULL AND n.name != ''
-        GROUP BY n.id
-        ORDER BY MAX(pn.created_at) DESC
-        LIMIT 20
-    ) name_usage
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
--- Description suggestions based on historical usage (returns UUIDs)
+-- Description suggestions based on generated flag from junction table (returns UUIDs)
 description_suggestions_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(desc_usage.id ORDER BY desc_usage.max_created_at DESC),
+            (SELECT ARRAY_AGG(pd.description_id ORDER BY pd.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pd.description_id, MAX(pd.created_at) as created_at
+                 FROM persona_descriptions pd
+                 WHERE pd.generated = true
+                   AND pd.description_id IS NOT NULL
+                 GROUP BY pd.description_id
+                 ORDER BY MAX(pd.created_at) DESC
+                 LIMIT 20
+             ) pd),
             ARRAY[]::uuid[]
         ) as description_suggestions
-    FROM (
-        SELECT DISTINCT
-            d.id,
-            MAX(pd.created_at) as max_created_at
-        FROM persona_descriptions pd
-        JOIN descriptions d ON pd.description_id = d.id
-        WHERE d.description IS NOT NULL AND d.description != ''
-        GROUP BY d.id
-        ORDER BY MAX(pd.created_at) DESC
-        LIMIT 20
-    ) desc_usage
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
--- Instructions suggestions based on historical usage (returns UUIDs)
+-- Instructions suggestions based on generated flag from junction table (returns UUIDs)
 instructions_suggestions_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(inst_usage.id ORDER BY inst_usage.max_created_at DESC),
+            (SELECT ARRAY_AGG(pi.instruction_id ORDER BY pi.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pi.instruction_id, MAX(pi.created_at) as created_at
+                 FROM persona_instructions pi
+                 JOIN instructions i ON pi.instruction_id = i.id
+                 WHERE pi.generated = true
+                   AND pi.instruction_id IS NOT NULL
+                   AND i.active = true
+                   AND i.template IS NOT NULL
+                   AND i.template != ''
+                 GROUP BY pi.instruction_id
+                 ORDER BY MAX(pi.created_at) DESC
+                 LIMIT 20
+             ) pi),
             ARRAY[]::uuid[]
         ) as instructions_suggestions
-    FROM (
-        SELECT DISTINCT
-            i.id,
-            MAX(pi.created_at) as max_created_at
-        FROM persona_instructions pi
-        JOIN instructions i ON pi.instruction_id = i.id
-        WHERE i.active = true AND i.template IS NOT NULL AND i.template != ''
-        GROUP BY i.id
-        ORDER BY MAX(pi.created_at) DESC
-        LIMIT 20
-    ) inst_usage
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Suggested resource objects CTEs - fetch full resource objects for suggestions
+names_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (n.id, n.name, COALESCE(n.generated, false))::types.q_get_persona_v4_name_resource
+                    ORDER BY array_position(nsd.name_suggestions, n.id)
+                )
+                FROM name_suggestions_data nsd
+                CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
+                JOIN names n ON n.id = suggestion_id
+                WHERE n.name IS NOT NULL AND n.name != ''
+            ),
+            ARRAY[]::types.q_get_persona_v4_name_resource[]
+        ) as names
+    FROM params
+    -- Always return at least one row, even if no suggestions exist
+    LIMIT 1
+),
+descriptions_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource
+                    ORDER BY array_position(dsd.description_suggestions, d.id)
+                )
+                FROM description_suggestions_data dsd
+                CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
+                JOIN descriptions d ON d.id = suggestion_id
+                WHERE d.description IS NOT NULL AND d.description != ''
+            ),
+            ARRAY[]::types.q_get_persona_v4_description_resource[]
+        ) as descriptions
+    FROM params
+    -- Always return at least one row, even if no suggestions exist
+    LIMIT 1
+),
+instructions_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (i.id, i.template, COALESCE(i.generated, false))::types.q_get_persona_v4_instructions_resource
+                    ORDER BY array_position(insd.instructions_suggestions, i.id)
+                )
+                FROM instructions_suggestions_data insd
+                CROSS JOIN LATERAL unnest(insd.instructions_suggestions) AS suggestion_id
+                JOIN instructions i ON i.id = suggestion_id
+                WHERE i.active = true AND i.template IS NOT NULL AND i.template != ''
+            ),
+            ARRAY[]::types.q_get_persona_v4_instructions_resource[]
+        ) as instructions
+    FROM params
+    -- Always return at least one row, even if no suggestions exist
+    LIMIT 1
 ),
 -- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
 name_resource_data AS (
@@ -629,13 +734,47 @@ flag_resource_data AS (
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
     FROM params
 ),
--- Department suggestions (empty for now, can be populated with AI recommendations later)
+-- Department suggestions based on generated flag from junction table (returns UUIDs)
 department_suggestions_data AS (
-    SELECT ARRAY[]::uuid[] as department_suggestions
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pd.department_id, MAX(pd.created_at) as created_at
+                 FROM persona_departments pd
+                 WHERE pd.generated = true
+                   AND pd.active = true
+                   AND pd.department_id IS NOT NULL
+                 GROUP BY pd.department_id
+                 ORDER BY MAX(pd.created_at) DESC
+                 LIMIT 20
+             ) pd),
+            ARRAY[]::uuid[]
+        ) as department_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
--- Field suggestions (empty for now, can be populated with AI recommendations later)
+-- Field suggestions based on generated flag from junction table (returns UUIDs)
 field_suggestions_data AS (
-    SELECT ARRAY[]::uuid[] as field_suggestions
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pf.field_id, MAX(pf.created_at) as created_at
+                 FROM persona_fields pf
+                 WHERE pf.generated = true
+                   AND pf.active = true
+                   AND pf.field_id IS NOT NULL
+                 GROUP BY pf.field_id
+                 ORDER BY MAX(pf.created_at) DESC
+                 LIMIT 20
+             ) pf),
+            ARRAY[]::uuid[]
+        ) as field_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
 ),
 -- Agent selection helper CTEs (shared across all agent selections)
 persona_department_for_agents AS (
@@ -1612,6 +1751,7 @@ SELECT
     (SELECT agent_id FROM name_agent_data) as name_agent_id,
     true as name_required,
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
+    COALESCE((SELECT names FROM names_suggestions_objects), ARRAY[]::types.q_get_persona_v4_name_resource[]) as names,
     -- Single-select resources: description
     (SELECT description_id FROM description_resource_data) as description_id,
     (SELECT desc_res FROM (SELECT drd.draft_description_resource as desc_res UNION ALL SELECT drd.persona_description_resource LIMIT 1) sub WHERE desc_res IS NOT NULL LIMIT 1) as description_resource,
@@ -1619,6 +1759,7 @@ SELECT
     (SELECT agent_id FROM description_agent_data) as description_agent_id,
     false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
+    COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_persona_v4_description_resource[]) as descriptions,
     -- Single-select resources: color
     (SELECT color_id FROM color_resource_data) as color_id,
     (SELECT color_res FROM (SELECT crd.draft_color_resource as color_res UNION ALL SELECT crd.persona_color_resource LIMIT 1) sub WHERE color_res IS NOT NULL LIMIT 1) as color_resource,
@@ -1629,7 +1770,7 @@ SELECT
     END as show_color,
     (SELECT agent_id FROM color_agent_data) as color_agent_id,
     true as color_required,
-    ARRAY[]::uuid[] as color_suggestions,
+    COALESCE((SELECT color_suggestions FROM color_suggestions_data), ARRAY[]::uuid[]) as color_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
             (cod.id, cod.name, cod.description, cod.hex_code, cod.generated)::types.q_get_persona_v4_color_option
@@ -1665,6 +1806,7 @@ SELECT
     (SELECT agent_id FROM instructions_agent_data) as instructions_agent_id,
     true as instructions_required,
     COALESCE((SELECT instructions_suggestions FROM instructions_suggestions_data), ARRAY[]::uuid[]) as instructions_suggestions,
+    COALESCE((SELECT instructions FROM instructions_suggestions_objects), ARRAY[]::types.q_get_persona_v4_instructions_resource[]) as instructions,
     -- Single-select resources: flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.persona_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,
@@ -1806,10 +1948,14 @@ CROSS JOIN color_resource_data crd
 CROSS JOIN icon_resource_data ird
 CROSS JOIN instructions_resource_data instrd
 CROSS JOIN flag_resource_data frd
+CROSS JOIN color_suggestions_data csd
 CROSS JOIN icon_suggestions_data isd
 CROSS JOIN name_suggestions_data nsd
 CROSS JOIN description_suggestions_data dsd
 CROSS JOIN instructions_suggestions_data insd
+CROSS JOIN names_suggestions_objects nso
+CROSS JOIN descriptions_suggestions_objects dso
+CROSS JOIN instructions_suggestions_objects iso
 CROSS JOIN colors_data cod
 CROSS JOIN icons_data iod
 CROSS JOIN department_suggestions_data dsd_dept
