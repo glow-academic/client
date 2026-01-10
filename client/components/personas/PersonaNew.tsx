@@ -75,8 +75,14 @@ type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftDocumentsIn = InputOf<"/api/v4/resources/documents", "post">;
 type CreateDraftDocumentsOut = OutputOf<"/api/v4/resources/documents", "post">;
-type CreateDraftDepartmentsIn = InputOf<"/api/v4/resources/departments", "post">;
-type CreateDraftDepartmentsOut = OutputOf<"/api/v4/resources/departments", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
 type PatchPersonaDraftIn = InputOf<"/api/v4/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v4/personas/draft", "patch">;
 
@@ -137,7 +143,6 @@ function PersonaNewComponent({
   createFlagsAction,
   createExamplesAction,
   createFieldsAction,
-  createDocumentsAction,
   createDepartmentsAction,
 }: PersonaNewProps) {
   const router = useRouter();
@@ -200,72 +205,114 @@ function PersonaNewComponent({
   const stablePersonaDataFields = React.useMemo(() => {
     if (!personaData) return null;
     return {
+      group_id: personaData.group_id,
       name_resource: personaData.name_resource,
       show_name: personaData.show_name,
       name_suggestions: personaData.name_suggestions,
+      name_required: personaData.name_required,
+      name_agent_id: personaData.name_agent_id,
       description_resource: personaData.description_resource,
       show_description: personaData.show_description,
       description_suggestions: personaData.description_suggestions,
+      description_required: personaData.description_required,
+      description_agent_id: personaData.description_agent_id,
+      descriptions: personaData.descriptions,
       department_resources: personaData.department_resources,
       show_departments: personaData.show_departments,
       department_suggestions: personaData.department_suggestions,
+      departments_required: personaData.departments_required,
+      departments_agent_id: personaData.departments_agent_id,
       departments: personaData.departments,
       flag_resource: personaData.flag_resource,
       show_flag: personaData.show_flag,
+      flag_required: personaData.flag_required,
+      flag_agent_id: personaData.flag_agent_id,
       field_resources: personaData.field_resources,
       show_fields: personaData.show_fields,
       field_suggestions: personaData.field_suggestions,
+      fields_required: personaData.fields_required,
+      fields_agent_id: personaData.fields_agent_id,
       fields: personaData.fields,
       color_resource: personaData.color_resource,
       show_color: personaData.show_color,
       color_suggestions: personaData.color_suggestions,
+      color_required: personaData.color_required,
+      color_agent_id: personaData.color_agent_id,
       colors: personaData.colors,
       icon_resource: personaData.icon_resource,
       show_icon: personaData.show_icon,
       icon_suggestions: personaData.icon_suggestions,
+      icon_required: personaData.icon_required,
+      icon_agent_id: personaData.icon_agent_id,
       icons: personaData.icons,
       instructions_resource: personaData.instructions_resource,
       show_instructions: personaData.show_instructions,
       instructions_suggestions: personaData.instructions_suggestions,
+      instructions_required: personaData.instructions_required,
+      instructions_agent_id: personaData.instructions_agent_id,
+      instructions: personaData.instructions,
       example_resources: personaData.example_resources,
       show_examples: personaData.show_examples,
       example_suggestions: personaData.example_suggestions,
+      examples_required: personaData.examples_required,
+      examples_agent_id: personaData.examples_agent_id,
       examples: personaData.examples,
     };
     // Intentionally depend on individual fields, not whole personaData object
     // to prevent recreation when only object reference changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    personaData?.group_id,
     personaData?.name_resource,
     personaData?.show_name,
     personaData?.name_suggestions,
+    personaData?.name_required,
+    personaData?.name_agent_id,
     personaData?.description_resource,
     personaData?.show_description,
     personaData?.description_suggestions,
+    personaData?.description_required,
+    personaData?.description_agent_id,
+    personaData?.descriptions,
     personaData?.department_resources,
     personaData?.show_departments,
     personaData?.department_suggestions,
+    personaData?.departments_required,
+    personaData?.departments_agent_id,
     personaData?.departments,
     personaData?.flag_resource,
     personaData?.show_flag,
+    personaData?.flag_required,
+    personaData?.flag_agent_id,
     personaData?.field_resources,
     personaData?.show_fields,
     personaData?.field_suggestions,
+    personaData?.fields_required,
+    personaData?.fields_agent_id,
     personaData?.fields,
     personaData?.color_resource,
     personaData?.show_color,
     personaData?.color_suggestions,
+    personaData?.color_required,
+    personaData?.color_agent_id,
     personaData?.colors,
     personaData?.icon_resource,
     personaData?.show_icon,
     personaData?.icon_suggestions,
+    personaData?.icon_required,
+    personaData?.icon_agent_id,
     personaData?.icons,
     personaData?.instructions_resource,
     personaData?.show_instructions,
     personaData?.instructions_suggestions,
+    personaData?.instructions_required,
+    personaData?.instructions_agent_id,
+    personaData?.instructions,
     personaData?.example_resources,
     personaData?.show_examples,
     personaData?.example_suggestions,
+    personaData?.examples_required,
+    personaData?.examples_agent_id,
     personaData?.examples,
   ]);
 
@@ -673,14 +720,21 @@ function PersonaNewComponent({
 
       // Determine agent_id based on resource types
       // Multi-resource combinations use specific agent IDs
-      const basicResources: ResourceType[] = ["names", "descriptions", "flags", "departments"];
+      const basicResources: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+      ];
       const contentResources: ResourceType[] = ["instructions", "examples"];
-      
-      const isBasicCombo = resourceTypes.length === basicResources.length &&
+
+      const isBasicCombo =
+        resourceTypes.length === basicResources.length &&
         resourceTypes.every((rt) => basicResources.includes(rt));
-      const isContentCombo = resourceTypes.length === contentResources.length &&
+      const isContentCombo =
+        resourceTypes.length === contentResources.length &&
         resourceTypes.every((rt) => contentResources.includes(rt));
-      
+
       let agentId: string | null = null;
       if (isBasicCombo && personaData?.basic_agent_id) {
         agentId = personaData.basic_agent_id;
@@ -689,20 +743,25 @@ function PersonaNewComponent({
       } else if (resourceTypes.length > 0) {
         // Use individual agent_id for the first resource type
         const firstResourceType = resourceTypes[0];
-        const agentIdMap: Record<ResourceType, keyof PersonaData | null> = {
-          names: "name_agent_id",
-          descriptions: "description_agent_id",
-          colors: "color_agent_id",
-          icons: "icon_agent_id",
-          instructions: "instructions_agent_id",
-          flags: "flag_agent_id",
-          departments: "departments_agent_id",
-          fields: "fields_agent_id",
-          examples: "examples_agent_id",
-        };
-        const agentIdKey = agentIdMap[firstResourceType];
-        if (agentIdKey && personaData?.[agentIdKey]) {
-          agentId = personaData[agentIdKey] as string | null;
+        if (firstResourceType && personaData) {
+          const agentIdMap: Record<ResourceType, keyof PersonaData> = {
+            names: "name_agent_id",
+            descriptions: "description_agent_id",
+            colors: "color_agent_id",
+            icons: "icon_agent_id",
+            instructions: "instructions_agent_id",
+            flags: "flag_agent_id",
+            departments: "departments_agent_id",
+            fields: "fields_agent_id",
+            examples: "examples_agent_id",
+          };
+          const agentIdKey = agentIdMap[firstResourceType];
+          if (agentIdKey) {
+            const value = personaData[agentIdKey];
+            if (typeof value === "string" || value === null) {
+              agentId = value;
+            }
+          }
         }
       }
 
@@ -798,17 +857,26 @@ function PersonaNewComponent({
         throw new Error("Instructions are required");
       }
 
-      if (personaData?.departments_required && (!formState.department_ids || formState.department_ids.length === 0)) {
+      if (
+        personaData?.departments_required &&
+        (!formState.department_ids || formState.department_ids.length === 0)
+      ) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
       }
 
-      if (personaData?.fields_required && (!formState.field_ids || formState.field_ids.length === 0)) {
+      if (
+        personaData?.fields_required &&
+        (!formState.field_ids || formState.field_ids.length === 0)
+      ) {
         toast.error("Fields are required");
         throw new Error("Fields are required");
       }
 
-      if (personaData?.examples_required && (!formState.example_ids || formState.example_ids.length === 0)) {
+      if (
+        personaData?.examples_required &&
+        (!formState.example_ids || formState.example_ids.length === 0)
+      ) {
         toast.error("Examples are required");
         throw new Error("Examples are required");
       }
@@ -826,10 +894,21 @@ function PersonaNewComponent({
         throw new Error("Save action not available");
       }
 
+      // Ensure required fields are present (TypeScript guard)
+      if (
+        !formState.name_id ||
+        !formState.color_id ||
+        !formState.icon_id ||
+        !formState.instructions_id
+      ) {
+        toast.error("Required fields are missing");
+        throw new Error("Required fields are missing");
+      }
+
       try {
         await savePersonaAction({
           body: {
-            input_persona_id: isEditMode ? personaId! : null,
+            input_persona_id: isEditMode && personaId ? personaId : null,
             name_id: formState.name_id,
             description_id: formState.description_id || null,
             color_id: formState.color_id,
@@ -859,6 +938,13 @@ function PersonaNewComponent({
       effectiveProfile?.id,
       savePersonaAction,
       router,
+      personaData?.name_required,
+      personaData?.color_required,
+      personaData?.icon_required,
+      personaData?.instructions_required,
+      personaData?.departments_required,
+      personaData?.fields_required,
+      personaData?.examples_required,
     ]
   );
 
@@ -1647,7 +1733,25 @@ function PersonaNewComponent({
                 itemPlaceholder="Message"
                 group_id={currentPersonaData?.group_id ?? null}
                 agent_id={currentPersonaData?.examples_agent_id ?? null}
-                createExamplesAction={createExamplesAction}
+                createExamplesAction={
+                  createExamplesAction
+                    ? async (input: {
+                        body: {
+                          agent_id: string;
+                          group_id: string;
+                          example: string;
+                        };
+                      }) => {
+                        // Wrap the action to add mcp field (defaults to false)
+                        return await createExamplesAction({
+                          body: {
+                            ...input.body,
+                            mcp: false,
+                          },
+                        });
+                      }
+                    : undefined
+                }
                 required={currentPersonaData?.examples_required ?? false}
                 exampleMapping={
                   currentPersonaData?.examples && formState.example_ids
@@ -1701,7 +1805,6 @@ function PersonaNewComponent({
       createFlagsAction,
       createExamplesAction,
       createFieldsAction,
-      createDocumentsAction,
       createDepartmentsAction,
       canRegenerate,
       handleOpenStepCardModal,

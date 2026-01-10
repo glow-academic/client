@@ -40,7 +40,7 @@ export interface DescriptionsProps {
   show_description?: boolean; // Whether to show this resource picker
   description_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   descriptions?: Array<{
-    id: string;
+    id: string | null;
     description: string | null;
     generated?: boolean | null;
   }>; // Array of suggested description resources (only suggested options, not all)

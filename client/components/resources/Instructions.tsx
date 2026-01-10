@@ -30,7 +30,7 @@ export interface InstructionsProps {
   show_instructions?: boolean; // Whether to show this resource picker
   instructions_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   instructions?: Array<{
-    id: string;
+    id: string | null;
     template: string | null;
     generated?: boolean | null;
   }>; // Array of suggested instruction resources (only suggested options, not all)
