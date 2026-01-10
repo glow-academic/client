@@ -117,8 +117,9 @@ async def get_persona(
         # Conditional validation based on mode
         if persona_id is None:
             # New mode: check for valid departments (derive from departments array)
+            departments_list = result.departments or []
             valid_department_ids = [
-                d.department_id for d in result.departments if d.department_id
+                d.department_id for d in departments_list if d.department_id
             ]
             if not valid_department_ids:
                 raise HTTPException(

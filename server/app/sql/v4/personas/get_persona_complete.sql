@@ -581,7 +581,6 @@ name_resource_data AS (
             LIMIT 1
         ) as name_resource
     FROM params
-    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 description_resource_data AS (
     SELECT 
@@ -592,7 +591,6 @@ description_resource_data AS (
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_description_resource
     FROM params
-    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 color_resource_data AS (
     SELECT 
@@ -603,7 +601,6 @@ color_resource_data AS (
         (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_color_resource,
         (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_color_resource
     FROM params
-    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 icon_resource_data AS (
     SELECT 
@@ -614,7 +611,6 @@ icon_resource_data AS (
         (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM draft_icons di JOIN icons i ON di.icons_id = i.id WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_icon_resource,
         (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_icon_resource
     FROM params
-    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 instructions_resource_data AS (
     SELECT 
@@ -625,7 +621,6 @@ instructions_resource_data AS (
         (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_persona_v4_instructions_resource FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_instructions_resource,
         (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_persona_v4_instructions_resource FROM persona_instructions pinst JOIN instructions inst ON pinst.instruction_id = inst.id WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_instructions_resource
     FROM params
-    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 flag_resource_data AS (
     SELECT 
@@ -636,7 +631,6 @@ flag_resource_data AS (
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
     FROM params
-    WHERE (SELECT draft_id FROM params) IS NOT NULL OR (SELECT persona_id FROM params) IS NOT NULL
 ),
 -- Department suggestions (empty for now, can be populated with AI recommendations later)
 department_suggestions_data AS (

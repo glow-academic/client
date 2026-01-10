@@ -153,105 +153,39 @@ function PersonaNewComponent({
     [generatingResources]
   );
 
-  // Helper to get group_id for a resource type
-  const getResourceGroupId = useCallback(
-    (resourceType: ResourceType): string | null => {
-      switch (resourceType) {
-        case "names":
-          return personaData?.name_resource?.group_id ?? null;
-        case "descriptions":
-          return personaData?.description_resource?.group_id ?? null;
-        case "colors":
-          return personaData?.color_resource?.group_id ?? null;
-        case "icons":
-          return personaData?.icon_resource?.group_id ?? null;
-        case "instructions":
-          return personaData?.instructions_resource?.group_id ?? null;
-        case "flags":
-          return personaData?.flag_resource?.group_id ?? null;
-        case "departments":
-          return (
-            personaData?.department_resources?.find((d) => d.group_id)
-              ?.group_id ?? null
-          );
-        case "fields":
-          return (
-            personaData?.field_resources?.find((f) => f.group_id)?.group_id ??
-            null
-          );
-        case "examples":
-          return (
-            personaData?.example_resources?.find((e) => e.group_id)?.group_id ??
-            null
-          );
-        default:
-          return null;
-      }
-    },
-    [personaData]
-  );
-
   // Helper to check if a resource type can be regenerated
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
-      const groupId = getResourceGroupId(resourceType);
       switch (resourceType) {
         case "names":
-          return (
-            (personaData?.name_resource?.generated ?? false) && groupId !== null
-          );
+          return personaData?.name_resource?.generated ?? false;
         case "descriptions":
-          return (
-            (personaData?.description_resource?.generated ?? false) &&
-            groupId !== null
-          );
+          return personaData?.description_resource?.generated ?? false;
         case "colors":
-          return (
-            (personaData?.color_resource?.generated ?? false) &&
-            groupId !== null
-          );
+          return personaData?.color_resource?.generated ?? false;
         case "icons":
-          return (
-            (personaData?.icon_resource?.generated ?? false) && groupId !== null
-          );
+          return personaData?.icon_resource?.generated ?? false;
         case "instructions":
-          return (
-            (personaData?.instructions_resource?.generated ?? false) &&
-            groupId !== null
-          );
+          return personaData?.instructions_resource?.generated ?? false;
         case "flags":
-          return (
-            (personaData?.flag_resource?.generated ?? false) && groupId !== null
-          );
+          return personaData?.flag_resource?.generated ?? false;
         case "departments":
           return (
-            (personaData?.department_resources?.some(
-              (d) => d.generated && d.group_id !== null
-            ) ??
-              false) &&
-            groupId !== null
+            personaData?.department_resources?.some((d) => d.generated) ?? false
           );
         case "fields":
           return (
-            (personaData?.field_resources?.some(
-              (f) => f.generated && f.group_id !== null
-            ) ??
-              false) &&
-            groupId !== null
+            personaData?.field_resources?.some((f) => f.generated) ?? false
           );
         case "examples":
           return (
-            (personaData?.example_resources?.some(
-              (e) => e.generated && e.group_id !== null
-            ) ??
-              false) &&
-            groupId !== null
+            personaData?.example_resources?.some((e) => e.generated) ?? false
           );
         default:
           return false;
       }
     },
-    [personaData, getResourceGroupId]
+    [personaData]
   );
 
   // nuqs parsers for URL-backed state (will be passed to GenericForm)
@@ -523,59 +457,13 @@ function PersonaNewComponent({
         return next;
       });
 
-      // Build group_ids mapping for regeneration
-      const groupIds: Record<string, string | null> = {};
-      resourceTypes.forEach((rt) => {
-        let groupId: string | null = null;
-        switch (rt) {
-          case "names":
-            groupId = personaData?.name_resource?.group_id ?? null;
-            break;
-          case "descriptions":
-            groupId = personaData?.description_resource?.group_id ?? null;
-            break;
-          case "colors":
-            groupId = personaData?.color_resource?.group_id ?? null;
-            break;
-          case "icons":
-            groupId = personaData?.icon_resource?.group_id ?? null;
-            break;
-          case "instructions":
-            groupId = personaData?.instructions_resource?.group_id ?? null;
-            break;
-          case "flags":
-            groupId = personaData?.flag_resource?.group_id ?? null;
-            break;
-          case "departments":
-            groupId =
-              personaData?.department_resources?.find((d) => d.group_id)
-                ?.group_id ?? null;
-            break;
-          case "fields":
-            groupId =
-              personaData?.field_resources?.find((f) => f.group_id)?.group_id ??
-              null;
-            break;
-          case "examples":
-            groupId =
-              personaData?.example_resources?.find((e) => e.group_id)
-                ?.group_id ?? null;
-            break;
-          default:
-            groupId = null;
-        }
-        groupIds[rt] = groupId;
-      });
-
       // Emit single event with resource_types array
+      // Note: group_ids are fetched server-side from database, not passed from frontend
       socket.emit("persona_generate", {
         draft_id: draftId,
         resource_types: resourceTypes,
         persona_id: personaId || null,
         instructions: userInstructions || null, // Renamed from user_instructions
-        group_ids: Object.keys(groupIds).some((k) => groupIds[k] !== null)
-          ? groupIds
-          : null,
         context: {
           name_id: formState.name_id || null,
           description_id: formState.description_id || null,
