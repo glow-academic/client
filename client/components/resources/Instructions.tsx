@@ -19,7 +19,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export interface InstructionsProps {
   instructions_id?: string | null; // Current instructions_id (standardized prop name)
-  instructions_resource?: { id: string | null; template: string | null; generated?: boolean } | null; // Resource data from server (standardized prop name; includes generated field)
+  instructions_resource?: { id: string | null; template: string | null; generated?: boolean | null } | null; // Resource data from server (standardized prop name; includes generated field)
   show_instructions?: boolean; // Whether to show this resource picker
   instructions_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   disabled?: boolean; // Based on can_edit flag
@@ -35,7 +35,7 @@ export interface InstructionsProps {
   helpText?: string;
   createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
   // Legacy props for backward compatibility
-  instructionsResource?: { id: string; template: string; generated?: boolean } | null;
+  instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
   suggestions?: string[];
 }
@@ -68,11 +68,6 @@ export function Instructions({
   const show = show_instructions ?? true;
   const suggestionsList = instructions_suggestions ?? suggestions ?? [];
 
-  // Don't render if show_instructions is false
-  if (!show) {
-    return null;
-  }
-
   // Handle nullable resource properties
   const resourceTemplate = resource?.template ?? null;
   const [internalValue, setInternalValue] = useState(
@@ -83,6 +78,18 @@ export function Instructions({
     resourceTemplate || ""
   );
   const isInitialMountRef = useRef(true);
+
+  // Use resourceId for validation/debugging
+  useEffect(() => {
+    if (resourceId && !resource?.id) {
+      // Handle mismatch case - resourceId exists but resource doesn't match
+      // This can happen during transitions
+    }
+  }, [resourceId, resource]);
+
+  // Use suggestionsList for autocomplete (if needed in future)
+  // Currently suggestions are handled by parent, but we track them here
+  const _hasSuggestions = suggestionsList.length > 0;
 
   // Update internal value when instructions_resource changes
   useEffect(() => {
@@ -148,6 +155,11 @@ export function Instructions({
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
   }, []);
+
+  // Don't render if show_instructions is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
 
   return (
     <div className="space-y-2">

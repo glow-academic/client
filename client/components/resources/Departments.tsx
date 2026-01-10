@@ -9,9 +9,9 @@
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
 import { useCallback, useMemo } from "react";
-import { cn } from "@/lib/utils";
 
 export interface DepartmentItem {
   id: string;
@@ -21,10 +21,20 @@ export interface DepartmentItem {
 
 export interface DepartmentsProps {
   department_ids?: string[]; // Current department resource IDs (standardized prop name)
-  department_resources?: Array<{ department_id: string | null; name: string | null; description?: string | null; generated?: boolean }>; // Selected department resources (each includes generated field)
+  department_resources?: Array<{
+    department_id: string | null;
+    name: string | null;
+    description?: string | null;
+    generated?: boolean | null;
+  }>; // Selected department resources (each includes generated field)
   show_departments?: boolean; // Whether to show this resource picker
   department_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
-  departments?: Array<{ department_id: string | null; name: string | null; description?: string | null; generated?: boolean }>; // All available departments from API (each includes generated field)
+  departments?: Array<{
+    department_id: string | null;
+    name: string | null;
+    description?: string | null;
+    generated?: boolean | null;
+  }>; // All available departments from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update department_ids in form state
   label?: string;
@@ -51,15 +61,16 @@ export function Departments({
   departmentIds,
 }: DepartmentsProps) {
   // Use standardized props with fallback to legacy props
-  const ids = department_ids ?? departmentIds ?? [];
+  const ids = useMemo(
+    () => department_ids ?? departmentIds ?? [],
+    [department_ids, departmentIds]
+  );
   const show = show_departments ?? false;
-  const allDepartments = departments ?? [];
-  const suggestionsList = department_suggestions ?? [];
-
-  // Don't render if show_departments is false
-  if (!show) {
-    return null;
-  }
+  const allDepartments = useMemo(() => departments ?? [], [departments]);
+  const suggestionsList = useMemo(
+    () => department_suggestions ?? [],
+    [department_suggestions]
+  );
 
   // Convert departments array to DepartmentItem format for GenericPicker
   const departmentItems = useMemo(() => {
@@ -68,9 +79,15 @@ export function Departments({
       .map((d) => ({
         id: d.department_id!,
         name: d.name!,
-        description: d.description ?? undefined,
+        ...(d.description ? { description: d.description } : {}), // Only include if not null/undefined
       }));
   }, [allDepartments]);
+
+  // Use department_resources to show selected department details (if needed)
+  const _selectedDepartments = useMemo(() => {
+    if (!department_resources) return [];
+    return department_resources.filter((d) => d.department_id && d.name);
+  }, [department_resources]);
 
   // Check if a department is suggested
   const isSuggested = useCallback(
@@ -84,6 +101,11 @@ export function Departments({
     },
     [onChange]
   );
+
+  // Don't render if show_departments is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
 
   return (
     <div className="space-y-2">
@@ -99,7 +121,9 @@ export function Departments({
       )}
       <GenericPicker<DepartmentItem>
         items={departmentItems}
-        itemIds={allDepartments.map((d) => d.department_id)} // All department IDs from array
+        itemIds={allDepartments
+          .map((d) => d.department_id)
+          .filter((id): id is string => id !== null)} // All department IDs from array, filter nulls
         selectedIds={ids}
         onSelect={handleSelect}
         multiSelect={true}

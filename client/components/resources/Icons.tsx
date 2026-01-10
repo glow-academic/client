@@ -24,7 +24,7 @@ export interface IconsProps {
     name: string | null;
     description: string | null;
     value: string | null;
-    generated?: boolean;
+    generated?: boolean | null;
   } | null; // Resource data from server (standardized prop name; includes generated field)
   show_icon?: boolean; // Whether to show this resource picker
   icon_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
@@ -33,7 +33,7 @@ export interface IconsProps {
     name: string | null;
     description: string | null;
     value: string | null;
-    generated?: boolean;
+    generated?: boolean | null;
   }>; // All available icons from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onIconIdChange: (iconId: string | null) => void; // Update icon_id in parent form state
@@ -53,7 +53,7 @@ export interface IconsProps {
     name: string;
     description: string;
     value: string;
-    generated?: boolean;
+    generated?: boolean | null;
   } | null;
   iconId?: string | null;
   allIcons?: string[];

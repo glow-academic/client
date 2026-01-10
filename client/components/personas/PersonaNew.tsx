@@ -476,7 +476,7 @@ function PersonaNewComponent({
         },
       });
     },
-    [socket, isConnected, draftId, personaId, formState, personaData]
+    [socket, isConnected, draftId, personaId, formState]
   );
 
   // Individual generation handlers - generate directly without modals
@@ -1327,7 +1327,6 @@ function PersonaNewComponent({
       handleGenerateName,
       handleGenerateDescription,
       handleGenerateInstructions,
-      handleGenerateResources,
       isGenerating,
       stepResources,
       formState,

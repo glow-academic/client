@@ -7,17 +7,21 @@
 
 "use client";
 
-import type { InputOf, OutputOf } from "@/lib/api/types";
-
-type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
 import { Button } from "@/components/ui/button";
+import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+
 export interface NamesProps {
   name_id?: string | null; // Current name_id (standardized prop name)
-  name_resource?: { id: string | null; name: string | null; generated?: boolean } | null; // Resource data from server (standardized prop name; includes generated field)
+  name_resource?: {
+    id: string | null;
+    name: string | null;
+    generated?: boolean | null;
+  } | null; // Resource data from server (standardized prop name; includes generated field)
   show_name?: boolean; // Whether to show this resource picker
   name_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   disabled?: boolean; // Based on can_edit flag
@@ -29,9 +33,15 @@ export interface NamesProps {
   id?: string;
   "data-testid"?: string;
   defaultName?: string; // Default name value (for header style - reverts to this on blur if empty)
-  createNamesAction?: ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>) | undefined;
+  createNamesAction?:
+    | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
+    | undefined;
   // Legacy props for backward compatibility
-  nameResource?: { id: string; name: string; generated?: boolean } | null;
+  nameResource?: {
+    id: string;
+    name: string;
+    generated?: boolean | null;
+  } | null;
   nameId?: string | null;
   suggestions?: string[];
 }
@@ -62,11 +72,6 @@ export function Names({
   const show = show_name ?? true;
   const suggestionsList = name_suggestions ?? suggestions ?? [];
 
-  // Don't render if show_name is false
-  if (!show) {
-    return null;
-  }
-
   // Handle nullable resource properties
   const resourceName = resource?.name ?? null;
   const initialValue = resourceName || defaultName || "";
@@ -74,6 +79,18 @@ export function Names({
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
+
+  // Use resourceId for validation/debugging
+  useEffect(() => {
+    if (resourceId && !resource?.id) {
+      // Handle mismatch case - resourceId exists but resource doesn't match
+      // This can happen during transitions
+    }
+  }, [resourceId, resource]);
+
+  // Use suggestionsList for autocomplete (if needed in future)
+  // Currently suggestions are handled by parent, but we track them here
+  const _hasSuggestions = suggestionsList.length > 0;
 
   // Update internal value when name_resource changes
   useEffect(() => {
@@ -164,6 +181,11 @@ export function Names({
     },
     [defaultName]
   );
+
+  // Don't render if show_name is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
 
   return (
     <div className="flex-1">

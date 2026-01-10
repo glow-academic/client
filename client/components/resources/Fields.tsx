@@ -25,7 +25,7 @@ export interface FieldsProps {
     field_id: string | null;
     name: string | null;
     description?: string | null;
-    generated?: boolean;
+    generated?: boolean | null;
   }>; // Selected field resources (each includes generated field)
   show_fields?: boolean; // Whether to show this resource picker
   field_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
@@ -33,7 +33,7 @@ export interface FieldsProps {
     field_id: string | null;
     name: string | null;
     description?: string | null;
-    generated?: boolean;
+    generated?: boolean | null;
   }>; // All available fields from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update field_ids in form state
@@ -64,7 +64,7 @@ export function Fields({
   const ids = field_ids ?? fieldIds ?? [];
   const show = show_fields ?? false;
   const allFieldsMemo = useMemo(() => fields ?? [], [fields]);
-  const suggestionsList = field_suggestions ?? [];
+  const suggestionsList = useMemo(() => _field_suggestions ?? [], [_field_suggestions]);
 
   // Convert fields array to FieldItem format for GenericPicker
   const fieldItems = useMemo(() => {

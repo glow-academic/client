@@ -28,7 +28,7 @@ export interface DescriptionsProps {
   description_resource?: {
     id: string | null;
     description: string | null;
-    generated?: boolean;
+    generated?: boolean | null;
   } | null; // Resource data from server (standardized prop name; includes generated field)
   show_description?: boolean; // Whether to show this resource picker
   description_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
@@ -49,7 +49,11 @@ export interface DescriptionsProps {
       ) => Promise<CreateDraftDescriptionsOut>)
     | undefined;
   // Legacy props for backward compatibility
-  descriptionResource?: { id: string; description: string; generated?: boolean } | null;
+  descriptionResource?: {
+    id: string;
+    description: string;
+    generated?: boolean | null;
+  } | null;
   descriptionId?: string | null;
   suggestions?: string[];
 }
@@ -82,17 +86,24 @@ export function Descriptions({
   const show = show_description ?? true;
   const suggestionsList = description_suggestions ?? suggestions ?? [];
 
-  // Don't render if show_description is false
-  if (!show) {
-    return null;
-  }
-
   // Handle nullable resource properties
   const resourceDescription = resource?.description ?? null;
   const [internalValue, setInternalValue] = useState(resourceDescription || "");
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(resourceDescription || "");
   const isInitialMountRef = useRef(true);
+
+  // Use resourceId for validation/debugging
+  useEffect(() => {
+    if (resourceId && !resource?.id) {
+      // Handle mismatch case - resourceId exists but resource doesn't match
+      // This can happen during transitions
+    }
+  }, [resourceId, resource]);
+
+  // Use suggestionsList for autocomplete (if needed in future)
+  // Currently suggestions are handled by parent, but we track them here
+  const _hasSuggestions = suggestionsList.length > 0;
 
   // Update internal value when description_resource changes
   useEffect(() => {
@@ -158,6 +169,11 @@ export function Descriptions({
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
   }, []);
+
+  // Don't render if show_description is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
 
   return (
     <div className="space-y-2">

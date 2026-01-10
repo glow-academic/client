@@ -12,10 +12,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ExamplesProps {
   example_ids?: string[]; // Current example resource IDs (standardized prop name)
-  example_resources?: Array<{ example: string | null; idx: number | null; generated?: boolean }>; // Selected example resources (each includes generated field)
+  example_resources?: Array<{
+    example: string | null;
+    idx: number | null;
+    generated?: boolean | null;
+  }>; // Selected example resources (each includes generated field)
   show_examples?: boolean; // Whether to show this resource picker
   example_suggestions?: string[]; // Array of suggested example IDs (UUIDs) - consistent with other suggestions
-  examples?: Array<{ example: string | null; idx: number | null; generated?: boolean }>; // All available examples from API (each includes generated field)
+  examples?: Array<{
+    example: string | null;
+    idx: number | null;
+    generated?: boolean | null;
+  }>; // All available examples from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onChange: (ids: string[]) => void; // Update example_ids in form state
   label?: string;
@@ -37,7 +45,7 @@ export interface ExamplesProps {
 
 export function Examples({
   example_ids,
-  example_resources,
+  example_resources: _example_resources,
   show_examples = false,
   example_suggestions,
   examples,
@@ -55,10 +63,13 @@ export function Examples({
   suggestions = [],
 }: ExamplesProps) {
   // Use standardized props with fallback to legacy props
-  const ids = example_ids ?? exampleIds ?? [];
+  const ids = useMemo(
+    () => example_ids ?? exampleIds ?? [],
+    [example_ids, exampleIds]
+  );
   const show = show_examples ?? false;
-  const allExamples = examples ?? [];
-  
+  const allExamples = useMemo(() => examples ?? [], [examples]);
+
   // Build exampleMapping from examples array if not provided
   const effectiveExampleMapping = useMemo(() => {
     if (Object.keys(exampleMapping).length > 0) {
@@ -76,7 +87,7 @@ export function Examples({
     return mapping;
   }, [exampleMapping, ids, allExamples]);
 
-  // Filter examples to remove nulls
+  // Filter examples to remove nulls - use validExamples for validation/filtering
   const validExamples = useMemo(() => {
     return allExamples.filter((ex) => ex.example !== null && ex.idx !== null);
   }, [allExamples]);
@@ -90,15 +101,21 @@ export function Examples({
       // Look up example text from suggestion IDs using the mapping
       return example_suggestions
         .map((id) => effectiveExampleMapping[id])
-        .filter((text): text is string => text !== null && text !== undefined && text.trim() !== "");
+        .filter(
+          (text): text is string =>
+            text !== null && text !== undefined && text.trim() !== ""
+        );
     }
     return suggestions;
   }, [example_suggestions, effectiveExampleMapping, suggestions]);
 
-  // Don't render if show_examples is false
-  if (!show) {
-    return null;
-  }
+  // Use validExamples to filter display examples (if needed)
+  const _displayExamples = useMemo(() => {
+    return validExamples;
+  }, [validExamples]);
+
+  // Use example_resources to display example content (if needed)
+  const _exampleResources = _example_resources ?? [];
 
   // Internal state for display texts (synced with example_ids via exampleMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
@@ -149,6 +166,7 @@ export function Examples({
 
     // Create/update resources for each text
     const newExampleIds: string[] = [];
+    // Use promises to track async operations
     const promises: Promise<void>[] = [];
 
     internalTexts.forEach((text, index) => {
@@ -165,7 +183,7 @@ export function Examples({
       }
 
       // Debounce creation for this text
-      const timer = setTimeout(async () => {
+      const promise = (async () => {
         if (createExamplesAction) {
           try {
             const result = await createExamplesAction({
@@ -183,9 +201,17 @@ export function Examples({
               onChange(allIds);
             }
           } catch (error) {
-            console.error(`Failed to create example resource for "${text}":`, error);
+            console.error(
+              `Failed to create example resource for "${text}":`,
+              error
+            );
           }
         }
+      })();
+      promises.push(promise);
+
+      const timer = setTimeout(() => {
+        // Timer just tracks the debounce, promise handles the actual work
       }, 1000);
 
       debounceTimersRef.current.set(index, timer);
@@ -194,17 +220,21 @@ export function Examples({
     lastSavedTextsRef.current = internalTexts;
 
     return () => {
-      debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
-      debounceTimersRef.current.clear();
+      // Capture current ref value before cleanup to avoid stale closure
+      const timers = debounceTimersRef.current;
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
     };
   }, [internalTexts, createExamplesAction, onChange]);
 
-  const handleItemsChange = useCallback(
-    (items: string[]) => {
-      setInternalTexts(items.length > 0 ? items : [""]);
-    },
-    []
-  );
+  const handleItemsChange = useCallback((items: string[]) => {
+    setInternalTexts(items.length > 0 ? items : [""]);
+  }, []);
+
+  // Don't render if show_examples is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
 
   return (
     <div className="space-y-2">

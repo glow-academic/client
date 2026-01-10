@@ -9564,1119 +9564,6 @@ class UpdateDocumentNameApiResponse(BaseModel):
 
 
 
-# Generated from: analyses
-
-class AnalysesSqlParams(BaseModel):
-
-    draft_id: UUID
-    content: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.content,
-        )
-
-class AnalysesSqlRow(BaseModel):
-
-    analyse_id: UUID | None = None
-    version: int | None = None
-
-class AnalysesApiRequest(BaseModel):
-
-    draft_id: UUID
-    content: str
-
-class AnalysesApiResponse(BaseModel):
-
-    analyse_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: colors
-
-class ColorsSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    hex_code: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.description,
-            self.hex_code,
-        )
-
-class ColorsSqlRow(BaseModel):
-
-    color_id: UUID | None = None
-    version: int | None = None
-
-class ColorsApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    hex_code: str
-
-class ColorsApiResponse(BaseModel):
-
-    color_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: content
-
-class ContentSqlParams(BaseModel):
-
-    draft_id: UUID
-    content: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.content,
-        )
-
-class ContentSqlRow(BaseModel):
-
-    content_id: UUID | None = None
-    version: int | None = None
-
-class ContentApiRequest(BaseModel):
-
-    draft_id: UUID
-    content: str
-
-class ContentApiResponse(BaseModel):
-
-    content_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: conversations
-
-class ConversationsSqlParams(BaseModel):
-
-    draft_id: UUID
-    end_reason: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.end_reason,
-        )
-
-class ConversationsSqlRow(BaseModel):
-
-    conversation_id: UUID | None = None
-    version: int | None = None
-
-class ConversationsApiRequest(BaseModel):
-
-    draft_id: UUID
-    end_reason: str
-
-class ConversationsApiResponse(BaseModel):
-
-    conversation_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: debug_info
-
-class DebugInfoSqlParams(BaseModel):
-
-    draft_id: UUID
-    content: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.content,
-        )
-
-class DebugInfoSqlRow(BaseModel):
-
-    debug_info_id: UUID | None = None
-    version: int | None = None
-
-class DebugInfoApiRequest(BaseModel):
-
-    draft_id: UUID
-    content: str
-
-class DebugInfoApiResponse(BaseModel):
-
-    debug_info_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: descriptions
-
-class DescriptionsSqlParams(BaseModel):
-
-    draft_id: UUID
-    description: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.description,
-        )
-
-class DescriptionsSqlRow(BaseModel):
-
-    description_id: UUID | None = None
-    version: int | None = None
-
-class DescriptionsApiRequest(BaseModel):
-
-    draft_id: UUID
-    description: str
-
-class DescriptionsApiResponse(BaseModel):
-
-    description_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: feedbacks
-
-class FeedbacksSqlParams(BaseModel):
-
-    draft_id: UUID
-    total: float
-    feedback: str
-    standard_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.total,
-            self.feedback,
-            self.standard_id,
-        )
-
-class FeedbacksSqlRow(BaseModel):
-
-    feedback_id: UUID | None = None
-    version: int | None = None
-
-class FeedbacksApiRequest(BaseModel):
-
-    draft_id: UUID
-    total: float
-    feedback: str
-    standard_id: UUID
-
-class FeedbacksApiResponse(BaseModel):
-
-    feedback_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: flags
-
-class FlagsSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    icon_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.description,
-            self.icon_id,
-        )
-
-class FlagsSqlRow(BaseModel):
-
-    flag_id: UUID | None = None
-    version: int | None = None
-
-class FlagsApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    icon_id: UUID
-
-class FlagsApiResponse(BaseModel):
-
-    flag_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: hints
-
-class HintsSqlParams(BaseModel):
-
-    draft_id: UUID
-    hint: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.hint,
-        )
-
-class HintsSqlRow(BaseModel):
-
-    hint_id: UUID | None = None
-    version: int | None = None
-
-class HintsApiRequest(BaseModel):
-
-    draft_id: UUID
-    hint: str
-
-class HintsApiResponse(BaseModel):
-
-    hint_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: html
-
-class HtmlSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.description,
-        )
-
-class HtmlSqlRow(BaseModel):
-
-    html_id: UUID | None = None
-    version: int | None = None
-
-class HtmlApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-
-class HtmlApiResponse(BaseModel):
-
-    html_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: icons
-
-class IconsSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    value: float
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.description,
-            self.value,
-        )
-
-class IconsSqlRow(BaseModel):
-
-    icon_id: UUID | None = None
-    version: int | None = None
-
-class IconsApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    value: float
-
-class IconsApiResponse(BaseModel):
-
-    icon_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: images
-
-class ImagesSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.description,
-        )
-
-class ImagesSqlRow(BaseModel):
-
-    image_id: UUID | None = None
-    version: int | None = None
-
-class ImagesApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-
-class ImagesApiResponse(BaseModel):
-
-    image_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: improvements
-
-class ImprovementsSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    message_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.description,
-            self.message_id,
-        )
-
-class ImprovementsSqlRow(BaseModel):
-
-    improvement_id: UUID | None = None
-    version: int | None = None
-
-class ImprovementsApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    message_id: UUID
-
-class ImprovementsApiResponse(BaseModel):
-
-    improvement_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: instructions
-
-class InstructionsSqlParams(BaseModel):
-
-    draft_id: UUID
-    template: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.template,
-        )
-
-class InstructionsSqlRow(BaseModel):
-
-    instruction_id: UUID | None = None
-    version: int | None = None
-
-class InstructionsApiRequest(BaseModel):
-
-    draft_id: UUID
-    template: str
-
-class InstructionsApiResponse(BaseModel):
-
-    instruction_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: names
-
-class NamesSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-        )
-
-class NamesSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    version: int | None = None
-
-class NamesApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-
-class NamesApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: objectives
-
-class ObjectivesSqlParams(BaseModel):
-
-    draft_id: UUID
-    objective: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.objective,
-        )
-
-class ObjectivesSqlRow(BaseModel):
-
-    objective_id: UUID | None = None
-    version: int | None = None
-
-class ObjectivesApiRequest(BaseModel):
-
-    draft_id: UUID
-    objective: str
-
-class ObjectivesApiResponse(BaseModel):
-
-    objective_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: options
-
-class OptionsSqlParams(BaseModel):
-
-    draft_id: UUID
-    option_text: str
-    is_correct: bool
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.option_text,
-            self.is_correct,
-        )
-
-class OptionsSqlRow(BaseModel):
-
-    option_id: UUID | None = None
-    version: int | None = None
-
-class OptionsApiRequest(BaseModel):
-
-    draft_id: UUID
-    option_text: str
-    is_correct: bool
-
-class OptionsApiResponse(BaseModel):
-
-    option_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: points
-
-class PointsSqlParams(BaseModel):
-
-    draft_id: UUID
-    value: float
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.value,
-        )
-
-class PointsSqlRow(BaseModel):
-
-    point_id: UUID | None = None
-    version: int | None = None
-
-class PointsApiRequest(BaseModel):
-
-    draft_id: UUID
-    value: float
-
-class PointsApiResponse(BaseModel):
-
-    point_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: problem_statements
-
-class ProblemStatementsSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    problem_statement: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.problem_statement,
-        )
-
-class ProblemStatementsSqlRow(BaseModel):
-
-    problem_statement_id: UUID | None = None
-    version: int | None = None
-
-class ProblemStatementsApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    problem_statement: str
-
-class ProblemStatementsApiResponse(BaseModel):
-
-    problem_statement_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: prompts
-
-class PromptsSqlParams(BaseModel):
-
-    draft_id: UUID
-    system_prompt: str
-    name: str
-    description: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.system_prompt,
-            self.name,
-            self.description,
-        )
-
-class PromptsSqlRow(BaseModel):
-
-    prompt_id: UUID | None = None
-    version: int | None = None
-
-class PromptsApiRequest(BaseModel):
-
-    draft_id: UUID
-    system_prompt: str
-    name: str
-    description: str
-
-class PromptsApiResponse(BaseModel):
-
-    prompt_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: questions
-
-class QuestionsSqlParams(BaseModel):
-
-    draft_id: UUID
-    question_text: str
-    allow_multiple: bool
-    time_value: int
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.question_text,
-            self.allow_multiple,
-            self.time_value,
-        )
-
-class QuestionsSqlRow(BaseModel):
-
-    question_id: UUID | None = None
-    version: int | None = None
-
-class QuestionsApiRequest(BaseModel):
-
-    draft_id: UUID
-    question_text: str
-    allow_multiple: bool
-    time_value: int
-
-class QuestionsApiResponse(BaseModel):
-
-    question_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: responses
-
-class ResponsesSqlParams(BaseModel):
-
-    draft_id: UUID
-    option_id: UUID
-    question_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.option_id,
-            self.question_id,
-        )
-
-class ResponsesSqlRow(BaseModel):
-
-    response_id: UUID | None = None
-    version: int | None = None
-
-class ResponsesApiRequest(BaseModel):
-
-    draft_id: UUID
-    option_id: UUID
-    question_id: UUID
-
-class ResponsesApiResponse(BaseModel):
-
-    response_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: schema_field_items
-
-class SchemaFieldItemsSqlParams(BaseModel):
-
-    draft_id: UUID
-    schema_field_id: UUID
-    item_schema_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.schema_field_id,
-            self.item_schema_id,
-        )
-
-class SchemaFieldItemsSqlRow(BaseModel):
-
-    schema_field_items_id: UUID | None = None
-    version: int | None = None
-
-class SchemaFieldItemsApiRequest(BaseModel):
-
-    draft_id: UUID
-    schema_field_id: UUID
-    item_schema_id: UUID
-
-class SchemaFieldItemsApiResponse(BaseModel):
-
-    schema_field_items_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: schema_fields
-
-class SchemaFieldsSqlParams(BaseModel):
-
-    draft_id: UUID
-    schema_id: UUID
-    name: str
-    field_type: str
-    required: bool
-    position_value: int
-    template: str
-    description: str
-    default_value: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.schema_id,
-            self.name,
-            self.field_type,
-            self.required,
-            self.position_value,
-            self.template,
-            self.description,
-            self.default_value,
-        )
-
-class SchemaFieldsSqlRow(BaseModel):
-
-    schema_field_id: UUID | None = None
-    version: int | None = None
-
-class SchemaFieldsApiRequest(BaseModel):
-
-    draft_id: UUID
-    schema_id: UUID
-    name: str
-    field_type: str
-    required: bool
-    position_value: int
-    template: str
-    description: str
-    default_value: str
-
-class SchemaFieldsApiResponse(BaseModel):
-
-    schema_field_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: schemas
-
-class SchemasSqlParams(BaseModel):
-
-    draft_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-        )
-
-class SchemasSqlRow(BaseModel):
-
-    schema_id: UUID | None = None
-    version: int | None = None
-
-class SchemasApiRequest(BaseModel):
-
-    draft_id: UUID
-
-class SchemasApiResponse(BaseModel):
-
-    schema_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: standard_groups
-
-class StandardGroupsSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    short_name: str
-    description: str
-    points: float
-    pass_points: float
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.short_name,
-            self.description,
-            self.points,
-            self.pass_points,
-        )
-
-class StandardGroupsSqlRow(BaseModel):
-
-    standard_group_id: UUID | None = None
-    version: int | None = None
-
-class StandardGroupsApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    short_name: str
-    description: str
-    points: float
-    pass_points: float
-
-class StandardGroupsApiResponse(BaseModel):
-
-    standard_group_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: strengths
-
-class StrengthsSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    message_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.description,
-            self.message_id,
-        )
-
-class StrengthsSqlRow(BaseModel):
-
-    strength_id: UUID | None = None
-    version: int | None = None
-
-class StrengthsApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    description: str
-    message_id: UUID
-
-class StrengthsApiResponse(BaseModel):
-
-    strength_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: template_array_items
-
-class TemplateArrayItemsSqlParams(BaseModel):
-
-    draft_id: UUID
-    template_id: UUID
-    schema_field_id: UUID
-    item_template_id: UUID
-    position_value: int
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.template_id,
-            self.schema_field_id,
-            self.item_template_id,
-            self.position_value,
-        )
-
-class TemplateArrayItemsSqlRow(BaseModel):
-
-    template_array_items_id: UUID | None = None
-    version: int | None = None
-
-class TemplateArrayItemsApiRequest(BaseModel):
-
-    draft_id: UUID
-    template_id: UUID
-    schema_field_id: UUID
-    item_template_id: UUID
-    position_value: int
-
-class TemplateArrayItemsApiResponse(BaseModel):
-
-    template_array_items_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: template_values
-
-class TemplateValuesSqlParams(BaseModel):
-
-    draft_id: UUID
-    template_id: UUID
-    schema_field_id: UUID
-    string_value: str
-    number_value: str
-    boolean_value: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.template_id,
-            self.schema_field_id,
-            self.string_value,
-            self.number_value,
-            self.boolean_value,
-        )
-
-class TemplateValuesSqlRow(BaseModel):
-
-    template_value_id: UUID | None = None
-    version: int | None = None
-
-class TemplateValuesApiRequest(BaseModel):
-
-    draft_id: UUID
-    template_id: UUID
-    schema_field_id: UUID
-    string_value: str
-    number_value: str
-    boolean_value: str
-
-class TemplateValuesApiResponse(BaseModel):
-
-    template_value_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: templates
-
-class TemplatesSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-        )
-
-class TemplatesSqlRow(BaseModel):
-
-    template_id: UUID | None = None
-    version: int | None = None
-
-class TemplatesApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-
-class TemplatesApiResponse(BaseModel):
-
-    template_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: thresholds
-
-class ThresholdsSqlParams(BaseModel):
-
-    draft_id: UUID
-    value: float
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.value,
-        )
-
-class ThresholdsSqlRow(BaseModel):
-
-    threshold_id: UUID | None = None
-    version: int | None = None
-
-class ThresholdsApiRequest(BaseModel):
-
-    draft_id: UUID
-    value: float
-
-class ThresholdsApiResponse(BaseModel):
-
-    threshold_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: times
-
-class TimesSqlParams(BaseModel):
-
-    draft_id: UUID
-    time_taken: float
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.time_taken,
-        )
-
-class TimesSqlRow(BaseModel):
-
-    time_id: UUID | None = None
-    version: int | None = None
-
-class TimesApiRequest(BaseModel):
-
-    draft_id: UUID
-    time_taken: float
-
-class TimesApiResponse(BaseModel):
-
-    time_id: UUID | None = None
-    version: int | None = None
-
-
-
-# Generated from: videos
-
-class VideosSqlParams(BaseModel):
-
-    draft_id: UUID
-    name: str
-    length_seconds: float
-    description: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.draft_id,
-            self.name,
-            self.length_seconds,
-            self.description,
-        )
-
-class VideosSqlRow(BaseModel):
-
-    video_id: UUID | None = None
-    version: int | None = None
-
-class VideosApiRequest(BaseModel):
-
-    draft_id: UUID
-    name: str
-    length_seconds: float
-    description: str
-
-class VideosApiResponse(BaseModel):
-
-    video_id: UUID | None = None
-    version: int | None = None
-
-
-
 # Generated from: create_feedback
 
 class CreateFeedbackSqlParams(BaseModel):
@@ -19304,20 +18191,158 @@ class GetReportsOverviewApiResponse(BaseModel):
 
 # Generated from: analyses
 
+class AnalysesSqlParams(BaseModel):
+
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.content,
+        )
+
+class AnalysesSqlRow(BaseModel):
+
+    analyse_id: UUID | None = None
+
+class AnalysesApiRequest(BaseModel):
+
+    content: str
+
+class AnalysesApiResponse(BaseModel):
+
+    analyse_id: UUID | None = None
+
+
 
 # Generated from: colors
+
+class ColorsSqlParams(BaseModel):
+
+    name: str
+    description: str
+    hex_code: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.hex_code,
+        )
+
+class ColorsSqlRow(BaseModel):
+
+    color_id: UUID | None = None
+
+class ColorsApiRequest(BaseModel):
+
+    name: str
+    description: str
+    hex_code: str
+
+class ColorsApiResponse(BaseModel):
+
+    color_id: UUID | None = None
+
 
 
 # Generated from: content
 
+class ContentSqlParams(BaseModel):
+
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.content,
+        )
+
+class ContentSqlRow(BaseModel):
+
+    content_id: UUID | None = None
+
+class ContentApiRequest(BaseModel):
+
+    content: str
+
+class ContentApiResponse(BaseModel):
+
+    content_id: UUID | None = None
+
+
 
 # Generated from: conversations
+
+class ConversationsSqlParams(BaseModel):
+
+    end_reason: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.end_reason,
+        )
+
+class ConversationsSqlRow(BaseModel):
+
+    conversation_id: UUID | None = None
+
+class ConversationsApiRequest(BaseModel):
+
+    end_reason: str
+
+class ConversationsApiResponse(BaseModel):
+
+    conversation_id: UUID | None = None
+
 
 
 # Generated from: debug_info
 
+class DebugInfoSqlParams(BaseModel):
+
+    content: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.content,
+        )
+
+class DebugInfoSqlRow(BaseModel):
+
+    debug_info_id: UUID | None = None
+
+class DebugInfoApiRequest(BaseModel):
+
+    content: str
+
+class DebugInfoApiResponse(BaseModel):
+
+    debug_info_id: UUID | None = None
+
+
 
 # Generated from: descriptions
+
+class DescriptionsSqlParams(BaseModel):
+
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.description,
+        )
+
+class DescriptionsSqlRow(BaseModel):
+
+    description_id: UUID | None = None
+
+class DescriptionsApiRequest(BaseModel):
+
+    description: str
+
+class DescriptionsApiResponse(BaseModel):
+
+    description_id: UUID | None = None
+
 
 
 # Generated from: examples
@@ -19347,83 +18372,792 @@ class ExamplesApiResponse(BaseModel):
 
 # Generated from: feedbacks
 
+class FeedbacksSqlParams(BaseModel):
+
+    total: float
+    feedback: str
+    standard_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.total,
+            self.feedback,
+            self.standard_id,
+        )
+
+class FeedbacksSqlRow(BaseModel):
+
+    feedback_id: UUID | None = None
+
+class FeedbacksApiRequest(BaseModel):
+
+    total: float
+    feedback: str
+    standard_id: UUID
+
+class FeedbacksApiResponse(BaseModel):
+
+    feedback_id: UUID | None = None
+
+
 
 # Generated from: flags
+
+class FlagsSqlParams(BaseModel):
+
+    name: str
+    description: str
+    icon_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.icon_id,
+        )
+
+class FlagsSqlRow(BaseModel):
+
+    flag_id: UUID | None = None
+
+class FlagsApiRequest(BaseModel):
+
+    name: str
+    description: str
+    icon_id: UUID
+
+class FlagsApiResponse(BaseModel):
+
+    flag_id: UUID | None = None
+
 
 
 # Generated from: hints
 
+class HintsSqlParams(BaseModel):
+
+    hint: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.hint,
+        )
+
+class HintsSqlRow(BaseModel):
+
+    hint_id: UUID | None = None
+
+class HintsApiRequest(BaseModel):
+
+    hint: str
+
+class HintsApiResponse(BaseModel):
+
+    hint_id: UUID | None = None
+
+
 
 # Generated from: html
+
+class HtmlSqlParams(BaseModel):
+
+    name: str
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+        )
+
+class HtmlSqlRow(BaseModel):
+
+    html_id: UUID | None = None
+
+class HtmlApiRequest(BaseModel):
+
+    name: str
+    description: str
+
+class HtmlApiResponse(BaseModel):
+
+    html_id: UUID | None = None
+
 
 
 # Generated from: icons
 
+class IconsSqlParams(BaseModel):
+
+    name: str
+    description: str
+    value: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.value,
+        )
+
+class IconsSqlRow(BaseModel):
+
+    icon_id: UUID | None = None
+
+class IconsApiRequest(BaseModel):
+
+    name: str
+    description: str
+    value: float
+
+class IconsApiResponse(BaseModel):
+
+    icon_id: UUID | None = None
+
+
 
 # Generated from: images
+
+class ImagesSqlParams(BaseModel):
+
+    name: str
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+        )
+
+class ImagesSqlRow(BaseModel):
+
+    image_id: UUID | None = None
+
+class ImagesApiRequest(BaseModel):
+
+    name: str
+    description: str
+
+class ImagesApiResponse(BaseModel):
+
+    image_id: UUID | None = None
+
 
 
 # Generated from: improvements
 
+class ImprovementsSqlParams(BaseModel):
+
+    name: str
+    description: str
+    message_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.message_id,
+        )
+
+class ImprovementsSqlRow(BaseModel):
+
+    improvement_id: UUID | None = None
+
+class ImprovementsApiRequest(BaseModel):
+
+    name: str
+    description: str
+    message_id: UUID
+
+class ImprovementsApiResponse(BaseModel):
+
+    improvement_id: UUID | None = None
+
+
 
 # Generated from: instructions
+
+class InstructionsSqlParams(BaseModel):
+
+    template: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.template,
+        )
+
+class InstructionsSqlRow(BaseModel):
+
+    instruction_id: UUID | None = None
+
+class InstructionsApiRequest(BaseModel):
+
+    template: str
+
+class InstructionsApiResponse(BaseModel):
+
+    instruction_id: UUID | None = None
+
 
 
 # Generated from: names
 
+class NamesSqlParams(BaseModel):
+
+    name: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+        )
+
+class NamesSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+
+class NamesApiRequest(BaseModel):
+
+    name: str
+
+class NamesApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+
+
 
 # Generated from: objectives
+
+class ObjectivesSqlParams(BaseModel):
+
+    objective: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.objective,
+        )
+
+class ObjectivesSqlRow(BaseModel):
+
+    objective_id: UUID | None = None
+
+class ObjectivesApiRequest(BaseModel):
+
+    objective: str
+
+class ObjectivesApiResponse(BaseModel):
+
+    objective_id: UUID | None = None
+
 
 
 # Generated from: options
 
+class OptionsSqlParams(BaseModel):
+
+    option_text: str
+    is_correct: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.option_text,
+            self.is_correct,
+        )
+
+class OptionsSqlRow(BaseModel):
+
+    option_id: UUID | None = None
+
+class OptionsApiRequest(BaseModel):
+
+    option_text: str
+    is_correct: bool
+
+class OptionsApiResponse(BaseModel):
+
+    option_id: UUID | None = None
+
+
 
 # Generated from: points
+
+class PointsSqlParams(BaseModel):
+
+    value: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.value,
+        )
+
+class PointsSqlRow(BaseModel):
+
+    point_id: UUID | None = None
+
+class PointsApiRequest(BaseModel):
+
+    value: float
+
+class PointsApiResponse(BaseModel):
+
+    point_id: UUID | None = None
+
 
 
 # Generated from: problem_statements
 
+class ProblemStatementsSqlParams(BaseModel):
+
+    name: str
+    problem_statement: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.problem_statement,
+        )
+
+class ProblemStatementsSqlRow(BaseModel):
+
+    problem_statement_id: UUID | None = None
+
+class ProblemStatementsApiRequest(BaseModel):
+
+    name: str
+    problem_statement: str
+
+class ProblemStatementsApiResponse(BaseModel):
+
+    problem_statement_id: UUID | None = None
+
+
 
 # Generated from: prompts
+
+class PromptsSqlParams(BaseModel):
+
+    system_prompt: str
+    name: str
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.system_prompt,
+            self.name,
+            self.description,
+        )
+
+class PromptsSqlRow(BaseModel):
+
+    prompt_id: UUID | None = None
+
+class PromptsApiRequest(BaseModel):
+
+    system_prompt: str
+    name: str
+    description: str
+
+class PromptsApiResponse(BaseModel):
+
+    prompt_id: UUID | None = None
+
 
 
 # Generated from: questions
 
+class QuestionsSqlParams(BaseModel):
+
+    question_text: str
+    allow_multiple: bool
+    time_value: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.question_text,
+            self.allow_multiple,
+            self.time_value,
+        )
+
+class QuestionsSqlRow(BaseModel):
+
+    question_id: UUID | None = None
+
+class QuestionsApiRequest(BaseModel):
+
+    question_text: str
+    allow_multiple: bool
+    time_value: int
+
+class QuestionsApiResponse(BaseModel):
+
+    question_id: UUID | None = None
+
+
 
 # Generated from: responses
+
+class ResponsesSqlParams(BaseModel):
+
+    option_id: UUID
+    question_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.option_id,
+            self.question_id,
+        )
+
+class ResponsesSqlRow(BaseModel):
+
+    response_id: UUID | None = None
+
+class ResponsesApiRequest(BaseModel):
+
+    option_id: UUID
+    question_id: UUID
+
+class ResponsesApiResponse(BaseModel):
+
+    response_id: UUID | None = None
+
 
 
 # Generated from: schema_field_items
 
+class SchemaFieldItemsSqlParams(BaseModel):
+
+    schema_field_id: UUID
+    item_schema_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.schema_field_id,
+            self.item_schema_id,
+        )
+
+class SchemaFieldItemsSqlRow(BaseModel):
+
+    schema_field_item_id: UUID | None = None
+
+class SchemaFieldItemsApiRequest(BaseModel):
+
+    schema_field_id: UUID
+    item_schema_id: UUID
+
+class SchemaFieldItemsApiResponse(BaseModel):
+
+    schema_field_item_id: UUID | None = None
+
+
 
 # Generated from: schema_fields
+
+class SchemaFieldsSqlParams(BaseModel):
+
+    schema_id: UUID
+    name: str
+    field_type: str
+    required: bool
+    position_value: int
+    template: str
+    description: str
+    default_value: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.schema_id,
+            self.name,
+            self.field_type,
+            self.required,
+            self.position_value,
+            self.template,
+            self.description,
+            self.default_value,
+        )
+
+class SchemaFieldsSqlRow(BaseModel):
+
+    schema_field_id: UUID | None = None
+
+class SchemaFieldsApiRequest(BaseModel):
+
+    schema_id: UUID
+    name: str
+    field_type: str
+    required: bool
+    position_value: int
+    template: str
+    description: str
+    default_value: str
+
+class SchemaFieldsApiResponse(BaseModel):
+
+    schema_field_id: UUID | None = None
+
 
 
 # Generated from: schemas
 
+class SchemasSqlParams(BaseModel):
+
+    pass
+
+class SchemasSqlRow(BaseModel):
+
+    schema_id: UUID | None = None
+
+class SchemasApiRequest(BaseModel):
+
+    pass
+
+class SchemasApiResponse(BaseModel):
+
+    schema_id: UUID | None = None
+
+
 
 # Generated from: standard_groups
+
+class StandardGroupsSqlParams(BaseModel):
+
+    name: str
+    short_name: str
+    description: str
+    points: float
+    pass_points: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.short_name,
+            self.description,
+            self.points,
+            self.pass_points,
+        )
+
+class StandardGroupsSqlRow(BaseModel):
+
+    standard_group_id: UUID | None = None
+
+class StandardGroupsApiRequest(BaseModel):
+
+    name: str
+    short_name: str
+    description: str
+    points: float
+    pass_points: float
+
+class StandardGroupsApiResponse(BaseModel):
+
+    standard_group_id: UUID | None = None
+
 
 
 # Generated from: strengths
 
+class StrengthsSqlParams(BaseModel):
+
+    name: str
+    description: str
+    message_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.message_id,
+        )
+
+class StrengthsSqlRow(BaseModel):
+
+    strength_id: UUID | None = None
+
+class StrengthsApiRequest(BaseModel):
+
+    name: str
+    description: str
+    message_id: UUID
+
+class StrengthsApiResponse(BaseModel):
+
+    strength_id: UUID | None = None
+
+
 
 # Generated from: template_array_items
+
+class TemplateArrayItemsSqlParams(BaseModel):
+
+    template_id: UUID
+    schema_field_id: UUID
+    item_template_id: UUID
+    position_value: int
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.template_id,
+            self.schema_field_id,
+            self.item_template_id,
+            self.position_value,
+        )
+
+class TemplateArrayItemsSqlRow(BaseModel):
+
+    template_array_item_id: UUID | None = None
+
+class TemplateArrayItemsApiRequest(BaseModel):
+
+    template_id: UUID
+    schema_field_id: UUID
+    item_template_id: UUID
+    position_value: int
+
+class TemplateArrayItemsApiResponse(BaseModel):
+
+    template_array_item_id: UUID | None = None
+
 
 
 # Generated from: template_values
 
+class TemplateValuesSqlParams(BaseModel):
+
+    template_id: UUID
+    schema_field_id: UUID
+    string_value: str
+    number_value: str
+    boolean_value: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.template_id,
+            self.schema_field_id,
+            self.string_value,
+            self.number_value,
+            self.boolean_value,
+        )
+
+class TemplateValuesSqlRow(BaseModel):
+
+    template_value_id: UUID | None = None
+
+class TemplateValuesApiRequest(BaseModel):
+
+    template_id: UUID
+    schema_field_id: UUID
+    string_value: str
+    number_value: str
+    boolean_value: str
+
+class TemplateValuesApiResponse(BaseModel):
+
+    template_value_id: UUID | None = None
+
+
 
 # Generated from: templates
+
+class TemplatesSqlParams(BaseModel):
+
+    name: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+        )
+
+class TemplatesSqlRow(BaseModel):
+
+    template_id: UUID | None = None
+
+class TemplatesApiRequest(BaseModel):
+
+    name: str
+
+class TemplatesApiResponse(BaseModel):
+
+    template_id: UUID | None = None
+
 
 
 # Generated from: thresholds
 
+class ThresholdsSqlParams(BaseModel):
+
+    value: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.value,
+        )
+
+class ThresholdsSqlRow(BaseModel):
+
+    threshold_id: UUID | None = None
+
+class ThresholdsApiRequest(BaseModel):
+
+    value: float
+
+class ThresholdsApiResponse(BaseModel):
+
+    threshold_id: UUID | None = None
+
+
 
 # Generated from: times
 
+class TimesSqlParams(BaseModel):
+
+    time_taken: float
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.time_taken,
+        )
+
+class TimesSqlRow(BaseModel):
+
+    time_id: UUID | None = None
+
+class TimesApiRequest(BaseModel):
+
+    time_taken: float
+
+class TimesApiResponse(BaseModel):
+
+    time_id: UUID | None = None
+
+
 
 # Generated from: videos
+
+class VideosSqlParams(BaseModel):
+
+    name: str
+    length_seconds: float
+    description: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.length_seconds,
+            self.description,
+        )
+
+class VideosSqlRow(BaseModel):
+
+    video_id: UUID | None = None
+
+class VideosApiRequest(BaseModel):
+
+    name: str
+    length_seconds: float
+    description: str
+
+class VideosApiResponse(BaseModel):
+
+    video_id: UUID | None = None
+
 
 
 # Generated from: create_rubric
@@ -28361,204 +28095,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentNameApiRequest",
         "UpdateDocumentNameApiResponse",
     ),
-    "app/sql/v4/drafts/analyses_complete.sql": (
-        "AnalysesSqlParams",
-        "AnalysesSqlRow",
-        "AnalysesApiRequest",
-        "AnalysesApiResponse",
-    ),
-    "app/sql/v4/drafts/colors_complete.sql": (
-        "ColorsSqlParams",
-        "ColorsSqlRow",
-        "ColorsApiRequest",
-        "ColorsApiResponse",
-    ),
-    "app/sql/v4/drafts/content_complete.sql": (
-        "ContentSqlParams",
-        "ContentSqlRow",
-        "ContentApiRequest",
-        "ContentApiResponse",
-    ),
-    "app/sql/v4/drafts/conversations_complete.sql": (
-        "ConversationsSqlParams",
-        "ConversationsSqlRow",
-        "ConversationsApiRequest",
-        "ConversationsApiResponse",
-    ),
-    "app/sql/v4/drafts/debug_info_complete.sql": (
-        "DebugInfoSqlParams",
-        "DebugInfoSqlRow",
-        "DebugInfoApiRequest",
-        "DebugInfoApiResponse",
-    ),
-    "app/sql/v4/drafts/descriptions_complete.sql": (
-        "DescriptionsSqlParams",
-        "DescriptionsSqlRow",
-        "DescriptionsApiRequest",
-        "DescriptionsApiResponse",
-    ),
-    "app/sql/v4/drafts/feedbacks_complete.sql": (
-        "FeedbacksSqlParams",
-        "FeedbacksSqlRow",
-        "FeedbacksApiRequest",
-        "FeedbacksApiResponse",
-    ),
-    "app/sql/v4/drafts/flags_complete.sql": (
-        "FlagsSqlParams",
-        "FlagsSqlRow",
-        "FlagsApiRequest",
-        "FlagsApiResponse",
-    ),
-    "app/sql/v4/drafts/hints_complete.sql": (
-        "HintsSqlParams",
-        "HintsSqlRow",
-        "HintsApiRequest",
-        "HintsApiResponse",
-    ),
-    "app/sql/v4/drafts/html_complete.sql": (
-        "HtmlSqlParams",
-        "HtmlSqlRow",
-        "HtmlApiRequest",
-        "HtmlApiResponse",
-    ),
-    "app/sql/v4/drafts/icons_complete.sql": (
-        "IconsSqlParams",
-        "IconsSqlRow",
-        "IconsApiRequest",
-        "IconsApiResponse",
-    ),
-    "app/sql/v4/drafts/images_complete.sql": (
-        "ImagesSqlParams",
-        "ImagesSqlRow",
-        "ImagesApiRequest",
-        "ImagesApiResponse",
-    ),
-    "app/sql/v4/drafts/improvements_complete.sql": (
-        "ImprovementsSqlParams",
-        "ImprovementsSqlRow",
-        "ImprovementsApiRequest",
-        "ImprovementsApiResponse",
-    ),
-    "app/sql/v4/drafts/instructions_complete.sql": (
-        "InstructionsSqlParams",
-        "InstructionsSqlRow",
-        "InstructionsApiRequest",
-        "InstructionsApiResponse",
-    ),
-    "app/sql/v4/drafts/names_complete.sql": (
-        "NamesSqlParams",
-        "NamesSqlRow",
-        "NamesApiRequest",
-        "NamesApiResponse",
-    ),
-    "app/sql/v4/drafts/objectives_complete.sql": (
-        "ObjectivesSqlParams",
-        "ObjectivesSqlRow",
-        "ObjectivesApiRequest",
-        "ObjectivesApiResponse",
-    ),
-    "app/sql/v4/drafts/options_complete.sql": (
-        "OptionsSqlParams",
-        "OptionsSqlRow",
-        "OptionsApiRequest",
-        "OptionsApiResponse",
-    ),
-    "app/sql/v4/drafts/points_complete.sql": (
-        "PointsSqlParams",
-        "PointsSqlRow",
-        "PointsApiRequest",
-        "PointsApiResponse",
-    ),
-    "app/sql/v4/drafts/problem_statements_complete.sql": (
-        "ProblemStatementsSqlParams",
-        "ProblemStatementsSqlRow",
-        "ProblemStatementsApiRequest",
-        "ProblemStatementsApiResponse",
-    ),
-    "app/sql/v4/drafts/prompts_complete.sql": (
-        "PromptsSqlParams",
-        "PromptsSqlRow",
-        "PromptsApiRequest",
-        "PromptsApiResponse",
-    ),
-    "app/sql/v4/drafts/questions_complete.sql": (
-        "QuestionsSqlParams",
-        "QuestionsSqlRow",
-        "QuestionsApiRequest",
-        "QuestionsApiResponse",
-    ),
-    "app/sql/v4/drafts/responses_complete.sql": (
-        "ResponsesSqlParams",
-        "ResponsesSqlRow",
-        "ResponsesApiRequest",
-        "ResponsesApiResponse",
-    ),
-    "app/sql/v4/drafts/schema_field_items_complete.sql": (
-        "SchemaFieldItemsSqlParams",
-        "SchemaFieldItemsSqlRow",
-        "SchemaFieldItemsApiRequest",
-        "SchemaFieldItemsApiResponse",
-    ),
-    "app/sql/v4/drafts/schema_fields_complete.sql": (
-        "SchemaFieldsSqlParams",
-        "SchemaFieldsSqlRow",
-        "SchemaFieldsApiRequest",
-        "SchemaFieldsApiResponse",
-    ),
-    "app/sql/v4/drafts/schemas_complete.sql": (
-        "SchemasSqlParams",
-        "SchemasSqlRow",
-        "SchemasApiRequest",
-        "SchemasApiResponse",
-    ),
-    "app/sql/v4/drafts/standard_groups_complete.sql": (
-        "StandardGroupsSqlParams",
-        "StandardGroupsSqlRow",
-        "StandardGroupsApiRequest",
-        "StandardGroupsApiResponse",
-    ),
-    "app/sql/v4/drafts/strengths_complete.sql": (
-        "StrengthsSqlParams",
-        "StrengthsSqlRow",
-        "StrengthsApiRequest",
-        "StrengthsApiResponse",
-    ),
-    "app/sql/v4/drafts/template_array_items_complete.sql": (
-        "TemplateArrayItemsSqlParams",
-        "TemplateArrayItemsSqlRow",
-        "TemplateArrayItemsApiRequest",
-        "TemplateArrayItemsApiResponse",
-    ),
-    "app/sql/v4/drafts/template_values_complete.sql": (
-        "TemplateValuesSqlParams",
-        "TemplateValuesSqlRow",
-        "TemplateValuesApiRequest",
-        "TemplateValuesApiResponse",
-    ),
-    "app/sql/v4/drafts/templates_complete.sql": (
-        "TemplatesSqlParams",
-        "TemplatesSqlRow",
-        "TemplatesApiRequest",
-        "TemplatesApiResponse",
-    ),
-    "app/sql/v4/drafts/thresholds_complete.sql": (
-        "ThresholdsSqlParams",
-        "ThresholdsSqlRow",
-        "ThresholdsApiRequest",
-        "ThresholdsApiResponse",
-    ),
-    "app/sql/v4/drafts/times_complete.sql": (
-        "TimesSqlParams",
-        "TimesSqlRow",
-        "TimesApiRequest",
-        "TimesApiResponse",
-    ),
-    "app/sql/v4/drafts/videos_complete.sql": (
-        "VideosSqlParams",
-        "VideosSqlRow",
-        "VideosApiRequest",
-        "VideosApiResponse",
-    ),
     "app/sql/v4/feedback/create_feedback_complete.sql": (
         "CreateFeedbackSqlParams",
         "CreateFeedbackSqlRow",
@@ -31144,171 +30680,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/documents/update_document_name_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/analyses_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/colors_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/content_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/conversations_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/debug_info_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/descriptions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/feedbacks_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/flags_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/hints_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/html_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/icons_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/images_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/improvements_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/instructions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/names_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/objectives_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/options_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/points_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/problem_statements_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/prompts_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/questions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/responses_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/schema_field_items_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/schema_fields_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/schemas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/standard_groups_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/strengths_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/template_array_items_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/template_values_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/templates_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/thresholds_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/times_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/drafts/videos_complete.sql"]
     ) -> SqlString: ...
 
     @overload

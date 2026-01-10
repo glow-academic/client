@@ -5183,11 +5183,6 @@ export interface components {
     schemas: {
         /** AnalysesApiRequest */
         AnalysesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Content */
             content: string;
         };
@@ -5195,8 +5190,6 @@ export interface components {
         AnalysesApiResponse: {
             /** Analyse Id */
             analyse_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** AuthorizeEmulationApiRequest */
         AuthorizeEmulationApiRequest: {
@@ -5572,11 +5565,6 @@ export interface components {
         };
         /** ColorsApiRequest */
         ColorsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -5588,8 +5576,6 @@ export interface components {
         ColorsApiResponse: {
             /** Color Id */
             color_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /**
          * ConnectionConfirmedPayload
@@ -5607,11 +5593,6 @@ export interface components {
         };
         /** ContentApiRequest */
         ContentApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Content */
             content: string;
         };
@@ -5619,16 +5600,9 @@ export interface components {
         ContentApiResponse: {
             /** Content Id */
             content_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** ConversationsApiRequest */
         ConversationsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** End Reason */
             end_reason: string;
         };
@@ -5636,8 +5610,6 @@ export interface components {
         ConversationsApiResponse: {
             /** Conversation Id */
             conversation_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** CreateAgentApiRequest */
         CreateAgentApiRequest: {
@@ -6175,11 +6147,6 @@ export interface components {
         };
         /** DebugInfoApiRequest */
         DebugInfoApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Content */
             content: string;
         };
@@ -6187,8 +6154,6 @@ export interface components {
         DebugInfoApiResponse: {
             /** Debug Info Id */
             debug_info_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** DeleteAgentApiRequest */
         DeleteAgentApiRequest: {
@@ -6543,11 +6508,6 @@ export interface components {
         };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Description */
             description: string;
         };
@@ -6555,8 +6515,6 @@ export interface components {
         DescriptionsApiResponse: {
             /** Description Id */
             description_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
@@ -6887,11 +6845,6 @@ export interface components {
         };
         /** FeedbacksApiRequest */
         FeedbacksApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Total */
             total: number;
             /** Feedback */
@@ -6906,8 +6859,6 @@ export interface components {
         FeedbacksApiResponse: {
             /** Feedback Id */
             feedback_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
@@ -6924,11 +6875,6 @@ export interface components {
         };
         /** FlagsApiRequest */
         FlagsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -6943,8 +6889,6 @@ export interface components {
         FlagsApiResponse: {
             /** Flag Id */
             flag_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** GetActivityBundleApiRequest */
         GetActivityBundleApiRequest: Record<string, never>;
@@ -10345,11 +10289,6 @@ export interface components {
         };
         /** HintsApiRequest */
         HintsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Hint */
             hint: string;
         };
@@ -10357,16 +10296,9 @@ export interface components {
         HintsApiResponse: {
             /** Hint Id */
             hint_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** HtmlApiRequest */
         HtmlApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10376,8 +10308,6 @@ export interface components {
         HtmlApiResponse: {
             /** Html Id */
             html_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** IBulkCreateStaffV4Profile */
         IBulkCreateStaffV4Profile: {
@@ -10628,11 +10558,6 @@ export interface components {
         };
         /** IconsApiRequest */
         IconsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10644,16 +10569,9 @@ export interface components {
         IconsApiResponse: {
             /** Icon Id */
             icon_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** ImagesApiRequest */
         ImagesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10663,16 +10581,9 @@ export interface components {
         ImagesApiResponse: {
             /** Image Id */
             image_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** ImprovementsApiRequest */
         ImprovementsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -10687,16 +10598,9 @@ export interface components {
         ImprovementsApiResponse: {
             /** Improvement Id */
             improvement_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** InstructionsApiRequest */
         InstructionsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Template */
             template: string;
         };
@@ -10704,8 +10608,6 @@ export interface components {
         InstructionsApiResponse: {
             /** Instruction Id */
             instruction_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** LeaveCohortApiRequest */
         LeaveCohortApiRequest: {
@@ -10764,11 +10666,6 @@ export interface components {
         };
         /** NamesApiRequest */
         NamesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
         };
@@ -10776,16 +10673,9 @@ export interface components {
         NamesApiResponse: {
             /** Name Id */
             name_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** ObjectivesApiRequest */
         ObjectivesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Objective */
             objective: string;
         };
@@ -10793,16 +10683,9 @@ export interface components {
         ObjectivesApiResponse: {
             /** Objective Id */
             objective_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** OptionsApiRequest */
         OptionsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Option Text */
             option_text: string;
             /** Is Correct */
@@ -10812,8 +10695,6 @@ export interface components {
         OptionsApiResponse: {
             /** Option Id */
             option_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** PatchPersonaDraftApiRequest */
         PatchPersonaDraftApiRequest: {
@@ -10854,11 +10735,6 @@ export interface components {
         };
         /** PointsApiRequest */
         PointsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Value */
             value: number;
         };
@@ -10866,16 +10742,9 @@ export interface components {
         PointsApiResponse: {
             /** Point Id */
             point_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** ProblemStatementsApiRequest */
         ProblemStatementsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Problem Statement */
@@ -10885,8 +10754,6 @@ export interface components {
         ProblemStatementsApiResponse: {
             /** Problem Statement Id */
             problem_statement_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** ProcessCsvApiRequest */
         ProcessCsvApiRequest: {
@@ -10908,11 +10775,6 @@ export interface components {
         };
         /** PromptsApiRequest */
         PromptsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** System Prompt */
             system_prompt: string;
             /** Name */
@@ -10924,8 +10786,6 @@ export interface components {
         PromptsApiResponse: {
             /** Prompt Id */
             prompt_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** QCreateScenarioV4Parameter */
         QCreateScenarioV4Parameter: {
@@ -17733,11 +17593,6 @@ export interface components {
         };
         /** QuestionsApiRequest */
         QuestionsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Question Text */
             question_text: string;
             /** Allow Multiple */
@@ -17749,8 +17604,6 @@ export interface components {
         QuestionsApiResponse: {
             /** Question Id */
             question_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** RefreshAnalyticsApiRequest */
         RefreshAnalyticsApiRequest: Record<string, never>;
@@ -17800,11 +17653,6 @@ export interface components {
         /** ResponsesApiRequest */
         ResponsesApiRequest: {
             /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /**
              * Option Id
              * Format: uuid
              */
@@ -17819,8 +17667,6 @@ export interface components {
         ResponsesApiResponse: {
             /** Response Id */
             response_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** SavePersonaApiRequest */
         SavePersonaApiRequest: {
@@ -17867,11 +17713,6 @@ export interface components {
         /** SchemaFieldItemsApiRequest */
         SchemaFieldItemsApiRequest: {
             /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-            /**
              * Schema Field Id
              * Format: uuid
              */
@@ -17884,18 +17725,11 @@ export interface components {
         };
         /** SchemaFieldItemsApiResponse */
         SchemaFieldItemsApiResponse: {
-            /** Schema Field Items Id */
-            schema_field_items_id?: string | null;
-            /** Version */
-            version?: number | null;
+            /** Schema Field Item Id */
+            schema_field_item_id?: string | null;
         };
         /** SchemaFieldsApiRequest */
         SchemaFieldsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /**
              * Schema Id
              * Format: uuid
@@ -17920,23 +17754,13 @@ export interface components {
         SchemaFieldsApiResponse: {
             /** Schema Field Id */
             schema_field_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** SchemasApiRequest */
-        SchemasApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
-        };
+        SchemasApiRequest: Record<string, never>;
         /** SchemasApiResponse */
         SchemasApiResponse: {
             /** Schema Id */
             schema_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** SearchSimulatableProfilesApiRequest */
         SearchSimulatableProfilesApiRequest: {
@@ -18160,11 +17984,6 @@ export interface components {
         };
         /** StandardGroupsApiRequest */
         StandardGroupsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Short Name */
@@ -18180,8 +17999,6 @@ export interface components {
         StandardGroupsApiResponse: {
             /** Standard Group Id */
             standard_group_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /**
          * StartSimulationErrorPayload
@@ -18270,11 +18087,6 @@ export interface components {
         };
         /** StrengthsApiRequest */
         StrengthsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Description */
@@ -18289,16 +18101,9 @@ export interface components {
         StrengthsApiResponse: {
             /** Strength Id */
             strength_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** TemplateArrayItemsApiRequest */
         TemplateArrayItemsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /**
              * Template Id
              * Format: uuid
@@ -18319,18 +18124,11 @@ export interface components {
         };
         /** TemplateArrayItemsApiResponse */
         TemplateArrayItemsApiResponse: {
-            /** Template Array Items Id */
-            template_array_items_id?: string | null;
-            /** Version */
-            version?: number | null;
+            /** Template Array Item Id */
+            template_array_item_id?: string | null;
         };
         /** TemplateValuesApiRequest */
         TemplateValuesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /**
              * Template Id
              * Format: uuid
@@ -18352,16 +18150,9 @@ export interface components {
         TemplateValuesApiResponse: {
             /** Template Value Id */
             template_value_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** TemplatesApiRequest */
         TemplatesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
         };
@@ -18369,16 +18160,9 @@ export interface components {
         TemplatesApiResponse: {
             /** Template Id */
             template_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** ThresholdsApiRequest */
         ThresholdsApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Value */
             value: number;
         };
@@ -18386,16 +18170,9 @@ export interface components {
         ThresholdsApiResponse: {
             /** Threshold Id */
             threshold_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** TimesApiRequest */
         TimesApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Time Taken */
             time_taken: number;
         };
@@ -18403,8 +18180,6 @@ export interface components {
         TimesApiResponse: {
             /** Time Id */
             time_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
         /** UpdateAgentApiRequest */
         UpdateAgentApiRequest: {
@@ -19085,11 +18860,6 @@ export interface components {
         };
         /** VideosApiRequest */
         VideosApiRequest: {
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
             /** Name */
             name: string;
             /** Length Seconds */
@@ -19101,8 +18871,6 @@ export interface components {
         VideosApiResponse: {
             /** Video Id */
             video_id?: string | null;
-            /** Version */
-            version?: number | null;
         };
     };
     responses: never;

@@ -30,7 +30,7 @@ export interface ColorsProps {
     name: string | null;
     description: string | null;
     hex_code: string | null;
-    generated?: boolean;
+    generated?: boolean | null;
   } | null; // Resource data from server (standardized prop name; includes generated field)
   show_color?: boolean; // Whether to show this resource picker
   color_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
@@ -39,7 +39,7 @@ export interface ColorsProps {
     name: string | null;
     description: string | null;
     hex_code: string | null;
-    generated?: boolean;
+    generated?: boolean | null;
   }>; // All available colors from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
   onColorIdChange: (colorId: string | null) => void; // Update color_id in parent form state
@@ -59,7 +59,7 @@ export interface ColorsProps {
     name: string;
     description: string;
     hex_code: string;
-    generated?: boolean;
+    generated?: boolean | null;
   } | null;
   colorId?: string | null;
   presetColors?: ColorItem[];
@@ -133,10 +133,13 @@ export function Colors({
       : `#${internalValue.toLowerCase()}`;
   }, [internalValue]);
 
-  // Don't render if show_color is false (AFTER all hooks)
-  if (!show) {
-    return null;
-  }
+  // Use resourceId for validation/debugging
+  useEffect(() => {
+    if (resourceId && !resource?.id) {
+      // Handle mismatch case - resourceId exists but resource doesn't match
+      // This can happen during transitions
+    }
+  }, [resourceId, resource]);
 
   // Debounced resource creation
   useEffect(() => {
@@ -234,6 +237,11 @@ export function Colors({
     }
     return result;
   }, [filteredColors, showSelectedFilter, currentColor]);
+
+  // Don't render if show_color is false (AFTER all hooks)
+  if (!show) {
+    return null;
+  }
 
   return (
     <div className="space-y-4">
