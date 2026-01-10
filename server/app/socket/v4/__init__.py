@@ -36,7 +36,6 @@ server_router = APIRouter(prefix="/server", tags=["socket-server"])
 # Include lifecycle routers
 client_router.include_router(connect.client_router)
 client_router.include_router(disconnect.client_router)
-client_router.include_router(artifacts.log.client_router)
 
 server_router.include_router(connect.server_router)
 

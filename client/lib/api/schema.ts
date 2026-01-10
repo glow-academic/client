@@ -3927,26 +3927,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/log": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Log Run Api
-         * @description Client-to-server event: Log run pricing and metrics (async, non-blocking).
-         */
-        post: operations["log_run_api_socket_v4_client_log_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/socket/v4/client/simulations/enter": {
         parameters: {
             query?: never;
@@ -4367,7 +4347,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/generate_start": {
+    "/socket/v4/server/generate_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -4380,67 +4360,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_artifacts_start_generate_start"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/audio/audio/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_artifacts_audio_start_audio_start"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/audio/audio/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_artifacts_audio_events_audio_events"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/socket/v4/server/audio/audio/stop": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Endpoint Handler
-         * @description Server-to-client event: {description}
-         */
-        post: operations["handle_artifacts_audio_stop_audio_stop"];
+        post: operations["handle_artifacts_error_generate_error"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10675,15 +10595,15 @@ export interface components {
         };
         /** IUpdateSettingsV4ProviderEnabled */
         IUpdateSettingsV4ProviderEnabled: {
-            /** Provider Id */
-            provider_id: string | null;
+            /** Provider */
+            provider: unknown | null;
             /** Enabled */
             enabled: boolean | null;
         };
         /** IUpdateSettingsV4ProviderKey */
         IUpdateSettingsV4ProviderKey: {
-            /** Provider Id */
-            provider_id: string | null;
+            /** Provider */
+            provider: unknown | null;
             /** Key Id */
             key_id: string | null;
         };
@@ -10814,43 +10734,6 @@ export interface components {
             provider_options?: components["schemas"]["QListModelsV4ProviderOption"][] | null;
             /** Status Options */
             status_options?: components["schemas"]["QListModelsV4StatusOption"][] | null;
-        };
-        /**
-         * LogRunApiRequest
-         * @description Request to log run pricing and metrics (snake_case).
-         */
-        LogRunApiRequest: {
-            /**
-             * Run Id
-             * Format: uuid
-             */
-            run_id: string;
-            /** Operation Type */
-            operation_type: string;
-            /** Input Text Tokens */
-            input_text_tokens: number;
-            /** Output Text Tokens */
-            output_text_tokens: number;
-            /** Input Audio Tokens */
-            input_audio_tokens?: number | null;
-            /** Input Image Tokens */
-            input_image_tokens?: number | null;
-            /** Output Audio Tokens */
-            output_audio_tokens?: number | null;
-            /** Cached Text Tokens */
-            cached_text_tokens?: number | null;
-            /** Cached Audio Tokens */
-            cached_audio_tokens?: number | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Input Items */
-            input_items?: {
-                [key: string]: unknown;
-            }[] | null;
-            /** Assistant Output */
-            assistant_output?: string | null;
-            /** Department Id */
-            department_id?: string | null;
         };
         /**
          * MemberProgressErrorPayload
@@ -13363,6 +13246,10 @@ export interface components {
             description: string | null;
             /** Hex Code */
             hex_code: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4ColorResource */
         QGetPersonaV4ColorResource: {
@@ -13374,6 +13261,10 @@ export interface components {
             description: string | null;
             /** Hex Code */
             hex_code: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4Department */
         QGetPersonaV4Department: {
@@ -13383,6 +13274,10 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4DescriptionResource */
         QGetPersonaV4DescriptionResource: {
@@ -13390,6 +13285,10 @@ export interface components {
             id: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4Example */
         QGetPersonaV4Example: {
@@ -13397,6 +13296,10 @@ export interface components {
             example: string | null;
             /** Idx */
             idx: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4Field */
         QGetPersonaV4Field: {
@@ -13406,6 +13309,10 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4FlagResource */
         QGetPersonaV4FlagResource: {
@@ -13417,6 +13324,10 @@ export interface components {
             description: string | null;
             /** Icon Id */
             icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4IconOption */
         QGetPersonaV4IconOption: {
@@ -13428,6 +13339,10 @@ export interface components {
             description: string | null;
             /** Value */
             value: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4IconResource */
         QGetPersonaV4IconResource: {
@@ -13439,6 +13354,10 @@ export interface components {
             description: string | null;
             /** Value */
             value: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4InstructionsResource */
         QGetPersonaV4InstructionsResource: {
@@ -13446,6 +13365,10 @@ export interface components {
             id: string | null;
             /** Template */
             template: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPersonaV4NameResource */
         QGetPersonaV4NameResource: {
@@ -13453,6 +13376,10 @@ export interface components {
             id: string | null;
             /** Name */
             name: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetPracticeHistoryV4Attempt */
         QGetPracticeHistoryV4Attempt: {
@@ -26297,41 +26224,6 @@ export interface operations {
             };
         };
     };
-    log_run_api_socket_v4_client_log_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LogRunApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     simulation_enter_api_socket_v4_client_simulations_enter_post: {
         parameters: {
             query?: never;
@@ -27067,112 +26959,7 @@ export interface operations {
             };
         };
     };
-    handle_artifacts_start_generate_start: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_artifacts_audio_start_audio_start: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_artifacts_audio_events_audio_events: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BaseModel"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: boolean;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handle_artifacts_audio_stop_audio_stop: {
+    handle_artifacts_error_generate_error: {
         parameters: {
             query?: never;
             header?: never;

@@ -459,7 +459,6 @@ async def transaction(
 # from app.socket.v4.agents.scenario.tools.video.call import (
 #     scenario_tool_video,  # noqa: F401
 # )
-from app.socket.v4.artifacts.log import log_run  # noqa: F401
 
 # Export IMAGE_FOLDER for use in other modules
 __all__ = ["IMAGE_FOLDER"]

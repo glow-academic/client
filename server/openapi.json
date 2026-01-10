@@ -15915,57 +15915,6 @@
         ]
       }
     },
-    "/socket/v4/client/log": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-client"
-        ],
-        "summary": "Log Run Api",
-        "description": "Client-to-server event: Log run pricing and metrics (async, non-blocking).",
-        "operationId": "log_run_api_socket_v4_client_log_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LogRunApiRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Log Run Api Socket V4 Client Log Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
-      }
-    },
     "/socket/v4/client/simulations/enter": {
       "post": {
         "tags": [
@@ -17077,7 +17026,7 @@
         ]
       }
     },
-    "/socket/v4/server/generate_start": {
+    "/socket/v4/server/generate_error": {
       "post": {
         "tags": [
           "socket",
@@ -17085,7 +17034,7 @@
         ],
         "summary": "Endpoint Handler",
         "description": "Server-to-client event: {description}",
-        "operationId": "handle_artifacts_start_generate_start",
+        "operationId": "handle_artifacts_error_generate_error",
         "requestBody": {
           "content": {
             "application/json": {
@@ -17106,160 +17055,7 @@
                     "type": "boolean"
                   },
                   "type": "object",
-                  "title": "Response Handle Artifacts Start Generate Start"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/audio/audio/start": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server"
-        ],
-        "summary": "Endpoint Handler",
-        "description": "Server-to-client event: {description}",
-        "operationId": "handle_artifacts_audio_start_audio_start",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BaseModel"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Handle Artifacts Audio Start Audio Start"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/audio/audio/events": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server"
-        ],
-        "summary": "Endpoint Handler",
-        "description": "Server-to-client event: {description}",
-        "operationId": "handle_artifacts_audio_events_audio_events",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BaseModel"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Handle Artifacts Audio Events Audio Events"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
-      }
-    },
-    "/socket/v4/server/audio/audio/stop": {
-      "post": {
-        "tags": [
-          "socket",
-          "socket-server"
-        ],
-        "summary": "Endpoint Handler",
-        "description": "Server-to-client event: {description}",
-        "operationId": "handle_artifacts_audio_stop_audio_stop",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/BaseModel"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "boolean"
-                  },
-                  "type": "object",
-                  "title": "Response Handle Artifacts Audio Stop Audio Stop"
+                  "title": "Response Handle Artifacts Error Generate Error"
                 }
               }
             }
@@ -44576,17 +44372,14 @@
       },
       "IUpdateSettingsV4ProviderEnabled": {
         "properties": {
-          "provider_id": {
+          "provider": {
             "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
+              {},
               {
                 "type": "null"
               }
             ],
-            "title": "Provider Id"
+            "title": "Provider"
           },
           "enabled": {
             "anyOf": [
@@ -44602,24 +44395,21 @@
         },
         "type": "object",
         "required": [
-          "provider_id",
+          "provider",
           "enabled"
         ],
         "title": "IUpdateSettingsV4ProviderEnabled"
       },
       "IUpdateSettingsV4ProviderKey": {
         "properties": {
-          "provider_id": {
+          "provider": {
             "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
+              {},
               {
                 "type": "null"
               }
             ],
-            "title": "Provider Id"
+            "title": "Provider"
           },
           "key_id": {
             "anyOf": [
@@ -44636,7 +44426,7 @@
         },
         "type": "object",
         "required": [
-          "provider_id",
+          "provider",
           "key_id"
         ],
         "title": "IUpdateSettingsV4ProviderKey"
@@ -45079,140 +44869,6 @@
         },
         "type": "object",
         "title": "ListModelsApiResponse"
-      },
-      "LogRunApiRequest": {
-        "properties": {
-          "run_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Run Id"
-          },
-          "operation_type": {
-            "type": "string",
-            "title": "Operation Type"
-          },
-          "input_text_tokens": {
-            "type": "integer",
-            "title": "Input Text Tokens"
-          },
-          "output_text_tokens": {
-            "type": "integer",
-            "title": "Output Text Tokens"
-          },
-          "input_audio_tokens": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Audio Tokens"
-          },
-          "input_image_tokens": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Image Tokens"
-          },
-          "output_audio_tokens": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Audio Tokens"
-          },
-          "cached_text_tokens": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cached Text Tokens"
-          },
-          "cached_audio_tokens": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cached Audio Tokens"
-          },
-          "system_prompt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "System Prompt"
-          },
-          "input_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "additionalProperties": true,
-                  "type": "object"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Items"
-          },
-          "assistant_output": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Assistant Output"
-          },
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "run_id",
-          "operation_type",
-          "input_text_tokens",
-          "output_text_tokens"
-        ],
-        "title": "LogRunApiRequest",
-        "description": "Request to log run pricing and metrics (snake_case)."
       },
       "MemberProgressErrorPayload": {
         "properties": {
@@ -58623,6 +58279,29 @@
               }
             ],
             "title": "Hex Code"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58630,7 +58309,9 @@
           "id",
           "name",
           "description",
-          "hex_code"
+          "hex_code",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4ColorOption"
       },
@@ -58680,6 +58361,29 @@
               }
             ],
             "title": "Hex Code"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58687,7 +58391,9 @@
           "id",
           "name",
           "description",
-          "hex_code"
+          "hex_code",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4ColorResource"
       },
@@ -58726,13 +58432,38 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "department_id",
           "name",
-          "description"
+          "description",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4Department"
       },
@@ -58760,12 +58491,37 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "description"
+          "description",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4DescriptionResource"
       },
@@ -58792,12 +58548,37 @@
               }
             ],
             "title": "Idx"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "example",
-          "idx"
+          "idx",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4Example"
       },
@@ -58836,13 +58617,38 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "field_id",
           "name",
-          "description"
+          "description",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4Field"
       },
@@ -58893,6 +58699,29 @@
               }
             ],
             "title": "Icon Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58900,7 +58729,9 @@
           "id",
           "name",
           "description",
-          "icon_id"
+          "icon_id",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4FlagResource"
       },
@@ -58950,6 +58781,29 @@
               }
             ],
             "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
@@ -58957,7 +58811,9 @@
           "id",
           "name",
           "description",
-          "value"
+          "value",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4IconOption"
       },
@@ -59007,6 +58863,29 @@
               }
             ],
             "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
@@ -59014,7 +58893,9 @@
           "id",
           "name",
           "description",
-          "value"
+          "value",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4IconResource"
       },
@@ -59042,12 +58923,37 @@
               }
             ],
             "title": "Template"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "template"
+          "template",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4InstructionsResource"
       },
@@ -59075,12 +58981,37 @@
               }
             ],
             "title": "Name"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "name"
+          "name",
+          "generated",
+          "group_id"
         ],
         "title": "QGetPersonaV4NameResource"
       },
@@ -61907,8 +61838,7 @@
           "provider_id": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -66811,8 +66741,7 @@
           "provider_id": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -66880,8 +66809,7 @@
           "provider_id": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "uuid"
+                "type": "string"
               },
               {
                 "type": "null"
