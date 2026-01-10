@@ -5,6 +5,7 @@ Walks all SQL files, introspects them, and generates Pydantic models
 for request/response types.
 """
 
+import argparse
 import asyncio
 import os
 import re
@@ -205,6 +206,118 @@ def generate_registry_entry(
         )
 
     return None
+
+
+def parse_existing_types_file(
+    registry_type: str, server_root: Path
+) -> dict[str, tuple[str, str, str, str, str, str, str]]:
+    """Parse existing types.py file to extract type definitions.
+
+    Args:
+        registry_type: Either "app" or "test"
+        server_root: Server root directory
+
+    Returns:
+        Dict mapping sql_path -> (sql_path, route_name, types_content, sql_params_class, sql_row_class, api_request_class, api_response_class)
+    """
+    if registry_type == "app":
+        types_file = server_root / "app" / "sql" / "types.py"
+    else:
+        types_file = server_root / "tests" / "sql" / "types.py"
+
+    if not types_file.exists():
+        return {}
+
+    content = types_file.read_text()
+    result: dict[str, tuple[str, str, str, str, str, str, str]] = {}
+
+    # Find registry section to extract class names
+    registry_match = re.search(
+        r"_registry:\s*dict\[str,\s*tuple\[str,\s*str,\s*str,\s*str\]\]\s*=\s*\{([^}]+)\}",
+        content,
+        re.DOTALL,
+    )
+    registry_dict: dict[str, tuple[str, str, str, str]] = {}
+    if registry_match:
+        registry_content = registry_match.group(1)
+        # Parse registry entries: "path": ("class1", "class2", "class3", "class4")
+        for match in re.finditer(
+            r'"([^"]+)":\s*\(\s*"([^"]+)",\s*"([^"]+)",\s*"([^"]+)",\s*"([^"]+)"\s*\)',
+            registry_content,
+        ):
+            sql_path = match.group(1)
+            sql_params_class = match.group(2)
+            sql_row_class = match.group(3)
+            api_request_class = match.group(4)
+            api_response_class = match.group(5)
+            registry_dict[sql_path] = (
+                sql_params_class,
+                sql_row_class,
+                api_request_class,
+                api_response_class,
+            )
+
+    # Find TYPE DEFINITIONS section
+    type_defs_match = re.search(
+        r"# ============================================================================\s*# TYPE DEFINITIONS\s*# ============================================================================\s*(.*?)\s*# ============================================================================\s*# REGISTRY",
+        content,
+        re.DOTALL,
+    )
+
+    if not type_defs_match:
+        return result
+
+    type_defs_content = type_defs_match.group(1)
+
+    # Find all "# Generated from: {route_name or sql_path}" comments
+    # The comment might contain either the route name or the full sql_path
+    pattern = r"# Generated from:\s*([^\n]+)\n(.*?)(?=\n# Generated from:|\n# ============================================================================|$)"
+    matches = re.finditer(pattern, type_defs_content, re.DOTALL)
+
+    for match in matches:
+        comment_value = match.group(1).strip()
+        types_content = match.group(2).strip()
+
+        # Determine if comment_value is a route name or sql_path
+        # Check if it looks like a path (contains slashes)
+        if "/" in comment_value:
+            sql_path = comment_value
+            route_name = _sql_path_to_route_name(sql_path)
+        else:
+            # It's a route name, need to find the corresponding sql_path from registry
+            route_name = comment_value
+            sql_path = None
+            # Find sql_path by matching route_name
+            for reg_path in registry_dict.keys():
+                if _sql_path_to_route_name(reg_path) == route_name:
+                    sql_path = reg_path
+                    break
+
+        if not sql_path or not route_name:
+            continue
+
+        # Get class names from registry
+        if sql_path not in registry_dict:
+            continue
+
+        (
+            sql_params_class,
+            sql_row_class,
+            api_request_class,
+            api_response_class,
+        ) = registry_dict[sql_path]
+
+        result[sql_path] = (
+            sql_path,
+            route_name,
+            types_content,
+            sql_params_class,
+            sql_row_class,
+            api_request_class,
+            api_response_class,
+        )
+
+    return result
 
 
 def write_consolidated_types_file(
@@ -895,6 +1008,17 @@ async def generate_types_for_sql_file(
 
 async def main() -> int:
     """Main entry point."""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Generate Python type files from SQL introspection."
+    )
+    parser.add_argument(
+        "files",
+        nargs="*",
+        help="Optional: Specific SQL files to process (relative to server root). If not provided, processes all files.",
+    )
+    args = parser.parse_args()
+
     # Get database connection info from environment
     db_user = os.getenv("DB_USER", "myuser")
     db_password = os.getenv("DB_PASSWORD", "mypassword")
@@ -907,26 +1031,67 @@ async def main() -> int:
     # Get server root
     server_root = Path(__file__).parent.parent
 
+    # Determine if we're in incremental mode
+    incremental_mode = len(args.files) > 0
+
     # Find all SQL files from both app and tests directories
     sql_files: list[Path] = []
 
-    # Process app/sql/{VERSION}/
-    app_sql_dir = server_root / "app" / "sql" / VERSION
-    if app_sql_dir.exists():
-        sql_files.extend(app_sql_dir.rglob("*.sql"))
+    if incremental_mode:
+        # In incremental mode, only process specified files
+        for file_path_str in args.files:
+            # Convert to Path and resolve relative to server root
+            file_path = Path(file_path_str)
+            if not file_path.is_absolute():
+                file_path = server_root / file_path
 
-    # Process tests/sql/{VERSION}/integration/ (all subdirectories)
-    tests_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
-    if tests_sql_dir.exists():
-        sql_files.extend(tests_sql_dir.rglob("*.sql"))
+            # Validate file exists
+            if not file_path.exists():
+                print(f"⚠️  File not found: {file_path}")
+                continue
 
-    if not sql_files:
-        print(
-            f"⚠️  No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/"
-        )
-        return 0
+            # Validate file is within allowed directories
+            try:
+                rel_path = file_path.relative_to(server_root)
+                rel_str = str(rel_path)
+                if not (
+                    rel_str.startswith(f"app/sql/{VERSION}/")
+                    or rel_str.startswith(f"tests/sql/{VERSION}/integration/")
+                ):
+                    print(
+                        f"⚠️  File must be in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/: {rel_str}"
+                    )
+                    continue
+            except ValueError:
+                print(f"⚠️  File must be relative to server root: {file_path}")
+                continue
 
-    print(f"🔍 Found {len(sql_files)} SQL files to process")
+            sql_files.append(file_path)
+
+        if not sql_files:
+            print("⚠️  No valid SQL files provided")
+            return 1
+
+        print(f"🔍 Processing {len(sql_files)} SQL file(s) in incremental mode")
+    else:
+        # Full mode: process all files
+        # Process app/sql/{VERSION}/
+        app_sql_dir = server_root / "app" / "sql" / VERSION
+        if app_sql_dir.exists():
+            sql_files.extend(app_sql_dir.rglob("*.sql"))
+
+        # Process tests/sql/{VERSION}/integration/ (all subdirectories)
+        tests_sql_dir = server_root / "tests" / "sql" / VERSION / "integration"
+        if tests_sql_dir.exists():
+            sql_files.extend(tests_sql_dir.rglob("*.sql"))
+
+        if not sql_files:
+            print(
+                f"⚠️  No SQL files found in app/sql/{VERSION}/ or tests/sql/{VERSION}/integration/"
+            )
+            return 0
+
+        print(f"🔍 Found {len(sql_files)} SQL files to process")
 
     # Custom sorting function to prioritize analytics routes
     def _sort_sql_files(sql_file: Path) -> tuple[int, str]:
@@ -992,6 +1157,17 @@ async def main() -> int:
         return 1
 
     try:
+        # Load existing type definitions if in incremental mode
+        existing_app_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
+        existing_test_types: dict[str, tuple[str, str, str, str, str, str, str]] = {}
+
+        if incremental_mode:
+            existing_app_types = parse_existing_types_file("app", server_root)
+            existing_test_types = parse_existing_types_file("test", server_root)
+            print(
+                f"📚 Loaded {len(existing_app_types)} existing app types and {len(existing_test_types)} existing test types"
+            )
+
         # Process each SQL file
         errors: list[tuple[str, str]] = []  # (sql_path, error_message)
         successes: list[str] = []
@@ -1059,6 +1235,14 @@ async def main() -> int:
             # Recover from transaction abort if needed before each introspection
             await _recover_from_transaction_abort(conn)
 
+            # Check if we have existing types for this file (incremental mode only)
+            existing_type = None
+            if incremental_mode:
+                if sql_path in existing_app_types:
+                    existing_type = existing_app_types[sql_path]
+                elif sql_path in existing_test_types:
+                    existing_type = existing_test_types[sql_path]
+
             success, message, type_definition = await generate_types_for_sql_file(
                 sql_path, conn, server_root, skip_execution=True
             )
@@ -1081,6 +1265,13 @@ async def main() -> int:
                 errors.append((sql_path, message))
                 print(f"❌ {sql_path}: {message}")
 
+                # In incremental mode, keep existing types if available
+                if incremental_mode and existing_type:
+                    print(
+                        f"   Keeping existing type definitions for {sql_path} due to error"
+                    )
+                    type_definitions.append(existing_type)
+
         # Separate app and test type definitions
         app_type_definitions = [
             td for td in type_definitions if td[0].startswith(f"app/sql/{VERSION}/")
@@ -1090,6 +1281,25 @@ async def main() -> int:
             for td in type_definitions
             if td[0].startswith(f"tests/sql/{VERSION}/integration/")
         ]
+
+        # In incremental mode, merge with existing types for files not processed
+        if incremental_mode:
+            # Create set of processed SQL paths
+            processed_paths = {td[0] for td in type_definitions}
+
+            # Add existing app types that weren't processed
+            for sql_path, existing_td in existing_app_types.items():
+                if sql_path not in processed_paths:
+                    app_type_definitions.append(existing_td)
+
+            # Add existing test types that weren't processed
+            for sql_path, existing_td in existing_test_types.items():
+                if sql_path not in processed_paths:
+                    test_type_definitions.append(existing_td)
+
+            # Sort to maintain consistent order
+            app_type_definitions.sort(key=lambda x: x[0])
+            test_type_definitions.sort(key=lambda x: x[0])
 
         # Write app consolidated types file if we have entries
         if app_type_definitions:
