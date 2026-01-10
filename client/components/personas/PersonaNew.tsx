@@ -16,6 +16,8 @@ import {
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
+import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Colors } from "@/components/resources/Colors";
 import { Departments } from "@/components/resources/Departments";
@@ -26,19 +28,7 @@ import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
@@ -148,12 +138,15 @@ function PersonaNewComponent({
     Set<ResourceType>
   >(new Set());
 
-  // Regeneration dialog state
-  const [showRegenerationDialog, setShowRegenerationDialog] = useState(false);
-  const [regenerationInstructions, setRegenerationInstructions] = useState("");
-  const [pendingResourceTypes, setPendingResourceTypes] = useState<
-    ResourceType[]
+  // Modal state for generate/regenerate
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
+    null
+  );
+  const [modalResources, setModalResources] = useState<
+    GenerateRegenerateModalResource[]
   >([]);
+  const [modalInstructions, setModalInstructions] = useState("");
 
   const isGenerating = useCallback(
     (resourceType: ResourceType) => generatingResources.has(resourceType),
@@ -579,7 +572,7 @@ function PersonaNewComponent({
         draft_id: draftId,
         resource_types: resourceTypes,
         persona_id: personaId || null,
-        user_instructions: userInstructions || null,
+        instructions: userInstructions || null, // Renamed from user_instructions
         group_ids: Object.keys(groupIds).some((k) => groupIds[k] !== null)
           ? groupIds
           : null,
@@ -598,7 +591,7 @@ function PersonaNewComponent({
     [socket, isConnected, draftId, personaId, formState, personaData]
   );
 
-  // Individual generation handlers for backward compatibility
+  // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
     async () => handleGenerateResources(["names"]),
     [handleGenerateResources]
@@ -758,6 +751,56 @@ function PersonaNewComponent({
       content: ["instructions", "examples"],
     }),
     []
+  );
+
+  // Resource labels for display
+  const resourceLabels: Record<ResourceType, string> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      colors: "Colors",
+      icons: "Icons",
+      instructions: "Instructions",
+      flags: "Flags",
+      examples: "Examples",
+      fields: "Fields",
+      departments: "Departments",
+    }),
+    []
+  );
+
+  // Handler to open modal for step card generation
+  const handleOpenStepCardModal = useCallback(
+    (stepId: string, mode: "generate" | "regenerate") => {
+      const resourceTypes = stepResources[stepId] || [];
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt],
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
+        })
+      );
+
+      setModalResources(resources);
+      setModalMode(mode);
+      setModalInstructions("");
+      setShowGenerateModal(true);
+    },
+    [stepResources, resourceLabels, canRegenerate]
+  );
+
+  // Handler for modal generate/regenerate action
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      const resourceTypes = selectedResources as ResourceType[];
+      await handleGenerateResources(
+        resourceTypes,
+        instructions.trim() || undefined
+      );
+      setShowGenerateModal(false);
+      setModalInstructions("");
+    },
+    [handleGenerateResources]
   );
 
   // Steps configuration for GenericForm
@@ -921,9 +964,15 @@ function PersonaNewComponent({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      handleGenerateResources(stepResources["basic"]!)
-                    }
+                    onClick={() => {
+                      const hasRegeneratable = stepResources["basic"]!.some(
+                        (rt) => canRegenerate(rt)
+                      );
+                      handleOpenStepCardModal(
+                        "basic",
+                        hasRegeneratable ? "regenerate" : "generate"
+                      );
+                    }}
                     disabled={
                       disabled ||
                       stepResources["basic"]!.some((rt) => isGenerating(rt))
@@ -1034,16 +1083,13 @@ function PersonaNewComponent({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const resourceTypes = stepResources["fields"]!;
-                      const hasRegeneratable = resourceTypes.some((rt) =>
-                        canRegenerate(rt)
+                      const hasRegeneratable = stepResources["fields"]!.some(
+                        (rt) => canRegenerate(rt)
                       );
-                      if (hasRegeneratable) {
-                        setPendingResourceTypes(resourceTypes);
-                        setShowRegenerationDialog(true);
-                      } else {
-                        handleGenerateResources(resourceTypes);
-                      }
+                      handleOpenStepCardModal(
+                        "fields",
+                        hasRegeneratable ? "regenerate" : "generate"
+                      );
                     }}
                     disabled={
                       disabled ||
@@ -1121,16 +1167,13 @@ function PersonaNewComponent({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const resourceTypes = stepResources["color"]!;
-                      const hasRegeneratable = resourceTypes.some((rt) =>
-                        canRegenerate(rt)
+                      const hasRegeneratable = stepResources["color"]!.some(
+                        (rt) => canRegenerate(rt)
                       );
-                      if (hasRegeneratable) {
-                        setPendingResourceTypes(resourceTypes);
-                        setShowRegenerationDialog(true);
-                      } else {
-                        handleGenerateResources(resourceTypes);
-                      }
+                      handleOpenStepCardModal(
+                        "color",
+                        hasRegeneratable ? "regenerate" : "generate"
+                      );
                     }}
                     disabled={
                       disabled ||
@@ -1220,16 +1263,13 @@ function PersonaNewComponent({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const resourceTypes = stepResources["icon"]!;
-                      const hasRegeneratable = resourceTypes.some((rt) =>
-                        canRegenerate(rt)
+                      const hasRegeneratable = stepResources["icon"]!.some(
+                        (rt) => canRegenerate(rt)
                       );
-                      if (hasRegeneratable) {
-                        setPendingResourceTypes(resourceTypes);
-                        setShowRegenerationDialog(true);
-                      } else {
-                        handleGenerateResources(resourceTypes);
-                      }
+                      handleOpenStepCardModal(
+                        "icon",
+                        hasRegeneratable ? "regenerate" : "generate"
+                      );
                     }}
                     disabled={
                       disabled ||
@@ -1299,16 +1339,13 @@ function PersonaNewComponent({
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const resourceTypes = stepResources["content"]!;
-                      const hasRegeneratable = resourceTypes.some((rt) =>
-                        canRegenerate(rt)
+                      const hasRegeneratable = stepResources["content"]!.some(
+                        (rt) => canRegenerate(rt)
                       );
-                      if (hasRegeneratable) {
-                        setPendingResourceTypes(resourceTypes);
-                        setShowRegenerationDialog(true);
-                      } else {
-                        handleGenerateResources(resourceTypes);
-                      }
+                      handleOpenStepCardModal(
+                        "content",
+                        hasRegeneratable ? "regenerate" : "generate"
+                      );
                     }}
                     disabled={
                       disabled ||
@@ -1414,8 +1451,7 @@ function PersonaNewComponent({
       createFlagsAction,
       createExamplesAction,
       canRegenerate,
-      setPendingResourceTypes,
-      setShowRegenerationDialog,
+      handleOpenStepCardModal,
     ]
   );
 
@@ -1447,60 +1483,22 @@ function PersonaNewComponent({
           renderStep={renderStep}
         />
 
-        {/* Regeneration Dialog */}
-        <AlertDialog
-          open={showRegenerationDialog}
-          onOpenChange={setShowRegenerationDialog}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Regenerate Resources</AlertDialogTitle>
-              <AlertDialogDescription className="pb-2">
-                Provide instructions for what you'd like to change.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="space-y-3 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="regeneration-instructions">Instructions</Label>
-                <Textarea
-                  id="regeneration-instructions"
-                  value={regenerationInstructions}
-                  onChange={(e) => setRegenerationInstructions(e.target.value)}
-                  placeholder="e.g., Make it more professional, focus on empathy..."
-                  className="min-h-[100px]"
-                  disabled={pendingResourceTypes.some((rt) => isGenerating(rt))}
-                />
-              </div>
-            </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel
-                onClick={() => {
-                  setRegenerationInstructions("");
-                  setShowRegenerationDialog(false);
-                }}
-                disabled={pendingResourceTypes.some((rt) => isGenerating(rt))}
-              >
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  handleGenerateResources(
-                    pendingResourceTypes,
-                    regenerationInstructions.trim() || undefined
-                  );
-                  setShowRegenerationDialog(false);
-                  setRegenerationInstructions("");
-                }}
-                disabled={pendingResourceTypes.some((rt) => isGenerating(rt))}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {pendingResourceTypes.some((rt) => isGenerating(rt))
-                  ? "Regenerating..."
-                  : "Regenerate"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Generate/Regenerate Modal */}
+        {modalMode && (
+          <GenerateRegenerateModal
+            open={showGenerateModal}
+            onOpenChange={setShowGenerateModal}
+            resources={modalResources}
+            onResourcesChange={setModalResources}
+            instructions={modalInstructions}
+            onInstructionsChange={setModalInstructions}
+            onGenerate={handleModalGenerate}
+            isGenerating={modalResources.some((r) =>
+              isGenerating(r.id as ResourceType)
+            )}
+            mode={modalMode}
+          />
+        )}
       </div>
     </TooltipProvider>
   );

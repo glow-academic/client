@@ -15418,6 +15418,39 @@ class DuplicatePersonaApiResponse(BaseModel):
 
 
 
+# Generated from: get_best_agent_for_persona_resources_v4
+
+class GetBestAgentForPersonaResourcesV4SqlParams(BaseModel):
+
+    profile_id: UUID
+    resource_types: list[str]
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.resource_types,
+            self.persona_id,
+            self.draft_id,
+        )
+
+class GetBestAgentForPersonaResourcesV4SqlRow(BaseModel):
+
+    agent_id: UUID | None = None
+
+class GetBestAgentForPersonaResourcesV4ApiRequest(BaseModel):
+
+    resource_types: list[str]
+    persona_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetBestAgentForPersonaResourcesV4ApiResponse(BaseModel):
+
+    agent_id: UUID | None = None
+
+
+
 # Generated from: get_persona
 
 class GetPersonaSqlParams(BaseModel):
@@ -29016,6 +29049,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicatePersonaApiRequest",
         "DuplicatePersonaApiResponse",
     ),
+    "app/sql/v4/personas/get_best_agent_for_persona_resources_v4_complete.sql": (
+        "GetBestAgentForPersonaResourcesV4SqlParams",
+        "GetBestAgentForPersonaResourcesV4SqlRow",
+        "GetBestAgentForPersonaResourcesV4ApiRequest",
+        "GetBestAgentForPersonaResourcesV4ApiResponse",
+    ),
     "app/sql/v4/personas/get_persona_complete.sql": (
         "GetPersonaSqlParams",
         "GetPersonaSqlRow",
@@ -31668,6 +31707,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/personas/duplicate_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/get_best_agent_for_persona_resources_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

@@ -1,7 +1,7 @@
 """Persona generation router - unified handler for all persona resource types."""
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
@@ -18,7 +18,7 @@ internal_sio = get_internal_sio()
 client_router = APIRouter()
 server_router = APIRouter()
 
-SQL_PATH = "app/sql/v4/personas/get_persona_generation_context_complete.sql"
+SQL_PATH = "app/sql/v4/personas/get_best_agent_for_persona_resources_v4_complete.sql"
 
 # Persona resource types
 PERSONA_RESOURCE_TYPES = [
@@ -42,7 +42,7 @@ class GeneratePersonaPayload(BaseModel):
     resource_type: str | None = None  # Single resource type (for backward compatibility)
     persona_id: str | None = None
     context: dict[str, Any] | None = None  # Additional context for generation
-    user_instructions: str | None = None  # Optional: For regeneration
+    instructions: str | None = None  # Optional: For regeneration (renamed from user_instructions)
     group_ids: dict[str, str | None] | None = None  # Optional: resource_type -> group_id mapping for regeneration
 
 
@@ -87,27 +87,27 @@ async def _persona_generate_impl(
             )
             return
 
-        # Get domain_id and agent_id from SQL function
+        # Get best agent_id based on tool-to-resource matching
         async with get_db_connection() as conn:
-            from app.sql.types import (GetPersonaGenerationContextSqlParams,
-                                       GetPersonaGenerationContextSqlRow)
+            # Types will be auto-generated from SQL introspection
+            # For now, use dict-based params until types are generated
+            params = {
+                "profile_id": profile_id,
+                "resource_types": resource_types,
+                "persona_id": uuid.UUID(data.persona_id) if data.persona_id else None,
+                "draft_id": uuid.UUID(data.draft_id) if data.draft_id else None,
+            }
+            result = await execute_sql_typed(conn, SQL_PATH, params=params)
 
-            params = GetPersonaGenerationContextSqlParams(
-                persona_id=uuid.UUID(data.persona_id) if data.persona_id else None,
-                draft_id=uuid.UUID(data.draft_id) if data.draft_id else None,
-                profile_id=profile_id,
-            )
-            result = cast(
-                GetPersonaGenerationContextSqlRow,
-                await execute_sql_typed(conn, SQL_PATH, params=params),
-            )
-
-            if not result or not result.domain_id:
+            # Extract agent_id from result
+            # execute_sql_typed returns a typed object with attributes
+            agent_id_value = getattr(result, "agent_id", None) if result else None
+            if not agent_id_value:
                 await emit_to_internal(
                     "generate_error",
                     GenerateErrorApiRequest(
                         sid=sid,
-                        error_message="Could not determine domain for persona generation",
+                        error_message="Could not find suitable agent for persona generation",
                         resource_id=data.persona_id or data.draft_id,
                         group_id=None,
                         resource_type="persona",
@@ -116,7 +116,7 @@ async def _persona_generate_impl(
                 )
                 return
 
-            domain_id = result.domain_id
+            selected_agent_id = agent_id_value
 
         # Emit generate_artifact events for each resource type
         for resource_type in resource_types:
@@ -131,17 +131,24 @@ async def _persona_generate_impl(
                         # Invalid UUID, treat as None
                         group_id = None
 
+            # Get message_ids from previous runs if regenerating (group_id exists)
+            message_ids: list[str] | None = None
+            if group_id:
+                # TODO: Retrieve message_ids from previous runs in the group
+                # For now, pass None - the generate_artifact handler will handle it
+                message_ids = None
+
             # Emit generate_artifact internal event for each resource type
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
-                    "domain_id": str(domain_id),  # Use domain_id instead of agent_id
+                    "agent_id": str(selected_agent_id),  # Use agent_id directly
                     "resource_id": data.persona_id or data.draft_id,
                     "resource_types": [resource_type],  # Use resource_types array
                     "group_id": str(group_id) if group_id else None,  # Pass group_id (string or None)
-                    "user_instructions": data.user_instructions,  # Pass user_instructions
-                    "message_ids": None,
+                    "instructions": data.instructions,  # Renamed from user_instructions
+                    "message_ids": message_ids,
                 },
             )
 

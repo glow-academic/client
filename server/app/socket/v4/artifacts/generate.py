@@ -105,18 +105,10 @@ async def _generate_artifact_impl(
                 else None
             )
 
-            # Handle both domain_id (new) and agent_id (legacy) for backward compatibility
-            domain_id = data.get("domain_id")
+            # Require agent_id directly (no domain_id lookup)
             agent_id = data.get("agent_id")
-            if domain_id:
-                # Look up agent_id from domain_id
-                domain_lookup_sql = "SELECT agent_id FROM domains WHERE id = $1"
-                agent_id_from_domain = await conn.fetchval(domain_lookup_sql, uuid.UUID(domain_id))
-                if not agent_id_from_domain:
-                    raise ValueError(f"Domain not found: {domain_id}")
-                agent_id = str(agent_id_from_domain)
-            elif not agent_id:
-                raise ValueError("Either domain_id or agent_id must be provided")
+            if not agent_id:
+                raise ValueError("agent_id must be provided")
             
             # Process each resource_type
             for resource_type in resource_types:
@@ -129,7 +121,7 @@ async def _generate_artifact_impl(
                         message_ids=message_ids_uuid,
                         department_id=None,  # Can be NULL, modality handlers will get it
                         group_id=uuid.UUID(data["group_id"]) if data.get("group_id") else None,
-                        user_instructions=data.get("user_instructions"),
+                        user_instructions=data.get("instructions"),  # Renamed from user_instructions
                     )
                     result = cast(
                         GetGenerationRunContextAndCreateRunSqlRow,
