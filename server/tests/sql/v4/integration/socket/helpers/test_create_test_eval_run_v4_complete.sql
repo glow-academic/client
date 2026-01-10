@@ -17,7 +17,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_run AS (
-        INSERT INTO runs (input_tokens, output_tokens)
+        INSERT INTO run (input_tokens, output_tokens)
         VALUES (0, 0)
         RETURNING id as run_id
     ),

@@ -14,9 +14,9 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    -- NOTE: chats table doesn't have trace_id column
-    -- trace_id is stored in groups table, not chats
-    INSERT INTO chats(title, scenario_id, completed) 
+    -- NOTE: chat table doesn't have trace_id column
+    -- trace_id is stored in groups table, not chat
+    INSERT INTO chat(title, scenario_id, completed) 
     VALUES ('Test Chat', test_create_test_chat_v4.scenario_id, false) 
     RETURNING id as chat_id;
 $$;

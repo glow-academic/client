@@ -14,7 +14,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT COUNT(*)::bigint as message_count
-    FROM messages m
+    FROM message m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN message_runs mr ON mr.message_id = m.id
     WHERE m.role = 'developer' AND mr.run_id = test_get_developer_messages_count_by_run_v4.run_id;
