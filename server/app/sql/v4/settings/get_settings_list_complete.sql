@@ -44,11 +44,21 @@ CREATE TYPE types.q_get_settings_list_v4_setting AS (
     department_ids text[]
 );
 
+CREATE TYPE types.q_get_settings_list_v4_key AS (
+    key_id uuid,
+    name text,
+    key_masked text,
+    description text,
+    active boolean,
+    department_ids text[]
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_settings_list_v4(profile_id uuid)
 RETURNS TABLE (
     actor_name text,
-    settings types.q_get_settings_list_v4_setting[]
+    settings types.q_get_settings_list_v4_setting[],
+    keys types.q_get_settings_list_v4_key[]
 )
 LANGUAGE sql
 STABLE
@@ -69,6 +79,61 @@ settings_departments_data AS (
     FROM department_settings ds
     WHERE ds.active = true
     GROUP BY ds.settings_id
+),
+user_departments AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments ON profile_departments.profile_id = x.profile_id AND profile_departments.active = true
+),
+user_profile AS (
+    SELECT role
+    FROM params x
+    JOIN profiles ON profiles.id = x.profile_id
+),
+-- Get department_ids via setting_provider_keys -> settings -> department_settings
+key_departments_data AS (
+    SELECT 
+        spk.key_id,
+        ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
+    FROM setting_provider_keys spk
+    JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    WHERE spk.active = true
+    GROUP BY spk.key_id
+),
+settings_keys_data AS (
+    -- Get all keys accessible to user (similar to keys/list logic)
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (k.id, 
+                 (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1),
+                 CASE 
+                     WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+                     ELSE '****'
+                 END,
+                 COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''),
+                 EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
+                 kdd.department_ids
+                )::types.q_get_settings_list_v4_key
+                ORDER BY k.created_at DESC
+            ),
+            '{}'::types.q_get_settings_list_v4_key[]
+        ) as keys
+    FROM keys k
+    LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
+    CROSS JOIN user_profile up
+    WHERE 
+        -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
+        EXISTS (
+            SELECT 1 FROM setting_provider_keys spk
+            JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+            JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+            JOIN user_departments ud ON ud.department_id = ds.department_id
+            WHERE spk.key_id = k.id AND spk.active = true
+        )
+        OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
+        OR up.role = 'superadmin'
 )
 SELECT 
     ap.actor_name::text as actor_name,
@@ -80,10 +145,12 @@ SELECT
             ORDER BY s.created_at DESC
         ),
         '{}'::types.q_get_settings_list_v4_setting[]
-    ) as settings
+    ) as settings,
+    COALESCE(skd.keys, '{}'::types.q_get_settings_list_v4_key[]) as keys
 FROM settings s
 CROSS JOIN actor_profile ap
 LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
+LEFT JOIN settings_keys_data skd ON true
 WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)  -- Only return active settings
-GROUP BY ap.actor_name
+GROUP BY ap.actor_name, skd.keys
 $$;

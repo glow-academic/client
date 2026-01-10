@@ -15,7 +15,7 @@ import type {
   DeleteEvalIn,
   DeleteEvalOut,
   EvalsListOut,
-} from "@/app/(main)/engine/evals/page";
+} from "@/app/(main)/system/evals/page";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
 import { DataTablePagination } from "@/components/common/table/DataTablePagination";
 import {
@@ -283,7 +283,7 @@ export default function Evals({
     <Card
       key={evalId}
       className="hover:shadow-md transition-shadow cursor-pointer"
-      onClick={() => router.push(`/engine/evals/e/${evalId}`)}
+      onClick={() => router.push(`/system/evals/e/${evalId}`)}
       data-testid="eval-card"
       data-eval-id={evalId}
     >
@@ -312,7 +312,7 @@ export default function Evals({
               onClick={(e) => {
                 e.stopPropagation();
                 const evalId = evalItem.eval_id ?? "";
-                if (evalId) router.push(`/engine/evals/e/${evalId}`);
+                if (evalId) router.push(`/system/evals/e/${evalId}`);
               }}
             >
               <Eye className="h-4 w-4 mr-2" />

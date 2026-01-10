@@ -51,13 +51,13 @@ import type {
   EvalNewOut,
   PatchEvalDraftIn,
   PatchEvalDraftOut,
-} from "@/app/(main)/engine/evals/new/page";
+} from "@/app/(main)/system/evals/new/page";
 // Import types from edit page (update action)
 import type {
   EvalDetailOut,
   UpdateEvalIn,
   UpdateEvalOut,
-} from "@/app/(main)/engine/evals/e/[evalId]/page";
+} from "@/app/(main)/system/evals/e/[evalId]/page";
 
 export interface EvalProps {
   evalId?: string;
@@ -949,7 +949,7 @@ function EvalComponent({
         // TODO: Call separate endpoints to add runs/groups with rubric_grade_agents
         // For now, this is a placeholder - full implementation requires API endpoints for add_eval_runs/add_eval_groups
         toast.success("Eval updated successfully!");
-          router.push("/engine/evals");
+          router.push("/system/evals");
         } catch (error) {
           toast.error(
             `Failed to update eval: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -980,7 +980,7 @@ function EvalComponent({
         // TODO: Call separate endpoints to add runs/groups with rubric_grade_agents
         // For now, this is a placeholder - full implementation requires API endpoints for add_eval_runs/add_eval_groups
         toast.success("Eval created successfully!");
-          router.push("/engine/evals");
+          router.push("/system/evals");
     } catch (error) {
       toast.error(
             `Failed to create eval: ${error instanceof Error ? error.message : "Unknown error"}`
@@ -1116,7 +1116,7 @@ function EvalComponent({
   // Memoize submitButton to prevent GenericForm re-renders
   const submitButton = useMemo(
     () => ({
-      backUrl: "/engine/evals",
+      backUrl: "/system/evals",
       backLabel: "Back",
       createLabel: "Create Eval",
       updateLabel: "Update Eval",

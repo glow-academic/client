@@ -71,6 +71,7 @@ from app.api.v4.scenarios import router as scenarios_router
 from app.api.v4.settings import router as settings_router
 from app.api.v4.simulations import router as simulations_router
 from app.api.v4.staff import router as staff_router
+from app.api.v4.tools import router as tools_router
 from app.api.v4.uploads import router as uploads_router
 
 # ============================================================================
@@ -101,6 +102,7 @@ router.include_router(documents_router)
 router.include_router(resources_router)
 router.include_router(evals_router)
 router.include_router(rubrics_router)
+router.include_router(tools_router)
 router.include_router(settings_router)
 
 # Batch E: Analytics & Dashboard Routes

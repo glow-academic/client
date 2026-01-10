@@ -14,7 +14,6 @@ export type UpdateSettingsIn = InputOf<"/api/v4/settings/update", "post">;
 export type UpdateSettingsOut = OutputOf<"/api/v4/settings/update", "post">;
 export type PatchSettingsDraftIn = InputOf<"/api/v4/settings/draft", "patch">;
 export type PatchSettingsDraftOut = OutputOf<"/api/v4/settings/draft", "patch">;
-export type KeysListOut = OutputOf<"/api/v4/keys/list", "post">;
 export type StaffListOut = OutputOf<"/api/v4/staff/list", "post">;
 export type DepartmentsListOut = OutputOf<"/api/v4/departments/list", "post">;
 
@@ -48,21 +47,6 @@ const getSettingsDetail = async (
         draft_id: draftId || null,
       },
     },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
-};
-
-/** ---- Direct fetch for keys list ---- */
-const getKeysList = async (): Promise<KeysListOut> => {
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post(
-    "/keys/list",
-    { body: {} },
     {
       cache: "no-store",
       headers: {
@@ -127,11 +111,6 @@ async function getSettingsDetailAction(
   return getSettingsDetail(settingsId, draftId);
 }
 
-async function getKeysListAction(): Promise<KeysListOut> {
-  "use server";
-  return getKeysList();
-}
-
 async function getStaffListAction(): Promise<StaffListOut> {
   "use server";
   return getStaffList();
@@ -141,9 +120,8 @@ export default async function SettingsPage() {
   // Access control is handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
 
-  // Fetch settings list server-side
+  // Fetch settings list server-side (includes keys array)
   const settingsListResponse = await getSettingsList();
-  const keysList = await getKeysList();
   const staffList = await getStaffListAction();
   const departmentsList = await getDepartmentsList();
 
@@ -153,13 +131,12 @@ export default async function SettingsPage() {
         settingsList={settingsListResponse.settings}
         settingsDetail={null}
         selectedSettingsId={null}
-        keysList={keysList}
+        keysList={settingsListResponse.keys || []}
         staffList={staffList}
         departmentsList={departmentsList}
         getSettingsDetailAction={getSettingsDetailAction}
         updateSettingsAction={updateSettings}
         patchSettingsDraftAction={patchSettingsDraft}
-        getKeysListAction={getKeysListAction}
         getStaffListAction={getStaffListAction}
       />
     </div>

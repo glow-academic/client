@@ -330,9 +330,9 @@ export function UnifiedSidebar({
         section: "rubrics",
       });
       engineItems.push({
-        title: "Evals",
+        title: "Tools",
         url: "#",
-        section: "evals",
+        section: "tools",
       });
 
       menu.push({
@@ -368,9 +368,9 @@ export function UnifiedSidebar({
         section: "auth",
       });
       systemItems.push({
-        title: "Keys",
+        title: "Evals",
         url: "#",
-        section: "keys",
+        section: "evals",
       });
 
       menu.push({

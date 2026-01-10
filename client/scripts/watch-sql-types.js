@@ -36,6 +36,12 @@ if (path.isAbsolute(changedFile)) {
   relativePath = path.relative(projectRoot, resolvedPath);
 }
 
+// The Python script expects paths relative to the server directory, not project root
+// Strip the 'server/' prefix if present
+if (relativePath.startsWith('server/')) {
+  relativePath = relativePath.replace(/^server\//, '');
+}
+
 // Call make sql-compile-incremental with the file path
 try {
   execSync(`make sql-compile-incremental FILE="${relativePath}"`, {

@@ -117,8 +117,10 @@ export const getSectionRoute = (
       return "/engine/models";
     case "rubrics":
       return "/engine/rubrics";
+    case "tools":
+      return "/engine/tools";
     case "evals":
-      return "/engine/evals";
+      return "/system/evals";
 
     // System routes
     case "system":
@@ -127,8 +129,6 @@ export const getSectionRoute = (
       return "/system/providers";
     case "auth":
       return "/system/auth";
-    case "keys":
-      return "/system/keys";
     case "settings":
       return "/settings";
 
@@ -216,10 +216,6 @@ export const getSectionRoute = (
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
         return `/engine/agents/a/${agentId}`;
-      }
-      if (section.startsWith("key-")) {
-        const keyId = section.replace("key-", "");
-        return `/system/keys/k/${keyId}`;
       }
       if (section.startsWith("eval-run-")) {
         const evalRunId = section.replace("eval-run-", "");

@@ -2168,6 +2168,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/tools/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Tools List
+         * @description Get tools list (skeleton).
+         */
+        post: operations["get_tools_list_api_v4_tools_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/tools/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Tool
+         * @description Get tool information - handles both new (tool_id = NULL) and detail (tool_id provided) (skeleton).
+         */
+        post: operations["get_tool_api_v4_tools_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/tools/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Tool
+         * @description Save tool - handles both create (tool_id = NULL) and update (tool_id provided) (skeleton).
+         */
+        post: operations["save_tool_api_v4_tools_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/settings/list": {
         parameters: {
             query?: never;
@@ -2582,126 +2642,6 @@ export interface paths {
          * @description Delete an agent.
          */
         post: operations["delete_agent_api_v4_agents_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/keys/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Keys List
-         * @description Get keys list with permissions and relationships.
-         */
-        post: operations["get_keys_list_api_v4_keys_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/keys/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Key Detail
-         * @description Get key detail information.
-         */
-        post: operations["get_key_detail_api_v4_keys_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/keys/new": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Key New
-         * @description Get default key detail information for new key creation.
-         */
-        post: operations["get_key_new_api_v4_keys_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/keys/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Key
-         * @description Create a new key.
-         */
-        post: operations["create_key_api_v4_keys_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/keys/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Key
-         * @description Update an existing key.
-         */
-        post: operations["update_key_api_v4_keys_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/keys/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Key
-         * @description Delete a key with permission checks.
-         */
-        post: operations["delete_key_api_v4_keys_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5880,28 +5820,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** CreateKeyApiRequest */
-        CreateKeyApiRequest: {
-            /** Name */
-            name: string;
-            /** Key */
-            key: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /** CreateKeyApiResponse */
-        CreateKeyApiResponse: {
-            /** Key Id */
-            key_id?: string | null;
-            /** Key Masked */
-            key_masked?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** CreateModelApiRequest */
         CreateModelApiRequest: {
             /**
@@ -6360,25 +6278,6 @@ export interface components {
         DeleteFieldApiResponse: {
             /** Field Exists */
             field_exists?: boolean | null;
-            /** Name */
-            name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** DeleteKeyApiRequest */
-        DeleteKeyApiRequest: {
-            /**
-             * Key Id
-             * Format: uuid
-             */
-            key_id: string;
-        };
-        /** DeleteKeyApiResponse */
-        DeleteKeyApiResponse: {
-            /** Key Exists */
-            key_exists?: boolean | null;
-            /** Key Id */
-            key_id?: string | null;
             /** Name */
             name?: string | null;
             /** Actor Name */
@@ -8163,53 +8062,6 @@ export interface components {
             /** Simulations */
             simulations?: components["schemas"]["QGetHomeOverviewV4Simulation"][] | null;
         };
-        /** GetKeyDetailApiRequest */
-        GetKeyDetailApiRequest: {
-            /**
-             * Key Id
-             * Format: uuid
-             */
-            key_id: string;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetKeyDetailApiResponse */
-        GetKeyDetailApiResponse: {
-            /** Key Exists */
-            key_exists?: boolean | null;
-            /** Key Id */
-            key_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Key Masked */
-            key_masked?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetKeyDetailV4Department"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetKeyDetailV4Model"][] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-        };
         /** GetKeyForDecryptApiRequest */
         GetKeyForDecryptApiRequest: {
             /**
@@ -8226,61 +8078,6 @@ export interface components {
             name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
-        };
-        /** GetKeyNewApiRequest */
-        GetKeyNewApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetKeyNewApiResponse */
-        GetKeyNewApiResponse: {
-            /** Key Id */
-            key_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Key Masked */
-            key_masked?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetKeyNewV4Department"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetKeyNewV4Model"][] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-        };
-        /** GetKeysListApiRequest */
-        GetKeysListApiRequest: Record<string, never>;
-        /** GetKeysListApiResponse */
-        GetKeysListApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Keys */
-            keys?: components["schemas"]["QGetKeysListV4Key"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetKeysListV4Department"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetKeysListV4Model"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["QGetKeysListV4DepartmentOption"][] | null;
-            /** Model Options */
-            model_options?: components["schemas"]["QGetKeysListV4ModelOption"][] | null;
         };
         /** GetLeaderboardBundleApiRequest */
         GetLeaderboardBundleApiRequest: {
@@ -10026,6 +9823,8 @@ export interface components {
             auth_keys?: components["schemas"]["QGetSettingsDetailV4AuthKey"][] | null;
             /** Auth Values */
             auth_values?: components["schemas"]["QGetSettingsDetailV4AuthValue"][] | null;
+            /** Keys */
+            keys?: components["schemas"]["QGetSettingsDetailV4Key"][] | null;
             /** All Providers */
             all_providers?: components["schemas"]["QGetSettingsDetailV4Provider"][] | null;
             /** All Auths */
@@ -10063,6 +9862,8 @@ export interface components {
             actor_name?: string | null;
             /** Settings */
             settings?: components["schemas"]["QGetSettingsListV4Setting"][] | null;
+            /** Keys */
+            keys?: components["schemas"]["QGetSettingsListV4Key"][] | null;
         };
         /** GetSimulationAttemptApiRequest */
         GetSimulationAttemptApiRequest: {
@@ -10469,6 +10270,43 @@ export interface components {
             cohorts?: components["schemas"]["QSearchStaffV4Cohort"][] | null;
             /** Departments */
             departments?: components["schemas"]["QSearchStaffV4Department"][] | null;
+        };
+        /** GetToolApiRequest */
+        GetToolApiRequest: {
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+        };
+        /** GetToolApiResponse */
+        GetToolApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Tool Exists */
+            tool_exists?: boolean | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** GetToolsListApiRequest */
+        GetToolsListApiRequest: Record<string, never>;
+        /** GetToolsListApiResponse */
+        GetToolsListApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Tools */
+            tools?: components["schemas"]["QGetToolsListV4Tool"][] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -13021,113 +12859,6 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetKeyDetailV4Department */
-        QGetKeyDetailV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetKeyDetailV4Model */
-        QGetKeyDetailV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Provider */
-            provider: string | null;
-            /** Active */
-            active: boolean | null;
-        };
-        /** QGetKeyNewV4Department */
-        QGetKeyNewV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetKeyNewV4Model */
-        QGetKeyNewV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Provider */
-            provider: string | null;
-            /** Active */
-            active: boolean | null;
-        };
-        /** QGetKeysListV4Department */
-        QGetKeysListV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetKeysListV4DepartmentOption */
-        QGetKeysListV4DepartmentOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
-        /** QGetKeysListV4Key */
-        QGetKeysListV4Key: {
-            /** Key Id */
-            key_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Key Masked */
-            key_masked: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Model Ids */
-            model_ids: string[] | null;
-            /** Can Edit */
-            can_edit: boolean | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-            /** Can Duplicate */
-            can_duplicate: boolean | null;
-        };
-        /** QGetKeysListV4Model */
-        QGetKeysListV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Provider */
-            provider: string | null;
-            /** Active */
-            active: boolean | null;
-        };
-        /** QGetKeysListV4ModelOption */
-        QGetKeysListV4ModelOption: {
-            /** Value */
-            value: string | null;
-            /** Label */
-            label: string | null;
-        };
         /** QGetLeaderboardBundleV4Metric */
         QGetLeaderboardBundleV4Metric: {
             /** Has Data */
@@ -14980,6 +14711,21 @@ export interface components {
             /** Value */
             value: string | null;
         };
+        /** QGetSettingsDetailV4Key */
+        QGetSettingsDetailV4Key: {
+            /** Key Id */
+            key_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Key Masked */
+            key_masked: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
         /** QGetSettingsDetailV4Provider */
         QGetSettingsDetailV4Provider: {
             /** Provider Id */
@@ -14999,6 +14745,21 @@ export interface components {
             provider_id: string | null;
             /** Key Id */
             key_id: string | null;
+        };
+        /** QGetSettingsListV4Key */
+        QGetSettingsListV4Key: {
+            /** Key Id */
+            key_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Key Masked */
+            key_masked: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
         };
         /** QGetSettingsListV4Setting */
         QGetSettingsListV4Setting: {
@@ -15985,6 +15746,19 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+        };
+        /** QGetToolsListV4Tool */
+        QGetToolsListV4Tool: {
+            /** Tool Id */
+            tool_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Updated At */
+            updated_at: string | null;
         };
         /** QListAgentsV4Agent */
         QListAgentsV4Agent: {
@@ -18108,6 +17882,25 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** SaveToolApiRequest */
+        SaveToolApiRequest: {
+            /**
+             * Input Tool Id
+             * Format: uuid
+             */
+            input_tool_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /** SaveToolApiResponse */
+        SaveToolApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Tool Id */
+            tool_id?: string | null;
+        };
         /** SchemaFieldItemsApiRequest */
         SchemaFieldItemsApiRequest: {
             /**
@@ -18960,35 +18753,6 @@ export interface components {
             field_id?: string | null;
             /** Field Name */
             field_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** UpdateKeyApiRequest */
-        UpdateKeyApiRequest: {
-            /**
-             * Key Id
-             * Format: uuid
-             */
-            key_id: string;
-            /** Name */
-            name: string;
-            /** Key */
-            key: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /** UpdateKeyApiResponse */
-        UpdateKeyApiResponse: {
-            /** Key Id */
-            key_id?: string | null;
-            /** Key Masked */
-            key_masked?: string | null;
-            /** Key Name */
-            key_name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -23445,6 +23209,117 @@ export interface operations {
             };
         };
     };
+    get_tools_list_api_v4_tools_list_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetToolsListApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetToolsListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tool_api_v4_tools_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetToolApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetToolApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_tool_api_v4_tools_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveToolApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveToolApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_settings_api_v4_settings_list_post: {
         parameters: {
             query?: never;
@@ -24209,228 +24084,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteAgentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_keys_list_api_v4_keys_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetKeysListApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetKeysListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_key_detail_api_v4_keys_detail_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetKeyDetailApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetKeyDetailApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_key_new_api_v4_keys_new_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetKeyNewApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetKeyNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_key_api_v4_keys_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateKeyApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateKeyApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_key_api_v4_keys_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateKeyApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateKeyApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_key_api_v4_keys_delete_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteKeyApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteKeyApiResponse"];
                 };
             };
             /** @description Validation Error */

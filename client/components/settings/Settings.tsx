@@ -59,7 +59,6 @@ import { getDefaultDepartmentIds } from "@/utils/department-picker-helpers";
 // Type-only import from server pages
 import type {
   DepartmentsListOut,
-  KeysListOut,
   PatchSettingsDraftIn,
   SettingsDetailOut,
   SettingsListOut,
@@ -93,14 +92,13 @@ export interface SettingsProps {
   settingsList: SettingsListOut["settings"];
   settingsDetail: SettingsDetailOut | null;
   selectedSettingsId: string | null;
-  keysList: KeysListOut;
+  keysList: SettingsListOut["keys"] | SettingsDetailOut["keys"];
   staffList: StaffListOut;
   departmentsList: DepartmentsListOut;
   getSettingsDetailAction: (
     settingsId: string,
     draftId?: string | null
   ) => Promise<SettingsDetailOut>;
-  getKeysListAction: () => Promise<KeysListOut>;
   getStaffListAction?: () => Promise<StaffListOut>;
   updateSettingsAction?: (
     input: UpdateSettingsIn
@@ -139,7 +137,6 @@ export default function Settings({
   staffList: initialStaffList,
   departmentsList,
   getSettingsDetailAction,
-  getKeysListAction,
   getStaffListAction,
   updateSettingsAction,
   patchSettingsDraftAction,
@@ -469,7 +466,7 @@ export default function Settings({
   );
   const [settingsDetail, setSettingsDetail] =
     useState<SettingsDetailOut | null>(initialSettingsDetail);
-  const [keysList, setKeysList] = useState<KeysListOut>(initialKeysList);
+  const [keysList, setKeysList] = useState<SettingsListOut["keys"] | SettingsDetailOut["keys"]>(initialKeysList);
   const [staffList, setStaffList] = useState<StaffListOut>(initialStaffList);
 
   // Original settings state for change tracking
@@ -782,7 +779,9 @@ export default function Settings({
         department_ids: string[] | null;
       }
     > = {};
-    (keysList.keys || []).forEach((key) => {
+    // Handle keys as array (from settingsList.keys or settingsDetail.keys)
+    const keysArray = Array.isArray(keysList) ? keysList : [];
+    keysArray.forEach((key) => {
       if (!key.key_id) return;
       mapping[key.key_id] = {
         name: key.name || "",
@@ -796,7 +795,8 @@ export default function Settings({
   }, [keysList]);
 
   const validKeyIds = useMemo(() => {
-    return (keysList.keys || [])
+    const keysArray = Array.isArray(keysList) ? keysList : [];
+    return keysArray
       .map((key) => key.key_id)
       .filter((id): id is string => id !== null && id !== undefined);
   }, [keysList]);
@@ -973,9 +973,10 @@ export default function Settings({
     try {
       const detailResult = await getSettingsDetailAction(settingsId, draftId);
       setSettingsDetail(detailResult);
-      // Refresh keys list and staff list
-      const freshKeysList = await getKeysListAction();
-      setKeysList(freshKeysList);
+      // Use keys from settings detail (embedded in query)
+      if (detailResult.keys) {
+        setKeysList(detailResult.keys);
+      }
       if (getStaffListAction) {
         const freshStaffList = await getStaffListAction();
         setStaffList(freshStaffList);

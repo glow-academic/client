@@ -127,6 +127,16 @@ CREATE TYPE types.q_get_settings_detail_v4_auth_value AS (
     items types.q_get_settings_detail_v4_auth_value_item[]
 );
 
+-- Key (for keys array)
+CREATE TYPE types.q_get_settings_detail_v4_key AS (
+    key_id uuid,
+    name text,
+    key_masked text,
+    description text,
+    active boolean,
+    department_ids text[]
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_settings_detail_v4(
     settings_id uuid,
@@ -165,6 +175,7 @@ RETURNS TABLE (
     provider_keys types.q_get_settings_detail_v4_provider_key[],
     auth_keys types.q_get_settings_detail_v4_auth_key[],
     auth_values types.q_get_settings_detail_v4_auth_value[],
+    keys types.q_get_settings_detail_v4_key[],
     all_providers types.q_get_settings_detail_v4_provider[],
     all_auths types.q_get_settings_detail_v4_auth[],
     default_admin_profile_id uuid,
@@ -375,6 +386,61 @@ settings_auth_values_data AS (
         ) as auth_values
     FROM settings_auth_values_grouped savg
 ),
+user_departments AS (
+    SELECT department_id
+    FROM params x
+    JOIN profile_departments ON profile_departments.profile_id = x.profile_id AND profile_departments.active = true
+),
+user_profile_role AS (
+    SELECT role
+    FROM params x
+    JOIN profiles ON profiles.id = x.profile_id
+),
+-- Get department_ids via setting_provider_keys -> settings -> department_settings
+key_departments_data AS (
+    SELECT 
+        spk.key_id,
+        ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
+    FROM setting_provider_keys spk
+    JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+    WHERE spk.active = true
+    GROUP BY spk.key_id
+),
+settings_keys_data AS (
+    -- Get all keys accessible to user (similar to keys/list logic)
+    SELECT 
+        COALESCE(
+            ARRAY_AGG(
+                (k.id, 
+                 (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1),
+                 CASE 
+                     WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+                     ELSE '****'
+                 END,
+                 COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''),
+                 EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
+                 kdd.department_ids
+                )::types.q_get_settings_detail_v4_key
+                ORDER BY k.created_at DESC
+            ),
+            '{}'::types.q_get_settings_detail_v4_key[]
+        ) as keys
+    FROM keys k
+    LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
+    CROSS JOIN user_profile_role upr
+    WHERE 
+        -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
+        EXISTS (
+            SELECT 1 FROM setting_provider_keys spk
+            JOIN settings s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+            JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
+            JOIN user_departments ud ON ud.department_id = ds.department_id
+            WHERE spk.key_id = k.id AND spk.active = true
+        )
+        OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
+        OR upr.role = 'superadmin'
+),
 settings_default_account_data AS (
     -- Get default admin/superadmin account for this settings
     SELECT 
@@ -526,6 +592,7 @@ SELECT
     COALESCE(spkd.provider_keys, '{}'::types.q_get_settings_detail_v4_provider_key[]) as provider_keys,
     COALESCE(sakd.auth_keys, '{}'::types.q_get_settings_detail_v4_auth_key[]) as auth_keys,
     COALESCE(savd.auth_values, '{}'::types.q_get_settings_detail_v4_auth_value[]) as auth_values,
+    COALESCE(skd.keys, '{}'::types.q_get_settings_detail_v4_key[]) as keys,
     COALESCE(apd.all_providers, '{}'::types.q_get_settings_detail_v4_provider[]) as all_providers,
     COALESCE(aad.all_auths, '{}'::types.q_get_settings_detail_v4_auth[]) as all_auths,
     COALESCE(
@@ -586,6 +653,7 @@ LEFT JOIN settings_providers_data spd ON true
 LEFT JOIN settings_provider_keys_data spkd ON true
 LEFT JOIN settings_auth_keys_data sakd ON true
 LEFT JOIN settings_auth_values_data savd ON true
+LEFT JOIN settings_keys_data skd ON true
 LEFT JOIN all_providers_data apd ON true
 LEFT JOIN all_auths_data aad ON true
 LEFT JOIN settings_default_account_data sdad ON true

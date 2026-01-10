@@ -140,8 +140,11 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "rubrics";
       }
-      if (second === "evals") {
-        return "evals";
+      if (second === "tools") {
+        if (third === "t" && fourth) {
+          return `tool-${fourth}`;
+        }
+        return "tools";
       }
       return "engine";
 
@@ -152,11 +155,8 @@ const getSectionFromSegments = (segments: string[]): string => {
       if (second === "auth") {
         return "auth";
       }
-      if (second === "keys") {
-        if (third === "k" && fourth) {
-          return `key-${fourth}`;
-        }
-        return "keys";
+      if (second === "evals") {
+        return "evals";
       }
       if (second === "departments") {
         if (third === "d" && fourth) {
