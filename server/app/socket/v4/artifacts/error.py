@@ -21,9 +21,9 @@ class GenerateErrorApiRequest(BaseModel):
 
     sid: str
     error_message: str
-    resource_id: str | None = None
+    artifact_type: str | None = None  # Artifact type (e.g., "persona")
     group_id: str | None = None
-    resource_type: str | None = None  # agent_role
+    resource_type: str | None = None  # Still needed for tool routing
 
 
 # Mapping from agent_role to agent error event name
@@ -52,10 +52,10 @@ async def _generate_error_impl(
 ) -> None:
     """Top-level error handler - routes to agent-specific error handlers."""
     try:
-        # Determine agent error event name from resource_type
-        agent_error_event = AGENT_ERROR_MAPPING.get(
-            data.resource_type or "text", "text_error"
-        )
+        # Determine agent error event name from artifact_type (preferred) or resource_type (fallback)
+        # Use artifact_type for routing if available, otherwise fall back to resource_type
+        routing_key = data.artifact_type or data.resource_type or "text"
+        agent_error_event = AGENT_ERROR_MAPPING.get(routing_key, "text_error")
 
         # Dispatch to agent-specific error handler
         await internal_sio.emit(
@@ -64,7 +64,7 @@ async def _generate_error_impl(
                 "sid": sid,
                 "success": False,
                 "message": data.error_message,
-                "resource_id": data.resource_id,
+                "artifact_type": data.artifact_type,
                 "group_id": data.group_id,
             },
         )
@@ -78,7 +78,7 @@ async def _generate_error_impl(
                     "sid": sid,
                     "success": False,
                     "message": f"Error routing failed: {str(e)}",
-                    "resource_id": data.resource_id,
+                    "artifact_type": data.artifact_type,
                     "group_id": data.group_id,
                 },
             )

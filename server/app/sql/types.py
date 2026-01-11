@@ -10260,7 +10260,6 @@ class UpdateFieldApiResponse(BaseModel):
 class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
 
     agent_id: UUID
-    resource_id: UUID
     resource_type: str
     profile_id: UUID
     message_ids: list[UUID] | None = None
@@ -10271,7 +10270,6 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
-            self.resource_id,
             self.resource_type,
             self.profile_id,
             self.message_ids,
@@ -10291,7 +10289,6 @@ class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
 class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
 
     agent_id: UUID
-    resource_id: UUID
     resource_type: str
     message_ids: list[UUID] | None = None
     department_id: UUID | None = None
@@ -10315,7 +10312,6 @@ class GetTextRunContextAndCreateRunSqlParams(BaseModel):
     agent_id: UUID
     profile_id: UUID
     department_id: UUID | None = None
-    resource_id: UUID | None = None
     resource_type: str | None = None
     upload_id: UUID | None = None
     group_id: UUID | None = None
@@ -10326,7 +10322,6 @@ class GetTextRunContextAndCreateRunSqlParams(BaseModel):
             self.agent_id,
             self.profile_id,
             self.department_id,
-            self.resource_id,
             self.resource_type,
             self.upload_id,
             self.group_id,
@@ -10378,7 +10373,6 @@ class GetTextRunContextAndCreateRunApiRequest(BaseModel):
 
     agent_id: UUID
     department_id: UUID | None = None
-    resource_id: UUID | None = None
     resource_type: str | None = None
     upload_id: UUID | None = None
     group_id: UUID | None = None
@@ -10421,7 +10415,6 @@ class GetTextRunContextForExistingRunSqlParams(BaseModel):
 
     run_id: UUID
     agent_id: UUID
-    resource_id: UUID
     resource_type: str
     message_ids: list[UUID] | None = None
     group_id: UUID | None = None
@@ -10430,7 +10423,6 @@ class GetTextRunContextForExistingRunSqlParams(BaseModel):
         return (
             self.run_id,
             self.agent_id,
-            self.resource_id,
             self.resource_type,
             self.message_ids,
             self.group_id,
@@ -10465,7 +10457,6 @@ class GetTextRunContextForExistingRunApiRequest(BaseModel):
 
     run_id: UUID
     agent_id: UUID
-    resource_id: UUID
     resource_type: str
     message_ids: list[UUID] | None = None
     group_id: UUID | None = None
@@ -10574,7 +10565,6 @@ class TextToolProgressUpdateSqlParams(BaseModel):
     call_id: str | None = None
     tool_name: str | None = None
     arguments_delta: str | None = None
-    resource_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -10584,7 +10574,6 @@ class TextToolProgressUpdateSqlParams(BaseModel):
             self.call_id,
             self.tool_name,
             self.arguments_delta,
-            self.resource_id,
         )
 
 class TextToolProgressUpdateSqlRow(BaseModel):
@@ -10604,7 +10593,6 @@ class TextToolProgressUpdateApiRequest(BaseModel):
     call_id: str | None = None
     tool_name: str | None = None
     arguments_delta: str | None = None
-    resource_id: UUID | None = None
 
 class TextToolProgressUpdateApiResponse(BaseModel):
 
@@ -14448,15 +14436,11 @@ class GetBestAgentForPersonaResourcesV4SqlParams(BaseModel):
 
     profile_id: UUID
     resource_types: list[str]
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.profile_id,
             self.resource_types,
-            self.persona_id,
-            self.draft_id,
         )
 
 class GetBestAgentForPersonaResourcesV4SqlRow(BaseModel):
@@ -14466,12 +14450,65 @@ class GetBestAgentForPersonaResourcesV4SqlRow(BaseModel):
 class GetBestAgentForPersonaResourcesV4ApiRequest(BaseModel):
 
     resource_types: list[str]
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
 
 class GetBestAgentForPersonaResourcesV4ApiResponse(BaseModel):
 
     agent_id: UUID | None = None
+
+
+
+# Generated from: get_group_ids_by_resource_ids
+
+class GetGroupIdsByResourceIdsSqlParams(BaseModel):
+
+    profile_id: UUID
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.name_id,
+            self.description_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.field_ids,
+            self.example_ids,
+        )
+
+class GetGroupIdsByResourceIdsSqlRow(BaseModel):
+
+    resource_type: str | None = None
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
+
+class GetGroupIdsByResourceIdsApiRequest(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+
+class GetGroupIdsByResourceIdsApiResponse(BaseModel):
+
+    resource_type: str | None = None
+    resource_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 
@@ -29801,6 +29838,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetBestAgentForPersonaResourcesV4ApiRequest",
         "GetBestAgentForPersonaResourcesV4ApiResponse",
     ),
+    "app/sql/v4/personas/get_group_ids_by_resource_ids_complete.sql": (
+        "GetGroupIdsByResourceIdsSqlParams",
+        "GetGroupIdsByResourceIdsSqlRow",
+        "GetGroupIdsByResourceIdsApiRequest",
+        "GetGroupIdsByResourceIdsApiResponse",
+    ),
     "app/sql/v4/personas/get_persona_complete.sql": (
         "GetPersonaSqlParams",
         "GetPersonaSqlRow",
@@ -32458,6 +32501,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/personas/get_best_agent_for_persona_resources_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/get_group_ids_by_resource_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload

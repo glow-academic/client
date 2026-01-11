@@ -607,12 +607,26 @@ function PersonaNewComponent({
   useEffect(() => {
     if (!socket || !isConnected) return;
 
+    // Use single group_id from personaData (no need to track multiple)
+    const currentGroupId = personaData?.group_id;
+
     const handleGenerationComplete = (data: {
-      success: boolean;
+      artifact_type?: string;
+      group_id?: string;
       resource_type?: string;
       message?: string;
+      success?: boolean;
       [key: string]: unknown;
     }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "persona" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this persona or wrong group_id
+      }
+
       const validResourceTypes: ResourceType[] = [
         "names",
         "descriptions",
@@ -645,23 +659,39 @@ function PersonaNewComponent({
       }
     };
 
-    const handleGenerationStart = (data: {
-      resource_types?: string[];
-      success?: boolean;
-      message?: string;
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
     }) => {
-      // Optional: Acknowledge generation start
-      if (data.success && data.resource_types) {
-        // Generation started successfully
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "persona" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this persona or wrong group_id
       }
+      // Handle progress updates if needed
     };
 
     const handleGenerationError = (data: {
-      success: boolean;
+      artifact_type?: string;
+      group_id?: string;
       message?: string;
       resource_type?: string;
       resource_types?: string[];
     }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "persona" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this persona or wrong group_id
+      }
+
       const validResourceTypes: ResourceType[] = [
         "names",
         "descriptions",
@@ -687,17 +717,17 @@ function PersonaNewComponent({
       toast.error(data.message || "Generation failed");
     };
 
-    // Listen to unified events
-    socket.on("personas_generation_start", handleGenerationStart);
-    socket.on("personas_generation_complete", handleGenerationComplete);
-    socket.on("personas_generation_error", handleGenerationError);
+    // Listen to unified events filtered by artifact_type and group_id
+    socket.on("artifact_generation_progress", handleGenerationProgress);
+    socket.on("artifact_generation_complete", handleGenerationComplete);
+    socket.on("artifact_generation_error", handleGenerationError);
 
     return () => {
-      socket.off("personas_generation_start", handleGenerationStart);
-      socket.off("personas_generation_complete", handleGenerationComplete);
-      socket.off("personas_generation_error", handleGenerationError);
+      socket.off("artifact_generation_progress", handleGenerationProgress);
+      socket.off("artifact_generation_complete", handleGenerationComplete);
+      socket.off("artifact_generation_error", handleGenerationError);
     };
-  }, [socket, isConnected]);
+  }, [socket, isConnected, personaData?.group_id]);
 
   // Multi-generation handler - accepts list of resource types and optional user instructions
   const handleGenerateResources = useCallback(
@@ -765,21 +795,21 @@ function PersonaNewComponent({
       // Note: draft_id and persona_id are NOT sent - generation is resource-agnostic
       // Pass group_id from personaData if available for regeneration, otherwise server will look up from context
       socket.emit("persona_generate", {
+        artifact_type: "persona",
         resource_types: resourceTypes,
         instructions: userInstructions || null,
         agent_id: agentId, // Pass agent_id from personaData
         group_id: personaData?.group_id || null, // Pass group_id from personaData for regeneration
-        context: {
-          name_id: formState.name_id || null,
-          description_id: formState.description_id || null,
-          instructions_id: formState.instructions_id || null,
-          color_id: formState.color_id || null,
-          icon_id: formState.icon_id || null,
-          active_flag_id: formState.active_flag_id || null,
-          field_ids: formState.field_ids || [],
-          department_ids: formState.department_ids || [],
-          example_ids: formState.example_ids || [],
-        },
+        // Flattened payload - all resource IDs at root level
+        name_id: formState.name_id || null,
+        description_id: formState.description_id || null,
+        instructions_id: formState.instructions_id || null,
+        color_id: formState.color_id || null,
+        icon_id: formState.icon_id || null,
+        active_flag_id: formState.active_flag_id || null,
+        field_ids: formState.field_ids || [],
+        department_ids: formState.department_ids || [],
+        example_ids: formState.example_ids || [],
       });
     },
     [socket, isConnected, formState, personaData]

@@ -37,8 +37,9 @@ SQL_PATH_LOG_RUN = "app/sql/v4/model_runs/log_run_complete.sql"
 @internal_sio.on("generate_complete")  # type: ignore
 async def handle_artifact_complete(data: dict[str, Any]) -> None:
     """Route completion events by output modality and handle SQL operations."""
-    # Extract modality from payload
+    # Extract modality and artifact_type from payload
     modality = data.get("modality", "text")
+    artifact_type = data.get("artifact_type")
 
     sid = data.get("sid", "")
     if not sid:
@@ -110,7 +111,7 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     emit_payload: dict[str, Any] = {
         "sid": sid,
         "type": completion_type,
-        "resource_id": data.get("resource_id"),
+        "artifact_type": artifact_type,
         "run_id": data.get("run_id"),
         "group_id": data.get("group_id"),
         "department_id": data.get("department_id"),
@@ -130,7 +131,7 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     await internal_sio.emit(agent_end_event, emit_payload)
 
     # Transform internal event format to client format
-    client_payload = _build_client_payload(modality, completion_type, data)
+    client_payload = _build_client_payload(modality, completion_type, data, artifact_type)
 
     # Emit unified client event
     await sio.emit(
@@ -141,13 +142,13 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
 
 
 def _build_client_payload(
-    modality: str, completion_type: str, data: dict[str, Any]
+    modality: str, completion_type: str, data: dict[str, Any], artifact_type: str | None
 ) -> dict[str, Any]:
     """Build client payload based on modality."""
     client_payload: dict[str, Any] = {
         "modality": modality,
+        "artifact_type": artifact_type,
         "resource_type": data.get("resource_type"),
-        "resource_id": data.get("resource_id"),
         "run_id": data.get("run_id"),
         "group_id": data.get("group_id"),
         "type": completion_type,

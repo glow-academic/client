@@ -25,8 +25,7 @@ CREATE OR REPLACE FUNCTION socket_text_tool_progress_update_v4(
     progress_type text,
     call_id text DEFAULT NULL,
     tool_name text DEFAULT NULL,
-    arguments_delta text DEFAULT '',
-    resource_id uuid DEFAULT NULL
+    arguments_delta text DEFAULT ''
 )
 RETURNS TABLE (
     tool_id uuid,
@@ -40,7 +39,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH params AS (
-    SELECT run_id, tool_call_id, call_id, tool_name, arguments_delta, progress_type, resource_id
+    SELECT run_id, tool_call_id, call_id, tool_name, arguments_delta, progress_type
 ),
 -- Get tool_id AND tool_type from tool_name + agent_tools junction table
 -- Works with any agent (not hardcoded to document)

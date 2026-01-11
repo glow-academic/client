@@ -43,11 +43,11 @@ PERSONA_RESOURCE_TYPES = [
 class GeneratePersonaPayload(BaseModel):
     """Request to generate persona resources - completely resource-agnostic."""
 
+    artifact_type: str = "persona"  # Artifact type identifier
     resource_types: list[str] | None = None  # Array of resource types to generate
     resource_type: str | None = (
         None  # Single resource type (for backward compatibility)
     )
-    context: dict[str, Any] | None = None  # Resource IDs for group_id lookup
     instructions: str | None = (
         None  # Optional: For regeneration (renamed from user_instructions)
     )
@@ -60,6 +60,16 @@ class GeneratePersonaPayload(BaseModel):
     agent_id: str | None = (
         None  # Optional: Agent ID from GET endpoint (frontend passes based on resource type)
     )
+    # Flattened resource IDs (removed context object)
+    name_id: str | None = None
+    description_id: str | None = None
+    color_id: str | None = None
+    icon_id: str | None = None
+    instructions_id: str | None = None
+    active_flag_id: str | None = None
+    field_ids: list[str] | None = None
+    department_ids: list[str] | None = None
+    example_ids: list[str] | None = None
 
 
 async def _persona_generate_impl(
@@ -79,7 +89,7 @@ async def _persona_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Either resource_types or resource_type must be provided",
-                    resource_id=None,
+                    artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
                 ),
@@ -97,7 +107,7 @@ async def _persona_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message=f"Invalid resource types: {', '.join(invalid_types)}",
-                    resource_id=None,
+                    artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
                 ),
@@ -116,7 +126,7 @@ async def _persona_generate_impl(
                     GenerateErrorApiRequest(
                         sid=sid,
                         error_message="Invalid agent_id format",
-                        resource_id=None,
+                        artifact_type="persona",
                         group_id=None,
                         resource_type="persona",
                     ),
@@ -143,7 +153,7 @@ async def _persona_generate_impl(
                         GenerateErrorApiRequest(
                             sid=sid,
                             error_message="Could not find suitable agent for persona generation",
-                            resource_id=None,
+                            artifact_type="persona",
                             group_id=None,
                             resource_type="persona",
                         ),
@@ -159,7 +169,7 @@ async def _persona_generate_impl(
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="No agent_id provided and could not find suitable agent",
-                    resource_id=None,
+                    artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
                 ),
@@ -176,21 +186,20 @@ async def _persona_generate_impl(
                 # Invalid UUID, treat as None
                 passed_group_id = None
 
-        # Fetch group_ids from database using resource IDs from context (only if group_id not passed)
+        # Fetch group_ids from database using resource IDs from payload (only if group_id not passed)
         group_ids_map: dict[str, str | None] = {}
-        if not passed_group_id and data.context:
+        if not passed_group_id:
             async with get_db_connection() as conn:
-                # Extract resource IDs from context
-                context = data.context
-                name_id = uuid.UUID(context.get("name_id")) if context.get("name_id") else None
-                description_id = uuid.UUID(context.get("description_id")) if context.get("description_id") else None
-                color_id = uuid.UUID(context.get("color_id")) if context.get("color_id") else None
-                icon_id = uuid.UUID(context.get("icon_id")) if context.get("icon_id") else None
-                instructions_id = uuid.UUID(context.get("instructions_id")) if context.get("instructions_id") else None
-                active_flag_id = uuid.UUID(context.get("active_flag_id")) if context.get("active_flag_id") else None
-                department_ids = [uuid.UUID(d) for d in context.get("department_ids", [])] if context.get("department_ids") else None
-                field_ids = [uuid.UUID(f) for f in context.get("field_ids", [])] if context.get("field_ids") else None
-                example_ids = [uuid.UUID(e) for e in context.get("example_ids", [])] if context.get("example_ids") else None
+                # Extract resource IDs from root level payload (flattened structure)
+                name_id = uuid.UUID(data.name_id) if data.name_id else None
+                description_id = uuid.UUID(data.description_id) if data.description_id else None
+                color_id = uuid.UUID(data.color_id) if data.color_id else None
+                icon_id = uuid.UUID(data.icon_id) if data.icon_id else None
+                instructions_id = uuid.UUID(data.instructions_id) if data.instructions_id else None
+                active_flag_id = uuid.UUID(data.active_flag_id) if data.active_flag_id else None
+                department_ids = [uuid.UUID(d) for d in data.department_ids] if data.department_ids else None
+                field_ids = [uuid.UUID(f) for f in data.field_ids] if data.field_ids else None
+                example_ids = [uuid.UUID(e) for e in data.example_ids] if data.example_ids else None
 
                 # Execute SQL function - returns multiple rows, use fetch() directly
                 rows = await conn.fetch(
@@ -241,6 +250,7 @@ async def _persona_generate_impl(
                 "generate_artifact",
                 {
                     "sid": sid,
+                    "artifact_type": data.artifact_type,  # Pass artifact_type through
                     "agent_id": str(selected_agent_id),  # Use agent_id directly
                     "resource_types": [resource_type],  # Use resource_types array
                     "group_id": str(group_id)
@@ -251,24 +261,13 @@ async def _persona_generate_impl(
                 },
             )
 
-        # Emit personas_generation_start client event to notify client
-        await sio.emit(
-            "personas_generation_start",
-            {
-                "resource_types": resource_types,
-                "success": True,
-                "message": f"Started generation for {len(resource_types)} resource type(s)",
-            },
-            room=sid,
-        )
-
     except Exception as e:
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Failed to generate persona resources: {str(e)}",
-                resource_id=None,
+                artifact_type="persona",
                 group_id=None,
                 resource_type="persona",
             ),
@@ -288,7 +287,7 @@ async def persona_generate(sid: str, data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    resource_id=None,
+                    artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
                 ),
@@ -303,7 +302,7 @@ async def persona_generate(sid: str, data: dict[str, Any]) -> None:
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                resource_id=None,
+                artifact_type="persona",
                 group_id=None,
                 resource_type="persona",
             ),
@@ -326,7 +325,7 @@ async def persona_generate_internal(data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    resource_id=None,
+                    artifact_type="persona",
                     group_id=None,
                     resource_type="persona",
                 ),
@@ -343,7 +342,7 @@ async def persona_generate_internal(data: dict[str, Any]) -> None:
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                resource_id=None,
+                artifact_type="persona",
                 group_id=None,
                 resource_type="persona",
             ),

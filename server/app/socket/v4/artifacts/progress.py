@@ -34,8 +34,9 @@ SQL_PATH_UPLOAD = "app/sql/v4/uploads/insert_upload_complete.sql"
 @internal_sio.on("generate_progress")  # type: ignore
 async def handle_artifact_progress(data: dict[str, Any]) -> None:
     """Route progress events by output modality and handle SQL operations."""
-    # Extract modality from payload
+    # Extract modality and artifact_type from payload
     modality = data.get("modality", "text")
+    artifact_type = data.get("artifact_type")
 
     sid = data.get("sid", "")
     if not sid:
@@ -68,8 +69,8 @@ async def handle_artifact_progress(data: dict[str, Any]) -> None:
         "artifact_generation_progress",
         {
             "modality": modality,
+            "artifact_type": artifact_type,
             "resource_type": data.get("resource_type"),
-            "resource_id": data.get("resource_id"),
             "run_id": data.get("run_id"),
             "group_id": data.get("group_id"),
             "type": client_type,
@@ -140,15 +141,13 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
     """Handle text tool progress SQL operations."""
     try:
         run_id_str = data.get("run_id")
-        resource_id_str = data.get("resource_id")
         tool_call_id = data.get("tool_call_id")
         progress_type = data.get("type", "")
 
-        if not run_id_str or not resource_id_str or not tool_call_id:
+        if not run_id_str or not tool_call_id:
             return
 
         run_id = uuid.UUID(run_id_str)
-        resource_id = uuid.UUID(resource_id_str)
 
         # Map progress_type to SQL progress_type
         sql_progress_type = "tool_call_start"
@@ -158,6 +157,12 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
             sql_progress_type = "tool_call_complete"
 
         async with get_db_connection() as conn:
+            # Get group_id from run (resource_id no longer needed)
+            group_id = await conn.fetchval(
+                "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
+                run_id,
+            )
+            
             progress_params = TextToolProgressUpdateSqlParams(
                 run_id=run_id,
                 tool_call_id=tool_call_id,
@@ -167,7 +172,6 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
                 arguments_delta=data.get("arguments_delta")
                 or data.get("arguments")
                 or "",
-                resource_id=resource_id,
             )
             result = cast(
                 TextToolProgressUpdateSqlRow,
@@ -197,7 +201,7 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
 async def _handle_image_start(data: dict[str, Any]) -> None:
     """Handle image start SQL operation - create upload record."""
     try:
-        image_id_str = data.get("image_id") or data.get("resource_id")
+        image_id_str = data.get("image_id")
         agent_id_str = data.get("agent_id")
         profile_id_str = data.get("profile_id")
         department_id_str = data.get("department_id")
@@ -234,7 +238,7 @@ async def _handle_image_start(data: dict[str, Any]) -> None:
 async def _handle_video_start(data: dict[str, Any]) -> None:
     """Handle video start SQL operations - create upload record and run context."""
     try:
-        video_id_str = data.get("video_id") or data.get("resource_id")
+        video_id_str = data.get("video_id")
         profile_id_str = data.get("profile_id")
 
         if not video_id_str or not profile_id_str:
