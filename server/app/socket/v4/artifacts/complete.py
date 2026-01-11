@@ -36,25 +36,12 @@ SQL_PATH_LOG_RUN = "app/sql/v4/model_runs/log_run_complete.sql"
 @internal_sio.on("generate_complete")  # type: ignore
 async def handle_artifact_complete(data: dict[str, Any]) -> None:
     """Route completion events by output modality and handle SQL operations."""
-    # #region agent log
-    import json
-    try:
-        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"N","location":"complete.py:36","message":"handle_artifact_complete received generate_complete","data":{"modality":data.get("modality"),"artifact_type":data.get("artifact_type"),"completion_type":data.get("type"),"has_sid":bool(data.get("sid"))},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-    except: pass
-    # #endregion
     # Extract modality and artifact_type from payload
     modality = data.get("modality", "text")
     artifact_type = data.get("artifact_type")
 
     sid = data.get("sid", "")
     if not sid:
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"N","location":"complete.py:45","message":"No sid in generate_complete, returning early","data":{},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
         return  # No socket ID, can't emit to client
 
     completion_type = data.get("type", "run_complete")
@@ -68,12 +55,6 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
         resource_type = data.get("resource_type")
         group_id = data.get("group_id")
         agent_id = data.get("agent_id")
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"L","location":"complete.py:52","message":"tool_call_complete handler invoked","data":{"call_id":call_id,"tool_name":tool_name,"resource_type":resource_type,"agent_id":agent_id,"has_call_id":bool(call_id),"has_tool_name":bool(tool_name),"has_resource_type":bool(resource_type),"has_agent_id":bool(agent_id)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
 
         if call_id:
             # Render templates (fixed function)
@@ -81,12 +62,6 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
 
             # Execute tool to create resource record
             if tool_name and resource_type and agent_id:
-                # #region agent log
-                try:
-                    with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"L","location":"complete.py:64","message":"Executing tool call","data":{"call_id":call_id,"tool_name":tool_name,"resource_type":resource_type,"agent_id":agent_id},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                except: pass
-                # #endregion
                 try:
                     async with get_db_connection() as conn:
                         resource_id = await _execute_tool_call(
@@ -97,12 +72,6 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
                             group_id=uuid.UUID(group_id) if group_id else None,
                             agent_id=uuid.UUID(agent_id),
                         )
-                        # #region agent log
-                        try:
-                            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"L","location":"complete.py:75","message":"Tool call executed successfully","data":{"call_id":call_id,"resource_id":str(resource_id) if resource_id else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                        except: pass
-                        # #endregion
                         if resource_id:
                             logger.info(
                                 f"Created {resource_type} resource {resource_id} from tool call {call_id}"
@@ -110,22 +79,9 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
                             # Store resource_id in data for client payload
                             data["resource_id"] = str(resource_id)
                 except Exception as exec_error:
-                    # #region agent log
-                    try:
-                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"L","location":"complete.py:82","message":"Tool call execution failed","data":{"call_id":call_id,"error":str(exec_error)[:500]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                    except: pass
-                    # #endregion
                     logger.warning(
                         f"Failed to execute tool call {call_id} for {resource_type}: {str(exec_error)}"
                     )
-            else:
-                # #region agent log
-                try:
-                    with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"L","location":"complete.py:64","message":"Tool call execution skipped - missing required fields","data":{"has_tool_name":bool(tool_name),"has_resource_type":bool(resource_type),"has_agent_id":bool(agent_id)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                except: pass
-                # #endregion
 
     # Handle SQL operations based on modality
     if completion_type == "run_complete":
@@ -161,23 +117,11 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     client_payload["sid"] = sid
 
     # Emit unified client event
-    # #region agent log
-    try:
-        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"N","location":"complete.py:151","message":"Emitting artifact_generation_complete to client","data":{"sid":sid,"modality":modality,"completion_type":completion_type,"client_payload_keys":list(client_payload.keys())},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-    except: pass
-    # #endregion
     await sio.emit(
         "artifact_generation_complete",
         client_payload,
         room=sid,
     )
-    # #region agent log
-    try:
-        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"N","location":"complete.py:156","message":"artifact_generation_complete emitted successfully","data":{"sid":sid},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-    except: pass
-    # #endregion
 
 
 def _build_client_payload(
@@ -522,23 +466,11 @@ async def _execute_tool_call(
             call_record = await conn.fetchrow(sql_text_call, call_id)
 
         if not call_record:
-            # #region agent log
-            try:
-                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:499","message":"Call record not found","data":{"call_id":call_id},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-            except: pass
-            # #endregion
             logger.warning(f"Call record not found for call_id: {call_id}")
             return None
 
         call_uuid = call_record["id"]
         tool_id = call_record["tool_id"]
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:503","message":"Call record found","data":{"call_id":call_id,"call_uuid":str(call_uuid),"tool_id":str(tool_id)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
 
         # Skip resource type verification - tools are already filtered by resource_type
         # when fetched in get_text_run_context_and_create_run_complete.sql, so if a tool
@@ -568,22 +500,10 @@ async def _execute_tool_call(
                     resource_data[field_name] = tv["number_value"]
                 elif tv["field_type"] == "boolean":
                     resource_data[field_name] = tv["boolean_value"]
-            # #region agent log
-            try:
-                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:536","message":"Using template values","data":{"template_values_count":len(template_values),"resource_data":resource_data},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-            except: pass
-            # #endregion
         else:
             # Fallback: parse arguments_raw and use directly (no template rendering)
             # This should rarely happen if template rendering worked correctly
             arguments_raw = call_record["arguments_raw"]
-            # #region agent log
-            try:
-                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:547","message":"No template values, using arguments_raw","data":{"arguments_raw":arguments_raw},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-            except: pass
-            # #endregion
             try:
                 parsed_args = json.loads(arguments_raw) if arguments_raw else {}
                 resource_data = parsed_args
@@ -591,24 +511,12 @@ async def _execute_tool_call(
                     f"Using arguments_raw directly for {resource_type} (no template_values found)"
                 )
             except json.JSONDecodeError:
-                # #region agent log
-                try:
-                    with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:556","message":"Failed to parse arguments_raw","data":{"arguments_raw":arguments_raw},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                except: pass
-                # #endregion
                 logger.warning(
                     f"Failed to parse arguments_raw for {resource_type}: {arguments_raw}"
                 )
                 return None
 
         # Create resource record using dynamic discovery
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:563","message":"Calling _create_resource_record","data":{"resource_type":resource_type,"call_uuid":str(call_uuid),"resource_data":resource_data},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
         resource_id = await _create_resource_record(
             conn=conn,
             resource_type=resource_type,
@@ -617,12 +525,6 @@ async def _execute_tool_call(
             mcp=False,
             tool_id=str(tool_id),
         )
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:572","message":"_create_resource_record returned","data":{"resource_id":str(resource_id) if resource_id else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
 
         return resource_id
     except Exception as exec_error:
@@ -686,20 +588,8 @@ async def _create_resource_record(
         
         if result and result.get("id"):
             resource_id = uuid.UUID(str(result["id"]))
-            # #region agent log
-            try:
-                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:632","message":"Resource record created successfully","data":{"resource_id":str(resource_id),"resource_type":resource_type},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-            except: pass
-            # #endregion
             return resource_id
         
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"complete.py:635","message":"Resource record creation returned no id","data":{"has_result":result is not None,"result_keys":list(result.keys()) if result else []},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
         return None
     except Exception as create_error:
         logger.error(

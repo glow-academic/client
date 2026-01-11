@@ -232,46 +232,10 @@ async def _call_llm_text_stream(
                                 "parameters": parameters,
                                 "strict": True,
                             })
-                        else:
-                            # #region agent log
-                            import json
-                            try:
-                                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"Skipping invalid tool (missing function.name)","data":{"tool":str(tool)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                            except: pass
-                            # #endregion
-                    else:
-                        # #region agent log
-                        import json
-                        try:
-                            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"Skipping invalid tool (wrong format)","data":{"tool":str(tool)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                        except: pass
-                        # #endregion
                 
                 if validated_tools:
-                    # #region agent log
-                    import json
-                    try:
-                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            # Log first tool structure in detail, including parameters schema
-                            first_tool = validated_tools[0] if validated_tools else None
-                            first_tool_params = None
-                            if isinstance(first_tool, dict):
-                                first_tool_params = first_tool.get("parameters")
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"H","location":"generate.py:252","message":"Adding tools to aresponses kwargs (Responses format)","data":{"num_tools":len(validated_tools),"first_tool":first_tool,"first_tool_keys":list(first_tool.keys()) if isinstance(first_tool, dict) else [],"first_tool_params":first_tool_params,"has_additionalProperties":first_tool_params.get("additionalProperties") if isinstance(first_tool_params, dict) else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                    except: pass
-                    # #endregion
                     responses_kwargs["tools"] = validated_tools  # type: ignore
                     responses_kwargs["tool_choice"] = tool_choice if isinstance(tool_choice, str) else tool_choice
-                else:
-                    # #region agent log
-                    import json
-                    try:
-                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"No valid tools after validation, skipping tools","data":{"original_tools_count":len(tools)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                    except: pass
-                    # #endregion
             
             if reasoning:
                 responses_kwargs["reasoning"] = reasoning
@@ -287,14 +251,6 @@ async def _call_llm_text_stream(
                 if responses_extra_headers:
                     responses_kwargs["extra_headers"] = responses_extra_headers
             
-            # #region agent log
-            import json
-            try:
-                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:170","message":"Calling litellm.aresponses()","data":{"model":model,"has_input":True,"input_type":type(messages).__name__,"stream":True},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-            except: pass
-            # #endregion
-            
             stream = await litellm.aresponses(**responses_kwargs)
             async for chunk in stream:
                 yield chunk
@@ -307,13 +263,6 @@ async def _call_llm_text_stream(
         logger.debug(
             f"aresponses() not available or failed: {e}, falling back to acompletion()"
         )
-        # #region agent log
-        import json
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:182","message":"aresponses() failed, falling back to acompletion()","data":{"error":str(e)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
 
     # Fallback to acompletion() - add stream_options to include usage
     # acompletion() needs OpenAI format tools, so convert if needed
@@ -342,32 +291,11 @@ async def _call_llm_text_stream(
         
         if acompletion_tools:
             base_kwargs["tools"] = acompletion_tools
-            # #region agent log
-            import json
-            try:
-                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:292","message":"Converted tools to OpenAI format for acompletion()","data":{"num_tools":len(acompletion_tools),"first_tool":acompletion_tools[0] if acompletion_tools else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-            except: pass
-            # #endregion
         else:
             # No valid tools, remove tools parameter
             base_kwargs.pop("tools", None)
             base_kwargs.pop("tool_choice", None)
-            # #region agent log
-            import json
-            try:
-                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:292","message":"No valid tools after conversion, removing tools from acompletion()","data":{"original_tools_count":len(tools) if tools else 0},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-            except: pass
-            # #endregion
     
-    # #region agent log
-    import json
-    try:
-        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:186","message":"Calling litellm.acompletion()","data":{"model":base_kwargs.get("model"),"stream":True,"stream_options_include_usage":True,"has_tools":bool(base_kwargs.get("tools"))},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-    except: pass
-    # #endregion
     
     # Add stream_options to include usage in streaming chunks
     base_kwargs["stream_options"] = {"include_usage": True}
@@ -645,13 +573,6 @@ async def _handle_text_generation(
     # - Responses format for aresponses() (preferred)
     openai_tools = convert_tools_to_openai_format(agent_tools_config)
     responses_tools = convert_tools_to_responses_format(agent_tools_config)
-    # #region agent log
-    import json
-    try:
-        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"H","location":"generate.py:543","message":"Tools converted to OpenAI format","data":{"num_tools":len(openai_tools),"tools":openai_tools[:3] if len(openai_tools) > 3 else openai_tools},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-    except: pass
-    # #endregion
 
     # Construct input items for the agent
     input_items: list[TResponseInputItem] = []
@@ -870,12 +791,6 @@ async def _handle_text_generation(
                         "arguments": "",
                     },
                     )
-                    # #region agent log
-                    try:
-                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"K","location":"generate.py:834","message":"tool_call_start event received","data":{"tool_call_id":tool_call_id,"tool_index":tool_index},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                    except: pass
-                    # #endregion
 
                     await internal_sio.emit(
                     "generate_progress",
@@ -936,12 +851,6 @@ async def _handle_text_generation(
                     # Prefer state store over event.get() for final arguments
                     st = tool_call_states.get(tool_call_id, {})
                     arguments_str = event.get("arguments") or st.get("arguments", "")
-                    # #region agent log
-                    try:
-                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"K","location":"generate.py:897","message":"tool_call_complete event received","data":{"tool_call_id":tool_call_id,"tool_name":tool_name,"arguments_str_length":len(arguments_str) if arguments_str else 0,"arguments_str_preview":arguments_str[:100] if arguments_str else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                    except: pass
-                    # #endregion
 
                     # Parse args (best effort)
                     try:
@@ -1002,33 +911,15 @@ async def _handle_text_generation(
                 # -------- message completion + usage
                 elif event_type == "message_complete":
                     usage_data = event.get("usage")
-                    # #region agent log
-                    try:
-                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:1003","message":"message_complete event received","data":{"has_usage":usage_data is not None,"usage_type":type(usage_data).__name__ if usage_data else None,"usage":usage_data,"current_input_tokens":input_tokens,"current_output_tokens":output_tokens,"has_tool_calls":len(tool_call_states) > 0},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                    except: pass
-                    # #endregion
                     if isinstance(usage_data, dict):
                         input_tokens = usage_data.get("prompt_tokens", 0) or 0
                         output_tokens = usage_data.get("completion_tokens", 0) or 0
-                        # #region agent log
-                        try:
-                            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:1013","message":"Updated tokens from message_complete","data":{"input_tokens":input_tokens,"output_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                        except: pass
-                        # #endregion
                     else:
                         logger.warning(
                             f"message_complete event received without usage_data for run {run_id}"
                         )
                     # message_complete signals stream completion - break out of loop
                     # The stream will end naturally, and generate_complete will be emitted after await task
-                    # #region agent log
-                    try:
-                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1023","message":"message_complete received - stream should end soon","data":{"event_count":event_count},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                    except: pass
-                    # #endregion
         except Exception as stream_error:
             logger.error(
                 f"Error processing stream events for run {run_id}: {str(stream_error)}",
@@ -1036,12 +927,6 @@ async def _handle_text_generation(
             )
             raise
         finally:
-            # #region agent log
-            try:
-                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1030","message":"_stream_and_emit finally block - stream ended","data":{"event_count":event_count,"final_input_tokens":input_tokens,"final_output_tokens":output_tokens,"assistant_output_length":len(assistant_output)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-            except: pass
-            # #endregion
             if event_count == 0:
                 logger.warning(
                     f"No events received from stream for run {run_id}. "
@@ -1054,29 +939,11 @@ async def _handle_text_generation(
     await store_active_run(group_id_str, task)
 
     try:
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1042","message":"Waiting for stream task to complete","data":{},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
         await task
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1043","message":"Stream task completed successfully","data":{"final_input_tokens":input_tokens,"final_output_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
     except asyncio.CancelledError:
         # Task was cancelled - cleanup already handled
         raise
     except BaseException as stream_error:
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1047","message":"Stream task failed with error","data":{"error":str(stream_error)[:500]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
         if isinstance(stream_error, (KeyboardInterrupt, SystemExit)):
             raise
         raise
@@ -1085,12 +952,6 @@ async def _handle_text_generation(
         await remove_active_run(group_id_str)
 
     # Emit run completion event with usage data
-    # #region agent log
-    try:
-        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:1062","message":"Emitting generate_complete with final token counts","data":{"input_text_tokens":input_tokens,"output_text_tokens":output_tokens,"assistant_output_length":len(assistant_output)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-    except: pass
-    # #endregion
     await internal_sio.emit(
         "generate_complete",
         {

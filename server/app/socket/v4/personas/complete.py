@@ -43,32 +43,12 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
     resource_id_str = data.get("resource_id")
     resource_type = data.get("resource_type")
 
-    # #region agent log
-    import json
-    try:
-        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"O","location":"personas/complete.py:42","message":"handle_persona_artifact_complete received resource_complete","data":{"has_group_id":bool(group_id_str),"has_resource_id":bool(resource_id_str),"resource_type":resource_type,"completion_type":data.get("type")},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-    except: pass
-    # #endregion
-
     if not group_id_str or not resource_type:
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"O","location":"personas/complete.py:50","message":"Missing required fields, returning early","data":{"has_group_id":bool(group_id_str),"has_resource_type":bool(resource_type)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
         return
 
     # If no resource_id, this is an error - we expected a tool call to create a resource
     # Emit resource_error so the error handler can process it and unblock the frontend
     if not resource_id_str:
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"O","location":"personas/complete.py:58","message":"No resource_id - expected tool call but got text-only, emitting resource_error","data":{"group_id":group_id_str,"resource_type":resource_type},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
         # Emit resource_error - the personas error handler will pick it up and emit persona_generation_error to client
         await internal_sio.emit(
             "resource_error",
@@ -81,12 +61,6 @@ async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
                 "trace_id": data.get("trace_id"),
             },
         )
-        # #region agent log
-        try:
-            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"O","location":"personas/complete.py:75","message":"resource_error emitted for missing resource_id","data":{"sid":sid,"resource_type":resource_type},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-        except: pass
-        # #endregion
         return
 
     group_id = uuid.UUID(group_id_str)
