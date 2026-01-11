@@ -9,11 +9,12 @@ from typing import Any, AsyncIterator, cast
 import httpx
 import websockets
 from agents.items import TResponseInputItem
-from app.infra.v4.artifacts import (convert_tools_to_openai_format,
-                                    format_messages_for_litellm,
-                                    stream_litellm_events)
-from app.infra.v4.websocket.find_profile_by_socket import \
-    find_profile_by_socket
+from app.infra.v4.artifacts import (
+    convert_tools_to_openai_format,
+    format_messages_for_litellm,
+    stream_litellm_events,
+)
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.is_run_cancelled import is_run_cancelled
 from app.infra.v4.websocket.remove_active_run import remove_active_run
@@ -21,21 +22,25 @@ from app.infra.v4.websocket.store_active_run import store_active_run
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import IMAGE_FOLDER, VIDEO_FOLDER, get_internal_sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
-                           GetAudioRunContextAndCreateRunSqlRow,
-                           GetGenerationRunContextAndCreateRunSqlParams,
-                           GetGenerationRunContextAndCreateRunSqlRow,
-                           GetImageGenerationContextAndCreateUploadSqlParams,
-                           GetImageGenerationContextAndCreateUploadSqlRow,
-                           GetMessagesByIdsSqlParams, GetMessagesByIdsSqlRow,
-                           GetMessagesByRunIdSqlParams,
-                           GetMessagesByRunIdSqlRow,
-                           GetTextRunContextForExistingRunSqlParams,
-                           GetTextRunContextForExistingRunSqlRow,
-                           GetVideoRunContextAndCreateRunSqlParams,
-                           GetVideoRunContextAndCreateRunSqlRow,
-                           IGetTextRunContextAndCreateRunV4Tool,
-                           InsertUploadSqlParams, InsertUploadSqlRow)
+from app.sql.types import (
+    GetAudioRunContextAndCreateRunSqlParams,
+    GetAudioRunContextAndCreateRunSqlRow,
+    GetGenerationRunContextAndCreateRunSqlParams,
+    GetGenerationRunContextAndCreateRunSqlRow,
+    GetImageGenerationContextAndCreateUploadSqlParams,
+    GetImageGenerationContextAndCreateUploadSqlRow,
+    GetMessagesByIdsSqlParams,
+    GetMessagesByIdsSqlRow,
+    GetMessagesByRunIdSqlParams,
+    GetMessagesByRunIdSqlRow,
+    GetTextRunContextForExistingRunSqlParams,
+    GetTextRunContextForExistingRunSqlRow,
+    GetVideoRunContextAndCreateRunSqlParams,
+    GetVideoRunContextAndCreateRunSqlRow,
+    IGetTextRunContextAndCreateRunV4Tool,
+    InsertUploadSqlParams,
+    InsertUploadSqlRow,
+)
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -176,7 +181,9 @@ async def _call_llm_text_stream(
         import logging
 
         logger = logging.getLogger(__name__)
-        logger.debug(f"aresponses() not available or failed: {e}, falling back to acompletion()")
+        logger.debug(
+            f"aresponses() not available or failed: {e}, falling back to acompletion()"
+        )
 
     # Fallback to acompletion()
     stream = await litellm.acompletion(**base_kwargs)
@@ -451,7 +458,9 @@ async def _handle_text_generation(
 
     # Construct input items for the agent
     input_items: list[TResponseInputItem] = []
-    seen_message_ids: set[uuid.UUID] = set()  # Track seen messages to prevent duplicates
+    seen_message_ids: set[uuid.UUID] = (
+        set()
+    )  # Track seen messages to prevent duplicates
 
     # Handle audio input if upload_id is provided
     if result.upload_id and result.file_path:

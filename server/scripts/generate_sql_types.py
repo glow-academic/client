@@ -1212,11 +1212,15 @@ async def main() -> int:
             )
 
             # Check if types.py is complete - if not, fall back to full compilation
-            if not is_types_file_complete(server_root, existing_app_types, existing_test_types):
+            if not is_types_file_complete(
+                server_root, existing_app_types, existing_test_types
+            ):
                 print(
                     f"\n⚠️  types.py appears incomplete (found {len(existing_app_types)} app types, expected many more)"
                 )
-                print("   Falling back to full compilation to ensure all types are available...")
+                print(
+                    "   Falling back to full compilation to ensure all types are available..."
+                )
                 print("   This may take a moment...\n")
                 # Switch to full mode by clearing sql_files and re-finding all files
                 sql_files = []
@@ -1235,7 +1239,9 @@ async def main() -> int:
                     return 0
                 # Re-sort SQL files with analytics routes first
                 sorted_sql_files = sorted(sql_files, key=_sort_sql_files)
-                print(f"🔍 Found {len(sql_files)} SQL files to process (full compilation mode)")
+                print(
+                    f"🔍 Found {len(sql_files)} SQL files to process (full compilation mode)"
+                )
 
         # Process each SQL file
         errors: list[tuple[str, str]] = []  # (sql_path, error_message)

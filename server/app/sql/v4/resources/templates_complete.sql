@@ -122,8 +122,8 @@ BEGIN
     );
     
     -- INSERT into templates table (always insert, never update)
-    INSERT INTO templates(name, active, call_id, mcp)
-    VALUES (name, true, v_call_id, mcp)
+    INSERT INTO templates(name, active, mcp)
+    VALUES (name, true, mcp)
     RETURNING id INTO v_template_id;
 
         

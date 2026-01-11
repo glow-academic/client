@@ -63,7 +63,9 @@ async def stream_litellm_events(
     # Detect format on first chunk
     format_detected: str | None = None
     choices: dict[int, ChoiceState] = {}
-    response_items: dict[str, dict[str, Any]] = {}  # item_id -> state for responses() format
+    response_items: dict[
+        str, dict[str, Any]
+    ] = {}  # item_id -> state for responses() format
 
     def get_choice_state(choice_index: int) -> ChoiceState:
         if choice_index not in choices:
@@ -77,10 +79,14 @@ async def stream_litellm_events(
     async for chunk in stream:
         # Detect format on first chunk
         if format_detected is None:
-            if hasattr(chunk, "type") or (isinstance(chunk, dict) and chunk.get("type")):
+            if hasattr(chunk, "type") or (
+                isinstance(chunk, dict) and chunk.get("type")
+            ):
                 # Responses API format (has "type" field)
                 format_detected = "responses"
-            elif hasattr(chunk, "choices") or (isinstance(chunk, dict) and "choices" in chunk):
+            elif hasattr(chunk, "choices") or (
+                isinstance(chunk, dict) and "choices" in chunk
+            ):
                 # Completions API format (has "choices" field)
                 format_detected = "completions"
             else:
@@ -92,7 +98,9 @@ async def stream_litellm_events(
             async for event in _parse_responses_chunk(chunk, response_items):
                 yield event
         else:
-            async for event in _parse_completions_chunk(chunk, choices, get_choice_state, stable_tool_key):
+            async for event in _parse_completions_chunk(
+                chunk, choices, get_choice_state, stable_tool_key
+            ):
                 yield event
 
     # Emit final completion events for responses format
@@ -252,8 +260,12 @@ async def _parse_responses_chunk(
             usage = chunk.get("usage")
             if isinstance(usage, dict):
                 usage_data = {
-                    "prompt_tokens": usage.get("input_tokens", usage.get("prompt_tokens", 0)),
-                    "completion_tokens": usage.get("output_tokens", usage.get("completion_tokens", 0)),
+                    "prompt_tokens": usage.get(
+                        "input_tokens", usage.get("prompt_tokens", 0)
+                    ),
+                    "completion_tokens": usage.get(
+                        "output_tokens", usage.get("completion_tokens", 0)
+                    ),
                 }
 
         ev: dict[str, Any] = {
@@ -379,9 +391,7 @@ async def _parse_completions_chunk(
                 if hasattr(usage_obj, "prompt_tokens"):
                     usage_data = {
                         "prompt_tokens": usage_obj.prompt_tokens,
-                        "completion_tokens": getattr(
-                            usage_obj, "completion_tokens", 0
-                        ),
+                        "completion_tokens": getattr(usage_obj, "completion_tokens", 0),
                     }
             elif isinstance(chunk, dict):
                 usage_data = chunk.get("usage")
@@ -402,9 +412,7 @@ async def _parse_completions_chunk(
                         "type": "tool_call_complete",
                         "choice_index": i,
                         "tool_index": tool_index,
-                        "tool_call_id": (
-                            tc_state.id or stable_tool_key(i, tool_index)
-                        ),
+                        "tool_call_id": (tc_state.id or stable_tool_key(i, tool_index)),
                         "id": tc_state.id,  # raw provider id (may be None)
                         "name": tc_state.function.name,
                         "arguments": tc_state.function.arguments,
