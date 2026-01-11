@@ -549,6 +549,7 @@ async def _handle_text_generation(
         {
             "modality": "text",
             "sid": sid,
+            "artifact_type": artifact_type,
             "resource_type": resource_type,
             "run_id": str(run_id),
             "group_id": str(group_id) if group_id else None,
@@ -590,18 +591,23 @@ async def _handle_text_generation(
     async def _stream_and_emit() -> None:
         """Inner function to handle streaming and emitting events."""
         nonlocal assistant_output, input_tokens, output_tokens
+        import logging
 
-        async for event in stream_litellm_events(stream):
-            # Check for cancellation periodically
-            if await is_run_cancelled(str(run_id)):
-                break
+        logger = logging.getLogger(__name__)
+        event_count = 0
 
-            event_type = event.get("type")
-            event_type = event.get("type")
+        try:
+            async for event in stream_litellm_events(stream):
+                event_count += 1
+                # Check for cancellation periodically
+                if await is_run_cancelled(str(run_id)):
+                    break
 
-            # -------- TEXT lifecycle
-            if event_type == "text_start":
-                await internal_sio.emit(
+                event_type = event.get("type")
+
+                # -------- TEXT lifecycle
+                if event_type == "text_start":
+                    await internal_sio.emit(
                     "generate_progress",
                     {
                         "modality": "text",
@@ -612,17 +618,18 @@ async def _handle_text_generation(
                         "group_id": str(group_id) if group_id else None,
                         "type": "text_start",
                     },
-                )
+                    )
 
-            elif event_type == "text_delta":
-                delta = event.get("delta", "")
-                if delta:
-                    assistant_output += delta
-                    await internal_sio.emit(
+                elif event_type == "text_delta":
+                    delta = event.get("delta", "")
+                    if delta:
+                        assistant_output += delta
+                        await internal_sio.emit(
                         "generate_progress",
                         {
                             "modality": "text",
                             "sid": sid,
+                            "artifact_type": artifact_type,
                             "group_id": str(group_id) if group_id else None,
                             "resource_type": resource_type,
                             "run_id": str(run_id),
@@ -630,15 +637,16 @@ async def _handle_text_generation(
                             "type": "text_delta",
                             "delta": delta,
                         },
-                    )
+                        )
 
-            elif event_type == "text_complete":
-                assistant_output = event.get("text", assistant_output)
-                await internal_sio.emit(
+                elif event_type == "text_complete":
+                    assistant_output = event.get("text", assistant_output)
+                    await internal_sio.emit(
                     "generate_progress",
                     {
                         "modality": "text",
                         "sid": sid,
+                        "artifact_type": artifact_type,
                         "group_id": str(group_id) if group_id else None,
                         "resource_type": resource_type,
                         "run_id": str(run_id),
@@ -646,14 +654,14 @@ async def _handle_text_generation(
                         "type": "text_complete",
                         "text": assistant_output,
                     },
-                )
+                    )
 
-            # -------- TOOL lifecycle
-            elif event_type == "tool_call_start":
-                tool_call_id = cast(str, event.get("tool_call_id"))
-                tool_index = event.get("tool_index", 0)
+                # -------- TOOL lifecycle
+                elif event_type == "tool_call_start":
+                    tool_call_id = cast(str, event.get("tool_call_id"))
+                    tool_index = event.get("tool_index", 0)
 
-                tool_call_states.setdefault(
+                    tool_call_states.setdefault(
                     tool_call_id,
                     {
                         "tool_index": tool_index,
@@ -661,9 +669,9 @@ async def _handle_text_generation(
                         "tool_name": None,
                         "arguments": "",
                     },
-                )
+                    )
 
-                await internal_sio.emit(
+                    await internal_sio.emit(
                     "generate_progress",
                     {
                         "modality": "text",
@@ -675,14 +683,14 @@ async def _handle_text_generation(
                         "type": "tool_call_start",
                         "tool_call_id": tool_call_id,
                     },
-                )
+                    )
 
-            elif event_type == "tool_call_delta":
-                tool_call_id = cast(str, event.get("tool_call_id"))
-                delta = event.get("delta", "") or ""
-                tool_name = event.get("tool_name")
+                elif event_type == "tool_call_delta":
+                    tool_call_id = cast(str, event.get("tool_call_id"))
+                    delta = event.get("delta", "") or ""
+                    tool_name = event.get("tool_name")
 
-                st = tool_call_states.setdefault(
+                    st = tool_call_states.setdefault(
                     tool_call_id,
                     {
                         "tool_index": event.get("tool_index", 0),
@@ -690,12 +698,12 @@ async def _handle_text_generation(
                         "tool_name": None,
                         "arguments": "",
                     },
-                )
-                if tool_name and not st["tool_name"]:
-                    st["tool_name"] = tool_name
-                st["arguments"] += delta
+                    )
+                    if tool_name and not st["tool_name"]:
+                        st["tool_name"] = tool_name
+                    st["arguments"] += delta
 
-                await internal_sio.emit(
+                    await internal_sio.emit(
                     "generate_progress",
                     {
                         "modality": "text",
@@ -710,81 +718,97 @@ async def _handle_text_generation(
                         "tool_name": st.get("tool_name"),
                         "arguments_delta": delta,
                     },
+                    )
+
+                elif event_type == "tool_call_complete":
+                    tool_call_id = cast(str, event.get("tool_call_id"))
+                    tool_name = (
+                        event.get("name")
+                        or tool_call_states.get(tool_call_id, {}).get("tool_name")
+                        or ""
+                    )
+                    # Prefer state store over event.get() for final arguments
+                    st = tool_call_states.get(tool_call_id, {})
+                    arguments_str = event.get("arguments") or st.get("arguments", "")
+
+                    # Parse args (best effort)
+                    try:
+                        arguments_dict = json.loads(arguments_str) if arguments_str else {}
+                    except json.JSONDecodeError:
+                        arguments_dict = {}
+
+                    st = tool_call_states.setdefault(
+                        tool_call_id,
+                        {
+                            "tool_index": event.get("tool_index", 0),
+                            "call_id": tool_call_id,
+                            "tool_name": None,
+                            "arguments": "",
+                        },
+                    )
+                    st["tool_name"] = tool_name or st.get("tool_name")
+                    st["arguments"] = arguments_str or st.get("arguments", "")
+
+                    # Emit progress event for progress handler
+                    await internal_sio.emit(
+                        "generate_progress",
+                        {
+                            "modality": "text",
+                            "sid": sid,
+                            "artifact_type": artifact_type,
+                            "resource_type": resource_type,
+                            "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
+                            "type": "tool_call_complete",
+                            "tool_call_id": tool_call_id,
+                            "tool_name": tool_name,
+                            "arguments": arguments_dict,
+                            "arguments_delta": st["arguments"],
+                            "call_id": tool_call_id,  # Add call_id for template rendering
+                            "agent_id": str(agent_id) if agent_id else None,  # Add agent_id for tool execution
+                        },
+                    )
+
+                    # Also emit generate_complete for complete handler to execute tool
+                    await internal_sio.emit(
+                        "generate_complete",
+                        {
+                            "modality": "text",
+                            "sid": sid,
+                            "artifact_type": artifact_type,
+                            "type": "tool_call_complete",
+                            "resource_type": resource_type,
+                            "run_id": str(run_id),
+                            "group_id": str(group_id) if group_id else None,
+                            "tool_call_id": tool_call_id,
+                            "call_id": tool_call_id,  # external_call_id for lookup
+                            "tool_name": tool_name,
+                            "agent_id": str(agent_id) if agent_id else None,
+                        },
+                    )
+
+                # -------- message completion + usage
+                elif event_type == "message_complete":
+                    usage_data = event.get("usage")
+                    if isinstance(usage_data, dict):
+                        input_tokens = usage_data.get("prompt_tokens", 0) or 0
+                        output_tokens = usage_data.get("completion_tokens", 0) or 0
+                    else:
+                        logger.warning(
+                            f"message_complete event received without usage_data for run {run_id}"
+                        )
+        except Exception as stream_error:
+            logger.error(
+                f"Error processing stream events for run {run_id}: {str(stream_error)}",
+                exc_info=True,
+            )
+            raise
+        finally:
+            if event_count == 0:
+                logger.warning(
+                    f"No events received from stream for run {run_id}. "
+                    f"This may indicate a parsing issue or empty response."
                 )
-
-            elif event_type == "tool_call_complete":
-                tool_call_id = cast(str, event.get("tool_call_id"))
-                tool_name = (
-                    event.get("name")
-                    or tool_call_states.get(tool_call_id, {}).get("tool_name")
-                    or ""
-                )
-                # Prefer state store over event.get() for final arguments
-                st = tool_call_states.get(tool_call_id, {})
-                arguments_str = event.get("arguments") or st.get("arguments", "")
-
-                # Parse args (best effort)
-                try:
-                    arguments_dict = json.loads(arguments_str) if arguments_str else {}
-                except json.JSONDecodeError:
-                    arguments_dict = {}
-
-                st = tool_call_states.setdefault(
-                    tool_call_id,
-                    {
-                        "tool_index": event.get("tool_index", 0),
-                        "call_id": tool_call_id,
-                        "tool_name": None,
-                        "arguments": "",
-                    },
-                )
-                st["tool_name"] = tool_name or st.get("tool_name")
-                st["arguments"] = arguments_str or st.get("arguments", "")
-
-                # Emit progress event for progress handler
-                await internal_sio.emit(
-                    "generate_progress",
-                    {
-                        "modality": "text",
-                        "sid": sid,
-                        "artifact_type": artifact_type,
-                        "resource_type": resource_type,
-                        "run_id": str(run_id),
-                        "group_id": str(group_id) if group_id else None,
-                        "type": "tool_call_complete",
-                        "tool_call_id": tool_call_id,
-                        "tool_name": tool_name,
-                        "arguments": arguments_dict,
-                        "arguments_delta": st["arguments"],
-                        "call_id": tool_call_id,  # Add call_id for template rendering
-                        "agent_id": str(agent_id) if agent_id else None,  # Add agent_id for tool execution
-                    },
-                )
-
-                # Also emit generate_complete for complete handler to execute tool
-                await internal_sio.emit(
-                    "generate_complete",
-                    {
-                        "modality": "text",
-                        "sid": sid,
-                        "artifact_type": artifact_type,
-                        "type": "tool_call_complete",
-                        "resource_type": resource_type,
-                        "run_id": str(run_id),
-                        "group_id": str(group_id) if group_id else None,
-                        "tool_call_id": tool_call_id,
-                        "call_id": tool_call_id,  # external_call_id for lookup
-                        "tool_name": tool_name,
-                        "agent_id": str(agent_id) if agent_id else None,
-                    },
-                )
-
-            # -------- message completion + usage
-            elif event_type == "message_complete":
-                usage_data = event.get("usage")
-                if isinstance(usage_data, dict):
-                    input_tokens = usage_data.get("prompt_tokens", 0) or 0
-                    output_tokens = usage_data.get("completion_tokens", 0) or 0
 
     # Create task for cancellation support
     task = asyncio.create_task(_stream_and_emit())

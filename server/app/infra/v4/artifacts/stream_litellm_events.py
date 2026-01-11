@@ -129,9 +129,10 @@ async def _parse_responses_chunk(
 
     Responses API uses events like:
     - response.output_item.added
-    - response.output_item.delta
+    - response.output_text.delta (for text content)
+    - response.function_call_arguments.delta (for tool call arguments)
     - response.output_item.done
-    - response.done
+    - response.completed (message complete)
     """
     chunk_type = None
     if hasattr(chunk, "type"):
@@ -141,6 +142,20 @@ async def _parse_responses_chunk(
 
     if not chunk_type:
         return
+
+    # Log unexpected event types for debugging (but don't fail)
+    import logging
+
+    logger = logging.getLogger(__name__)
+    unexpected_types = {
+        "response.output_item.delta",  # Old incorrect type
+        "response.done",  # Old incorrect type
+    }
+    if chunk_type in unexpected_types:
+        logger.warning(
+            f"Received unexpected (possibly old) event type: {chunk_type}. "
+            f"This may indicate a parsing issue."
+        )
 
     # Handle response.output_item.added
     if chunk_type == "response.output_item.added":
@@ -191,8 +206,8 @@ async def _parse_responses_chunk(
                 "tool_name": function_name,
             }
 
-    # Handle response.output_item.delta
-    elif chunk_type == "response.output_item.delta":
+    # Handle response.output_text.delta (for text content)
+    elif chunk_type == "response.output_text.delta":
         item_id = None
         delta = None
         if hasattr(chunk, "item_id"):
@@ -205,23 +220,105 @@ async def _parse_responses_chunk(
         elif isinstance(chunk, dict):
             delta = chunk.get("delta")
 
-        if not item_id or item_id not in response_items:
-            return
+        if delta:
+            # Find or create text item by item_id
+            if item_id and item_id in response_items:
+                item_state = response_items[item_id]
+                if item_state.get("type") == "text":
+                    item_state["buffer"] = item_state.get("buffer", "") + delta
+                    yield {"type": "text_delta", "delta": delta}
+            elif item_id:
+                # Create new text item if not found (shouldn't happen, but handle gracefully)
+                response_items[item_id] = {"type": "text", "started": True, "buffer": delta}
+                yield {"type": "text_start"}
+                yield {"type": "text_delta", "delta": delta}
+            else:
+                # No item_id, create a temporary item
+                temp_id = "temp_text_0"
+                if temp_id not in response_items:
+                    response_items[temp_id] = {"type": "text", "started": True, "buffer": ""}
+                    yield {"type": "text_start"}
+                response_items[temp_id]["buffer"] += delta
+                yield {"type": "text_delta", "delta": delta}
 
-        item_state = response_items[item_id]
-        if item_state.get("type") == "text" and delta:
-            item_state["buffer"] = item_state.get("buffer", "") + delta
-            yield {"type": "text_delta", "delta": delta}
-        elif item_state.get("type") == "function_call" and delta:
-            item_state["arguments"] = item_state.get("arguments", "") + delta
-            yield {
-                "type": "tool_call_delta",
-                "tool_call_id": item_id,
-                "delta": delta,
-                "tool_name": item_state.get("name"),
-            }
+    # Handle response.function_call_arguments.delta (for tool call arguments)
+    elif chunk_type == "response.function_call_arguments.delta":
+        item_id = None
+        delta = None
+        if hasattr(chunk, "item_id"):
+            item_id = chunk.item_id
+        elif isinstance(chunk, dict):
+            item_id = chunk.get("item_id")
 
-    # Handle response.output_item.done
+        if hasattr(chunk, "delta"):
+            delta = chunk.delta
+        elif isinstance(chunk, dict):
+            delta = chunk.get("delta")
+
+        if item_id and item_id in response_items and delta:
+            item_state = response_items[item_id]
+            if item_state.get("type") == "function_call":
+                item_state["arguments"] = item_state.get("arguments", "") + delta
+                yield {
+                    "type": "tool_call_delta",
+                    "tool_call_id": item_id,
+                    "delta": delta,
+                    "tool_name": item_state.get("name"),
+                }
+
+    # Handle response.output_text.done (text item complete)
+    elif chunk_type == "response.output_text.done":
+        item_id = None
+        text = None
+        if hasattr(chunk, "item_id"):
+            item_id = chunk.item_id
+        elif isinstance(chunk, dict):
+            item_id = chunk.get("item_id")
+
+        if hasattr(chunk, "text"):
+            text = chunk.text
+        elif isinstance(chunk, dict):
+            text = chunk.get("text")
+
+        if item_id and item_id in response_items:
+            item_state = response_items[item_id]
+            if item_state.get("type") == "text":
+                # Use provided text or accumulated buffer
+                final_text = text if text is not None else item_state.get("buffer", "")
+                yield {
+                    "type": "text_complete",
+                    "text": final_text,
+                }
+
+    # Handle response.function_call_arguments.done (function call complete)
+    elif chunk_type == "response.function_call_arguments.done":
+        item_id = None
+        arguments = None
+        if hasattr(chunk, "item_id"):
+            item_id = chunk.item_id
+        elif isinstance(chunk, dict):
+            item_id = chunk.get("item_id")
+
+        if hasattr(chunk, "arguments"):
+            arguments = chunk.arguments
+        elif isinstance(chunk, dict):
+            arguments = chunk.get("arguments")
+
+        if item_id and item_id in response_items:
+            item_state = response_items[item_id]
+            if item_state.get("type") == "function_call":
+                # Use provided arguments or accumulated arguments
+                final_arguments = (
+                    arguments if arguments is not None else item_state.get("arguments", "")
+                )
+                yield {
+                    "type": "tool_call_complete",
+                    "tool_call_id": item_id,
+                    "name": item_state.get("name"),
+                    "arguments": final_arguments,
+                }
+
+    # Handle response.output_item.done (legacy/fallback)
     elif chunk_type == "response.output_item.done":
         item_id = None
         if hasattr(chunk, "item_id"):
@@ -246,27 +343,49 @@ async def _parse_responses_chunk(
                 "arguments": item_state.get("arguments", ""),
             }
 
-    # Handle response.done (message complete)
-    elif chunk_type == "response.done":
+    # Handle response.completed (message complete)
+    elif chunk_type == "response.completed":
         usage_data = None
-        if hasattr(chunk, "usage"):
-            usage_obj = chunk.usage
-            if hasattr(usage_obj, "input_tokens"):
-                usage_data = {
-                    "prompt_tokens": getattr(usage_obj, "input_tokens", 0),
-                    "completion_tokens": getattr(usage_obj, "output_tokens", 0),
-                }
+        # ResponseCompletedEvent has usage nested in chunk.response.usage
+        if hasattr(chunk, "response"):
+            response_obj = chunk.response
+            if hasattr(response_obj, "usage"):
+                usage_obj = response_obj.usage
+                if hasattr(usage_obj, "input_tokens"):
+                    usage_data = {
+                        "prompt_tokens": getattr(usage_obj, "input_tokens", 0),
+                        "completion_tokens": getattr(usage_obj, "output_tokens", 0),
+                    }
+                elif hasattr(usage_obj, "prompt_tokens"):
+                    usage_data = {
+                        "prompt_tokens": getattr(usage_obj, "prompt_tokens", 0),
+                        "completion_tokens": getattr(usage_obj, "completion_tokens", 0),
+                    }
         elif isinstance(chunk, dict):
-            usage = chunk.get("usage")
-            if isinstance(usage, dict):
-                usage_data = {
-                    "prompt_tokens": usage.get(
-                        "input_tokens", usage.get("prompt_tokens", 0)
-                    ),
-                    "completion_tokens": usage.get(
-                        "output_tokens", usage.get("completion_tokens", 0)
-                    ),
-                }
+            response = chunk.get("response", {})
+            if isinstance(response, dict):
+                usage = response.get("usage")
+                if isinstance(usage, dict):
+                    usage_data = {
+                        "prompt_tokens": usage.get(
+                            "input_tokens", usage.get("prompt_tokens", 0)
+                        ),
+                        "completion_tokens": usage.get(
+                            "output_tokens", usage.get("completion_tokens", 0)
+                        ),
+                    }
+            # Fallback: check chunk.usage directly (for dict format)
+            if not usage_data:
+                usage = chunk.get("usage")
+                if isinstance(usage, dict):
+                    usage_data = {
+                        "prompt_tokens": usage.get(
+                            "input_tokens", usage.get("prompt_tokens", 0)
+                        ),
+                        "completion_tokens": usage.get(
+                            "output_tokens", usage.get("completion_tokens", 0)
+                        ),
+                    }
 
         ev: dict[str, Any] = {
             "type": "message_complete",
