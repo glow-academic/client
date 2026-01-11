@@ -1,14 +1,23 @@
-"""Persona completion handler - listens to internal completion events and emits to clients."""
+"""Persona completion handler - listens to artifact_generation_complete events and emits granular persona events."""
 
-from typing import Any
+import uuid
+from typing import Any, cast
 
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.sql.types import (GetPersonaResourceIdsByGroupIdSqlParams,
+                           GetPersonaResourceIdsByGroupIdSqlRow)
 from fastapi import APIRouter
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
+
+SQL_PATH = "app/sql/v4/personas/get_persona_resource_ids_by_group_id_complete.sql"
 
 # Persona resource types
 PERSONA_RESOURCE_TYPES = [
@@ -25,73 +34,83 @@ PERSONA_RESOURCE_TYPES = [
 
 
 @internal_sio.on("generate_complete")  # type: ignore
-async def handle_personas_complete(data: dict[str, Any]) -> None:
-    """Handle generate_complete internal event - filter by persona resource_type and emit to client."""
-    # Filter by modality (personas are text-based) and resource_type
-    modality = data.get("modality", "text")
-    if modality != "text":
-        return  # Not for us
-
-    resource_type = data.get("resource_type")
-    if resource_type not in PERSONA_RESOURCE_TYPES:
+async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
+    """Handle generate_complete internal event - filter by persona artifact_type and emit granular event."""
+    # Filter by artifact_type (SQL will also validate, but early return for efficiency)
+    artifact_type = data.get("artifact_type")
+    if artifact_type != "persona":
         return  # Not for us
 
     sid = data.get("sid", "")
     if not sid:
         return  # No socket ID, can't emit to client
 
-    completion_type = data.get("type", "run_complete")
-    resource_id = data.get("resource_id")
-    run_id = data.get("run_id")
+    # Get profile_id from sid
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        return
+    profile_id = uuid.UUID(profile_id_str)
 
+    # Extract all data from event (no Python filtering for resource_type - SQL handles it)
+    group_id_str = data.get("group_id")
+    resource_id_str = data.get("resource_id")
+    resource_type = data.get("resource_type")
+
+    if not group_id_str or not resource_id_str or not resource_type:
+        return
+
+    group_id = uuid.UUID(group_id_str)
+    resource_id = uuid.UUID(resource_id_str)
+
+    # Query SQL function - SQL handles validation and mapping (no-op, no queries)
     try:
-        # For now, emit dummy completion event (skeleton implementation)
-        # TODO: Fetch tool results from database and format for client
-        if completion_type == "tool_call_complete":
-            # Handle tool call completion
-            tool_name = data.get("tool_name", "")
-            await sio.emit(
-                "personas_generation_complete",
-                {
-                    "resource_type": resource_type,
-                    "resource_id": resource_id,
-                    "run_id": run_id,
-                    "group_id": data.get("group_id"),
-                    "tool_name": tool_name,
-                    "tool_call_id": data.get("tool_call_id"),
-                    "success": True,
-                    "message": f"{resource_type} generation completed successfully",
-                    "trace_id": data.get("trace_id"),
-                },
-                room=sid,
+        async with get_db_connection() as conn:
+            params = GetPersonaResourceIdsByGroupIdSqlParams(
+                profile_id=profile_id,
+                group_id=group_id,
+                resource_id=resource_id,
+                resource_type=resource_type,
+                artifact_type="persona",  # Always "persona" for this handler
             )
-        elif completion_type == "run_complete":
-            # Handle run completion
-            await sio.emit(
-                "personas_generation_complete",
-                {
-                    "resource_type": resource_type,
-                    "resource_id": resource_id,
-                    "run_id": run_id,
-                    "group_id": data.get("group_id"),
-                    "success": True,
-                    "message": f"{resource_type} generation completed successfully",
-                    "trace_id": data.get("trace_id"),
-                },
-                room=sid,
+            result = cast(
+                GetPersonaResourceIdsByGroupIdSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
             )
-
     except Exception as e:
-        # Emit error to client
+        # SQL function raised error (validation failed) - emit error to client
         await sio.emit(
-            "personas_generation_error",
+            "artifact_generation_error",
             {
+                "artifact_type": "persona",
                 "resource_type": resource_type,
-                "resource_id": resource_id,
-                "group_id": data.get("group_id"),
+                "group_id": group_id_str,
                 "success": False,
-                "message": f"Failed to handle {resource_type} completion: {str(e)}",
-                "trace_id": data.get("trace_id"),
+                "message": str(e),
             },
             room=sid,
         )
+        return
+
+    # Emit granular event with mapped resource ID (one field set, others NULL)
+    await sio.emit(
+        "persona_generation_complete",
+        {
+            "artifact_type": "persona",
+            "group_id": group_id_str,
+            "resource_type": resource_type,
+            "name_id": str(result.name_id) if result.name_id else None,
+            "description_id": str(result.description_id) if result.description_id else None,
+            "color_id": str(result.color_id) if result.color_id else None,
+            "icon_id": str(result.icon_id) if result.icon_id else None,
+            "instructions_id": str(result.instructions_id) if result.instructions_id else None,
+            "active_flag_id": str(result.active_flag_id) if result.active_flag_id else None,
+            "field_ids": [str(fid) for fid in (result.field_ids or [])],
+            "department_ids": [str(did) for did in (result.department_ids or [])],
+            "example_ids": [str(eid) for eid in (result.example_ids or [])],
+            "success": True,
+            "message": f"{resource_type} generation completed successfully",
+            "run_id": data.get("run_id"),
+            "type": data.get("type", "run_complete"),
+        },
+        room=sid,
+    )

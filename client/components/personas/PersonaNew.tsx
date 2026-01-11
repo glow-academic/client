@@ -614,6 +614,15 @@ function PersonaNewComponent({
       artifact_type?: string;
       group_id?: string;
       resource_type?: string;
+      name_id?: string | null;
+      description_id?: string | null;
+      color_id?: string | null;
+      icon_id?: string | null;
+      instructions_id?: string | null;
+      active_flag_id?: string | null;
+      field_ids?: string[];
+      department_ids?: string[];
+      example_ids?: string[];
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -642,6 +651,44 @@ function PersonaNewComponent({
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
       ) {
+        // Update formState with the resource ID that was generated
+        // Only update the field that matches resource_type (others will be null)
+        setFormState((prev) => {
+          const updates: Partial<typeof prev> = {};
+
+          if (data.name_id) updates.name_id = data.name_id;
+          if (data.description_id) updates.description_id = data.description_id;
+          if (data.color_id) updates.color_id = data.color_id;
+          if (data.icon_id) updates.icon_id = data.icon_id;
+          if (data.instructions_id)
+            updates.instructions_id = data.instructions_id;
+          if (data.active_flag_id)
+            updates.active_flag_id = data.active_flag_id;
+          if (data.field_ids && data.field_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newFieldIds = data.field_ids.filter(
+              (id) => !prev.field_ids.includes(id)
+            );
+            updates.field_ids = [...prev.field_ids, ...newFieldIds];
+          }
+          if (data.department_ids && data.department_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newDeptIds = data.department_ids.filter(
+              (id) => !prev.department_ids.includes(id)
+            );
+            updates.department_ids = [...prev.department_ids, ...newDeptIds];
+          }
+          if (data.example_ids && data.example_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newExampleIds = data.example_ids.filter(
+              (id) => !prev.example_ids.includes(id)
+            );
+            updates.example_ids = [...prev.example_ids, ...newExampleIds];
+          }
+
+          return { ...prev, ...updates };
+        });
+
         setGeneratingResources((prev) => {
           const next = new Set(prev);
           next.delete(data.resource_type as ResourceType);
@@ -719,12 +766,12 @@ function PersonaNewComponent({
 
     // Listen to unified events filtered by artifact_type and group_id
     socket.on("artifact_generation_progress", handleGenerationProgress);
-    socket.on("artifact_generation_complete", handleGenerationComplete);
+    socket.on("persona_generation_complete", handleGenerationComplete);
     socket.on("artifact_generation_error", handleGenerationError);
 
     return () => {
       socket.off("artifact_generation_progress", handleGenerationProgress);
-      socket.off("artifact_generation_complete", handleGenerationComplete);
+      socket.off("persona_generation_complete", handleGenerationComplete);
       socket.off("artifact_generation_error", handleGenerationError);
     };
   }, [socket, isConnected, personaData?.group_id]);

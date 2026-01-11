@@ -1,4 +1,4 @@
-"""Persona error handler - listens to internal error events and emits to clients."""
+"""Persona error handler - listens to artifact_generation_error events and re-emits to clients."""
 
 from typing import Any
 
@@ -24,14 +24,17 @@ PERSONA_RESOURCE_TYPES = [
 ]
 
 
-@internal_sio.on("generate_error")  # type: ignore
+@internal_sio.on("artifact_generation_error")  # type: ignore
 async def handle_personas_error(data: dict[str, Any]) -> None:
-    """Handle generate_error internal event - filter by persona resource_type and emit to client."""
-    # Filter by resource_type
-    resource_type = data.get("resource_type")
+    """Handle artifact_generation_error event - filter by persona artifact_type and re-emit to client."""
+    # Filter by artifact_type
+    artifact_type = data.get("artifact_type")
+    if artifact_type != "persona":
+        return  # Not for us
 
     # Check if resource_type is a persona resource type
     # Also check if resource_types array contains any persona resource types
+    resource_type = data.get("resource_type")
     resource_types = data.get("resource_types", [])
     is_persona_resource = resource_type in PERSONA_RESOURCE_TYPES or any(
         rt in PERSONA_RESOURCE_TYPES for rt in resource_types
@@ -47,18 +50,19 @@ async def handle_personas_error(data: dict[str, Any]) -> None:
     error_message = data.get("error_message") or data.get(
         "message", "An error occurred during persona generation"
     )
-    error_payload = {
-        "resource_type": resource_type,
-        "resource_id": data.get("resource_id"),
-        "group_id": data.get("group_id"),
-        "success": False,
-        "message": error_message,
-        "trace_id": data.get("trace_id"),
-    }
-
-    # Emit unified error event to client
+    
+    # Re-emit unified error event to client (client already listens to artifact_generation_error)
     await sio.emit(
-        "personas_generation_error",
-        error_payload,
+        "artifact_generation_error",
+        {
+            "artifact_type": artifact_type,
+            "resource_type": resource_type,
+            "resource_types": resource_types if resource_types else None,
+            "resource_id": data.get("resource_id"),
+            "group_id": data.get("group_id"),
+            "success": False,
+            "message": error_message,
+            "trace_id": data.get("trace_id"),
+        },
         room=sid,
     )

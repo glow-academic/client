@@ -49,6 +49,7 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
 
     # Handle tool_call_complete template rendering and tool execution if applicable
     rendered_values: dict[str, Any] | None = None
+    resource_id: uuid.UUID | None = None
     if completion_type == "tool_call_complete":
         call_id = data.get("call_id")
         tool_name = data.get("tool_name")
@@ -76,6 +77,8 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
                             logger.info(
                                 f"Created {resource_type} resource {resource_id} from tool call {call_id}"
                             )
+                            # Store resource_id in data for client payload
+                            data["resource_id"] = str(resource_id)
                 except Exception as exec_error:
                     logger.warning(
                         f"Failed to execute tool call {call_id} for {resource_type}: {str(exec_error)}"
@@ -134,6 +137,9 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
 
     # Transform internal event format to client format
     client_payload = _build_client_payload(modality, completion_type, data, artifact_type)
+    
+    # Include sid for internal handlers that listen to client-facing events
+    client_payload["sid"] = sid
 
     # Emit unified client event
     await sio.emit(
@@ -155,6 +161,10 @@ def _build_client_payload(
         "group_id": data.get("group_id"),
         "type": completion_type,
     }
+    
+    # Include resource_id if available (from tool_call_complete)
+    if "resource_id" in data:
+        client_payload["resource_id"] = data.get("resource_id")
 
     # Add modality-specific fields
     if modality == "text" or modality == "call" or modality == "document":

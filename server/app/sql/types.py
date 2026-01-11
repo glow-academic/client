@@ -14874,6 +14874,58 @@ class GetPersonaResourceGroupIdsApiResponse(BaseModel):
 
 
 
+# Generated from: get_persona_resource_ids_by_group_id
+
+class GetPersonaResourceIdsByGroupIdSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class GetPersonaResourceIdsByGroupIdSqlRow(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    field_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+
+class GetPersonaResourceIdsByGroupIdApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class GetPersonaResourceIdsByGroupIdApiResponse(BaseModel):
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    field_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+
+
+
 # Generated from: get_personas_list
 
 class GetPersonasListSqlParams(BaseModel):
@@ -29862,6 +29914,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaResourceGroupIdsApiRequest",
         "GetPersonaResourceGroupIdsApiResponse",
     ),
+    "app/sql/v4/personas/get_persona_resource_ids_by_group_id_complete.sql": (
+        "GetPersonaResourceIdsByGroupIdSqlParams",
+        "GetPersonaResourceIdsByGroupIdSqlRow",
+        "GetPersonaResourceIdsByGroupIdApiRequest",
+        "GetPersonaResourceIdsByGroupIdApiResponse",
+    ),
     "app/sql/v4/personas/get_personas_list_complete.sql": (
         "GetPersonasListSqlParams",
         "GetPersonasListSqlRow",
@@ -32521,6 +32579,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/personas/get_persona_resource_group_ids_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/get_persona_resource_ids_by_group_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
