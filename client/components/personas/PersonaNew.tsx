@@ -180,8 +180,6 @@ function PersonaNewComponent({
   // Memoize to prevent new object reference on every render
   const personaSearchParamsClient = useMemo(
     () => ({
-      // Draft ID (URL-backed, updated when draft is created)
-      draftId: parseAsString,
       // Search params (URL-backed, updated via debounced callback in StepCard)
       colorSearch: parseAsString,
       iconSearch: parseAsString,
@@ -649,8 +647,6 @@ function PersonaNewComponent({
 
     const handleGenerationStart = (data: {
       resource_types?: string[];
-      draft_id?: string;
-      persona_id?: string;
       success?: boolean;
       message?: string;
     }) => {
@@ -706,8 +702,8 @@ function PersonaNewComponent({
   // Multi-generation handler - accepts list of resource types and optional user instructions
   const handleGenerateResources = useCallback(
     async (resourceTypes: ResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected || !draftId) {
-        toast.error("WebSocket not connected or draft not available");
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
         return;
       }
 
@@ -766,27 +762,27 @@ function PersonaNewComponent({
       }
 
       // Emit single event with resource_types array
-      // Pass group_id from personaData if available, otherwise server will fetch from database
+      // Note: draft_id and persona_id are NOT sent - generation is resource-agnostic
+      // Pass group_id from personaData if available for regeneration, otherwise server will look up from context
       socket.emit("persona_generate", {
-        draft_id: draftId,
         resource_types: resourceTypes,
-        persona_id: personaId || null,
-        instructions: userInstructions || null, // Renamed from user_instructions
+        instructions: userInstructions || null,
         agent_id: agentId, // Pass agent_id from personaData
-        group_id: personaData?.group_id || null, // Pass group_id from personaData
+        group_id: personaData?.group_id || null, // Pass group_id from personaData for regeneration
         context: {
           name_id: formState.name_id || null,
           description_id: formState.description_id || null,
           instructions_id: formState.instructions_id || null,
           color_id: formState.color_id || null,
           icon_id: formState.icon_id || null,
+          active_flag_id: formState.active_flag_id || null,
           field_ids: formState.field_ids || [],
           department_ids: formState.department_ids || [],
           example_ids: formState.example_ids || [],
         },
       });
     },
-    [socket, isConnected, draftId, personaId, formState, personaData]
+    [socket, isConnected, formState, personaData]
   );
 
   // Individual generation handlers - generate directly without modals

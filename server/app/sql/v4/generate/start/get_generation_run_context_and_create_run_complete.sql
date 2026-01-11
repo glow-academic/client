@@ -20,7 +20,6 @@ END $$;
 -- Minimal function: only rate limit, group creation, run creation, user message creation
 CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
     agent_id uuid,
-    resource_id uuid,
     resource_type text,
     profile_id uuid,
     message_ids uuid[] DEFAULT NULL,  -- Context message IDs (e.g., hint agent needs message_id)
@@ -41,7 +40,6 @@ AS $$
 WITH params AS (
     SELECT 
         agent_id AS agent_id,
-        resource_id AS resource_id,
         resource_type AS resource_type,
         message_ids AS message_ids,
         profile_id AS profile_id,

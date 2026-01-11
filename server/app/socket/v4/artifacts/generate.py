@@ -223,7 +223,6 @@ async def _generate_artifact_impl(
                 try:
                     params = GetGenerationRunContextAndCreateRunSqlParams(
                         agent_id=uuid.UUID(agent_id),
-                        resource_id=uuid.UUID(data["resource_id"]),
                         resource_type=resource_type,
                         profile_id=profile_id,
                         message_ids=message_ids_uuid,
@@ -253,25 +252,25 @@ async def _generate_artifact_impl(
                             if "RATE_LIMIT_EXCEEDED: " in error_msg
                             else error_msg
                         )
-                        await emit_to_internal(
-                            "generate_error",
-                            GenerateErrorApiRequest(
-                                sid=sid,
-                                error_message=user_msg,
-                                resource_id=data.get("resource_id"),
-                                group_id=data.get("group_id"),
-                                resource_type=resource_type,
-                            ),
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
                             sid=sid,
-                        )
-                        continue  # Continue to next resource_type instead of returning
-                    # Other errors
+                            error_message=user_msg,
+                            resource_id=None,
+                            group_id=data.get("group_id"),
+                            resource_type=resource_type,
+                        ),
+                        sid=sid,
+                    )
+                    continue  # Continue to next resource_type instead of returning
+                # Other errors
                     await emit_to_internal(
                         "generate_error",
                         GenerateErrorApiRequest(
                             sid=sid,
                             error_message=f"Failed to start generation for {resource_type}: {str(e)}",
-                            resource_id=data.get("resource_id"),
+                            resource_id=None,
                             group_id=data.get("group_id"),
                             resource_type=resource_type,
                         ),
@@ -285,7 +284,7 @@ async def _generate_artifact_impl(
                         GenerateErrorApiRequest(
                             sid=sid,
                             error_message=f"Failed to create run for {resource_type}",
-                            resource_id=data.get("resource_id"),
+                            resource_id=None,
                             group_id=data.get("group_id"),
                             resource_type=resource_type,
                         ),
@@ -311,7 +310,7 @@ async def _generate_artifact_impl(
                             GenerateErrorApiRequest(
                                 sid=sid,
                                 error_message=f"agent_id missing for {resource_type}",
-                                resource_id=data.get("resource_id"),
+                                resource_id=None,
                                 group_id=data.get("group_id"),
                                 resource_type=resource_type,
                             ),
@@ -328,7 +327,6 @@ async def _generate_artifact_impl(
                         conn=conn,
                         run_id=uuid.UUID(run_id),
                         agent_id=uuid.UUID(agent_id) if agent_id else None,
-                        resource_id=uuid.UUID(data["resource_id"]),
                         resource_type=resource_type,
                         message_ids=[uuid.UUID(mid) for mid in message_ids]
                         if message_ids
@@ -345,7 +343,6 @@ async def _generate_artifact_impl(
                         conn=conn,
                         run_id=uuid.UUID(run_id),
                         agent_id=uuid.UUID(agent_id) if agent_id else None,
-                        resource_id=uuid.UUID(data["resource_id"]),
                         trace_id=trace_id,
                     )
                 elif modality == "video":
@@ -355,7 +352,6 @@ async def _generate_artifact_impl(
                         profile_id=profile_id,
                         conn=conn,
                         run_id=uuid.UUID(run_id),
-                        resource_id=uuid.UUID(data["resource_id"]),
                         trace_id=trace_id,
                     )
                 elif modality == "audio":
@@ -366,7 +362,6 @@ async def _generate_artifact_impl(
                         conn=conn,
                         run_id=uuid.UUID(run_id),
                         agent_id=uuid.UUID(agent_id) if agent_id else None,
-                        resource_id=uuid.UUID(data["resource_id"]),
                         resource_type=resource_type,
                     )
                 else:
@@ -375,7 +370,7 @@ async def _generate_artifact_impl(
                         GenerateErrorApiRequest(
                             sid=sid,
                             error_message=f"Modality {modality} not yet supported",
-                            resource_id=data.get("resource_id"),
+                            resource_id=None,
                             group_id=group_id,
                             resource_type=resource_type,
                         ),
@@ -388,7 +383,7 @@ async def _generate_artifact_impl(
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Failed to generate artifact: {str(e)}",
-                resource_id=data.get("resource_id"),
+                resource_id=None,
                 group_id=data.get("group_id"),
                 resource_type=data.get("resource_type"),
             ),
@@ -403,7 +398,6 @@ async def _handle_text_generation(
     conn: Any,
     run_id: uuid.UUID,
     agent_id: uuid.UUID | None,
-    resource_id: uuid.UUID,
     resource_type: str,
     message_ids: list[uuid.UUID] | None,
     group_id: uuid.UUID | None,
@@ -421,7 +415,6 @@ async def _handle_text_generation(
     params = GetTextRunContextForExistingRunSqlParams(
         run_id=run_id,
         agent_id=agent_id,
-        resource_id=resource_id,
         resource_type=resource_type,
         message_ids=message_ids,
         group_id=group_id,
@@ -547,7 +540,6 @@ async def _handle_text_generation(
         {
             "modality": "text",
             "sid": sid,
-            "resource_id": str(resource_id),
             "resource_type": resource_type,
             "run_id": str(run_id),
             "group_id": str(group_id) if group_id else None,
@@ -560,7 +552,7 @@ async def _handle_text_generation(
     metadata: dict[str, Any] = {
         "run_id": str(run_id),
         "trace_id": trace_id,
-        "resource_id": str(resource_id),
+        "group_id": str(group_id) if group_id else None,
         "resource_type": resource_type,
         "agent_id": str(agent_id) if agent_id else None,
     }
@@ -604,7 +596,6 @@ async def _handle_text_generation(
                     {
                         "modality": "text",
                         "sid": sid,
-                        "resource_id": str(resource_id),
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
@@ -621,7 +612,7 @@ async def _handle_text_generation(
                         {
                             "modality": "text",
                             "sid": sid,
-                            "resource_id": str(resource_id),
+                            "group_id": str(group_id) if group_id else None,
                             "resource_type": resource_type,
                             "run_id": str(run_id),
                             "group_id": str(group_id) if group_id else None,
@@ -637,7 +628,7 @@ async def _handle_text_generation(
                     {
                         "modality": "text",
                         "sid": sid,
-                        "resource_id": str(resource_id),
+                        "group_id": str(group_id) if group_id else None,
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
@@ -666,7 +657,7 @@ async def _handle_text_generation(
                     {
                         "modality": "text",
                         "sid": sid,
-                        "resource_id": str(resource_id),
+                        "group_id": str(group_id) if group_id else None,
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
@@ -698,7 +689,7 @@ async def _handle_text_generation(
                     {
                         "modality": "text",
                         "sid": sid,
-                        "resource_id": str(resource_id),
+                        "group_id": str(group_id) if group_id else None,
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
@@ -745,7 +736,7 @@ async def _handle_text_generation(
                     {
                         "modality": "text",
                         "sid": sid,
-                        "resource_id": str(resource_id),
+                        "group_id": str(group_id) if group_id else None,
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
@@ -766,7 +757,7 @@ async def _handle_text_generation(
                         "modality": "text",
                         "sid": sid,
                         "type": "tool_call_complete",
-                        "resource_id": str(resource_id),
+                        "group_id": str(group_id) if group_id else None,
                         "resource_type": resource_type,
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
@@ -809,7 +800,6 @@ async def _handle_text_generation(
             "modality": "text",
             "sid": sid,
             "type": "run_complete",
-            "resource_id": str(resource_id),
             "resource_type": resource_type,
             "run_id": str(run_id),
             "group_id": str(group_id) if group_id else None,
@@ -829,7 +819,6 @@ async def _handle_image_generation(
     conn: Any,
     run_id: uuid.UUID,
     agent_id: uuid.UUID | None,
-    resource_id: uuid.UUID,
     trace_id: str | None,
 ) -> None:
     """Handle image generation using LiteLLM."""
@@ -839,7 +828,7 @@ async def _handle_image_generation(
     if not agent_id:
         raise ValueError("agent_id is required for image generation")
 
-    image_id = uuid.UUID(data.get("image_id") or data.get("resource_id"))
+    image_id = uuid.UUID(data.get("image_id") or str(uuid.uuid4()))
     prompt = data.get("prompt", "")
 
     # Get image context from SQL
@@ -868,15 +857,21 @@ async def _handle_image_generation(
     except Exception as e:
         raise ValueError(f"Failed to decrypt API key: {str(e)}")
 
+    # Get group_id from run
+    group_id_from_run = await conn.fetchval(
+        "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
+        run_id,
+    )
+
     # Emit start event
     await internal_sio.emit(
         "generate_progress",
         {
             "modality": "image",
             "sid": sid,
-            "resource_id": str(resource_id),
             "resource_type": "images",
             "run_id": str(run_id),
+            "group_id": str(group_id_from_run) if group_id_from_run else None,
             "type": "start",
             "message": "Starting image generation",
         },
@@ -963,9 +958,9 @@ async def _handle_image_generation(
                     {
                         "modality": "image",
                         "sid": sid,
-                        "resource_id": str(resource_id),
                         "resource_type": "images",
                         "run_id": str(run_id),
+                        "group_id": str(group_id_from_run) if group_id_from_run else None,
                         "image_id": str(image_id),
                         "file_path": file_path,
                         "mime_type": mime_type,
@@ -1045,9 +1040,9 @@ async def _handle_image_generation(
             {
                 "modality": "image",
                 "sid": sid,
-                "resource_id": str(resource_id),
                 "resource_type": "images",
                 "run_id": str(run_id),
+                "group_id": str(group_id_from_run) if group_id_from_run else None,
                 "image_id": str(image_id),
                 "file_path": file_path,
                 "mime_type": mime_type,
@@ -1057,12 +1052,18 @@ async def _handle_image_generation(
         )
 
     except Exception as e:
+        # Get group_id from run for error reporting
+        group_id_from_run = await conn.fetchval(
+            "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
+            run_id,
+        )
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Image generation failed: {str(e)}",
-                resource_id=str(resource_id),
+                resource_id=None,
+                group_id=str(group_id_from_run) if group_id_from_run else None,
                 resource_type="images",
             ),
             sid=sid,
@@ -1075,11 +1076,10 @@ async def _handle_video_generation(
     profile_id: uuid.UUID,
     conn: Any,
     run_id: uuid.UUID,
-    resource_id: uuid.UUID,
     trace_id: str | None,
 ) -> None:
     """Handle video generation using OpenAI Sora API or LiteLLM."""
-    video_id = uuid.UUID(data.get("videoId") or data.get("resource_id"))
+    video_id = uuid.UUID(data.get("videoId") or str(uuid.uuid4()))
     prompt = data.get("prompt", "")
     image_reference_id = data.get("imageReferenceId")
 
@@ -1121,15 +1121,21 @@ async def _handle_video_generation(
     except ValueError as e:
         raise ValueError(f"Failed to decrypt API key: {str(e)}")
 
+    # Get group_id from run
+    group_id_from_run = await conn.fetchval(
+        "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
+        run_id,
+    )
+
     # Emit start event
     await internal_sio.emit(
         "generate_progress",
         {
             "modality": "video",
             "sid": sid,
-            "resource_id": str(resource_id),
             "resource_type": "videos",
             "run_id": str(run_id),
+            "group_id": str(group_id_from_run) if group_id_from_run else None,
             "type": "start",
             "message": "Starting video generation",
             "status": "created",
@@ -1190,9 +1196,9 @@ async def _handle_video_generation(
                 {
                     "modality": "video",
                     "sid": sid,
-                    "resource_id": str(resource_id),
                     "resource_type": "videos",
                     "run_id": str(run_id),
+                    "group_id": str(group_id_from_run) if group_id_from_run else None,
                     "type": "polling",
                     "message": f"Video generation in progress: {video_status.status}",
                     "status": video_status.status,
@@ -1225,7 +1231,7 @@ async def _handle_video_generation(
                     {
                         "modality": "video",
                         "sid": sid,
-                        "resource_id": str(resource_id),
+                        "group_id": str(group_id_from_run) if group_id_from_run else None,
                         "resource_type": "videos",
                         "run_id": str(run_id),
                         "success": True,
@@ -1280,7 +1286,7 @@ async def _handle_video_generation(
                         {
                             "modality": "video",
                             "sid": sid,
-                            "resource_id": str(resource_id),
+                            "group_id": str(group_id_from_run) if group_id_from_run else None,
                             "resource_type": "videos",
                             "run_id": str(run_id),
                             "type": "polling",
@@ -1312,7 +1318,7 @@ async def _handle_video_generation(
                             {
                                 "modality": "video",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": "videos",
                                 "run_id": str(run_id),
                                 "success": True,
@@ -1345,7 +1351,6 @@ async def _handle_audio_generation(
     conn: Any,
     run_id: uuid.UUID,
     agent_id: uuid.UUID | None,
-    resource_id: uuid.UUID,
     resource_type: str,
 ) -> None:
     """Handle audio generation using direct WebSocket connection to OpenAI Realtime API."""
@@ -1354,7 +1359,7 @@ async def _handle_audio_generation(
 
     # Get audio context from SQL
     upload_id_for_audio = (
-        resource_id
+        uuid.UUID(data.get("upload_id") or str(uuid.uuid4()))
         if resource_type == "audio"
         else uuid.UUID("00000000-0000-0000-0000-000000000000")  # Dummy UUID for voice
     )
@@ -1388,6 +1393,12 @@ async def _handle_audio_generation(
     # Connect to OpenAI Realtime API WebSocket
     from urllib.parse import quote
 
+    # Get group_id from run
+    group_id_from_run = await conn.fetchval(
+        "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
+        run_id,
+    )
+
     url = f"wss://api.openai.com/v1/realtime?model={quote(model_name)}"
     headers = {
         "Authorization": f"Bearer {decrypted_api_key}",
@@ -1402,9 +1413,9 @@ async def _handle_audio_generation(
                 {
                     "modality": "audio",
                     "sid": sid,
-                    "resource_id": str(resource_id),
                     "resource_type": resource_type,
                     "run_id": str(run_id),
+                    "group_id": str(group_id_from_run) if group_id_from_run else None,
                     "type": "session_started",
                     "model": model_name,
                 },
@@ -1438,7 +1449,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "session_created",
@@ -1454,7 +1465,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "user_speech_started",
@@ -1469,7 +1480,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "user_speech_stopped",
@@ -1486,7 +1497,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "user_transcription_complete",
@@ -1501,7 +1512,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "response_started",
@@ -1515,7 +1526,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "output_item_added",
@@ -1530,7 +1541,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "output_item_done",
@@ -1544,7 +1555,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "audio_transcript_delta",
@@ -1558,7 +1569,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "audio_transcript_done",
@@ -1574,7 +1585,7 @@ async def _handle_audio_generation(
                                 {
                                     "modality": "audio",
                                     "sid": sid,
-                                    "resource_id": str(resource_id),
+                                    "group_id": str(group_id_from_run) if group_id_from_run else None,
                                     "resource_type": resource_type,
                                     "run_id": str(run_id),
                                     "type": "audio_delta",
@@ -1588,7 +1599,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "tool_call_progress",
@@ -1603,7 +1614,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "tool_call_complete",
@@ -1618,7 +1629,7 @@ async def _handle_audio_generation(
                             {
                                 "modality": "audio",
                                 "sid": sid,
-                                "resource_id": str(resource_id),
+                                "group_id": str(group_id_from_run) if group_id_from_run else None,
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "run_complete",
@@ -1635,7 +1646,8 @@ async def _handle_audio_generation(
                                 error_message=error_data.get(
                                     "message", "Unknown error"
                                 ),
-                                resource_id=str(resource_id),
+                                resource_id=None,
+                                group_id=str(group_id_from_run) if group_id_from_run else None,
                                 resource_type=resource_type,
                             ),
                             sid=sid,
@@ -1651,7 +1663,8 @@ async def _handle_audio_generation(
                         GenerateErrorApiRequest(
                             sid=sid,
                             error_message=f"Error processing WebSocket event: {str(e)}",
-                            resource_id=str(resource_id),
+                            resource_id=None,
+                            group_id=str(group_id_from_run) if group_id_from_run else None,
                             resource_type=resource_type,
                         ),
                         sid=sid,
@@ -1659,12 +1672,18 @@ async def _handle_audio_generation(
                     break
 
     except Exception as e:
+        # Get group_id from run for error reporting
+        group_id_from_run = await conn.fetchval(
+            "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
+            run_id,
+        )
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"WebSocket connection failed: {str(e)}",
-                resource_id=str(resource_id),
+                resource_id=None,
+                group_id=str(group_id_from_run) if group_id_from_run else None,
                 resource_type=resource_type,
             ),
             sid=sid,

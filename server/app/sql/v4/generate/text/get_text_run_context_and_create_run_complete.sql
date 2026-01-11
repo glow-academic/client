@@ -75,14 +75,13 @@ CREATE TYPE types.i_get_text_run_context_and_create_run_v4_tool AS (
 );
 
 -- 5) Recreate function
--- Generic version that accepts agent_id, resource_id, resource_type, etc.
+-- Generic version that accepts agent_id, resource_type, etc.
 -- Supports optional upload_id for audio input (used by audio agent)
 -- Supports optional group_id and user_instructions for regeneration
 CREATE OR REPLACE FUNCTION socket_get_text_run_context_and_create_run_v4(
     agent_id uuid,
     profile_id uuid,
     department_id uuid DEFAULT NULL,
-    resource_id uuid DEFAULT NULL,
     resource_type text DEFAULT NULL,
     upload_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
@@ -124,7 +123,6 @@ WITH params AS (
         agent_id AS agent_id, 
         profile_id AS profile_id,
         department_id AS department_id,
-        resource_id AS resource_id,
         resource_type AS resource_type,
         upload_id AS upload_id,
         group_id AS group_id,

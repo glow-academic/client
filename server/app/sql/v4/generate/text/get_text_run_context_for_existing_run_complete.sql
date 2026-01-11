@@ -23,7 +23,6 @@ END $$;
 CREATE OR REPLACE FUNCTION socket_get_text_run_context_for_existing_run_v4(
     run_id uuid,
     agent_id uuid,
-    resource_id uuid,
     resource_type text,
     message_ids uuid[] DEFAULT NULL,  -- Includes user regeneration message (if created) + context messages
     group_id uuid DEFAULT NULL
@@ -59,7 +58,6 @@ WITH params AS (
     SELECT 
         run_id AS run_id,
         agent_id AS agent_id,
-        resource_id AS resource_id,
         resource_type AS resource_type,
         message_ids AS message_ids,
         group_id AS group_id

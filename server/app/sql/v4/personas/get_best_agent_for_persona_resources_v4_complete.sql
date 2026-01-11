@@ -19,9 +19,7 @@ END $$;
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_get_best_agent_for_persona_resources_v4(
     profile_id uuid,
-    resource_types text[],
-    persona_id uuid DEFAULT NULL,
-    draft_id uuid DEFAULT NULL
+    resource_types text[]
 )
 RETURNS TABLE (
     agent_id uuid
@@ -31,34 +29,20 @@ STABLE
 AS $$
 WITH params AS (
     SELECT 
-        persona_id AS persona_id,
-        draft_id AS draft_id,
         profile_id AS profile_id,
         resource_types AS resource_types
 ),
--- Get persona's department (if persona_id provided)
-persona_department AS (
-    SELECT pd.department_id
-    FROM params p
-    JOIN persona_departments pd ON pd.persona_id = p.persona_id AND pd.active = true
-    WHERE p.persona_id IS NOT NULL
-    LIMIT 1
-),
--- Get profile's primary department (if only draft_id provided)
+-- Get profile's primary department
 profile_primary_department AS (
     SELECT pd.department_id
     FROM params p
     JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
-    WHERE p.persona_id IS NULL
     LIMIT 1
 ),
 -- Determine department to use
 selected_department AS (
     SELECT 
-        COALESCE(
-            (SELECT department_id FROM persona_department),
-            (SELECT department_id FROM profile_primary_department)
-        ) as department_id
+        (SELECT department_id FROM profile_primary_department) as department_id
 ),
 -- Get all user's departments (for filtering agents)
 user_departments AS (
