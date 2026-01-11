@@ -343,6 +343,46 @@ field_mapping_data AS (
     JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
+-- Valid fields data for new personas (based on departments, similar to documents endpoint)
+valid_fields_data AS (
+    SELECT 
+        f.id as field_id,
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) as parameter_id,
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1) as parameter_name,
+        COALESCE(f.generated, false) as generated
+    FROM params x
+    CROSS JOIN user_profile up
+    LEFT JOIN parameter_fields pf_pf ON pf_pf.parameter_id IN (
+        SELECT p.id FROM parameter p 
+        WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
+          AND EXISTS (SELECT 1 FROM parameter_flags pf2 JOIN flags fl2 ON pf2.flag_id = fl2.id WHERE pf2.parameter_id = p.id AND fl2.name = 'persona_parameter' AND pf2.type = 'persona_parameter'::type_parameter_flags AND pf2.value = TRUE)
+    )
+    LEFT JOIN fields f ON f.id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    WHERE x.persona_id IS NULL
+      AND (
+        -- If user has no departments (superadmin), include only cross-department fields
+        (NOT EXISTS (SELECT 1 FROM user_departments) AND up.role = 'superadmin'::profile_role
+         AND NOT EXISTS (
+             SELECT 1 FROM field_departments fd2 
+             WHERE fd2.field_id = f.id 
+             AND fd2.active = true
+         ))
+        OR
+        -- If user has departments, include fields from those departments OR cross-department fields
+        (EXISTS (SELECT 1 FROM user_departments)
+         AND (
+             fd.department_id IN (SELECT department_id FROM user_departments)
+             OR NOT EXISTS (
+                 SELECT 1 FROM field_departments fd2 
+                 WHERE fd2.field_id = f.id 
+                 AND fd2.active = true
+             )
+         ))
+      )
+),
 ui_flags AS (
     SELECT 
         -- Single-select resource flags (based on whether options exist)
@@ -352,16 +392,25 @@ ui_flags AS (
         true as show_color,  -- Will be updated in SELECT to check colors array
         true as show_icon,  -- Will be updated in SELECT to check icons array
         true as show_instructions,  -- Always show instructions picker
-        false as show_flag,  -- Flag is just a boolean toggle, no picker needed
+        true as show_flag,  -- Flag is a boolean toggle that should be shown
         -- Multi-select resource flags (based on business logic)
         CASE 
-            WHEN up.role = 'superadmin'::profile_role THEN false
-            WHEN (SELECT COUNT(*) FROM department_mapping_data) > 1 THEN true
+            WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
             ELSE false
         END as show_departments,
         CASE 
-            WHEN (SELECT COUNT(*) FROM field_mapping_data) > 0 THEN true
-            ELSE false
+            WHEN (SELECT persona_id FROM params) IS NULL THEN
+                -- For new personas, check valid_fields_data
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM valid_fields_data) > 0 THEN true
+                    ELSE false
+                END
+            ELSE
+                -- For existing personas, check field_mapping_data
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM field_mapping_data) > 0 THEN true
+                    ELSE false
+                END
         END as show_fields
         -- show_examples will be computed in SELECT clause
     FROM params x
@@ -1861,6 +1910,7 @@ SELECT
     ) as department_resources,
     CASE 
         WHEN (SELECT agent_id FROM departments_agent_data) IS NULL AND uf.show_departments THEN false
+        WHEN EXISTS (SELECT 1 FROM department_mapping_data LIMIT 1) THEN true
         ELSE uf.show_departments
     END as show_departments,
     (SELECT agent_id FROM departments_agent_data) as departments_agent_id,
@@ -1899,10 +1949,20 @@ SELECT
     END as fields_required,
     fsd.field_suggestions,
     COALESCE(
-        (SELECT ARRAY_AGG(
-            (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
-            ORDER BY fmd.name
-        ) FROM field_mapping_data fmd),
+        CASE 
+            WHEN (SELECT persona_id FROM params) IS NULL THEN
+                -- For new personas, use valid_fields_data
+                (SELECT ARRAY_AGG(
+                    (vfd.field_id, vfd.name, vfd.description, vfd.generated)::types.q_get_persona_v4_field
+                    ORDER BY vfd.name
+                ) FROM valid_fields_data vfd)
+            ELSE
+                -- For existing personas, use field_mapping_data
+                (SELECT ARRAY_AGG(
+                    (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
+                    ORDER BY fmd.name
+                ) FROM field_mapping_data fmd)
+        END,
         '{}'::types.q_get_persona_v4_field[]
     ) as fields,
     -- Multi-select resources: examples
@@ -1917,9 +1977,8 @@ SELECT
         '{}'::types.q_get_persona_v4_example[]
     ) as example_resources,
     CASE 
-        WHEN (SELECT agent_id FROM examples_agent_data) IS NULL AND (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN false
-        WHEN (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN true
-        ELSE false
+        WHEN (SELECT agent_id FROM examples_agent_data) IS NULL AND true THEN false
+        ELSE true
     END as show_examples,
     (SELECT agent_id FROM examples_agent_data) as examples_agent_id,
     CASE 
