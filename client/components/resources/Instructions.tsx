@@ -216,51 +216,12 @@ export function Instructions({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label htmlFor={id}>
-          {label}
-          {required && <span className="text-destructive ml-1">*</span>}
-        </Label>
-      </div>
-      {/* GenericPicker for suggestions */}
-      {(suggestionsList.length > 0 || (instructions && instructions.length > 0)) && (
-        <div className="flex justify-end">
-          <GenericPicker
-            items={pickerItems}
-            selectedIds={resourceId ? [resourceId] : []}
-            onSelect={(ids) => {
-              onInstructionsIdChange(ids[0] || null);
-            }}
-            getId={(item) => (typeof item === 'string' ? item : item.id)}
-            getLabel={(item) => {
-              if (typeof item === 'string') {
-                return `Instructions ${item.slice(0, 8)}...`;
-              }
-              return item.template || `Instructions ${item.id.slice(0, 8)}...`;
-            }}
-            placeholder="Instructions"
-            disabled={disabled}
-            multiSelect={false}
-            compact={true}
-            buttonClassName="h-8"
-            showLabel={false}
-          />
-        </div>
-      )}
-      {/* Textarea with generate button inside */}
-      <div className="relative">
-        <Textarea
-          id={id}
-          data-testid={dataTestId}
-          value={internalValue || ""}
-          onChange={(e) => handleChange(e.target.value)}
-          placeholder={placeholder}
-          required={required}
-          disabled={disabled}
-          rows={rows}
-          className={onGenerate ? "pr-10" : ""}
-        />
-        {onGenerate && (
-          <div className="absolute top-2 right-2">
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id}>
+            {label}
+            {required && <span className="text-destructive ml-1">*</span>}
+          </Label>
+          {onGenerate && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -284,9 +245,43 @@ export function Instructions({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-          </div>
+          )}
+        </div>
+        {/* GenericPicker for suggestions */}
+        {(suggestionsList.length > 0 || (instructions && instructions.length > 0)) && (
+          <GenericPicker
+            items={pickerItems}
+            selectedIds={resourceId ? [resourceId] : []}
+            onSelect={(ids) => {
+              onInstructionsIdChange(ids[0] || null);
+            }}
+            getId={(item) => (typeof item === 'string' ? item : item.id)}
+            getLabel={(item) => {
+              if (typeof item === 'string') {
+                return `Instructions ${item.slice(0, 8)}...`;
+              }
+              return item.template || `Instructions ${item.id.slice(0, 8)}...`;
+            }}
+            placeholder="Instructions"
+            disabled={disabled}
+            multiSelect={false}
+            compact={true}
+            buttonClassName="h-8"
+            showLabel={false}
+          />
         )}
       </div>
+      {/* Textarea without generate button inside */}
+      <Textarea
+        id={id}
+        data-testid={dataTestId}
+        value={internalValue || ""}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        rows={rows}
+      />
       {helpText && (
         <p className="text-xs text-muted-foreground">{helpText}</p>
       )}

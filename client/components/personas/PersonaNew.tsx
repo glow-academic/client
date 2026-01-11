@@ -766,13 +766,14 @@ function PersonaNewComponent({
       }
 
       // Emit single event with resource_types array
-      // Note: group_ids are fetched server-side from database, not passed from frontend
+      // Pass group_id from personaData if available, otherwise server will fetch from database
       socket.emit("persona_generate", {
         draft_id: draftId,
         resource_types: resourceTypes,
         persona_id: personaId || null,
         instructions: userInstructions || null, // Renamed from user_instructions
         agent_id: agentId, // Pass agent_id from personaData
+        group_id: personaData?.group_id || null, // Pass group_id from personaData
         context: {
           name_id: formState.name_id || null,
           description_id: formState.description_id || null,

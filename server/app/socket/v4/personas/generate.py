@@ -1,13 +1,17 @@
 """Persona generation router - unified handler for all persona resource types."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
+from app.sql.types import (
+    GetBestAgentForPersonaResourcesV4SqlParams,
+    GetBestAgentForPersonaResourcesV4SqlRow,
+)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
@@ -48,6 +52,9 @@ class GeneratePersonaPayload(BaseModel):
     context: dict[str, Any] | None = None  # Additional context for generation
     instructions: str | None = (
         None  # Optional: For regeneration (renamed from user_instructions)
+    )
+    group_id: str | None = (
+        None  # Optional: Group ID from personaData (used for all resources if provided)
     )
     group_ids: dict[str, str | None] | None = (
         None  # Optional: resource_type -> group_id mapping for regeneration
@@ -121,21 +128,19 @@ async def _persona_generate_impl(
         else:
             # Fallback: Get best agent_id based on tool-to-resource matching (for backward compatibility)
             async with get_db_connection() as conn:
-                # Types will be auto-generated from SQL introspection
-                # For now, use dict-based params until types are generated
-                params = {
-                    "profile_id": profile_id,
-                    "resource_types": resource_types,
-                    "persona_id": uuid.UUID(data.persona_id)
-                    if data.persona_id
-                    else None,
-                    "draft_id": uuid.UUID(data.draft_id) if data.draft_id else None,
-                }
-                result = await execute_sql_typed(conn, SQL_PATH, params=params)
+                params = GetBestAgentForPersonaResourcesV4SqlParams(
+                    profile_id=profile_id,
+                    resource_types=resource_types,
+                    persona_id=uuid.UUID(data.persona_id) if data.persona_id else None,
+                    draft_id=uuid.UUID(data.draft_id) if data.draft_id else None,
+                )
+                result = cast(
+                    GetBestAgentForPersonaResourcesV4SqlRow,
+                    await execute_sql_typed(conn, SQL_PATH, params=params),
+                )
 
                 # Extract agent_id from result
-                # execute_sql_typed returns a typed object with attributes
-                agent_id_value = getattr(result, "agent_id", None) if result else None
+                agent_id_value = result.agent_id if result else None
                 if not agent_id_value:
                     await emit_to_internal(
                         "generate_error",
@@ -166,36 +171,49 @@ async def _persona_generate_impl(
             )
             return
 
-        # Fetch group_ids from database for all resource types
-        group_ids_map: dict[str, str | None] = {}
-        async with get_db_connection() as conn:
-            # Execute SQL function - returns multiple rows, use fetch() directly
-            rows = await conn.fetch(
-                "SELECT * FROM api_get_persona_resource_group_ids_v4($1, $2, $3, $4)",
-                profile_id,
-                uuid.UUID(data.persona_id) if data.persona_id else None,
-                uuid.UUID(data.draft_id) if data.draft_id else None,
-                resource_types,
-            )
+        # Determine group_id: prioritize passed group_id, otherwise fetch from database
+        passed_group_id: uuid.UUID | None = None
+        if data.group_id:
+            try:
+                passed_group_id = uuid.UUID(data.group_id)
+            except ValueError:
+                # Invalid UUID, treat as None
+                passed_group_id = None
 
-            # Build group_ids map from result rows
-            for row in rows:
-                resource_type = row["resource_type"]
-                group_id = row["group_id"]
-                if group_id:
-                    group_ids_map[resource_type] = str(group_id)
+        # Fetch group_ids from database for all resource types (only if group_id not passed)
+        group_ids_map: dict[str, str | None] = {}
+        if not passed_group_id:
+            async with get_db_connection() as conn:
+                # Execute SQL function - returns multiple rows, use fetch() directly
+                rows = await conn.fetch(
+                    "SELECT * FROM api_get_persona_resource_group_ids_v4($1, $2, $3, $4)",
+                    profile_id,
+                    uuid.UUID(data.persona_id) if data.persona_id else None,
+                    uuid.UUID(data.draft_id) if data.draft_id else None,
+                    resource_types,
+                )
+
+                # Build group_ids map from result rows
+                for row in rows:
+                    resource_type = row["resource_type"]
+                    group_id = row["group_id"]
+                    if group_id:
+                        group_ids_map[resource_type] = str(group_id)
 
         # Emit generate_artifact events for each resource type
         for resource_type in resource_types:
-            # Get group_id from database lookup (source of truth)
-            group_id_str = group_ids_map.get(resource_type)
-            group_id = None
-            if group_id_str:
-                try:
-                    group_id = uuid.UUID(group_id_str)
-                except ValueError:
-                    # Invalid UUID, treat as None
-                    group_id = None
+            # Use passed group_id if available, otherwise get from database lookup
+            if passed_group_id:
+                group_id = passed_group_id
+            else:
+                group_id_str = group_ids_map.get(resource_type)
+                group_id = None
+                if group_id_str:
+                    try:
+                        group_id = uuid.UUID(group_id_str)
+                    except ValueError:
+                        # Invalid UUID, treat as None
+                        group_id = None
 
             # Get message_ids from previous runs if regenerating (group_id exists)
             message_ids: list[str] | None = None
