@@ -10,6 +10,7 @@ import httpx
 import websockets
 from agents.items import TResponseInputItem
 from app.infra.v4.artifacts import (convert_tools_to_openai_format,
+                                    convert_tools_to_responses_format,
                                     format_messages_for_litellm,
                                     stream_litellm_events)
 from app.infra.v4.websocket.find_profile_by_socket import \
@@ -58,10 +59,17 @@ SQL_PATH_AUDIO = "app/sql/v4/audio/get_audio_run_context_and_create_run_complete
 # Try to import litellm
 try:
     import litellm  # type: ignore
+    from openai.types.responses.response_create_params import ToolChoice
+    from openai.types.responses.response_input_param import ResponseInputParam
+    from openai.types.responses.tool_param import ToolParam
 
     LITELLM_AVAILABLE = True
 except ImportError:
     LITELLM_AVAILABLE = False
+    # Type stubs for when litellm is not available
+    ResponseInputParam = Any  # type: ignore
+    ToolChoice = Any  # type: ignore
+    ToolParam = Any  # type: ignore
 
 from app.main import UPLOAD_FOLDER
 
@@ -101,8 +109,8 @@ def determine_modality_from_output_modalities(
 async def _call_llm_text_stream(
     model: str,
     messages: list[dict[str, Any]],
-    tools: list[dict[str, Any]] | None = None,
-    tool_choice: str = "auto",
+    tools: list[dict[str, Any]] | list[ToolParam] | None = None,
+    tool_choice: str | ToolChoice = "auto",
     api_key: str | None = None,
     base_url: str | None = None,
     temperature: float = 0.0,
@@ -165,8 +173,102 @@ async def _call_llm_text_stream(
     # Try aresponses() first (preferred API)
     try:
         if hasattr(litellm, "aresponses"):
-            responses_kwargs = base_kwargs.copy()
-            # aresponses() may have slightly different parameter names
+            # aresponses() requires 'input' parameter (not 'messages')
+            # Convert messages list to input format - aresponses accepts list of messages as input
+            responses_kwargs: dict[str, Any] = {
+                "input": messages,  # aresponses accepts messages list as input
+                "model": model,
+                "stream": True,  # Explicitly set stream=True
+                "api_key": api_key,
+                "temperature": temperature,
+            }
+            
+            if base_url:
+                responses_kwargs["base_url"] = base_url
+            
+            if tools:
+                # For aresponses(), tools should be in Responses format (FunctionToolParam)
+                # Check if tools are already in Responses format or need conversion
+                validated_tools: list[dict[str, Any]] = []
+                for tool in tools:
+                    if isinstance(tool, dict):
+                        tool_dict = cast(dict[str, Any], tool)
+                        # Responses format: {"type": "function", "name": ..., "parameters": ...}
+                        if tool_dict.get("type") == "function" and "name" in tool_dict:
+                            # Already in Responses format - use directly
+                            validated_tools.append(tool_dict)
+                        # OpenAI format: {"type": "function", "function": {"name": ...}}
+                        elif tool_dict.get("type") == "function" and "function" in tool_dict:
+                            func = tool_dict.get("function")
+                            if isinstance(func, dict) and func.get("name"):
+                                # Convert OpenAI format to Responses format
+                                validated_tools.append({
+                                    "type": "function",
+                                    "name": func["name"],
+                                    "description": func.get("description", ""),
+                                    "parameters": func.get("parameters", {}),
+                                    "strict": True,
+                                })
+                            else:
+                                # #region agent log
+                                import json
+                                try:
+                                    with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"Skipping invalid tool (missing function.name)","data":{"tool":str(tool)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                                except: pass
+                                # #endregion
+                        else:
+                            # #region agent log
+                            import json
+                            try:
+                                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"Skipping invalid tool (wrong format)","data":{"tool":str(tool)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                            except: pass
+                            # #endregion
+                
+                if validated_tools:
+                    # #region agent log
+                    import json
+                    try:
+                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                            # Log first tool structure in detail
+                            first_tool = validated_tools[0] if validated_tools else None
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"H","location":"generate.py:208","message":"Adding tools to aresponses kwargs (Responses format)","data":{"num_tools":len(validated_tools),"first_tool":first_tool,"first_tool_keys":list(first_tool.keys()) if isinstance(first_tool, dict) else []},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                    except: pass
+                    # #endregion
+                    responses_kwargs["tools"] = validated_tools  # type: ignore
+                    responses_kwargs["tool_choice"] = tool_choice if isinstance(tool_choice, str) else tool_choice
+                else:
+                    # #region agent log
+                    import json
+                    try:
+                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"No valid tools after validation, skipping tools","data":{"original_tools_count":len(tools)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                    except: pass
+                    # #endregion
+            
+            if reasoning:
+                responses_kwargs["reasoning"] = reasoning
+            
+            # Include usage in response (if supported)
+            # Note: aresponses() may include usage by default in response.completed events
+            if metadata:
+                responses_extra_headers: dict[str, str] = {}
+                if metadata.get("trace_id"):
+                    responses_extra_headers["OpenAI-Trace-Id"] = str(metadata["trace_id"])
+                if metadata.get("run_id"):
+                    responses_extra_headers["X-Run-Id"] = str(metadata["run_id"])
+                if responses_extra_headers:
+                    responses_kwargs["extra_headers"] = responses_extra_headers
+            
+            # #region agent log
+            import json
+            try:
+                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:170","message":"Calling litellm.aresponses()","data":{"model":model,"has_input":True,"input_type":type(messages).__name__,"stream":True},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            
             stream = await litellm.aresponses(**responses_kwargs)
             async for chunk in stream:
                 yield chunk
@@ -179,8 +281,70 @@ async def _call_llm_text_stream(
         logger.debug(
             f"aresponses() not available or failed: {e}, falling back to acompletion()"
         )
+        # #region agent log
+        import json
+        try:
+            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:182","message":"aresponses() failed, falling back to acompletion()","data":{"error":str(e)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
 
-    # Fallback to acompletion()
+    # Fallback to acompletion() - add stream_options to include usage
+    # acompletion() needs OpenAI format tools, so convert if needed
+    # Note: tools might be in Responses format (from responses_kwargs) or OpenAI format (from base_kwargs)
+    # We need to check the original tools parameter and convert if needed
+    if tools:
+        # Check if tools are in Responses format and convert to OpenAI format
+        acompletion_tools: list[dict[str, Any]] = []
+        for tool in tools:
+            if isinstance(tool, dict):
+                tool_dict = cast(dict[str, Any], tool)
+                # Responses format: {"type": "function", "name": ..., "parameters": ...}
+                if tool_dict.get("type") == "function" and "name" in tool_dict and "function" not in tool_dict:
+                    # Convert Responses format to OpenAI format
+                    acompletion_tools.append({
+                        "type": "function",
+                        "function": {
+                            "name": tool_dict["name"],
+                            "description": tool_dict.get("description", ""),
+                            "parameters": tool_dict.get("parameters", {}),
+                        },
+                    })
+                # Already in OpenAI format: {"type": "function", "function": {"name": ...}}
+                elif tool_dict.get("type") == "function" and "function" in tool_dict:
+                    acompletion_tools.append(tool_dict)
+        
+        if acompletion_tools:
+            base_kwargs["tools"] = acompletion_tools
+            # #region agent log
+            import json
+            try:
+                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:292","message":"Converted tools to OpenAI format for acompletion()","data":{"num_tools":len(acompletion_tools),"first_tool":acompletion_tools[0] if acompletion_tools else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+        else:
+            # No valid tools, remove tools parameter
+            base_kwargs.pop("tools", None)
+            base_kwargs.pop("tool_choice", None)
+            # #region agent log
+            import json
+            try:
+                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:292","message":"No valid tools after conversion, removing tools from acompletion()","data":{"original_tools_count":len(tools) if tools else 0},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+    
+    # #region agent log
+    import json
+    try:
+        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"generate.py:186","message":"Calling litellm.acompletion()","data":{"model":base_kwargs.get("model"),"stream":True,"stream_options_include_usage":True,"has_tools":bool(base_kwargs.get("tools"))},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
+    
+    # Add stream_options to include usage in streaming chunks
+    base_kwargs["stream_options"] = {"include_usage": True}
     stream = await litellm.acompletion(**base_kwargs)
     async for chunk in stream:
         yield chunk
@@ -450,8 +614,18 @@ async def _handle_text_generation(
         tool for tool in (result.tools or []) if tool.name is not None
     ]
 
-    # Convert tools to OpenAI format
+    # Convert tools to both formats:
+    # - OpenAI format for acompletion() fallback
+    # - Responses format for aresponses() (preferred)
     openai_tools = convert_tools_to_openai_format(agent_tools_config)
+    responses_tools = convert_tools_to_responses_format(agent_tools_config)
+    # #region agent log
+    import json
+    try:
+        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"H","location":"generate.py:543","message":"Tools converted to OpenAI format","data":{"num_tools":len(openai_tools),"tools":openai_tools[:3] if len(openai_tools) > 3 else openai_tools},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
 
     # Construct input items for the agent
     input_items: list[TResponseInputItem] = []
@@ -573,7 +747,7 @@ async def _handle_text_generation(
     stream = _call_llm_text_stream(
         model=result.model_name or "",
         messages=messages,
-        tools=openai_tools if openai_tools else None,
+        tools=responses_tools if responses_tools else (openai_tools if openai_tools else None),
         tool_choice=tool_choice,
         api_key=decrypted_api_key,
         base_url=result.base_url,
@@ -670,6 +844,12 @@ async def _handle_text_generation(
                         "arguments": "",
                     },
                     )
+                    # #region agent log
+                    try:
+                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"K","location":"generate.py:834","message":"tool_call_start event received","data":{"tool_call_id":tool_call_id,"tool_index":tool_index},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                    except: pass
+                    # #endregion
 
                     await internal_sio.emit(
                     "generate_progress",
@@ -730,6 +910,12 @@ async def _handle_text_generation(
                     # Prefer state store over event.get() for final arguments
                     st = tool_call_states.get(tool_call_id, {})
                     arguments_str = event.get("arguments") or st.get("arguments", "")
+                    # #region agent log
+                    try:
+                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"K","location":"generate.py:897","message":"tool_call_complete event received","data":{"tool_call_id":tool_call_id,"tool_name":tool_name,"arguments_str_length":len(arguments_str) if arguments_str else 0,"arguments_str_preview":arguments_str[:100] if arguments_str else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                    except: pass
+                    # #endregion
 
                     # Parse args (best effort)
                     try:
@@ -790,9 +976,21 @@ async def _handle_text_generation(
                 # -------- message completion + usage
                 elif event_type == "message_complete":
                     usage_data = event.get("usage")
+                    # #region agent log
+                    try:
+                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:880","message":"message_complete event received","data":{"has_usage":usage_data is not None,"usage_type":type(usage_data).__name__ if usage_data else None,"usage":usage_data,"current_input_tokens":input_tokens,"current_output_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                    except: pass
+                    # #endregion
                     if isinstance(usage_data, dict):
                         input_tokens = usage_data.get("prompt_tokens", 0) or 0
                         output_tokens = usage_data.get("completion_tokens", 0) or 0
+                        # #region agent log
+                        try:
+                            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:884","message":"Updated tokens from message_complete","data":{"input_tokens":input_tokens,"output_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                        except: pass
+                        # #endregion
                     else:
                         logger.warning(
                             f"message_complete event received without usage_data for run {run_id}"
@@ -829,6 +1027,12 @@ async def _handle_text_generation(
         await remove_active_run(group_id_str)
 
     # Emit run completion event with usage data
+    # #region agent log
+    try:
+        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:933","message":"Emitting generate_complete with final token counts","data":{"input_text_tokens":input_tokens,"output_text_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
     await internal_sio.emit(
         "generate_complete",
         {

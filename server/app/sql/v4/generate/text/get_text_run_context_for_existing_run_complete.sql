@@ -258,6 +258,8 @@ tool_schema_data AS (
     GROUP BY t.id, ts.schema_id
 ),
 -- Get agent tools as composite type array
+-- Filter tools to only include those matching the resource_type parameter
+-- Include tools where rt.resource matches resource_type OR rt.resource IS NULL (global tools)
 agent_tools_data AS (
     SELECT 
         sa.agent_id,
@@ -265,10 +267,11 @@ agent_tools_data AS (
             ARRAY_AGG(
                 (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(da.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
-            ) FILTER (WHERE t.id IS NOT NULL),
+            ) FILTER (WHERE t.id IS NOT NULL AND (rt.resource::text = p.resource_type OR rt.resource IS NULL)),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
         ) as tools
     FROM selected_agent sa
+    CROSS JOIN params p
     LEFT JOIN agent_tools at ON at.agent_id = sa.agent_id AND at.active = true
     LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
