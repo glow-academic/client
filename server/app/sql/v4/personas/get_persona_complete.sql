@@ -124,6 +124,10 @@ CREATE OR REPLACE FUNCTION api_get_persona_v4(
     icon_show_selected boolean DEFAULT NULL,
     current_color text DEFAULT NULL,
     current_icon text DEFAULT NULL,
+    descriptions_search text DEFAULT NULL,
+    instructions_search text DEFAULT NULL,
+    field_search text DEFAULT NULL,
+    field_show_selected boolean DEFAULT NULL,
     draft_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
 )
@@ -222,6 +226,10 @@ WITH params AS (
         COALESCE(icon_show_selected, false) AS icon_show_selected,
         current_color AS current_color,
         current_icon AS current_icon,
+        descriptions_search AS descriptions_search,
+        instructions_search AS instructions_search,
+        field_search AS field_search,
+        COALESCE(field_show_selected, false) AS field_show_selected,
         draft_id AS draft_id,
         COALESCE(mcp, false) AS mcp
 ),
@@ -546,6 +554,37 @@ icons_data AS (
         )
     ORDER BY i.name
 ),
+-- Descriptions (all available description options, filtered by search)
+descriptions_data AS (
+    SELECT 
+        d.id,
+        d.description,
+        COALESCE(d.generated, false) as generated
+    FROM descriptions d
+    CROSS JOIN params p
+    WHERE 
+        -- Search filter: if descriptions_search provided, match description text
+        (p.descriptions_search IS NULL OR p.descriptions_search = '' OR
+         LOWER(d.description) LIKE '%' || LOWER(p.descriptions_search) || '%')
+    ORDER BY d.description
+),
+-- Instructions (all available instruction options, filtered by search)
+instructions_data AS (
+    SELECT 
+        i.id,
+        i.template,
+        COALESCE(i.generated, false) as generated
+    FROM instructions i
+    CROSS JOIN params p
+    WHERE 
+        i.active = true
+        -- Search filter: if instructions_search provided, match template text
+        AND (p.instructions_search IS NULL OR p.instructions_search = '' OR
+             LOWER(i.template) LIKE '%' || LOWER(p.instructions_search) || '%')
+    ORDER BY i.template
+),
+-- Fields (all available field options, filtered by search and show_selected)
+-- Note: Filtering happens in SELECT statement using valid_fields_data and field_mapping_data
 -- Color suggestions based on generated flag from junction table (returns UUIDs)
 color_suggestions_data AS (
     SELECT 
@@ -1808,7 +1847,13 @@ SELECT
     (SELECT agent_id FROM description_agent_data) as description_agent_id,
     false as description_required,
     COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
-    COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_persona_v4_description_resource[]) as descriptions,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dd.id, dd.description, dd.generated)::types.q_get_persona_v4_description_resource
+            ORDER BY dd.description
+        ) FROM descriptions_data dd),
+        COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_persona_v4_description_resource[])
+    ) as descriptions,
     -- Single-select resources: color
     (SELECT color_id FROM color_resource_data) as color_id,
     (SELECT color_res FROM (SELECT crd.draft_color_resource as color_res UNION ALL SELECT crd.persona_color_resource LIMIT 1) sub WHERE color_res IS NOT NULL LIMIT 1) as color_resource,
@@ -1855,7 +1900,13 @@ SELECT
     (SELECT agent_id FROM instructions_agent_data) as instructions_agent_id,
     true as instructions_required,
     COALESCE((SELECT instructions_suggestions FROM instructions_suggestions_data), ARRAY[]::uuid[]) as instructions_suggestions,
-    COALESCE((SELECT instructions FROM instructions_suggestions_objects), ARRAY[]::types.q_get_persona_v4_instructions_resource[]) as instructions,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (id.id, id.template, id.generated)::types.q_get_persona_v4_instructions_resource
+            ORDER BY id.template
+        ) FROM instructions_data id),
+        COALESCE((SELECT instructions FROM instructions_suggestions_objects), ARRAY[]::types.q_get_persona_v4_instructions_resource[])
+    ) as instructions,
     -- Single-select resources: flag
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT flag_res FROM (SELECT frd.draft_flag_resource as flag_res UNION ALL SELECT frd.persona_flag_resource LIMIT 1) sub WHERE flag_res IS NOT NULL LIMIT 1) as flag_resource,
@@ -1951,17 +2002,48 @@ SELECT
     COALESCE(
         CASE 
             WHEN (SELECT persona_id FROM params) IS NULL THEN
-                -- For new personas, use valid_fields_data
+                -- For new personas, use valid_fields_data with search/filter
                 (SELECT ARRAY_AGG(
                     (vfd.field_id, vfd.name, vfd.description, vfd.generated)::types.q_get_persona_v4_field
                     ORDER BY vfd.name
-                ) FROM valid_fields_data vfd)
+                ) FROM valid_fields_data vfd
+                CROSS JOIN params p
+                WHERE 
+                    -- Search filter: if field_search provided, match name or description
+                    (p.field_search IS NULL OR p.field_search = '' OR
+                     LOWER(vfd.name) LIKE '%' || LOWER(p.field_search) || '%' OR
+                     LOWER(vfd.description) LIKE '%' || LOWER(p.field_search) || '%')
+                    -- Show selected filter: if enabled, only show selected fields
+                    AND (
+                        NOT p.field_show_selected OR
+                        vfd.field_id IN (
+                            SELECT jsonb_array_elements_text(payload->'field_ids')::uuid
+                            FROM draft_payload_data
+                            WHERE payload->'field_ids' IS NOT NULL
+                        )
+                    ))
             ELSE
-                -- For existing personas, use field_mapping_data
+                -- For existing personas, use field_mapping_data with search/filter
                 (SELECT ARRAY_AGG(
                     (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
                     ORDER BY fmd.name
-                ) FROM field_mapping_data fmd)
+                ) FROM field_mapping_data fmd
+                CROSS JOIN params p
+                WHERE 
+                    -- Search filter: if field_search provided, match name or description
+                    (p.field_search IS NULL OR p.field_search = '' OR
+                     LOWER(fmd.name) LIKE '%' || LOWER(p.field_search) || '%' OR
+                     LOWER(fmd.description) LIKE '%' || LOWER(p.field_search) || '%')
+                    -- Show selected filter: if enabled, only show selected fields
+                    AND (
+                        NOT p.field_show_selected OR
+                        fmd.field_id IN (
+                            SELECT pf.field_id
+                            FROM persona_fields pf
+                            WHERE pf.persona_id = (SELECT persona_id FROM params)
+                              AND pf.field_id IS NOT NULL
+                        )
+                    ))
         END,
         '{}'::types.q_get_persona_v4_field[]
     ) as fields,

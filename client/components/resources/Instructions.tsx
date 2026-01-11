@@ -48,6 +48,8 @@ export interface InstructionsProps {
   group_id?: string | null; // Group ID for linking resources
   agent_id?: string | null; // Agent ID for resource creation
   createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
+  searchTerm?: string; // Search term for filtering instructions
+  onSearchChange?: (term: string) => void; // Callback when search term changes
   // Legacy props for backward compatibility
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
@@ -74,6 +76,8 @@ export function Instructions({
   group_id,
   agent_id,
   createInstructionsAction,
+  searchTerm,
+  onSearchChange,
   // Legacy props for backward compatibility
   instructionsResource,
   instructionsId,
@@ -247,29 +251,28 @@ export function Instructions({
             </TooltipProvider>
           )}
         </div>
-        {/* GenericPicker for suggestions */}
-        {(suggestionsList.length > 0 || (instructions && instructions.length > 0)) && (
-          <GenericPicker
-            items={pickerItems}
-            selectedIds={resourceId ? [resourceId] : []}
-            onSelect={(ids) => {
-              onInstructionsIdChange(ids[0] || null);
-            }}
-            getId={(item) => (typeof item === 'string' ? item : item.id)}
-            getLabel={(item) => {
-              if (typeof item === 'string') {
-                return `Instructions ${item.slice(0, 8)}...`;
-              }
-              return item.template || `Instructions ${item.id.slice(0, 8)}...`;
-            }}
-            placeholder="Instructions"
-            disabled={disabled}
-            multiSelect={false}
-            compact={true}
-            buttonClassName="h-8"
-            showLabel={false}
-          />
-        )}
+        {/* GenericPicker for suggestions - always show */}
+        <GenericPicker
+          items={pickerItems}
+          selectedIds={resourceId ? [resourceId] : []}
+          onSelect={(ids) => {
+            onInstructionsIdChange(ids[0] || null);
+          }}
+          getId={(item) => (typeof item === 'string' ? item : item.id)}
+          getLabel={(item) => {
+            if (typeof item === 'string') {
+              return `Instructions ${item.slice(0, 8)}...`;
+            }
+            return item.template || `Instructions ${item.id.slice(0, 8)}...`;
+          }}
+          placeholder="Instructions"
+          disabled={disabled}
+          multiSelect={false}
+          compact={true}
+          buttonClassName="h-8"
+          showLabel={false}
+          initialSearchTerm={searchTerm}
+        />
       </div>
       {/* Textarea without generate button inside */}
       <Textarea

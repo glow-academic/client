@@ -62,6 +62,8 @@ export interface DescriptionsProps {
         input: CreateDraftDescriptionsIn
       ) => Promise<CreateDraftDescriptionsOut>)
     | undefined;
+  searchTerm?: string; // Search term for filtering descriptions
+  onSearchChange?: (term: string) => void; // Callback when search term changes
   // Legacy props for backward compatibility
   descriptionResource?: {
     id: string;
@@ -92,6 +94,8 @@ export function Descriptions({
   group_id,
   agent_id,
   createDescriptionsAction,
+  searchTerm,
+  onSearchChange,
   // Legacy props for backward compatibility
   descriptionResource,
   descriptionId,
@@ -283,29 +287,28 @@ export function Descriptions({
             </TooltipProvider>
           )}
         </div>
-        {/* GenericPicker for suggestions */}
-        {(suggestionsList.length > 0 || (descriptions && descriptions.length > 0)) && (
-          <GenericPicker
-            items={pickerItems}
-            selectedIds={resourceId ? [resourceId] : []}
-            onSelect={(ids) => {
-              onDescriptionIdChange(ids[0] || null);
-            }}
-            getId={(item) => (typeof item === 'string' ? item : item.id)}
-            getLabel={(item) => {
-              if (typeof item === 'string') {
-                return `Description ${item.slice(0, 8)}...`;
-              }
-              return item.description || `Description ${item.id.slice(0, 8)}...`;
-            }}
-            placeholder="Descriptions"
-            disabled={disabled}
-            multiSelect={false}
-            compact={true}
-            buttonClassName="h-8"
-            showLabel={false}
-          />
-        )}
+        {/* GenericPicker for suggestions - always show */}
+        <GenericPicker
+          items={pickerItems}
+          selectedIds={resourceId ? [resourceId] : []}
+          onSelect={(ids) => {
+            onDescriptionIdChange(ids[0] || null);
+          }}
+          getId={(item) => (typeof item === 'string' ? item : item.id)}
+          getLabel={(item) => {
+            if (typeof item === 'string') {
+              return `Description ${item.slice(0, 8)}...`;
+            }
+            return item.description || `Description ${item.id.slice(0, 8)}...`;
+          }}
+          placeholder="Descriptions"
+          disabled={disabled}
+          multiSelect={false}
+          compact={true}
+          buttonClassName="h-8"
+          showLabel={false}
+          initialSearchTerm={searchTerm}
+        />
       </div>
       {/* Textarea without generate button inside */}
       <Textarea

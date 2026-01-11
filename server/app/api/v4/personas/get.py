@@ -78,6 +78,10 @@ async def get_persona(
         icon_show_selected = request.icon_show_selected
         current_color = request.current_color
         current_icon = request.current_icon
+        descriptions_search = request.descriptions_search
+        instructions_search = request.instructions_search
+        field_search = request.field_search
+        field_show_selected = request.field_show_selected
         draft_id = request.draft_id
         persona_id = request.persona_id  # Can be NULL for new mode
 
@@ -94,6 +98,10 @@ async def get_persona(
             icon_show_selected=icon_show_selected,
             current_color=current_color,
             current_icon=current_icon,
+            descriptions_search=descriptions_search,
+            instructions_search=instructions_search,
+            field_search=field_search,
+            field_show_selected=field_show_selected,
             draft_id=draft_id,
             mcp=mcp,
         )

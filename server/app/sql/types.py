@@ -14524,6 +14524,10 @@ class GetPersonaSqlParams(BaseModel):
     icon_show_selected: bool | None = None
     current_color: str | None = None
     current_icon: str | None = None
+    descriptions_search: str | None = None
+    instructions_search: str | None = None
+    field_search: str | None = None
+    field_show_selected: bool | None = None
     draft_id: UUID | None = None
     mcp: bool | None = False
 
@@ -14537,6 +14541,10 @@ class GetPersonaSqlParams(BaseModel):
             self.icon_show_selected,
             self.current_color,
             self.current_icon,
+            self.descriptions_search,
+            self.instructions_search,
+            self.field_search,
+            self.field_show_selected,
             self.draft_id,
             self.mcp,
         )
@@ -14729,6 +14737,10 @@ class GetPersonaApiRequest(BaseModel):
     icon_show_selected: bool | None = None
     current_color: str | None = None
     current_icon: str | None = None
+    descriptions_search: str | None = None
+    instructions_search: str | None = None
+    field_search: str | None = None
+    field_show_selected: bool | None = None
     draft_id: UUID | None = None
     mcp: bool | None = False
 

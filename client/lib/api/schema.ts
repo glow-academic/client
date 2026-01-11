@@ -8884,6 +8884,14 @@ export interface components {
             current_color?: string | null;
             /** Current Icon */
             current_icon?: string | null;
+            /** Descriptions Search */
+            descriptions_search?: string | null;
+            /** Instructions Search */
+            instructions_search?: string | null;
+            /** Field Search */
+            field_search?: string | null;
+            /** Field Show Selected */
+            field_show_selected?: boolean | null;
             /** Draft Id */
             draft_id?: string | null;
             /**

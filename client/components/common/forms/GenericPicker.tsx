@@ -75,6 +75,8 @@ export interface GenericPickerProps<T> extends PopoverProps {
   badgesPosition?: "above" | "below";
   /** Show a Clear All button when items are selected (only for multi-select) */
   showClearAll?: boolean;
+  /** Initial search term to prefill the search input */
+  initialSearchTerm?: string;
 }
 
 export function GenericPicker<T>({
@@ -107,9 +109,18 @@ export function GenericPicker<T>({
   maxHeight = "max-h-[250px]",
   badgesPosition = "below",
   showClearAll = false,
+  initialSearchTerm,
   ...props
 }: GenericPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
+  const [searchValue, setSearchValue] = React.useState(initialSearchTerm || "");
+  
+  // Sync search value when initialSearchTerm changes
+  React.useEffect(() => {
+    if (initialSearchTerm !== undefined) {
+      setSearchValue(initialSearchTerm);
+    }
+  }, [initialSearchTerm]);
 
   // Normalize items to array format with id attached
   // When items is Record<string, T>, we add id property from the key
@@ -286,7 +297,16 @@ export function GenericPicker<T>({
 
       <Popover
         open={disabled ? false : open}
-        onOpenChange={disabled ? () => {} : setOpen}
+        onOpenChange={(newOpen) => {
+          if (disabled) return;
+          setOpen(newOpen);
+          // Reset search when closing, restore initial when opening
+          if (newOpen) {
+            setSearchValue(initialSearchTerm || "");
+          } else {
+            setSearchValue("");
+          }
+        }}
         {...props}
       >
         <PopoverTrigger asChild>
@@ -329,7 +349,11 @@ export function GenericPicker<T>({
               <CommandList
                 className={cn("h-[var(--cmdk-list-height)]", maxHeight)}
               >
-                <CommandInput placeholder={searchPlaceholder} />
+                <CommandInput 
+                  placeholder={searchPlaceholder} 
+                  value={searchValue}
+                  onValueChange={setSearchValue}
+                />
                 <CommandEmpty>{emptyMessage}</CommandEmpty>
                 <HoverCardTrigger />
                 {selectedIds.length > 0 && showClearAction && (

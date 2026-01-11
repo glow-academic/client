@@ -37283,6 +37283,50 @@
             ],
             "title": "Current Icon"
           },
+          "descriptions_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descriptions Search"
+          },
+          "instructions_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions Search"
+          },
+          "field_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Search"
+          },
+          "field_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Show Selected"
+          },
           "draft_id": {
             "anyOf": [
               {

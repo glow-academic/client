@@ -185,9 +185,13 @@ function PersonaNewComponent({
       // Search params (URL-backed, updated via debounced callback in StepCard)
       colorSearch: parseAsString,
       iconSearch: parseAsString,
+      descriptionSearch: parseAsString,
+      instructionsSearch: parseAsString,
+      fieldSearch: parseAsString,
       // Filter params (URL-backed)
       colorShowSelected: parseAsBoolean,
       iconShowSelected: parseAsBoolean,
+      fieldShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -1340,6 +1344,15 @@ function PersonaNewComponent({
                       description_id: descriptionId,
                     }))
                   }
+                  searchTerm={
+                    (stepFormData["descriptionSearch"] as
+                      | string
+                      | null
+                      | undefined) || ""
+                  }
+                  onSearchChange={(term: string) =>
+                    setStepFormData({ descriptionSearch: term || null })
+                  }
                   onGenerate={handleGenerateDescription}
                   isGenerating={isGenerating("descriptions")}
                   label="Description"
@@ -1404,6 +1417,11 @@ function PersonaNewComponent({
           );
 
         case "fields":
+          const fieldSearchTerm =
+            (stepFormData["fieldSearch"] as string | null | undefined) || "";
+          const fieldShowSelected =
+            (stepFormData["fieldShowSelected"] as boolean | null | undefined) ??
+            false;
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1412,7 +1430,22 @@ function PersonaNewComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              resetFields={["field_ids"]}
+              searchTerm={fieldSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ fieldSearch: term || null })
+              }
+              searchPlaceholder="Search fields..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: fieldShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({ fieldShowSelected: value || null }),
+                },
+              ]}
+              resetFields={["field_ids", "fieldSearch", "fieldShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
@@ -1473,11 +1506,12 @@ function PersonaNewComponent({
                   setFormState((prev) => ({ ...prev, field_ids: ids }))
                 }
                 label="Fields"
-                description="Select fields for this persona"
                 required={currentPersonaData?.fields_required ?? false}
                 group_id={currentPersonaData?.group_id ?? null}
                 agent_id={currentPersonaData?.fields_agent_id ?? null}
                 createFieldsAction={createFieldsAction}
+                searchTerm={fieldSearchTerm}
+                showSelectedFilter={fieldShowSelected}
               />
             </StepCard>
           );
@@ -1776,6 +1810,15 @@ function PersonaNewComponent({
                     ...prev,
                     instructions_id: instructionsId,
                   }))
+                }
+                searchTerm={
+                  (stepFormData["instructionsSearch"] as
+                    | string
+                    | null
+                    | undefined) || ""
+                }
+                onSearchChange={(term: string) =>
+                  setStepFormData({ instructionsSearch: term || null })
                 }
                 onGenerate={handleGenerateInstructions}
                 isGenerating={isGenerating("instructions")}

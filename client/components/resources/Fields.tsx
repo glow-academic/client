@@ -1,18 +1,18 @@
 /**
  * Fields.tsx
  * Resource component for field selection
- * Uses GenericPicker to select existing field resources
+ * Uses SelectableGrid for field selection with search/filter support
  * Manages field_ids array and reports to parent
  */
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Label } from "@/components/ui/label";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 
 type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
@@ -51,6 +51,8 @@ export interface FieldsProps {
   createFieldsAction?:
     | ((input: CreateDraftFieldsIn) => Promise<CreateDraftFieldsOut>)
     | undefined;
+  searchTerm?: string; // Search term for filtering fields
+  showSelectedFilter?: boolean; // Whether to show only selected fields
   // Legacy props for backward compatibility
   fieldIds?: string[];
 }
@@ -71,6 +73,8 @@ export function Fields({
   group_id,
   agent_id,
   createFieldsAction,
+  searchTerm = "",
+  showSelectedFilter = false,
   // Legacy props for backward compatibility
   fieldIds,
 }: FieldsProps) {
@@ -80,7 +84,7 @@ export function Fields({
   const allFieldsMemo = useMemo(() => fields ?? [], [fields]);
   const suggestionsList = useMemo(() => _field_suggestions ?? [], [_field_suggestions]);
 
-  // Convert fields array to FieldItem format for GenericPicker
+  // Convert fields array to FieldItem format for SelectableGrid
   const fieldItems = useMemo(() => {
     return allFieldsMemo
       .filter((f) => f.field_id && f.name) // Filter out nulls
@@ -91,6 +95,27 @@ export function Fields({
       }));
   }, [allFieldsMemo]);
 
+  // Filter fields based on search term
+  const filteredFields = useMemo(() => {
+    let filtered = fieldItems;
+    
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((field) => {
+        const searchText = `${field.name} ${field.description || ""}`.toLowerCase();
+        return searchText.includes(searchLower);
+      });
+    }
+    
+    // Apply show selected filter
+    if (showSelectedFilter) {
+      filtered = filtered.filter((field) => ids.includes(field.id));
+    }
+    
+    return filtered;
+  }, [fieldItems, searchTerm, showSelectedFilter, ids]);
+
   // Check if a field is suggested
   const isSuggested = useCallback(
     (fieldId: string) => suggestionsList.includes(fieldId),
@@ -98,10 +123,15 @@ export function Fields({
   );
 
   const handleSelect = useCallback(
-    (selectedIds: string[]) => {
-      onChange(selectedIds);
+    (fieldId: string) => {
+      const isSelected = ids.includes(fieldId);
+      if (isSelected) {
+        onChange(ids.filter((id) => id !== fieldId));
+      } else {
+        onChange([...ids, fieldId]);
+      }
     },
-    [onChange]
+    [ids, onChange]
   );
 
   // Don't render if show_fields is false (AFTER all hooks)
@@ -122,21 +152,13 @@ export function Fields({
           )}
         </Label>
       )}
-      <GenericPicker<FieldItem>
-        items={fieldItems}
-        itemIds={allFieldsMemo
-          .map((f) => f.field_id)
-          .filter((id): id is string => id !== null)} // All field IDs from array
+      <SelectableGrid<FieldItem>
+        items={filteredFields}
         selectedIds={ids}
         onSelect={handleSelect}
-        multiSelect={true}
         getId={(item) => item.id}
-        getLabel={(item) => item.name}
-        getSearchText={(item) =>
-          `${item.name} ${item.description || ""}`.trim()
-        }
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
+          <div className="flex items-center justify-between w-full p-3 border rounded-md hover:bg-accent">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {isSuggested(item.id) && !isSelected && (
                 <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
@@ -144,9 +166,9 @@ export function Fields({
                 </span>
               )}
               <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name}</div>
+                <div className="truncate font-medium">{item.name}</div>
                 {item.description && (
-                  <div className="text-xs text-muted-foreground truncate">
+                  <div className="text-xs text-muted-foreground truncate mt-1">
                     {item.description}
                   </div>
                 )}
@@ -155,16 +177,13 @@ export function Fields({
             <Check
               className={cn(
                 "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
+                isSelected ? "opacity-100 text-primary" : "opacity-0"
               )}
             />
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No fields found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );
