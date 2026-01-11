@@ -1,6 +1,6 @@
--- Get agent end event name for a resource type
--- Checks if resource_type matches an artifact name in the artifacts table
--- Returns {resource_type}_end if artifact exists, otherwise returns default
+-- Get agent end event name for an artifact type
+-- Checks if artifact_type is a valid value in the artifacts enum
+-- Returns {artifact_type}_end if artifact exists, otherwise returns default
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -18,7 +18,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_get_agent_end_event_name_v4(
-    resource_type text
+    artifact_type text
 )
 RETURNS TABLE (
     event_name text
@@ -29,18 +29,18 @@ AS $$
 DECLARE
     v_event_name text;
 BEGIN
-    -- Check if resource_type matches an artifact name
+    -- Check if artifact_type is a valid artifacts enum value
     IF EXISTS (
-        SELECT 1 FROM artifacts
-        WHERE name = resource_type
+        SELECT 1 FROM unnest(enum_range(NULL::artifacts)) AS e
+        WHERE e::text = artifact_type
     ) THEN
-        v_event_name := resource_type || '_end';
+        v_event_name := artifact_type || '_end';
         RETURN QUERY SELECT v_event_name;
         RETURN;
     END IF;
     
     -- Special case: audio maps to voice
-    IF resource_type = 'audio' THEN
+    IF artifact_type = 'audio' THEN
         RETURN QUERY SELECT 'voice_end'::text;
         RETURN;
     END IF;

@@ -104,8 +104,10 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     final_resource_type = modality_to_resource_type.get(modality, resource_type)
 
     # Discover agent end event name dynamically
+    # Use artifact_type (from artifacts enum) to determine the end event name
+    # If artifact_type is None, the function will return "text_end" as default
     async with get_db_connection() as conn:
-        agent_end_event = await get_agent_end_event_name(conn, final_resource_type)
+        agent_end_event = await get_agent_end_event_name(conn, artifact_type if artifact_type else "")
 
     # Build payload for agent-specific end handler
     emit_payload: dict[str, Any] = {

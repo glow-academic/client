@@ -11750,11 +11750,11 @@ class UpdateImageCompletedApiResponse(BaseModel):
 
 class GetAgentEndEventNameSqlParams(BaseModel):
 
-    resource_type: str
+    artifact_type: str
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.resource_type,
+            self.artifact_type,
         )
 
 class GetAgentEndEventNameSqlRow(BaseModel):
@@ -11763,7 +11763,7 @@ class GetAgentEndEventNameSqlRow(BaseModel):
 
 class GetAgentEndEventNameApiRequest(BaseModel):
 
-    resource_type: str
+    artifact_type: str
 
 class GetAgentEndEventNameApiResponse(BaseModel):
 

@@ -491,9 +491,9 @@ The artifact generation workflow uses **dynamic discovery** to eliminate hardcod
 - Uses direct match, template variable extraction, or fallback
 - Returns dictionary ready for INSERT
 
-**`get_agent_end_event_name(conn, resource_type)`**
-- Checks if resource_type matches artifact name in `artifacts` table
-- Returns `{resource_type}_end` or `text_end` as default
+**`get_agent_end_event_name(conn, artifact_type)`**
+- Checks if artifact_type is a valid value in the `artifacts` enum
+- Returns `{artifact_type}_end` or `text_end` as default
 - Handles special cases (e.g., `audio` → `voice_end`)
 
 ### Resource Creation Flow

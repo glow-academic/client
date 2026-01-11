@@ -273,19 +273,19 @@ async def map_template_values_to_table_columns(
 
 
 async def get_agent_end_event_name(
-    conn: asyncpg.Connection, resource_type: str
+    conn: asyncpg.Connection, artifact_type: str
 ) -> str:
-    """Discover agent end event name for a resource type.
+    """Discover agent end event name for an artifact type.
     
-    Checks if resource_type matches an artifact name in the artifacts table.
-    If found, returns {resource_type}_end. Otherwise returns "text_end" as default.
+    Checks if artifact_type is a valid value in the artifacts enum.
+    If found, returns {artifact_type}_end. Otherwise returns "text_end" as default.
     
     Args:
         conn: Database connection
-        resource_type: Resource type name
+        artifact_type: Artifact type name (from artifacts enum, e.g., "persona", "scenario", "rubric")
         
     Returns:
-        Event name string (e.g., "scenario_end", "text_end")
+        Event name string (e.g., "persona_end", "scenario_end", "text_end")
     """
     sql_path = "app/sql/v4/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"
     
@@ -296,7 +296,7 @@ async def get_agent_end_event_name(
     if is_function and function_name:
         # Call function and get first row (function returns single row)
         function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
-        row = await conn.fetchrow(function_call_sql, resource_type)
+        row = await conn.fetchrow(function_call_sql, artifact_type)
         if row and row.get("event_name"):
             return str(row["event_name"])
     
