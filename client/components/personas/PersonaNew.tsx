@@ -180,6 +180,8 @@ function PersonaNewComponent({
   // Memoize to prevent new object reference on every render
   const personaSearchParamsClient = useMemo(
     () => ({
+      // Draft ID (URL-backed, updated when draft is created)
+      draftId: parseAsString,
       // Search params (URL-backed, updated via debounced callback in StepCard)
       colorSearch: parseAsString,
       iconSearch: parseAsString,
@@ -662,8 +664,7 @@ function PersonaNewComponent({
           if (data.icon_id) updates.icon_id = data.icon_id;
           if (data.instructions_id)
             updates.instructions_id = data.instructions_id;
-          if (data.active_flag_id)
-            updates.active_flag_id = data.active_flag_id;
+          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
           if (data.field_ids && data.field_ids.length > 0) {
             // For arrays, append new IDs (avoid duplicates)
             const newFieldIds = data.field_ids.filter(
