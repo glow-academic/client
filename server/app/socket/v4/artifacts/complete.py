@@ -7,8 +7,7 @@ from typing import Any, cast
 import asyncpg
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.artifacts.discovery import (
-    get_agent_end_event_name, get_resource_table_columns,
-    map_template_values_to_table_columns)
+    get_resource_table_columns, map_template_values_to_table_columns)
 from app.infra.v4.tools.render_tool_template import render_tool_template
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
@@ -93,47 +92,23 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
         elif modality in ("text", "call", "document"):
             await _handle_text_complete(data, sid)
 
-    # Dispatch to agent-specific end handlers
+    # Re-emit generate_complete with enriched data for resource handlers
+    # Only include fields that resource handlers (like personas/complete.py) actually need
     resource_type = data.get("resource_type", "text")
-    # Map modality to resource_type for end handler
-    modality_to_resource_type = {
-        "text": resource_type,
-        "call": resource_type,
-        "document": resource_type,
-        "image": "image",
-        "video": "video",
-        "audio": "voice",  # Audio maps to voice resource type
-    }
-    final_resource_type = modality_to_resource_type.get(modality, resource_type)
-
-    # Discover agent end event name dynamically
-    # Use artifact_type (from artifacts enum) to determine the end event name
-    # If artifact_type is None, the function will return "text_end" as default
-    async with get_db_connection() as conn:
-        agent_end_event = await get_agent_end_event_name(conn, artifact_type if artifact_type else "")
-
-    # Build payload for agent-specific end handler
-    emit_payload: dict[str, Any] = {
+    
+    # Build minimal payload with only fields needed by resource handlers
+    enriched_payload: dict[str, Any] = {
         "sid": sid,
-        "type": completion_type,
         "artifact_type": artifact_type,
-        "run_id": data.get("run_id"),
         "group_id": data.get("group_id"),
-        "department_id": data.get("department_id"),
-        "tool_call_id": data.get("tool_call_id"),
-        "call_id": data.get("call_id"),
-        "tool_name": data.get("tool_name"),
-        "tool_type": data.get("tool_type"),
-        "final_content": data.get("final_content"),
-        "arguments_raw": data.get("arguments_raw"),
+        "resource_id": data.get("resource_id"),  # Added if created from tool execution
+        "resource_type": resource_type,
+        "run_id": data.get("run_id"),
+        "type": completion_type,
     }
 
-    # Include rendered template values if available
-    if rendered_values is not None:
-        emit_payload["rendered_template_values"] = rendered_values
-
-    # Dispatch to agent-specific end handler
-    await internal_sio.emit(agent_end_event, emit_payload)
+    # Re-emit generate_complete for resource handlers to process
+    await internal_sio.emit("generate_complete", enriched_payload)
 
     # Transform internal event format to client format
     client_payload = _build_client_payload(modality, completion_type, data, artifact_type)
