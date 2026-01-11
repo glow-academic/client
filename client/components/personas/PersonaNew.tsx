@@ -764,15 +764,15 @@ function PersonaNewComponent({
       toast.error(data.message || "Generation failed");
     };
 
-    // Listen to unified events filtered by artifact_type and group_id
-    socket.on("artifact_generation_progress", handleGenerationProgress);
+    // Listen to persona-specific events filtered by artifact_type and group_id
+    socket.on("persona_generation_progress", handleGenerationProgress);
     socket.on("persona_generation_complete", handleGenerationComplete);
-    socket.on("artifact_generation_error", handleGenerationError);
+    socket.on("persona_generation_error", handleGenerationError);
 
     return () => {
-      socket.off("artifact_generation_progress", handleGenerationProgress);
+      socket.off("persona_generation_progress", handleGenerationProgress);
       socket.off("persona_generation_complete", handleGenerationComplete);
-      socket.off("artifact_generation_error", handleGenerationError);
+      socket.off("persona_generation_error", handleGenerationError);
     };
   }, [socket, isConnected, personaData?.group_id]);
 

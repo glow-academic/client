@@ -19,19 +19,6 @@ server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/personas/get_persona_resource_ids_by_group_id_complete.sql"
 
-# Persona resource types
-PERSONA_RESOURCE_TYPES = [
-    "names",
-    "descriptions",
-    "colors",
-    "icons",
-    "instructions",
-    "flags",
-    "examples",
-    "fields",
-    "departments",
-]
-
 
 @internal_sio.on("generate_complete")  # type: ignore
 async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:

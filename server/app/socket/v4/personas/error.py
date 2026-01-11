@@ -1,59 +1,78 @@
-"""Persona error handler - listens to artifact_generation_error events and re-emits to clients."""
+"""Persona error handler - listens to artifact_generation_error events and emits persona-specific events."""
 
-from typing import Any
+import uuid
+from typing import Any, cast
 
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
+from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.sql.types import (ValidatePersonaResourceErrorSqlParams,
+                           ValidatePersonaResourceErrorSqlRow)
 from fastapi import APIRouter
+from utils.sql_helper import execute_sql_typed
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
-# Persona resource types
-PERSONA_RESOURCE_TYPES = [
-    "names",
-    "descriptions",
-    "colors",
-    "icons",
-    "instructions",
-    "flags",
-    "examples",
-    "fields",
-    "departments",
-]
+SQL_PATH = "app/sql/v4/personas/validate_persona_resource_error_complete.sql"
 
 
 @internal_sio.on("artifact_generation_error")  # type: ignore
 async def handle_personas_error(data: dict[str, Any]) -> None:
-    """Handle artifact_generation_error event - filter by persona artifact_type and re-emit to client."""
-    # Filter by artifact_type
+    """Handle artifact_generation_error event - filter by persona artifact_type and emit persona-specific event."""
+    # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "persona":
-        return  # Not for us
-
-    # Check if resource_type is a persona resource type
-    # Also check if resource_types array contains any persona resource types
-    resource_type = data.get("resource_type")
-    resource_types = data.get("resource_types", [])
-    is_persona_resource = resource_type in PERSONA_RESOURCE_TYPES or any(
-        rt in PERSONA_RESOURCE_TYPES for rt in resource_types
-    )
-
-    if not is_persona_resource:
         return  # Not for us
 
     sid = data.get("sid", "")
     if not sid:
         return  # No socket ID, can't emit to client
 
+    # Get profile_id from sid
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        return
+    profile_id = uuid.UUID(profile_id_str)
+
+    # Extract data from event
+    group_id_str = data.get("group_id")
+    resource_type = data.get("resource_type")
+    resource_types = data.get("resource_types", [])
+
+    if not group_id_str:
+        return
+
+    group_id = uuid.UUID(group_id_str)
+
+    # Query SQL function - SQL handles validation (handles both resource_type and resource_types)
+    try:
+        async with get_db_connection() as conn:
+            params = ValidatePersonaResourceErrorSqlParams(
+                profile_id=profile_id,
+                group_id=group_id,
+                resource_type=resource_type or "",  # SQL function expects non-null, empty string if None
+                resource_types=resource_types or [],  # SQL function expects non-null array
+                artifact_type="persona",  # Always "persona" for this handler
+            )
+            result = cast(
+                ValidatePersonaResourceErrorSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+    except Exception:
+        # SQL function raised error (validation failed) - return early
+        return
+
     error_message = data.get("error_message") or data.get(
         "message", "An error occurred during persona generation"
     )
-    
-    # Re-emit unified error event to client (client already listens to artifact_generation_error)
+
+    # Emit persona-specific error event with all fields from internal event
     await sio.emit(
-        "artifact_generation_error",
+        "persona_generation_error",
         {
             "artifact_type": artifact_type,
             "resource_type": resource_type,

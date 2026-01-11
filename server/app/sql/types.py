@@ -15132,6 +15132,75 @@ class SavePersonaApiResponse(BaseModel):
 
 
 
+# Generated from: validate_persona_resource_error
+
+class ValidatePersonaResourceErrorSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.resource_types,
+            self.artifact_type,
+        )
+
+class ValidatePersonaResourceErrorSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidatePersonaResourceErrorApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    resource_types: list[str]
+    artifact_type: str
+
+class ValidatePersonaResourceErrorApiResponse(BaseModel):
+
+    is_valid: bool | None = None
+
+
+
+# Generated from: validate_persona_resource_progress
+
+class ValidatePersonaResourceProgressSqlParams(BaseModel):
+
+    profile_id: UUID
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.group_id,
+            self.resource_type,
+            self.artifact_type,
+        )
+
+class ValidatePersonaResourceProgressSqlRow(BaseModel):
+
+    is_valid: bool | None = None
+
+class ValidatePersonaResourceProgressApiRequest(BaseModel):
+
+    group_id: UUID
+    resource_type: str
+    artifact_type: str
+
+class ValidatePersonaResourceProgressApiResponse(BaseModel):
+
+    is_valid: bool | None = None
+
+
+
 # Generated from: find_practice_simulation_with_persona
 
 class FindPracticeSimulationWithPersonaSqlParams(BaseModel):
@@ -29938,6 +30007,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SavePersonaApiRequest",
         "SavePersonaApiResponse",
     ),
+    "app/sql/v4/personas/validate_persona_resource_error_complete.sql": (
+        "ValidatePersonaResourceErrorSqlParams",
+        "ValidatePersonaResourceErrorSqlRow",
+        "ValidatePersonaResourceErrorApiRequest",
+        "ValidatePersonaResourceErrorApiResponse",
+    ),
+    "app/sql/v4/personas/validate_persona_resource_progress_complete.sql": (
+        "ValidatePersonaResourceProgressSqlParams",
+        "ValidatePersonaResourceProgressSqlRow",
+        "ValidatePersonaResourceProgressApiRequest",
+        "ValidatePersonaResourceProgressApiResponse",
+    ),
     "app/sql/v4/practice/find_practice_simulation_with_persona_complete.sql": (
         "FindPracticeSimulationWithPersonaSqlParams",
         "FindPracticeSimulationWithPersonaSqlRow",
@@ -32599,6 +32680,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/personas/save_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/validate_persona_resource_error_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/validate_persona_resource_progress_complete.sql"]
     ) -> SqlString: ...
 
     @overload
