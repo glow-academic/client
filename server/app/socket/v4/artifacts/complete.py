@@ -368,18 +368,20 @@ async def _handle_tool_call_template_rendering(call_id: str) -> dict[str, Any] |
     """Handle tool call template rendering for tool_call_complete events."""
     try:
         async with get_db_connection() as conn:
-            # Get calls record by external_call_id
-            call_record = await conn.fetchrow(
-                """
-                SELECT id, tool_id, template_id, arguments_raw
-                FROM calls
-                WHERE external_call_id = $1
-                LIMIT 1
-                """,
-                call_id,
-            )
+            from utils.sql_helper import _detect_function_in_sql, load_sql
 
-            if not call_record or not call_record["tool_id"]:
+            # Get calls record by external_call_id
+            sql_path_call = "app/sql/v4/artifacts/complete/get_call_by_external_id_complete.sql"
+            sql_text_call = load_sql(sql_path_call)
+            is_function_call, function_name_call, schema_call = _detect_function_in_sql(sql_text_call)
+            
+            if is_function_call and function_name_call:
+                function_call_sql = f'SELECT * FROM "{schema_call}"."{function_name_call}"($1::text)'
+                call_record = await conn.fetchrow(function_call_sql, call_id)
+            else:
+                call_record = await conn.fetchrow(sql_text_call, call_id)
+
+            if not call_record or not call_record.get("tool_id"):
                 return None
 
             call_uuid = call_record["id"]
@@ -399,61 +401,40 @@ async def _handle_tool_call_template_rendering(call_id: str) -> dict[str, Any] |
             # Store rendered values in template_values table
             if rendered_values and template_id:
                 # Get schema_fields for this tool's output schema
-                schema_fields = await conn.fetch(
-                    """
-                    SELECT sf.id, sf.name, sf.field_type
-                    FROM schema_fields sf
-                    JOIN schemas s ON s.id = sf.schema_id
-                    JOIN schema_templates st ON st.schema_id = s.id
-                    WHERE st.template_id = $1
-                    ORDER BY sf.position
-                    """,
-                    template_id,
-                )
+                sql_path_schema = "app/sql/v4/artifacts/complete/get_schema_fields_by_template_id_complete.sql"
+                sql_text_schema = load_sql(sql_path_schema)
+                is_function_schema, function_name_schema, schema_schema = _detect_function_in_sql(sql_text_schema)
+                
+                if is_function_schema and function_name_schema:
+                    function_call_sql = f'SELECT * FROM "{schema_schema}"."{function_name_schema}"($1::uuid)'
+                    schema_fields = await conn.fetch(function_call_sql, template_id)
+                else:
+                    schema_fields = await conn.fetch(sql_text_schema, template_id)
 
-                # Insert/update template_values
+                # Upsert template_values using SQL function
+                sql_path_upsert = "app/sql/v4/artifacts/complete/upsert_template_value_complete.sql"
+                sql_text_upsert = load_sql(sql_path_upsert)
+                is_function_upsert, function_name_upsert, schema_upsert = _detect_function_in_sql(sql_text_upsert)
+                
                 for field in schema_fields:
                     field_name = field["name"]
                     if field_name in rendered_values:
                         value = rendered_values[field_name]
                         field_type = field["field_type"]
 
-                        # Upsert template_value
-                        await conn.execute(
-                            """
-                            INSERT INTO template_values (
+                        # Upsert template_value using SQL function
+                        if is_function_upsert and function_name_upsert:
+                            upsert_sql = f'SELECT * FROM "{schema_upsert}"."{function_name_upsert}"($1::uuid, $2::uuid, $3::uuid, $4::text, $5::text, $6::numeric, $7::boolean)'
+                            await conn.fetchrow(
+                                upsert_sql,
                                 template_id,
-                                schema_field_id,
-                                call_id,
-                                string_value,
-                                number_value,
-                                boolean_value,
-                                active,
-                                created_at,
-                                updated_at
+                                field["id"],
+                                call_uuid,
+                                field_type,
+                                value if field_type == "string" else None,
+                                value if field_type == "number" else None,
+                                value if field_type == "boolean" else None,
                             )
-                            VALUES (
-                                $1, $2, $3,
-                                CASE WHEN $4 = 'string' THEN $5::text ELSE NULL END,
-                                CASE WHEN $4 = 'number' THEN $6::numeric ELSE NULL END,
-                                CASE WHEN $4 = 'boolean' THEN $7::boolean ELSE NULL END,
-                                true, NOW(), NOW()
-                            )
-                            ON CONFLICT (template_id, schema_field_id)
-                            DO UPDATE SET
-                                string_value = CASE WHEN $4 = 'string' THEN $5::text ELSE template_values.string_value END,
-                                number_value = CASE WHEN $4 = 'number' THEN $6::numeric ELSE template_values.number_value END,
-                                boolean_value = CASE WHEN $4 = 'boolean' THEN $7::boolean ELSE template_values.boolean_value END,
-                                updated_at = NOW()
-                            """,
-                            template_id,
-                            field["id"],
-                            call_uuid,
-                            field_type,
-                            value if field_type == "string" else None,
-                            value if field_type == "number" else None,
-                            value if field_type == "boolean" else None,
-                        )
 
             return rendered_values
     except Exception as template_error:
@@ -483,16 +464,18 @@ async def _execute_tool_call(
     Returns created resource_id or None if execution failed.
     """
     try:
+        from utils.sql_helper import _detect_function_in_sql, load_sql
+
         # Get calls record
-        call_record = await conn.fetchrow(
-            """
-            SELECT id, tool_id, arguments_raw
-            FROM calls
-            WHERE external_call_id = $1
-            LIMIT 1
-            """,
-            call_id,
-        )
+        sql_path_call = "app/sql/v4/artifacts/complete/get_call_by_external_id_complete.sql"
+        sql_text_call = load_sql(sql_path_call)
+        is_function_call, function_name_call, schema_call = _detect_function_in_sql(sql_text_call)
+        
+        if is_function_call and function_name_call:
+            function_call_sql = f'SELECT * FROM "{schema_call}"."{function_name_call}"($1::text)'
+            call_record = await conn.fetchrow(function_call_sql, call_id)
+        else:
+            call_record = await conn.fetchrow(sql_text_call, call_id)
 
         if not call_record:
             logger.warning(f"Call record not found for call_id: {call_id}")
@@ -502,37 +485,32 @@ async def _execute_tool_call(
         tool_id = call_record["tool_id"]
 
         # Get resource type from resource_tools to verify tool is for this resource
-        resource_check = await conn.fetchrow(
-            """
-            SELECT rt.resource::text as resource_type
-            FROM resource_tools rt
-            WHERE rt.tool_id = $1
-            LIMIT 1
-            """,
-            tool_id,
-        )
+        sql_path_resource = "app/sql/v4/artifacts/complete/get_resource_type_by_tool_id_complete.sql"
+        sql_text_resource = load_sql(sql_path_resource)
+        is_function_resource, function_name_resource, schema_resource = _detect_function_in_sql(sql_text_resource)
+        
+        if is_function_resource and function_name_resource:
+            function_call_sql = f'SELECT * FROM "{schema_resource}"."{function_name_resource}"($1::uuid)'
+            resource_check = await conn.fetchrow(function_call_sql, tool_id)
+        else:
+            resource_check = await conn.fetchrow(sql_text_resource, tool_id)
 
-        if not resource_check or resource_check["resource_type"] != resource_type:
+        if not resource_check or resource_check.get("resource_type") != resource_type:
             logger.warning(
                 f"Tool {tool_id} is not for resource type {resource_type}"
             )
             return None
 
-        # Create resource record directly, linking to existing call_id
-        # Each resource table has different columns, so we need to handle them differently
-        # For now, we'll create a minimal record with call_id linkage
-        
         # Get rendered template values to use for resource creation
-        template_values = await conn.fetch(
-            """
-            SELECT sf.name, tv.string_value, tv.number_value, tv.boolean_value, sf.field_type
-            FROM template_values tv
-            JOIN schema_fields sf ON sf.id = tv.schema_field_id
-            WHERE tv.call_id = $1
-            ORDER BY sf.position
-            """,
-            call_uuid,
-        )
+        sql_path_template = "app/sql/v4/artifacts/complete/get_template_values_by_call_id_complete.sql"
+        sql_text_template = load_sql(sql_path_template)
+        is_function_template, function_name_template, schema_template = _detect_function_in_sql(sql_text_template)
+        
+        if is_function_template and function_name_template:
+            function_call_sql = f'SELECT * FROM "{schema_template}"."{function_name_template}"($1::uuid)'
+            template_values = await conn.fetch(function_call_sql, call_uuid)
+        else:
+            template_values = await conn.fetch(sql_text_template, call_uuid)
 
         # Build resource data from template values
         resource_data: dict[str, Any] = {}
@@ -607,76 +585,32 @@ async def _create_resource_record(
             conn, resource_type, resource_data, tool_id
         )
         
-        # Build INSERT query dynamically
-        insert_columns: list[str] = []
-        insert_values: list[str] = []
-        value_params: list[Any] = []
+        # Use SQL function to create resource record dynamically
+        import json
+
+        from utils.sql_helper import _detect_function_in_sql, load_sql
         
-        param_idx = 1
+        sql_path = "app/sql/v4/artifacts/complete/create_resource_record_complete.sql"
+        sql_text = load_sql(sql_path)
+        is_function, function_name, schema = _detect_function_in_sql(sql_text)
         
-        # System columns that are always set
-        system_columns = {
-            "call_id": call_id,
-            "active": True,
-            "generated": True,
-            "mcp": mcp,
-        }
+        # Convert resource_data to JSONB for the function
+        resource_data_jsonb = json.dumps(mapped_data)
         
-        for col in table_columns:
-            col_name = col["name"]
-            is_nullable = col["is_nullable"]
-            col_default = col["column_default"]
-            
-            # Handle system columns
-            if col_name in system_columns:
-                insert_columns.append(col_name)
-                insert_values.append(f"${param_idx}")
-                value_params.append(system_columns[col_name])  # type: ignore[list-item]
-                param_idx += 1
-            # Handle mapped data from template values
-            elif col_name in mapped_data and mapped_data[col_name] is not None:
-                insert_columns.append(col_name)
-                insert_values.append(f"${param_idx}")
-                value_params.append(mapped_data[col_name])  # type: ignore[list-item]
-                param_idx += 1
-            # Handle required columns without defaults
-            elif not is_nullable and col_default is None:
-                # Required field not found - use type-appropriate defaults
-                logger.warning(
-                    f"Required field '{col_name}' not found in resource_data for {resource_type}, using default"
-                )
-                data_type = col["data_type"]
-                if data_type in ("text", "character varying", "character"):
-                    insert_columns.append(col_name)
-                    insert_values.append(f"${param_idx}")
-                    value_params.append("")  # type: ignore[list-item]
-                    param_idx += 1
-                elif data_type in ("integer", "bigint", "numeric", "real", "double precision"):
-                    insert_columns.append(col_name)
-                    insert_values.append(f"${param_idx}")
-                    value_params.append(0)  # type: ignore[list-item]
-                    param_idx += 1
-                elif data_type == "boolean":
-                    insert_columns.append(col_name)
-                    insert_values.append(f"${param_idx}")
-                    value_params.append(False)  # type: ignore[list-item]
-                    param_idx += 1
-                # Skip uuid columns - they may have defaults or be auto-generated
-            # Optional columns with defaults can be skipped
+        if is_function and function_name:
+            function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text, $2::uuid, $3::boolean, $4::jsonb)'
+            result = await conn.fetchrow(
+                function_call_sql,
+                resource_type,
+                call_id,
+                mcp,
+                resource_data_jsonb,
+            )
+        else:
+            # Fallback to raw SQL (shouldn't happen)
+            result = await conn.fetchrow(sql_text, resource_type, call_id, mcp, resource_data_jsonb)
         
-        if not insert_columns:
-            logger.warning(f"No columns to insert for {resource_type}")
-            return None
-        
-        # Execute INSERT and return resource_id
-        query = f"""
-            INSERT INTO {resource_type} ({', '.join(insert_columns)})
-            VALUES ({', '.join(insert_values)})
-            RETURNING id
-        """
-        
-        result = await conn.fetchrow(query, *value_params)
-        if result and result["id"]:
+        if result and result.get("id"):
             return uuid.UUID(str(result["id"]))
         
         return None

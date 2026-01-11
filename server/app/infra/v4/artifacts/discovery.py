@@ -9,10 +9,12 @@ This module provides functions to dynamically discover:
 All discovery is database-driven, eliminating the need for hardcoded mappings.
 """
 
+import json
 import re
 from typing import Any
 
 import asyncpg
+from utils.sql_helper import _detect_function_in_sql, load_sql
 
 
 async def get_resource_sql_function_name(
@@ -33,53 +35,18 @@ async def get_resource_sql_function_name(
     Returns:
         Function name if found, None otherwise
     """
-    # First check if resource exists in resource_tools
-    resource_exists = await conn.fetchval(
-        """
-        SELECT EXISTS (
-            SELECT 1 FROM resource_tools
-            WHERE resource = $1::resources
-        )
-        """,
-        resource_type,
-    )
+    sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql"
     
-    if not resource_exists:
-        return None
+    # Load SQL and detect if it's a function
+    sql_text = load_sql(sql_path)
+    is_function, function_name, schema = _detect_function_in_sql(sql_text)
     
-    # Try singular form first
-    function_name_singular = f"api_create_{resource_type}_v4"
-    function_exists = await conn.fetchval(
-        """
-        SELECT EXISTS (
-            SELECT 1 FROM pg_proc p
-            JOIN pg_namespace n ON n.oid = p.pronamespace
-            WHERE n.nspname = 'public'
-              AND p.proname = $1
-        )
-        """,
-        function_name_singular,
-    )
-    
-    if function_exists:
-        return function_name_singular
-    
-    # Try plural form
-    function_name_plural = f"api_create_{resource_type}s_v4"
-    function_exists = await conn.fetchval(
-        """
-        SELECT EXISTS (
-            SELECT 1 FROM pg_proc p
-            JOIN pg_namespace n ON n.oid = p.pronamespace
-            WHERE n.nspname = 'public'
-              AND p.proname = $1
-        )
-        """,
-        function_name_plural,
-    )
-    
-    if function_exists:
-        return function_name_plural
+    if is_function and function_name:
+        # Call function and get first row (function returns single row or empty)
+        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
+        row = await conn.fetchrow(function_call_sql, resource_type)
+        if row and row.get("function_name"):
+            return str(row["function_name"])
     
     return None
 
@@ -104,30 +71,28 @@ async def get_resource_table_columns(
         - is_nullable: Whether column allows NULL
         - column_default: Default value if any
     """
-    columns = await conn.fetch(
-        """
-        SELECT 
-            column_name as name,
-            data_type,
-            is_nullable,
-            column_default
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = $1
-          AND column_name NOT IN ('id', 'created_at', 'updated_at')
-        ORDER BY ordinal_position
-        """,
-        resource_type,
-    )
+    sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_table_columns_complete.sql"
+    
+    # Load SQL and detect if it's a function
+    sql_text = load_sql(sql_path)
+    is_function, function_name, schema = _detect_function_in_sql(sql_text)
+    
+    if is_function and function_name:
+        # Call function and fetch all rows
+        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
+        rows = await conn.fetch(function_call_sql, resource_type)
+    else:
+        # Raw SQL - execute directly
+        rows = await conn.fetch(sql_text, resource_type)
     
     return [
         {
-            "name": col["name"],
-            "data_type": col["data_type"],
-            "is_nullable": col["is_nullable"] == "YES",
-            "column_default": col["column_default"],
+            "name": str(row["name"]),
+            "data_type": str(row["data_type"]),
+            "is_nullable": bool(row["is_nullable"]),
+            "column_default": str(row["column_default"]) if row["column_default"] else None,
         }
-        for col in columns
+        for row in rows
     ]
 
 
@@ -151,33 +116,29 @@ async def get_resource_schema_fields(
         - position: Field position in schema
         - template: Jinja template string (if any)
     """
-    fields = await conn.fetch(
-        """
-        SELECT 
-            sf.name,
-            sf.field_type::text as field_type,
-            sf.required,
-            sf.position,
-            sf.template
-        FROM resource_schemas rs
-        JOIN schemas s ON s.id = rs.schema_id
-        JOIN schema_fields sf ON sf.schema_id = s.id
-        WHERE rs.resource = $1::resources
-          AND sf.active = true
-        ORDER BY sf.position
-        """,
-        resource_type,
-    )
+    sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_schema_fields_complete.sql"
+    
+    # Load SQL and detect if it's a function
+    sql_text = load_sql(sql_path)
+    is_function, function_name, schema = _detect_function_in_sql(sql_text)
+    
+    if is_function and function_name:
+        # Call function and fetch all rows
+        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
+        rows = await conn.fetch(function_call_sql, resource_type)
+    else:
+        # Raw SQL - execute directly
+        rows = await conn.fetch(sql_text, resource_type)
     
     return [
         {
-            "name": field["name"],
-            "field_type": field["field_type"],
-            "required": field["required"],
-            "position": field["position"],
-            "template": field["template"],
+            "name": str(row["name"]),
+            "field_type": str(row["field_type"]),
+            "required": bool(row["required"]),
+            "position": int(row["position"]),
+            "template": str(row["template"]),
         }
-        for field in fields
+        for row in rows
     ]
 
 
@@ -196,34 +157,33 @@ async def get_resource_output_schema_fields(
     Returns:
         List of schema field metadata dictionaries
     """
-    fields = await conn.fetch(
-        """
-        SELECT 
-            sf.name,
-            sf.field_type::text as field_type,
-            sf.required,
-            sf.position,
-            sf.template
-        FROM tool_templates tt
-        JOIN schema_templates st ON st.template_id = tt.template_id
-        JOIN schemas s ON s.id = st.schema_id
-        JOIN schema_fields sf ON sf.schema_id = s.id
-        WHERE tt.tool_id = $1::uuid
-          AND sf.active = true
-        ORDER BY sf.position
-        """,
-        tool_id,
-    )
+    sql_path = "app/sql/v4/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
+    
+    import uuid
+
+    # Load SQL and detect if it's a function
+    sql_text = load_sql(sql_path)
+    is_function, function_name, schema = _detect_function_in_sql(sql_text)
+    
+    tool_uuid = uuid.UUID(tool_id)
+    
+    if is_function and function_name:
+        # Call function and fetch all rows
+        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::uuid)'
+        rows = await conn.fetch(function_call_sql, tool_uuid)
+    else:
+        # Raw SQL - execute directly
+        rows = await conn.fetch(sql_text, tool_uuid)
     
     return [
         {
-            "name": field["name"],
-            "field_type": field["field_type"],
-            "required": field["required"],
-            "position": field["position"],
-            "template": field["template"],
+            "name": str(row["name"]),
+            "field_type": str(row["field_type"]),
+            "required": bool(row["required"]),
+            "position": int(row["position"]),
+            "template": str(row["template"]),
         }
-        for field in fields
+        for row in rows
     ]
 
 
@@ -327,23 +287,17 @@ async def get_agent_end_event_name(
     Returns:
         Event name string (e.g., "scenario_end", "text_end")
     """
-    # Check if resource_type matches an artifact name
-    artifact_exists = await conn.fetchval(
-        """
-        SELECT EXISTS (
-            SELECT 1 FROM artifacts
-            WHERE name = $1
-        )
-        """,
-        resource_type,
-    )
+    sql_path = "app/sql/v4/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"
     
-    if artifact_exists:
-        return f"{resource_type}_end"
+    # Load SQL and detect if it's a function
+    sql_text = load_sql(sql_path)
+    is_function, function_name, schema = _detect_function_in_sql(sql_text)
     
-    # Special case: audio maps to voice
-    if resource_type == "audio":
-        return "voice_end"
+    if is_function and function_name:
+        # Call function and get first row (function returns single row)
+        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
+        row = await conn.fetchrow(function_call_sql, resource_type)
+        if row and row.get("event_name"):
+            return str(row["event_name"])
     
-    # Default fallback
     return "text_end"

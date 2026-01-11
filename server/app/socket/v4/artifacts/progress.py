@@ -177,14 +177,17 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
             )
             # Mark call as completed when tool_call_complete
             if sql_progress_type == "tool_call_complete" and result.persisted_call_id:
-                await conn.execute(
-                    """
-                    UPDATE calls
-                    SET completed = true, updated_at = NOW()
-                    WHERE external_call_id = $1
-                    """,
-                    result.persisted_call_id,
-                )
+                from utils.sql_helper import _detect_function_in_sql, load_sql
+                
+                sql_path = "app/sql/v4/artifacts/progress/mark_call_completed_complete.sql"
+                sql_text = load_sql(sql_path)
+                is_function, function_name, schema = _detect_function_in_sql(sql_text)
+                
+                if is_function and function_name:
+                    function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
+                    await conn.fetchrow(function_call_sql, result.persisted_call_id)
+                else:
+                    await conn.execute(sql_text, result.persisted_call_id)
     except Exception:
         import logging
 
