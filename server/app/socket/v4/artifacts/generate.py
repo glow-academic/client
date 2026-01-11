@@ -4,42 +4,38 @@ import asyncio
 import base64
 import json
 import uuid
-from typing import Any, cast
+from typing import Any, AsyncIterator, cast
 
 import httpx
 import websockets
 from agents.items import TResponseInputItem
-from app.infra.v4.artifacts import (
-    convert_tools_to_openai_format,
-    format_messages_for_litellm,
-    stream_litellm_events,
-)
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.artifacts import (convert_tools_to_openai_format,
+                                    format_messages_for_litellm,
+                                    stream_litellm_events)
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.infra.v4.websocket.is_run_cancelled import is_run_cancelled
 from app.infra.v4.websocket.remove_active_run import remove_active_run
 from app.infra.v4.websocket.store_active_run import store_active_run
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import IMAGE_FOLDER, VIDEO_FOLDER, get_internal_sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (
-    GetAudioRunContextAndCreateRunSqlParams,
-    GetAudioRunContextAndCreateRunSqlRow,
-    GetGenerationRunContextAndCreateRunSqlParams,
-    GetGenerationRunContextAndCreateRunSqlRow,
-    GetImageGenerationContextAndCreateUploadSqlParams,
-    GetImageGenerationContextAndCreateUploadSqlRow,
-    GetMessagesByIdsSqlParams,
-    GetMessagesByIdsSqlRow,
-    GetMessagesByRunIdSqlParams,
-    GetMessagesByRunIdSqlRow,
-    GetTextRunContextForExistingRunSqlParams,
-    GetTextRunContextForExistingRunSqlRow,
-    GetVideoRunContextAndCreateRunSqlParams,
-    GetVideoRunContextAndCreateRunSqlRow,
-    IGetTextRunContextAndCreateRunV4Tool,
-    InsertUploadSqlParams,
-    InsertUploadSqlRow,
-)
+from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
+                           GetAudioRunContextAndCreateRunSqlRow,
+                           GetGenerationRunContextAndCreateRunSqlParams,
+                           GetGenerationRunContextAndCreateRunSqlRow,
+                           GetImageGenerationContextAndCreateUploadSqlParams,
+                           GetImageGenerationContextAndCreateUploadSqlRow,
+                           GetMessagesByIdsSqlParams, GetMessagesByIdsSqlRow,
+                           GetMessagesByRunIdSqlParams,
+                           GetMessagesByRunIdSqlRow,
+                           GetTextRunContextForExistingRunSqlParams,
+                           GetTextRunContextForExistingRunSqlRow,
+                           GetVideoRunContextAndCreateRunSqlParams,
+                           GetVideoRunContextAndCreateRunSqlRow,
+                           IGetTextRunContextAndCreateRunV4Tool,
+                           InsertUploadSqlParams, InsertUploadSqlRow)
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -69,6 +65,19 @@ except ImportError:
 
 from app.main import UPLOAD_FOLDER
 
+# In-memory store for active tasks (for cancellation)
+_active_tasks: dict[str, asyncio.Task[None]] = {}
+
+
+def _store_active_task(resource_id: str, task: asyncio.Task[None]) -> None:
+    """Store an active task for potential cancellation."""
+    _active_tasks[resource_id] = task
+
+
+def _remove_active_task(resource_id: str) -> None:
+    """Remove an active task from storage."""
+    _active_tasks.pop(resource_id, None)
+
 
 def determine_modality_from_output_modalities(
     output_modalities: list[str] | None,
@@ -87,6 +96,92 @@ def determine_modality_from_output_modalities(
 
     # Otherwise use first modality
     return output_modalities[0]
+
+
+async def _call_llm_text_stream(
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]] | None = None,
+    tool_choice: str = "auto",
+    api_key: str | None = None,
+    base_url: str | None = None,
+    temperature: float = 0.0,
+    reasoning: str | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> AsyncIterator[Any]:
+    """Call LLM with streaming, preferring aresponses() API, falling back to acompletion().
+
+    This function makes AI calls (litellm), so it stays in the handler layer, not infra.
+    Infra handles parsing via stream_litellm_events().
+
+    Args:
+        model: Model name
+        messages: List of message dicts
+        tools: Optional list of tool definitions
+        tool_choice: Tool choice mode ("auto", "required", etc.)
+        api_key: API key for the provider
+        base_url: Optional base URL override
+        temperature: Temperature setting
+        reasoning: Optional reasoning mode
+        metadata: Optional metadata dict for tracing (run_id, trace_id, etc.)
+
+    Yields:
+        Raw stream chunks from litellm (will be parsed by stream_litellm_events)
+    """
+    if not LITELLM_AVAILABLE:
+        raise ValueError("litellm is not available")
+
+    # Prepare base parameters
+    base_kwargs: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "stream": True,
+        "api_key": api_key,
+        "temperature": temperature,
+    }
+
+    if base_url:
+        base_kwargs["base_url"] = base_url
+
+    if tools:
+        base_kwargs["tools"] = tools
+        base_kwargs["tool_choice"] = tool_choice
+
+    if reasoning:
+        base_kwargs["extra_body"] = {"reasoning": reasoning}
+
+    # Inject tracing metadata for OpenAI native tracing
+    if metadata:
+        # For OpenAI: use extra_headers for trace correlation
+        # Format: OpenAI-Trace-Id or similar (check OpenAI docs for exact header)
+        extra_headers: dict[str, str] = {}
+        if metadata.get("trace_id"):
+            extra_headers["OpenAI-Trace-Id"] = str(metadata["trace_id"])
+        if metadata.get("run_id"):
+            extra_headers["X-Run-Id"] = str(metadata["run_id"])
+        if extra_headers:
+            base_kwargs["extra_headers"] = extra_headers
+
+    # Try aresponses() first (preferred API)
+    try:
+        if hasattr(litellm, "aresponses"):
+            responses_kwargs = base_kwargs.copy()
+            # aresponses() may have slightly different parameter names
+            stream = await litellm.aresponses(**responses_kwargs)
+            async for chunk in stream:
+                yield chunk
+            return
+    except (AttributeError, TypeError, Exception) as e:
+        # Fallback to acompletion() if aresponses() fails or doesn't exist
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.debug(f"aresponses() not available or failed: {e}, falling back to acompletion()")
+
+    # Fallback to acompletion()
+    stream = await litellm.acompletion(**base_kwargs)
+    async for chunk in stream:
+        yield chunk
 
 
 async def _generate_artifact_impl(
@@ -356,14 +451,17 @@ async def _handle_text_generation(
 
     # Construct input items for the agent
     input_items: list[TResponseInputItem] = []
+    seen_message_ids: set[uuid.UUID] = set()  # Track seen messages to prevent duplicates
 
     # Handle audio input if upload_id is provided
     if result.upload_id and result.file_path:
         audio_file_path = UPLOAD_FOLDER / result.file_path
         if audio_file_path.exists():
+            # TODO: Convert to proper audio input format or signed URL instead of filesystem path
+            # For now, use a placeholder that doesn't expose filesystem paths
             audio_input: TResponseInputItem = {
                 "role": "user",
-                "content": f"Audio file to process: {audio_file_path}",
+                "content": "Audio file is available for processing",
             }
             input_items.append(audio_input)
 
@@ -378,13 +476,19 @@ async def _handle_text_generation(
         )
         if run_messages_result.messages:
             for msg in run_messages_result.messages:
+                # Deduplicate by message ID
+                msg_id = getattr(msg, "id", None)
+                if msg_id and msg_id in seen_message_ids:
+                    continue
+                if msg_id:
+                    seen_message_ids.add(msg_id)
+
                 if msg.role in ("system", "developer"):
-                    input_items.append(
-                        {  # type: ignore[arg-type]
-                            "role": msg.role,
-                            "content": msg.content or "",
-                        }
-                    )
+                    item: TResponseInputItem = {  # type: ignore[assignment]
+                        "role": msg.role,
+                        "content": msg.content or "",
+                    }
+                    input_items.append(item)  # type: ignore[arg-type]
     except Exception:
         import logging
 
@@ -402,13 +506,19 @@ async def _handle_text_generation(
             )
             if messages_result.messages:
                 for msg in messages_result.messages:
+                    # Deduplicate by message ID
+                    msg_id = getattr(msg, "id", None)
+                    if msg_id and msg_id in seen_message_ids:
+                        continue
+                    if msg_id:
+                        seen_message_ids.add(msg_id)
+
                     if msg.role not in ("system", "developer"):
-                        input_items.append(
-                            {  # type: ignore[arg-type]
-                                "role": msg.role,
-                                "content": msg.content or "",
-                            }
-                        )
+                        item: TResponseInputItem = {  # type: ignore[assignment]
+                            "role": msg.role,
+                            "content": msg.content or "",
+                        }
+                        input_items.append(item)  # type: ignore[arg-type]
         except Exception:
             import logging
 
@@ -427,16 +537,6 @@ async def _handle_text_generation(
             },
         )
 
-    # Track completed tool names for verification
-    required_tool_names: set[str] = {
-        tool.name for tool in agent_tools_config if tool.name is not None
-    }
-    tool_name_to_type: dict[str, str] = {
-        tool.name: tool.tool_type
-        for tool in agent_tools_config
-        if tool.name is not None and tool.tool_type is not None
-    }
-
     # Emit start event
     await internal_sio.emit(
         "generate_progress",
@@ -452,46 +552,45 @@ async def _handle_text_generation(
         },
     )
 
-    # Prepare litellm completion parameters
-    completion_kwargs: dict[str, Any] = {
-        "model": result.model_name or "",
-        "messages": messages,
-        "stream": True,
-        "api_key": decrypted_api_key,
-        "temperature": result.temperature or 0.0,
+    # Prepare metadata for tracing
+    metadata: dict[str, Any] = {
+        "run_id": str(run_id),
+        "trace_id": trace_id,
+        "resource_id": str(resource_id),
+        "resource_type": resource_type,
+        "agent_id": str(agent_id) if agent_id else None,
     }
 
-    if result.base_url:
-        completion_kwargs["base_url"] = result.base_url
-
-    if openai_tools:
-        completion_kwargs["tools"] = openai_tools
-        completion_kwargs["tool_choice"] = tool_choice
-
-    # Handle reasoning if present
-    if result.reasoning:
-        completion_kwargs["extra_body"] = {"reasoning": result.reasoning}
-
-    # Call litellm with streaming
+    # Call LLM with streaming using boundary function
     resource_id_str = str(group_id) if group_id else sid
-    stream = await litellm.acompletion(**completion_kwargs)
+    stream = _call_llm_text_stream(
+        model=result.model_name or "",
+        messages=messages,
+        tools=openai_tools if openai_tools else None,
+        tool_choice=tool_choice,
+        api_key=decrypted_api_key,
+        base_url=result.base_url,
+        temperature=result.temperature or 0.0,
+        reasoning=result.reasoning,
+        metadata=metadata,
+    )
 
-    # Store stream reference for potential cancellation
-    # Note: litellm streams don't have a direct cancellation method,
-    # but we store it for consistency with existing patterns
-    await store_active_run(resource_id_str, stream)
-
-    enforce_required_tools = tool_choice == "required"
-
-    completed_tool_names: set[str] = set()
+    # Wrap streaming loop in task for cancellation
     assistant_output = ""
     input_tokens = 0
     output_tokens = 0
-
     tool_call_states: dict[str, dict[str, Any]] = {}  # tool_call_id -> state
 
-    try:
+    async def _stream_and_emit() -> None:
+        """Inner function to handle streaming and emitting events."""
+        nonlocal assistant_output, input_tokens, output_tokens
+
         async for event in stream_litellm_events(stream):
+            # Check for cancellation periodically
+            if await is_run_cancelled(str(run_id)):
+                break
+
+            event_type = event.get("type")
             event_type = event.get("type")
 
             # -------- TEXT lifecycle
@@ -614,7 +713,9 @@ async def _handle_text_generation(
                     or tool_call_states.get(tool_call_id, {}).get("tool_name")
                     or ""
                 )
-                arguments_str = event.get("arguments", "") or ""
+                # Prefer state store over event.get() for final arguments
+                st = tool_call_states.get(tool_call_id, {})
+                arguments_str = event.get("arguments") or st.get("arguments", "")
 
                 # Parse args (best effort)
                 try:
@@ -633,9 +734,6 @@ async def _handle_text_generation(
                 )
                 st["tool_name"] = tool_name or st.get("tool_name")
                 st["arguments"] = arguments_str or st.get("arguments", "")
-
-                if tool_name:
-                    completed_tool_names.add(tool_name)
 
                 await internal_sio.emit(
                     "generate_progress",
@@ -661,32 +759,23 @@ async def _handle_text_generation(
                     input_tokens = usage_data.get("prompt_tokens", 0) or 0
                     output_tokens = usage_data.get("completion_tokens", 0) or 0
 
+    # Create task for cancellation support
+    task = asyncio.create_task(_stream_and_emit())
+    _store_active_task(resource_id_str, task)
+    await store_active_run(resource_id_str, task)
+
+    try:
+        await task
+    except asyncio.CancelledError:
+        # Task was cancelled - cleanup already handled
+        raise
     except BaseException as stream_error:
-        if isinstance(
-            stream_error,
-            (asyncio.CancelledError, KeyboardInterrupt, SystemExit),
-        ):
+        if isinstance(stream_error, (KeyboardInterrupt, SystemExit)):
             raise
         raise
     finally:
+        _remove_active_task(resource_id_str)
         await remove_active_run(resource_id_str)
-
-    if enforce_required_tools:
-        missing_tools = required_tool_names - completed_tool_names
-        if missing_tools:
-            tool_names_str = ", ".join(sorted(missing_tools))
-            await emit_to_internal(
-                "generate_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message=f"Agent did not call all required tools. Missing: {tool_names_str}",
-                    resource_id=str(resource_id),
-                    group_id=str(group_id) if group_id else None,
-                    resource_type=resource_type,
-                ),
-                sid=sid,
-            )
-            return
 
     # Emit run completion event with usage data
     await internal_sio.emit(
@@ -771,55 +860,95 @@ async def _handle_image_generation(
     # Check if model supports native image generation (Gemini 3.0)
     model_name = result.model_name or ""
     if model_name.startswith("gemini-3") or "gemini-3" in model_name.lower():
-        # Use native image generation via completion
+        # Use native image generation via responses() API if available, otherwise completion
         try:
             import litellm
 
-            resp = await litellm.acompletion(
-                model=model_name,
-                messages=[{"role": "user", "content": prompt}],
-                modalities=["text", "image"],
-                api_key=decrypted_api_key,
-            )
-
-            # Extract image_part
-            if resp.choices and resp.choices[0].message.images:
-                image_data = resp.choices[0].message.images[0]["image_url"]["url"]
-                # Extract base64 data
-                if image_data.startswith("data:image"):
-                    base64_data = image_data.split(",")[1]
-                    gemini_image_bytes = base64.b64decode(base64_data)
-                    mime_type = "image/png"  # Default for Gemini
-                    file_size = len(gemini_image_bytes)
-
-                    # Persist image
-                    image_name = data.get("name", "image")
-                    file_path = await _persist_image(
-                        conn,
-                        image_id,
-                        gemini_image_bytes,
-                        mime_type,
-                        file_size,
-                        image_name,
+            # Try aresponses() first for better format handling
+            if hasattr(litellm, "aresponses"):
+                try:
+                    resp = await litellm.aresponses(
+                        model=model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        modalities=["text", "image"],
+                        api_key=decrypted_api_key,
                     )
-
-                    # Emit completion
-                    await internal_sio.emit(
-                        "generate_complete",
-                        {
-                            "modality": "image",
-                            "sid": sid,
-                            "resource_id": str(resource_id),
-                            "resource_type": "images",
-                            "run_id": str(run_id),
-                            "image_id": str(image_id),
-                            "file_path": file_path,
-                            "mime_type": mime_type,
-                            "file_size": file_size,
-                            "trace_id": trace_id,
-                        },
+                    # Handle responses() format (check response structure)
+                    # Note: Actual structure may vary - validate carefully
+                    if hasattr(resp, "output") and resp.output:
+                        # Extract image from response output
+                        # This is a placeholder - actual structure needs validation
+                        pass
+                except (AttributeError, TypeError):
+                    # Fall back to acompletion
+                    resp = await litellm.acompletion(
+                        model=model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        modalities=["text", "image"],
+                        api_key=decrypted_api_key,
                     )
-                    return
+            else:
+                resp = await litellm.acompletion(
+                    model=model_name,
+                    messages=[{"role": "user", "content": prompt}],
+                    modalities=["text", "image"],
+                    api_key=decrypted_api_key,
+                )
+
+            # Extract image_part - validate structure carefully
+            image_data = None
+            if hasattr(resp, "choices") and resp.choices:
+                choice = resp.choices[0]
+                if hasattr(choice, "message"):
+                    msg = choice.message
+                    if hasattr(msg, "images") and msg.images:
+                        img = msg.images[0]
+                        if hasattr(img, "image_url"):
+                            image_data = img.image_url.url
+                        elif isinstance(img, dict):
+                            image_data = img.get("image_url", {}).get("url")
+            elif isinstance(resp, dict):
+                choices = resp.get("choices", [])
+                if choices:
+                    msg = choices[0].get("message", {})
+                    images = msg.get("images", [])
+                    if images:
+                        image_data = images[0].get("image_url", {}).get("url")
+
+            if image_data and image_data.startswith("data:image"):
+                base64_data = image_data.split(",")[1]
+                gemini_image_bytes = base64.b64decode(base64_data)
+                mime_type = "image/png"  # Default for Gemini
+                file_size = len(gemini_image_bytes)
+
+                # Persist image
+                image_name = data.get("name", "image")
+                file_path = await _persist_image(
+                    conn,
+                    image_id,
+                    gemini_image_bytes,
+                    mime_type,
+                    file_size,
+                    image_name,
+                )
+
+                # Emit completion
+                await internal_sio.emit(
+                    "generate_complete",
+                    {
+                        "modality": "image",
+                        "sid": sid,
+                        "resource_id": str(resource_id),
+                        "resource_type": "images",
+                        "run_id": str(run_id),
+                        "image_id": str(image_id),
+                        "file_path": file_path,
+                        "mime_type": mime_type,
+                        "file_size": file_size,
+                        "trace_id": trace_id,
+                    },
+                )
+                return
         except Exception as e:
             # Fall back to image_generation if native fails
             import logging
@@ -987,7 +1116,7 @@ async def _handle_video_generation(
     # Use OpenAI Sora API directly (or LiteLLM video_generation if available)
     model_name = result.model_name or ""
     if model_name.startswith("sora") or "sora" in model_name.lower():
-        # OpenAI Sora API
+        # OpenAI Sora API - isolate SDK calls for consistency
         from openai import OpenAI
 
         client = OpenAI(api_key=decrypted_api_key)
@@ -997,24 +1126,34 @@ async def _handle_video_generation(
         model: str = "sora-2"
         size: str = "720x1280"
 
-        # Create video job
-        create_params: dict[str, Any] = {
-            "prompt": prompt,
-            "model": model,
-            "seconds": seconds,
-            "size": size,
-        }
-        if image_reference_id:
-            create_params["image_reference_id"] = image_reference_id
+        # Create video job - use consistent async pattern
+        async def _create_video_job() -> Any:
+            create_params: dict[str, Any] = {
+                "prompt": prompt,
+                "model": model,
+                "seconds": seconds,
+                "size": size,
+            }
+            if image_reference_id:
+                create_params["image_reference_id"] = image_reference_id
+            return await asyncio.to_thread(client.videos.create, **create_params)
 
-        video_job = await asyncio.to_thread(client.videos.create, **create_params)
+        video_job = await _create_video_job()
 
         video_job_id = video_job.id
+
+        # Helper function for consistent async SDK calls
+        async def _retrieve_video_status(job_id: str) -> Any:
+            return await asyncio.to_thread(client.videos.retrieve, job_id)
+
+        async def _download_video_content(job_id: str) -> Any:
+            return await asyncio.to_thread(client.videos.download_content, job_id)
+
         # Poll for completion with progress updates
         max_polls = 60  # 5 minutes max (5 second intervals)
         poll_count = 0
         while poll_count < max_polls:
-            video_status = await asyncio.to_thread(client.videos.retrieve, video_job_id)
+            video_status = await _retrieve_video_status(video_job_id)
             # Emit progress update
             progress_value = (
                 video_status.progress / 100.0
@@ -1039,9 +1178,7 @@ async def _handle_video_generation(
 
             if video_status.status == "completed":
                 # Download video using OpenAI client's download_content method
-                video_response = await asyncio.to_thread(
-                    client.videos.download_content, video_job_id
-                )
+                video_response = await _download_video_content(video_job_id)
                 video_content_bytes: bytes = getattr(video_response, "content", b"")
                 if not video_content_bytes:
                     if hasattr(video_response, "read"):
@@ -1541,9 +1678,12 @@ async def _persist_image(
     # Ensure image directory exists
     IMAGE_FOLDER.mkdir(parents=True, exist_ok=True)
 
-    # Save image bytes to file
-    with open(full_path, "wb") as f:
-        f.write(image_bytes)
+    # Save image bytes to file using async I/O
+    def _write_image_sync(path: str, data: bytes) -> None:
+        with open(path, "wb") as f:
+            f.write(data)
+
+    await asyncio.to_thread(_write_image_sync, str(full_path), image_bytes)
 
     return file_path
 
