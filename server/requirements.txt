@@ -6,6 +6,7 @@ python-dotenv==1.1.1
 asyncpg==0.30.0
 openai==1.99.6
 openai-agents[litellm]==0.2.7
+litellm>=1.80.13
 
 python-docx==1.1.0
 lxml==6.0.0
