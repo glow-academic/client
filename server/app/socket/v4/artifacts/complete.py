@@ -92,7 +92,7 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
         elif modality in ("text", "call", "document"):
             await _handle_text_complete(data, sid)
 
-    # Re-emit generate_complete with enriched data for resource handlers
+    # Re-emit resource_complete with enriched data for resource handlers
     # Only include fields that resource handlers (like personas/complete.py) actually need
     resource_type = data.get("resource_type", "text")
     
@@ -107,8 +107,8 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
         "type": completion_type,
     }
 
-    # Re-emit generate_complete for resource handlers to process
-    await internal_sio.emit("generate_complete", enriched_payload)
+    # Re-emit resource_complete for resource handlers to process
+    await internal_sio.emit("resource_complete", enriched_payload)
 
     # Transform internal event format to client format
     client_payload = _build_client_payload(modality, completion_type, data, artifact_type)

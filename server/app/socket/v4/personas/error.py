@@ -1,4 +1,4 @@
-"""Persona error handler - listens to artifact_generation_error events and emits persona-specific events."""
+"""Persona error handler - listens to resource_error events and emits persona-specific events."""
 
 import uuid
 from typing import Any, cast
@@ -20,9 +20,9 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v4/personas/validate_persona_resource_error_complete.sql"
 
 
-@internal_sio.on("artifact_generation_error")  # type: ignore
+@internal_sio.on("resource_error")  # type: ignore
 async def handle_personas_error(data: dict[str, Any]) -> None:
-    """Handle artifact_generation_error event - filter by persona artifact_type and emit persona-specific event."""
+    """Handle resource_error event - filter by persona artifact_type and emit persona-specific event."""
     # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "persona":

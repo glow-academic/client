@@ -101,6 +101,43 @@ async def handle_artifact_progress(data: dict[str, Any]) -> None:
         room=sid,
     )
 
+    # Re-emit resource_progress with enriched data for resource handlers
+    # Build minimal payload with only fields needed by resource handlers
+    resource_type = data.get("resource_type", "text")
+    enriched_payload: dict[str, Any] = {
+        "sid": sid,
+        "modality": modality,
+        "artifact_type": artifact_type,
+        "group_id": data.get("group_id"),
+        "resource_type": resource_type,
+        "resource_id": data.get("resource_id"),
+        "run_id": data.get("run_id"),
+        "type": progress_type,
+        "message": message,
+        "text": data.get("text"),
+        "tool_call_id": data.get("tool_call_id"),
+        "tool_name": data.get("tool_name"),
+        "arguments": data.get("arguments"),
+        "arguments_delta": data.get("arguments_delta"),
+        "status": data.get("status"),
+        "progress": data.get("progress"),
+        "ephemeral_key": data.get("ephemeral_key"),
+        "expires_in": data.get("expires_in"),
+        "model": data.get("model"),
+        "trace_id": data.get("trace_id"),
+        "item_id": data.get("item_id"),
+        "audio_start_ms": data.get("audio_start_ms"),
+        "transcript": data.get("transcript"),
+        "response_id": data.get("response_id"),
+        "output_type": data.get("output_type"),
+        "audio": data.get("audio"),
+        "call_id": data.get("call_id"),
+        "function_call": data.get("function_call"),
+    }
+
+    # Re-emit resource_progress for resource handlers to process
+    await internal_sio.emit("resource_progress", enriched_payload)
+
 
 def _map_progress_type_to_client(
     progress_type: str, modality: str, data: dict[str, Any]

@@ -20,9 +20,9 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v4/personas/get_persona_resource_ids_by_group_id_complete.sql"
 
 
-@internal_sio.on("generate_complete")  # type: ignore
+@internal_sio.on("resource_complete")  # type: ignore
 async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
-    """Handle generate_complete internal event - filter by persona artifact_type and emit granular event."""
+    """Handle resource_complete internal event - filter by persona artifact_type and emit granular event."""
     # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "persona":

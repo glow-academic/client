@@ -1,4 +1,4 @@
-"""Persona progress handler - listens to generate_progress events and emits persona-specific events."""
+"""Persona progress handler - listens to resource_progress events and emits persona-specific events."""
 
 import uuid
 from typing import Any, cast
@@ -20,9 +20,9 @@ server_router = APIRouter()
 SQL_PATH = "app/sql/v4/personas/validate_persona_resource_progress_complete.sql"
 
 
-@internal_sio.on("generate_progress")  # type: ignore
+@internal_sio.on("resource_progress")  # type: ignore
 async def handle_personas_progress(data: dict[str, Any]) -> None:
-    """Handle generate_progress internal event - filter by persona artifact_type and emit persona-specific event."""
+    """Handle resource_progress internal event - filter by persona artifact_type and emit persona-specific event."""
     # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "persona":

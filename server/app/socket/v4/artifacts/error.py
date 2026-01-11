@@ -68,6 +68,22 @@ async def _generate_error_impl(
                 "group_id": data.group_id,
             },
         )
+
+        # Also emit resource_error for resource handlers (like persona)
+        # Resource handlers listen to resource_error instead of agent-specific events
+        if data.artifact_type and data.artifact_type not in AGENT_ERROR_MAPPING:
+            await internal_sio.emit(
+                "resource_error",
+                {
+                    "sid": sid,
+                    "success": False,
+                    "error_message": data.error_message,
+                    "message": data.error_message,
+                    "artifact_type": data.artifact_type,
+                    "group_id": data.group_id,
+                    "resource_type": data.resource_type,
+                },
+            )
     except Exception as e:
         # If routing fails, try to emit to a generic error handler
         # This should not happen, but provides fallback
