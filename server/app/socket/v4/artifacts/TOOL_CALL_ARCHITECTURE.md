@@ -433,12 +433,85 @@ resources (created records)
 - **Function**: `_handle_tool_call_template_rendering(call_id)`
 - **Process**: Renders templates, creates `template_values` records
 
-### Resource Creation
+### Resource Creation (Dynamic Discovery)
+- **File**: `server/app/infra/v4/artifacts/discovery.py`
+- **Functions**: 
+  - `get_resource_sql_function_name()` - Discovers SQL function names dynamically
+  - `get_resource_table_columns()` - Discovers table column structures
+  - `get_resource_schema_fields()` - Discovers schema field definitions
+  - `map_template_values_to_table_columns()` - Maps template values to table columns
+  - `get_agent_end_event_name()` - Discovers agent end event names
+- **Process**: All resource mappings are discovered dynamically from the database schema
+- **Benefits**: 
+  - No hardcoded mappings required
+  - Automatic support for new resource types
+  - Single source of truth (database schema)
+  - Easier maintenance
+
+### Resource Creation (Legacy SQL Functions)
 - **SQL Functions**: `server/app/sql/v4/resources/{resource}_complete.sql`
 - **Pattern**: `api_create_{resource}_v4(agent_id, group_id, mcp)`
 - **Process**: Reads `calls.arguments_raw`, renders templates, creates resource with `call_id`
+- **Note**: These functions create NEW call records. For tool calls with existing `call_id`, 
+  the dynamic discovery approach in `complete.py` is used instead.
 
 ---
+
+## Dynamic Discovery Architecture
+
+### Overview
+
+The artifact generation workflow uses **dynamic discovery** to eliminate hardcoded mappings. All resource types, table structures, and field mappings are discovered at runtime from the database schema.
+
+### Key Principles
+
+1. **Database as Source of Truth**: All mappings come from database metadata (`pg_proc`, `information_schema`, `resource_tools`, etc.)
+2. **No Hardcoded Mappings**: Resource types, table columns, and field mappings are discovered dynamically
+3. **Automatic Support**: New resource types work automatically without code changes
+4. **Type Safety**: Uses `execute_sql_typed()` with discovered function signatures
+
+### Discovery Functions
+
+**`get_resource_sql_function_name(conn, resource_type)`**
+- Queries `pg_proc` for functions matching `api_create_{resource_type}_v4` or `api_create_{resource_type}s_v4`
+- Validates resource exists in `resource_tools` table
+- Returns function name or None
+
+**`get_resource_table_columns(conn, resource_type)`**
+- Queries `information_schema.columns` for resource table
+- Filters out system columns (`id`, `created_at`, `updated_at`)
+- Returns column metadata: `{name, data_type, is_nullable, column_default}`
+
+**`get_resource_schema_fields(conn, resource_type)`**
+- Queries `resource_schemas` → `schemas` → `schema_fields`
+- Returns schema field metadata: `{name, field_type, required, position, template}`
+
+**`map_template_values_to_table_columns(conn, resource_type, template_values, tool_id)`**
+- Maps template values (using schema field names) to table column names
+- Uses direct match, template variable extraction, or fallback
+- Returns dictionary ready for INSERT
+
+**`get_agent_end_event_name(conn, resource_type)`**
+- Checks if resource_type matches artifact name in `artifacts` table
+- Returns `{resource_type}_end` or `text_end` as default
+- Handles special cases (e.g., `audio` → `voice_end`)
+
+### Resource Creation Flow
+
+1. **Tool Call Complete Event**: `_execute_tool_call()` receives `call_id`, `resource_type`, `tool_id`
+2. **Template Values**: Get rendered template values from `template_values` table
+3. **Dynamic Discovery**: 
+   - Discover table columns via `get_resource_table_columns()`
+   - Map template values to columns via `map_template_values_to_table_columns()`
+4. **Resource Creation**: Build INSERT query dynamically and create resource record
+5. **Agent End Event**: Discover agent end event name via `get_agent_end_event_name()`
+
+### Benefits
+
+- **No Code Changes for New Resources**: Adding a new resource type only requires database setup
+- **Consistent Behavior**: All resources follow the same discovery pattern
+- **Easier Debugging**: Can inspect database schema to understand mappings
+- **Type Safety**: Discovery functions return typed data structures
 
 ## References
 
@@ -446,4 +519,5 @@ resources (created records)
 - Template Rendering: `server/app/infra/v4/tools/render_tool_template.py`
 - Progress Handler: `server/app/socket/v4/artifacts/progress.py`
 - Complete Handler: `server/app/socket/v4/artifacts/complete.py`
+- Dynamic Discovery: `server/app/infra/v4/artifacts/discovery.py`
 - Resource SQL Functions: `server/app/sql/v4/resources/*_complete.sql`

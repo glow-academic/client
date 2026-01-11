@@ -6,6 +6,9 @@ from typing import Any, cast
 
 import asyncpg
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
+from app.infra.v4.artifacts.discovery import (
+    get_agent_end_event_name, get_resource_table_columns,
+    map_template_values_to_table_columns)
 from app.infra.v4.tools.render_tool_template import render_tool_template
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
@@ -29,38 +32,6 @@ server_router = APIRouter()
 SQL_PATH_IMAGE_COMPLETE = "app/sql/v4/images/complete_image_generation_complete.sql"
 SQL_PATH_VIDEO_COMPLETE = "app/sql/v4/videos/create_generation_and_link_complete.sql"
 SQL_PATH_LOG_RUN = "app/sql/v4/model_runs/log_run_complete.sql"
-
-# Mapping from resource_type to SQL function name for tool execution
-RESOURCE_SQL_FUNCTION_MAP = {
-    "personas": "api_create_personas_v4",
-    "names": "api_create_names_v4",
-    "descriptions": "api_create_descriptions_v4",
-    "colors": "api_create_colors_v4",
-    "icons": "api_create_icons_v4",
-    "instructions": "api_create_instructions_v4",
-    "flags": "api_create_flags_v4",
-    "examples": "api_create_examples_v4",
-    "fields": "api_create_fields_v4",
-    "departments": "api_create_departments_v4",
-}
-
-# Mapping from agent_role to agent end event name
-AGENT_END_MAPPING = {
-    "scenario": "scenario_end",
-    "document": "document_end",
-    "simulation": "simulation_end",
-    "grade": "grade_end",
-    "hint": "hint_end",
-    "classify": "classify_end",
-    "member": "member_end",
-    "prompt": "prompt_end",
-    "rubric": "rubric_end",
-    "title": "title_end",
-    "audio": "audio_end",
-    "image": "image_end",
-    "video": "video_end",
-    "voice": "voice_end",
-}
 
 
 @internal_sio.on("generate_complete")  # type: ignore
@@ -131,7 +102,9 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     }
     final_resource_type = modality_to_resource_type.get(modality, resource_type)
 
-    agent_end_event = AGENT_END_MAPPING.get(final_resource_type, "text_end")
+    # Discover agent end event name dynamically
+    async with get_db_connection() as conn:
+        agent_end_event = await get_agent_end_event_name(conn, final_resource_type)
 
     # Build payload for agent-specific end handler
     emit_payload: dict[str, Any] = {
@@ -589,15 +562,14 @@ async def _execute_tool_call(
                 )
                 return None
 
-        # Map resource_type to table name and create record
-        # Note: This is a simplified approach - in production, you might want
-        # to use the SQL functions but modify them to accept existing call_id
+        # Create resource record using dynamic discovery
         resource_id = await _create_resource_record(
             conn=conn,
             resource_type=resource_type,
             call_id=call_uuid,
             resource_data=resource_data,
             mcp=False,
+            tool_id=str(tool_id),
         )
 
         return resource_id
@@ -615,130 +587,98 @@ async def _create_resource_record(
     call_id: uuid.UUID,
     resource_data: dict[str, Any],
     mcp: bool = False,
+    tool_id: str | None = None,
 ) -> uuid.UUID | None:
-    """Create resource record in the appropriate table.
+    """Create resource record in the appropriate table using dynamic discovery.
     
-    This is a simplified implementation. In production, you might want to
-    use the SQL functions but modify them to accept existing call_id, or
-    create resource-specific handlers.
+    Dynamically discovers table columns and maps template values to columns.
+    No hardcoded mappings required - all discovery is database-driven.
     """
     try:
-        # Map resource_type to table and required columns
-        # Columns are ordered: required fields first, then optional with defaults
-        # Note: Field names in resource_data come from rendered template values (schema field names)
-        resource_table_map: dict[str, tuple[str, list[str]]] = {
-            "personas": ("personas", ["active", "generated", "mcp", "call_id"]),
-            "names": ("names", ["name", "active", "generated", "call_id", "mcp"]),
-            "descriptions": ("descriptions", ["description", "active", "generated", "call_id", "mcp"]),
-            "colors": ("colors", ["name", "description", "hex_code", "active", "generated", "call_id", "mcp"]),
-            "icons": ("icons", ["name", "description", "value", "active", "generated", "call_id", "mcp"]),
-            "instructions": ("instructions", ["template", "active", "generated", "call_id", "mcp"]),
-            "flags": ("flags", ["name", "description", "icon_id", "active", "generated", "call_id", "mcp"]),
-            "examples": ("examples", ["example", "generated", "call_id", "mcp"]),
-            "fields": ("fields", ["active", "generated", "mcp", "call_id"]),
-            "departments": ("departments", ["active", "generated", "mcp", "call_id"]),
-        }
-
-        if resource_type not in resource_table_map:
-            logger.warning(f"Unknown resource type: {resource_type}")
+        # Discover table columns dynamically
+        table_columns = await get_resource_table_columns(conn, resource_type)
+        
+        if not table_columns:
+            logger.warning(f"No columns found for resource type: {resource_type}")
             return None
-
-        table_name, columns = resource_table_map[resource_type]
-
+        
+        # Map template values to table columns
+        mapped_data = await map_template_values_to_table_columns(
+            conn, resource_type, resource_data, tool_id
+        )
+        
         # Build INSERT query dynamically
-        # Extract values from resource_data based on column names
         insert_columns: list[str] = []
         insert_values: list[str] = []
         value_params: list[Any] = []
-
+        
         param_idx = 1
-        for col in columns:
-            if col == "call_id":
-                insert_columns.append(col)
+        
+        # System columns that are always set
+        system_columns = {
+            "call_id": call_id,
+            "active": True,
+            "generated": True,
+            "mcp": mcp,
+        }
+        
+        for col in table_columns:
+            col_name = col["name"]
+            is_nullable = col["is_nullable"]
+            col_default = col["column_default"]
+            
+            # Handle system columns
+            if col_name in system_columns:
+                insert_columns.append(col_name)
                 insert_values.append(f"${param_idx}")
-                value_params.append(call_id)  # type: ignore[list-item]
+                value_params.append(system_columns[col_name])  # type: ignore[list-item]
                 param_idx += 1
-            elif col == "active":
-                insert_columns.append(col)
+            # Handle mapped data from template values
+            elif col_name in mapped_data and mapped_data[col_name] is not None:
+                insert_columns.append(col_name)
                 insert_values.append(f"${param_idx}")
-                value_params.append(True)  # type: ignore[list-item]
+                value_params.append(mapped_data[col_name])  # type: ignore[list-item]
                 param_idx += 1
-            elif col == "generated":
-                insert_columns.append(col)
-                insert_values.append(f"${param_idx}")
-                value_params.append(True)  # type: ignore[list-item]
-                param_idx += 1
-            elif col == "mcp":
-                insert_columns.append(col)
-                insert_values.append(f"${param_idx}")
-                value_params.append(mcp)  # type: ignore[list-item]
-                param_idx += 1
-            elif col in resource_data and resource_data[col] is not None:
-                # Use value from rendered template values
-                insert_columns.append(col)
-                insert_values.append(f"${param_idx}")
-                value_params.append(resource_data[col])  # type: ignore[list-item]
-                param_idx += 1
-            elif col not in ["call_id", "active", "generated", "mcp"]:
-                # Required field not in resource_data - try to find it with different field name mappings
-                # Template values use schema field names which may differ from table column names
-                field_mappings: dict[str, list[str]] = {
-                    "name": ["name"],
-                    "description": ["description"],
-                    "hex_code": ["hex_code", "color", "hex"],
-                    "value": ["value", "icon"],
-                    "template": ["template", "instruction"],
-                    "example": ["example"],
-                    "icon_id": ["icon_id", "icon"],
-                }
-                
-                found_value = None
-                if col in field_mappings:
-                    for possible_field in field_mappings[col]:
-                        if possible_field in resource_data:
-                            found_value = resource_data[possible_field]
-                            break
-                
-                if found_value is not None:
-                    insert_columns.append(col)
+            # Handle required columns without defaults
+            elif not is_nullable and col_default is None:
+                # Required field not found - use type-appropriate defaults
+                logger.warning(
+                    f"Required field '{col_name}' not found in resource_data for {resource_type}, using default"
+                )
+                data_type = col["data_type"]
+                if data_type in ("text", "character varying", "character"):
+                    insert_columns.append(col_name)
                     insert_values.append(f"${param_idx}")
-                    value_params.append(found_value)  # type: ignore[list-item]
+                    value_params.append("")  # type: ignore[list-item]
                     param_idx += 1
-                else:
-                    # Required field not found - use defaults or empty values
-                    logger.warning(
-                        f"Required field '{col}' not found in resource_data for {resource_type}, using default"
-                    )
-                    if col in ["name", "description", "template", "example", "value"]:
-                        insert_columns.append(col)
-                        insert_values.append(f"${param_idx}")
-                        value_params.append("")  # type: ignore[list-item]
-                        param_idx += 1
-                    elif col == "hex_code":
-                        insert_columns.append(col)
-                        insert_values.append(f"${param_idx}")
-                        value_params.append("#000000")  # type: ignore[list-item]
-                        param_idx += 1
-                    elif col == "icon_id":
-                        # icon_id is optional for flags, skip if not found
-                        pass
-                    # Skip other columns - they may have database defaults
-
+                elif data_type in ("integer", "bigint", "numeric", "real", "double precision"):
+                    insert_columns.append(col_name)
+                    insert_values.append(f"${param_idx}")
+                    value_params.append(0)  # type: ignore[list-item]
+                    param_idx += 1
+                elif data_type == "boolean":
+                    insert_columns.append(col_name)
+                    insert_values.append(f"${param_idx}")
+                    value_params.append(False)  # type: ignore[list-item]
+                    param_idx += 1
+                # Skip uuid columns - they may have defaults or be auto-generated
+            # Optional columns with defaults can be skipped
+        
         if not insert_columns:
             logger.warning(f"No columns to insert for {resource_type}")
             return None
-
+        
         # Execute INSERT and return resource_id
         query = f"""
-            INSERT INTO {table_name} ({', '.join(insert_columns)})
+            INSERT INTO {resource_type} ({', '.join(insert_columns)})
             VALUES ({', '.join(insert_values)})
             RETURNING id
         """
-
+        
         result = await conn.fetchrow(query, *value_params)
         if result and result["id"]:
             return uuid.UUID(str(result["id"]))
-
+        
         return None
     except Exception as create_error:
         logger.error(
