@@ -158,6 +158,7 @@ def convert_tools_to_responses_format(
                     required_fields.append(field_name)
 
         # Responses API format: FunctionToolParam (flat structure, not nested)
+        # When strict=True, additionalProperties must be explicitly set to false
         responses_tools.append(
             {
                 "type": "function",
@@ -167,6 +168,7 @@ def convert_tools_to_responses_format(
                     "type": "object",
                     "properties": parameters,
                     "required": required_fields,
+                    "additionalProperties": False,  # Required when strict=True
                 },
                 "strict": True,  # Default to strict validation
             }

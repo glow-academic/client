@@ -191,49 +191,75 @@ async def _call_llm_text_stream(
                 # Check if tools are already in Responses format or need conversion
                 validated_tools: list[dict[str, Any]] = []
                 for tool in tools:
+                    # Convert FunctionToolParam (Pydantic model) to dict if needed
+                    tool_dict: dict[str, Any] | None = None
                     if isinstance(tool, dict):
                         tool_dict = cast(dict[str, Any], tool)
-                        # Responses format: {"type": "function", "name": ..., "parameters": ...}
-                        if tool_dict.get("type") == "function" and "name" in tool_dict:
-                            # Already in Responses format - use directly
-                            validated_tools.append(tool_dict)
-                        # OpenAI format: {"type": "function", "function": {"name": ...}}
-                        elif tool_dict.get("type") == "function" and "function" in tool_dict:
-                            func = tool_dict.get("function")
-                            if isinstance(func, dict) and func.get("name"):
-                                # Convert OpenAI format to Responses format
-                                validated_tools.append({
-                                    "type": "function",
-                                    "name": func["name"],
-                                    "description": func.get("description", ""),
-                                    "parameters": func.get("parameters", {}),
-                                    "strict": True,
-                                })
-                            else:
-                                # #region agent log
-                                import json
-                                try:
-                                    with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"Skipping invalid tool (missing function.name)","data":{"tool":str(tool)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
-                                except: pass
-                                # #endregion
+                    elif hasattr(tool, "model_dump"):
+                        # Pydantic model - convert to dict
+                        tool_dict = tool.model_dump()
+                    elif hasattr(tool, "dict"):
+                        # Pydantic v1 style
+                        tool_dict = tool.dict()
+                    
+                    if not tool_dict:
+                        continue
+                    
+                    # Responses format: {"type": "function", "name": ..., "parameters": ...}
+                    if tool_dict.get("type") == "function" and "name" in tool_dict:
+                        # Already in Responses format - ensure additionalProperties is set for strict mode
+                        tool_copy = {**tool_dict}
+                        if tool_copy.get("strict") and isinstance(tool_copy.get("parameters"), dict):
+                            tool_copy["parameters"] = {
+                                **tool_copy["parameters"],
+                                "additionalProperties": False,
+                            }
+                        validated_tools.append(tool_copy)
+                    # OpenAI format: {"type": "function", "function": {"name": ...}}
+                    elif tool_dict.get("type") == "function" and "function" in tool_dict:
+                        func = tool_dict.get("function")
+                        if isinstance(func, dict) and func.get("name"):
+                            # Convert OpenAI format to Responses format
+                            # When strict=True, additionalProperties must be explicitly set to false
+                            parameters = func.get("parameters", {})
+                            if isinstance(parameters, dict):
+                                # Ensure additionalProperties is set to false for strict mode
+                                parameters = {**parameters, "additionalProperties": False}
+                            validated_tools.append({
+                                "type": "function",
+                                "name": func["name"],
+                                "description": func.get("description", ""),
+                                "parameters": parameters,
+                                "strict": True,
+                            })
                         else:
                             # #region agent log
                             import json
                             try:
                                 with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"Skipping invalid tool (wrong format)","data":{"tool":str(tool)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"Skipping invalid tool (missing function.name)","data":{"tool":str(tool)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
                             except: pass
                             # #endregion
+                    else:
+                        # #region agent log
+                        import json
+                        try:
+                            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"generate.py:181","message":"Skipping invalid tool (wrong format)","data":{"tool":str(tool)[:200]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                        except: pass
+                        # #endregion
                 
                 if validated_tools:
                     # #region agent log
                     import json
                     try:
                         with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            # Log first tool structure in detail
+                            # Log first tool structure in detail, including parameters schema
                             first_tool = validated_tools[0] if validated_tools else None
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"H","location":"generate.py:208","message":"Adding tools to aresponses kwargs (Responses format)","data":{"num_tools":len(validated_tools),"first_tool":first_tool,"first_tool_keys":list(first_tool.keys()) if isinstance(first_tool, dict) else []},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                            first_tool_params = None
+                            if isinstance(first_tool, dict):
+                                first_tool_params = first_tool.get("parameters")
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"H","location":"generate.py:252","message":"Adding tools to aresponses kwargs (Responses format)","data":{"num_tools":len(validated_tools),"first_tool":first_tool,"first_tool_keys":list(first_tool.keys()) if isinstance(first_tool, dict) else [],"first_tool_params":first_tool_params,"has_additionalProperties":first_tool_params.get("additionalProperties") if isinstance(first_tool_params, dict) else None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
                     except: pass
                     # #endregion
                     responses_kwargs["tools"] = validated_tools  # type: ignore
@@ -979,7 +1005,7 @@ async def _handle_text_generation(
                     # #region agent log
                     try:
                         with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:880","message":"message_complete event received","data":{"has_usage":usage_data is not None,"usage_type":type(usage_data).__name__ if usage_data else None,"usage":usage_data,"current_input_tokens":input_tokens,"current_output_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:1003","message":"message_complete event received","data":{"has_usage":usage_data is not None,"usage_type":type(usage_data).__name__ if usage_data else None,"usage":usage_data,"current_input_tokens":input_tokens,"current_output_tokens":output_tokens,"has_tool_calls":len(tool_call_states) > 0},"timestamp":int(__import__("time").time()*1000)}) + "\n")
                     except: pass
                     # #endregion
                     if isinstance(usage_data, dict):
@@ -988,13 +1014,21 @@ async def _handle_text_generation(
                         # #region agent log
                         try:
                             with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-                                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:884","message":"Updated tokens from message_complete","data":{"input_tokens":input_tokens,"output_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:1013","message":"Updated tokens from message_complete","data":{"input_tokens":input_tokens,"output_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
                         except: pass
                         # #endregion
                     else:
                         logger.warning(
                             f"message_complete event received without usage_data for run {run_id}"
                         )
+                    # message_complete signals stream completion - break out of loop
+                    # The stream will end naturally, and generate_complete will be emitted after await task
+                    # #region agent log
+                    try:
+                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1023","message":"message_complete received - stream should end soon","data":{"event_count":event_count},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                    except: pass
+                    # #endregion
         except Exception as stream_error:
             logger.error(
                 f"Error processing stream events for run {run_id}: {str(stream_error)}",
@@ -1002,6 +1036,12 @@ async def _handle_text_generation(
             )
             raise
         finally:
+            # #region agent log
+            try:
+                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1030","message":"_stream_and_emit finally block - stream ended","data":{"event_count":event_count,"final_input_tokens":input_tokens,"final_output_tokens":output_tokens,"assistant_output_length":len(assistant_output)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
             if event_count == 0:
                 logger.warning(
                     f"No events received from stream for run {run_id}. "
@@ -1014,11 +1054,29 @@ async def _handle_text_generation(
     await store_active_run(group_id_str, task)
 
     try:
+        # #region agent log
+        try:
+            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1042","message":"Waiting for stream task to complete","data":{},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
         await task
+        # #region agent log
+        try:
+            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1043","message":"Stream task completed successfully","data":{"final_input_tokens":input_tokens,"final_output_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
     except asyncio.CancelledError:
         # Task was cancelled - cleanup already handled
         raise
     except BaseException as stream_error:
+        # #region agent log
+        try:
+            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"generate.py:1047","message":"Stream task failed with error","data":{"error":str(stream_error)[:500]},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
         if isinstance(stream_error, (KeyboardInterrupt, SystemExit)):
             raise
         raise
@@ -1030,7 +1088,7 @@ async def _handle_text_generation(
     # #region agent log
     try:
         with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:933","message":"Emitting generate_complete with final token counts","data":{"input_text_tokens":input_tokens,"output_text_tokens":output_tokens},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"G","location":"generate.py:1062","message":"Emitting generate_complete with final token counts","data":{"input_text_tokens":input_tokens,"output_text_tokens":output_tokens,"assistant_output_length":len(assistant_output)},"timestamp":int(__import__("time").time()*1000)}) + "\n")
     except: pass
     # #endregion
     await internal_sio.emit(

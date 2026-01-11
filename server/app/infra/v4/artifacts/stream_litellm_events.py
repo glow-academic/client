@@ -80,6 +80,7 @@ async def stream_litellm_events(
     # Usage represents completion - when we find it, emit completion event
     # All text/tool deltas are progress events (already handled)
     final_usage_data: dict[str, Any] | None = None
+    response_completed_received = False  # Track if response.completed was received (for Responses API)
     
     async for chunk in stream:
         # Check every chunk for usage
@@ -220,7 +221,35 @@ async def stream_litellm_events(
         # Route to appropriate parser
         if format_detected == "responses":
             async for event in _parse_responses_chunk(chunk, response_items):
+                # Track if response.completed was received (signals stream completion for Responses API)
+                if event.get("type") == "message_complete":
+                    response_completed_received = True
+                    # #region agent log
+                    import json
+                    try:
+                        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"stream_litellm_events.py:225","message":"message_complete detected in Responses API, setting flag","data":{"has_final_usage":final_usage_data is not None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                    except: pass
+                    # #endregion
                 yield event
+            # For Responses API, break after response.completed (message_complete) is received
+            # The stream may not properly signal completion, so we break manually
+            # #region agent log
+            import json
+            try:
+                with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                    f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"stream_litellm_events.py:230","message":"Checking break condition after Responses chunk","data":{"response_completed_received":response_completed_received,"has_final_usage":final_usage_data is not None,"should_break":response_completed_received and final_usage_data is not None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+            except: pass
+            # #endregion
+            if response_completed_received and final_usage_data:
+                # #region agent log
+                import json
+                try:
+                    with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                        f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"M","location":"stream_litellm_events.py:238","message":"Breaking after response.completed (Responses API)","data":{"has_usage":final_usage_data is not None},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+                except: pass
+                # #endregion
+                break
         else:
             # For completions format, check if this is the final usage chunk (empty choices, has usage)
             # According to LiteLLM docs, final chunk has empty choices array and usage field

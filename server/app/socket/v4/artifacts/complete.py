@@ -36,12 +36,25 @@ SQL_PATH_LOG_RUN = "app/sql/v4/model_runs/log_run_complete.sql"
 @internal_sio.on("generate_complete")  # type: ignore
 async def handle_artifact_complete(data: dict[str, Any]) -> None:
     """Route completion events by output modality and handle SQL operations."""
+    # #region agent log
+    import json
+    try:
+        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"N","location":"complete.py:36","message":"handle_artifact_complete received generate_complete","data":{"modality":data.get("modality"),"artifact_type":data.get("artifact_type"),"completion_type":data.get("type"),"has_sid":bool(data.get("sid"))},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
     # Extract modality and artifact_type from payload
     modality = data.get("modality", "text")
     artifact_type = data.get("artifact_type")
 
     sid = data.get("sid", "")
     if not sid:
+        # #region agent log
+        try:
+            with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"N","location":"complete.py:45","message":"No sid in generate_complete, returning early","data":{},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+        except: pass
+        # #endregion
         return  # No socket ID, can't emit to client
 
     completion_type = data.get("type", "run_complete")
@@ -148,11 +161,23 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     client_payload["sid"] = sid
 
     # Emit unified client event
+    # #region agent log
+    try:
+        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"N","location":"complete.py:151","message":"Emitting artifact_generation_complete to client","data":{"sid":sid,"modality":modality,"completion_type":completion_type,"client_payload_keys":list(client_payload.keys())},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
     await sio.emit(
         "artifact_generation_complete",
         client_payload,
         room=sid,
     )
+    # #region agent log
+    try:
+        with open("/Users/ashoksaravanan/Coding/glow/.cursor/debug.log", "a") as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"N","location":"complete.py:156","message":"artifact_generation_complete emitted successfully","data":{"sid":sid},"timestamp":int(__import__("time").time()*1000)}) + "\n")
+    except: pass
+    # #endregion
 
 
 def _build_client_payload(
