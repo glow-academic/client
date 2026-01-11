@@ -6,16 +6,13 @@ from typing import Any, cast
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio, sio
-from app.sql.types import (
-    GetImageGenerationContextAndCreateUploadSqlParams,
-    GetImageGenerationContextAndCreateUploadSqlRow,
-    GetVideoRunContextAndCreateRunSqlParams,
-    GetVideoRunContextAndCreateRunSqlRow,
-    InsertUploadSqlParams,
-    InsertUploadSqlRow,
-    TextToolProgressUpdateSqlParams,
-    TextToolProgressUpdateSqlRow,
-)
+from app.sql.types import (GetImageGenerationContextAndCreateUploadSqlParams,
+                           GetImageGenerationContextAndCreateUploadSqlRow,
+                           GetVideoRunContextAndCreateRunSqlParams,
+                           GetVideoRunContextAndCreateRunSqlRow,
+                           InsertUploadSqlParams, InsertUploadSqlRow,
+                           TextToolProgressUpdateSqlParams,
+                           TextToolProgressUpdateSqlRow)
 from fastapi import APIRouter
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -172,9 +169,22 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
                 or "",
                 resource_id=resource_id,
             )
-            await execute_sql_typed(
-                conn, SQL_PATH_TEXT_TOOL_PROGRESS, params=progress_params
+            result = cast(
+                TextToolProgressUpdateSqlRow,
+                await execute_sql_typed(
+                    conn, SQL_PATH_TEXT_TOOL_PROGRESS, params=progress_params
+                ),
             )
+            # Mark call as completed when tool_call_complete
+            if sql_progress_type == "tool_call_complete" and result.persisted_call_id:
+                await conn.execute(
+                    """
+                    UPDATE calls
+                    SET completed = true, updated_at = NOW()
+                    WHERE external_call_id = $1
+                    """,
+                    result.persisted_call_id,
+                )
     except Exception:
         import logging
 

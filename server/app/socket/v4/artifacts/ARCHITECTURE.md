@@ -724,3 +724,4 @@ Error events include:
 - Audio endpoints: `audio/start.py`, `audio/events.py`, `audio/stop.py`
 - End handler: `end.py`
 - Personas SQL: `app/sql/v4/personas/get_persona_generation_context_complete.sql`
+- **Tool Call Architecture**: `TOOL_CALL_ARCHITECTURE.md` - Complete BEFORE/AFTER inference architecture for tool calls

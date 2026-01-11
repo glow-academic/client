@@ -9,12 +9,11 @@ from typing import Any, AsyncIterator, cast
 import httpx
 import websockets
 from agents.items import TResponseInputItem
-from app.infra.v4.artifacts import (
-    convert_tools_to_openai_format,
-    format_messages_for_litellm,
-    stream_litellm_events,
-)
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.artifacts import (convert_tools_to_openai_format,
+                                    format_messages_for_litellm,
+                                    stream_litellm_events)
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.is_run_cancelled import is_run_cancelled
 from app.infra.v4.websocket.remove_active_run import remove_active_run
@@ -22,25 +21,21 @@ from app.infra.v4.websocket.store_active_run import store_active_run
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import IMAGE_FOLDER, VIDEO_FOLDER, get_internal_sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (
-    GetAudioRunContextAndCreateRunSqlParams,
-    GetAudioRunContextAndCreateRunSqlRow,
-    GetGenerationRunContextAndCreateRunSqlParams,
-    GetGenerationRunContextAndCreateRunSqlRow,
-    GetImageGenerationContextAndCreateUploadSqlParams,
-    GetImageGenerationContextAndCreateUploadSqlRow,
-    GetMessagesByIdsSqlParams,
-    GetMessagesByIdsSqlRow,
-    GetMessagesByRunIdSqlParams,
-    GetMessagesByRunIdSqlRow,
-    GetTextRunContextForExistingRunSqlParams,
-    GetTextRunContextForExistingRunSqlRow,
-    GetVideoRunContextAndCreateRunSqlParams,
-    GetVideoRunContextAndCreateRunSqlRow,
-    IGetTextRunContextAndCreateRunV4Tool,
-    InsertUploadSqlParams,
-    InsertUploadSqlRow,
-)
+from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
+                           GetAudioRunContextAndCreateRunSqlRow,
+                           GetGenerationRunContextAndCreateRunSqlParams,
+                           GetGenerationRunContextAndCreateRunSqlRow,
+                           GetImageGenerationContextAndCreateUploadSqlParams,
+                           GetImageGenerationContextAndCreateUploadSqlRow,
+                           GetMessagesByIdsSqlParams, GetMessagesByIdsSqlRow,
+                           GetMessagesByRunIdSqlParams,
+                           GetMessagesByRunIdSqlRow,
+                           GetTextRunContextForExistingRunSqlParams,
+                           GetTextRunContextForExistingRunSqlRow,
+                           GetVideoRunContextAndCreateRunSqlParams,
+                           GetVideoRunContextAndCreateRunSqlRow,
+                           IGetTextRunContextAndCreateRunV4Tool,
+                           InsertUploadSqlParams, InsertUploadSqlRow)
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -744,6 +739,7 @@ async def _handle_text_generation(
                 st["tool_name"] = tool_name or st.get("tool_name")
                 st["arguments"] = arguments_str or st.get("arguments", "")
 
+                # Emit progress event for progress handler
                 await internal_sio.emit(
                     "generate_progress",
                     {
@@ -758,6 +754,26 @@ async def _handle_text_generation(
                         "tool_name": tool_name,
                         "arguments": arguments_dict,
                         "arguments_delta": st["arguments"],
+                        "call_id": tool_call_id,  # Add call_id for template rendering
+                        "agent_id": str(agent_id) if agent_id else None,  # Add agent_id for tool execution
+                    },
+                )
+
+                # Also emit generate_complete for complete handler to execute tool
+                await internal_sio.emit(
+                    "generate_complete",
+                    {
+                        "modality": "text",
+                        "sid": sid,
+                        "type": "tool_call_complete",
+                        "resource_id": str(resource_id),
+                        "resource_type": resource_type,
+                        "run_id": str(run_id),
+                        "group_id": str(group_id) if group_id else None,
+                        "tool_call_id": tool_call_id,
+                        "call_id": tool_call_id,  # external_call_id for lookup
+                        "tool_name": tool_name,
+                        "agent_id": str(agent_id) if agent_id else None,
                     },
                 )
 
