@@ -118,7 +118,10 @@ export function GenericPicker<T>({
   debounceMs = 300,
   ...props
 }: GenericPickerProps<T>) {
-  const [open, setOpen] = React.useState(false);
+  // Auto-open if initialSearchTerm exists (search term in URL means picker should be open)
+  const [open, setOpen] = React.useState(() => {
+    return !!(initialSearchTerm && initialSearchTerm.trim().length > 0);
+  });
   const [searchValue, setSearchValue] = React.useState(initialSearchTerm || "");
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   
@@ -323,11 +326,14 @@ export function GenericPicker<T>({
         onOpenChange={(newOpen) => {
           if (disabled) return;
           setOpen(newOpen);
-          // Reset search when closing, restore initial when opening
           if (newOpen) {
+            // Opening: restore initial search term if it exists
             setSearchValue(initialSearchTerm || "");
           } else {
+            // Closing: clear search term from URL (via onSearchChange callback)
             setSearchValue("");
+            // Clear search term from URL when picker closes
+            onSearchChange?.("");
           }
         }}
         {...props}
