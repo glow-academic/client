@@ -145,17 +145,6 @@ async def _persona_generate_impl(
         agent_id_uuid = uuid.UUID(data.agent_id) if data.agent_id else None
         group_id_uuid = uuid.UUID(data.group_id) if data.group_id else None
 
-        # Convert user_instructions: handle backward compatibility (single string -> array)
-        user_instructions_list: list[str] = []
-        if data.user_instructions:
-            user_instructions_list = data.user_instructions
-        elif hasattr(data, 'instructions') and data.instructions:
-            # Backward compatibility: convert single string to array
-            if isinstance(data.instructions, str):
-                user_instructions_list = [data.instructions]
-            elif isinstance(data.instructions, list):
-                user_instructions_list = data.instructions
-
         # Call new SQL function to get agent_id, resources, and developer instruction templates
         async with get_db_connection() as conn:
 
@@ -318,7 +307,7 @@ async def _persona_generate_impl(
                         if group_id
                         else None,  # Pass group_id (string or None)
                         "developer_instructions": developer_instructions if developer_instructions else None,
-                        "user_instructions": user_instructions_list if user_instructions_list else None,
+                        "user_instructions": data.user_instructions if data.user_instructions else None,
                         "message_ids": message_ids,
                     },
                 )

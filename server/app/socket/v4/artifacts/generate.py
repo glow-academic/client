@@ -343,18 +343,9 @@ async def _generate_artifact_impl(
             if not agent_id:
                 raise ValueError("agent_id must be provided")
 
-            # Extract developer_instructions and user_instructions (handle backward compatibility)
+            # Extract developer_instructions and user_instructions
             developer_instructions = data.get("developer_instructions")  # list[str] | None
             user_instructions = data.get("user_instructions")  # list[str] | None
-            # Backward compatibility: if user_instructions not provided, check instructions
-            if user_instructions is None:
-                instructions_value = data.get("instructions")
-                if instructions_value:
-                    # Convert single string to array for backward compatibility
-                    if isinstance(instructions_value, str):
-                        user_instructions = [instructions_value]
-                    elif isinstance(instructions_value, list):
-                        user_instructions = instructions_value
 
             # Process each resource_type
             for resource_type in resource_types:
