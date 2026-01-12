@@ -368,7 +368,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/simulations/detail": {
+    "/api/v4/simulations/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -378,17 +378,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Simulation Detail
-         * @description Get detailed simulation information.
+         * Get Simulation
+         * @description Get simulation information - handles both new (simulation_id = NULL) and detail (simulation_id provided).
          */
-        post: operations["get_simulation_detail_api_v4_simulations_detail_post"];
+        post: operations["get_simulation_api_v4_simulations_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/simulations/new": {
+    "/api/v4/simulations/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -398,50 +398,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Simulation New
-         * @description Get default simulation details based on profile.
+         * Save Simulation
+         * @description Save simulation - handles both create (input_simulation_id = NULL) and update (input_simulation_id provided).
          */
-        post: operations["get_simulation_new_api_v4_simulations_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/simulations/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Simulation
-         * @description Create a new simulation.
-         */
-        post: operations["create_simulation_api_v4_simulations_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/simulations/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Simulation
-         * @description Update an existing simulation.
-         */
-        post: operations["update_simulation_api_v4_simulations_update_post"];
+        post: operations["save_simulation_api_v4_simulations_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6506,50 +6466,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** CreateSimulationApiRequest */
-        CreateSimulationApiRequest: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Department Ids */
-            department_ids: string[];
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Active Flags */
-            scenario_active_flags: boolean[];
-            /** Scenario Hints Enabled */
-            scenario_hints_enabled: boolean[];
-            /** Scenario Time Limit Seconds */
-            scenario_time_limit_seconds: number[];
-            /** Scenario Audio Enabled */
-            scenario_audio_enabled: boolean[];
-            /** Scenario Text Enabled */
-            scenario_text_enabled: boolean[];
-            /** Scenario Rubric Grade Agents */
-            scenario_rubric_grade_agents: components["schemas"]["ICreateSimulationV4ScenarioRubricGradeAgent"][];
-            /**
-             * Simulation Text Domain Id
-             * Format: uuid
-             */
-            simulation_text_domain_id: string;
-            /**
-             * Simulation Voice Domain Id
-             * Format: uuid
-             */
-            simulation_voice_domain_id: string;
-        };
-        /** CreateSimulationApiResponse */
-        CreateSimulationApiResponse: {
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** DebugInfoApiRequest */
         DebugInfoApiRequest: {
             /**
@@ -10430,6 +10346,104 @@ export interface components {
             /** Keys */
             keys?: components["schemas"]["QGetSettingsListV4Key"][] | null;
         };
+        /** GetSimulationApiRequest */
+        GetSimulationApiRequest: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Scenario Search */
+            scenario_search?: string | null;
+            /** Scenario Show Selected */
+            scenario_show_selected?: boolean | null;
+            /** Filter Scenario Ids */
+            filter_scenario_ids?: string[] | null;
+        };
+        /** GetSimulationApiResponse */
+        GetSimulationApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Simulation Exists */
+            simulation_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Time Limit */
+            time_limit?: number | null;
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Valid Rubric Ids */
+            valid_rubric_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Valid Scenario Ids */
+            valid_scenario_ids?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Valid Video Ids */
+            valid_video_ids?: string[] | null;
+            /** Active */
+            active?: boolean | null;
+            /** Practice Simulation */
+            practice_simulation?: boolean | null;
+            /** Simulation Text Domain Id */
+            simulation_text_domain_id?: string | null;
+            /** Simulation Voice Domain Id */
+            simulation_voice_domain_id?: string | null;
+            /** Member Agent Id */
+            member_agent_id?: string | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** In Use */
+            in_use?: boolean | null;
+            /** Cohort Count */
+            cohort_count?: number | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QGetSimulationV4Scenario"][] | null;
+            /** Videos */
+            videos?: components["schemas"]["QGetSimulationV4Video"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetSimulationV4ParameterItem"][] | null;
+            /** Parameter Items */
+            parameter_items?: components["schemas"]["QGetSimulationV4ParameterItemDetail"][] | null;
+            /** Scenarios Full */
+            scenarios_full?: components["schemas"]["QGetSimulationV4ScenarioFull"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetSimulationV4Rubric"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetSimulationV4Department"][] | null;
+            /** Parameters Full */
+            parameters_full?: components["schemas"]["QGetSimulationV4Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetSimulationV4Field"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetSimulationV4Agent"][] | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Scenario Active States */
+            scenario_active_states?: unknown | null;
+            /** Scenario Settings */
+            scenario_settings?: unknown | null;
+        };
         /** GetSimulationAttemptApiRequest */
         GetSimulationAttemptApiRequest: {
             /**
@@ -10480,175 +10494,6 @@ export interface components {
             /** All Simulation Scenarios */
             all_simulation_scenarios?: components["schemas"]["QGetSimulationAttemptV4AllSimulationScenario"][] | null;
             available_continuation_options?: components["schemas"]["QGetSimulationAttemptV4AvailableContinuationOptions"] | null;
-        };
-        /** GetSimulationDetailApiRequest */
-        GetSimulationDetailApiRequest: {
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Scenario Search */
-            scenario_search?: string | null;
-            /** Scenario Show Selected */
-            scenario_show_selected?: boolean | null;
-            /** Filter Scenario Ids */
-            filter_scenario_ids?: string[] | null;
-        };
-        /** GetSimulationDetailApiResponse */
-        GetSimulationDetailApiResponse: {
-            /** Simulation Exists */
-            simulation_exists?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Valid Scenario Ids */
-            valid_scenario_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Practice Simulation */
-            practice_simulation?: boolean | null;
-            /** Simulation Text Domain Id */
-            simulation_text_domain_id?: string | null;
-            /** Simulation Voice Domain Id */
-            simulation_voice_domain_id?: string | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Duplicate */
-            can_duplicate?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** In Use */
-            in_use?: boolean | null;
-            /** Cohort Count */
-            cohort_count?: number | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QGetSimulationDetailV4Scenario"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetSimulationDetailV4ParameterItem"][] | null;
-            /** Parameter Items */
-            parameter_items?: components["schemas"]["QGetSimulationDetailV4ParameterItemDetail"][] | null;
-            /** Scenarios Full */
-            scenarios_full?: components["schemas"]["QGetSimulationDetailV4ScenarioFull"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetSimulationDetailV4Rubric"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetSimulationDetailV4Department"][] | null;
-            /** Parameters Full */
-            parameters_full?: components["schemas"]["QGetSimulationDetailV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetSimulationDetailV4Field"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetSimulationDetailV4Agent"][] | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Scenario Active States */
-            scenario_active_states?: unknown | null;
-            /** Scenario Settings */
-            scenario_settings?: unknown | null;
-        };
-        /** GetSimulationNewApiRequest */
-        GetSimulationNewApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetSimulationNewApiResponse */
-        GetSimulationNewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Time Limit */
-            time_limit?: number | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Valid Scenario Ids */
-            valid_scenario_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Valid Video Ids */
-            valid_video_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Practice Simulation */
-            practice_simulation?: boolean | null;
-            /** Simulation Text Agent Id */
-            simulation_text_agent_id?: string | null;
-            /** Simulation Voice Agent Id */
-            simulation_voice_agent_id?: string | null;
-            /** Member Agent Id */
-            member_agent_id?: string | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Duplicate */
-            can_duplicate?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** In Use */
-            in_use?: boolean | null;
-            /** Cohort Count */
-            cohort_count?: number | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QGetSimulationNewV4Scenario"][] | null;
-            /** Videos */
-            videos?: components["schemas"]["QGetSimulationNewV4Video"][] | null;
-            /** Parameters */
-            parameters?: components["schemas"]["QGetSimulationNewV4ParameterItem"][] | null;
-            /** Parameter Items */
-            parameter_items?: components["schemas"]["QGetSimulationNewV4ParameterItemDetail"][] | null;
-            /** Scenarios Full */
-            scenarios_full?: components["schemas"]["QGetSimulationNewV4ScenarioFull"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetSimulationNewV4Rubric"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetSimulationNewV4Department"][] | null;
-            /** Parameters Full */
-            parameters_full?: components["schemas"]["QGetSimulationNewV4Parameter"][] | null;
-            /** Fields */
-            fields?: components["schemas"]["QGetSimulationNewV4Field"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetSimulationNewV4Agent"][] | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Scenario Active States */
-            scenario_active_states?: unknown | null;
-            /** Scenario Settings */
-            scenario_settings?: unknown | null;
         };
         /** GetSimulationsListApiRequest */
         GetSimulationsListApiRequest: Record<string, never>;
@@ -11019,8 +10864,15 @@ export interface components {
             /** Standards */
             standards: components["schemas"]["ICreateRubricV4Standard"][] | null;
         };
-        /** ICreateSimulationV4ScenarioRubricGradeAgent */
-        ICreateSimulationV4ScenarioRubricGradeAgent: {
+        /** IProcessCsvV4ColumnMapping */
+        IProcessCsvV4ColumnMapping: {
+            /** Csv Column */
+            csv_column: string | null;
+            /** Target Field */
+            target_field: string | null;
+        };
+        /** ISaveSimulationV4ScenarioRubricGradeAgent */
+        ISaveSimulationV4ScenarioRubricGradeAgent: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Rubric Id */
@@ -11029,13 +10881,6 @@ export interface components {
             grade_agent_id: string | null;
             /** Audio Agent Id */
             audio_agent_id: string | null;
-        };
-        /** IProcessCsvV4ColumnMapping */
-        IProcessCsvV4ColumnMapping: {
-            /** Csv Column */
-            csv_column: string | null;
-            /** Target Field */
-            target_field: string | null;
         };
         /** IUpdateAuthV4AuthItem */
         IUpdateAuthV4AuthItem: {
@@ -16057,8 +15902,8 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
-        /** QGetSimulationDetailV4Agent */
-        QGetSimulationDetailV4Agent: {
+        /** QGetSimulationV4Agent */
+        QGetSimulationV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -16068,8 +15913,8 @@ export interface components {
             /** Roles */
             roles: string[] | null;
         };
-        /** QGetSimulationDetailV4Department */
-        QGetSimulationDetailV4Department: {
+        /** QGetSimulationV4Department */
+        QGetSimulationV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -16083,8 +15928,8 @@ export interface components {
             /** Cohort Ids */
             cohort_ids: string[] | null;
         };
-        /** QGetSimulationDetailV4Document */
-        QGetSimulationDetailV4Document: {
+        /** QGetSimulationV4Document */
+        QGetSimulationV4Document: {
             /** Document Id */
             document_id: string | null;
             /** Name */
@@ -16092,8 +15937,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationDetailV4Field */
-        QGetSimulationDetailV4Field: {
+        /** QGetSimulationV4Field */
+        QGetSimulationV4Field: {
             /** Field Id */
             field_id: string | null;
             /** Name */
@@ -16105,8 +15950,8 @@ export interface components {
             /** Parameter Name */
             parameter_name: string | null;
         };
-        /** QGetSimulationDetailV4Parameter */
-        QGetSimulationDetailV4Parameter: {
+        /** QGetSimulationV4Parameter */
+        QGetSimulationV4Parameter: {
             /** Parameter Id */
             parameter_id: string | null;
             /** Name */
@@ -16118,8 +15963,8 @@ export interface components {
             /** Persona Parameter */
             persona_parameter: boolean | null;
         };
-        /** QGetSimulationDetailV4ParameterItem */
-        QGetSimulationDetailV4ParameterItem: {
+        /** QGetSimulationV4ParameterItem */
+        QGetSimulationV4ParameterItem: {
             /** Id */
             id: string | null;
             /** Parameter Id */
@@ -16129,8 +15974,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationDetailV4ParameterItemDetail */
-        QGetSimulationDetailV4ParameterItemDetail: {
+        /** QGetSimulationV4ParameterItemDetail */
+        QGetSimulationV4ParameterItemDetail: {
             /** Id */
             id: string | null;
             /** Name */
@@ -16140,8 +15985,8 @@ export interface components {
             /** Parameter Id */
             parameter_id: string | null;
         };
-        /** QGetSimulationDetailV4Persona */
-        QGetSimulationDetailV4Persona: {
+        /** QGetSimulationV4Persona */
+        QGetSimulationV4Persona: {
             /** Persona Id */
             persona_id: string | null;
             /** Name */
@@ -16155,8 +16000,8 @@ export interface components {
             /** Image Model */
             image_model: boolean | null;
         };
-        /** QGetSimulationDetailV4Rubric */
-        QGetSimulationDetailV4Rubric: {
+        /** QGetSimulationV4Rubric */
+        QGetSimulationV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -16164,8 +16009,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetSimulationDetailV4RubricGradeAgent */
-        QGetSimulationDetailV4RubricGradeAgent: {
+        /** QGetSimulationV4RubricGradeAgent */
+        QGetSimulationV4RubricGradeAgent: {
             /** Rubric Grade Agent Id */
             rubric_grade_agent_id: string | null;
             /** Rubric Id */
@@ -16181,8 +16026,8 @@ export interface components {
             /** Audio Agent Name */
             audio_agent_name: string | null;
         };
-        /** QGetSimulationDetailV4Scenario */
-        QGetSimulationDetailV4Scenario: {
+        /** QGetSimulationV4Scenario */
+        QGetSimulationV4Scenario: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Title */
@@ -16216,10 +16061,10 @@ export interface components {
             /** Has Active Video */
             has_active_video: boolean | null;
             /** Rubric Grade Agents */
-            rubric_grade_agents: components["schemas"]["QGetSimulationDetailV4RubricGradeAgent"][] | null;
+            rubric_grade_agents: components["schemas"]["QGetSimulationV4RubricGradeAgent"][] | null;
         };
-        /** QGetSimulationDetailV4ScenarioFull */
-        QGetSimulationDetailV4ScenarioFull: {
+        /** QGetSimulationV4ScenarioFull */
+        QGetSimulationV4ScenarioFull: {
             /** Scenario Id */
             scenario_id: string | null;
             /** Name */
@@ -16229,181 +16074,18 @@ export interface components {
             /** Persona Ids */
             persona_ids: string[] | null;
             /** Persona Mapping */
-            persona_mapping: components["schemas"]["QGetSimulationDetailV4Persona"][] | null;
+            persona_mapping: components["schemas"]["QGetSimulationV4Persona"][] | null;
             /** Document Mapping */
-            document_mapping: components["schemas"]["QGetSimulationDetailV4Document"][] | null;
+            document_mapping: components["schemas"]["QGetSimulationV4Document"][] | null;
             /** Parameter Item Mapping */
-            parameter_item_mapping: components["schemas"]["QGetSimulationDetailV4Field"][] | null;
+            parameter_item_mapping: components["schemas"]["QGetSimulationV4Field"][] | null;
             /** Parameter Item Ids */
             parameter_item_ids: string[] | null;
             /** Document Ids */
             document_ids: string[] | null;
         };
-        /** QGetSimulationNewV4Agent */
-        QGetSimulationNewV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Roles */
-            roles: string[] | null;
-        };
-        /** QGetSimulationNewV4Department */
-        QGetSimulationNewV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Scenario Ids */
-            scenario_ids: string[] | null;
-            /** Rubric Ids */
-            rubric_ids: string[] | null;
-            /** Cohort Ids */
-            cohort_ids: string[] | null;
-        };
-        /** QGetSimulationNewV4Document */
-        QGetSimulationNewV4Document: {
-            /** Document Id */
-            document_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetSimulationNewV4Field */
-        QGetSimulationNewV4Field: {
-            /** Field Id */
-            field_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Parameter Name */
-            parameter_name: string | null;
-        };
-        /** QGetSimulationNewV4Parameter */
-        QGetSimulationNewV4Parameter: {
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Document Parameter */
-            document_parameter: boolean | null;
-            /** Persona Parameter */
-            persona_parameter: boolean | null;
-        };
-        /** QGetSimulationNewV4ParameterItem */
-        QGetSimulationNewV4ParameterItem: {
-            /** Id */
-            id: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetSimulationNewV4ParameterItemDetail */
-        QGetSimulationNewV4ParameterItemDetail: {
-            /** Id */
-            id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Parameter Id */
-            parameter_id: string | null;
-        };
-        /** QGetSimulationNewV4Persona */
-        QGetSimulationNewV4Persona: {
-            /** Persona Id */
-            persona_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Color */
-            color: string | null;
-            /** Icon */
-            icon: string | null;
-            /** Image Model */
-            image_model: boolean | null;
-        };
-        /** QGetSimulationNewV4Rubric */
-        QGetSimulationNewV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetSimulationNewV4Scenario */
-        QGetSimulationNewV4Scenario: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Title */
-            title: string | null;
-            /** Description */
-            description: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Position */
-            position: number | null;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[] | null;
-            /** Hints Enabled */
-            hints_enabled: boolean | null;
-            /** Objectives Enabled */
-            objectives_enabled: boolean | null;
-            /** Image Input Enabled */
-            image_input_enabled: boolean | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Time Limit Seconds */
-            time_limit_seconds: number | null;
-            /** Usage Count */
-            usage_count: number | null;
-            /** Success Rate */
-            success_rate: number | null;
-            /** Last Used */
-            last_used: string | null;
-            /** Can Remove */
-            can_remove: boolean | null;
-            /** Has Active Video */
-            has_active_video: boolean | null;
-        };
-        /** QGetSimulationNewV4ScenarioFull */
-        QGetSimulationNewV4ScenarioFull: {
-            /** Scenario Id */
-            scenario_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Persona Ids */
-            persona_ids: string[] | null;
-            /** Persona Mapping */
-            persona_mapping: components["schemas"]["QGetSimulationNewV4Persona"][] | null;
-            /** Document Mapping */
-            document_mapping: components["schemas"]["QGetSimulationNewV4Document"][] | null;
-            /** Parameter Item Mapping */
-            parameter_item_mapping: components["schemas"]["QGetSimulationNewV4Field"][] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids: string[] | null;
-            /** Document Ids */
-            document_ids: string[] | null;
-        };
-        /** QGetSimulationNewV4Video */
-        QGetSimulationNewV4Video: {
+        /** QGetSimulationV4Video */
+        QGetSimulationV4Video: {
             /** Video Id */
             video_id: string | null;
             /** Name */
@@ -18612,6 +18294,62 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** SaveSimulationApiRequest */
+        SaveSimulationApiRequest: {
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Practice Simulation */
+            practice_simulation: boolean;
+            /** Department Ids */
+            department_ids: string[];
+            /** Scenario Ids */
+            scenario_ids: string[];
+            /** Scenario Active Flags */
+            scenario_active_flags: boolean[];
+            /** Scenario Hints Enabled */
+            scenario_hints_enabled: boolean[];
+            /** Scenario Time Limit Seconds */
+            scenario_time_limit_seconds: number[];
+            /** Scenario Audio Enabled */
+            scenario_audio_enabled: boolean[];
+            /** Scenario Text Enabled */
+            scenario_text_enabled: boolean[];
+            /** Scenario Rubric Grade Agents */
+            scenario_rubric_grade_agents: components["schemas"]["ISaveSimulationV4ScenarioRubricGradeAgent"][];
+            /**
+             * Simulation Text Domain Id
+             * Format: uuid
+             */
+            simulation_text_domain_id: string;
+            /**
+             * Simulation Voice Domain Id
+             * Format: uuid
+             */
+            simulation_voice_domain_id: string;
+            /** Input Simulation Id */
+            input_simulation_id?: string | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Video Active Flags */
+            video_active_flags?: boolean[] | null;
+            /** Video Show Problem Statement */
+            video_show_problem_statement?: boolean[] | null;
+            /** Video Show Objectives */
+            video_show_objectives?: boolean[] | null;
+            /** Video Show Image */
+            video_show_image?: boolean[] | null;
+        };
+        /** SaveSimulationApiResponse */
+        SaveSimulationApiResponse: {
+            /** Simulation Id */
+            simulation_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SaveToolApiRequest */
         SaveToolApiRequest: {
             /**
@@ -19898,63 +19636,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** UpdateSimulationApiRequest */
-        UpdateSimulationApiRequest: {
-            /**
-             * Simulation Id
-             * Format: uuid
-             */
-            simulation_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Practice Simulation */
-            practice_simulation: boolean;
-            /** Department Ids */
-            department_ids: string[];
-            /** Scenario Ids */
-            scenario_ids: string[];
-            /** Scenario Active Flags */
-            scenario_active_flags: boolean[];
-            /** Video Ids */
-            video_ids: string[];
-            /** Video Active Flags */
-            video_active_flags: boolean[];
-            /** Scenario Hints Enabled */
-            scenario_hints_enabled: boolean[];
-            /** Scenario Time Limit Seconds */
-            scenario_time_limit_seconds: number[];
-            /** Scenario Audio Enabled */
-            scenario_audio_enabled: boolean[];
-            /** Scenario Text Enabled */
-            scenario_text_enabled: boolean[];
-            /** Scenario Rubric Grade Agents */
-            scenario_rubric_grade_agents: components["schemas"]["ICreateSimulationV4ScenarioRubricGradeAgent"][];
-            /** Video Show Problem Statement */
-            video_show_problem_statement: boolean[];
-            /** Video Show Objectives */
-            video_show_objectives: boolean[];
-            /** Video Show Image */
-            video_show_image: boolean[];
-            /**
-             * Simulation Text Agent Domain Id
-             * Format: uuid
-             */
-            simulation_text_agent_domain_id: string;
-            /**
-             * Simulation Voice Agent Domain Id
-             * Format: uuid
-             */
-            simulation_voice_agent_domain_id: string;
-        };
-        /** UpdateSimulationApiResponse */
-        UpdateSimulationApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** UpsertStaffApiRequest */
         UpsertStaffApiRequest: {
             /** Profiles */
@@ -20689,7 +20370,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_detail_api_v4_simulations_detail_post: {
+    get_simulation_api_v4_simulations_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -20702,7 +20383,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetSimulationDetailApiRequest"];
+                "application/json": components["schemas"]["GetSimulationApiRequest"];
             };
         };
         responses: {
@@ -20712,7 +20393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetSimulationDetailApiResponse"];
+                    "application/json": components["schemas"]["GetSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -20726,7 +20407,7 @@ export interface operations {
             };
         };
     };
-    get_simulation_new_api_v4_simulations_new_post: {
+    save_simulation_api_v4_simulations_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -20739,7 +20420,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetSimulationNewApiRequest"];
+                "application/json": components["schemas"]["SaveSimulationApiRequest"];
             };
         };
         responses: {
@@ -20749,81 +20430,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetSimulationNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_simulation_api_v4_simulations_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateSimulationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateSimulationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_simulation_api_v4_simulations_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateSimulationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateSimulationApiResponse"];
+                    "application/json": components["schemas"]["SaveSimulationApiResponse"];
                 };
             };
             /** @description Validation Error */

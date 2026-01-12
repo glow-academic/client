@@ -26157,6 +26157,271 @@ class GetSimulationByIdApiResponse(BaseModel):
 
 
 
+# Generated from: get_simulation
+
+class GetSimulationSqlParams(BaseModel):
+
+    profile_id: UUID
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+    scenario_search: str | None = None
+    scenario_show_selected: bool | None = None
+    filter_scenario_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.simulation_id,
+            self.draft_id,
+            self.scenario_search,
+            self.scenario_show_selected,
+            self.filter_scenario_ids,
+        )
+
+class QGetSimulationV4Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetSimulationV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    scenario_ids: list[UUID] | None
+    rubric_ids: list[UUID] | None
+    cohort_ids: list[UUID] | None
+
+
+
+
+class QGetSimulationV4Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+
+
+
+
+class QGetSimulationV4Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+
+
+
+
+class QGetSimulationV4ParameterItem(BaseModel):
+
+    id: UUID | None
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationV4ParameterItemDetail(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+
+
+
+
+class QGetSimulationV4Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationV4RubricGradeAgent(BaseModel):
+
+    rubric_grade_agent_id: UUID | None
+    rubric_id: UUID | None
+    rubric_name: str | None
+    grade_agent_id: UUID | None
+    grade_agent_name: str | None
+    audio_agent_id: UUID | None
+    audio_agent_name: str | None
+
+class QGetSimulationV4Scenario(BaseModel):
+
+    scenario_id: UUID | None
+    title: str | None
+    description: str | None
+    active: bool | None
+    position: int | None
+    parameter_item_ids: list[UUID] | None
+    hints_enabled: bool | None
+    copy_paste_allowed: bool | None
+    audio_enabled: bool | None
+    text_enabled: bool | None
+    time_limit_seconds: int | None
+    usage_count: int | None
+    success_rate: int | None
+    last_used: str | None
+    can_remove: bool | None
+    has_active_video: bool | None
+    rubric_grade_agents: list[QGetSimulationV4RubricGradeAgent] | None
+
+
+
+
+class QGetSimulationV4Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetSimulationV4Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    image_model: bool | None
+
+class QGetSimulationV4ScenarioFull(BaseModel):
+
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    persona_ids: list[UUID] | None
+    persona_mapping: list[QGetSimulationV4Persona] | None
+    document_mapping: list[QGetSimulationV4Document] | None
+    parameter_item_mapping: list[QGetSimulationV4Field] | None
+    parameter_item_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+
+
+
+
+class QGetSimulationV4Video(BaseModel):
+
+    video_id: UUID | None
+    name: str | None
+    description: str | None
+    length_seconds: int | None
+
+class GetSimulationSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    simulation_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    valid_department_ids: list[UUID] | None = None
+    time_limit: int | None = None
+    rubric_id: UUID | None = None
+    valid_rubric_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    valid_scenario_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    valid_video_ids: list[UUID] | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    simulation_text_domain_id: UUID | None = None
+    simulation_voice_domain_id: UUID | None = None
+    member_agent_id: UUID | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    cohort_count: int | None = None
+    primary_department_id: UUID | None = None
+    scenarios: list[QGetSimulationV4Scenario] | None = None
+    videos: list[QGetSimulationV4Video] | None = None
+    parameters: list[QGetSimulationV4ParameterItem] | None = None
+    parameter_items: list[QGetSimulationV4ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationV4ScenarioFull] | None = None
+    rubrics: list[QGetSimulationV4Rubric] | None = None
+    departments: list[QGetSimulationV4Department] | None = None
+    parameters_full: list[QGetSimulationV4Parameter] | None = None
+    fields: list[QGetSimulationV4Field] | None = None
+    agents: list[QGetSimulationV4Agent] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    draft_version: int | None = None
+    scenario_active_states: Any | None = None
+    scenario_settings: Any | None = None
+
+class GetSimulationApiRequest(BaseModel):
+
+    simulation_id: UUID | None = None
+    draft_id: UUID | None = None
+    scenario_search: str | None = None
+    scenario_show_selected: bool | None = None
+    filter_scenario_ids: list[UUID] | None = None
+
+class GetSimulationApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    simulation_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    simulation_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    department_ids: list[UUID] | None = None
+    valid_department_ids: list[UUID] | None = None
+    time_limit: int | None = None
+    rubric_id: UUID | None = None
+    valid_rubric_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    valid_scenario_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    valid_video_ids: list[UUID] | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    simulation_text_domain_id: UUID | None = None
+    simulation_voice_domain_id: UUID | None = None
+    member_agent_id: UUID | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    cohort_count: int | None = None
+    primary_department_id: UUID | None = None
+    scenarios: list[QGetSimulationV4Scenario] | None = None
+    videos: list[QGetSimulationV4Video] | None = None
+    parameters: list[QGetSimulationV4ParameterItem] | None = None
+    parameter_items: list[QGetSimulationV4ParameterItemDetail] | None = None
+    scenarios_full: list[QGetSimulationV4ScenarioFull] | None = None
+    rubrics: list[QGetSimulationV4Rubric] | None = None
+    departments: list[QGetSimulationV4Department] | None = None
+    parameters_full: list[QGetSimulationV4Parameter] | None = None
+    fields: list[QGetSimulationV4Field] | None = None
+    agents: list[QGetSimulationV4Agent] | None = None
+    valid_agent_ids: list[UUID] | None = None
+    draft_version: int | None = None
+    scenario_active_states: Any | None = None
+    scenario_settings: Any | None = None
+
+
+
 # Generated from: get_simulation_detail
 
 class GetSimulationDetailSqlParams(BaseModel):
@@ -27270,6 +27535,104 @@ class MarkChatCompletedApiRequest(BaseModel):
 class MarkChatCompletedApiResponse(BaseModel):
 
     success: bool | None = None
+
+
+
+# Generated from: save_simulation
+
+class ISaveSimulationV4ScenarioRubricGradeAgent(BaseModel):
+
+    scenario_id: UUID | None
+    rubric_id: UUID | None
+    grade_agent_id: UUID | None
+    audio_agent_id: UUID | None
+
+class SaveSimulationSqlParams(BaseModel):
+
+    title: str
+    description: str
+    active: bool
+    practice_simulation: bool
+    department_ids: list[UUID]
+    scenario_ids: list[UUID]
+    scenario_active_flags: list[bool]
+    scenario_hints_enabled: list[bool]
+    scenario_time_limit_seconds: list[int]
+    scenario_audio_enabled: list[bool]
+    scenario_text_enabled: list[bool]
+    scenario_rubric_grade_agents: list[ISaveSimulationV4ScenarioRubricGradeAgent]
+    simulation_text_domain_id: UUID
+    simulation_voice_domain_id: UUID
+    profile_id: UUID
+    input_simulation_id: UUID | None = None
+    video_ids: list[UUID] | None = None
+    video_active_flags: list[bool] | None = None
+    video_show_problem_statement: list[bool] | None = None
+    video_show_objectives: list[bool] | None = None
+    video_show_image: list[bool] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert scenario_rubric_grade_agents composite array to tuples for asyncpg
+        scenario_rubric_grade_agents_tuples = [
+            (conn.scenario_id, conn.rubric_id, conn.grade_agent_id, conn.audio_agent_id)
+            for conn in (self.scenario_rubric_grade_agents or [])
+        ]
+        return (
+            self.title,
+            self.description,
+            self.active,
+            self.practice_simulation,
+            self.department_ids,
+            self.scenario_ids,
+            self.scenario_active_flags,
+            self.scenario_hints_enabled,
+            self.scenario_time_limit_seconds,
+            self.scenario_audio_enabled,
+            self.scenario_text_enabled,
+            scenario_rubric_grade_agents_tuples,
+            self.simulation_text_domain_id,
+            self.simulation_voice_domain_id,
+            self.profile_id,
+            self.input_simulation_id,
+            self.video_ids,
+            self.video_active_flags,
+            self.video_show_problem_statement,
+            self.video_show_objectives,
+            self.video_show_image,
+        )
+
+class SaveSimulationSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveSimulationApiRequest(BaseModel):
+
+    title: str
+    description: str
+    active: bool
+    practice_simulation: bool
+    department_ids: list[UUID]
+    scenario_ids: list[UUID]
+    scenario_active_flags: list[bool]
+    scenario_hints_enabled: list[bool]
+    scenario_time_limit_seconds: list[int]
+    scenario_audio_enabled: list[bool]
+    scenario_text_enabled: list[bool]
+    scenario_rubric_grade_agents: list[ISaveSimulationV4ScenarioRubricGradeAgent]
+    simulation_text_domain_id: UUID
+    simulation_voice_domain_id: UUID
+    input_simulation_id: UUID | None = None
+    video_ids: list[UUID] | None = None
+    video_active_flags: list[bool] | None = None
+    video_show_problem_statement: list[bool] | None = None
+    video_show_objectives: list[bool] | None = None
+    video_show_image: list[bool] | None = None
+
+class SaveSimulationApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -31559,6 +31922,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationByIdApiRequest",
         "GetSimulationByIdApiResponse",
     ),
+    "app/sql/v4/simulations/get_simulation_complete.sql": (
+        "GetSimulationSqlParams",
+        "GetSimulationSqlRow",
+        "GetSimulationApiRequest",
+        "GetSimulationApiResponse",
+    ),
     "app/sql/v4/simulations/get_simulation_detail_complete.sql": (
         "GetSimulationDetailSqlParams",
         "GetSimulationDetailSqlRow",
@@ -31624,6 +31993,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkChatCompletedSqlRow",
         "MarkChatCompletedApiRequest",
         "MarkChatCompletedApiResponse",
+    ),
+    "app/sql/v4/simulations/save_simulation_complete.sql": (
+        "SaveSimulationSqlParams",
+        "SaveSimulationSqlRow",
+        "SaveSimulationApiRequest",
+        "SaveSimulationApiResponse",
     ),
     "app/sql/v4/simulations/simulation_text_stop_run_complete.sql": (
         "SimulationTextStopRunSqlParams",
@@ -34087,6 +34462,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_simulation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_simulation_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -34138,6 +34518,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/mark_chat_completed_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/save_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

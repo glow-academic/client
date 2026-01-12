@@ -1752,15 +1752,15 @@
         ]
       }
     },
-    "/api/v4/simulations/detail": {
+    "/api/v4/simulations/get": {
       "post": {
         "tags": [
           "v4",
           "simulations"
         ],
-        "summary": "Get Simulation Detail",
-        "description": "Get detailed simulation information.",
-        "operationId": "get_simulation_detail_api_v4_simulations_detail_post",
+        "summary": "Get Simulation",
+        "description": "Get simulation information - handles both new (simulation_id = NULL) and detail (simulation_id provided).",
+        "operationId": "get_simulation_api_v4_simulations_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1816,7 +1816,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetSimulationDetailApiRequest"
+                "$ref": "#/components/schemas/GetSimulationApiRequest"
               }
             }
           }
@@ -1827,7 +1827,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetSimulationDetailApiResponse"
+                  "$ref": "#/components/schemas/GetSimulationApiResponse"
                 }
               }
             }
@@ -1849,15 +1849,15 @@
         ]
       }
     },
-    "/api/v4/simulations/new": {
+    "/api/v4/simulations/save": {
       "post": {
         "tags": [
           "v4",
           "simulations"
         ],
-        "summary": "Get Simulation New",
-        "description": "Get default simulation details based on profile.",
-        "operationId": "get_simulation_new_api_v4_simulations_new_post",
+        "summary": "Save Simulation",
+        "description": "Save simulation - handles both create (input_simulation_id = NULL) and update (input_simulation_id provided).",
+        "operationId": "save_simulation_api_v4_simulations_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -1913,7 +1913,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetSimulationNewApiRequest"
+                "$ref": "#/components/schemas/SaveSimulationApiRequest"
               }
             }
           }
@@ -1924,201 +1924,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetSimulationNewApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
-      }
-    },
-    "/api/v4/simulations/create": {
-      "post": {
-        "tags": [
-          "v4",
-          "simulations"
-        ],
-        "summary": "Create Simulation",
-        "description": "Create a new simulation.",
-        "operationId": "create_simulation_api_v4_simulations_create_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSimulationApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateSimulationApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
-      }
-    },
-    "/api/v4/simulations/update": {
-      "post": {
-        "tags": [
-          "v4",
-          "simulations"
-        ],
-        "summary": "Update Simulation",
-        "description": "Update an existing simulation.",
-        "operationId": "update_simulation_api_v4_simulations_update_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSimulationApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateSimulationApiResponse"
+                  "$ref": "#/components/schemas/SaveSimulationApiResponse"
                 }
               }
             }
@@ -26834,141 +26640,6 @@
         "type": "object",
         "title": "CreateScenarioApiResponse"
       },
-      "CreateSimulationApiRequest": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "practice_simulation": {
-            "type": "boolean",
-            "title": "Practice Simulation"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_active_flags": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Scenario Active Flags"
-          },
-          "scenario_hints_enabled": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Scenario Hints Enabled"
-          },
-          "scenario_time_limit_seconds": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Scenario Time Limit Seconds"
-          },
-          "scenario_audio_enabled": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Scenario Audio Enabled"
-          },
-          "scenario_text_enabled": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Scenario Text Enabled"
-          },
-          "scenario_rubric_grade_agents": {
-            "items": {
-              "$ref": "#/components/schemas/ICreateSimulationV4ScenarioRubricGradeAgent"
-            },
-            "type": "array",
-            "title": "Scenario Rubric Grade Agents"
-          },
-          "simulation_text_domain_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Text Domain Id"
-          },
-          "simulation_voice_domain_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Voice Domain Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "description",
-          "active",
-          "practice_simulation",
-          "department_ids",
-          "scenario_ids",
-          "scenario_active_flags",
-          "scenario_hints_enabled",
-          "scenario_time_limit_seconds",
-          "scenario_audio_enabled",
-          "scenario_text_enabled",
-          "scenario_rubric_grade_agents",
-          "simulation_text_domain_id",
-          "simulation_voice_domain_id"
-        ],
-        "title": "CreateSimulationApiRequest"
-      },
-      "CreateSimulationApiResponse": {
-        "properties": {
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "CreateSimulationApiResponse"
-      },
       "DebugInfoApiRequest": {
         "properties": {
           "agent_id": {
@@ -45607,6 +45278,595 @@
         "type": "object",
         "title": "GetSettingsListApiResponse"
       },
+      "GetSimulationApiRequest": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "scenario_search": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Search"
+          },
+          "scenario_show_selected": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Show Selected"
+          },
+          "filter_scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filter Scenario Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetSimulationApiRequest"
+      },
+      "GetSimulationApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "simulation_exists": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Exists"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "disabled_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabled Reason"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
+          },
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "valid_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Department Ids"
+          },
+          "time_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Limit"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "valid_rubric_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Rubric Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "valid_scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Scenario Ids"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
+          "valid_video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Video Ids"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "practice_simulation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Practice Simulation"
+          },
+          "simulation_text_domain_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Text Domain Id"
+          },
+          "simulation_voice_domain_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Voice Domain Id"
+          },
+          "member_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Member Agent Id"
+          },
+          "can_duplicate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Duplicate"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete"
+          },
+          "in_use": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Use"
+          },
+          "cohort_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Count"
+          },
+          "primary_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Department Id"
+          },
+          "scenarios": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4Scenario"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios"
+          },
+          "videos": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4Video"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videos"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4ParameterItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "parameter_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4ParameterItemDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameter Items"
+          },
+          "scenarios_full": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4ScenarioFull"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenarios Full"
+          },
+          "rubrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4Rubric"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubrics"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "parameters_full": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4Parameter"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters Full"
+          },
+          "fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4Field"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fields"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetSimulationV4Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "valid_agent_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Agent Ids"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
+          },
+          "scenario_active_states": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Active States"
+          },
+          "scenario_settings": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Settings"
+          }
+        },
+        "type": "object",
+        "title": "GetSimulationApiResponse"
+      },
       "GetSimulationAttemptApiRequest": {
         "properties": {
           "attempt_id": {
@@ -45885,994 +46145,6 @@
         },
         "type": "object",
         "title": "GetSimulationAttemptApiResponse"
-      },
-      "GetSimulationDetailApiRequest": {
-        "properties": {
-          "simulation_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Id"
-          },
-          "draft_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Id"
-          },
-          "scenario_search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Search"
-          },
-          "scenario_show_selected": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Show Selected"
-          },
-          "filter_scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Filter Scenario Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulation_id"
-        ],
-        "title": "GetSimulationDetailApiRequest"
-      },
-      "GetSimulationDetailApiResponse": {
-        "properties": {
-          "simulation_exists": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Exists"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "simulation_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "valid_rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Rubric Ids"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "valid_scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Scenario Ids"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "practice_simulation": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practice Simulation"
-          },
-          "simulation_text_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Text Domain Id"
-          },
-          "simulation_voice_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Voice Domain Id"
-          },
-          "can_edit": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Delete"
-          },
-          "in_use": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "In Use"
-          },
-          "cohort_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Count"
-          },
-          "scenarios": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Scenario"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarios"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4ParameterItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
-          "parameter_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4ParameterItemDetail"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Items"
-          },
-          "scenarios_full": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4ScenarioFull"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarios Full"
-          },
-          "rubrics": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Rubric"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "parameters_full": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Parameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Full"
-          },
-          "fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Field"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields"
-          },
-          "agents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Agent"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents"
-          },
-          "valid_agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Agent Ids"
-          },
-          "draft_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Version"
-          },
-          "scenario_active_states": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Active States"
-          },
-          "scenario_settings": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Settings"
-          }
-        },
-        "type": "object",
-        "title": "GetSimulationDetailApiResponse"
-      },
-      "GetSimulationNewApiRequest": {
-        "properties": {
-          "draft_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Id"
-          }
-        },
-        "type": "object",
-        "title": "GetSimulationNewApiRequest"
-      },
-      "GetSimulationNewApiResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "time_limit": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "valid_rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Rubric Ids"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "valid_scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Scenario Ids"
-          },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
-          },
-          "valid_video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Video Ids"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "practice_simulation": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Practice Simulation"
-          },
-          "simulation_text_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Text Agent Id"
-          },
-          "simulation_voice_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Voice Agent Id"
-          },
-          "member_agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Member Agent Id"
-          },
-          "can_edit": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Edit"
-          },
-          "can_duplicate": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Duplicate"
-          },
-          "can_delete": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Delete"
-          },
-          "in_use": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "In Use"
-          },
-          "cohort_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Count"
-          },
-          "scenarios": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Scenario"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarios"
-          },
-          "videos": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Video"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Videos"
-          },
-          "parameters": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4ParameterItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters"
-          },
-          "parameter_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4ParameterItemDetail"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Items"
-          },
-          "scenarios_full": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4ScenarioFull"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenarios Full"
-          },
-          "rubrics": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Rubric"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "parameters_full": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Parameter"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameters Full"
-          },
-          "fields": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Field"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Fields"
-          },
-          "agents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Agent"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents"
-          },
-          "valid_agent_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Agent Ids"
-          },
-          "primary_department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Primary Department Id"
-          },
-          "draft_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Version"
-          },
-          "scenario_active_states": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Active States"
-          },
-          "scenario_settings": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Settings"
-          }
-        },
-        "type": "object",
-        "title": "GetSimulationNewApiResponse"
       },
       "GetSimulationsListApiRequest": {
         "properties": {},
@@ -48611,7 +47883,39 @@
         ],
         "title": "ICreateRubricV4StandardGroup"
       },
-      "ICreateSimulationV4ScenarioRubricGradeAgent": {
+      "IProcessCsvV4ColumnMapping": {
+        "properties": {
+          "csv_column": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csv Column"
+          },
+          "target_field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Field"
+          }
+        },
+        "type": "object",
+        "required": [
+          "csv_column",
+          "target_field"
+        ],
+        "title": "IProcessCsvV4ColumnMapping"
+      },
+      "ISaveSimulationV4ScenarioRubricGradeAgent": {
         "properties": {
           "scenario_id": {
             "anyOf": [
@@ -48669,39 +47973,7 @@
           "grade_agent_id",
           "audio_agent_id"
         ],
-        "title": "ICreateSimulationV4ScenarioRubricGradeAgent"
-      },
-      "IProcessCsvV4ColumnMapping": {
-        "properties": {
-          "csv_column": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Csv Column"
-          },
-          "target_field": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Target Field"
-          }
-        },
-        "type": "object",
-        "required": [
-          "csv_column",
-          "target_field"
-        ],
-        "title": "IProcessCsvV4ColumnMapping"
+        "title": "ISaveSimulationV4ScenarioRubricGradeAgent"
       },
       "IUpdateAuthV4AuthItem": {
         "properties": {
@@ -74901,7 +74173,7 @@
         ],
         "title": "QGetSimulationAttemptV4VideoDocument"
       },
-      "QGetSimulationDetailV4Agent": {
+      "QGetSimulationV4Agent": {
         "properties": {
           "agent_id": {
             "anyOf": [
@@ -74959,9 +74231,9 @@
           "description",
           "roles"
         ],
-        "title": "QGetSimulationDetailV4Agent"
+        "title": "QGetSimulationV4Agent"
       },
-      "QGetSimulationDetailV4Department": {
+      "QGetSimulationV4Department": {
         "properties": {
           "department_id": {
             "anyOf": [
@@ -75052,9 +74324,9 @@
           "rubric_ids",
           "cohort_ids"
         ],
-        "title": "QGetSimulationDetailV4Department"
+        "title": "QGetSimulationV4Department"
       },
-      "QGetSimulationDetailV4Document": {
+      "QGetSimulationV4Document": {
         "properties": {
           "document_id": {
             "anyOf": [
@@ -75097,9 +74369,9 @@
           "name",
           "description"
         ],
-        "title": "QGetSimulationDetailV4Document"
+        "title": "QGetSimulationV4Document"
       },
-      "QGetSimulationDetailV4Field": {
+      "QGetSimulationV4Field": {
         "properties": {
           "field_id": {
             "anyOf": [
@@ -75167,9 +74439,9 @@
           "parameter_id",
           "parameter_name"
         ],
-        "title": "QGetSimulationDetailV4Field"
+        "title": "QGetSimulationV4Field"
       },
-      "QGetSimulationDetailV4Parameter": {
+      "QGetSimulationV4Parameter": {
         "properties": {
           "parameter_id": {
             "anyOf": [
@@ -75236,9 +74508,9 @@
           "document_parameter",
           "persona_parameter"
         ],
-        "title": "QGetSimulationDetailV4Parameter"
+        "title": "QGetSimulationV4Parameter"
       },
-      "QGetSimulationDetailV4ParameterItem": {
+      "QGetSimulationV4ParameterItem": {
         "properties": {
           "id": {
             "anyOf": [
@@ -75294,9 +74566,9 @@
           "name",
           "description"
         ],
-        "title": "QGetSimulationDetailV4ParameterItem"
+        "title": "QGetSimulationV4ParameterItem"
       },
-      "QGetSimulationDetailV4ParameterItemDetail": {
+      "QGetSimulationV4ParameterItemDetail": {
         "properties": {
           "id": {
             "anyOf": [
@@ -75352,9 +74624,9 @@
           "description",
           "parameter_id"
         ],
-        "title": "QGetSimulationDetailV4ParameterItemDetail"
+        "title": "QGetSimulationV4ParameterItemDetail"
       },
-      "QGetSimulationDetailV4Persona": {
+      "QGetSimulationV4Persona": {
         "properties": {
           "persona_id": {
             "anyOf": [
@@ -75433,9 +74705,9 @@
           "icon",
           "image_model"
         ],
-        "title": "QGetSimulationDetailV4Persona"
+        "title": "QGetSimulationV4Persona"
       },
-      "QGetSimulationDetailV4Rubric": {
+      "QGetSimulationV4Rubric": {
         "properties": {
           "rubric_id": {
             "anyOf": [
@@ -75478,9 +74750,9 @@
           "name",
           "description"
         ],
-        "title": "QGetSimulationDetailV4Rubric"
+        "title": "QGetSimulationV4Rubric"
       },
-      "QGetSimulationDetailV4RubricGradeAgent": {
+      "QGetSimulationV4RubricGradeAgent": {
         "properties": {
           "rubric_grade_agent_id": {
             "anyOf": [
@@ -75574,9 +74846,9 @@
           "audio_agent_id",
           "audio_agent_name"
         ],
-        "title": "QGetSimulationDetailV4RubricGradeAgent"
+        "title": "QGetSimulationV4RubricGradeAgent"
       },
-      "QGetSimulationDetailV4Scenario": {
+      "QGetSimulationV4Scenario": {
         "properties": {
           "scenario_id": {
             "anyOf": [
@@ -75763,7 +75035,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4RubricGradeAgent"
+                  "$ref": "#/components/schemas/QGetSimulationV4RubricGradeAgent"
                 },
                 "type": "array"
               },
@@ -75794,9 +75066,9 @@
           "has_active_video",
           "rubric_grade_agents"
         ],
-        "title": "QGetSimulationDetailV4Scenario"
+        "title": "QGetSimulationV4Scenario"
       },
-      "QGetSimulationDetailV4ScenarioFull": {
+      "QGetSimulationV4ScenarioFull": {
         "properties": {
           "scenario_id": {
             "anyOf": [
@@ -75851,7 +75123,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Persona"
+                  "$ref": "#/components/schemas/QGetSimulationV4Persona"
                 },
                 "type": "array"
               },
@@ -75865,7 +75137,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Document"
+                  "$ref": "#/components/schemas/QGetSimulationV4Document"
                 },
                 "type": "array"
               },
@@ -75879,7 +75151,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetSimulationDetailV4Field"
+                  "$ref": "#/components/schemas/QGetSimulationV4Field"
                 },
                 "type": "array"
               },
@@ -75932,932 +75204,9 @@
           "parameter_item_ids",
           "document_ids"
         ],
-        "title": "QGetSimulationDetailV4ScenarioFull"
+        "title": "QGetSimulationV4ScenarioFull"
       },
-      "QGetSimulationNewV4Agent": {
-        "properties": {
-          "agent_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "roles": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          }
-        },
-        "type": "object",
-        "required": [
-          "agent_id",
-          "name",
-          "description",
-          "roles"
-        ],
-        "title": "QGetSimulationNewV4Agent"
-      },
-      "QGetSimulationNewV4Department": {
-        "properties": {
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "rubric_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Ids"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id",
-          "name",
-          "description",
-          "scenario_ids",
-          "rubric_ids",
-          "cohort_ids"
-        ],
-        "title": "QGetSimulationNewV4Department"
-      },
-      "QGetSimulationNewV4Document": {
-        "properties": {
-          "document_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "document_id",
-          "name",
-          "description"
-        ],
-        "title": "QGetSimulationNewV4Document"
-      },
-      "QGetSimulationNewV4Field": {
-        "properties": {
-          "field_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Field Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
-          },
-          "parameter_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Name"
-          }
-        },
-        "type": "object",
-        "required": [
-          "field_id",
-          "name",
-          "description",
-          "parameter_id",
-          "parameter_name"
-        ],
-        "title": "QGetSimulationNewV4Field"
-      },
-      "QGetSimulationNewV4Parameter": {
-        "properties": {
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "document_parameter": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Parameter"
-          },
-          "persona_parameter": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Parameter"
-          }
-        },
-        "type": "object",
-        "required": [
-          "parameter_id",
-          "name",
-          "description",
-          "document_parameter",
-          "persona_parameter"
-        ],
-        "title": "QGetSimulationNewV4Parameter"
-      },
-      "QGetSimulationNewV4ParameterItem": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "parameter_id",
-          "name",
-          "description"
-        ],
-        "title": "QGetSimulationNewV4ParameterItem"
-      },
-      "QGetSimulationNewV4ParameterItemDetail": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "parameter_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "parameter_id"
-        ],
-        "title": "QGetSimulationNewV4ParameterItemDetail"
-      },
-      "QGetSimulationNewV4Persona": {
-        "properties": {
-          "persona_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "image_model": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Model"
-          }
-        },
-        "type": "object",
-        "required": [
-          "persona_id",
-          "name",
-          "description",
-          "color",
-          "icon",
-          "image_model"
-        ],
-        "title": "QGetSimulationNewV4Persona"
-      },
-      "QGetSimulationNewV4Rubric": {
-        "properties": {
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "rubric_id",
-          "name",
-          "description"
-        ],
-        "title": "QGetSimulationNewV4Rubric"
-      },
-      "QGetSimulationNewV4Scenario": {
-        "properties": {
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
-          },
-          "hints_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hints Enabled"
-          },
-          "objectives_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objectives Enabled"
-          },
-          "image_input_enabled": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Input Enabled"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "time_limit_seconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Time Limit Seconds"
-          },
-          "usage_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Usage Count"
-          },
-          "success_rate": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Success Rate"
-          },
-          "last_used": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Last Used"
-          },
-          "can_remove": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Remove"
-          },
-          "has_active_video": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Has Active Video"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenario_id",
-          "title",
-          "description",
-          "active",
-          "position",
-          "parameter_item_ids",
-          "hints_enabled",
-          "objectives_enabled",
-          "image_input_enabled",
-          "rubric_id",
-          "time_limit_seconds",
-          "usage_count",
-          "success_rate",
-          "last_used",
-          "can_remove",
-          "has_active_video"
-        ],
-        "title": "QGetSimulationNewV4Scenario"
-      },
-      "QGetSimulationNewV4ScenarioFull": {
-        "properties": {
-          "scenario_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "persona_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Ids"
-          },
-          "persona_mapping": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Persona"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Persona Mapping"
-          },
-          "document_mapping": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Document"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Mapping"
-          },
-          "parameter_item_mapping": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetSimulationNewV4Field"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Mapping"
-          },
-          "parameter_item_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parameter Item Ids"
-          },
-          "document_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "scenario_id",
-          "name",
-          "description",
-          "persona_ids",
-          "persona_mapping",
-          "document_mapping",
-          "parameter_item_mapping",
-          "parameter_item_ids",
-          "document_ids"
-        ],
-        "title": "QGetSimulationNewV4ScenarioFull"
-      },
-      "QGetSimulationNewV4Video": {
+      "QGetSimulationV4Video": {
         "properties": {
           "video_id": {
             "anyOf": [
@@ -76912,7 +75261,7 @@
           "description",
           "length_seconds"
         ],
-        "title": "QGetSimulationNewV4Video"
+        "title": "QGetSimulationV4Video"
       },
       "QGetStaffDetailV4Cohort": {
         "properties": {
@@ -88663,6 +87012,224 @@
         "type": "object",
         "title": "SavePersonaApiResponse"
       },
+      "SaveSimulationApiRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "practice_simulation": {
+            "type": "boolean",
+            "title": "Practice Simulation"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Ids"
+          },
+          "scenario_active_flags": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Active Flags"
+          },
+          "scenario_hints_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Hints Enabled"
+          },
+          "scenario_time_limit_seconds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Scenario Time Limit Seconds"
+          },
+          "scenario_audio_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Audio Enabled"
+          },
+          "scenario_text_enabled": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array",
+            "title": "Scenario Text Enabled"
+          },
+          "scenario_rubric_grade_agents": {
+            "items": {
+              "$ref": "#/components/schemas/ISaveSimulationV4ScenarioRubricGradeAgent"
+            },
+            "type": "array",
+            "title": "Scenario Rubric Grade Agents"
+          },
+          "simulation_text_domain_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Text Domain Id"
+          },
+          "simulation_voice_domain_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Voice Domain Id"
+          },
+          "input_simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Simulation Id"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
+          "video_active_flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "boolean"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Active Flags"
+          },
+          "video_show_problem_statement": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "boolean"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Show Problem Statement"
+          },
+          "video_show_objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "boolean"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Show Objectives"
+          },
+          "video_show_image": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "boolean"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Show Image"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "active",
+          "practice_simulation",
+          "department_ids",
+          "scenario_ids",
+          "scenario_active_flags",
+          "scenario_hints_enabled",
+          "scenario_time_limit_seconds",
+          "scenario_audio_enabled",
+          "scenario_text_enabled",
+          "scenario_rubric_grade_agents",
+          "simulation_text_domain_id",
+          "simulation_voice_domain_id"
+        ],
+        "title": "SaveSimulationApiRequest"
+      },
+      "SaveSimulationApiResponse": {
+        "properties": {
+          "simulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "SaveSimulationApiResponse"
+      },
       "SaveToolApiRequest": {
         "properties": {
           "input_tool_id": {
@@ -92321,176 +90888,6 @@
         },
         "type": "object",
         "title": "UpdateSettingsApiResponse"
-      },
-      "UpdateSimulationApiRequest": {
-        "properties": {
-          "simulation_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "practice_simulation": {
-            "type": "boolean",
-            "title": "Practice Simulation"
-          },
-          "department_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Department Ids"
-          },
-          "scenario_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Scenario Ids"
-          },
-          "scenario_active_flags": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Scenario Active Flags"
-          },
-          "video_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "title": "Video Ids"
-          },
-          "video_active_flags": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Video Active Flags"
-          },
-          "scenario_hints_enabled": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Scenario Hints Enabled"
-          },
-          "scenario_time_limit_seconds": {
-            "items": {
-              "type": "integer"
-            },
-            "type": "array",
-            "title": "Scenario Time Limit Seconds"
-          },
-          "scenario_audio_enabled": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Scenario Audio Enabled"
-          },
-          "scenario_text_enabled": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Scenario Text Enabled"
-          },
-          "scenario_rubric_grade_agents": {
-            "items": {
-              "$ref": "#/components/schemas/ICreateSimulationV4ScenarioRubricGradeAgent"
-            },
-            "type": "array",
-            "title": "Scenario Rubric Grade Agents"
-          },
-          "video_show_problem_statement": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Video Show Problem Statement"
-          },
-          "video_show_objectives": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Video Show Objectives"
-          },
-          "video_show_image": {
-            "items": {
-              "type": "boolean"
-            },
-            "type": "array",
-            "title": "Video Show Image"
-          },
-          "simulation_text_agent_domain_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Text Agent Domain Id"
-          },
-          "simulation_voice_agent_domain_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Voice Agent Domain Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "simulation_id",
-          "title",
-          "description",
-          "active",
-          "practice_simulation",
-          "department_ids",
-          "scenario_ids",
-          "scenario_active_flags",
-          "video_ids",
-          "video_active_flags",
-          "scenario_hints_enabled",
-          "scenario_time_limit_seconds",
-          "scenario_audio_enabled",
-          "scenario_text_enabled",
-          "scenario_rubric_grade_agents",
-          "video_show_problem_statement",
-          "video_show_objectives",
-          "video_show_image",
-          "simulation_text_agent_domain_id",
-          "simulation_voice_agent_domain_id"
-        ],
-        "title": "UpdateSimulationApiRequest"
-      },
-      "UpdateSimulationApiResponse": {
-        "properties": {
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "UpdateSimulationApiResponse"
       },
       "UpsertStaffApiRequest": {
         "properties": {

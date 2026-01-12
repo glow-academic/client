@@ -1,48 +1,59 @@
 /**
  * app/(main)/create/simulations/new/page.tsx
- * New simulation creation page
+ * New simulation page for the simulations section.
  * @AshokSaravanan222 & @siladiea
- * 06/09/2025
+ * 01/12/2026
  */
 
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Simulation from "@/components/simulations/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import {
-  createLoader,
-  parseAsBoolean,
-  parseAsString,
-} from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationNewOut = OutputOf<"/api/v4/simulations/new", "post">;
-type CreateSimulationIn = InputOf<"/api/v4/simulations/create", "post">;
-type CreateSimulationOut = OutputOf<"/api/v4/simulations/create", "post">;
+type GetSimulationIn = InputOf<"/api/v4/simulations/get", "post">;
+type GetSimulationOut = OutputOf<"/api/v4/simulations/get", "post">;
+type SaveSimulationIn = InputOf<"/api/v4/simulations/save", "post">;
+type SaveSimulationOut = OutputOf<"/api/v4/simulations/save", "post">;
 type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
- * Always bypass cache to ensure fresh data for detail/edit pages.
+ * Always bypass cache to ensure fresh data for new pages.
  */
 const getSimulationDefault = async (
-  input: { body: { draft_id?: string | null } }
-): Promise<SimulationNewOut> => {
-  return api.post("/simulations/new", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
+  input: GetSimulationIn
+): Promise<GetSimulationOut> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+  try {
+    const result = await api.post("/simulations/get", input, {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Request timeout: Server took too long to respond");
+    }
+    throw error;
+  }
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createSimulation(
-  input: CreateSimulationIn,
-): Promise<CreateSimulationOut> {
+async function saveSimulation(input: SaveSimulationIn): Promise<SaveSimulationOut> {
   "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/simulations/create", input);
+  return api.post("/simulations/save", input);
 }
 
 async function patchSimulationDraft(
@@ -57,7 +68,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "New Simulation",
     description:
-      "Create a new teaching practice simulation for graduate teaching assistant training. Design realistic student interaction scenarios to practice pedagogical techniques, improve communication skills, and enhance teaching effectiveness through simulation-based learning.",
+      "Create a new teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.",
   };
 }
 
@@ -81,28 +92,43 @@ export default async function NewSimulationPage({
     }
   });
 
-  // Inline server-side parsers for simulation search params
-  // Only include search/filter params, not draft data (scenarioIds comes from draft payload)
+  // Inline server-side parsers for simulation search params (navigation/search params only)
   const simulationSearchParams = {
     draftId: parseAsString,
+    // Search/filter params
     scenarioSearch: parseAsString,
     scenarioShowSelected: parseAsBoolean,
   };
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
 
-  // Fetch default simulation detail server-side with draft_id and filters
-  // filter_scenario_ids will come from draft payload if draft_id is provided
-  const input = {
+  // Fetch default simulation detail server-side with filter params and draft_id
+  const input: GetSimulationIn = {
     body: {
+      simulation_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
       scenario_search: q.scenarioSearch ?? null,
       scenario_show_selected: q.scenarioShowSelected ?? null,
-      // filter_scenario_ids comes from draft payload, not URL params
-      filter_scenario_ids: null,
-    },
+      filter_scenario_ids: null, // Not used in new mode
+    } as GetSimulationIn["body"],
   };
-  const simulationDetailDefault = await getSimulationDefault(input);
+
+  let simulationDataDefault: GetSimulationOut | null = null;
+  try {
+    simulationDataDefault = await getSimulationDefault(input);
+  } catch (error) {
+    // Check for 403 (access denied) - show UnifiedAccessDenied component
+    if (
+      error instanceof Error &&
+      (error.message.includes("403") ||
+        error.message.includes("access denied") ||
+        error.message.includes("Access denied"))
+    ) {
+      return <UnifiedAccessDenied />;
+    }
+    // Re-throw other errors
+    throw error;
+  }
 
   return (
     <div
@@ -112,19 +138,12 @@ export default async function NewSimulationPage({
     >
       <Simulation
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        simulationDetailDefault={simulationDetailDefault}
-        createSimulationAction={createSimulation}
+        simulationData={simulationDataDefault}
+        saveSimulationAction={saveSimulation}
         patchSimulationDraftAction={patchSimulationDraft}
       />
     </div>
   );
 }
 
-/** ---- Export types for client component (type-only imports) ---- */
-export type {
-  CreateSimulationIn,
-  CreateSimulationOut,
-  PatchSimulationDraftIn,
-  PatchSimulationDraftOut,
-  SimulationNewOut,
-};
+// Types are now defined inline in components using InputOf/OutputOf

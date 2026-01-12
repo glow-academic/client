@@ -17,32 +17,48 @@ import {
 } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationDetailIn = InputOf<"/api/v4/simulations/detail", "post">;
-type SimulationDetailOut = OutputOf<"/api/v4/simulations/detail", "post">;
-
-type SimulationNewIn = InputOf<"/api/v4/simulations/new", "post">;
-type SimulationNewOut = OutputOf<"/api/v4/simulations/new", "post">;
-
-type CreateSimulationIn = InputOf<"/api/v4/simulations/create", "post">;
-type CreateSimulationOut = OutputOf<"/api/v4/simulations/create", "post">;
-
-type UpdateSimulationIn = InputOf<"/api/v4/simulations/update", "post">;
-type UpdateSimulationOut = OutputOf<"/api/v4/simulations/update", "post">;
+type GetSimulationIn = InputOf<"/api/v4/simulations/get", "post">;
+type GetSimulationOut = OutputOf<"/api/v4/simulations/get", "post">;
+type SaveSimulationIn = InputOf<"/api/v4/simulations/save", "post">;
+type SaveSimulationOut = OutputOf<"/api/v4/simulations/save", "post">;
 type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
+
+// Export types for client component (type-only imports)
+export type {
+  GetSimulationOut as SimulationDataOut,
+  SaveSimulationIn,
+  SaveSimulationOut,
+  PatchSimulationDraftIn,
+  PatchSimulationDraftOut,
+};
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getSimulation = async (
-  input: SimulationDetailIn
-): Promise<SimulationDetailOut> => {
-  return api.post("/simulations/detail", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
+  input: GetSimulationIn
+): Promise<GetSimulationOut> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+  try {
+    const result = await api.post("/simulations/get", input, {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Request timeout: Server took too long to respond");
+    }
+    throw error;
+  }
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -54,11 +70,11 @@ export async function generateMetadata(
   // profileId removed - comes from X-Profile-Id header automatically
 
   try {
-    const input: SimulationDetailIn = {
+    const input: GetSimulationIn = {
       body: {
         simulation_id: simulationId,
         draft_id: null,
-      } as SimulationDetailIn["body"],
+      } as GetSimulationIn["body"],
     };
     const simulation = await getSimulation(input);
     return {
@@ -77,12 +93,12 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateSimulation(
-  input: UpdateSimulationIn
-): Promise<UpdateSimulationOut> {
+async function saveSimulation(
+  input: SaveSimulationIn
+): Promise<SaveSimulationOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/simulations/update", input);
+  return api.post("/simulations/save", input);
 }
 
 async function patchSimulationDraft(
@@ -130,7 +146,7 @@ export default async function EditSimulationPage({
   // Fetch simulation detail (always fresh - source of truth) with draft_id and filters
   // filter_scenario_ids will come from draft payload if draft_id is provided
   try {
-    const input: SimulationDetailIn = {
+    const input: GetSimulationIn = {
       body: {
         simulation_id: simulationId,
         draft_id: q.draftId ?? null,
@@ -138,9 +154,9 @@ export default async function EditSimulationPage({
         scenario_show_selected: q.scenarioShowSelected ?? null,
         // filter_scenario_ids comes from draft payload, not URL params
         filter_scenario_ids: null,
-      } as SimulationDetailIn["body"],
+      } as GetSimulationIn["body"],
     };
-    const simulationDetail = await getSimulation(input);
+    const simulationData = await getSimulation(input);
 
     return (
       <div
@@ -150,19 +166,23 @@ export default async function EditSimulationPage({
       >
         <Simulation
           simulationId={simulationId}
-          simulationDetail={simulationDetail}
-          updateSimulationAction={updateSimulation}
+          simulationData={simulationData}
+          saveSimulationAction={saveSimulation}
           patchSimulationDraftAction={patchSimulationDraft}
         />
       </div>
     );
   } catch (error: unknown) {
-    // Check if it's a 403 error (department access denied)
+    // Check for 403 (access denied) - show UnifiedAccessDenied component
     if (
-      error &&
-      typeof error === "object" &&
-      "status" in error &&
-      error.status === 403
+      error instanceof Error &&
+      (error.message.includes("403") ||
+        error.message.includes("access denied") ||
+        error.message.includes("Access denied") ||
+        (error &&
+          typeof error === "object" &&
+          "status" in error &&
+          error.status === 403))
     ) {
       return (
         <UnifiedAccessDenied
@@ -176,17 +196,3 @@ export default async function EditSimulationPage({
     throw error;
   }
 }
-
-/** ---- Export types for client component (type-only imports) ---- */
-export type {
-  CreateSimulationIn,
-  CreateSimulationOut,
-  PatchSimulationDraftIn,
-  PatchSimulationDraftOut,
-  SimulationDetailIn,
-  SimulationDetailOut,
-  SimulationNewIn,
-  SimulationNewOut,
-  UpdateSimulationIn,
-  UpdateSimulationOut,
-};
