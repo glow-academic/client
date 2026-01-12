@@ -216,6 +216,7 @@ export function Examples({
               onChange(allIds);
             }
           } catch (error) {
+            // eslint-disable-next-line no-console
             console.error(
               `Failed to create example resource for "${text}":`,
               error

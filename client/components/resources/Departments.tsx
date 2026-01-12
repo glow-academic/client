@@ -154,6 +154,7 @@ export function Departments({
             });
             createdDepartmentIdsRef.current.add(departmentId);
           } catch (error) {
+            // eslint-disable-next-line no-console
             console.error(
               `Failed to create department resource for ${departmentId}:`,
               error

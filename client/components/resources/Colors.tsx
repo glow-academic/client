@@ -197,6 +197,7 @@ export function Colors({
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to create color resource:", error);
       }
     }, 1000);

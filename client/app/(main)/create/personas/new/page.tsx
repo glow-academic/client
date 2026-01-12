@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import PersonaNew from "@/components/personas/PersonaNew";
+import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -219,7 +219,7 @@ export default async function NewPersonaPage({
       data-page="persona-new"
       aria-label="Create new persona page"
     >
-      <PersonaNew
+      <Persona
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         personaData={personaDetailDefault}
         savePersonaAction={savePersona}

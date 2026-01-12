@@ -202,6 +202,7 @@ export function Descriptions({
         lastSavedValueRef.current = internalValue;
         isDirtyRef.current = false;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to create description resource:", error);
       }
     }, 1000);

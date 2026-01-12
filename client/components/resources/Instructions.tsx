@@ -167,6 +167,7 @@ export function Instructions({
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to create instructions resource:", error);
       }
     }, 1000);

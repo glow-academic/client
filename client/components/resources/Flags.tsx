@@ -159,6 +159,7 @@ export function Flags({
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to create flag resource:", error);
       }
     }, 1000);

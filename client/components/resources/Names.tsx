@@ -216,6 +216,7 @@ export function Names({
         }
         lastSavedValueRef.current = internalValue;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to create name resource:", error);
       }
     }, 1000);

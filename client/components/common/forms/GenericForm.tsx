@@ -159,7 +159,7 @@ function useFormInitialization<T extends Record<string, Parser<unknown>>>({
       if ("persona_id" in serverData && serverData.persona_id) {
         return `persona_id:${String(serverData.persona_id)}`;
       }
-      // For create mode (PersonaNewOut), there's no ID
+      // For create mode (PersonaOut), there's no ID
       // Use a stable hash of immutable fields that represent the data identity
       // These fields come from the server and shouldn't change between renders
       const keyFields: Record<string, unknown> = {};

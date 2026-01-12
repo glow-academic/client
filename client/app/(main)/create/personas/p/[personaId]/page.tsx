@@ -6,7 +6,7 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import PersonaNew from "@/components/personas/PersonaNew";
+import Persona from "@/components/personas/Persona";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -217,7 +217,7 @@ export default async function PersonaEditPage({
         data-page="persona-edit"
         data-persona-id={personaId}
       >
-        <PersonaNew
+        <Persona
           personaId={personaId}
           personaData={personaDetail}
           savePersonaAction={savePersona}

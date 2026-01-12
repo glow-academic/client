@@ -164,6 +164,7 @@ export function Fields({
             });
             createdFieldIdsRef.current.add(fieldId);
           } catch (error) {
+            // eslint-disable-next-line no-console
             console.error(
               `Failed to create field resource for ${fieldId}:`,
               error
