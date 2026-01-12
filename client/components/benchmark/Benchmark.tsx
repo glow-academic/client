@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import BenchmarkZone, { BenchmarkZoneSkeleton } from "./BenchmarkZone";
-import EvalAttemptsTable from "./EvalAttemptsTable";
 
 // Rubric mapping types
 type RubricMapping = {
@@ -268,9 +267,6 @@ export default function Benchmark({
           loadingEval={loadingEval}
           rubricMappings={rubricMappings}
         />
-
-        {/* Eval Attempts Table */}
-        <EvalAttemptsTable />
       </div>
     </TooltipProvider>
   );

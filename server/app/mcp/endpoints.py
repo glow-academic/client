@@ -147,7 +147,7 @@ except ImportError:
 # Analytics handlers
 try:
     from app.api.v4.activity.list import get_activity_list
-    from app.api.v4.benchmark.bundle import get_benchmark_bundle
+    from app.api.v4.benchmark.overview import get_benchmark_overview
     from app.api.v4.dashboard.bundle import get_dashboard
     from app.api.v4.health.bundle import get_health_bundle
     from app.api.v4.home.overview import get_home_overview
@@ -169,7 +169,7 @@ try:
         "activity": get_activity_list,
         "pricing": get_pricing,
         "health": get_health_bundle,
-        "benchmark": get_benchmark_bundle,
+        "benchmark": get_benchmark_overview,
     }
 except ImportError:
     ANALYTICS_HANDLERS = {}

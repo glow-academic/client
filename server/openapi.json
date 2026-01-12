@@ -18826,15 +18826,15 @@
         ]
       }
     },
-    "/api/v4/benchmark/bundle": {
+    "/api/v4/benchmark/overview": {
       "post": {
         "tags": [
           "v4",
           "benchmark"
         ],
-        "summary": "Get Benchmark Bundle",
-        "description": "Get benchmark bundle with evals list and eval attempts list.",
-        "operationId": "get_benchmark_bundle_api_v4_benchmark_bundle_post",
+        "summary": "Get Benchmark Overview",
+        "description": "Get benchmark overview with evals list and all entity mappings.\n\nBenchmark uses department_ids filter (analytics endpoint pattern).\nNote: History is not included in overview - use /benchmark/history endpoint separately.",
+        "operationId": "get_benchmark_overview_api_v4_benchmark_overview_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -18890,7 +18890,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetBenchmarkBundleApiRequest"
+                "$ref": "#/components/schemas/GetBenchmarkOverviewApiRequest"
               }
             }
           }
@@ -18901,7 +18901,104 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetBenchmarkBundleApiResponse"
+                  "$ref": "#/components/schemas/GetBenchmarkOverviewApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "benchmark"
+        ]
+      }
+    },
+    "/api/v4/benchmark/history": {
+      "post": {
+        "tags": [
+          "v4",
+          "benchmark"
+        ],
+        "summary": "Get Benchmark History",
+        "description": "Get paginated benchmark history with search, filters, sorting, and pagination.",
+        "operationId": "get_benchmark_history_api_v4_benchmark_history_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GetBenchmarkHistoryApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetBenchmarkHistoryApiResponse"
                 }
               }
             }
@@ -30855,8 +30952,23 @@
         "type": "object",
         "title": "GetAuthNewApiResponse"
       },
-      "GetBenchmarkBundleApiRequest": {
+      "GetBenchmarkHistoryApiRequest": {
         "properties": {
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
           "eval_ids": {
             "anyOf": [
               {
@@ -30905,6 +31017,28 @@
             ],
             "title": "Search"
           },
+          "sort_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort By"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
           "page": {
             "anyOf": [
               {
@@ -30931,9 +31065,9 @@
           }
         },
         "type": "object",
-        "title": "GetBenchmarkBundleApiRequest"
+        "title": "GetBenchmarkHistoryApiRequest"
       },
-      "GetBenchmarkBundleApiResponse": {
+      "GetBenchmarkHistoryApiResponse": {
         "properties": {
           "actor_name": {
             "anyOf": [
@@ -30946,11 +31080,11 @@
             ],
             "title": "Actor Name"
           },
-          "evals": {
+          "data": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4Eval"
+                  "$ref": "#/components/schemas/QGetBenchmarkHistoryV4Attempt"
                 },
                 "type": "array"
               },
@@ -30958,147 +31092,7 @@
                 "type": "null"
               }
             ],
-            "title": "Evals"
-          },
-          "attempts": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4EvalAttempt"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempts"
-          },
-          "rubrics": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4Rubric"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubrics"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "agents": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4Agent"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agents"
-          },
-          "standard_groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4StandardGroup"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standard Groups"
-          },
-          "standards": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4Standard"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Standards"
-          },
-          "rubric_standard_groups": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4RubricStandardGroup"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Standard Groups"
-          },
-          "rubric_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4RubricOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Options"
-          },
-          "department_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4DepartmentOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Options"
-          },
-          "agent_options": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetBenchmarkBundleV4AgentOption"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agent Options"
+            "title": "Data"
           },
           "total_count": {
             "anyOf": [
@@ -31146,7 +31140,200 @@
           }
         },
         "type": "object",
-        "title": "GetBenchmarkBundleApiResponse"
+        "title": "GetBenchmarkHistoryApiResponse"
+      },
+      "GetBenchmarkOverviewApiRequest": {
+        "properties": {
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "eval_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Ids"
+          }
+        },
+        "type": "object",
+        "title": "GetBenchmarkOverviewApiRequest"
+      },
+      "GetBenchmarkOverviewApiResponse": {
+        "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "evals": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4Eval"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evals"
+          },
+          "rubrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4Rubric"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubrics"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4Agent"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4StandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standard Groups"
+          },
+          "standards": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4Standard"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards"
+          },
+          "rubric_standard_groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4RubricStandardGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Standard Groups"
+          },
+          "rubric_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4RubricOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Options"
+          },
+          "department_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4DepartmentOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Options"
+          },
+          "agent_options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetBenchmarkOverviewV4AgentOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent Options"
+          }
+        },
+        "type": "object",
+        "title": "GetBenchmarkOverviewApiResponse"
       },
       "GetCertificateDataApiRequest": {
         "properties": {},
@@ -51815,7 +52002,162 @@
         ],
         "title": "QGetAuthNewV4AuthItem"
       },
-      "QGetBenchmarkBundleV4Agent": {
+      "QGetBenchmarkHistoryV4Attempt": {
+        "properties": {
+          "attempt_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Id"
+          },
+          "eval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Id"
+          },
+          "eval_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Name"
+          },
+          "eval_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eval Description"
+          },
+          "rubric_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Id"
+          },
+          "rubric_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric Name"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "archived": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "total_runs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Runs"
+          },
+          "completed_runs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Runs"
+          },
+          "pending_runs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Runs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "eval_id",
+          "eval_name",
+          "eval_description",
+          "rubric_id",
+          "rubric_name",
+          "created_at",
+          "archived",
+          "status",
+          "total_runs",
+          "completed_runs",
+          "pending_runs"
+        ],
+        "title": "QGetBenchmarkHistoryV4Attempt"
+      },
+      "QGetBenchmarkOverviewV4Agent": {
         "properties": {
           "agent_id": {
             "anyOf": [
@@ -51858,9 +52200,9 @@
           "name",
           "description"
         ],
-        "title": "QGetBenchmarkBundleV4Agent"
+        "title": "QGetBenchmarkOverviewV4Agent"
       },
-      "QGetBenchmarkBundleV4AgentOption": {
+      "QGetBenchmarkOverviewV4AgentOption": {
         "properties": {
           "value": {
             "anyOf": [
@@ -51890,9 +52232,9 @@
           "value",
           "label"
         ],
-        "title": "QGetBenchmarkBundleV4AgentOption"
+        "title": "QGetBenchmarkOverviewV4AgentOption"
       },
-      "QGetBenchmarkBundleV4Department": {
+      "QGetBenchmarkOverviewV4Department": {
         "properties": {
           "department_id": {
             "anyOf": [
@@ -51935,9 +52277,9 @@
           "name",
           "description"
         ],
-        "title": "QGetBenchmarkBundleV4Department"
+        "title": "QGetBenchmarkOverviewV4Department"
       },
-      "QGetBenchmarkBundleV4DepartmentOption": {
+      "QGetBenchmarkOverviewV4DepartmentOption": {
         "properties": {
           "value": {
             "anyOf": [
@@ -51967,9 +52309,9 @@
           "value",
           "label"
         ],
-        "title": "QGetBenchmarkBundleV4DepartmentOption"
+        "title": "QGetBenchmarkOverviewV4DepartmentOption"
       },
-      "QGetBenchmarkBundleV4Eval": {
+      "QGetBenchmarkOverviewV4Eval": {
         "properties": {
           "eval_id": {
             "anyOf": [
@@ -52187,164 +52529,9 @@
           "can_edit",
           "can_delete"
         ],
-        "title": "QGetBenchmarkBundleV4Eval"
+        "title": "QGetBenchmarkOverviewV4Eval"
       },
-      "QGetBenchmarkBundleV4EvalAttempt": {
-        "properties": {
-          "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Id"
-          },
-          "eval_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Id"
-          },
-          "eval_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Name"
-          },
-          "eval_description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eval Description"
-          },
-          "rubric_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Id"
-          },
-          "rubric_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Name"
-          },
-          "created_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Created At"
-          },
-          "archived": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Archived"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status"
-          },
-          "total_runs": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Total Runs"
-          },
-          "completed_runs": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Completed Runs"
-          },
-          "pending_runs": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pending Runs"
-          }
-        },
-        "type": "object",
-        "required": [
-          "attempt_id",
-          "eval_id",
-          "eval_name",
-          "eval_description",
-          "rubric_id",
-          "rubric_name",
-          "created_at",
-          "archived",
-          "status",
-          "total_runs",
-          "completed_runs",
-          "pending_runs"
-        ],
-        "title": "QGetBenchmarkBundleV4EvalAttempt"
-      },
-      "QGetBenchmarkBundleV4Rubric": {
+      "QGetBenchmarkOverviewV4Rubric": {
         "properties": {
           "rubric_id": {
             "anyOf": [
@@ -52411,9 +52598,9 @@
           "points",
           "pass_points"
         ],
-        "title": "QGetBenchmarkBundleV4Rubric"
+        "title": "QGetBenchmarkOverviewV4Rubric"
       },
-      "QGetBenchmarkBundleV4RubricOption": {
+      "QGetBenchmarkOverviewV4RubricOption": {
         "properties": {
           "value": {
             "anyOf": [
@@ -52443,9 +52630,9 @@
           "value",
           "label"
         ],
-        "title": "QGetBenchmarkBundleV4RubricOption"
+        "title": "QGetBenchmarkOverviewV4RubricOption"
       },
-      "QGetBenchmarkBundleV4RubricStandardGroup": {
+      "QGetBenchmarkOverviewV4RubricStandardGroup": {
         "properties": {
           "rubric_id": {
             "anyOf": [
@@ -52493,9 +52680,9 @@
           "standard_group_id",
           "standard_ids"
         ],
-        "title": "QGetBenchmarkBundleV4RubricStandardGroup"
+        "title": "QGetBenchmarkOverviewV4RubricStandardGroup"
       },
-      "QGetBenchmarkBundleV4Standard": {
+      "QGetBenchmarkOverviewV4Standard": {
         "properties": {
           "standard_id": {
             "anyOf": [
@@ -52550,9 +52737,9 @@
           "description",
           "points"
         ],
-        "title": "QGetBenchmarkBundleV4Standard"
+        "title": "QGetBenchmarkOverviewV4Standard"
       },
-      "QGetBenchmarkBundleV4StandardGroup": {
+      "QGetBenchmarkOverviewV4StandardGroup": {
         "properties": {
           "standard_group_id": {
             "anyOf": [
@@ -52619,7 +52806,7 @@
           "points",
           "pass_points"
         ],
-        "title": "QGetBenchmarkBundleV4StandardGroup"
+        "title": "QGetBenchmarkOverviewV4StandardGroup"
       },
       "QGetCohortDetailV4Department": {
         "properties": {

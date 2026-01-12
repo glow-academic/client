@@ -5707,6 +5707,235 @@ class GetBenchmarkBundleApiResponse(BaseModel):
 
 
 
+# Generated from: get_benchmark_history
+
+class GetBenchmarkHistorySqlParams(BaseModel):
+
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    status: str | None = None
+    archived: bool | None = None
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_ids,
+            self.eval_ids,
+            self.status,
+            self.archived,
+            self.search,
+            self.sort_by,
+            self.sort_order,
+            self.page,
+            self.page_size,
+        )
+
+class QGetBenchmarkHistoryV4Attempt(BaseModel):
+
+    attempt_id: UUID | None
+    eval_id: UUID | None
+    eval_name: str | None
+    eval_description: str | None
+    rubric_id: UUID | None
+    rubric_name: str | None
+    created_at: str | None
+    archived: bool | None
+    status: str | None
+    total_runs: int | None
+    completed_runs: int | None
+    pending_runs: int | None
+
+class GetBenchmarkHistorySqlRow(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetBenchmarkHistoryV4Attempt] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+
+class GetBenchmarkHistoryApiRequest(BaseModel):
+
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    status: str | None = None
+    archived: bool | None = None
+    search: str | None = None
+    sort_by: str | None = None
+    sort_order: str | None = None
+    page: int | None = 0
+    page_size: int | None = 20
+
+class GetBenchmarkHistoryApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    data: list[QGetBenchmarkHistoryV4Attempt] | None = None
+    total_count: int | None = None
+    page: int | None = None
+    page_size: int | None = None
+    total_pages: int | None = None
+
+
+
+# Generated from: get_benchmark_overview
+
+class GetBenchmarkOverviewSqlParams(BaseModel):
+
+    profile_id: UUID
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_ids,
+            self.eval_ids,
+        )
+
+class QGetBenchmarkOverviewV4Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetBenchmarkOverviewV4AgentOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QGetBenchmarkOverviewV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetBenchmarkOverviewV4DepartmentOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QGetBenchmarkOverviewV4Eval(BaseModel):
+
+    eval_id: UUID | None
+    name: str | None
+    description: str | None
+    rubric_id: UUID | None
+    agent_ids: list[str] | None
+    dynamic: bool | None
+    rubric_name: str | None
+    rubric_description: str | None
+    total_runs: int | None
+    completed_runs: int | None
+    pending_runs: int | None
+    status: str | None
+    created_at: str | None
+    updated_at: str | None
+    department_ids: list[str] | None
+    can_edit: bool | None
+    can_delete: bool | None
+
+
+
+
+class QGetBenchmarkOverviewV4Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+
+
+
+class QGetBenchmarkOverviewV4RubricOption(BaseModel):
+
+    value: str | None
+    label: str | None
+
+
+
+
+class QGetBenchmarkOverviewV4RubricStandardGroup(BaseModel):
+
+    rubric_id: UUID | None
+    standard_group_id: UUID | None
+    standard_ids: list[UUID] | None
+
+
+
+
+class QGetBenchmarkOverviewV4Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetBenchmarkOverviewV4StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+
+class GetBenchmarkOverviewSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    evals: list[QGetBenchmarkOverviewV4Eval] | None = None
+    rubrics: list[QGetBenchmarkOverviewV4Rubric] | None = None
+    departments: list[QGetBenchmarkOverviewV4Department] | None = None
+    agents: list[QGetBenchmarkOverviewV4Agent] | None = None
+    standard_groups: list[QGetBenchmarkOverviewV4StandardGroup] | None = None
+    standards: list[QGetBenchmarkOverviewV4Standard] | None = None
+    rubric_standard_groups: list[QGetBenchmarkOverviewV4RubricStandardGroup] | None = None
+    rubric_options: list[QGetBenchmarkOverviewV4RubricOption] | None = None
+    department_options: list[QGetBenchmarkOverviewV4DepartmentOption] | None = None
+    agent_options: list[QGetBenchmarkOverviewV4AgentOption] | None = None
+
+class GetBenchmarkOverviewApiRequest(BaseModel):
+
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    eval_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class GetBenchmarkOverviewApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    evals: list[QGetBenchmarkOverviewV4Eval] | None = None
+    rubrics: list[QGetBenchmarkOverviewV4Rubric] | None = None
+    departments: list[QGetBenchmarkOverviewV4Department] | None = None
+    agents: list[QGetBenchmarkOverviewV4Agent] | None = None
+    standard_groups: list[QGetBenchmarkOverviewV4StandardGroup] | None = None
+    standards: list[QGetBenchmarkOverviewV4Standard] | None = None
+    rubric_standard_groups: list[QGetBenchmarkOverviewV4RubricStandardGroup] | None = None
+    rubric_options: list[QGetBenchmarkOverviewV4RubricOption] | None = None
+    department_options: list[QGetBenchmarkOverviewV4DepartmentOption] | None = None
+    agent_options: list[QGetBenchmarkOverviewV4AgentOption] | None = None
+
+
+
 # Generated from: get_benchmark_run_start_context
 
 class GetBenchmarkRunStartContextSqlParams(BaseModel):
@@ -29260,6 +29489,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetBenchmarkBundleApiRequest",
         "GetBenchmarkBundleApiResponse",
     ),
+    "app/sql/v4/benchmark/get_benchmark_history_complete.sql": (
+        "GetBenchmarkHistorySqlParams",
+        "GetBenchmarkHistorySqlRow",
+        "GetBenchmarkHistoryApiRequest",
+        "GetBenchmarkHistoryApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_benchmark_overview_complete.sql": (
+        "GetBenchmarkOverviewSqlParams",
+        "GetBenchmarkOverviewSqlRow",
+        "GetBenchmarkOverviewApiRequest",
+        "GetBenchmarkOverviewApiResponse",
+    ),
     "app/sql/v4/benchmark/get_benchmark_run_start_context_complete.sql": (
         "GetBenchmarkRunStartContextSqlParams",
         "GetBenchmarkRunStartContextSqlRow",
@@ -32117,6 +32358,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/get_benchmark_bundle_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_benchmark_history_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_benchmark_overview_complete.sql"]
     ) -> SqlString: ...
 
     @overload

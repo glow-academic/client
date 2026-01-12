@@ -3893,7 +3893,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/benchmark/bundle": {
+    "/api/v4/benchmark/overview": {
         parameters: {
             query?: never;
             header?: never;
@@ -3903,10 +3903,33 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Benchmark Bundle
-         * @description Get benchmark bundle with evals list and eval attempts list.
+         * Get Benchmark Overview
+         * @description Get benchmark overview with evals list and all entity mappings.
+         *
+         *     Benchmark uses department_ids filter (analytics endpoint pattern).
+         *     Note: History is not included in overview - use /benchmark/history endpoint separately.
          */
-        post: operations["get_benchmark_bundle_api_v4_benchmark_bundle_post"];
+        post: operations["get_benchmark_overview_api_v4_benchmark_overview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/benchmark/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Benchmark History
+         * @description Get paginated benchmark history with search, filters, sorting, and pagination.
+         */
+        post: operations["get_benchmark_history_api_v4_benchmark_history_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7689,8 +7712,10 @@ export interface components {
             /** Auth Item Encrypted States */
             auth_item_encrypted_states?: unknown | null;
         };
-        /** GetBenchmarkBundleApiRequest */
-        GetBenchmarkBundleApiRequest: {
+        /** GetBenchmarkHistoryApiRequest */
+        GetBenchmarkHistoryApiRequest: {
+            /** Department Ids */
+            department_ids?: string[] | null;
             /** Eval Ids */
             eval_ids?: string[] | null;
             /** Status */
@@ -7699,6 +7724,10 @@ export interface components {
             archived?: boolean | null;
             /** Search */
             search?: string | null;
+            /** Sort By */
+            sort_by?: string | null;
+            /** Sort Order */
+            sort_order?: string | null;
             /**
              * Page
              * @default 0
@@ -7710,32 +7739,12 @@ export interface components {
              */
             page_size: number | null;
         };
-        /** GetBenchmarkBundleApiResponse */
-        GetBenchmarkBundleApiResponse: {
+        /** GetBenchmarkHistoryApiResponse */
+        GetBenchmarkHistoryApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            /** Evals */
-            evals?: components["schemas"]["QGetBenchmarkBundleV4Eval"][] | null;
-            /** Attempts */
-            attempts?: components["schemas"]["QGetBenchmarkBundleV4EvalAttempt"][] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetBenchmarkBundleV4Rubric"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetBenchmarkBundleV4Department"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetBenchmarkBundleV4Agent"][] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetBenchmarkBundleV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetBenchmarkBundleV4Standard"][] | null;
-            /** Rubric Standard Groups */
-            rubric_standard_groups?: components["schemas"]["QGetBenchmarkBundleV4RubricStandardGroup"][] | null;
-            /** Rubric Options */
-            rubric_options?: components["schemas"]["QGetBenchmarkBundleV4RubricOption"][] | null;
-            /** Department Options */
-            department_options?: components["schemas"]["QGetBenchmarkBundleV4DepartmentOption"][] | null;
-            /** Agent Options */
-            agent_options?: components["schemas"]["QGetBenchmarkBundleV4AgentOption"][] | null;
+            /** Data */
+            data?: components["schemas"]["QGetBenchmarkHistoryV4Attempt"][] | null;
             /** Total Count */
             total_count?: number | null;
             /** Page */
@@ -7744,6 +7753,38 @@ export interface components {
             page_size?: number | null;
             /** Total Pages */
             total_pages?: number | null;
+        };
+        /** GetBenchmarkOverviewApiRequest */
+        GetBenchmarkOverviewApiRequest: {
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Eval Ids */
+            eval_ids?: string[] | null;
+        };
+        /** GetBenchmarkOverviewApiResponse */
+        GetBenchmarkOverviewApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Evals */
+            evals?: components["schemas"]["QGetBenchmarkOverviewV4Eval"][] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetBenchmarkOverviewV4Rubric"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetBenchmarkOverviewV4Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetBenchmarkOverviewV4Agent"][] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetBenchmarkOverviewV4StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetBenchmarkOverviewV4Standard"][] | null;
+            /** Rubric Standard Groups */
+            rubric_standard_groups?: components["schemas"]["QGetBenchmarkOverviewV4RubricStandardGroup"][] | null;
+            /** Rubric Options */
+            rubric_options?: components["schemas"]["QGetBenchmarkOverviewV4RubricOption"][] | null;
+            /** Department Options */
+            department_options?: components["schemas"]["QGetBenchmarkOverviewV4DepartmentOption"][] | null;
+            /** Agent Options */
+            agent_options?: components["schemas"]["QGetBenchmarkOverviewV4AgentOption"][] | null;
         };
         /** GetCertificateDataApiRequest */
         GetCertificateDataApiRequest: Record<string, never>;
@@ -11890,8 +11931,35 @@ export interface components {
             /** Encrypted */
             encrypted: boolean | null;
         };
-        /** QGetBenchmarkBundleV4Agent */
-        QGetBenchmarkBundleV4Agent: {
+        /** QGetBenchmarkHistoryV4Attempt */
+        QGetBenchmarkHistoryV4Attempt: {
+            /** Attempt Id */
+            attempt_id: string | null;
+            /** Eval Id */
+            eval_id: string | null;
+            /** Eval Name */
+            eval_name: string | null;
+            /** Eval Description */
+            eval_description: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Rubric Name */
+            rubric_name: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Archived */
+            archived: boolean | null;
+            /** Status */
+            status: string | null;
+            /** Total Runs */
+            total_runs: number | null;
+            /** Completed Runs */
+            completed_runs: number | null;
+            /** Pending Runs */
+            pending_runs: number | null;
+        };
+        /** QGetBenchmarkOverviewV4Agent */
+        QGetBenchmarkOverviewV4Agent: {
             /** Agent Id */
             agent_id: string | null;
             /** Name */
@@ -11899,15 +11967,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetBenchmarkBundleV4AgentOption */
-        QGetBenchmarkBundleV4AgentOption: {
+        /** QGetBenchmarkOverviewV4AgentOption */
+        QGetBenchmarkOverviewV4AgentOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QGetBenchmarkBundleV4Department */
-        QGetBenchmarkBundleV4Department: {
+        /** QGetBenchmarkOverviewV4Department */
+        QGetBenchmarkOverviewV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
@@ -11915,15 +11983,15 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetBenchmarkBundleV4DepartmentOption */
-        QGetBenchmarkBundleV4DepartmentOption: {
+        /** QGetBenchmarkOverviewV4DepartmentOption */
+        QGetBenchmarkOverviewV4DepartmentOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QGetBenchmarkBundleV4Eval */
-        QGetBenchmarkBundleV4Eval: {
+        /** QGetBenchmarkOverviewV4Eval */
+        QGetBenchmarkOverviewV4Eval: {
             /** Eval Id */
             eval_id: string | null;
             /** Name */
@@ -11959,35 +12027,8 @@ export interface components {
             /** Can Delete */
             can_delete: boolean | null;
         };
-        /** QGetBenchmarkBundleV4EvalAttempt */
-        QGetBenchmarkBundleV4EvalAttempt: {
-            /** Attempt Id */
-            attempt_id: string | null;
-            /** Eval Id */
-            eval_id: string | null;
-            /** Eval Name */
-            eval_name: string | null;
-            /** Eval Description */
-            eval_description: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Rubric Name */
-            rubric_name: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Archived */
-            archived: boolean | null;
-            /** Status */
-            status: string | null;
-            /** Total Runs */
-            total_runs: number | null;
-            /** Completed Runs */
-            completed_runs: number | null;
-            /** Pending Runs */
-            pending_runs: number | null;
-        };
-        /** QGetBenchmarkBundleV4Rubric */
-        QGetBenchmarkBundleV4Rubric: {
+        /** QGetBenchmarkOverviewV4Rubric */
+        QGetBenchmarkOverviewV4Rubric: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Name */
@@ -11999,15 +12040,15 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetBenchmarkBundleV4RubricOption */
-        QGetBenchmarkBundleV4RubricOption: {
+        /** QGetBenchmarkOverviewV4RubricOption */
+        QGetBenchmarkOverviewV4RubricOption: {
             /** Value */
             value: string | null;
             /** Label */
             label: string | null;
         };
-        /** QGetBenchmarkBundleV4RubricStandardGroup */
-        QGetBenchmarkBundleV4RubricStandardGroup: {
+        /** QGetBenchmarkOverviewV4RubricStandardGroup */
+        QGetBenchmarkOverviewV4RubricStandardGroup: {
             /** Rubric Id */
             rubric_id: string | null;
             /** Standard Group Id */
@@ -12015,8 +12056,8 @@ export interface components {
             /** Standard Ids */
             standard_ids: string[] | null;
         };
-        /** QGetBenchmarkBundleV4Standard */
-        QGetBenchmarkBundleV4Standard: {
+        /** QGetBenchmarkOverviewV4Standard */
+        QGetBenchmarkOverviewV4Standard: {
             /** Standard Id */
             standard_id: string | null;
             /** Name */
@@ -12026,8 +12067,8 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** QGetBenchmarkBundleV4StandardGroup */
-        QGetBenchmarkBundleV4StandardGroup: {
+        /** QGetBenchmarkOverviewV4StandardGroup */
+        QGetBenchmarkOverviewV4StandardGroup: {
             /** Standard Group Id */
             standard_group_id: string | null;
             /** Name */
@@ -27164,7 +27205,7 @@ export interface operations {
             };
         };
     };
-    get_benchmark_bundle_api_v4_benchmark_bundle_post: {
+    get_benchmark_overview_api_v4_benchmark_overview_post: {
         parameters: {
             query?: never;
             header?: {
@@ -27177,7 +27218,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetBenchmarkBundleApiRequest"];
+                "application/json": components["schemas"]["GetBenchmarkOverviewApiRequest"];
             };
         };
         responses: {
@@ -27187,7 +27228,44 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetBenchmarkBundleApiResponse"];
+                    "application/json": components["schemas"]["GetBenchmarkOverviewApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_benchmark_history_api_v4_benchmark_history_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetBenchmarkHistoryApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetBenchmarkHistoryApiResponse"];
                 };
             };
             /** @description Validation Error */
