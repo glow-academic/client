@@ -852,16 +852,26 @@ function PersonaNewComponent({
         instructions: userInstructions || null,
         agent_id: agentId, // Pass agent_id from personaData
         group_id: personaData?.group_id || null, // Pass group_id from personaData for regeneration
-        // Flattened payload - all resource IDs at root level
+        // Flattened payload - all resource IDs at root level (grouped with their option arrays)
         name_id: formState.name_id || null,
+        names: personaData?.names?.map((n) => n.id).filter((id): id is string => id !== null) || [],
         description_id: formState.description_id || null,
-        instructions_id: formState.instructions_id || null,
+        descriptions: personaData?.descriptions?.map((d) => d.id).filter((id): id is string => id !== null) || [],
         color_id: formState.color_id || null,
+        colors: personaData?.colors?.map((c) => c.id).filter((id): id is string => id !== null) || [],
         icon_id: formState.icon_id || null,
+        icons: personaData?.icons?.map((i) => i.id).filter((id): id is string => id !== null) || [],
+        instructions_id: formState.instructions_id || null,
+        instructions: personaData?.instructions?.map((i) => i.id).filter((id): id is string => id !== null) || [],
         active_flag_id: formState.active_flag_id || null,
-        field_ids: formState.field_ids || [],
+        flags: personaData?.flags?.map((f) => f.id).filter((id): id is string => id !== null) || [],
+        // Multi-select resources
         department_ids: formState.department_ids || [],
+        departments: personaData?.departments?.map((d) => d.department_id).filter((id): id is string => id !== null) || [],
+        field_ids: formState.field_ids || [],
+        fields: personaData?.fields?.map((f) => f.field_id).filter((id): id is string => id !== null) || [],
         example_ids: formState.example_ids || [],
+        examples: personaData?.examples?.map((e) => e.id).filter((id): id is string => id !== null) || [],
       });
     },
     [socket, isConnected, formState, personaData]

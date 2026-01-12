@@ -50,6 +50,7 @@ CREATE TYPE types.q_get_persona_v4_field AS (
 );
 
 CREATE TYPE types.q_get_persona_v4_example AS (
+    id uuid,
     example text,
     idx integer,
     generated boolean
@@ -185,6 +186,7 @@ RETURNS TABLE (
     show_flag boolean,
     flag_agent_id uuid,
     flag_required boolean,
+    flags types.q_get_persona_v4_flag_resource[],
     -- Multi-select resources: departments
     department_ids uuid[],
     department_resources types.q_get_persona_v4_department[],
@@ -459,9 +461,10 @@ persona_examples_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Example mapping (for examples array - available for both new and detail)
+-- Example mapping (for examples array - persona-scoped, includes id)
 example_mapping_data AS (
     SELECT 
+        e.id,
         e.example,
         pe.idx,
         COALESCE(e.generated, false) as generated
@@ -510,7 +513,7 @@ example_suggestions_data AS (
 ),
 -- Colors (all available color options)
 colors_data AS (
-    SELECT 
+    SELECT DISTINCT
         c.id,
         c.name,
         c.description,
@@ -519,21 +522,25 @@ colors_data AS (
     FROM colors c
     CROSS JOIN params p
     WHERE 
-        -- Search filter: if color_search provided, match name or hex_code
-        (p.color_search IS NULL OR p.color_search = '' OR
-         LOWER(c.name) LIKE '%' || LOWER(p.color_search) || '%' OR
-         LOWER(c.hex_code) LIKE '%' || LOWER(p.color_search) || '%')
-        -- Show selected filter: if enabled and current_color provided, only show current color
-        AND (
-            NOT p.color_show_selected OR
-            p.current_color IS NULL OR
-            UPPER(c.hex_code) = UPPER(COALESCE(p.current_color, ''))
+        -- Always include selected color_id if it exists
+        c.id = (SELECT color_id FROM color_resource_data)
+        OR (
+            -- Search filter: if color_search provided, match name or hex_code
+            (p.color_search IS NULL OR p.color_search = '' OR
+             LOWER(c.name) LIKE '%' || LOWER(p.color_search) || '%' OR
+             LOWER(c.hex_code) LIKE '%' || LOWER(p.color_search) || '%')
+            -- Show selected filter: if enabled and current_color provided, only show current color
+            AND (
+                NOT p.color_show_selected OR
+                p.current_color IS NULL OR
+                UPPER(c.hex_code) = UPPER(COALESCE(p.current_color, ''))
+            )
         )
     ORDER BY c.name
 ),
 -- Icons (all available icon options)
 icons_data AS (
-    SELECT 
+    SELECT DISTINCT
         i.id,
         i.name,
         i.description,
@@ -542,63 +549,93 @@ icons_data AS (
     FROM icons i
     CROSS JOIN params p
     WHERE 
-        -- Search filter: if icon_search provided, match name or value
-        (p.icon_search IS NULL OR p.icon_search = '' OR
-         LOWER(i.name) LIKE '%' || LOWER(p.icon_search) || '%' OR
-         LOWER(i.value) LIKE '%' || LOWER(p.icon_search) || '%')
-        -- Show selected filter: if enabled and current_icon provided, only show current icon
-        AND (
-            NOT p.icon_show_selected OR
-            p.current_icon IS NULL OR
-            LOWER(i.value) = LOWER(COALESCE(p.current_icon, ''))
+        -- Always include selected icon_id if it exists
+        i.id = (SELECT icon_id FROM icon_resource_data)
+        OR (
+            -- Search filter: if icon_search provided, match name or value
+            (p.icon_search IS NULL OR p.icon_search = '' OR
+             LOWER(i.name) LIKE '%' || LOWER(p.icon_search) || '%' OR
+             LOWER(i.value) LIKE '%' || LOWER(p.icon_search) || '%')
+            -- Show selected filter: if enabled and current_icon provided, only show current icon
+            AND (
+                NOT p.icon_show_selected OR
+                p.current_icon IS NULL OR
+                LOWER(i.value) = LOWER(COALESCE(p.current_icon, ''))
+            )
         )
     ORDER BY i.name
 ),
+-- Flags (all available flag options)
+flags_data AS (
+    SELECT DISTINCT
+        f.id,
+        f.name,
+        f.description,
+        f.icon_id,
+        COALESCE(f.generated, false) as generated
+    FROM flags f
+    CROSS JOIN params p
+    WHERE 
+        -- Always include selected active_flag_id if it exists
+        f.id = (SELECT active_flag_id FROM flag_resource_data)
+        OR (SELECT active_flag_id FROM flag_resource_data) IS NULL
+    ORDER BY f.name
+),
 -- Descriptions (only generated descriptions that have been linked to personas)
 descriptions_data AS (
-    SELECT 
+    SELECT DISTINCT
         d.id,
         d.description,
         true as generated  -- Always true since we filtered for generated = true in junction table
     FROM descriptions d
-    WHERE d.id IN (
-        -- Get all description_ids from persona_descriptions where generated = true
-        SELECT DISTINCT pd.description_id
-        FROM persona_descriptions pd
-        WHERE pd.generated = true
-          AND pd.description_id IS NOT NULL
-    )
     CROSS JOIN params p
     WHERE 
-        -- Search filter: if descriptions_search provided, match description text
-        (p.descriptions_search IS NULL OR p.descriptions_search = '' OR
-         LOWER(d.description) LIKE '%' || LOWER(p.descriptions_search) || '%')
+        -- Always include selected description_id if it exists
+        d.id = (SELECT description_id FROM description_resource_data)
+        OR (
+            d.id IN (
+                -- Get all description_ids from persona_descriptions where generated = true
+                SELECT DISTINCT pd.description_id
+                FROM persona_descriptions pd
+                WHERE pd.generated = true
+                  AND pd.description_id IS NOT NULL
+            )
+            -- Search filter: if descriptions_search provided, match description text
+            AND (p.descriptions_search IS NULL OR p.descriptions_search = '' OR
+                 LOWER(d.description) LIKE '%' || LOWER(p.descriptions_search) || '%')
+        )
     ORDER BY d.description
 ),
 -- Instructions (only generated instructions that have been linked to personas)
 instructions_data AS (
-    SELECT 
+    SELECT DISTINCT
         i.id,
         i.template,
         true as generated  -- Always true since we filtered for generated = true in junction table
     FROM instructions i
-    WHERE i.active = true
-      AND i.id IN (
-          -- Get all instruction_ids from persona_instructions where generated = true
-          SELECT DISTINCT pi.instruction_id
-          FROM persona_instructions pi
-          JOIN instructions i_check ON pi.instruction_id = i_check.id
-          WHERE pi.generated = true
-            AND pi.instruction_id IS NOT NULL
-            AND i_check.active = true
-            AND i_check.template IS NOT NULL
-            AND i_check.template != ''
-      )
     CROSS JOIN params p
     WHERE 
-        -- Search filter: if instructions_search provided, match template text
-        (p.instructions_search IS NULL OR p.instructions_search = '' OR
-         LOWER(i.template) LIKE '%' || LOWER(p.instructions_search) || '%')
+        i.active = true
+        AND (
+            -- Always include selected instructions_id if it exists
+            i.id = (SELECT instructions_id FROM instructions_resource_data)
+            OR (
+                i.id IN (
+                    -- Get all instruction_ids from persona_instructions where generated = true
+                    SELECT DISTINCT pi.instruction_id
+                    FROM persona_instructions pi
+                    JOIN instructions i_check ON pi.instruction_id = i_check.id
+                    WHERE pi.generated = true
+                      AND pi.instruction_id IS NOT NULL
+                      AND i_check.active = true
+                      AND i_check.template IS NOT NULL
+                      AND i_check.template != ''
+                )
+                -- Search filter: if instructions_search provided, match template text
+                AND (p.instructions_search IS NULL OR p.instructions_search = '' OR
+                     LOWER(i.template) LIKE '%' || LOWER(p.instructions_search) || '%')
+            )
+        )
     ORDER BY i.template
 ),
 -- Fields (all available field options, filtered by search and show_selected)
@@ -1931,6 +1968,13 @@ SELECT
     uf.show_flag,
     (SELECT agent_id FROM flag_agent_data) as flag_agent_id,
     false as flag_required,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (fd.id, fd.name, fd.description, fd.icon_id, fd.generated)::types.q_get_persona_v4_flag_resource
+            ORDER BY fd.name
+        ) FROM flags_data fd),
+        '{}'::types.q_get_persona_v4_flag_resource[]
+    ) as flags,
     -- Multi-select resources: departments
     COALESCE(
         (SELECT 

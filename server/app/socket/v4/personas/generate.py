@@ -3,15 +3,14 @@
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (
-    GetBestAgentForPersonaResourcesV4SqlParams,
-    GetBestAgentForPersonaResourcesV4SqlRow,
-)
+from app.sql.types import (GetBestAgentForPersonaResourcesV4SqlParams,
+                           GetBestAgentForPersonaResourcesV4SqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
@@ -62,14 +61,23 @@ class GeneratePersonaPayload(BaseModel):
     )
     # Flattened resource IDs (removed context object)
     name_id: str | None = None
+    names: list[str] | None = None
     description_id: str | None = None
+    descriptions: list[str] | None = None
     color_id: str | None = None
+    colors: list[str] | None = None
     icon_id: str | None = None
+    icons: list[str] | None = None
     instructions_id: str | None = None
+    instructions: list[str] | None = None
     active_flag_id: str | None = None
+    flags: list[str] | None = None
     field_ids: list[str] | None = None
+    fields: list[str] | None = None
     department_ids: list[str] | None = None
+    departments: list[str] | None = None
     example_ids: list[str] | None = None
+    examples: list[str] | None = None
 
 
 async def _persona_generate_impl(
