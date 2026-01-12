@@ -44,9 +44,9 @@ After the required fields, resources follow consistent patterns based on whether
 **Order:**
 1. `{resource}_id` (uuid) - The selected resource ID
 2. `{resource}_resource` (composite type) - The selected resource object (includes `generated` boolean field and `group_id` uuid field)
-3. `show_{resource}` (boolean) - Whether to show this resource picker (based on whether options exist AND tool availability for required resources)
-4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no tool available)
-5. `{resource}_required` (boolean) - Whether this resource is required (affects `can_edit` and `disabled_reason` if no tool available)
+3. `show_{resource}` (boolean) - Whether to show this resource picker (based on whether options exist AND tool existence for required resources)
+4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no agent available; tools may still exist allowing manual entry)
+5. `{resource}_required` (boolean) - Whether this resource is required (affects `can_edit` and `disabled_reason` if no tools exist)
 6. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs, never text)
 7. `{resource}` (array, optional) - Options array (see "Option Arrays" section below for details on two types: all available vs. suggested only)
 
@@ -73,8 +73,8 @@ This enables regeneration workflows where users can regenerate resources with cu
 **Order:**
 1. `{resource}_ids` (uuid[]) - Array of selected resource IDs
 2. `{resource}_resources` (composite_type[]) - Array of selected resource objects (each includes `generated` boolean and `group_id` uuid)
-3. `show_{resource}` (boolean) - Whether to show this resource picker (based on business logic AND tool availability for required resources)
-4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no tool available)
+3. `show_{resource}` (boolean) - Whether to show this resource picker (based on business logic AND tool existence for required resources)
+4. `{resource}_agent_id` (uuid, nullable) - Agent ID for generating this resource (NULL if no agent available; tools may still exist allowing manual entry)
 5. `{resource}_required` (boolean) - Whether this resource is required (affects `can_edit` and `disabled_reason` if no tool available)
 6. `{resource}_suggestions` (uuid[]) - Array of suggested resource IDs (always UUIDs)
 7. `{resource}` (composite_type[]) - **All available options array (comes last; each includes `generated` boolean and `group_id` uuid)**
@@ -247,20 +247,36 @@ ROW(resource.id, resource.name, resource.generated, gr.group_id)::types.q_get_pe
 
 **Purpose:**
 - Indicates whether the UI should display the resource picker/selector
-- For single-select resources: Based on whether options exist AND tool availability (e.g., `show_color = colors.length > 0 AND color_agent_id IS NOT NULL` for required resources)
-- For multi-select resources: Based on business logic AND tool availability (e.g., `show_departments = user has multiple departments AND departments_agent_id IS NOT NULL` for required resources)
+- **⚠️ IMPORTANT: `show_{resource}` is based on TOOL existence, not agent existence**
+- Tools are required for resources (error if missing)
+- Agents are optional (NULL `agent_id` means manual entry only, no generate button)
+- For single-select resources: Based on whether options exist AND tool availability (e.g., `show_color = colors.length > 0 AND tools exist for 'colors' resource`)
+- For multi-select resources: Based on business logic AND tool availability (e.g., `show_departments = user has multiple departments AND tools exist for 'departments' resource`)
 - For flag resource: Can be `false` for consistency (as it's just a boolean toggle)
-- **For required resources**: If `{resource}_required = true` AND `{resource}_agent_id IS NULL`, then `show_{resource} = false`
+- **For required resources**: If `{resource}_required = true` AND no tools exist for the resource, then `show_{resource} = false`
 - **For optional resources**: `show_{resource}` is not affected by tool availability
 
 **Implementation:**
 ```sql
--- Single-select: Based on options array and tool availability
-show_color boolean,  -- true if colors array has items AND (color_agent_id IS NOT NULL OR color_required = false)
+-- Check tool existence via tools_existence_check CTE
+tools_existence_check AS (
+    SELECT 
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'colors'::resources 
+              AND t.active = true
+        ) as colors_has_tools,
+        -- ... repeat for other resources
+    FROM params x
+),
 
--- Multi-select: Based on business logic and tool availability
-show_departments boolean,  -- true if user has multiple departments AND (departments_agent_id IS NOT NULL OR departments_required = false)
-show_fields boolean,  -- true if fields exist AND (fields_agent_id IS NOT NULL OR fields_required = false)
+-- Single-select: Based on options array and tool existence
+show_color boolean,  -- true if colors array has items AND colors_has_tools = true
+
+-- Multi-select: Based on business logic and tool existence
+show_departments boolean,  -- true if user has multiple departments AND departments_has_tools = true
+show_fields boolean,  -- true if fields exist AND fields_has_tools = true
 ```
 
 ## Complete Example Structure
@@ -383,14 +399,47 @@ RETURNS TABLE (
 - Optional resources: description, active_flag (always false)
 - Conditional required: departments, fields, examples (true if `show_{resource}` is true)
 
+**Tool vs Agent Availability:**
+- **⚠️ CRITICAL: Tools are required, agents are optional**
+- **Tools**: Required for resources - if no tools exist, resource cannot be used (error)
+- **Agents**: Optional - if no agent exists but tools exist, users can enter manually (no generate button)
+
 **Tool Availability Impact:**
-- If `{resource}_required = true` AND `{resource}_agent_id IS NULL`:
+- If `{resource}_required = true` AND no tools exist for the resource:
   - `show_{resource} = false`
   - Contributes to `can_edit = false`
   - Adds to `disabled_reason`: "No tool configured for {resource1}, {resource2}, and {resource3}. Therefore we cannot proceed ahead."
 - If `{resource}_required = false`, missing tools do not affect `can_edit` or `disabled_reason`
-- **This applies in both new and edit modes** - when no agents are found, `can_edit` becomes `false` and `disabled_reason` explains why
+- **This applies in both new and edit modes** - when no tools are found, `can_edit` becomes `false` and `disabled_reason` explains why
 - Frontend must check `can_edit` in both modes to display `disabled_reason` via `ReadOnlyBanner` component
+
+**Agent Availability Impact:**
+- If `{resource}_agent_id IS NULL`:
+  - Generate button is hidden in frontend (checked via `agent_id` prop)
+  - Users can still enter values manually (tools exist, just no agent for generation)
+  - Does NOT affect `can_edit` or `disabled_reason` (agents are optional)
+- Frontend components check `agent_id` before showing generate button: `{onGenerate && agent_id && (...button...)}`
+
+**SQL Validation Pattern:**
+```sql
+-- Check for missing tools (not agents) - tools are required
+missing_tools_check AS (
+    SELECT 
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT tec.names_has_tools THEN 'name' ELSE NULL END,
+            CASE WHEN NOT tec.colors_has_tools THEN 'color' ELSE NULL END,
+            -- ... repeat for other required resources
+        ]::text[], NULL) as missing_resources
+    FROM tools_existence_check tec
+    CROSS JOIN ui_flags uf
+),
+
+-- Show flags based on tool existence (not agent existence)
+show_color boolean,  -- CASE WHEN NOT tec.colors_has_tools THEN false ELSE ... END
+
+-- Agent selection can return NULL - that's fine (agents are optional)
+color_agent_id uuid,  -- NULL if no agent found, but tools exist (manual entry only)
+```
 
 ## SQL CTE Patterns for CROSS JOIN Safety
 
@@ -499,7 +548,7 @@ END IF;
 - MCP validation happens in SQL functions, not Python endpoints (consistent with profile_id pattern)
 - Agent filtering only applies when `mcp=true` (backward compatible)
 - **MCP filtering is scoped to agent selection CTEs only** - resource lists (colors, icons, departments, fields) are always returned regardless of MCP flag
-- When `mcp = true` and no MCP agents exist, `{resource}_agent_id` will be `NULL` for all resources, causing `can_edit = false` and `disabled_reason` to explain missing tools
+- When `mcp = true` and no MCP agents exist, `{resource}_agent_id` will be `NULL` for all resources, but `can_edit` and `disabled_reason` are only affected if tools don't exist (agents are optional)
 - Resource `mcp` field defaults to `false` (backward compatible)
 - All existing resources will have `mcp=false` after migration
 
@@ -670,9 +719,11 @@ const disabled = useMemo(() => {
 **Key Points:**
 - `disabled` is computed once at the top level from `can_edit`
 - **Check `can_edit` in both new and edit modes** - not just edit mode
-- This ensures `disabled_reason` is displayed when agents/tools are missing (e.g., "No tool configured for name, color, icon, instructions")
+- This ensures `disabled_reason` is displayed when tools are missing (e.g., "No tool configured for name, color, icon, instructions")
+- Missing agents do NOT affect `can_edit` or `disabled_reason` (agents are optional)
 - All resource components receive the same `disabled` value
 - Components apply `disabled` to all interactive elements
+- Components check `agent_id` before showing generate button: `{onGenerate && agent_id && (...button...)}`
 - When `can_edit = false`, the `ReadOnlyBanner` component displays `disabled_reason` to explain why editing is disabled
 
 ### Top-Level Component Pattern
