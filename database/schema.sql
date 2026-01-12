@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict VaUXWyfoiwNaGQ7khhP4dEB0VL8AahECmMj13DZgPbEN0aQwFmGXARlcB6S9uVY
+\restrict J2tdwZHJoMvWsIZNNkLol9bRMKhZzdvFWjipUP9lzEPnkaoihDyZThqe4J0ipqM
 
 -- Dumped from database version 18.1 (Homebrew)
 -- Dumped by pg_dump version 18.1 (Homebrew)
@@ -86,7 +86,8 @@ CREATE TYPE public.artifacts AS ENUM (
     'key',
     'setting',
     'profile',
-    'tool'
+    'tool',
+    'provider'
 );
 
 
@@ -149,16 +150,6 @@ CREATE TYPE public.profile_role AS ENUM (
     'instructional',
     'member',
     'guest'
-);
-
-
---
--- Name: providers; Type: TYPE; Schema: public; Owner: -
---
-
-CREATE TYPE public.providers AS ENUM (
-    'openai',
-    'gemini'
 );
 
 
@@ -246,7 +237,8 @@ CREATE TYPE public.resources AS ENUM (
     'times',
     'videos',
     'texts',
-    'audios'
+    'audios',
+    'providers'
 );
 
 
@@ -961,7 +953,8 @@ CREATE TABLE public.agent (
     id uuid DEFAULT uuidv7() CONSTRAINT agents_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT agents_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT agents_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT agents_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT agents_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -1160,12 +1153,12 @@ CREATE TABLE public.agent_voices (
 CREATE TABLE public.agents (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT agents_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT agents_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT agents_id_v7_not_null NOT NULL,
+    agent_id uuid DEFAULT uuidv7() CONSTRAINT agents_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT agents_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT agents_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT agents_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT agents_id_new_not_null NOT NULL
 );
 
 
@@ -1371,11 +1364,12 @@ CREATE TABLE public.auth_slugs (
 CREATE TABLE public.auths (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_created_at_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT auth_updated_at_not_null NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT auth_id_v7_not_null NOT NULL,
+    auth_id uuid DEFAULT uuidv7() CONSTRAINT auth_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT auth_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT auth_mcp_not_null NOT NULL,
-    call_id uuid
+    call_id uuid,
+    id uuid DEFAULT uuidv7() CONSTRAINT auths_id_new_not_null NOT NULL
 );
 
 
@@ -1457,7 +1451,8 @@ CREATE TABLE public.cohort (
     id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT cohorts_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohorts_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT cohorts_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT cohorts_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -1564,12 +1559,12 @@ CREATE TABLE public.cohort_simulations (
 CREATE TABLE public.cohorts (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT cohorts_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT cohorts_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_v7_not_null NOT NULL,
+    cohort_id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT cohorts_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohorts_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT cohorts_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT cohorts_id_new_not_null NOT NULL
 );
 
 
@@ -1648,7 +1643,8 @@ CREATE TABLE public.department (
     id uuid DEFAULT uuidv7() CONSTRAINT departments_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT departments_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT departments_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT departments_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT departments_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -1710,12 +1706,12 @@ CREATE TABLE public.department_settings (
 CREATE TABLE public.departments (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT departments_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT departments_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT departments_id_v7_not_null NOT NULL,
+    department_id uuid DEFAULT uuidv7() CONSTRAINT departments_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT departments_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT departments_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT departments_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT departments_id_new_not_null NOT NULL
 );
 
 
@@ -1745,7 +1741,8 @@ CREATE TABLE public.document (
     id uuid DEFAULT uuidv7() CONSTRAINT documents_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT documents_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT documents_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT documents_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT documents_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -1940,12 +1937,12 @@ CREATE TABLE public.document_uploads (
 CREATE TABLE public.documents (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT documents_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT documents_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT documents_id_v7_not_null NOT NULL,
+    document_id uuid DEFAULT uuidv7() CONSTRAINT documents_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT documents_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT documents_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT documents_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT documents_id_new_not_null NOT NULL
 );
 
 
@@ -1956,18 +1953,6 @@ CREATE TABLE public.documents (
 CREATE TABLE public.domain_artifacts (
     domain_id uuid NOT NULL,
     artifact public.artifacts NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-
---
--- Name: domain_providers; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.domain_providers (
-    domain_id uuid NOT NULL,
-    provider public.providers NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -2525,6 +2510,21 @@ CREATE TABLE public.draft_protocols (
 
 
 --
+-- Name: draft_providers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.draft_providers (
+    draft_id uuid NOT NULL,
+    providers_id uuid NOT NULL,
+    version integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
 -- Name: draft_questions; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -2836,7 +2836,8 @@ CREATE TABLE public.eval (
     id uuid DEFAULT uuidv7() CONSTRAINT evals_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT evals_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT evals_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT evals_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT evals_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -2989,12 +2990,12 @@ CREATE TABLE public.eval_runs_rubric_grade_agents (
 CREATE TABLE public.evals (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT evals_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT evals_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT evals_id_v7_not_null NOT NULL,
+    eval_id uuid DEFAULT uuidv7() CONSTRAINT evals_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT evals_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT evals_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT evals_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT evals_id_new_not_null NOT NULL
 );
 
 
@@ -3040,7 +3041,8 @@ CREATE TABLE public.field (
     id uuid DEFAULT uuidv7() CONSTRAINT fields_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT fields_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT fields_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT fields_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT fields_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -3127,12 +3129,12 @@ CREATE TABLE public.field_names (
 CREATE TABLE public.fields (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT fields_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT fields_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT fields_id_v7_not_null NOT NULL,
+    field_id uuid DEFAULT uuidv7() CONSTRAINT fields_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT fields_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT fields_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT fields_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT fields_id_new_not_null NOT NULL
 );
 
 
@@ -3483,7 +3485,8 @@ CREATE TABLE public.key (
     id uuid DEFAULT uuidv7() CONSTRAINT keys_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT keys_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT keys_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT keys_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT keys_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -3542,12 +3545,12 @@ CREATE TABLE public.keys (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT keys_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT keys_updated_at_not_null1 NOT NULL,
     key text CONSTRAINT keys_key_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT keys_id_v7_not_null NOT NULL,
+    key_id uuid DEFAULT uuidv7() CONSTRAINT keys_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT keys_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT keys_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT keys_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT keys_id_new_not_null NOT NULL
 );
 
 
@@ -3755,7 +3758,8 @@ CREATE TABLE public.model (
     id uuid DEFAULT uuidv7() CONSTRAINT models_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT models_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT models_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT models_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT models_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -3787,18 +3791,6 @@ CREATE TABLE public.model_descriptions (
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     call_id uuid
-);
-
-
---
--- Name: model_domains; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.model_domains (
-    model_id uuid NOT NULL,
-    domain_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -3894,6 +3886,18 @@ CREATE TABLE public.model_pricing (
 
 
 --
+-- Name: model_providers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.model_providers (
+    model_id uuid NOT NULL,
+    providers_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: model_qualities; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3958,12 +3962,12 @@ CREATE TABLE public.models (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT models_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT models_updated_at_not_null1 NOT NULL,
     value text CONSTRAINT models_value_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT models_id_v7_not_null NOT NULL,
+    model_id uuid DEFAULT uuidv7() CONSTRAINT models_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT models_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT models_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT models_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT models_id_new_not_null NOT NULL
 );
 
 
@@ -4039,7 +4043,8 @@ CREATE TABLE public.parameter (
     id uuid DEFAULT uuidv7() CONSTRAINT parameters_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT parameters_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT parameters_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT parameters_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT parameters_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -4128,12 +4133,12 @@ CREATE TABLE public.parameter_names (
 CREATE TABLE public.parameters (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT parameters_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT parameters_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT parameters_id_v7_not_null NOT NULL,
+    parameter_id uuid DEFAULT uuidv7() CONSTRAINT parameters_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT parameters_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT parameters_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT parameters_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT parameters_id_new_not_null NOT NULL
 );
 
 
@@ -4147,7 +4152,8 @@ CREATE TABLE public.persona (
     id uuid DEFAULT uuidv7() CONSTRAINT personas_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT personas_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT personas_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT personas_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT personas_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -4298,12 +4304,12 @@ CREATE TABLE public.persona_names (
 CREATE TABLE public.personas (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT personas_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT personas_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT personas_id_v7_not_null NOT NULL,
+    persona_id uuid DEFAULT uuidv7() CONSTRAINT personas_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT personas_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT personas_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT personas_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT personas_id_new_not_null NOT NULL
 );
 
 
@@ -4379,7 +4385,8 @@ CREATE TABLE public.profile (
     id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT profiles_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profiles_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT profiles_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT profiles_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -4489,12 +4496,12 @@ CREATE TABLE public.profiles (
     last_login timestamp with time zone DEFAULT now() CONSTRAINT profiles_last_login_not_null1 NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profiles_created_at_not_null1 NOT NULL,
     role public.profile_role DEFAULT 'guest'::public.profile_role CONSTRAINT profiles_role_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL,
+    profile_id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT profiles_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profiles_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profiles_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_new_not_null NOT NULL
 );
 
 
@@ -4541,6 +4548,81 @@ CREATE TABLE public.protocols (
     generated boolean DEFAULT false NOT NULL,
     call_id uuid NOT NULL,
     mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- Name: provider; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.provider (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    group_id uuid NOT NULL
+);
+
+
+--
+-- Name: provider_descriptions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.provider_descriptions (
+    provider_id uuid NOT NULL,
+    description_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
+);
+
+
+--
+-- Name: provider_flags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.provider_flags (
+    provider_id uuid NOT NULL,
+    flag_id uuid NOT NULL,
+    type public.type_provider_flags NOT NULL,
+    value boolean NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: provider_names; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.provider_names (
+    provider_id uuid NOT NULL,
+    name_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid
+);
+
+
+--
+-- Name: providers; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.providers (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    provider_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    call_id uuid NOT NULL
 );
 
 
@@ -4640,7 +4722,8 @@ CREATE TABLE public.rubric (
     rubric_domain_id uuid,
     active boolean DEFAULT true CONSTRAINT rubrics_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubrics_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT rubrics_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT rubrics_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -4809,13 +4892,13 @@ CREATE TABLE public.rubric_standard_groups (
 CREATE TABLE public.rubrics (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubrics_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT rubrics_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_v7_not_null NOT NULL,
+    rubric_id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_v7_not_null NOT NULL,
     rubric_domain_id uuid,
     active boolean DEFAULT true CONSTRAINT rubrics_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubrics_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubrics_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_new_not_null NOT NULL
 );
 
 
@@ -4911,7 +4994,8 @@ CREATE TABLE public.scenario (
     id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT scenarios_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenarios_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT scenarios_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT scenarios_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -5285,12 +5369,12 @@ CREATE TABLE public.scenario_videos (
 CREATE TABLE public.scenarios (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenarios_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT scenarios_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL,
+    scenario_id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT scenarios_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenarios_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenarios_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT scenarios_id_new_not_null NOT NULL
 );
 
 
@@ -5384,7 +5468,8 @@ CREATE TABLE public.setting (
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT settings_updated_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT settings_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT settings_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT settings_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT settings_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -5506,7 +5591,7 @@ CREATE TABLE public.setting_provider_keys (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     key_id uuid NOT NULL,
     settings_id uuid NOT NULL,
-    provider public.providers NOT NULL
+    providers_id uuid NOT NULL
 );
 
 
@@ -5519,7 +5604,7 @@ CREATE TABLE public.setting_providers (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     settings_id uuid NOT NULL,
-    provider public.providers NOT NULL
+    providers_id uuid NOT NULL
 );
 
 
@@ -5545,13 +5630,13 @@ CREATE TABLE public.setting_thresholds (
 
 CREATE TABLE public.settings (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT settings_created_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT settings_id_v7_not_null NOT NULL,
+    setting_id uuid DEFAULT uuidv7() CONSTRAINT settings_id_v7_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT settings_updated_at_not_null1 NOT NULL,
     active boolean DEFAULT true CONSTRAINT settings_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT settings_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT settings_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT settings_id_new_not_null NOT NULL
 );
 
 
@@ -5604,7 +5689,8 @@ CREATE TABLE public.simulation (
     id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulations_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulations_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT simulations_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT simulations_mcp_not_null NOT NULL,
+    group_id uuid NOT NULL
 );
 
 
@@ -5741,12 +5827,12 @@ CREATE TABLE public.simulation_scenarios_rubric_grade_agents (
 CREATE TABLE public.simulations (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT simulations_created_at_not_null1 NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT simulations_updated_at_not_null1 NOT NULL,
-    id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL,
+    simulation_id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_v7_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT simulations_active_not_null1 NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulations_generated_not_null1 NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulations_mcp_not_null1 NOT NULL,
     call_id uuid,
-    group_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() CONSTRAINT simulations_id_new_not_null NOT NULL
 );
 
 
@@ -6139,6 +6225,14 @@ ALTER TABLE ONLY public.agent_flags
 
 
 --
+-- Name: agent agent_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent
+    ADD CONSTRAINT agent_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: agent_models agent_models_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6200,14 +6294,6 @@ ALTER TABLE ONLY public.agent_voices
 
 ALTER TABLE ONLY public.agent
     ADD CONSTRAINT agents_pkey PRIMARY KEY (id);
-
-
---
--- Name: agents agents_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.agents
-    ADD CONSTRAINT agents_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -6291,6 +6377,14 @@ ALTER TABLE ONLY public.auth_flags
 
 
 --
+-- Name: auth auth_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth
+    ADD CONSTRAINT auth_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: auth_items auth_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6328,14 +6422,6 @@ ALTER TABLE ONLY public.auth_slugs
 
 ALTER TABLE ONLY public.auth
     ADD CONSTRAINT auths_pkey PRIMARY KEY (id);
-
-
---
--- Name: auths auths_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.auths
-    ADD CONSTRAINT auths_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -6403,6 +6489,14 @@ ALTER TABLE ONLY public.cohort_flags
 
 
 --
+-- Name: cohort cohort_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cohort
+    ADD CONSTRAINT cohort_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: cohort_names cohort_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6432,14 +6526,6 @@ ALTER TABLE ONLY public.cohort_simulations
 
 ALTER TABLE ONLY public.cohort
     ADD CONSTRAINT cohorts_pkey PRIMARY KEY (id);
-
-
---
--- Name: cohorts cohorts_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cohorts
-    ADD CONSTRAINT cohorts_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -6491,6 +6577,14 @@ ALTER TABLE ONLY public.department_flags
 
 
 --
+-- Name: department department_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.department
+    ADD CONSTRAINT department_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: department_names department_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6512,14 +6606,6 @@ ALTER TABLE ONLY public.department_settings
 
 ALTER TABLE ONLY public.department
     ADD CONSTRAINT departments_pkey PRIMARY KEY (id);
-
-
---
--- Name: departments departments_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.departments
-    ADD CONSTRAINT departments_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -6587,6 +6673,14 @@ ALTER TABLE ONLY public.document_flags
 
 
 --
+-- Name: document document_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document
+    ADD CONSTRAINT document_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: document_groups document_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6651,27 +6745,11 @@ ALTER TABLE ONLY public.document
 
 
 --
--- Name: documents documents_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.documents
-    ADD CONSTRAINT documents_resource_temp_pkey PRIMARY KEY (id);
-
-
---
 -- Name: domain_artifacts domain_artifacts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.domain_artifacts
     ADD CONSTRAINT domain_artifacts_pkey PRIMARY KEY (domain_id, artifact);
-
-
---
--- Name: domain_providers domain_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.domain_providers
-    ADD CONSTRAINT domain_providers_pkey PRIMARY KEY (domain_id, provider);
 
 
 --
@@ -6971,6 +7049,14 @@ ALTER TABLE ONLY public.draft_protocols
 
 
 --
+-- Name: draft_providers draft_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_providers
+    ADD CONSTRAINT draft_providers_pkey PRIMARY KEY (draft_id, providers_id, version);
+
+
+--
 -- Name: draft_questions draft_questions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7171,6 +7257,14 @@ ALTER TABLE ONLY public.eval_flags
 
 
 --
+-- Name: eval eval_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval
+    ADD CONSTRAINT eval_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: eval_groups eval_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7216,14 +7310,6 @@ ALTER TABLE ONLY public.eval_runs_rubric_grade_agents
 
 ALTER TABLE ONLY public.eval
     ADD CONSTRAINT evals_pkey PRIMARY KEY (id);
-
-
---
--- Name: evals evals_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.evals
-    ADD CONSTRAINT evals_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -7275,6 +7361,14 @@ ALTER TABLE ONLY public.field_flags
 
 
 --
+-- Name: field field_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.field
+    ADD CONSTRAINT field_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: field_names field_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7288,14 +7382,6 @@ ALTER TABLE ONLY public.field_names
 
 ALTER TABLE ONLY public.field
     ADD CONSTRAINT fields_pkey PRIMARY KEY (id);
-
-
---
--- Name: fields fields_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.fields
-    ADD CONSTRAINT fields_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -7491,6 +7577,14 @@ ALTER TABLE ONLY public.key_flags
 
 
 --
+-- Name: key key_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.key
+    ADD CONSTRAINT key_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: key_names key_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7504,14 +7598,6 @@ ALTER TABLE ONLY public.key_names
 
 ALTER TABLE ONLY public.key
     ADD CONSTRAINT keys_pkey PRIMARY KEY (id);
-
-
---
--- Name: keys keys_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.keys
-    ADD CONSTRAINT keys_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -7627,14 +7713,6 @@ ALTER TABLE ONLY public.model_descriptions
 
 
 --
--- Name: model_domains model_domains_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_domains
-    ADD CONSTRAINT model_domains_pkey PRIMARY KEY (model_id, domain_id);
-
-
---
 -- Name: model_endpoints model_endpoints_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7648,6 +7726,14 @@ ALTER TABLE ONLY public.model_endpoints
 
 ALTER TABLE ONLY public.model_flags
     ADD CONSTRAINT model_flags_pkey PRIMARY KEY (model_id, flag_id, type);
+
+
+--
+-- Name: model model_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model
+    ADD CONSTRAINT model_group_id_unique UNIQUE (group_id);
 
 
 --
@@ -7683,6 +7769,14 @@ ALTER TABLE ONLY public.model_pricing
 
 
 --
+-- Name: model_providers model_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_providers
+    ADD CONSTRAINT model_providers_pkey PRIMARY KEY (model_id, providers_id);
+
+
+--
 -- Name: model_reasoning_levels model_reasoning_levels_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7715,11 +7809,11 @@ ALTER TABLE ONLY public.model
 
 
 --
--- Name: models models_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: models models_pkey1; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.models
-    ADD CONSTRAINT models_resource_temp_pkey PRIMARY KEY (id);
+    ADD CONSTRAINT models_pkey1 PRIMARY KEY (id);
 
 
 --
@@ -7787,6 +7881,14 @@ ALTER TABLE ONLY public.parameter_flags
 
 
 --
+-- Name: parameter parameter_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parameter
+    ADD CONSTRAINT parameter_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: parameter_names parameter_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7800,14 +7902,6 @@ ALTER TABLE ONLY public.parameter_names
 
 ALTER TABLE ONLY public.parameter
     ADD CONSTRAINT parameters_pkey PRIMARY KEY (id);
-
-
---
--- Name: parameters parameters_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.parameters
-    ADD CONSTRAINT parameters_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -7859,6 +7953,14 @@ ALTER TABLE ONLY public.persona_flags
 
 
 --
+-- Name: persona persona_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona
+    ADD CONSTRAINT persona_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: persona_icons persona_icons_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7888,14 +7990,6 @@ ALTER TABLE ONLY public.persona_names
 
 ALTER TABLE ONLY public.persona
     ADD CONSTRAINT personas_pkey PRIMARY KEY (id);
-
-
---
--- Name: personas personas_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.personas
-    ADD CONSTRAINT personas_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -7955,6 +8049,14 @@ ALTER TABLE ONLY public.profile_flags
 
 
 --
+-- Name: profile profile_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile
+    ADD CONSTRAINT profile_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: profile_names profile_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -7968,14 +8070,6 @@ ALTER TABLE ONLY public.profile_names
 
 ALTER TABLE ONLY public.profile
     ADD CONSTRAINT profiles_pkey PRIMARY KEY (id);
-
-
---
--- Name: profiles profiles_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.profiles
-    ADD CONSTRAINT profiles_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -8008,6 +8102,46 @@ ALTER TABLE ONLY public.protocols
 
 ALTER TABLE ONLY public.protocols
     ADD CONSTRAINT protocols_value_key UNIQUE (value);
+
+
+--
+-- Name: provider_descriptions provider_descriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_descriptions
+    ADD CONSTRAINT provider_descriptions_pkey PRIMARY KEY (provider_id, description_id);
+
+
+--
+-- Name: provider_flags provider_flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_flags
+    ADD CONSTRAINT provider_flags_pkey PRIMARY KEY (provider_id, flag_id, type);
+
+
+--
+-- Name: provider_names provider_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_names
+    ADD CONSTRAINT provider_names_pkey PRIMARY KEY (provider_id, name_id);
+
+
+--
+-- Name: provider provider_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider
+    ADD CONSTRAINT provider_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: providers providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.providers
+    ADD CONSTRAINT providers_pkey PRIMARY KEY (id);
 
 
 --
@@ -8107,6 +8241,14 @@ ALTER TABLE ONLY public.rubric_grade_agents_audio
 
 
 --
+-- Name: rubric rubric_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric
+    ADD CONSTRAINT rubric_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: rubric_groups rubric_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8144,14 +8286,6 @@ ALTER TABLE ONLY public.rubric_standard_groups
 
 ALTER TABLE ONLY public.rubric
     ADD CONSTRAINT rubrics_pkey PRIMARY KEY (id);
-
-
---
--- Name: rubrics rubrics_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.rubrics
-    ADD CONSTRAINT rubrics_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -8248,6 +8382,14 @@ ALTER TABLE ONLY public.scenario_fields
 
 ALTER TABLE ONLY public.scenario_flags
     ADD CONSTRAINT scenario_flags_pkey PRIMARY KEY (scenario_id, flag_id, type);
+
+
+--
+-- Name: scenario scenario_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario
+    ADD CONSTRAINT scenario_group_id_unique UNIQUE (group_id);
 
 
 --
@@ -8371,14 +8513,6 @@ ALTER TABLE ONLY public.scenario
 
 
 --
--- Name: scenarios scenarios_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenarios
-    ADD CONSTRAINT scenarios_resource_temp_pkey PRIMARY KEY (id);
-
-
---
 -- Name: schema_field_items schema_field_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8475,6 +8609,14 @@ ALTER TABLE ONLY public.setting_flags
 
 
 --
+-- Name: setting setting_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting
+    ADD CONSTRAINT setting_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: setting_names setting_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8487,7 +8629,15 @@ ALTER TABLE ONLY public.setting_names
 --
 
 ALTER TABLE ONLY public.setting_provider_keys
-    ADD CONSTRAINT setting_provider_keys_pkey PRIMARY KEY (settings_id, provider, key_id);
+    ADD CONSTRAINT setting_provider_keys_pkey PRIMARY KEY (settings_id, providers_id, key_id);
+
+
+--
+-- Name: setting_providers setting_providers_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_providers
+    ADD CONSTRAINT setting_providers_pkey PRIMARY KEY (settings_id, providers_id);
 
 
 --
@@ -8531,14 +8681,6 @@ ALTER TABLE ONLY public.setting
 
 
 --
--- Name: settings settings_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.settings
-    ADD CONSTRAINT settings_resource_temp_pkey PRIMARY KEY (id);
-
-
---
 -- Name: simulation_attempts simulation_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8579,6 +8721,14 @@ ALTER TABLE ONLY public.simulation_flags
 
 
 --
+-- Name: simulation simulation_group_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation
+    ADD CONSTRAINT simulation_group_id_unique UNIQUE (group_id);
+
+
+--
 -- Name: simulation_names simulation_names_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8608,14 +8758,6 @@ ALTER TABLE ONLY public.simulation_scenarios_rubric_grade_agents
 
 ALTER TABLE ONLY public.simulation
     ADD CONSTRAINT simulations_pkey PRIMARY KEY (id);
-
-
---
--- Name: simulations simulations_resource_temp_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulations
-    ADD CONSTRAINT simulations_resource_temp_pkey PRIMARY KEY (id);
 
 
 --
@@ -8972,6 +9114,13 @@ CREATE INDEX agent_flags_type_idx ON public.agent_flags USING btree (type);
 
 
 --
+-- Name: agent_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_group_id_idx ON public.agent USING btree (group_id);
+
+
+--
 -- Name: agent_instructions_agent_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9151,13 +9300,6 @@ CREATE INDEX agent_voices_model_voice_id_v7_idx ON public.agent_voices USING btr
 --
 
 CREATE INDEX agents_call_id_idx ON public.agents USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: agents_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX agents_group_id_idx ON public.agents USING btree (group_id);
 
 
 --
@@ -9560,6 +9702,13 @@ CREATE INDEX cohort_flags_type_idx ON public.cohort_flags USING btree (type);
 
 
 --
+-- Name: cohort_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cohort_group_id_idx ON public.cohort USING btree (group_id);
+
+
+--
 -- Name: cohort_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9627,13 +9776,6 @@ CREATE INDEX cohort_simulations_simulation_id_v7_idx ON public.cohort_simulation
 --
 
 CREATE INDEX cohorts_call_id_idx ON public.cohorts USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: cohorts_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX cohorts_group_id_idx ON public.cohorts USING btree (group_id);
 
 
 --
@@ -9721,6 +9863,13 @@ CREATE INDEX department_flags_type_idx ON public.department_flags USING btree (t
 
 
 --
+-- Name: department_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX department_group_id_idx ON public.department USING btree (group_id);
+
+
+--
 -- Name: department_names_department_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9760,13 +9909,6 @@ CREATE INDEX department_settings_settings_id_v7_idx ON public.department_setting
 --
 
 CREATE INDEX departments_call_id_idx ON public.departments USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: departments_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX departments_group_id_idx ON public.departments USING btree (group_id);
 
 
 --
@@ -9879,6 +10021,13 @@ CREATE INDEX document_flags_flag_id_idx ON public.document_flags USING btree (fl
 --
 
 CREATE INDEX document_flags_type_idx ON public.document_flags USING btree (type);
+
+
+--
+-- Name: document_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX document_group_id_idx ON public.document USING btree (group_id);
 
 
 --
@@ -10029,13 +10178,6 @@ CREATE INDEX documents_call_id_idx ON public.documents USING btree (call_id) WHE
 
 
 --
--- Name: documents_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX documents_group_id_idx ON public.documents USING btree (group_id);
-
-
---
 -- Name: domain_artifacts_artifact_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10050,17 +10192,17 @@ CREATE INDEX domain_artifacts_domain_id_idx ON public.domain_artifacts USING btr
 
 
 --
--- Name: domain_providers_domain_id_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: draft_providers_draft_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX domain_providers_domain_id_idx ON public.domain_providers USING btree (domain_id);
+CREATE INDEX draft_providers_draft_id_idx ON public.draft_providers USING btree (draft_id);
 
 
 --
--- Name: domain_providers_provider_idx; Type: INDEX; Schema: public; Owner: -
+-- Name: draft_providers_providers_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX domain_providers_provider_idx ON public.domain_providers USING btree (provider);
+CREATE INDEX draft_providers_providers_id_idx ON public.draft_providers USING btree (providers_id);
 
 
 --
@@ -10204,6 +10346,13 @@ CREATE INDEX eval_flags_type_idx ON public.eval_flags USING btree (type);
 
 
 --
+-- Name: eval_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eval_group_id_idx ON public.eval USING btree (group_id);
+
+
+--
 -- Name: eval_groups_eval_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10299,13 +10448,6 @@ CREATE INDEX eval_runs_run_id_v7_idx ON public.eval_runs USING btree (run_id);
 --
 
 CREATE INDEX evals_call_id_idx ON public.evals USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: evals_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX evals_group_id_idx ON public.evals USING btree (group_id);
 
 
 --
@@ -10428,6 +10570,13 @@ CREATE INDEX field_flags_type_idx ON public.field_flags USING btree (type);
 
 
 --
+-- Name: field_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX field_group_id_idx ON public.field USING btree (group_id);
+
+
+--
 -- Name: field_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10453,13 +10602,6 @@ CREATE INDEX field_names_name_id_idx ON public.field_names USING btree (name_id)
 --
 
 CREATE INDEX fields_call_id_idx ON public.fields USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: fields_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX fields_group_id_idx ON public.fields USING btree (group_id);
 
 
 --
@@ -13900,6 +14042,13 @@ CREATE INDEX idx_protocols_mcp ON public.protocols USING btree (mcp);
 
 
 --
+-- Name: idx_provider_mcp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_provider_mcp ON public.provider USING btree (mcp);
+
+
+--
 -- Name: idx_questions_mcp; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -14712,6 +14861,13 @@ CREATE INDEX key_flags_type_idx ON public.key_flags USING btree (type);
 
 
 --
+-- Name: key_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX key_group_id_idx ON public.key USING btree (group_id);
+
+
+--
 -- Name: key_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -14737,13 +14893,6 @@ CREATE INDEX key_names_name_id_idx ON public.key_names USING btree (name_id);
 --
 
 CREATE INDEX keys_call_id_idx ON public.keys USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: keys_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX keys_group_id_idx ON public.keys USING btree (group_id);
 
 
 --
@@ -14992,20 +15141,6 @@ CREATE INDEX model_descriptions_model_id_idx ON public.model_descriptions USING 
 
 
 --
--- Name: model_domains_domain_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX model_domains_domain_id_idx ON public.model_domains USING btree (domain_id);
-
-
---
--- Name: model_domains_model_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX model_domains_model_id_idx ON public.model_domains USING btree (model_id);
-
-
---
 -- Name: model_endpoints_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -15052,6 +15187,13 @@ CREATE INDEX model_flags_model_id_idx ON public.model_flags USING btree (model_i
 --
 
 CREATE INDEX model_flags_type_idx ON public.model_flags USING btree (type);
+
+
+--
+-- Name: model_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_group_id_idx ON public.model USING btree (group_id);
 
 
 --
@@ -15153,6 +15295,20 @@ CREATE INDEX model_pricing_unit_id_v7_idx ON public.model_pricing USING btree (u
 
 
 --
+-- Name: model_providers_model_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_providers_model_id_idx ON public.model_providers USING btree (model_id);
+
+
+--
+-- Name: model_providers_providers_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX model_providers_providers_id_idx ON public.model_providers USING btree (providers_id);
+
+
+--
 -- Name: model_qualities_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -15248,13 +15404,6 @@ CREATE INDEX model_voices_voice_idx ON public.model_voices USING btree (voice);
 --
 
 CREATE INDEX models_call_id_idx ON public.models USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: models_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX models_group_id_idx ON public.models USING btree (group_id);
 
 
 --
@@ -15405,6 +15554,13 @@ CREATE INDEX parameter_flags_type_idx ON public.parameter_flags USING btree (typ
 
 
 --
+-- Name: parameter_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX parameter_group_id_idx ON public.parameter USING btree (group_id);
+
+
+--
 -- Name: parameter_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -15430,13 +15586,6 @@ CREATE INDEX parameter_names_parameter_id_idx ON public.parameter_names USING bt
 --
 
 CREATE INDEX parameters_call_id_idx ON public.parameters USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: parameters_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX parameters_group_id_idx ON public.parameters USING btree (group_id);
 
 
 --
@@ -15587,6 +15736,13 @@ CREATE INDEX persona_flags_type_idx ON public.persona_flags USING btree (type);
 
 
 --
+-- Name: persona_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX persona_group_id_idx ON public.persona USING btree (group_id);
+
+
+--
 -- Name: persona_icons_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -15654,13 +15810,6 @@ CREATE INDEX persona_names_persona_id_idx ON public.persona_names USING btree (p
 --
 
 CREATE INDEX personas_call_id_idx ON public.personas USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: personas_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX personas_group_id_idx ON public.personas USING btree (group_id);
 
 
 --
@@ -15825,6 +15974,13 @@ CREATE INDEX profile_flags_type_idx ON public.profile_flags USING btree (type);
 
 
 --
+-- Name: profile_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX profile_group_id_idx ON public.profile USING btree (group_id);
+
+
+--
 -- Name: profile_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -15864,13 +16020,6 @@ CREATE INDEX profile_request_limits_profile_id_v7_idx ON public.profile_request_
 --
 
 CREATE INDEX profiles_call_id_idx ON public.profiles USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: profiles_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX profiles_group_id_idx ON public.profiles USING btree (group_id);
 
 
 --
@@ -15920,6 +16069,104 @@ CREATE INDEX protocols_call_id_idx ON public.protocols USING btree (call_id) WHE
 --
 
 CREATE INDEX protocols_value_idx ON public.protocols USING btree (value);
+
+
+--
+-- Name: provider_descriptions_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_descriptions_call_id_idx ON public.provider_descriptions USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: provider_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_descriptions_description_id_idx ON public.provider_descriptions USING btree (description_id);
+
+
+--
+-- Name: provider_descriptions_provider_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_descriptions_provider_id_idx ON public.provider_descriptions USING btree (provider_id);
+
+
+--
+-- Name: provider_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_flags_flag_id_idx ON public.provider_flags USING btree (flag_id);
+
+
+--
+-- Name: provider_flags_provider_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_flags_provider_id_idx ON public.provider_flags USING btree (provider_id);
+
+
+--
+-- Name: provider_flags_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_flags_type_idx ON public.provider_flags USING btree (type);
+
+
+--
+-- Name: provider_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_group_id_idx ON public.provider USING btree (group_id);
+
+
+--
+-- Name: provider_group_id_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX provider_group_id_unique ON public.provider USING btree (group_id);
+
+
+--
+-- Name: provider_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_id_idx ON public.provider USING btree (id);
+
+
+--
+-- Name: provider_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_names_call_id_idx ON public.provider_names USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: provider_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_names_name_id_idx ON public.provider_names USING btree (name_id);
+
+
+--
+-- Name: provider_names_provider_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX provider_names_provider_id_idx ON public.provider_names USING btree (provider_id);
+
+
+--
+-- Name: providers_call_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX providers_call_id_idx ON public.providers USING btree (call_id) WHERE (call_id IS NOT NULL);
+
+
+--
+-- Name: providers_provider_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX providers_provider_id_idx ON public.providers USING btree (provider_id);
 
 
 --
@@ -16140,6 +16387,13 @@ CREATE INDEX rubric_grade_agents_voice_rubric_grade_agent_id_idx ON public.rubri
 
 
 --
+-- Name: rubric_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX rubric_group_id_idx ON public.rubric USING btree (group_id);
+
+
+--
 -- Name: rubric_groups_group_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -16235,13 +16489,6 @@ CREATE INDEX rubric_standard_groups_standard_group_id_idx ON public.rubric_stand
 --
 
 CREATE INDEX rubrics_call_id_idx ON public.rubrics USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: rubrics_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX rubrics_group_id_idx ON public.rubrics USING btree (group_id);
 
 
 --
@@ -16501,6 +16748,13 @@ CREATE INDEX scenario_flags_scenario_id_idx ON public.scenario_flags USING btree
 --
 
 CREATE INDEX scenario_flags_type_idx ON public.scenario_flags USING btree (type);
+
+
+--
+-- Name: scenario_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX scenario_group_id_idx ON public.scenario USING btree (group_id);
 
 
 --
@@ -16840,13 +17094,6 @@ CREATE INDEX scenarios_call_id_idx ON public.scenarios USING btree (call_id) WHE
 
 
 --
--- Name: scenarios_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX scenarios_group_id_idx ON public.scenarios USING btree (group_id);
-
-
---
 -- Name: schema_field_items_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -17092,6 +17339,13 @@ CREATE INDEX setting_flags_type_idx ON public.setting_flags USING btree (type);
 
 
 --
+-- Name: setting_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX setting_group_id_idx ON public.setting USING btree (group_id);
+
+
+--
 -- Name: setting_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -17253,13 +17507,6 @@ CREATE INDEX settings_default_guest_settings_id_v7_idx ON public.settings_defaul
 
 
 --
--- Name: settings_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX settings_group_id_idx ON public.settings USING btree (group_id);
-
-
---
 -- Name: settings_updated_at_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -17379,6 +17626,13 @@ CREATE INDEX simulation_flags_type_idx ON public.simulation_flags USING btree (t
 
 
 --
+-- Name: simulation_group_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX simulation_group_id_idx ON public.simulation USING btree (group_id);
+
+
+--
 -- Name: simulation_names_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -17446,13 +17700,6 @@ CREATE INDEX simulation_scenarios_simulation_id_v7_idx ON public.simulation_scen
 --
 
 CREATE INDEX simulations_call_id_idx ON public.simulations USING btree (call_id) WHERE (call_id IS NOT NULL);
-
-
---
--- Name: simulations_group_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX simulations_group_id_idx ON public.simulations USING btree (group_id);
 
 
 --
@@ -18023,14 +18270,6 @@ ALTER TABLE ONLY public.agent_departments
 
 
 --
--- Name: agent_departments agent_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.agent_departments
-    ADD CONSTRAINT agent_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
-
-
---
 -- Name: agent_descriptions agent_descriptions_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18103,6 +18342,14 @@ ALTER TABLE ONLY public.agent_flags
 
 
 --
+-- Name: agent agent_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent
+    ADD CONSTRAINT agent_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: agent_instructions agent_instructions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18132,14 +18379,6 @@ ALTER TABLE ONLY public.agent_models
 
 ALTER TABLE ONLY public.agent_models
     ADD CONSTRAINT agent_models_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: agent_models agent_models_models_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.agent_models
-    ADD CONSTRAINT agent_models_models_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
 
 
 --
@@ -18255,19 +18494,19 @@ ALTER TABLE ONLY public.agent_voices
 
 
 --
+-- Name: agents agents_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agents
+    ADD CONSTRAINT agents_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agent(id);
+
+
+--
 -- Name: agents agents_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.agents
     ADD CONSTRAINT agents_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: agents agents_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.agents
-    ADD CONSTRAINT agents_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
 
 
 --
@@ -18300,14 +18539,6 @@ ALTER TABLE ONLY public.attempt_chats
 
 ALTER TABLE ONLY public.attempt_profiles
     ADD CONSTRAINT attempt_profiles_attempt_id_fkey FOREIGN KEY (attempt_id) REFERENCES public.simulation_attempts(id);
-
-
---
--- Name: attempt_profiles attempt_profiles_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_profiles
-    ADD CONSTRAINT attempt_profiles_profiles_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 
 --
@@ -18455,6 +18686,14 @@ ALTER TABLE ONLY public.auth_slugs
 
 
 --
+-- Name: auths auths_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auths
+    ADD CONSTRAINT auths_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth(id);
+
+
+--
 -- Name: auths auths_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18551,14 +18790,6 @@ ALTER TABLE ONLY public.cohort_departments
 
 
 --
--- Name: cohort_departments cohort_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cohort_departments
-    ADD CONSTRAINT cohort_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
-
-
---
 -- Name: cohort_descriptions cohort_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18607,6 +18838,14 @@ ALTER TABLE ONLY public.cohort_flags
 
 
 --
+-- Name: cohort cohort_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.cohort
+    ADD CONSTRAINT cohort_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: cohort_names cohort_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18647,14 +18886,6 @@ ALTER TABLE ONLY public.cohort_profiles
 
 
 --
--- Name: cohort_profiles cohort_profiles_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cohort_profiles
-    ADD CONSTRAINT cohort_profiles_profiles_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
-
-
---
 -- Name: cohort_simulations cohort_simulations_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18671,14 +18902,6 @@ ALTER TABLE ONLY public.cohort_simulations
 
 
 --
--- Name: cohort_simulations cohort_simulations_simulations_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.cohort_simulations
-    ADD CONSTRAINT cohort_simulations_simulations_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations(id) ON DELETE CASCADE;
-
-
---
 -- Name: cohorts cohorts_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18687,11 +18910,11 @@ ALTER TABLE ONLY public.cohorts
 
 
 --
--- Name: cohorts cohorts_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: cohorts cohorts_cohort_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.cohorts
-    ADD CONSTRAINT cohorts_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT cohorts_cohort_id_fkey FOREIGN KEY (cohort_id) REFERENCES public.cohort(id);
 
 
 --
@@ -18759,6 +18982,14 @@ ALTER TABLE ONLY public.department_flags
 
 
 --
+-- Name: department department_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.department
+    ADD CONSTRAINT department_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: department_names department_names_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18799,11 +19030,11 @@ ALTER TABLE ONLY public.departments
 
 
 --
--- Name: departments departments_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: departments departments_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.departments
-    ADD CONSTRAINT departments_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.department(id);
 
 
 --
@@ -18844,14 +19075,6 @@ ALTER TABLE ONLY public.document_agent_domains
 
 ALTER TABLE ONLY public.document_departments
     ADD CONSTRAINT document_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: document_departments document_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_departments
-    ADD CONSTRAINT document_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -18903,14 +19126,6 @@ ALTER TABLE ONLY public.document_fields
 
 
 --
--- Name: document_fields document_fields_fields_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_fields
-    ADD CONSTRAINT document_fields_fields_id_fkey FOREIGN KEY (field_id) REFERENCES public.fields(id) ON DELETE CASCADE;
-
-
---
 -- Name: document_flags document_flags_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -18932,6 +19147,14 @@ ALTER TABLE ONLY public.document_flags
 
 ALTER TABLE ONLY public.document_flags
     ADD CONSTRAINT document_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags(id) ON DELETE CASCADE;
+
+
+--
+-- Name: document document_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.document
+    ADD CONSTRAINT document_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
 
 
 --
@@ -19087,11 +19310,11 @@ ALTER TABLE ONLY public.documents
 
 
 --
--- Name: documents documents_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: documents documents_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.documents
-    ADD CONSTRAINT documents_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT documents_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.document(id);
 
 
 --
@@ -19100,14 +19323,6 @@ ALTER TABLE ONLY public.documents
 
 ALTER TABLE ONLY public.domain_artifacts
     ADD CONSTRAINT domain_artifacts_domain_id_fkey FOREIGN KEY (domain_id) REFERENCES public.domains(id) ON DELETE CASCADE;
-
-
---
--- Name: domain_providers domain_providers_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.domain_providers
-    ADD CONSTRAINT domain_providers_domain_id_fkey FOREIGN KEY (domain_id) REFERENCES public.domains(id) ON DELETE CASCADE;
 
 
 --
@@ -19687,6 +19902,22 @@ ALTER TABLE ONLY public.draft_protocols
 
 
 --
+-- Name: draft_providers draft_providers_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_providers
+    ADD CONSTRAINT draft_providers_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.drafts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: draft_providers draft_providers_providers_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.draft_providers
+    ADD CONSTRAINT draft_providers_providers_id_fkey FOREIGN KEY (providers_id) REFERENCES public.providers(id) ON DELETE CASCADE;
+
+
+--
 -- Name: draft_questions draft_questions_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -19999,14 +20230,6 @@ ALTER TABLE ONLY public.endpoints
 
 
 --
--- Name: eval_agents eval_agents_agents_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eval_agents
-    ADD CONSTRAINT eval_agents_agents_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agents(id) ON DELETE CASCADE;
-
-
---
 -- Name: eval_agents eval_agents_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -20036,14 +20259,6 @@ ALTER TABLE ONLY public.eval_attempts
 
 ALTER TABLE ONLY public.eval_departments
     ADD CONSTRAINT eval_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: eval_departments eval_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eval_departments
-    ADD CONSTRAINT eval_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -20100,6 +20315,14 @@ ALTER TABLE ONLY public.eval_flags
 
 ALTER TABLE ONLY public.eval_flags
     ADD CONSTRAINT eval_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags(id) ON DELETE CASCADE;
+
+
+--
+-- Name: eval eval_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.eval
+    ADD CONSTRAINT eval_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
 
 
 --
@@ -20199,11 +20422,11 @@ ALTER TABLE ONLY public.evals
 
 
 --
--- Name: evals evals_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: evals evals_eval_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.evals
-    ADD CONSTRAINT evals_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT evals_eval_id_fkey FOREIGN KEY (eval_id) REFERENCES public.eval(id);
 
 
 --
@@ -20252,14 +20475,6 @@ ALTER TABLE ONLY public.field_conditional_parameters
 
 ALTER TABLE ONLY public.field_departments
     ADD CONSTRAINT field_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: field_departments field_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.field_departments
-    ADD CONSTRAINT field_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -20319,6 +20534,14 @@ ALTER TABLE ONLY public.field_flags
 
 
 --
+-- Name: field field_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.field
+    ADD CONSTRAINT field_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: field_names field_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -20351,11 +20574,11 @@ ALTER TABLE ONLY public.fields
 
 
 --
--- Name: fields fields_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: fields fields_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.fields
-    ADD CONSTRAINT fields_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT fields_field_id_fkey FOREIGN KEY (field_id) REFERENCES public.field(id);
 
 
 --
@@ -20575,14 +20798,6 @@ ALTER TABLE ONLY public.icons
 
 
 --
--- Name: image_departments image_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.image_departments
-    ADD CONSTRAINT image_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
-
-
---
 -- Name: image_departments image_departments_image_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -20703,6 +20918,14 @@ ALTER TABLE ONLY public.key_flags
 
 
 --
+-- Name: key key_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.key
+    ADD CONSTRAINT key_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: key_names key_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -20735,11 +20958,11 @@ ALTER TABLE ONLY public.keys
 
 
 --
--- Name: keys keys_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: keys keys_key_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.keys
-    ADD CONSTRAINT keys_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT keys_key_id_fkey FOREIGN KEY (key_id) REFERENCES public.key(id);
 
 
 --
@@ -20788,14 +21011,6 @@ ALTER TABLE ONLY public.message_contents
 
 ALTER TABLE ONLY public.message_contents
     ADD CONSTRAINT message_contents_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.message(id) ON DELETE CASCADE;
-
-
---
--- Name: message_documents message_documents_documents_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_documents
-    ADD CONSTRAINT message_documents_documents_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE CASCADE;
 
 
 --
@@ -20860,14 +21075,6 @@ ALTER TABLE ONLY public.message_images
 
 ALTER TABLE ONLY public.message_personas
     ADD CONSTRAINT message_personas_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.message(id);
-
-
---
--- Name: message_personas message_personas_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.message_personas
-    ADD CONSTRAINT message_personas_personas_id_fkey FOREIGN KEY (persona_id) REFERENCES public.personas(id) ON DELETE CASCADE;
 
 
 --
@@ -20943,14 +21150,6 @@ ALTER TABLE ONLY public.model_departments
 
 
 --
--- Name: model_departments model_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_departments
-    ADD CONSTRAINT model_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
-
-
---
 -- Name: model_departments model_departments_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -20980,22 +21179,6 @@ ALTER TABLE ONLY public.model_descriptions
 
 ALTER TABLE ONLY public.model_descriptions
     ADD CONSTRAINT model_descriptions_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.model(id) ON DELETE CASCADE;
-
-
---
--- Name: model_domains model_domains_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_domains
-    ADD CONSTRAINT model_domains_domain_id_fkey FOREIGN KEY (domain_id) REFERENCES public.domains(id) ON DELETE CASCADE;
-
-
---
--- Name: model_domains model_domains_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_domains
-    ADD CONSTRAINT model_domains_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.model(id) ON DELETE CASCADE;
 
 
 --
@@ -21047,19 +21230,19 @@ ALTER TABLE ONLY public.model_flags
 
 
 --
+-- Name: model model_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model
+    ADD CONSTRAINT model_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: model_keys model_keys_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.model_keys
     ADD CONSTRAINT model_keys_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: model_keys model_keys_keys_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.model_keys
-    ADD CONSTRAINT model_keys_keys_id_fkey FOREIGN KEY (key_id) REFERENCES public.keys(id) ON DELETE CASCADE;
 
 
 --
@@ -21119,6 +21302,22 @@ ALTER TABLE ONLY public.model_pricing
 
 
 --
+-- Name: model_providers model_providers_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_providers
+    ADD CONSTRAINT model_providers_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
+
+
+--
+-- Name: model_providers model_providers_providers_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.model_providers
+    ADD CONSTRAINT model_providers_providers_id_fkey FOREIGN KEY (providers_id) REFERENCES public.providers(id) ON DELETE CASCADE;
+
+
+--
 -- Name: model_qualities model_qualities_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -21159,11 +21358,11 @@ ALTER TABLE ONLY public.models
 
 
 --
--- Name: models models_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: models models_model_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.models
-    ADD CONSTRAINT models_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT models_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.model(id);
 
 
 --
@@ -21172,14 +21371,6 @@ ALTER TABLE ONLY public.models
 
 ALTER TABLE ONLY public.names
     ADD CONSTRAINT names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: objective_departments objective_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.objective_departments
-    ADD CONSTRAINT objective_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -21212,14 +21403,6 @@ ALTER TABLE ONLY public.options
 
 ALTER TABLE ONLY public.parameter_departments
     ADD CONSTRAINT parameter_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: parameter_departments parameter_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.parameter_departments
-    ADD CONSTRAINT parameter_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -21263,14 +21446,6 @@ ALTER TABLE ONLY public.parameter_fields
 
 
 --
--- Name: parameter_fields parameter_fields_fields_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.parameter_fields
-    ADD CONSTRAINT parameter_fields_fields_id_fkey FOREIGN KEY (field_id) REFERENCES public.fields(id) ON DELETE CASCADE;
-
-
---
 -- Name: parameter_fields parameter_fields_parameter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -21300,6 +21475,14 @@ ALTER TABLE ONLY public.parameter_flags
 
 ALTER TABLE ONLY public.parameter_flags
     ADD CONSTRAINT parameter_flags_parameter_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameter(id) ON DELETE CASCADE;
+
+
+--
+-- Name: parameter parameter_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.parameter
+    ADD CONSTRAINT parameter_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
 
 
 --
@@ -21335,11 +21518,11 @@ ALTER TABLE ONLY public.parameters
 
 
 --
--- Name: parameters parameters_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: parameters parameters_parameter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.parameters
-    ADD CONSTRAINT parameters_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT parameters_parameter_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameter(id);
 
 
 --
@@ -21372,14 +21555,6 @@ ALTER TABLE ONLY public.persona_colors
 
 ALTER TABLE ONLY public.persona_departments
     ADD CONSTRAINT persona_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: persona_departments persona_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_departments
-    ADD CONSTRAINT persona_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -21447,14 +21622,6 @@ ALTER TABLE ONLY public.persona_fields
 
 
 --
--- Name: persona_fields persona_fields_fields_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.persona_fields
-    ADD CONSTRAINT persona_fields_fields_id_fkey FOREIGN KEY (field_id) REFERENCES public.fields(id) ON DELETE CASCADE;
-
-
---
 -- Name: persona_fields persona_fields_persona_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -21484,6 +21651,14 @@ ALTER TABLE ONLY public.persona_flags
 
 ALTER TABLE ONLY public.persona_flags
     ADD CONSTRAINT persona_flags_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.persona(id) ON DELETE CASCADE;
+
+
+--
+-- Name: persona persona_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.persona
+    ADD CONSTRAINT persona_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
 
 
 --
@@ -21567,11 +21742,11 @@ ALTER TABLE ONLY public.personas
 
 
 --
--- Name: personas personas_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: personas personas_persona_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.personas
-    ADD CONSTRAINT personas_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT personas_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.persona(id);
 
 
 --
@@ -21631,14 +21806,6 @@ ALTER TABLE ONLY public.profile_departments
 
 
 --
--- Name: profile_departments profile_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.profile_departments
-    ADD CONSTRAINT profile_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
-
-
---
 -- Name: profile_departments profile_departments_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -21676,6 +21843,14 @@ ALTER TABLE ONLY public.profile_flags
 
 ALTER TABLE ONLY public.profile_flags
     ADD CONSTRAINT profile_flags_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profile(id) ON DELETE CASCADE;
+
+
+--
+-- Name: profile profile_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.profile
+    ADD CONSTRAINT profile_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
 
 
 --
@@ -21719,19 +21894,11 @@ ALTER TABLE ONLY public.profiles
 
 
 --
--- Name: profiles profiles_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: profiles profiles_profile_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.profiles
-    ADD CONSTRAINT profiles_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
-
-
---
--- Name: prompt_departments prompt_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.prompt_departments
-    ADD CONSTRAINT prompt_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
+    ADD CONSTRAINT profiles_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profile(id);
 
 
 --
@@ -21759,11 +21926,91 @@ ALTER TABLE ONLY public.protocols
 
 
 --
--- Name: question_departments question_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: provider_descriptions provider_descriptions_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.question_departments
-    ADD CONSTRAINT question_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.provider_descriptions
+    ADD CONSTRAINT provider_descriptions_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: provider_descriptions provider_descriptions_description_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_descriptions
+    ADD CONSTRAINT provider_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions(id) ON DELETE CASCADE;
+
+
+--
+-- Name: provider_descriptions provider_descriptions_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_descriptions
+    ADD CONSTRAINT provider_descriptions_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.provider(id) ON DELETE CASCADE;
+
+
+--
+-- Name: provider_flags provider_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_flags
+    ADD CONSTRAINT provider_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags(id) ON DELETE CASCADE;
+
+
+--
+-- Name: provider_flags provider_flags_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_flags
+    ADD CONSTRAINT provider_flags_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.provider(id) ON DELETE CASCADE;
+
+
+--
+-- Name: provider provider_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider
+    ADD CONSTRAINT provider_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
+-- Name: provider_names provider_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_names
+    ADD CONSTRAINT provider_names_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: provider_names provider_names_name_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_names
+    ADD CONSTRAINT provider_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names(id) ON DELETE CASCADE;
+
+
+--
+-- Name: provider_names provider_names_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.provider_names
+    ADD CONSTRAINT provider_names_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.provider(id) ON DELETE CASCADE;
+
+
+--
+-- Name: providers providers_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.providers
+    ADD CONSTRAINT providers_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
+
+
+--
+-- Name: providers providers_provider_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.providers
+    ADD CONSTRAINT providers_provider_id_fkey FOREIGN KEY (provider_id) REFERENCES public.provider(id) ON DELETE CASCADE;
 
 
 --
@@ -21836,14 +22083,6 @@ ALTER TABLE ONLY public.rubric_artifacts
 
 ALTER TABLE ONLY public.rubric_departments
     ADD CONSTRAINT rubric_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: rubric_departments rubric_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.rubric_departments
-    ADD CONSTRAINT rubric_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -21959,6 +22198,14 @@ ALTER TABLE ONLY public.rubric_grade_agents_audio
 
 
 --
+-- Name: rubric rubric_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubric
+    ADD CONSTRAINT rubric_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: rubric_groups rubric_groups_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -22055,19 +22302,19 @@ ALTER TABLE ONLY public.rubrics
 
 
 --
--- Name: rubrics rubrics_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.rubrics
-    ADD CONSTRAINT rubrics_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
-
-
---
 -- Name: rubric rubrics_rubric_domain_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.rubric
     ADD CONSTRAINT rubrics_rubric_domain_id_fkey FOREIGN KEY (rubric_domain_id) REFERENCES public.domains(id) ON DELETE SET NULL;
+
+
+--
+-- Name: rubrics rubrics_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rubrics
+    ADD CONSTRAINT rubrics_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubric(id);
 
 
 --
@@ -22087,27 +22334,11 @@ ALTER TABLE ONLY public.run_debug_info
 
 
 --
--- Name: run_models run_models_models_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.run_models
-    ADD CONSTRAINT run_models_models_id_fkey FOREIGN KEY (model_id) REFERENCES public.models(id) ON DELETE CASCADE;
-
-
---
 -- Name: run_models run_models_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.run_models
     ADD CONSTRAINT run_models_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.run(id);
-
-
---
--- Name: run_personas run_personas_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.run_personas
-    ADD CONSTRAINT run_personas_personas_id_fkey FOREIGN KEY (persona_id) REFERENCES public.personas(id) ON DELETE CASCADE;
 
 
 --
@@ -22132,14 +22363,6 @@ ALTER TABLE ONLY public.run_pricing_usage
 
 ALTER TABLE ONLY public.run_pricing_usage
     ADD CONSTRAINT run_pricing_usage_unit_id_fkey FOREIGN KEY (unit_id) REFERENCES public.units(id);
-
-
---
--- Name: run_profiles run_profiles_profiles_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.run_profiles
-    ADD CONSTRAINT run_profiles_profiles_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
 
 
 --
@@ -22180,14 +22403,6 @@ ALTER TABLE ONLY public.scenario_agent_domains
 
 ALTER TABLE ONLY public.scenario_departments
     ADD CONSTRAINT scenario_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: scenario_departments scenario_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_departments
-    ADD CONSTRAINT scenario_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -22239,14 +22454,6 @@ ALTER TABLE ONLY public.scenario_documents
 
 
 --
--- Name: scenario_documents scenario_documents_documents_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_documents
-    ADD CONSTRAINT scenario_documents_documents_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents(id) ON DELETE CASCADE;
-
-
---
 -- Name: scenario_documents scenario_documents_scenario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -22287,14 +22494,6 @@ ALTER TABLE ONLY public.scenario_fields
 
 
 --
--- Name: scenario_fields scenario_fields_fields_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_fields
-    ADD CONSTRAINT scenario_fields_fields_id_fkey FOREIGN KEY (field_id) REFERENCES public.fields(id) ON DELETE CASCADE;
-
-
---
 -- Name: scenario_fields scenario_fields_scenario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -22324,6 +22523,14 @@ ALTER TABLE ONLY public.scenario_flags
 
 ALTER TABLE ONLY public.scenario_flags
     ADD CONSTRAINT scenario_flags_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenario(id) ON DELETE CASCADE;
+
+
+--
+-- Name: scenario scenario_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.scenario
+    ADD CONSTRAINT scenario_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
 
 
 --
@@ -22455,14 +22662,6 @@ ALTER TABLE ONLY public.scenario_parameters
 
 
 --
--- Name: scenario_parameters scenario_parameters_parameters_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_parameters
-    ADD CONSTRAINT scenario_parameters_parameters_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameters(id) ON DELETE CASCADE;
-
-
---
 -- Name: scenario_parameters scenario_parameters_scenario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -22484,14 +22683,6 @@ ALTER TABLE ONLY public.scenario_persona_ranges
 
 ALTER TABLE ONLY public.scenario_personas
     ADD CONSTRAINT scenario_personas_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: scenario_personas scenario_personas_personas_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.scenario_personas
-    ADD CONSTRAINT scenario_personas_personas_id_fkey FOREIGN KEY (persona_id) REFERENCES public.personas(id) ON DELETE CASCADE;
 
 
 --
@@ -22647,11 +22838,11 @@ ALTER TABLE ONLY public.scenarios
 
 
 --
--- Name: scenarios scenarios_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: scenarios scenarios_scenario_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.scenarios
-    ADD CONSTRAINT scenarios_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT scenarios_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenario(id);
 
 
 --
@@ -22775,14 +22966,6 @@ ALTER TABLE ONLY public.setting_auth_values
 
 
 --
--- Name: setting_auths setting_auths_auths_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_auths
-    ADD CONSTRAINT setting_auths_auths_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths(id) ON DELETE CASCADE;
-
-
---
 -- Name: setting_auths setting_auths_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -22871,6 +23054,14 @@ ALTER TABLE ONLY public.setting_flags
 
 
 --
+-- Name: setting setting_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting
+    ADD CONSTRAINT setting_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: setting_names setting_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -22903,11 +23094,27 @@ ALTER TABLE ONLY public.setting_provider_keys
 
 
 --
+-- Name: setting_provider_keys setting_provider_keys_providers_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_provider_keys
+    ADD CONSTRAINT setting_provider_keys_providers_id_fkey FOREIGN KEY (providers_id) REFERENCES public.providers(id);
+
+
+--
 -- Name: setting_provider_keys setting_provider_keys_settings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.setting_provider_keys
     ADD CONSTRAINT setting_provider_keys_settings_id_fkey FOREIGN KEY (settings_id) REFERENCES public.setting(id);
+
+
+--
+-- Name: setting_providers setting_providers_providers_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_providers
+    ADD CONSTRAINT setting_providers_providers_id_fkey FOREIGN KEY (providers_id) REFERENCES public.providers(id);
 
 
 --
@@ -22999,11 +23206,11 @@ ALTER TABLE ONLY public.settings_default_guest
 
 
 --
--- Name: settings settings_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: settings settings_setting_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.settings
-    ADD CONSTRAINT settings_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT settings_setting_id_fkey FOREIGN KEY (setting_id) REFERENCES public.setting(id);
 
 
 --
@@ -23028,14 +23235,6 @@ ALTER TABLE ONLY public.simulation_attempts
 
 ALTER TABLE ONLY public.simulation_departments
     ADD CONSTRAINT simulation_departments_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls(id);
-
-
---
--- Name: simulation_departments simulation_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulation_departments
-    ADD CONSTRAINT simulation_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
 
 
 --
@@ -23103,6 +23302,14 @@ ALTER TABLE ONLY public.simulation_flags
 
 
 --
+-- Name: simulation simulation_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.simulation
+    ADD CONSTRAINT simulation_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+
+
+--
 -- Name: simulation_names simulation_names_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -23151,14 +23358,6 @@ ALTER TABLE ONLY public.simulation_scenarios_rubric_grade_agents
 
 
 --
--- Name: simulation_scenarios simulation_scenarios_scenarios_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.simulation_scenarios
-    ADD CONSTRAINT simulation_scenarios_scenarios_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios(id) ON DELETE CASCADE;
-
-
---
 -- Name: simulation_scenarios simulation_scenarios_simulation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -23175,11 +23374,11 @@ ALTER TABLE ONLY public.simulations
 
 
 --
--- Name: simulations simulations_group_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: simulations simulations_simulation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.simulations
-    ADD CONSTRAINT simulations_group_id_fkey FOREIGN KEY (group_id) REFERENCES public.groups(id);
+    ADD CONSTRAINT simulations_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulation(id);
 
 
 --
@@ -23375,14 +23574,6 @@ ALTER TABLE ONLY public.tool_templates
 
 
 --
--- Name: video_departments video_departments_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.video_departments
-    ADD CONSTRAINT video_departments_departments_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(id) ON DELETE CASCADE;
-
-
---
 -- Name: video_departments video_departments_video_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -23418,5 +23609,5 @@ ALTER TABLE ONLY public.videos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict VaUXWyfoiwNaGQ7khhP4dEB0VL8AahECmMj13DZgPbEN0aQwFmGXARlcB6S9uVY
+\unrestrict J2tdwZHJoMvWsIZNNkLol9bRMKhZzdvFWjipUP9lzEPnkaoihDyZThqe4J0ipqM
 
