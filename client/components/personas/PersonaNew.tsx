@@ -261,6 +261,8 @@ function PersonaNewComponent({
       examples_required: personaData.examples_required,
       examples_agent_id: personaData.examples_agent_id,
       examples: personaData.examples,
+      basic_agent_id: personaData.basic_agent_id,
+      content_agent_id: personaData.content_agent_id,
     };
     // Intentionally depend on individual fields, not whole personaData object
     // to prevent recreation when only object reference changes
@@ -318,6 +320,8 @@ function PersonaNewComponent({
     personaData?.examples_required,
     personaData?.examples_agent_id,
     personaData?.examples,
+    personaData?.basic_agent_id,
+    personaData?.content_agent_id,
   ]);
 
   // Helper to check if a resource type can be regenerated
@@ -484,8 +488,13 @@ function PersonaNewComponent({
     null | ((updates: Record<string, unknown>) => void)
   >(null);
 
+  // Store formData from GenericForm to access search params
+  const formDataRef = React.useRef<Record<string, unknown>>({});
+
   // Memoized callback to sync draftId from GenericForm - only update if value changed
   const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
+    // Store formData for access in handleGenerateResources
+    formDataRef.current = fd;
     const next = (fd["draftId"] as string | undefined) ?? null;
     setDraftId((prev) => (prev === next ? prev : next));
   }, []);
@@ -796,8 +805,7 @@ function PersonaNewComponent({
         return next;
       });
 
-      // Determine agent_id based on resource types
-      // Multi-resource combinations use specific agent IDs
+      // Determine agent_type based on resource types
       const basicResources: ResourceType[] = [
         "names",
         "descriptions",
@@ -805,6 +813,17 @@ function PersonaNewComponent({
         "departments",
       ];
       const contentResources: ResourceType[] = ["instructions", "examples"];
+      const allResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "colors",
+        "icons",
+        "instructions",
+        "flags",
+        "fields",
+        "departments",
+        "examples",
+      ];
 
       const isBasicCombo =
         resourceTypes.length === basicResources.length &&
@@ -812,69 +831,78 @@ function PersonaNewComponent({
       const isContentCombo =
         resourceTypes.length === contentResources.length &&
         resourceTypes.every((rt) => contentResources.includes(rt));
+      const isAllResources =
+        resourceTypes.length === allResourceTypes.length &&
+        resourceTypes.every((rt) => allResourceTypes.includes(rt));
 
-      let agentId: string | null = null;
-      if (isBasicCombo && personaData?.basic_agent_id) {
-        agentId = personaData.basic_agent_id;
-      } else if (isContentCombo && personaData?.content_agent_id) {
-        agentId = personaData.content_agent_id;
-      } else if (resourceTypes.length > 0) {
-        // Use individual agent_id for the first resource type
-        const firstResourceType = resourceTypes[0];
-        if (firstResourceType && personaData) {
-          const agentIdMap: Record<ResourceType, keyof PersonaData> = {
-            names: "name_agent_id",
-            descriptions: "description_agent_id",
-            colors: "color_agent_id",
-            icons: "icon_agent_id",
-            instructions: "instructions_agent_id",
-            flags: "flag_agent_id",
-            departments: "departments_agent_id",
-            fields: "fields_agent_id",
-            examples: "examples_agent_id",
-          };
-          const agentIdKey = agentIdMap[firstResourceType];
-          if (agentIdKey) {
-            const value = personaData[agentIdKey];
-            if (typeof value === "string" || value === null) {
-              agentId = value;
-            }
-          }
+      // Map resource types to agent_type
+      let agentType: string | null = null;
+      if (isAllResources) {
+        agentType = "general";
+      } else if (isBasicCombo) {
+        agentType = "basic";
+      } else if (isContentCombo) {
+        agentType = "content";
+      } else if (resourceTypes.length === 1) {
+        // Single resource type - map to agent_type
+        const agentTypeMap: Record<ResourceType, string> = {
+          names: "name",
+          descriptions: "description",
+          colors: "color",
+          icons: "icon",
+          instructions: "instructions",
+          flags: "flags",
+          departments: "departments",
+          fields: "fields",
+          examples: "examples",
+        };
+        const firstType = resourceTypes[0];
+        if (firstType && firstType in agentTypeMap) {
+          agentType = agentTypeMap[firstType];
         }
       }
 
-      // Emit single event with resource_types array
-      // Note: draft_id and persona_id are NOT sent - generation is resource-agnostic
-      // Pass group_id from personaData if available for regeneration, otherwise server will look up from context
+      // Read search params from formData
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+      const colorSearch =
+        (formData["colorSearch"] as string | undefined) ?? null;
+      const iconSearch = (formData["iconSearch"] as string | undefined) ?? null;
+      const descriptionSearch =
+        (formData["descriptionSearch"] as string | undefined) ?? null;
+      const instructionsSearch =
+        (formData["instructionsSearch"] as string | undefined) ?? null;
+      const fieldSearch =
+        (formData["fieldSearch"] as string | undefined) ?? null;
+      const colorShowSelected =
+        (formData["colorShowSelected"] as boolean | undefined) ?? false;
+      const iconShowSelected =
+        (formData["iconShowSelected"] as boolean | undefined) ?? false;
+      const fieldShowSelected =
+        (formData["fieldShowSelected"] as boolean | undefined) ?? false;
+
+      // Emit persona_generate event with GetPersonaApiRequest fields
       socket.emit("persona_generate", {
-        artifact_type: "persona",
-        resource_types: resourceTypes,
-        instructions: userInstructions || null,
-        agent_id: agentId, // Pass agent_id from personaData
-        group_id: personaData?.group_id || null, // Pass group_id from personaData for regeneration
-        // Flattened payload - all resource IDs at root level (grouped with their option arrays)
-        name_id: formState.name_id || null,
-        names: personaData?.names?.map((n) => n.id).filter((id): id is string => id !== null) || [],
-        description_id: formState.description_id || null,
-        descriptions: personaData?.descriptions?.map((d) => d.id).filter((id): id is string => id !== null) || [],
-        color_id: formState.color_id || null,
-        colors: personaData?.colors?.map((c) => c.id).filter((id): id is string => id !== null) || [],
-        icon_id: formState.icon_id || null,
-        icons: personaData?.icons?.map((i) => i.id).filter((id): id is string => id !== null) || [],
-        instructions_id: formState.instructions_id || null,
-        instructions: personaData?.instructions?.map((i) => i.id).filter((id): id is string => id !== null) || [],
-        active_flag_id: formState.active_flag_id || null,
-        flags: personaData?.flags?.map((f) => f.id).filter((id): id is string => id !== null) || [],
-        // Multi-select resources
-        department_ids: formState.department_ids || [],
-        departments: personaData?.departments?.map((d) => d.department_id).filter((id): id is string => id !== null) || [],
-        field_ids: formState.field_ids || [],
-        fields: personaData?.fields?.map((f) => f.field_id).filter((id): id is string => id !== null) || [],
-        example_ids: formState.example_ids || [],
-        examples: personaData?.examples?.map((e) => e.id).filter((id): id is string => id !== null) || [],
+        resource_types: resourceTypes, // Simple array of strings
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        // GetPersonaApiRequest fields from formData
+        draft_id: draftId || null,
+        color_search: colorSearch || null,
+        icon_search: iconSearch || null,
+        descriptions_search: descriptionSearch || null,
+        instructions_search: instructionsSearch || null,
+        field_search: fieldSearch || null,
+        color_show_selected: colorShowSelected || false,
+        icon_show_selected: iconShowSelected || false,
+        field_show_selected: fieldShowSelected || false,
+        current_color: null,
+        current_icon: null,
+        mcp: false,
+        persona_id: personaId || null,
       });
     },
-    [socket, isConnected, formState, personaData]
+    [socket, isConnected, personaId]
   );
 
   // Individual generation handlers - generate directly without modals
@@ -1303,7 +1331,9 @@ function PersonaNewComponent({
               }
               resetFields={["name", "description", "department_ids", "active"]}
               actions={
-                stepResources["basic"] && stepResources["basic"].length > 0 ? (
+                stepResources["basic"] &&
+                stepResources["basic"].length > 0 &&
+                currentPersonaData?.basic_agent_id ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1775,7 +1805,8 @@ function PersonaNewComponent({
               resetLabel="Reset"
               actions={
                 stepResources["content"] &&
-                stepResources["content"].length > 0 ? (
+                stepResources["content"].length > 0 &&
+                currentPersonaData?.content_agent_id ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
