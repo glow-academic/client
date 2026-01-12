@@ -8,13 +8,9 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (
-    GetPersonaApiRequest,
-    GetPersonaApiResponse,
-    GetPersonaSqlParams,
-    GetPersonaSqlRow,
-    load_sql_query,
-)
+from app.sql.types import (GetPersonaApiRequest, GetPersonaApiResponse,
+                           GetPersonaSqlParams, GetPersonaSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.cache_key import cache_key
 from utils.cache.get_cached import get_cached
@@ -76,8 +72,6 @@ async def get_persona(
         icon_search = request.icon_search
         color_show_selected = request.color_show_selected
         icon_show_selected = request.icon_show_selected
-        current_color = request.current_color
-        current_icon = request.current_icon
         descriptions_search = request.descriptions_search
         instructions_search = request.instructions_search
         field_search = request.field_search
@@ -96,8 +90,6 @@ async def get_persona(
             icon_search=icon_search,
             color_show_selected=color_show_selected,
             icon_show_selected=icon_show_selected,
-            current_color=current_color,
-            current_icon=current_icon,
             descriptions_search=descriptions_search,
             instructions_search=instructions_search,
             field_search=field_search,

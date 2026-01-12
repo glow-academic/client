@@ -207,8 +207,6 @@ export default async function PersonaEditPage({
         color_show_selected: q.colorShowSelected ?? null,
         icon_show_selected: q.iconShowSelected ?? null,
         field_show_selected: q.fieldShowSelected ?? null,
-        current_color: q.color ?? null,
-        current_icon: q.icon ?? null,
       } as GetPersonaIn["body"],
     };
     const personaDetail = await getPersona(input);

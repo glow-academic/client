@@ -191,8 +191,6 @@ export default async function NewPersonaPage({
     colorShowSelected: parseAsBoolean,
     iconShowSelected: parseAsBoolean,
     fieldShowSelected: parseAsBoolean,
-    color: parseAsString,
-    icon: parseAsString,
   };
   const loadPersonaSearchParams = createLoader(personaSearchParams);
   const q = loadPersonaSearchParams(searchParamsObj);
@@ -211,8 +209,6 @@ export default async function NewPersonaPage({
       color_show_selected: q.colorShowSelected ?? null,
       icon_show_selected: q.iconShowSelected ?? null,
       field_show_selected: q.fieldShowSelected ?? null,
-      current_color: q.color ?? null,
-      current_icon: q.icon ?? null,
     } as GetPersonaIn["body"],
   };
   const personaDetailDefault = await getPersonaDefault(input);

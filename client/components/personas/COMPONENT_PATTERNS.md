@@ -327,6 +327,117 @@ useEffect(() => {
 }, [personaData, personaId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 ```
 
+### 10. Generation Context
+
+**Pattern:** Set generation capability when persona data loads to enable full-page generation button in layout.
+
+**Purpose:** The layout component (`layout-client.tsx`) needs to know if full-page generation is available for the current artifact type. This is communicated via `GenerationContext`, similar to how `BreadcrumbContext` works for entity metadata.
+
+**Implementation:**
+```typescript
+import { useGenerationContext } from "@/contexts/generation-context";
+
+const { setGenerationCapability, clearGenerationCapability } =
+  useGenerationContext();
+
+// Set generation capability when persona data loads
+useEffect(() => {
+  if (personaData?.general_agent_id) {
+    setGenerationCapability({
+      artifactType: "persona", // singular artifact type
+      canGenerate: true,
+      agentId: personaData.general_agent_id,
+    });
+  } else {
+    setGenerationCapability({
+      artifactType: "persona",
+      canGenerate: false,
+      agentId: null,
+    });
+  }
+  return () => clearGenerationCapability();
+}, [
+  personaData?.general_agent_id,
+  setGenerationCapability,
+  clearGenerationCapability,
+]);
+```
+
+**Key Points:**
+- Check `general_agent_id` from API response (not `basic_agent_id` or `content_agent_id`)
+- Always set capability (even if `canGenerate: false`) so layout knows the current state
+- Use singular artifact type (`"persona"`, not `"personas"`)
+- Clear capability on unmount to prevent stale state
+
+### 11. Full-Page Generation Event Listener
+
+**Pattern:** Listen for `"full-page-generate"` custom event from layout to trigger full generation.
+
+**Purpose:** The layout's `FullPageGenerateButton` dispatches a custom event that page components listen to. This allows the layout (parent) to trigger generation in the page component (child) without tight coupling.
+
+**Implementation:**
+```typescript
+// Listen for full-page-generate event from layout
+useEffect(() => {
+  const handleFullPageGenerate = () => {
+    if (personaData?.general_agent_id) {
+      // Trigger full generation with all resources
+      handleGenerateResources(
+        [
+          "names",
+          "descriptions",
+          "colors",
+          "icons",
+          "instructions",
+          "flags",
+          "fields",
+          "departments",
+          "examples",
+        ],
+        "general" // Use "general" agent type for full-page generation
+      );
+    }
+  };
+  window.addEventListener("full-page-generate", handleFullPageGenerate);
+  return () =>
+    window.removeEventListener("full-page-generate", handleFullPageGenerate);
+}, [personaData?.general_agent_id, handleGenerateResources]);
+```
+
+**Key Points:**
+- Use `"general"` agent type for full-page generation (not individual resource types)
+- Include all resources that can be generated
+- Check `general_agent_id` exists before triggering generation
+- Clean up event listener on unmount
+
+**Naming Convention:**
+- **Artifacts**: Top-level entities (singular: `"persona"`, `"scenario"`, `"document"`)
+- **Resources**: Sub-entities within artifacts (plural: `"names"`, `"descriptions"`, `"colors"`)
+- **Drafts**: Store artifact types, not resource types (use `artifact_type`/`artifactType`, not `resource_type`/`resourceType`)
+
+### 12. Artifact Type vs Resource Type Naming
+
+**Pattern:** Use correct terminology - artifacts are top-level entities, resources are sub-entities.
+
+**Naming Convention:**
+- **Artifacts**: Top-level entities stored in `drafts.artifact` column (singular: `"persona"`, `"scenario"`, `"document"`)
+- **Resources**: Sub-entities within artifacts (plural: `"names"`, `"descriptions"`, `"colors"`)
+- **Drafts**: Store artifact types, not resource types
+
+**Correct Usage:**
+```typescript
+// ✅ CORRECT: Use artifactType for drafts
+<DraftPicker artifactType={artifactType} /> // artifactType = "persona" (singular)
+
+// ✅ CORRECT: Use resourceType for actual resources
+handleGenerateResources(["names", "descriptions"], "general"); // resources are plural
+
+// ❌ WRONG: Mixing terminology
+<DraftPicker resourceType={resourceType} /> // drafts store artifacts, not resources
+```
+
+**Why:** The database `drafts` table has an `artifact` column (not `resource_type`). The SQL query casts it as `artifact_type` to match the frontend naming. Using `artifactType` makes it clear we're working with artifact types, not resource types.
+
 ## Common Pitfalls
 
 ### 1. Only Checking `can_edit` in Edit Mode
@@ -370,6 +481,55 @@ const handleGenerateName = useCallback(
   async () => handleGenerateResources(["names"]),
   [handleGenerateResources]
 );
+```
+
+### 5. Not Setting Generation Capability
+
+**Problem:** Full-page generate button won't show if generation capability isn't set.
+
+**Solution:** Always set generation capability in `useEffect`, even if `canGenerate: false`:
+```typescript
+// ✅ CORRECT: Always set capability
+useEffect(() => {
+  if (personaData?.general_agent_id) {
+    setGenerationCapability({
+      artifactType: "persona",
+      canGenerate: true,
+      agentId: personaData.general_agent_id,
+    });
+  } else {
+    setGenerationCapability({
+      artifactType: "persona",
+      canGenerate: false,
+      agentId: null,
+    });
+  }
+  return () => clearGenerationCapability();
+}, [personaData?.general_agent_id, setGenerationCapability, clearGenerationCapability]);
+
+// ❌ WRONG: Only setting when agent exists
+useEffect(() => {
+  if (personaData?.general_agent_id) {
+    setGenerationCapability({ /* ... */ });
+  }
+  // Missing else case - layout won't know generation is unavailable
+}, [personaData?.general_agent_id]);
+```
+
+### 6. Using Wrong Agent Type for Full-Page Generation
+
+**Problem:** Using individual resource agent types instead of `"general"` for full-page generation.
+
+**Solution:** Always use `"general"` agent type for full-page generation:
+```typescript
+// ✅ CORRECT: Use "general" agent type
+handleGenerateResources(
+  ["names", "descriptions", "colors", /* ... */],
+  "general"
+);
+
+// ❌ WRONG: Using individual agent types
+handleGenerateResources(["names", "descriptions"], "basic"); // Wrong agent type
 ```
 
 ## Related Documentation
