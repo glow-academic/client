@@ -568,6 +568,46 @@ color_resource_data AS (
         (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_color_resource
     FROM params
 ),
+-- Color suggestions: linked to personas OR same group with generated=true
+-- NOTE: Must be defined before colors_data which references it
+color_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pc.color_id ORDER BY pc.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pc.color_id, MAX(pc.created_at) as created_at
+                 FROM persona_colors pc
+                 JOIN colors c ON c.id = pc.color_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pc.color_id IS NOT NULL
+                   AND (
+                       -- Option 1: Linked to personas (persona_colors junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       pc.generated = false
+                       OR
+                       (
+                           pc.generated = true
+                           AND c.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c2
+                               JOIN message_calls mc ON mc.call_id = c2.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c2.id = c.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY pc.color_id
+                 ORDER BY MAX(pc.created_at) DESC
+                 LIMIT 20
+             ) pc),
+            ARRAY[]::uuid[]
+        ) as color_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
 -- Colors (all available color options)
 colors_data AS (
     SELECT DISTINCT
@@ -575,10 +615,17 @@ colors_data AS (
         c.name,
         c.description,
         c.hex_code,
-        COALESCE(c.generated, false) as generated
+        COALESCE(c.generated, false) as generated,
+        -- Add sort priority: suggested colors first (1), then others (2)
+        CASE 
+            WHEN c.id = ANY(csd.color_suggestions) THEN 1
+            ELSE 2
+        END as sort_priority
     FROM colors c
     CROSS JOIN params p
-    WHERE 
+    CROSS JOIN color_suggestions_data csd
+    WHERE c.active = true
+      AND (
         -- Always include selected color_id if it exists
         c.id = (SELECT color_id FROM color_resource_data)
         OR (
@@ -592,7 +639,9 @@ colors_data AS (
                 c.id = (SELECT color_id FROM color_resource_data)
             )
         )
-    ORDER BY c.name
+      )
+    ORDER BY sort_priority, c.name
+    LIMIT 30  -- Multiple of 3 for nice grid layout
 ),
 -- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
 -- NOTE: These must be defined BEFORE they are referenced in other CTEs (e.g., descriptions_data references description_resource_data, flags_data references flag_resource_data)
@@ -626,6 +675,46 @@ icon_resource_data AS (
         (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_icon_resource
     FROM params
 ),
+-- Icon suggestions: linked to personas OR same group with generated=true
+-- NOTE: Must be defined before icons_data which references it
+icon_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pi.icon_id ORDER BY pi.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pi.icon_id, MAX(pi.created_at) as created_at
+                 FROM persona_icons pi
+                 JOIN icons i ON i.id = pi.icon_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pi.icon_id IS NOT NULL
+                   AND (
+                       -- Option 1: Linked to personas (persona_icons junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       pi.generated = false
+                       OR
+                       (
+                           pi.generated = true
+                           AND i.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = i.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY pi.icon_id
+                 ORDER BY MAX(pi.created_at) DESC
+                 LIMIT 20
+             ) pi),
+            ARRAY[]::uuid[]
+        ) as icon_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
 -- Icons (all available icon options)
 icons_data AS (
     SELECT DISTINCT
@@ -633,10 +722,17 @@ icons_data AS (
         i.name,
         i.description,
         i.value,
-        COALESCE(i.generated, false) as generated
+        COALESCE(i.generated, false) as generated,
+        -- Add sort priority: suggested icons first (1), then others (2)
+        CASE 
+            WHEN i.id = ANY(isd.icon_suggestions) THEN 1
+            ELSE 2
+        END as sort_priority
     FROM icons i
     CROSS JOIN params p
-    WHERE 
+    CROSS JOIN icon_suggestions_data isd
+    WHERE i.active = true
+      AND (
         -- Always include selected icon_id if it exists
         i.id = (SELECT icon_id FROM icon_resource_data)
         OR (
@@ -650,7 +746,9 @@ icons_data AS (
                 i.id = (SELECT icon_id FROM icon_resource_data)
             )
         )
-    ORDER BY i.name
+      )
+    ORDER BY sort_priority, i.name
+    LIMIT 189  -- Multiple of 3 for nice grid layout (63 rows x 3 columns)
 ),
 -- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
 -- NOTE: instructions_resource_data is defined here (before instructions_data) to avoid forward reference
@@ -767,84 +865,7 @@ instructions_data AS (
 ),
 -- Fields (all available field options, filtered by search and show_selected)
 -- Note: Filtering happens in SELECT statement using valid_fields_data and field_mapping_data
--- Color suggestions: linked to personas OR same group with generated=true
-color_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(pc.color_id ORDER BY pc.created_at DESC)
-             FROM (
-                 SELECT DISTINCT pc.color_id, MAX(pc.created_at) as created_at
-                 FROM persona_colors pc
-                 JOIN colors c ON c.id = pc.color_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE pc.color_id IS NOT NULL
-                   AND (
-                       -- Option 1: Linked to personas (persona_colors junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       pc.generated = false
-                       OR
-                       (
-                           pc.generated = true
-                           AND c.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c2
-                               JOIN message_calls mc ON mc.call_id = c2.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c2.id = c.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY pc.color_id
-                 ORDER BY MAX(pc.created_at) DESC
-                 LIMIT 20
-             ) pc),
-            ARRAY[]::uuid[]
-        ) as color_suggestions
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Icon suggestions: linked to personas OR same group with generated=true
-icon_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(pi.icon_id ORDER BY pi.created_at DESC)
-             FROM (
-                 SELECT DISTINCT pi.icon_id, MAX(pi.created_at) as created_at
-                 FROM persona_icons pi
-                 JOIN icons i ON i.id = pi.icon_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE pi.icon_id IS NOT NULL
-                   AND (
-                       -- Option 1: Linked to personas (persona_icons junction table means it's validated/used)
-                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
-                       pi.generated = false
-                       OR
-                       (
-                           pi.generated = true
-                           AND i.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = i.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY pi.icon_id
-                 ORDER BY MAX(pi.created_at) DESC
-                 LIMIT 20
-             ) pi),
-            ARRAY[]::uuid[]
-        ) as icon_suggestions
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
+-- NOTE: color_suggestions_data and icon_suggestions_data moved earlier (before colors_data and icons_data)
 -- Name suggestions: linked to personas OR same group with generated=true
 name_suggestions_data AS (
     SELECT 
@@ -2302,8 +2323,8 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (cod.id, cod.name, cod.description, cod.hex_code, cod.generated)::types.q_get_persona_v4_color_option
-            ORDER BY cod.name
-        ) FROM (SELECT DISTINCT id, name, description, hex_code, generated FROM colors_data) cod),
+            ORDER BY cod.sort_priority, cod.name
+        ) FROM (SELECT DISTINCT id, name, description, hex_code, generated, sort_priority FROM colors_data) cod),
         '{}'::types.q_get_persona_v4_color_option[]
     ) as colors,
     -- Single-select resources: icon
@@ -2320,8 +2341,8 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (iod.id, iod.name, iod.description, iod.value, iod.generated)::types.q_get_persona_v4_icon_option
-            ORDER BY iod.name
-        ) FROM (SELECT DISTINCT id, name, description, value, generated FROM icons_data) iod),
+            ORDER BY iod.sort_priority, iod.name
+        ) FROM (SELECT DISTINCT id, name, description, value, generated, sort_priority FROM icons_data) iod),
         '{}'::types.q_get_persona_v4_icon_option[]
     ) as icons,
     -- Single-select resources: instructions
