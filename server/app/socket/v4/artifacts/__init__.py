@@ -2,9 +2,9 @@
 
 from fastapi import APIRouter
 
-from . import complete, error, generate, progress
+from . import complete, error, frames, generate, progress
 
-__all__ = ["complete", "error", "generate", "progress"]
+__all__ = ["complete", "error", "frames", "generate", "progress"]
 
 # Export routers for inclusion in main router
 client_router = APIRouter()

@@ -21,6 +21,12 @@ from app.infra.v4.websocket.remove_active_run import remove_active_run
 from app.infra.v4.websocket.store_active_run import store_active_run
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import IMAGE_FOLDER, VIDEO_FOLDER, get_internal_sio
+from app.socket.v4.artifacts.session_store import (
+    create_session,
+    get_session_by_run_id,
+    remove_session,
+)
+from app.socket.v4.artifacts.frames import start_client_ws_sender
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
                            GetAudioRunContextAndCreateRunSqlRow,
@@ -1523,7 +1529,7 @@ async def _handle_audio_generation(
     resource_type: str,
     artifact_type: str | None,
 ) -> None:
-    """Handle audio generation using direct WebSocket connection to OpenAI Realtime API."""
+    """Handle audio generation using queue-based architecture with OpenAI Realtime WebSocket."""
     if not agent_id:
         raise ValueError("agent_id is required for audio generation")
 
@@ -1563,11 +1569,26 @@ async def _handle_audio_generation(
     # Connect to OpenAI Realtime API WebSocket
     from urllib.parse import quote
 
-    # Get group_id from run
+    # Get group_id and chat_id from run
     group_id_from_run = await conn.fetchval(
         "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
         run_id,
     )
+    
+    # Get chat_id from resource_id if available (for voice mode)
+    chat_id: str | None = None
+    resource_id = data.get("resource_id")
+    if resource_id:
+        try:
+            chat_id = str(uuid.UUID(resource_id))
+        except (ValueError, TypeError):
+            pass
+
+    # Create session in session store
+    session = create_session(sid, str(run_id))
+    session.oa_ws_connection = None  # Will be set when WS connects
+    session.chat_id = chat_id
+    session.group_id = str(group_id_from_run) if group_id_from_run else None
 
     url = f"wss://api.openai.com/v1/realtime?model={quote(model_name)}"
     headers = {
@@ -1577,6 +1598,8 @@ async def _handle_audio_generation(
 
     try:
         async with websockets.connect(url, extra_headers=headers) as ws:
+            # Store WebSocket connection in session
+            session.oa_ws_connection = ws
             # Emit session started event
             await internal_sio.emit(
                 "generate_progress",
@@ -1606,11 +1629,63 @@ async def _handle_audio_generation(
             # For now, send basic session config
             await ws.send(json.dumps(session_config))
 
-            # Listen for events from OpenAI Realtime API
-            async for message in ws:
+            # Uplink loop: drain inbound_queue and forward to OpenAI (unless muted)
+            async def uplink_loop() -> None:
+                """Drain inbound_queue and forward audio frames to OpenAI."""
+                while True:
+                    try:
+                        msg = await session.inbound_queue.get()
+                        
+                        if msg.get("type") == "mic.set_muted":
+                            muted = msg.get("muted", False)
+                            session.muted = muted
+                            if muted:
+                                # Send clear buffer command once when muted
+                                await ws.send(json.dumps({"type": "input_audio_buffer.clear"}))
+                            continue
+                        
+                        if msg.get("type") == "audio":
+                            if session.muted:
+                                continue  # Stop forwarding when muted
+                            
+                            # Convert binary PCM16 to base64
+                            pcm16_bytes = msg.get("pcm16_bytes")
+                            if pcm16_bytes:
+                                if isinstance(pcm16_bytes, str):
+                                    # Already base64 encoded
+                                    audio_base64 = pcm16_bytes
+                                else:
+                                    # Binary bytes - encode to base64
+                                    audio_base64 = base64.b64encode(pcm16_bytes).decode("utf-8")
+                                
+                                await ws.send(json.dumps({
+                                    "type": "input_audio_buffer.append",
+                                    "audio": audio_base64,
+                                }))
+                    except asyncio.CancelledError:
+                        break
+                    except Exception as e:
+                        # Log error but continue loop
+                        await emit_to_internal(
+                            "generate_error",
+                            GenerateErrorApiRequest(
+                                sid=sid,
+                                error_message=f"Error in uplink loop: {str(e)}",
+                                artifact_type=artifact_type,
+                                group_id=str(group_id_from_run) if group_id_from_run else None,
+                                resource_type=resource_type,
+                            ),
+                            sid=sid,
+                        )
+
+            # Downlink loop: read OpenAI events and push to outbound_queue
+            async def downlink_loop() -> None:
+                """Read OpenAI events and push audio deltas to outbound_queue."""
                 try:
-                    event = json.loads(message)
-                    event_type = event.get("type")
+                    async for message in ws:
+                        try:
+                            event = json.loads(message)
+                            event_type = event.get("type")
 
                     # Handle 14 OpenAI Realtime API events
                     if event_type == "session.created":
@@ -1647,7 +1722,15 @@ async def _handle_audio_generation(
                             },
                         )
                     elif event_type == "input_audio_buffer.speech_stopped":
-                        # User stopped speaking
+                        # User stopped speaking - create upload_id for user audio
+                        item_id = event.get("item_id")
+                        if item_id:
+                            # TODO: Create upload_id and start TUS upload for user audio
+                            # For now, store item_id mapping (upload_id will be created when audio is ready)
+                            # upload_id = await _create_audio_upload(...)
+                            # session.item_id_to_upload_id[item_id] = str(upload_id)
+                            pass
+                        
                         await internal_sio.emit(
                             "generate_progress",
                             {
@@ -1658,14 +1741,55 @@ async def _handle_audio_generation(
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "user_speech_stopped",
-                                "item_id": event.get("item_id"),
+                                "item_id": item_id,
                             },
                         )
                     elif (
                         event_type
                         == "conversation.item.input_audio_transcription.completed"
                     ):
-                        # User transcription completed
+                        # User transcription completed - retrieve upload_id and call member_progress
+                        item_id = event.get("item_id")
+                        transcript = event.get("transcript", "")
+                        upload_id = session.item_id_to_upload_id.get(item_id) if item_id else None
+                        
+                        # Call member_progress with transcript and upload_id (if available)
+                        if transcript and chat_id:
+                            try:
+                                from app.socket.v4.simulations.member_progress import (
+                                    MemberProgressPayload,
+                                    _member_progress_impl,
+                                )
+                                from app.infra.v4.websocket.find_profile_by_socket import (
+                                    find_profile_by_socket,
+                                )
+                                
+                                profile_id_str = await find_profile_by_socket(sid)
+                                if profile_id_str:
+                                    await _member_progress_impl(
+                                        sid,
+                                        MemberProgressPayload(
+                                            chat_id=chat_id,
+                                            message=transcript,
+                                            voice_mode=True,
+                                            upload_id=upload_id,
+                                        ),
+                                        uuid.UUID(profile_id_str),
+                                    )
+                            except Exception as e:
+                                # Log error but continue
+                                await emit_to_internal(
+                                    "generate_error",
+                                    GenerateErrorApiRequest(
+                                        sid=sid,
+                                        error_message=f"Error calling member_progress: {str(e)}",
+                                        artifact_type=artifact_type,
+                                        group_id=str(group_id_from_run) if group_id_from_run else None,
+                                        resource_type=resource_type,
+                                    ),
+                                    sid=sid,
+                                )
+                        
                         await internal_sio.emit(
                             "generate_progress",
                             {
@@ -1676,8 +1800,8 @@ async def _handle_audio_generation(
                                 "resource_type": resource_type,
                                 "run_id": str(run_id),
                                 "type": "user_transcription_complete",
-                                "item_id": event.get("item_id"),
-                                "transcript": event.get("transcript"),
+                                "item_id": item_id,
+                                "transcript": transcript,
                             },
                         )
                     elif event_type == "response.created":
@@ -1757,9 +1881,21 @@ async def _handle_audio_generation(
                             },
                         )
                     elif event_type == "response.audio.delta":
-                        # Assistant audio delta - send to client
+                        # Assistant audio delta - push to outbound_queue and emit generate_progress
                         audio_delta = event.get("delta")
                         if audio_delta:
+                            # Decode base64 to PCM16 bytes for client
+                            try:
+                                pcm16_bytes = base64.b64decode(audio_delta)
+                                await session.outbound_queue.put({
+                                    "type": "audio",
+                                    "pcm16": pcm16_bytes,
+                                })
+                            except Exception as e:
+                                # If decoding fails, still emit generate_progress with base64
+                                pass
+                            
+                            # Also emit generate_progress for simulations listeners
                             await internal_sio.emit(
                                 "generate_progress",
                                 {
@@ -1806,7 +1942,15 @@ async def _handle_audio_generation(
                             },
                         )
                     elif event_type == "response.done":
-                        # Response complete
+                        # Response complete - create upload_id for assistant audio
+                        response_id = event.get("response_id")
+                        if response_id:
+                            # TODO: Create upload_id and start TUS upload for assistant audio
+                            # For now, store response_id mapping (upload_id will be created when audio is ready)
+                            # upload_id = await _create_audio_upload(...)
+                            # session.response_id_to_upload_id[response_id] = str(upload_id)
+                            pass
+                        
                         await internal_sio.emit(
                             "generate_complete",
                             {
@@ -1837,23 +1981,71 @@ async def _handle_audio_generation(
                             sid=sid,
                         )
                         break  # Exit on error
-                except json.JSONDecodeError:
-                    # Skip invalid JSON
-                    continue
+                        except json.JSONDecodeError:
+                            # Skip invalid JSON
+                            continue
+                        except Exception as e:
+                            # Emit error for unexpected exceptions
+                            await emit_to_internal(
+                                "generate_error",
+                                GenerateErrorApiRequest(
+                                    sid=sid,
+                                    error_message=f"Error processing WebSocket event: {str(e)}",
+                                    artifact_type=artifact_type,
+                                    group_id=str(group_id_from_run) if group_id_from_run else None,
+                                    resource_type=resource_type,
+                                ),
+                                sid=sid,
+                            )
+                            break
+                except asyncio.CancelledError:
+                    break
                 except Exception as e:
-                    # Emit error for unexpected exceptions
+                    # Emit error for unexpected exceptions in downlink loop
                     await emit_to_internal(
                         "generate_error",
                         GenerateErrorApiRequest(
                             sid=sid,
-                            error_message=f"Error processing WebSocket event: {str(e)}",
+                            error_message=f"Error in downlink loop: {str(e)}",
                             artifact_type=artifact_type,
                             group_id=str(group_id_from_run) if group_id_from_run else None,
                             resource_type=resource_type,
                         ),
                         sid=sid,
                     )
+                except asyncio.CancelledError:
                     break
+                except Exception as e:
+                    # Emit error for unexpected exceptions in downlink loop
+                    await emit_to_internal(
+                        "generate_error",
+                        GenerateErrorApiRequest(
+                            sid=sid,
+                            error_message=f"Error in downlink loop: {str(e)}",
+                            artifact_type=artifact_type,
+                            group_id=str(group_id_from_run) if group_id_from_run else None,
+                            resource_type=resource_type,
+                        ),
+                        sid=sid,
+                    )
+
+            # Start client WS sender task
+            await start_client_ws_sender(sid, str(run_id))
+            
+            # Run both loops concurrently
+            uplink_task = asyncio.create_task(uplink_loop())
+            downlink_task = asyncio.create_task(downlink_loop())
+            
+            try:
+                # Wait for downlink loop to complete (it will break on response.done or error)
+                await downlink_task
+            finally:
+                # Cancel uplink loop when downlink completes
+                uplink_task.cancel()
+                try:
+                    await uplink_task
+                except asyncio.CancelledError:
+                    pass
 
     except Exception as e:
         # Get group_id from run for error reporting
@@ -1872,6 +2064,10 @@ async def _handle_audio_generation(
             ),
             sid=sid,
         )
+    finally:
+        # Clean up session
+        remove_session(str(run_id))
+        remove_session(sid)
 
 
 async def _persist_image(

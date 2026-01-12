@@ -1,0 +1,125 @@
+"""Simulation progress handler - listens to generate_progress events and emits simulation-specific events."""
+
+import uuid
+from typing import Any
+
+from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.main import get_internal_sio, sio
+
+internal_sio = get_internal_sio()
+
+
+@internal_sio.on("generate_progress")  # type: ignore
+async def handle_simulations_progress(data: dict[str, Any]) -> None:
+    """Handle generate_progress internal event - filter by simulation artifact_type and voice resource_type."""
+    # Filter by artifact_type and resource_type
+    artifact_type = data.get("artifact_type")
+    resource_type = data.get("resource_type")
+    modality = data.get("modality")
+    
+    if artifact_type != "simulation" or resource_type != "voice" or modality != "audio":
+        return  # Not for us
+    
+    sid = data.get("sid", "")
+    if not sid:
+        return  # No socket ID, can't emit to client
+    
+    # Get profile_id from sid
+    profile_id_str = await find_profile_by_socket(sid)
+    if not profile_id_str:
+        return
+    
+    # Extract event type and map to simulation events
+    event_type = data.get("type")
+    chat_id = data.get("group_id")  # group_id contains chat_id for simulations
+    
+    # Map artifact event types to simulation events
+    if event_type == "user_speech_started":
+        await sio.emit(
+            "simulation_voice_user_start",
+            {
+                "chat_id": chat_id,
+                "item_id": data.get("item_id"),
+                "audio_start_ms": data.get("audio_start_ms", 0),
+            },
+            room=sid,
+        )
+    elif event_type == "user_transcription_complete":
+        await sio.emit(
+            "simulation_voice_user_complete",
+            {
+                "chat_id": chat_id,
+                "item_id": data.get("item_id"),
+                "transcript": data.get("transcript"),
+            },
+            room=sid,
+        )
+    elif event_type == "audio_delta":
+        # Audio delta is handled by frames.py client WS sender
+        # But we can also emit a progress event if needed
+        await sio.emit(
+            "simulation_voice_assistant_delta",
+            {
+                "chat_id": chat_id,
+                "audio": data.get("audio"),  # Base64 encoded audio
+            },
+            room=sid,
+        )
+    elif event_type == "response_started":
+        await sio.emit(
+            "simulation_voice_assistant_start",
+            {
+                "chat_id": chat_id,
+                "response_id": data.get("response_id"),
+            },
+            room=sid,
+        )
+    elif event_type == "response_done":
+        await sio.emit(
+            "simulation_voice_assistant_done",
+            {
+                "chat_id": chat_id,
+                "response_id": data.get("response_id"),
+            },
+            room=sid,
+        )
+    elif event_type == "tool_call_progress":
+        await sio.emit(
+            "simulation_voice_tool_call_progress",
+            {
+                "chat_id": chat_id,
+                "call_id": data.get("call_id"),
+                "arguments_delta": data.get("arguments_delta"),
+            },
+            room=sid,
+        )
+    elif event_type == "tool_call_complete":
+        await sio.emit(
+            "simulation_voice_tool_call_complete",
+            {
+                "chat_id": chat_id,
+                "call_id": data.get("call_id"),
+                "function_call": data.get("function_call"),
+            },
+            room=sid,
+        )
+    elif event_type == "session_started":
+        # Emit session config to client
+        await sio.emit(
+            "simulation_voice_start_response",
+            {
+                "success": True,
+                "message": "Voice session started successfully",
+                "model": data.get("model"),
+            },
+            room=sid,
+        )
+    elif event_type == "session_created":
+        # Session ready
+        await sio.emit(
+            "simulation_voice_session_ready",
+            {
+                "chat_id": chat_id,
+            },
+            room=sid,
+        )
