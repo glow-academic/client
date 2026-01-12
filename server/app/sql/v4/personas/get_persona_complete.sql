@@ -554,13 +554,20 @@ icons_data AS (
         )
     ORDER BY i.name
 ),
--- Descriptions (all available description options, filtered by search)
+-- Descriptions (only generated descriptions that have been linked to personas)
 descriptions_data AS (
     SELECT 
         d.id,
         d.description,
-        COALESCE(d.generated, false) as generated
+        true as generated  -- Always true since we filtered for generated = true in junction table
     FROM descriptions d
+    WHERE d.id IN (
+        -- Get all description_ids from persona_descriptions where generated = true
+        SELECT DISTINCT pd.description_id
+        FROM persona_descriptions pd
+        WHERE pd.generated = true
+          AND pd.description_id IS NOT NULL
+    )
     CROSS JOIN params p
     WHERE 
         -- Search filter: if descriptions_search provided, match description text
@@ -568,19 +575,30 @@ descriptions_data AS (
          LOWER(d.description) LIKE '%' || LOWER(p.descriptions_search) || '%')
     ORDER BY d.description
 ),
--- Instructions (all available instruction options, filtered by search)
+-- Instructions (only generated instructions that have been linked to personas)
 instructions_data AS (
     SELECT 
         i.id,
         i.template,
-        COALESCE(i.generated, false) as generated
+        true as generated  -- Always true since we filtered for generated = true in junction table
     FROM instructions i
+    WHERE i.active = true
+      AND i.id IN (
+          -- Get all instruction_ids from persona_instructions where generated = true
+          SELECT DISTINCT pi.instruction_id
+          FROM persona_instructions pi
+          JOIN instructions i_check ON pi.instruction_id = i_check.id
+          WHERE pi.generated = true
+            AND pi.instruction_id IS NOT NULL
+            AND i_check.active = true
+            AND i_check.template IS NOT NULL
+            AND i_check.template != ''
+      )
     CROSS JOIN params p
     WHERE 
-        i.active = true
         -- Search filter: if instructions_search provided, match template text
-        AND (p.instructions_search IS NULL OR p.instructions_search = '' OR
-             LOWER(i.template) LIKE '%' || LOWER(p.instructions_search) || '%')
+        (p.instructions_search IS NULL OR p.instructions_search = '' OR
+         LOWER(i.template) LIKE '%' || LOWER(p.instructions_search) || '%')
     ORDER BY i.template
 ),
 -- Fields (all available field options, filtered by search and show_selected)
