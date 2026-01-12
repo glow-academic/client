@@ -24,7 +24,7 @@ type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 
 export interface FlagsProps {
-  active_flag_id?: string | null; // Current flag_id (standardized prop name)
+  flag_id?: string | null; // Current flag_id (standardized prop name)
   flag_resource?: {
     id: string | null;
     name: string | null;
@@ -60,7 +60,7 @@ export interface FlagsProps {
 }
 
 export function Flags({
-  active_flag_id,
+  flag_id,
   flag_resource,
   show_flag = false,
   disabled = false,
@@ -82,7 +82,7 @@ export function Flags({
 }: FlagsProps) {
   // Use standardized props with fallback to legacy props
   const resource = flag_resource ?? flagResource ?? null;
-  const resourceId = active_flag_id ?? flagId ?? null;
+  const resourceId = flag_id ?? flagId ?? null;
   const show = show_flag ?? false;
 
   // If flag_resource exists, the flag is active (true), otherwise false

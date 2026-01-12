@@ -1522,7 +1522,7 @@ function PersonaComponent({
 
                 {/* Active Switch - using Flags resource component */}
                 <Flags
-                  active_flag_id={formState.active_flag_id ?? null}
+                  flag_id={formState.active_flag_id ?? null}
                   flag_resource={currentPersonaData?.flag_resource ?? null}
                   show_flag={currentPersonaData?.show_flag ?? false}
                   disabled={disabled}
