@@ -1028,11 +1028,21 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             try:
                 # First, update database
                 async with pool.acquire() as conn:
-                    await conn.execute(
-                        "UPDATE keycloak.realm SET ssl_required = 'NONE' WHERE name = 'master'"
+                    from typing import cast
+
+                    from app.sql.types import UpdateMasterRealmSslSqlRow
+                    from utils.sql_helper import execute_sql_typed
+
+                    result = cast(
+                        UpdateMasterRealmSslSqlRow,
+                        await execute_sql_typed(
+                            conn,
+                            "app/sql/v4/keycloak/update_master_realm_ssl_complete.sql",
+                            params=None,
+                        ),
                     )
                     logger.info(
-                        "✅ Set master realm SSL requirement to NONE in database"
+                        f"✅ {result.message}"
                     )
 
                 # Note: Keycloak caches realm settings in memory, so database updates take time to take effect
@@ -1095,33 +1105,21 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             async with pool.acquire() as conn:
                 # Simplified: Get all settings with providers and keys
                 # Master realm for default settings, settings_id for department-specific
-                settings_to_sync_result = await conn.fetch("""
-                    -- Default settings → 'master' realm
-                    SELECT 'master'::text as realm_name
-                    WHERE EXISTS (
-                        SELECT 1 FROM settings s
-                        JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-                        WHERE s.active = true
-                          AND NOT EXISTS (
-                              SELECT 1 FROM department_settings sd 
-                              WHERE sd.settings_id = s.id AND sd.active = true
-                          )
+                from utils.sql_helper import _detect_function_in_sql, load_sql
+
+                sql_text = load_sql("app/sql/v4/keycloak/get_settings_to_sync_complete.sql")
+                is_function, function_name, schema = _detect_function_in_sql(sql_text)
+
+                if is_function and function_name:
+                    function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
+                    settings_to_sync_result = await conn.fetch(function_call_sql)
+                    settings_to_sync = [
+                        row["realm_name"] for row in settings_to_sync_result
+                    ]
+                else:
+                    raise ValueError(
+                        "Expected function definition in get_settings_to_sync_complete.sql"
                     )
-                    UNION
-                    -- Department-specific settings with keys → use settings_id as realm
-                    SELECT DISTINCT s.id::text as realm_name
-                    FROM settings s
-                    JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-                    JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-                    WHERE s.active = true
-                      AND EXISTS (
-                          SELECT 1 FROM setting_auth_keys sak
-                          WHERE sak.settings_id = s.id AND sak.active = true
-                      )
-                """)
-                settings_to_sync = [
-                    row["realm_name"] for row in settings_to_sync_result
-                ]
 
         # Sync each settings realm (settings-based, not department-based)
         for settings_id in settings_to_sync:
@@ -1132,16 +1130,26 @@ async def sync_keycloak(department_id: str | None = None) -> None:
                 department_id_for_sync = None
                 if settings_id != "master":
                     async with pool.acquire() as conn:
-                        dept_result = await conn.fetchval(
-                            """
-                            SELECT ds.department_id::text
-                            FROM department_settings ds
-                            WHERE ds.settings_id = $1::uuid AND ds.active = true
-                            LIMIT 1
-                        """,
-                            settings_id,
+                        import uuid
+                        from typing import cast
+
+                        from app.sql.types import (
+                            GetDepartmentIdForSettingsSqlParams,
+                            GetDepartmentIdForSettingsSqlRow)
+                        from utils.sql_helper import execute_sql_typed
+
+                        params = GetDepartmentIdForSettingsSqlParams(
+                            settings_id=uuid.UUID(settings_id)
                         )
-                        department_id_for_sync = dept_result
+                        result = cast(
+                            GetDepartmentIdForSettingsSqlRow,
+                            await execute_sql_typed(
+                                conn,
+                                "app/sql/v4/keycloak/get_department_id_for_settings_complete.sql",
+                                params=params,
+                            ),
+                        )
+                        department_id_for_sync = result.department_id
 
                 # Sync the realm using settings_id as realm_name
                 await sync_department_realm_by_settings(

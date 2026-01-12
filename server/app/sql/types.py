@@ -12176,6 +12176,31 @@ class GetAuthProvidersApiResponse(BaseModel):
 
 
 
+# Generated from: get_department_id_for_settings
+
+class GetDepartmentIdForSettingsSqlParams(BaseModel):
+
+    settings_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.settings_id,
+        )
+
+class GetDepartmentIdForSettingsSqlRow(BaseModel):
+
+    department_id: str | None = None
+
+class GetDepartmentIdForSettingsApiRequest(BaseModel):
+
+    settings_id: UUID
+
+class GetDepartmentIdForSettingsApiResponse(BaseModel):
+
+    department_id: str | None = None
+
+
+
 # Generated from: get_realm_name_for_department
 
 class GetRealmNameForDepartmentSqlParams(BaseModel):
@@ -12198,6 +12223,48 @@ class GetRealmNameForDepartmentApiRequest(BaseModel):
 class GetRealmNameForDepartmentApiResponse(BaseModel):
 
     realm_name: str | None = None
+
+
+
+# Generated from: get_settings_to_sync
+
+class GetSettingsToSyncSqlParams(BaseModel):
+
+    pass
+
+class GetSettingsToSyncSqlRow(BaseModel):
+
+    realm_name: str | None = None
+
+class GetSettingsToSyncApiRequest(BaseModel):
+
+    pass
+
+class GetSettingsToSyncApiResponse(BaseModel):
+
+    realm_name: str | None = None
+
+
+
+# Generated from: update_master_realm_ssl
+
+class UpdateMasterRealmSslSqlParams(BaseModel):
+
+    pass
+
+class UpdateMasterRealmSslSqlRow(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
+
+class UpdateMasterRealmSslApiRequest(BaseModel):
+
+    pass
+
+class UpdateMasterRealmSslApiResponse(BaseModel):
+
+    success: bool | None = None
+    message: str | None = None
 
 
 
@@ -29737,11 +29804,29 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAuthProvidersApiRequest",
         "GetAuthProvidersApiResponse",
     ),
+    "app/sql/v4/keycloak/get_department_id_for_settings_complete.sql": (
+        "GetDepartmentIdForSettingsSqlParams",
+        "GetDepartmentIdForSettingsSqlRow",
+        "GetDepartmentIdForSettingsApiRequest",
+        "GetDepartmentIdForSettingsApiResponse",
+    ),
     "app/sql/v4/keycloak/get_realm_name_for_department_complete.sql": (
         "GetRealmNameForDepartmentSqlParams",
         "GetRealmNameForDepartmentSqlRow",
         "GetRealmNameForDepartmentApiRequest",
         "GetRealmNameForDepartmentApiResponse",
+    ),
+    "app/sql/v4/keycloak/get_settings_to_sync_complete.sql": (
+        "GetSettingsToSyncSqlParams",
+        "GetSettingsToSyncSqlRow",
+        "GetSettingsToSyncApiRequest",
+        "GetSettingsToSyncApiResponse",
+    ),
+    "app/sql/v4/keycloak/update_master_realm_ssl_complete.sql": (
+        "UpdateMasterRealmSslSqlParams",
+        "UpdateMasterRealmSslSqlRow",
+        "UpdateMasterRealmSslApiRequest",
+        "UpdateMasterRealmSslApiResponse",
     ),
     "app/sql/v4/keys/create_key_complete.sql": (
         "CreateKeySqlParams",
@@ -32461,7 +32546,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/keycloak/get_department_id_for_settings_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/keycloak/get_realm_name_for_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/keycloak/get_settings_to_sync_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/keycloak/update_master_realm_ssl_complete.sql"]
     ) -> SqlString: ...
 
     @overload
