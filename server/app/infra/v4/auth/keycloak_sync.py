@@ -7,11 +7,11 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
+from app.main import get_pool
+from app.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import _detect_function_in_sql, load_sql
-
-from app.main import get_pool
 
 logger = get_logger(__name__)
 
@@ -154,12 +154,9 @@ async def get_realm_name_for_department(department_id: str | None, pool: Any) ->
         import uuid
         from typing import cast
 
+        from app.sql.types import (GetRealmNameForDepartmentSqlParams,
+                                   GetRealmNameForDepartmentSqlRow)
         from utils.sql_helper import execute_sql_typed
-
-        from app.sql.types import (
-            GetRealmNameForDepartmentSqlParams,
-            GetRealmNameForDepartmentSqlRow,
-        )
 
         async with pool.acquire() as conn:
             params = GetRealmNameForDepartmentSqlParams(
@@ -273,6 +270,243 @@ async def ensure_glow_client_in_master_realm(kc_admin: Any) -> None:
                     )
     except Exception as e:
         logger.warning(f"Could not ensure glow-client in master realm: {e}")
+
+
+async def ensure_mcp_client_scope(kc_admin: Any) -> None:
+    """Ensure MCP client scope exists in master realm with audience mapper.
+
+    Creates the mcp-resource client scope, adds an audience mapper with the MCP
+    resource URL, and assigns it to glow-client as a default client scope.
+
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    """
+    # Check if MCP is enabled
+    if not is_mcp_enabled():
+        logger.debug("MCP is disabled, skipping MCP client scope creation")
+        return
+
+    target_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
+    scope_name = "mcp-resource"
+    mapper_name = "mcp-audience"
+
+    try:
+        # Ensure we're in master realm
+        kc_admin.change_current_realm(realm_name="master")
+
+        # Get MCP resource URL from oauth module
+        mcp_resource_url = MCP_RESOURCE
+
+        # Step 1: Check if client scope exists, create if not
+        try:
+            scopes = kc_admin.get_client_scopes()
+            existing_scope = next(
+                (s for s in scopes if s.get("name") == scope_name), None
+            )
+        except Exception as e:
+            logger.warning(f"Failed to list client scopes: {e}")
+            return
+
+        if existing_scope:
+            scope_id = existing_scope.get("id")
+            logger.info(f"✅ Client scope '{scope_name}' already exists")
+        else:
+            # Create the client scope
+            scope_payload: dict[str, Any] = {
+                "name": scope_name,
+                "description": "MCP resource scope for OAuth audience binding",
+                "protocol": "openid-connect",
+                "attributes": {},
+            }
+
+            try:
+                scope_id = kc_admin.create_client_scope(scope_payload, skip_exists=True)
+                logger.info(f"✅ Created client scope '{scope_name}'")
+            except Exception as e:
+                error_str = str(e).lower()
+                is_conflict = (
+                    "location" in error_str
+                    or "duplicate" in error_str
+                    or "conflict" in error_str
+                    or "409" in error_str
+                    or "already exists" in error_str
+                )
+
+                if is_conflict:
+                    # Scope was created by another process, fetch it
+                    scopes = kc_admin.get_client_scopes()
+                    existing_scope = next(
+                        (s for s in scopes if s.get("name") == scope_name), None
+                    )
+                    if existing_scope:
+                        scope_id = existing_scope.get("id")
+                        logger.info(
+                            f"⚠️  Client scope '{scope_name}' was created by another process"
+                        )
+                    else:
+                        logger.warning(
+                            f"Client scope '{scope_name}' conflict but not found"
+                        )
+                        return
+                else:
+                    logger.warning(f"Failed to create client scope '{scope_name}': {e}")
+                    return
+
+        if not scope_id:
+            logger.warning(f"Client scope '{scope_name}' has no ID")
+            return
+
+        # Step 2: Check if audience mapper exists, create if not
+        try:
+            mappers = kc_admin.get_mappers_from_client_scope(scope_id=scope_id)
+            existing_mapper = next(
+                (m for m in mappers if m.get("name") == mapper_name), None
+            )
+        except Exception as e:
+            logger.warning(f"Failed to list mappers for scope '{scope_name}': {e}")
+            return
+
+        if existing_mapper:
+            mapper_id = existing_mapper.get("id")
+            # Check if mapper config needs update
+            mapper_config = existing_mapper.get("config", {})
+            current_audience = mapper_config.get("included.custom.audience", "")
+            if current_audience != mcp_resource_url:
+                # Update mapper config - need to update the full mapper payload
+                updated_mapper_payload = dict(existing_mapper)
+                updated_mapper_payload["config"] = dict(mapper_config)
+                updated_mapper_payload["config"]["included.custom.audience"] = mcp_resource_url
+                try:
+                    kc_admin.update_mapper_in_client_scope(
+                        client_scope_id=scope_id,
+                        protocol_mapper_id=mapper_id,
+                        payload=updated_mapper_payload,
+                    )
+                    logger.info(
+                        f"✅ Updated audience mapper '{mapper_name}' with MCP resource URL"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to update audience mapper '{mapper_name}': {e}"
+                    )
+            else:
+                logger.info(f"✅ Audience mapper '{mapper_name}' already configured correctly")
+        else:
+            # Create the audience mapper
+            mapper_payload: dict[str, Any] = {
+                "name": mapper_name,
+                "protocol": "openid-connect",
+                "protocolMapper": "oidc-audience-mapper",
+                "config": {
+                    "included.client.audience": "",
+                    "included.custom.audience": mcp_resource_url,
+                    "id.token.claim": "true",
+                    "access.token.claim": "true",
+                },
+            }
+
+            try:
+                kc_admin.add_mapper_to_client_scope(
+                    scope_id=scope_id, payload=mapper_payload
+                )
+                logger.info(
+                    f"✅ Created audience mapper '{mapper_name}' for scope '{scope_name}'"
+                )
+            except Exception as e:
+                error_str = str(e).lower()
+                is_conflict = (
+                    "location" in error_str
+                    or "duplicate" in error_str
+                    or "conflict" in error_str
+                    or "409" in error_str
+                    or "already exists" in error_str
+                )
+
+                if is_conflict:
+                    logger.info(
+                        f"⚠️  Audience mapper '{mapper_name}' was created by another process"
+                    )
+                else:
+                    logger.warning(
+                        f"Failed to create audience mapper '{mapper_name}': {e}"
+                    )
+                    return
+
+        # Step 3: Assign scope to glow-client as default client scope
+        try:
+            clients = kc_admin.get_clients()
+            client = next(
+                (c for c in clients if c.get("clientId") == target_client_id), None
+            )
+
+            if not client:
+                logger.warning(
+                    f"Client '{target_client_id}' not found, cannot assign MCP scope"
+                )
+                return
+
+            client_id = client.get("id")
+            if not client_id:
+                logger.warning(f"Client '{target_client_id}' has no ID")
+                return
+
+            # Get current default client scopes
+            try:
+                default_scopes = kc_admin.get_client_default_client_scopes(
+                    client_id=client_id
+                )
+                scope_already_assigned = any(
+                    s.get("name") == scope_name for s in default_scopes
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to get default client scopes for '{target_client_id}': {e}"
+                )
+                default_scopes = []
+                scope_already_assigned = False
+
+            if scope_already_assigned:
+                logger.info(
+                    f"✅ Client scope '{scope_name}' already assigned to '{target_client_id}'"
+                )
+            else:
+                # Add scope as default client scope
+                # The add_client_default_client_scope method requires a payload with client_scope_id
+                try:
+                    kc_admin.add_client_default_client_scope(
+                        client_id=client_id,
+                        client_scope_id=scope_id,
+                        payload={},  # Empty payload, scope_id is in the method parameter
+                    )
+                    logger.info(
+                        f"✅ Assigned client scope '{scope_name}' to '{target_client_id}' as default scope"
+                    )
+                except Exception as e:
+                    error_str = str(e).lower()
+                    is_conflict = (
+                        "location" in error_str
+                        or "duplicate" in error_str
+                        or "conflict" in error_str
+                        or "409" in error_str
+                        or "already exists" in error_str
+                    )
+
+                    if is_conflict:
+                        logger.info(
+                            f"⚠️  Client scope '{scope_name}' was already assigned to '{target_client_id}'"
+                        )
+                    else:
+                        logger.warning(
+                            f"Failed to assign client scope '{scope_name}' to '{target_client_id}': {e}"
+                        )
+
+        except Exception as e:
+            logger.warning(
+                f"Failed to assign MCP scope to client '{target_client_id}': {e}"
+            )
+
+    except Exception as e:
+        logger.warning(f"Could not ensure MCP client scope: {e}")
 
 
 async def sync_department_realm_by_settings(
@@ -846,6 +1080,9 @@ async def sync_keycloak(department_id: str | None = None) -> None:
 
         # Ensure glow-client exists in master realm before syncing departments
         await ensure_glow_client_in_master_realm(kc_admin)
+
+        # Ensure MCP client scope is configured (after client is ensured)
+        await ensure_mcp_client_scope(kc_admin)
 
         # Determine which settings to sync (settings-based realms, not department-based)
         # Sync each settings that has providers with keys
