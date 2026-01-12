@@ -1,7 +1,9 @@
 """Unified endpoints for artifacts and resources."""
 
+import inspect
 from typing import Any, cast
 
+from fastapi import Request, Response
 from mcp.server.fastmcp import FastMCP
 
 # Static enumeration of artifacts and resources with descriptions
@@ -142,6 +144,89 @@ try:
 except ImportError:
     PERSONAS_HANDLERS = {}
 
+# Analytics handlers
+try:
+    from app.api.v4.activity.list import get_activity_list
+    from app.api.v4.benchmark.bundle import get_benchmark_bundle
+    from app.api.v4.dashboard.bundle import get_dashboard
+    from app.api.v4.health.bundle import get_health_bundle
+    from app.api.v4.home.overview import get_home_overview
+    from app.api.v4.leaderboard.bundle import get_leaderboard
+    from app.api.v4.practice.overview import get_practice_overview
+    from app.api.v4.pricing.analytics import get_pricing
+    from app.api.v4.reports.bundle import \
+        get_reports  # Bundle for multiple profiles
+    from app.api.v4.reports.overview import \
+        get_reports_overview  # Single profile report
+
+    ANALYTICS_HANDLERS = {
+        "home": get_home_overview,
+        "dashboard": get_dashboard,
+        "practice": get_practice_overview,
+        "leaderboard": get_leaderboard,
+        "reports": get_reports,  # Bundle for multiple profiles
+        "report": get_reports_overview,  # Single profile report
+        "activity": get_activity_list,
+        "pricing": get_pricing,
+        "health": get_health_bundle,
+        "benchmark": get_benchmark_bundle,
+    }
+except ImportError:
+    ANALYTICS_HANDLERS = {}
+
+# Groups handlers (pricing)
+try:
+    from app.api.v4.pricing.detail import get_pricing_run_detail
+    from app.api.v4.pricing.runs import get_pricing_runs
+
+    GROUPS_HANDLERS = {
+        "list": get_pricing_runs,
+        "get": get_pricing_run_detail,
+    }
+except ImportError:
+    GROUPS_HANDLERS = {}
+
+# Attempts handlers
+try:
+    from app.api.v4.attempts.archive import bulk_archive_attempts
+    from app.api.v4.attempts.eval import get_eval_attempt_full
+    from app.api.v4.attempts.simulation import get_attempt_full
+    from app.api.v4.dashboard.history import get_dashboard_history
+    from app.api.v4.home.history import get_home_history
+    from app.api.v4.practice.history import get_practice_history
+
+    ATTEMPTS_HANDLERS = {
+        "list_home": get_home_history,
+        "list_dashboard": get_dashboard_history,
+        "list_practice": get_practice_history,
+        "list_benchmark": None,  # TODO: Will be implemented when benchmark/history endpoint is created
+        "get_simulation": get_attempt_full,
+        "get_eval": get_eval_attempt_full,
+        "archive": bulk_archive_attempts,  # Currently supports simulation only, will support benchmark/eval later
+    }
+except ImportError:
+    ATTEMPTS_HANDLERS = {}
+
+# Settings handlers
+try:
+    from app.api.v4.settings.list import list_settings
+    from app.api.v4.settings.update import update_settings
+
+    SETTINGS_HANDLERS = {
+        "get": list_settings,
+        "save": update_settings,
+    }
+except ImportError:
+    SETTINGS_HANDLERS = {}
+
+# Feedback handlers (for debug/report problem)
+try:
+    from app.api.v4.feedback.create import create_feedback
+
+    FEEDBACK_HANDLER: Any = create_feedback
+except ImportError:
+    FEEDBACK_HANDLER: Any = None
+
 # Import artifact documentation functions
 ARTIFACT_DOCS: dict[str, Any] = {}
 try:
@@ -252,6 +337,111 @@ async def call_handler(
         "status": "handler_exists",
         "note": "Handlers require FastAPI Request/Response objects and database connection. Consider calling via HTTP or refactoring handlers.",
     }
+
+
+def get_request_model_from_handler(handler: Any) -> Any | None:
+    """Extract request model from handler function annotations.
+    
+    Args:
+        handler: The handler function
+        
+    Returns:
+        Request model class or None if not found
+    """
+    try:
+        sig = inspect.signature(handler)
+        params = list(sig.parameters.values())
+        if params and len(params) > 0:
+            # First parameter is usually the request model
+            first_param = params[0]
+            if first_param.annotation != inspect.Parameter.empty:
+                return first_param.annotation
+    except Exception:
+        pass
+    
+    return None
+
+
+async def call_endpoint_handler(
+    handler: Any,
+    payload: dict[str, Any],
+    profile_id: str,
+) -> dict[str, Any]:
+    """Call an endpoint handler with proper Request/Response/DB context.
+    
+    Args:
+        handler: The handler function to call
+        payload: The payload dictionary (will be passed as request body)
+        profile_id: The profile ID to use
+        
+    Returns:
+        Dictionary with response data or error information
+    """
+    from app.main import get_db
+    from starlette.requests import Request as StarletteRequest
+    
+    try:
+        # Get request model from handler
+        request_model = get_request_model_from_handler(handler)
+        if not request_model:
+            return {
+                "error": "Could not determine request model from handler",
+                "status": "error",
+            }
+        
+        # Create Request object with proper scope
+        scope = {
+            "type": "http",
+            "method": "POST",
+            "path": "/api/v4/mcp",
+            "headers": [],
+            "query_string": b"",
+            "server": ("localhost", 8000),
+        }
+        http_request = StarletteRequest(scope)
+        
+        # Set profile_id in request state
+        http_request.state.profile_id = profile_id
+        http_request.state.mcp = True
+        
+        # Create Response object
+        http_response = Response()
+        
+        # Get database connection (get_db is an async generator)
+        async for conn in get_db():
+            # Parse payload into request model
+            api_request = request_model(**payload)
+            
+            # Call handler
+            result = await handler(
+                request=api_request,
+                http_request=http_request,
+                response=http_response,
+                conn=conn,
+            )
+            
+            # Convert result to dict
+            if hasattr(result, "model_dump"):
+                result_dict = result.model_dump(mode="json")
+                return cast(dict[str, Any], result_dict)
+            elif hasattr(result, "dict"):
+                result_dict = result.dict()
+                return cast(dict[str, Any], result_dict)
+            else:
+                return cast(dict[str, Any], {"data": result})
+        
+        # This should never happen (get_db always yields), but satisfy type checker
+        return {
+            "error": "Database connection not available",
+            "status": "error",
+        }
+                
+    except Exception as e:
+        return {
+            "error": str(e),
+            "status": "error",
+            "type": type(e).__name__,
+        }
 
 
 def register_endpoints(server: FastMCP) -> None:
@@ -440,3 +630,343 @@ def register_endpoints(server: FastMCP) -> None:
             "status": "not_implemented",
             "note": "Resources are create-only. Use POST /api/v4/resources/{name} endpoint.",
         }
+
+    # Analytics endpoints
+    @server.tool()
+    async def analytics(
+        type: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
+        """Call analytics endpoint by type.
+
+        Args:
+            type: Analytics type (home, dashboard, practice, leaderboard, reports, report, activity, pricing, health, benchmark)
+            payload: Request payload
+            profile_id: Profile ID for authentication
+
+        Returns:
+            Analytics data or error message.
+        """
+        if type not in ANALYTICS_HANDLERS:
+            return {
+                "error": f"'{type}' is not a valid analytics type.",
+                "status": "invalid_type",
+                "valid_types": list(ANALYTICS_HANDLERS.keys()),
+            }
+
+        handler = ANALYTICS_HANDLERS[type]
+        if handler is None:
+            return {
+                "error": f"Analytics type '{type}' is not implemented yet.",
+                "status": "not_implemented",
+            }
+
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    def analytics_payload(type: str) -> dict[str, Any]:
+        """Get payload schema for analytics endpoint type.
+
+        Args:
+            type: Analytics type (home, dashboard, practice, leaderboard, reports, report, activity, pricing, health, benchmark)
+
+        Returns:
+            JSON schema for the payload.
+        """
+        if type not in ANALYTICS_HANDLERS:
+            return {
+                "error": f"'{type}' is not a valid analytics type.",
+                "status": "invalid_type",
+                "valid_types": list(ANALYTICS_HANDLERS.keys()),
+            }
+
+        handler = ANALYTICS_HANDLERS[type]
+        if handler is None:
+            return {
+                "error": f"Analytics type '{type}' is not implemented yet.",
+                "status": "not_implemented",
+            }
+
+        request_model = get_request_model_from_handler(handler)
+        if request_model and hasattr(request_model, "model_json_schema"):
+            return request_model.model_json_schema()
+
+        return {
+            "type": "object",
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "description": f"Payload for {type} analytics endpoint",
+                }
+            },
+        }
+
+    # Groups endpoints (pricing)
+    @server.tool()
+    async def list_groups(
+        payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
+        """List pricing groups/runs.
+
+        Args:
+            payload: Request payload
+            profile_id: Profile ID for authentication
+
+        Returns:
+            List of pricing groups/runs or error message.
+        """
+        if "list" not in GROUPS_HANDLERS:
+            return {
+                "error": "list_groups handler not available.",
+                "status": "not_implemented",
+            }
+
+        handler = GROUPS_HANDLERS["list"]
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def get_group(
+        payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
+        """Get pricing group detail.
+
+        Args:
+            payload: Request payload (must include group_id)
+            profile_id: Profile ID for authentication
+
+        Returns:
+            Pricing group detail or error message.
+        """
+        if "get" not in GROUPS_HANDLERS:
+            return {
+                "error": "get_group handler not available.",
+                "status": "not_implemented",
+            }
+
+        handler = GROUPS_HANDLERS["get"]
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    # Attempts endpoints
+    @server.tool()
+    async def list_attempts(
+        type: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
+        """List attempts by type.
+
+        Args:
+            type: Attempt type (home, dashboard, practice, benchmark)
+            payload: Request payload
+            profile_id: Profile ID for authentication
+
+        Returns:
+            List of attempts or error message.
+        """
+        type_map = {
+            "home": "list_home",
+            "dashboard": "list_dashboard",
+            "practice": "list_practice",
+            "benchmark": "list_benchmark",
+        }
+
+        operation = type_map.get(type)
+        if not operation:
+            return {
+                "error": f"'{type}' is not a valid attempt type.",
+                "status": "invalid_type",
+                "valid_types": list(type_map.keys()),
+            }
+
+        if operation not in ATTEMPTS_HANDLERS:
+            return {
+                "error": f"list_attempts for type '{type}' is not available.",
+                "status": "not_implemented",
+            }
+
+        handler = ATTEMPTS_HANDLERS[operation]
+        if handler is None:
+            return {
+                "error": f"list_attempts for type '{type}' is not implemented yet.",
+                "status": "not_implemented",
+                "note": "Benchmark history endpoint will be created in the future.",
+            }
+
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def get_attempt(
+        type: str, attempt_id: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
+        """Get attempt by type and ID.
+
+        Args:
+            type: Attempt type (simulation, eval)
+            attempt_id: Attempt ID
+            payload: Request payload (will include attempt_id)
+            profile_id: Profile ID for authentication
+
+        Returns:
+            Attempt data or error message.
+        """
+        type_map = {
+            "simulation": "get_simulation",
+            "eval": "get_eval",
+        }
+
+        operation = type_map.get(type)
+        if not operation:
+            return {
+                "error": f"'{type}' is not a valid attempt type.",
+                "status": "invalid_type",
+                "valid_types": list(type_map.keys()),
+            }
+
+        if operation not in ATTEMPTS_HANDLERS:
+            return {
+                "error": f"get_attempt for type '{type}' is not available.",
+                "status": "not_implemented",
+            }
+
+        handler = ATTEMPTS_HANDLERS[operation]
+
+        # Add attempt_id to payload
+        payload_with_id = {**payload, "attempt_id": attempt_id}
+        return await call_endpoint_handler(handler, payload_with_id, profile_id)
+
+    @server.tool()
+    async def archive_attempts(
+        type: str,
+        archive: bool,
+        ids: list[str],
+        payload: dict[str, Any],
+        profile_id: str,
+    ) -> dict[str, Any]:
+        """Archive or unarchive attempts.
+
+        Args:
+            type: Attempt type (simulation, benchmark, eval)
+            archive: True to archive, False to unarchive
+            ids: List of attempt IDs
+            payload: Additional request payload
+            profile_id: Profile ID for authentication
+
+        Returns:
+            Archive result or error message.
+        """
+        # Currently only simulation is supported
+        if type != "simulation":
+            return {
+                "error": f"archive_attempts for type '{type}' is not implemented yet.",
+                "status": "not_implemented",
+                "note": "Will support benchmark and eval types in the future.",
+            }
+
+        if "archive" not in ATTEMPTS_HANDLERS:
+            return {
+                "error": "archive_attempts handler not available.",
+                "status": "not_implemented",
+            }
+
+        handler = ATTEMPTS_HANDLERS["archive"]
+
+        # Add archive parameters to payload
+        payload_with_params = {
+            **payload,
+            "attempt_ids": ids,
+            "archived": archive,
+        }
+        return await call_endpoint_handler(handler, payload_with_params, profile_id)
+
+    # Settings endpoints
+    @server.tool()
+    async def get_settings(
+        payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
+        """Get settings list or detail.
+
+        Args:
+            payload: Request payload
+            profile_id: Profile ID for authentication
+
+        Returns:
+            Settings data or error message.
+        """
+        if "get" not in SETTINGS_HANDLERS:
+            return {
+                "error": "get_settings handler not available.",
+                "status": "not_implemented",
+            }
+
+        handler = SETTINGS_HANDLERS["get"]
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    @server.tool()
+    async def save_settings(
+        payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
+        """Save (update) settings.
+
+        Args:
+            payload: Request payload with settings data
+            profile_id: Profile ID for authentication
+
+        Returns:
+            Updated settings or error message.
+        """
+        if "save" not in SETTINGS_HANDLERS:
+            return {
+                "error": "save_settings handler not available.",
+                "status": "not_implemented",
+            }
+
+        handler = SETTINGS_HANDLERS["save"]
+        return await call_endpoint_handler(handler, payload, profile_id)
+
+    # Debug/Report Problem endpoint
+    @server.tool()
+    async def debug(
+        type: str, message: str, profile_id: str
+    ) -> dict[str, Any]:
+        """Report a problem or provide feedback (debug tool).
+
+        Args:
+            type: Problem type (feature, bug, question, other)
+            message: Problem description or feedback message (max 1000 characters)
+            profile_id: Profile ID for authentication
+
+        Returns:
+            Feedback creation result or error message.
+        """
+        if FEEDBACK_HANDLER is None:
+            return {
+                "error": "debug/report problem handler not available.",
+                "status": "not_implemented",
+            }
+
+        # Validate type
+        valid_types = ["feature", "bug", "question", "other"]
+        if type not in valid_types:
+            return {
+                "error": f"Invalid feedback type: '{type}'",
+                "status": "invalid_type",
+                "valid_types": valid_types,
+            }
+
+        # Validate message
+        if not message or not message.strip():
+            return {
+                "error": "Message is required",
+                "status": "validation_error",
+            }
+
+        if len(message) > 1000:
+            return {
+                "error": "Message must be less than 1000 characters",
+                "status": "validation_error",
+            }
+
+        # Create payload for feedback endpoint
+        payload = {
+            "type": type,
+            "message": message.strip(),
+        }
+
+        return await call_endpoint_handler(FEEDBACK_HANDLER, payload, profile_id)
