@@ -278,7 +278,7 @@ export function GenericPicker<T>({
   );
 
   const buttonClasses = cn(
-    compact ? "h-8 justify-between" : "w-full justify-between",
+    compact ? "h-8 justify-between max-w-[200px]" : "w-full justify-between",
     buttonClassName,
   );
 
