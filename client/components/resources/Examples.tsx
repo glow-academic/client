@@ -44,7 +44,12 @@ export interface ExamplesProps {
   agent_id?: string | null; // Agent ID for resource creation
   createExamplesAction?:
     | ((input: {
-        body: { agent_id: string; group_id: string; example: string };
+        body: {
+          agent_id: string;
+          group_id: string;
+          example: string;
+          mcp?: boolean;
+        };
       }) => Promise<{ example_id?: string | null }>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
@@ -105,11 +110,6 @@ export function Examples({
     return mapping;
   }, [exampleMapping, ids, allExamples]);
 
-  // Filter examples to remove nulls - use validExamples for validation/filtering
-  const validExamples = useMemo(() => {
-    return allExamples.filter((ex) => ex.example !== null && ex.idx !== null);
-  }, [allExamples]);
-
   // Convert example_suggestions (UUIDs) to example strings by looking them up
   // Use effectiveExampleMapping which maps example_id -> example text from current persona's examples
   // Note: This only works for suggestions that are in the current persona's examples array
@@ -126,14 +126,6 @@ export function Examples({
     }
     return suggestions;
   }, [example_suggestions, effectiveExampleMapping, suggestions]);
-
-  // Use validExamples to filter display examples (if needed)
-  const _displayExamples = useMemo(() => {
-    return validExamples;
-  }, [validExamples]);
-
-  // Use example_resources to display example content (if needed)
-  const _exampleResources = _example_resources ?? [];
 
   // Internal state for display texts (synced with example_ids via exampleMapping)
   const [internalTexts, setInternalTexts] = useState<string[]>(() => {
@@ -205,7 +197,12 @@ export function Examples({
         if (createExamplesAction && agent_id && group_id) {
           try {
             const result = await createExamplesAction({
-              body: { agent_id: agent_id, group_id: group_id, example: text },
+              body: {
+                agent_id: agent_id,
+                group_id: group_id,
+                example: text,
+                mcp: false,
+              },
             });
             if (result.example_id) {
               exampleIdMapRef.current.set(text, result.example_id);
@@ -237,27 +234,29 @@ export function Examples({
 
     lastSavedTextsRef.current = internalTexts;
 
+    // Capture ref value at effect start for cleanup
+    const timersAtStart = debounceTimersRef.current;
+
     return () => {
-      // Capture current ref value before cleanup to avoid stale closure
-      const timers = debounceTimersRef.current;
-      timers.forEach((timer) => clearTimeout(timer));
-      timers.clear();
+      // Use captured ref value for cleanup
+      timersAtStart.forEach((timer) => clearTimeout(timer));
+      timersAtStart.clear();
     };
-  }, [internalTexts, createExamplesAction, onChange]);
+  }, [internalTexts, createExamplesAction, onChange, agent_id, group_id]);
 
   const handleItemsChange = useCallback((items: string[]) => {
     setInternalTexts(items.length > 0 ? items : [""]);
   }, []);
 
+  // Check if any example resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return _example_resources?.some((e) => e.generated) ?? false;
+  }, [_example_resources]);
+
   // Don't render if show_examples is false (AFTER all hooks)
   if (!show) {
     return null;
   }
-
-  // Check if any example resource is generated
-  const hasGenerated = useMemo(() => {
-    return _example_resources?.some((e) => e.generated) ?? false;
-  }, [_example_resources]);
 
   return (
     <div className="space-y-2">

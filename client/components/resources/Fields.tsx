@@ -7,12 +7,12 @@
 
 "use client";
 
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Label } from "@/components/ui/label";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Check } from "lucide-react";
-import { useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
+import { Check } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
 type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
@@ -68,7 +68,7 @@ export function Fields({
   label = "Fields",
   id = "fields",
   required = false,
-  placeholder = "Select fields...",
+  placeholder: _placeholder = "Select fields...",
   description,
   group_id,
   agent_id,
@@ -79,10 +79,21 @@ export function Fields({
   fieldIds,
 }: FieldsProps) {
   // Use standardized props with fallback to legacy props
-  const ids = field_ids ?? fieldIds ?? [];
+  const ids = useMemo(() => field_ids ?? fieldIds ?? [], [field_ids, fieldIds]);
   const show = show_fields ?? false;
   const allFieldsMemo = useMemo(() => fields ?? [], [fields]);
-  const suggestionsList = useMemo(() => _field_suggestions ?? [], [_field_suggestions]);
+  const suggestionsList = useMemo(
+    () => _field_suggestions ?? [],
+    [_field_suggestions]
+  );
+
+  // Track which field IDs have already had resources created
+  const createdFieldIdsRef = useRef<Set<string>>(new Set());
+
+  // Initialize createdFieldIdsRef with current IDs
+  useEffect(() => {
+    ids.forEach((id) => createdFieldIdsRef.current.add(id));
+  }, [ids]);
 
   // Convert fields array to FieldItem format for SelectableGrid
   const fieldItems = useMemo(() => {
@@ -98,21 +109,22 @@ export function Fields({
   // Filter fields based on search term
   const filteredFields = useMemo(() => {
     let filtered = fieldItems;
-    
+
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((field) => {
-        const searchText = `${field.name} ${field.description || ""}`.toLowerCase();
+        const searchText =
+          `${field.name} ${field.description || ""}`.toLowerCase();
         return searchText.includes(searchLower);
       });
     }
-    
+
     // Apply show selected filter
     if (showSelectedFilter) {
       filtered = filtered.filter((field) => ids.includes(field.id));
     }
-    
+
     return filtered;
   }, [fieldItems, searchTerm, showSelectedFilter, ids]);
 
@@ -123,15 +135,48 @@ export function Fields({
   );
 
   const handleSelect = useCallback(
-    (fieldId: string) => {
+    async (fieldId: string) => {
       const isSelected = ids.includes(fieldId);
+      let newIds: string[];
+
       if (isSelected) {
-        onChange(ids.filter((id) => id !== fieldId));
+        // Remove field
+        newIds = ids.filter((id) => id !== fieldId);
+        createdFieldIdsRef.current.delete(fieldId);
       } else {
-        onChange([...ids, fieldId]);
+        // Add field - create resource if not already created
+        newIds = [...ids, fieldId];
+
+        if (
+          !createdFieldIdsRef.current.has(fieldId) &&
+          createFieldsAction &&
+          agent_id &&
+          group_id
+        ) {
+          try {
+            await createFieldsAction({
+              body: {
+                agent_id: agent_id,
+                group_id: group_id,
+                field_id: fieldId,
+                mcp: false,
+              },
+            });
+            createdFieldIdsRef.current.add(fieldId);
+          } catch (error) {
+            console.error(
+              `Failed to create field resource for ${fieldId}:`,
+              error
+            );
+            // Don't block UI - still update selection
+          }
+        }
       }
+
+      // Update parent state
+      onChange(newIds);
     },
-    [ids, onChange]
+    [ids, onChange, createFieldsAction, agent_id, group_id]
   );
 
   // Don't render if show_fields is false (AFTER all hooks)
@@ -154,6 +199,7 @@ export function Fields({
       )}
       <SelectableGrid<FieldItem>
         items={filteredFields}
+        selectedId={null}
         selectedIds={ids}
         onSelect={handleSelect}
         getId={(item) => item.id}
@@ -181,9 +227,7 @@ export function Fields({
             )}
 
             <div className="flex-1 min-w-0">
-              <h3 className="font-medium text-sm leading-tight">
-                {item.name}
-              </h3>
+              <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
               {item.description && (
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {item.description}

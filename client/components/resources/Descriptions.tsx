@@ -105,7 +105,10 @@ export function Descriptions({
   const resource = description_resource ?? descriptionResource ?? null;
   const resourceId = description_id ?? descriptionId ?? null;
   const show = show_description ?? true;
-  const suggestionsList = description_suggestions ?? suggestions ?? [];
+  const suggestionsList = useMemo(
+    () => description_suggestions ?? suggestions ?? [],
+    [description_suggestions, suggestions]
+  );
 
   // Handle nullable resource properties - normalize to string
   const resourceDescription = resource?.description ?? "";
@@ -128,10 +131,6 @@ export function Descriptions({
       // This can happen during transitions
     }
   }, [resourceId, resource]);
-
-  // Use suggestionsList for autocomplete (if needed in future)
-  // Currently suggestions are handled by parent, but we track them here
-  const _hasSuggestions = suggestionsList.length > 0;
 
   // Update internal value when description_resource changes
   // Only sync if server text actually changed AND user is not actively editing
@@ -186,6 +185,7 @@ export function Descriptions({
               agent_id: agent_id,
               group_id: group_id,
               description: internalValue,
+              mcp: false,
             },
           });
           // Ignore stale response if user typed more
@@ -211,7 +211,13 @@ export function Descriptions({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createDescriptionsAction, onDescriptionIdChange]);
+  }, [
+    internalValue,
+    createDescriptionsAction,
+    onDescriptionIdChange,
+    agent_id,
+    group_id,
+  ]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
@@ -245,10 +251,16 @@ export function Descriptions({
   }, [descriptions, suggestionsList]);
 
   // Use descriptions array for GenericPicker items if available
-  const pickerItems =
-    descriptions && descriptions.length > 0
-      ? descriptions
-      : Object.values(suggestionsMapping);
+  const pickerItems: Array<{
+    id: string | null;
+    description: string | null;
+    generated?: boolean | null;
+  }> = useMemo(() => {
+    if (descriptions && descriptions.length > 0) {
+      return descriptions;
+    }
+    return Object.values(suggestionsMapping);
+  }, [descriptions, suggestionsMapping]);
 
   // Don't render if show_description is false (AFTER all hooks)
   if (!show) {
@@ -296,21 +308,37 @@ export function Descriptions({
           onSelect={(ids) => {
             onDescriptionIdChange(ids[0] || null);
           }}
-          getId={(item) => (typeof item === "string" ? item : item.id || "")}
-          getLabel={(item) => {
+          getId={(item) => {
+            if (typeof item === "string") {
+              return item;
+            }
+            return item.id || "";
+          }}
+          getLabel={(
+            item: { id: string | null; description: string | null } | string
+          ) => {
             if (typeof item === "string") {
               return `Description ${item.slice(0, 8)}...`;
             }
-            return item.description || `Description ${item.id?.slice(0, 8)}...`;
+            const desc = item.description;
+            const id = item.id;
+            if (desc && typeof desc === "string") return desc;
+            if (id && typeof id === "string")
+              return `Description ${id.slice(0, 8)}...`;
+            return "Description";
           }}
-          getSearchText={(item) => {
+          getSearchText={(
+            item: { id: string | null; description: string | null } | string
+          ) => {
             if (typeof item === "string") {
               return `Description ${item.slice(0, 8)}... ${item}`;
             }
             // Include ID in search text (hidden from user) to make items distinguishable internally
-            const desc = item.description || "";
-            const id = item.id || "";
-            return `${desc} ${id}`;
+            const desc = item.description;
+            const id = item.id;
+            const descStr = desc && typeof desc === "string" ? desc : "";
+            const idStr = id && typeof id === "string" ? id : "";
+            return `${descStr} ${idStr}`;
           }}
           placeholder="Descriptions"
           disabled={disabled}
@@ -318,8 +346,8 @@ export function Descriptions({
           compact={true}
           buttonClassName="h-8"
           showLabel={false}
-          initialSearchTerm={searchTerm}
-          onSearchChange={onSearchChange}
+          {...(searchTerm ? { initialSearchTerm: searchTerm } : {})}
+          {...(onSearchChange ? { onSearchChange } : {})}
         />
       </div>
       {/* Textarea without generate button inside */}

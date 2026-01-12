@@ -176,7 +176,7 @@ export function Instructions({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createInstructionsAction, onInstructionsIdChange]);
+  }, [internalValue, createInstructionsAction, onInstructionsIdChange, agent_id, group_id]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);

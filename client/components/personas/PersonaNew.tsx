@@ -216,6 +216,7 @@ function PersonaNewComponent({
       name_resource: personaData.name_resource,
       show_name: personaData.show_name,
       name_suggestions: personaData.name_suggestions,
+      names: personaData.names,
       name_required: personaData.name_required,
       name_agent_id: personaData.name_agent_id,
       description_resource: personaData.description_resource,
@@ -275,6 +276,7 @@ function PersonaNewComponent({
     personaData?.name_resource,
     personaData?.show_name,
     personaData?.name_suggestions,
+    personaData?.names,
     personaData?.name_required,
     personaData?.name_agent_id,
     personaData?.description_resource,
@@ -1380,6 +1382,7 @@ function PersonaNewComponent({
                   name_resource={currentPersonaData?.name_resource ?? null}
                   show_name={currentPersonaData?.show_name ?? true}
                   name_suggestions={currentPersonaData?.name_suggestions ?? []}
+                  names={currentPersonaData?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
@@ -1992,13 +1995,14 @@ function PersonaNewComponent({
                           agent_id: string;
                           group_id: string;
                           example: string;
+                          mcp?: boolean;
                         };
                       }) => {
                         // Wrap the action to add mcp field (defaults to false)
                         return await createExamplesAction({
                           body: {
                             ...input.body,
-                            mcp: false,
+                            mcp: input.body.mcp ?? false,
                           },
                         });
                       }

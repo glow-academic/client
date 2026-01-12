@@ -237,7 +237,7 @@ export function Icons({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createIconsAction, allIconsList, onIconIdChange]);
+  }, [internalValue, createIconsAction, allIconsList, onIconIdChange, agent_id, group_id]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);

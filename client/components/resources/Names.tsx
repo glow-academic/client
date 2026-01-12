@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
@@ -30,6 +30,11 @@ export interface NamesProps {
   } | null; // Resource data from server (standardized prop name; includes generated field)
   show_name?: boolean; // Whether to show this resource picker
   name_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
+  names?: Array<{
+    id: string | null;
+    name: string | null;
+    generated?: boolean | null;
+  }>; // Array of name suggestion objects (for autocomplete)
   disabled?: boolean; // Based on can_edit flag
   onNameIdChange: (nameId: string | null) => void; // Update name_id in parent form state
   onGenerate?: () => Promise<void>;
@@ -60,6 +65,7 @@ export function Names({
   name_resource,
   show_name = true,
   name_suggestions,
+  names,
   disabled = false,
   onNameIdChange,
   onGenerate,
@@ -82,7 +88,11 @@ export function Names({
   const resource = name_resource ?? nameResource ?? null;
   const resourceId = name_id ?? _nameId ?? null;
   const show = show_name ?? true;
-  const suggestionsList = name_suggestions ?? suggestions ?? [];
+  const suggestionsList = useMemo(
+    () => name_suggestions ?? suggestions ?? [],
+    [name_suggestions, suggestions]
+  );
+  const namesArray = useMemo(() => names ?? [], [names]);
 
   // Handle nullable resource properties
   const resourceName = resource?.name ?? null;
@@ -93,6 +103,8 @@ export function Names({
   const isInitialMountRef = useRef(true);
   const measureRef = useRef<HTMLSpanElement>(null);
   const [inputWidth, setInputWidth] = useState<number>(300); // Default min width
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Use resourceId for validation/debugging
   useEffect(() => {
@@ -102,9 +114,38 @@ export function Names({
     }
   }, [resourceId, resource]);
 
-  // Use suggestionsList for autocomplete (if needed in future)
-  // Currently suggestions are handled by parent, but we track them here
-  const _hasSuggestions = suggestionsList.length > 0;
+  // Convert name_suggestions UUIDs to name strings for autocomplete
+  const suggestionNames = useMemo(() => {
+    if (namesArray.length > 0) {
+      // Use names array to map UUIDs to name strings
+      return suggestionsList
+        .map((id) => {
+          const nameObj = namesArray.find((n) => n.id === id);
+          return nameObj?.name ?? null;
+        })
+        .filter((name): name is string => name !== null && name.trim() !== "");
+    }
+    // Fallback: if we have name_resource and it matches a suggestion, use it
+    if (resource?.name && suggestionsList.includes(resource.id ?? "")) {
+      return [resource.name];
+    }
+    return [];
+  }, [suggestionsList, namesArray, resource]);
+
+  // Simple prefix/substring matching for autocomplete filtering
+  const filteredSuggestions = useMemo(() => {
+    if (!internalValue.trim()) return suggestionNames;
+    const valueLower = internalValue.toLowerCase().trim();
+    return suggestionNames
+      .filter((s) => {
+        const sLower = s.toLowerCase().trim();
+        // Skip exact matches
+        if (sLower === valueLower) return false;
+        // Include if starts with or contains the typed text
+        return sLower.startsWith(valueLower) || sLower.includes(valueLower);
+      })
+      .slice(0, 5); // Show top 5 matches
+  }, [suggestionNames, internalValue]);
 
   // Measure text width and update input width dynamically
   useEffect(() => {
@@ -163,6 +204,7 @@ export function Names({
               agent_id: agent_id,
               group_id: group_id,
               name: internalValue,
+              mcp: false,
             },
           });
           if (result.name_id) {
@@ -183,10 +225,17 @@ export function Names({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createNamesAction, onNameIdChange]);
+  }, [internalValue, createNamesAction, onNameIdChange, agent_id, group_id]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
+    setShowSuggestions(true);
+  }, []);
+
+  const handleSelectSuggestion = useCallback((suggestion: string) => {
+    setInternalValue(suggestion);
+    setShowSuggestions(false);
+    inputRef.current?.focus();
   }, []);
 
   const handleFocus = useCallback(
@@ -208,6 +257,25 @@ export function Names({
       }
     },
     [defaultName]
+  );
+
+  const handleInputFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      handleFocus(e);
+      if (internalValue && filteredSuggestions.length > 0) {
+        setShowSuggestions(true);
+      }
+    },
+    [internalValue, filteredSuggestions, handleFocus]
+  );
+
+  const handleInputBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      handleBlur(e);
+      // Delay hiding suggestions to allow clicks
+      setTimeout(() => setShowSuggestions(false), 200);
+    },
+    [handleBlur]
   );
 
   // Don't render if show_name is false (AFTER all hooks)
@@ -237,20 +305,39 @@ export function Names({
         >
           {displayValue || "\u00A0"}
         </span>
-        <input
-          type="text"
-          id={id}
-          data-testid={dataTestId}
-          value={internalValue || ""}
-          onChange={(e) => handleChange(e.target.value)}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          placeholder={placeholder || defaultName || "Enter name"}
-          required={required}
-          disabled={disabled}
-          style={{ width: `${inputWidth}px` }}
-          className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
-        />
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            id={id}
+            data-testid={dataTestId}
+            value={internalValue || ""}
+            onChange={(e) => handleChange(e.target.value)}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            placeholder={placeholder || defaultName || "Enter name"}
+            required={required}
+            disabled={disabled}
+            style={{ width: `${inputWidth}px` }}
+            className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+          />
+          {showSuggestions && !disabled && filteredSuggestions.length > 0 && (
+            <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-md max-h-48 overflow-auto">
+              <div className="p-1">
+                {filteredSuggestions.map((suggestion, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => handleSelectSuggestion(suggestion)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm transition-colors"
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         {onGenerate && agent_id && (
           <TooltipProvider>
             <Tooltip>

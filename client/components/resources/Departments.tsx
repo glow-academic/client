@@ -19,7 +19,7 @@ import {
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 type CreateDraftDepartmentsIn = InputOf<
   "/api/v4/resources/departments",
@@ -103,6 +103,14 @@ export function Departments({
     [department_suggestions]
   );
 
+  // Track which department IDs have already had resources created
+  const createdDepartmentIdsRef = useRef<Set<string>>(new Set());
+
+  // Initialize createdDepartmentIdsRef with current IDs
+  useEffect(() => {
+    ids.forEach((id) => createdDepartmentIdsRef.current.add(id));
+  }, [ids]);
+
   // Convert departments array to DepartmentItem format for GenericPicker
   const departmentItems = useMemo(() => {
     return allDepartments
@@ -114,12 +122,6 @@ export function Departments({
       }));
   }, [allDepartments]);
 
-  // Use department_resources to show selected department details (if needed)
-  const _selectedDepartments = useMemo(() => {
-    if (!department_resources) return [];
-    return department_resources.filter((d) => d.department_id && d.name);
-  }, [department_resources]);
-
   // Check if a department is suggested
   const isSuggested = useCallback(
     (departmentId: string) => suggestionsList.includes(departmentId),
@@ -127,21 +129,55 @@ export function Departments({
   );
 
   const handleSelect = useCallback(
-    (selectedIds: string[]) => {
+    async (selectedIds: string[]) => {
+      // Find newly selected IDs
+      const newlySelected = selectedIds.filter(
+        (id) => !ids.includes(id) && !createdDepartmentIdsRef.current.has(id)
+      );
+
+      // Create resources for newly selected departments
+      if (
+        newlySelected.length > 0 &&
+        createDepartmentsAction &&
+        agent_id &&
+        group_id
+      ) {
+        for (const departmentId of newlySelected) {
+          try {
+            await createDepartmentsAction({
+              body: {
+                agent_id: agent_id,
+                group_id: group_id,
+                department_id: departmentId,
+                mcp: false,
+              },
+            });
+            createdDepartmentIdsRef.current.add(departmentId);
+          } catch (error) {
+            console.error(
+              `Failed to create department resource for ${departmentId}:`,
+              error
+            );
+            // Don't block UI - still update selection
+          }
+        }
+      }
+
+      // Update parent state
       onChange(selectedIds);
     },
-    [onChange]
+    [ids, onChange, createDepartmentsAction, agent_id, group_id]
   );
+
+  // Check if any department resource is generated (must be before early return)
+  const hasGenerated = useMemo(() => {
+    return department_resources?.some((d) => d.generated) ?? false;
+  }, [department_resources]);
 
   // Don't render if show_departments is false (AFTER all hooks)
   if (!show) {
     return null;
   }
-
-  // Check if any department resource is generated
-  const hasGenerated = useMemo(() => {
-    return department_resources?.some((d) => d.generated) ?? false;
-  }, [department_resources]);
 
   return (
     <div className="space-y-2">

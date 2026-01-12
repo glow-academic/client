@@ -147,6 +147,7 @@ export function Flags({
               name: "active",
               description: "Active flag",
               icon_id: iconId,
+              mcp: false,
             },
           });
           if (result.flag_id) {
@@ -167,7 +168,14 @@ export function Flags({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, createFlagsAction, iconId, onFlagIdChange]);
+  }, [
+    internalValue,
+    createFlagsAction,
+    iconId,
+    onFlagIdChange,
+    agent_id,
+    group_id,
+  ]);
 
   const handleChange = useCallback((checked: boolean) => {
     setInternalValue(checked);

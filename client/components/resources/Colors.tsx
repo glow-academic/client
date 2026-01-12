@@ -206,7 +206,7 @@ export function Colors({
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [internalValue, currentColor, createColorsAction, onColorIdChange]);
+  }, [internalValue, currentColor, createColorsAction, onColorIdChange, agent_id, group_id]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
