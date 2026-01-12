@@ -9064,6 +9064,8 @@ export interface components {
             basic_agent_id?: string | null;
             /** Content Agent Id */
             content_agent_id?: string | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
         };
         /** GetPersonasListApiRequest */
         GetPersonasListApiRequest: Record<string, never>;

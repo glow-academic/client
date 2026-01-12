@@ -8,6 +8,7 @@ from typing import Any, AsyncIterator, cast
 
 import httpx
 import websockets
+from jinja2 import Environment, TemplateError
 from agents.items import TResponseInputItem
 from app.infra.v4.artifacts import (convert_tools_to_openai_format,
                                     convert_tools_to_responses_format,
@@ -343,16 +344,17 @@ async def _generate_artifact_impl(
             if not agent_id:
                 raise ValueError("agent_id must be provided")
 
-            # Extract developer_instructions and user_instructions
+            # Extract developer_instructions and user_instructions (legacy support)
             developer_instructions = data.get("developer_instructions")  # list[str] | None
             user_instructions = data.get("user_instructions")  # list[str] | None
+            # Extract resources (array of {resource_type, resource_ids})
+            resources = data.get("resources")  # list[dict[str, Any]] | None
 
             # Process each resource_type
             for resource_type in resource_types:
                 try:
                     params = GetGenerationRunContextAndCreateRunSqlParams(
                         agent_id=uuid.UUID(agent_id),
-                        resource_type=resource_type,
                         profile_id=profile_id,
                         message_ids=message_ids_uuid,
                         department_id=None,  # Can be NULL, modality handlers will get it
@@ -361,6 +363,7 @@ async def _generate_artifact_impl(
                         else None,
                         developer_instructions=developer_instructions,
                         user_instructions=user_instructions,
+                        resources=resources,  # Pass resources array to SQL
                     )
                     result = cast(
                         GetGenerationRunContextAndCreateRunSqlRow,
@@ -554,12 +557,13 @@ async def _handle_text_generation(
         raise ValueError("agent_id is required for text generation")
 
     # Get text context from SQL
+    resources = data.get("resources")  # Extract resources array from data
     params = GetTextRunContextForExistingRunSqlParams(
         run_id=run_id,
         agent_id=agent_id,
-        resource_type=resource_type,
         message_ids=message_ids,
         group_id=group_id,
+        resources=resources,  # Pass resources array to SQL
     )
     result = cast(
         GetTextRunContextForExistingRunSqlRow,
@@ -669,13 +673,57 @@ async def _handle_text_generation(
     # Format messages for litellm
     messages = format_messages_for_litellm(input_items)
 
+    # Render developer instruction templates with context (if provided)
+    system_prompt = result.system_prompt or ""
+    developer_instruction_templates = getattr(result, "developer_instruction_templates", None)
+    context = getattr(result, "context", None)
+    
+    if developer_instruction_templates and context:
+        # Convert context from JSONB to Python dict if needed
+        context_dict = context if isinstance(context, dict) else json.loads(context) if isinstance(context, str) else {}
+        
+        # Render each template with context
+        env = Environment(
+            autoescape=True,
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        
+        rendered_instructions: list[str] = []
+        for template_str in developer_instruction_templates:
+            if not template_str or not template_str.strip():
+                continue
+            
+            try:
+                template = env.from_string(template_str)
+                rendered_content = template.render(**context_dict)
+                
+                if rendered_content and rendered_content.strip():
+                    rendered_instructions.append(rendered_content.strip())
+            except TemplateError as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"Failed to render developer instruction template: {str(e)}"
+                )
+                continue
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"Unexpected error rendering developer instruction template: {str(e)}"
+                )
+                continue
+        
+        # Append rendered instructions to system prompt
+        if rendered_instructions:
+            system_prompt = system_prompt + "\n\n" + "\n\n".join(rendered_instructions)
+
     # Add system prompt if present
-    if result.system_prompt:
+    if system_prompt:
         messages.insert(
             0,
             {
                 "role": "system",
-                "content": result.system_prompt,
+                "content": system_prompt,
             },
         )
 

@@ -16,17 +16,32 @@ BEGIN
     END LOOP;
 END $$;
 
--- 2) Recreate function
+-- 2) Create composite type if it doesn't exist (shared with text functions)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_type 
+        WHERE typname = 'i_persona_resource_v4' 
+        AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    ) THEN
+        CREATE TYPE types.i_persona_resource_v4 AS (
+            resource_type text,
+            resource_ids uuid[]
+        );
+    END IF;
+END $$;
+
+-- 3) Recreate function
 -- Minimal function: only rate limit, group creation, run creation, user message creation
 CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
     agent_id uuid,
-    resource_type text,
     profile_id uuid,
     message_ids uuid[] DEFAULT NULL,  -- Context message IDs (e.g., hint agent needs message_id)
     department_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
     developer_instructions text[] DEFAULT NULL,  -- Optional: array of developer instruction messages
-    user_instructions text[] DEFAULT NULL  -- Optional: array of user instructions for regeneration
+    user_instructions text[] DEFAULT NULL,  -- Optional: array of user instructions for regeneration
+    resources types.i_persona_resource_v4[] DEFAULT NULL  -- Optional: array of (resource_type, resource_ids) for fetching whitelisted resources
 )
 RETURNS TABLE (
     run_id text,
@@ -41,14 +56,14 @@ AS $$
 WITH params AS (
     SELECT 
         agent_id AS agent_id,
-        resource_type AS resource_type,
         message_ids AS message_ids,
         profile_id AS profile_id,
         department_id AS department_id,
         group_id AS group_id,
         developer_instructions AS developer_instructions,
-        user_instructions AS user_instructions
-),
+        user_instructions AS user_instructions,
+        resources AS resources
+    ),
 -- Validate agent exists
 selected_agent AS (
     SELECT a.id as agent_id

@@ -10257,27 +10257,37 @@ class UpdateFieldApiResponse(BaseModel):
 
 # Generated from: get_generation_run_context_and_create_run
 
+class IPersonaResourceV4(BaseModel):
+
+    resource_type: str | None
+    resource_ids: list[UUID] | None
+
 class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
 
     agent_id: UUID
-    resource_type: str
     profile_id: UUID
     message_ids: list[UUID] | None = None
     department_id: UUID | None = None
     group_id: UUID | None = None
     developer_instructions: list[str] | None = None
     user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
         return (
             self.agent_id,
-            self.resource_type,
             self.profile_id,
             self.message_ids,
             self.department_id,
             self.group_id,
             self.developer_instructions,
             self.user_instructions,
+            resources_tuples,
         )
 
 class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
@@ -10291,12 +10301,12 @@ class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
 class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
 
     agent_id: UUID
-    resource_type: str
     message_ids: list[UUID] | None = None
     department_id: UUID | None = None
     group_id: UUID | None = None
     developer_instructions: list[str] | None = None
     user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
 
 class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -10315,20 +10325,25 @@ class GetTextRunContextAndCreateRunSqlParams(BaseModel):
     agent_id: UUID
     profile_id: UUID
     department_id: UUID | None = None
-    resource_type: str | None = None
     upload_id: UUID | None = None
     group_id: UUID | None = None
     user_instructions: str | None = None
+    resources: list[IPersonaResourceV4] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
         return (
             self.agent_id,
             self.profile_id,
             self.department_id,
-            self.resource_type,
             self.upload_id,
             self.group_id,
             self.user_instructions,
+            resources_tuples,
         )
 
 class IGetTextRunContextAndCreateRunV4Tool(BaseModel):
@@ -10364,8 +10379,8 @@ class GetTextRunContextAndCreateRunSqlRow(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_template: str | None = None
-    developer_instruction_schema_id: UUID | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
     department_name: str | None = None
     developer_message_id: UUID | None = None
     upload_id: UUID | None = None
@@ -10376,10 +10391,10 @@ class GetTextRunContextAndCreateRunApiRequest(BaseModel):
 
     agent_id: UUID
     department_id: UUID | None = None
-    resource_type: str | None = None
     upload_id: UUID | None = None
     group_id: UUID | None = None
     user_instructions: str | None = None
+    resources: list[IPersonaResourceV4] | None = None
 
 class GetTextRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -10402,8 +10417,8 @@ class GetTextRunContextAndCreateRunApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_template: str | None = None
-    developer_instruction_schema_id: UUID | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
     department_name: str | None = None
     developer_message_id: UUID | None = None
     upload_id: UUID | None = None
@@ -10418,17 +10433,22 @@ class GetTextRunContextForExistingRunSqlParams(BaseModel):
 
     run_id: UUID
     agent_id: UUID
-    resource_type: str
     message_ids: list[UUID] | None = None
     group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
         return (
             self.run_id,
             self.agent_id,
-            self.resource_type,
             self.message_ids,
             self.group_id,
+            resources_tuples,
         )
 
 class GetTextRunContextForExistingRunSqlRow(BaseModel):
@@ -10451,6 +10471,8 @@ class GetTextRunContextForExistingRunSqlRow(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
     department_name: str | None = None
     upload_id: UUID | None = None
     file_path: str | None = None
@@ -10460,9 +10482,9 @@ class GetTextRunContextForExistingRunApiRequest(BaseModel):
 
     run_id: UUID
     agent_id: UUID
-    resource_type: str
     message_ids: list[UUID] | None = None
     group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
 
 class GetTextRunContextForExistingRunApiResponse(BaseModel):
 
@@ -10484,6 +10506,8 @@ class GetTextRunContextForExistingRunApiResponse(BaseModel):
     group_id: UUID | None = None
     trace_id: str | None = None
     tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
     department_name: str | None = None
     upload_id: UUID | None = None
     file_path: str | None = None
@@ -14799,6 +14823,7 @@ class GetPersonaSqlRow(BaseModel):
     examples: list[QGetPersonaV4Example] | None = None
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
 
 class GetPersonaApiRequest(BaseModel):
 
@@ -14887,6 +14912,7 @@ class GetPersonaApiResponse(BaseModel):
     examples: list[QGetPersonaV4Example] | None = None
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
+    general_agent_id: UUID | None = None
 
 
 

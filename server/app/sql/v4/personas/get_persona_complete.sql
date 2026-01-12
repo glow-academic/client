@@ -213,7 +213,8 @@ RETURNS TABLE (
     examples types.q_get_persona_v4_example[],
     -- Multi-resource combination agent IDs
     basic_agent_id uuid,
-    content_agent_id uuid
+    content_agent_id uuid,
+    general_agent_id uuid
 )
 LANGUAGE sql
 STABLE
@@ -2035,6 +2036,107 @@ content_agent_data AS (
         adp.agent_id ASC
     LIMIT 1
 ),
+-- Agent selection for 'general' - agent with ALL persona tools (names, descriptions, colors, icons, instructions, flags, fields, departments, examples)
+general_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'persona'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+    ),
+    agent_tool_resources AS (
+        SELECT 
+            ea.agent_id,
+            COALESCE(
+                ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
+                ARRAY[]::text[]
+            ) as tool_resources,
+            ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT 
+            atr.agent_id,
+            atr.tool_resources,
+            ARRAY_LENGTH(
+                ARRAY(
+                    SELECT unnest(atr.tool_resources)
+                    EXCEPT
+                    SELECT unnest(ARRAY['names', 'descriptions', 'colors', 'icons', 'instructions', 'flags', 'fields', 'departments', 'examples']::text[])
+                ),
+                1
+            ) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['names', 'descriptions', 'colors', 'icons', 'instructions', 'flags', 'fields', 'departments', 'examples']::text[] <@ atr.tool_resources
+        -- Filter by MCP flag when mcp=true
+        AND (
+            (SELECT mcp FROM params) = false
+            OR EXISTS (
+                SELECT 1 FROM agent_flags af_mcp
+                WHERE af_mcp.agent_id = atr.agent_id
+                  AND af_mcp.type = 'mcp'::type_agent_flags
+                  AND af_mcp.value = true
+            )
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ascores.agent_id,
+            ascores.unmatched_count,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ascores.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.unmatched_count ASC,
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
 -- Check for missing tools on required resources (after all agent selection CTEs and ui_flags)
 missing_tools_check AS (
     SELECT 
@@ -2379,7 +2481,8 @@ SELECT
     ) as examples,
     -- Multi-resource combination agent IDs
     (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
-    (SELECT agent_id FROM content_agent_data) as content_agent_id
+    (SELECT agent_id FROM content_agent_data) as content_agent_id,
+    (SELECT agent_id FROM general_agent_data) as general_agent_id
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf

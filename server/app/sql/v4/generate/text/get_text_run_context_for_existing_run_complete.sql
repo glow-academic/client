@@ -23,9 +23,9 @@ END $$;
 CREATE OR REPLACE FUNCTION socket_get_text_run_context_for_existing_run_v4(
     run_id uuid,
     agent_id uuid,
-    resource_type text,
     message_ids uuid[] DEFAULT NULL,  -- Includes user regeneration message (if created) + context messages
-    group_id uuid DEFAULT NULL
+    group_id uuid DEFAULT NULL,
+    resources types.i_persona_resource_v4[] DEFAULT NULL  -- Optional: array of (resource_type, resource_ids) for fetching whitelisted resources
 )
 RETURNS TABLE (
     agent_id text,
@@ -46,6 +46,8 @@ RETURNS TABLE (
     group_id uuid,
     trace_id text,
     tools types.i_get_text_run_context_and_create_run_v4_tool[],
+    developer_instruction_templates text[],  -- Changed to array
+    context jsonb,  -- Added: whitelisted resources for Jinja templating
     department_name text,
     upload_id uuid,
     file_path text,
@@ -58,9 +60,9 @@ WITH params AS (
     SELECT 
         run_id AS run_id,
         agent_id AS agent_id,
-        resource_type AS resource_type,
         message_ids AS message_ids,
-        group_id AS group_id
+        group_id AS group_id,
+        resources AS resources
 ),
 -- Validate run exists
 existing_run AS (
@@ -267,7 +269,14 @@ agent_tools_data AS (
             ARRAY_AGG(
                 (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(da.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
-            ) FILTER (WHERE t.id IS NOT NULL AND (rt.resource::text = p.resource_type OR rt.resource IS NULL)),
+            ) FILTER (WHERE t.id IS NOT NULL AND (
+                p.resources IS NULL  -- Backward compatibility: include all tools
+                OR rt.resource IS NULL  -- Global tools always included
+                OR EXISTS (
+                    SELECT 1 FROM unnest(p.resources) AS r
+                    WHERE rt.resource::text = r.resource_type
+                )
+            )),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
         ) as tools
     FROM selected_agent sa
@@ -280,16 +289,196 @@ agent_tools_data AS (
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     GROUP BY sa.agent_id
 ),
--- Get developer instruction using agent role
+-- Get developer instruction templates (array) for the agent
 developer_instruction_data AS (
     SELECT 
         sa.agent_id,
-        i.template as developer_instruction_template
+        COALESCE(
+            ARRAY_AGG(i.template ORDER BY i.created_at),
+            ARRAY[]::text[]
+        ) as developer_instruction_templates
     FROM selected_agent sa
     INNER JOIN agents a ON a.id = sa.agent_id
     LEFT JOIN agent_instructions ai ON ai.agent_id = a.id
     LEFT JOIN instructions i ON i.id = ai.instruction_id AND i.active = true
-    LIMIT 1
+    GROUP BY sa.agent_id
+),
+-- Fetch whitelisted resources based on resource_ids (if provided)
+-- Reuse the same pattern as get_text_run_context_and_create_run
+names_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', n.id::text,
+                    'name', n.name
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS name_id
+    JOIN names n ON n.id = name_id
+    WHERE r.resource_type = 'names'
+),
+descriptions_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', d.id::text,
+                    'description', d.description
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS desc_id
+    JOIN descriptions d ON d.id = desc_id
+    WHERE r.resource_type = 'descriptions'
+),
+colors_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', c.id::text,
+                    'name', c.name,
+                    'description', c.description,
+                    'hex_code', c.hex_code
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS color_id
+    JOIN colors c ON c.id = color_id
+    WHERE r.resource_type = 'colors'
+),
+icons_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', i.id::text,
+                    'name', i.name,
+                    'description', i.description,
+                    'value', i.value
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS icon_id
+    JOIN icons i ON i.id = icon_id
+    WHERE r.resource_type = 'icons'
+),
+instructions_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', inst.id::text,
+                    'template', inst.template
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS inst_id
+    JOIN instructions inst ON inst.id = inst_id
+    WHERE r.resource_type = 'instructions'
+),
+flags_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', f.id::text,
+                    'name', f.name,
+                    'description', f.description
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS flag_id
+    JOIN flags f ON f.id = flag_id
+    WHERE r.resource_type = 'flags'
+),
+departments_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', d.id::text,
+                    'name', (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
+                    'description', (SELECT desc_data.description FROM department_descriptions dd JOIN descriptions desc_data ON dd.description_id = desc_data.id WHERE dd.department_id = d.id LIMIT 1)
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS dept_id
+    JOIN departments d ON d.id = dept_id
+    WHERE r.resource_type = 'departments'
+),
+fields_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', f.field_id::text,
+                    'name', (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1),
+                    'description', (SELECT desc_data.description FROM field_descriptions fd JOIN descriptions desc_data ON fd.description_id = desc_data.id WHERE fd.field_id = f.field_id LIMIT 1)
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS field_id_val
+    JOIN fields f ON f.field_id = field_id_val
+    WHERE r.resource_type = 'fields'
+),
+examples_resources AS (
+    SELECT 
+        COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'id', e.id::text,
+                    'example', e.example
+                )
+            ),
+            '[]'::jsonb
+        ) as resources
+    FROM params p
+    CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS example_id
+    JOIN examples e ON e.id = example_id
+    WHERE r.resource_type = 'examples'
+),
+-- Combine all resources into single JSONB object
+combined_resources AS (
+    SELECT 
+        jsonb_build_object(
+            'names', COALESCE((SELECT resources FROM names_resources), '[]'::jsonb),
+            'descriptions', COALESCE((SELECT resources FROM descriptions_resources), '[]'::jsonb),
+            'colors', COALESCE((SELECT resources FROM colors_resources), '[]'::jsonb),
+            'icons', COALESCE((SELECT resources FROM icons_resources), '[]'::jsonb),
+            'instructions', COALESCE((SELECT resources FROM instructions_resources), '[]'::jsonb),
+            'flags', COALESCE((SELECT resources FROM flags_resources), '[]'::jsonb),
+            'departments', COALESCE((SELECT resources FROM departments_resources), '[]'::jsonb),
+            'fields', COALESCE((SELECT resources FROM fields_resources), '[]'::jsonb),
+            'examples', COALESCE((SELECT resources FROM examples_resources), '[]'::jsonb)
+        ) as context
 ),
 -- Get department name (from agent_departments or profile primary department)
 department_data AS (
@@ -326,14 +515,7 @@ context_data AS (
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
-        COALESCE(
-            CASE 
-                WHEN did.developer_instruction_template IS NOT NULL AND did.developer_instruction_template != ''
-                THEN COALESCE(pr_prompt.system_prompt, '') || E'\n\n' || did.developer_instruction_template
-                ELSE COALESCE(pr_prompt.system_prompt, '')
-            END,
-            ''
-        ) as system_prompt,
+        COALESCE(pr_prompt.system_prompt, '') as system_prompt,  -- Don't append developer instructions here - Python will handle it
         COALESCE(mtl.temperature, 0.0) as temperature,
         mrl.reasoning_level as reasoning,
         
@@ -354,6 +536,12 @@ context_data AS (
         
         -- Tools data
         COALESCE(atd.tools, '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]) as tools,
+        
+        -- Developer instruction templates (array)
+        COALESCE(did.developer_instruction_templates, ARRAY[]::text[]) as developer_instruction_templates,
+        
+        -- Context (whitelisted resources for Jinja templating)
+        COALESCE(cr.context, '{}'::jsonb) as context,
         
         -- Department data
         dnd.department_name
@@ -398,6 +586,8 @@ context_data AS (
     LEFT JOIN agent_tools_data atd ON atd.agent_id = sa.agent_id
     -- Join developer instruction data
     LEFT JOIN developer_instruction_data did ON did.agent_id = sa.agent_id
+    -- Join context (whitelisted resources)
+    CROSS JOIN combined_resources cr
     -- Join department data
     CROSS JOIN department_name_data dnd
 )
@@ -423,6 +613,10 @@ SELECT
     gd.trace_id::text as trace_id,
     -- Tools array
     cd.tools,
+    -- Developer instruction templates (array)
+    cd.developer_instruction_templates,
+    -- Context (whitelisted resources for Jinja templating)
+    cd.context,
     -- Department name
     cd.department_name,
     -- Upload info (for audio input, when upload_id is provided)
