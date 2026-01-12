@@ -143,36 +143,67 @@ descriptions types.q_get_persona_v4_description_resource[]  -- Only descriptions
 - **Consistent type**: All `{resource}_suggestions` fields must be `uuid[]` type
 
 **Suggestions Logic:**
-- **Based on `generated` flag**: Suggestions are determined by querying junction tables (e.g., `persona_colors`, `persona_descriptions`) for resources where `generated = true`
-- **Junction table pattern**: Each junction table (e.g., `persona_colors`, `persona_descriptions`, `persona_instructions`) has a `generated` boolean column
-- **Ordering**: Suggestions are ordered by `created_at DESC` to show most recently generated resources first
+- **Two-part filtering**: Suggestions include resources that meet either condition:
+  1. **Linked to personas**: Resources linked via junction tables (e.g., `persona_descriptions`, `persona_names`) - these are validated by actual usage in personas
+  2. **Same group with generated=true**: Resources that are generated (`generated = true`) AND linked to the same group as the current draft/persona (via `call_id → calls → message_calls → message_runs → group_runs → group_id`)
+- **Junction table pattern**: Query from junction tables (e.g., `persona_colors`, `persona_descriptions`, `persona_instructions`) to find resources linked to personas
+- **Active flag handling**: Some junction tables have `active` columns (e.g., `persona_departments`, `persona_fields`, `persona_examples`) - use `active = true` when available. Others (e.g., `persona_names`, `persona_descriptions`, `persona_instructions`, `persona_colors`, `persona_icons`) don't have `active` - presence in junction table indicates usage
+- **Group lookup**: For same-group filtering, follow the chain: `resource.call_id → calls.id → message_calls.call_id → message_calls.message_id → message_runs.message_id → message_runs.run_id → group_runs.run_id → group_runs.group_id`
+- **Ordering**: Suggestions are ordered by `created_at DESC` to show most recently used/generated resources first
 - **Limits**: Typically limited to 20 suggestions per resource type
-- **Purpose**: Enables users to quickly access previously AI-generated resources
+- **Purpose**: Shows validated resources (linked to personas) and generated resources from the current group, avoiding partial/incomplete items
 
 **Why:**
 - Frontend can look up full resource objects using IDs
 - Consistent type makes type generation and validation easier
 - IDs are stable identifiers, text values may change
-- `generated` flag provides a clear signal for AI-generated content that users may want to reuse
+- Linking to personas validates quality (if a persona uses it, it's complete)
+- Same-group filtering shows relevant generated items from the current context
 
 **Example:**
 ```sql
 -- ❌ WRONG: Returns text array
 name_suggestions text[]
 
--- ✅ CORRECT: Returns UUID array based on generated flag
+-- ✅ CORRECT: Returns UUID array with two-part filtering
 name_suggestions_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC),
+            (SELECT ARRAY_AGG(pn.name_id ORDER BY pn.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pn.name_id, MAX(pn.created_at) as created_at
+                 FROM persona_names pn
+                 JOIN names n ON n.id = pn.name_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pn.name_id IS NOT NULL
+                   AND n.name IS NOT NULL
+                   AND n.name != ''
+                   AND (
+                       -- Option 1: Linked to personas (validated by usage)
+                       -- Option 2: OR linked to same group with generated=true
+                       pn.generated = false
+                       OR
+                       (
+                           pn.generated = true
+                           AND n.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = n.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY pn.name_id
+                 ORDER BY MAX(pn.created_at) DESC
+                 LIMIT 20
+             ) pn),
             ARRAY[]::uuid[]
         ) as name_suggestions
-    FROM persona_names pn
-    WHERE pn.generated = true
-      AND pn.name_id IS NOT NULL
-    GROUP BY pn.name_id
-    ORDER BY MAX(pn.created_at) DESC
-    LIMIT 20
+    FROM params
+    LIMIT 1
 )
 ```
 

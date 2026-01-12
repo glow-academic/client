@@ -14890,9 +14890,9 @@ class GetPersonaApiResponse(BaseModel):
 
 
 
-# Generated from: get_persona_generate_context
+# Generated from: get_persona_generate_context_v4
 
-class GetPersonaGenerateContextSqlParams(BaseModel):
+class GetPersonaGenerateContextV4SqlParams(BaseModel):
 
     profile_id: UUID
     resource_types: list[str]
@@ -14925,13 +14925,13 @@ class GetPersonaGenerateContextSqlParams(BaseModel):
             self.example_ids,
         )
 
-class GetPersonaGenerateContextSqlRow(BaseModel):
+class GetPersonaGenerateContextV4SqlRow(BaseModel):
 
     agent_id: UUID | None = None
     resources: Any | None = None
     developer_instruction_templates: list[str] | None = None
 
-class GetPersonaGenerateContextApiRequest(BaseModel):
+class GetPersonaGenerateContextV4ApiRequest(BaseModel):
 
     resource_types: list[str]
     agent_id: UUID | None = None
@@ -14946,7 +14946,7 @@ class GetPersonaGenerateContextApiRequest(BaseModel):
     field_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
 
-class GetPersonaGenerateContextApiResponse(BaseModel):
+class GetPersonaGenerateContextV4ApiResponse(BaseModel):
 
     agent_id: UUID | None = None
     resources: Any | None = None
@@ -30182,11 +30182,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaApiRequest",
         "GetPersonaApiResponse",
     ),
-    "app/sql/v4/personas/get_persona_generate_context_complete.sql": (
-        "GetPersonaGenerateContextSqlParams",
-        "GetPersonaGenerateContextSqlRow",
-        "GetPersonaGenerateContextApiRequest",
-        "GetPersonaGenerateContextApiResponse",
+    "app/sql/v4/personas/get_persona_generate_context_v4_complete.sql": (
+        "GetPersonaGenerateContextV4SqlParams",
+        "GetPersonaGenerateContextV4SqlRow",
+        "GetPersonaGenerateContextV4ApiRequest",
+        "GetPersonaGenerateContextV4ApiResponse",
     ),
     "app/sql/v4/personas/get_persona_generation_context_complete.sql": (
         "GetPersonaGenerationContextSqlParams",
@@ -32886,7 +32886,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/personas/get_persona_generate_context_complete.sql"]
+        file_path: Literal["app/sql/v4/personas/get_persona_generate_context_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

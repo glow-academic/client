@@ -5454,6 +5454,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Artifact Agent Id
+             * Format: uuid
+             */
+            artifact_agent_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -5897,6 +5902,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Cohort Id
+             * Format: uuid
+             */
+            cohort_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -5904,8 +5914,8 @@ export interface components {
         };
         /** CohortsApiResponse */
         CohortsApiResponse: {
-            /** Cohort Id */
-            cohort_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** ColorsApiRequest */
         ColorsApiRequest: {
@@ -6882,6 +6892,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Department Id
+             * Format: uuid
+             */
+            department_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -6889,8 +6904,8 @@ export interface components {
         };
         /** DepartmentsApiResponse */
         DepartmentsApiResponse: {
-            /** Department Id */
-            department_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** DescriptionsApiRequest */
         DescriptionsApiRequest: {
@@ -6930,6 +6945,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -6937,8 +6957,8 @@ export interface components {
         };
         /** DocumentsApiResponse */
         DocumentsApiResponse: {
-            /** Document Id */
-            document_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** DuplicateAgentApiRequest */
         DuplicateAgentApiRequest: {
@@ -7223,6 +7243,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Eval Id
+             * Format: uuid
+             */
+            eval_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -7230,8 +7255,8 @@ export interface components {
         };
         /** EvalsApiResponse */
         EvalsApiResponse: {
-            /** Eval Id */
-            eval_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** ExamplesApiRequest */
         ExamplesApiRequest: {
@@ -7350,6 +7375,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Field Id
+             * Format: uuid
+             */
+            field_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -7357,8 +7387,8 @@ export interface components {
         };
         /** FieldsApiResponse */
         FieldsApiResponse: {
-            /** Field Id */
-            field_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** FinalizeUploadApiResponse */
         FinalizeUploadApiResponse: {
@@ -8986,6 +9016,8 @@ export interface components {
             flag_agent_id?: string | null;
             /** Flag Required */
             flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["QGetPersonaV4FlagResource"][] | null;
             /** Department Ids */
             department_ids?: string[] | null;
             /** Department Resources */
@@ -11070,15 +11102,15 @@ export interface components {
         };
         /** IUpdateSettingsV4ProviderEnabled */
         IUpdateSettingsV4ProviderEnabled: {
-            /** Provider */
-            provider: unknown | null;
+            /** Providers Id */
+            providers_id: string | null;
             /** Enabled */
             enabled: boolean | null;
         };
         /** IUpdateSettingsV4ProviderKey */
         IUpdateSettingsV4ProviderKey: {
-            /** Provider */
-            provider: unknown | null;
+            /** Providers Id */
+            providers_id: string | null;
             /** Key Id */
             key_id: string | null;
         };
@@ -11227,6 +11259,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -11234,8 +11271,8 @@ export interface components {
         };
         /** KeysApiResponse */
         KeysApiResponse: {
-            /** Key Id */
-            key_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** LeaveCohortApiRequest */
         LeaveCohortApiRequest: {
@@ -11305,6 +11342,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -11312,8 +11354,8 @@ export interface components {
         };
         /** ModelsApiResponse */
         ModelsApiResponse: {
-            /** Model Id */
-            model_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** NamesApiRequest */
         NamesApiRequest: {
@@ -11405,6 +11447,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Parameter Id
+             * Format: uuid
+             */
+            parameter_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -11412,8 +11459,8 @@ export interface components {
         };
         /** ParametersApiResponse */
         ParametersApiResponse: {
-            /** Parameter Id */
-            parameter_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** PatchPersonaDraftApiRequest */
         PatchPersonaDraftApiRequest: {
@@ -11465,6 +11512,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Persona Id
+             * Format: uuid
+             */
+            persona_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -11472,8 +11524,8 @@ export interface components {
         };
         /** PersonasApiResponse */
         PersonasApiResponse: {
-            /** Persona Id */
-            persona_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** PointsApiRequest */
         PointsApiRequest: {
@@ -11565,8 +11617,8 @@ export interface components {
         };
         /** ProfilesApiResponse */
         ProfilesApiResponse: {
-            /** Profile Id */
-            profile_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** PromptsApiRequest */
         PromptsApiRequest: {
@@ -13847,6 +13899,8 @@ export interface components {
         };
         /** QGetPersonaV4Example */
         QGetPersonaV4Example: {
+            /** Id */
+            id: string | null;
             /** Example */
             example: string | null;
             /** Idx */
@@ -18457,6 +18511,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -18464,8 +18523,8 @@ export interface components {
         };
         /** RubricsApiResponse */
         RubricsApiResponse: {
-            /** Rubric Id */
-            rubric_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** SavePersonaApiRequest */
         SavePersonaApiRequest: {
@@ -18541,6 +18600,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -18548,8 +18612,8 @@ export interface components {
         };
         /** ScenariosApiResponse */
         ScenariosApiResponse: {
-            /** Scenario Id */
-            scenario_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** SchemaFieldItemsApiRequest */
         SchemaFieldItemsApiRequest: {
@@ -18676,6 +18740,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Setting Id
+             * Format: uuid
+             */
+            setting_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -18683,8 +18752,8 @@ export interface components {
         };
         /** SettingsApiResponse */
         SettingsApiResponse: {
-            /** Setting Id */
-            setting_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /**
          * SimulationAdvanceErrorPayload
@@ -18905,6 +18974,11 @@ export interface components {
              */
             group_id: string;
             /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /**
              * Mcp
              * @default false
              */
@@ -18912,8 +18986,8 @@ export interface components {
         };
         /** SimulationsApiResponse */
         SimulationsApiResponse: {
-            /** Simulation Id */
-            simulation_id?: string | null;
+            /** Id */
+            id?: string | null;
         };
         /** StandardGroupsApiRequest */
         StandardGroupsApiRequest: {

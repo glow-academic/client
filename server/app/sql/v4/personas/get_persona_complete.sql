@@ -316,8 +316,27 @@ department_mapping_data AS (
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
-    JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
+    CROSS JOIN user_profile up
+    JOIN departments d ON (
+        -- Include departments with active flag
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        OR
+        -- OR include departments user is linked to (even without active flag)
+        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
+        OR
+        -- OR superadmins see all departments (even without active flag)
+        up.role = 'superadmin'::profile_role
+    )
+    LEFT JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
+    WHERE (
+        -- Superadmins see all departments
+        up.role = 'superadmin'::profile_role
+        OR
+        -- Others only see departments they're linked to OR departments with active flag
+        pd.department_id IS NOT NULL
+        OR
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    )
 ),
 primary_department_id_data AS (
     SELECT department_id
@@ -487,23 +506,43 @@ accessible_personas AS (
         OR NOT EXISTS (SELECT 1 FROM persona_departments pd2 WHERE pd2.persona_id = p.id AND pd2.active = true)
       )
 ),
--- Example suggestions based on generated flag from junction table (returns UUIDs)
+-- Example suggestions: linked to personas with active=true OR same group with generated=true
 example_suggestions_data AS (
     SELECT 
         COALESCE(
             (
                 SELECT ARRAY_AGG(pe.example_id ORDER BY pe.created_at DESC)
-                FROM persona_examples pe
-                JOIN examples e ON e.id = pe.example_id
-                JOIN accessible_personas ap ON ap.persona_id = pe.persona_id
-                WHERE pe.generated = true
-                  AND pe.active = true
-                  AND pe.example_id IS NOT NULL
-                  AND e.example IS NOT NULL
-                  AND e.example != ''
-                GROUP BY pe.example_id
-                ORDER BY MAX(pe.created_at) DESC
-                LIMIT 20
+                FROM (
+                    SELECT DISTINCT pe.example_id, MAX(pe.created_at) as created_at
+                    FROM persona_examples pe
+                    JOIN examples e ON e.id = pe.example_id
+                    JOIN accessible_personas ap ON ap.persona_id = pe.persona_id
+                    CROSS JOIN draft_group_data dgd
+                    WHERE pe.example_id IS NOT NULL
+                      AND e.example IS NOT NULL
+                      AND e.example != ''
+                      AND (
+                          -- Option 1: Linked to personas with active=true
+                          pe.active = true
+                          OR
+                          -- Option 2: Linked to same group with generated=true
+                          (
+                              pe.generated = true
+                              AND e.generated = true
+                              AND EXISTS (
+                                  SELECT 1 FROM calls c
+                                  JOIN message_calls mc ON mc.call_id = c.id
+                                  JOIN message_runs mr ON mr.message_id = mc.message_id
+                                  JOIN group_runs gr ON gr.run_id = mr.run_id
+                                  WHERE c.id = e.call_id
+                                    AND gr.group_id = dgd.group_id
+                              )
+                          )
+                      )
+                    GROUP BY pe.example_id
+                    ORDER BY MAX(pe.created_at) DESC
+                    LIMIT 20
+                ) pe
             ),
             ARRAY[]::uuid[]
         ) as example_suggestions
@@ -637,66 +676,94 @@ flags_data AS (
         OR (SELECT active_flag_id FROM flag_resource_data) IS NULL
     ORDER BY f.name
 ),
--- Descriptions (only generated descriptions that have been linked to personas)
+-- Descriptions: linked to personas with active=true OR same group with generated=true
 descriptions_data AS (
     SELECT DISTINCT
         d.id,
         d.description,
-        true as generated  -- Always true since we filtered for generated = true in junction table
+        COALESCE(d.generated, false) as generated
     FROM descriptions d
     CROSS JOIN params p
+    CROSS JOIN draft_group_data dgd
     WHERE 
         -- Always include selected description_id if it exists
         d.id = (SELECT description_id FROM description_resource_data)
         OR (
-            d.id IN (
-                -- Get all description_ids from persona_descriptions where generated = true
-                SELECT DISTINCT pd.description_id
-                FROM persona_descriptions pd
-                WHERE pd.generated = true
-                  AND pd.description_id IS NOT NULL
+            (
+                -- Option 1: Linked to personas (persona_descriptions junction table means it's used)
+                EXISTS (
+                    SELECT 1 FROM persona_descriptions pd
+                    WHERE pd.description_id = d.id
+                )
+                OR
+                -- Option 2: Linked to same group with generated=true
+                (
+                    d.generated = true
+                    AND EXISTS (
+                        SELECT 1 FROM calls c
+                        JOIN message_calls mc ON mc.call_id = c.id
+                        JOIN message_runs mr ON mr.message_id = mc.message_id
+                        JOIN group_runs gr ON gr.run_id = mr.run_id
+                        WHERE c.id = d.call_id
+                          AND gr.group_id = dgd.group_id
+                    )
+                )
             )
             -- Search filter: if descriptions_search provided, match description text
             AND (p.descriptions_search IS NULL OR p.descriptions_search = '' OR
                  LOWER(d.description) LIKE '%' || LOWER(p.descriptions_search) || '%')
+            AND d.description IS NOT NULL
+            AND d.description != ''
         )
     ORDER BY d.description
 ),
--- Instructions (only generated instructions that have been linked to personas)
+-- Instructions: linked to personas with active=true OR same group with generated=true
 instructions_data AS (
     SELECT DISTINCT
         i.id,
         i.template,
-        true as generated  -- Always true since we filtered for generated = true in junction table
+        COALESCE(i.generated, false) as generated
     FROM instructions i
     CROSS JOIN params p
+    CROSS JOIN draft_group_data dgd
     WHERE 
         i.active = true
         AND (
             -- Always include selected instructions_id if it exists
             i.id = (SELECT instructions_id FROM instructions_resource_data)
             OR (
-                i.id IN (
-                    -- Get all instruction_ids from persona_instructions where generated = true
-                    SELECT DISTINCT pi.instruction_id
-                    FROM persona_instructions pi
-                    JOIN instructions i_check ON pi.instruction_id = i_check.id
-                    WHERE pi.generated = true
-                      AND pi.instruction_id IS NOT NULL
-                      AND i_check.active = true
-                      AND i_check.template IS NOT NULL
-                      AND i_check.template != ''
+                (
+                    -- Option 1: Linked to personas (persona_instructions junction table means it's used)
+                    EXISTS (
+                        SELECT 1 FROM persona_instructions pi
+                        WHERE pi.instruction_id = i.id
+                    )
+                    OR
+                    -- Option 2: Linked to same group with generated=true
+                    (
+                        i.generated = true
+                        AND EXISTS (
+                            SELECT 1 FROM calls c
+                            JOIN message_calls mc ON mc.call_id = c.id
+                            JOIN message_runs mr ON mr.message_id = mc.message_id
+                            JOIN group_runs gr ON gr.run_id = mr.run_id
+                            WHERE c.id = i.call_id
+                              AND gr.group_id = dgd.group_id
+                        )
+                    )
                 )
                 -- Search filter: if instructions_search provided, match template text
                 AND (p.instructions_search IS NULL OR p.instructions_search = '' OR
                      LOWER(i.template) LIKE '%' || LOWER(p.instructions_search) || '%')
+                AND i.template IS NOT NULL
+                AND i.template != ''
             )
         )
     ORDER BY i.template
 ),
 -- Fields (all available field options, filtered by search and show_selected)
 -- Note: Filtering happens in SELECT statement using valid_fields_data and field_mapping_data
--- Color suggestions based on generated flag from junction table (returns UUIDs)
+-- Color suggestions: linked to personas OR same group with generated=true
 color_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -704,8 +771,27 @@ color_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pc.color_id, MAX(pc.created_at) as created_at
                  FROM persona_colors pc
-                 WHERE pc.generated = true
-                   AND pc.color_id IS NOT NULL
+                 JOIN colors c ON c.id = pc.color_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pc.color_id IS NOT NULL
+                   AND (
+                       -- Option 1: Linked to personas (persona_colors junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       pc.generated = false
+                       OR
+                       (
+                           pc.generated = true
+                           AND c.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c2
+                               JOIN message_calls mc ON mc.call_id = c2.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c2.id = c.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
                  GROUP BY pc.color_id
                  ORDER BY MAX(pc.created_at) DESC
                  LIMIT 20
@@ -716,7 +802,7 @@ color_suggestions_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Icon suggestions based on generated flag from junction table (returns UUIDs)
+-- Icon suggestions: linked to personas OR same group with generated=true
 icon_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -724,8 +810,27 @@ icon_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pi.icon_id, MAX(pi.created_at) as created_at
                  FROM persona_icons pi
-                 WHERE pi.generated = true
-                   AND pi.icon_id IS NOT NULL
+                 JOIN icons i ON i.id = pi.icon_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pi.icon_id IS NOT NULL
+                   AND (
+                       -- Option 1: Linked to personas (persona_icons junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       pi.generated = false
+                       OR
+                       (
+                           pi.generated = true
+                           AND i.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = i.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
                  GROUP BY pi.icon_id
                  ORDER BY MAX(pi.created_at) DESC
                  LIMIT 20
@@ -736,7 +841,7 @@ icon_suggestions_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Name suggestions based on generated flag from junction table (returns UUIDs)
+-- Name suggestions: linked to personas OR same group with generated=true
 name_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -744,8 +849,29 @@ name_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pn.name_id, MAX(pn.created_at) as created_at
                  FROM persona_names pn
-                 WHERE pn.generated = true
-                   AND pn.name_id IS NOT NULL
+                 JOIN names n ON n.id = pn.name_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pn.name_id IS NOT NULL
+                   AND n.name IS NOT NULL
+                   AND n.name != ''
+                   AND (
+                       -- Option 1: Linked to personas (persona_names junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       pn.generated = false
+                       OR
+                       (
+                           pn.generated = true
+                           AND n.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = n.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
                  GROUP BY pn.name_id
                  ORDER BY MAX(pn.created_at) DESC
                  LIMIT 20
@@ -756,7 +882,7 @@ name_suggestions_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Description suggestions based on generated flag from junction table (returns UUIDs)
+-- Description suggestions: linked to personas OR same group with generated=true
 description_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -764,8 +890,29 @@ description_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pd.description_id, MAX(pd.created_at) as created_at
                  FROM persona_descriptions pd
-                 WHERE pd.generated = true
-                   AND pd.description_id IS NOT NULL
+                 JOIN descriptions d ON d.id = pd.description_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pd.description_id IS NOT NULL
+                   AND d.description IS NOT NULL
+                   AND d.description != ''
+                   AND (
+                       -- Option 1: Linked to personas (persona_descriptions junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       pd.generated = false
+                       OR
+                       (
+                           pd.generated = true
+                           AND d.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = d.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
                  GROUP BY pd.description_id
                  ORDER BY MAX(pd.created_at) DESC
                  LIMIT 20
@@ -776,7 +923,7 @@ description_suggestions_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Instructions suggestions based on generated flag from junction table (returns UUIDs)
+-- Instructions suggestions: linked to personas OR same group with generated=true
 instructions_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -784,12 +931,30 @@ instructions_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pi.instruction_id, MAX(pi.created_at) as created_at
                  FROM persona_instructions pi
-                 JOIN instructions i ON pi.instruction_id = i.id
-                 WHERE pi.generated = true
-                   AND pi.instruction_id IS NOT NULL
+                 JOIN instructions i ON i.id = pi.instruction_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pi.instruction_id IS NOT NULL
                    AND i.active = true
                    AND i.template IS NOT NULL
                    AND i.template != ''
+                   AND (
+                       -- Option 1: Linked to personas (persona_instructions junction table means it's validated/used)
+                       -- Option 2: OR linked to same group with generated=true (show generated items from current group)
+                       pi.generated = false
+                       OR
+                       (
+                           pi.generated = true
+                           AND i.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = i.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
                  GROUP BY pi.instruction_id
                  ORDER BY MAX(pi.created_at) DESC
                  LIMIT 20
@@ -884,7 +1049,7 @@ name_resource_data AS (
         ) as name_resource
     FROM params
 ),
--- Department suggestions based on generated flag from junction table (returns UUIDs)
+-- Department suggestions: linked to personas with active=true OR same group with generated=true
 department_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -892,9 +1057,35 @@ department_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pd.department_id, MAX(pd.created_at) as created_at
                  FROM persona_departments pd
-                 WHERE pd.generated = true
-                   AND pd.active = true
-                   AND pd.department_id IS NOT NULL
+                 JOIN departments d ON d.id = pd.department_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pd.department_id IS NOT NULL
+                   AND EXISTS (
+                       SELECT 1 FROM department_flags df
+                       JOIN flags fl ON df.flag_id = fl.id
+                       WHERE df.department_id = d.id
+                         AND fl.name = 'active'
+                         AND df.type = 'active'::type_department_flags
+                         AND df.value = true
+                   )
+                   AND (
+                       -- Option 1: Linked to personas with active=true
+                       pd.active = true
+                       OR
+                       -- Option 2: Linked to same group with generated=true
+                       (
+                           pd.generated = true
+                           AND d.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = d.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
                  GROUP BY pd.department_id
                  ORDER BY MAX(pd.created_at) DESC
                  LIMIT 20
@@ -905,7 +1096,7 @@ department_suggestions_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
--- Field suggestions based on generated flag from junction table (returns UUIDs)
+-- Field suggestions: linked to personas with active=true OR same group with generated=true
 field_suggestions_data AS (
     SELECT 
         COALESCE(
@@ -913,9 +1104,35 @@ field_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pf.field_id, MAX(pf.created_at) as created_at
                  FROM persona_fields pf
-                 WHERE pf.generated = true
-                   AND pf.active = true
-                   AND pf.field_id IS NOT NULL
+                 JOIN fields f ON f.id = pf.field_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pf.field_id IS NOT NULL
+                   AND EXISTS (
+                       SELECT 1 FROM field_flags ff
+                       JOIN flags fl ON ff.flag_id = fl.id
+                       WHERE ff.field_id = f.id
+                         AND fl.name = 'active'
+                         AND ff.type = 'active'::type_field_flags
+                         AND ff.value = true
+                   )
+                   AND (
+                       -- Option 1: Linked to personas with active=true
+                       pf.active = true
+                       OR
+                       -- Option 2: Linked to same group with generated=true
+                       (
+                           pf.generated = true
+                           AND f.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = f.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
                  GROUP BY pf.field_id
                  ORDER BY MAX(pf.created_at) DESC
                  LIMIT 20
