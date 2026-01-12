@@ -39,6 +39,7 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     # Extract modality and artifact_type from payload
     modality = data.get("modality", "text")
     artifact_type = data.get("artifact_type")
+    eval_mode = data.get("eval_mode", False)  # Extract eval_mode flag
 
     sid = data.get("sid", "")
     if not sid:
@@ -105,6 +106,7 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
         "resource_type": resource_type,
         "run_id": data.get("run_id"),
         "type": completion_type,
+        "eval_mode": eval_mode,  # Add eval_mode flag
     }
 
     # Re-emit resource_complete for resource handlers to process
@@ -115,6 +117,7 @@ async def handle_artifact_complete(data: dict[str, Any]) -> None:
     
     # Include sid for internal handlers that listen to client-facing events
     client_payload["sid"] = sid
+    client_payload["eval_mode"] = eval_mode  # Add eval_mode flag
 
     # Emit unified client event
     await sio.emit(

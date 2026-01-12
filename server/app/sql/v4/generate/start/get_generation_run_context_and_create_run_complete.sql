@@ -25,7 +25,8 @@ CREATE OR REPLACE FUNCTION socket_get_generation_run_context_and_create_run_v4(
     message_ids uuid[] DEFAULT NULL,  -- Context message IDs (e.g., hint agent needs message_id)
     department_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,  -- Optional: for regeneration (uses existing group)
-    user_instructions text DEFAULT NULL  -- Optional: for regeneration (creates user message)
+    developer_instructions text[] DEFAULT NULL,  -- Optional: array of developer instruction messages
+    user_instructions text[] DEFAULT NULL  -- Optional: array of user instructions for regeneration
 )
 RETURNS TABLE (
     run_id text,
@@ -45,6 +46,7 @@ WITH params AS (
         profile_id AS profile_id,
         department_id AS department_id,
         group_id AS group_id,
+        developer_instructions AS developer_instructions,
         user_instructions AS user_instructions
 ),
 -- Validate agent exists
@@ -160,50 +162,218 @@ link_group AS (
     CROSS JOIN group_data gd
     RETURNING run_id
 ),
--- Create user message if user_instructions provided (for regeneration)
-create_user_message AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
-    SELECT 'user'::message_role, false, false, NOW(), NOW()
+-- Create developer messages from developer_instructions array
+developer_message_content_array AS (
+    SELECT 
+        t.content,
+        lg.run_id,
+        t.idx
     FROM params p
     CROSS JOIN link_group lg
-    WHERE p.user_instructions IS NOT NULL
-      AND p.user_instructions != ''
-    RETURNING id as message_id, created_at, updated_at
+    CROSS JOIN LATERAL unnest(p.developer_instructions) WITH ORDINALITY AS t(content, idx)
+    WHERE p.developer_instructions IS NOT NULL
+      AND array_length(p.developer_instructions, 1) > 0
 ),
--- Insert user message contents
+developer_message_hash_array AS (
+    SELECT 
+        dmc.content,
+        dmc.run_id,
+        dmc.idx,
+        message_content_hash(dmc.content, 'developer') as hash
+    FROM developer_message_content_array dmc
+),
+existing_developer_messages AS (
+    SELECT DISTINCT ON (dmh.hash)
+        m.id as message_id,
+        dmh.run_id,
+        dmh.hash
+    FROM message m
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN contents cnt ON cnt.id = mc.content_id
+    JOIN developer_message_hash_array dmh ON message_content_hash(cnt.content, 'developer') = dmh.hash
+    WHERE m.role = 'developer'
+    ORDER BY dmh.hash, m.created_at DESC
+),
+new_developer_messages_data AS (
+    SELECT 
+        dmh.content,
+        dmh.run_id,
+        dmh.idx,
+        dmh.hash
+    FROM developer_message_hash_array dmh
+    WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
+),
+new_developer_messages AS (
+    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    SELECT 'developer'::message_role, false, false, NOW(), NOW()
+    FROM new_developer_messages_data
+    RETURNING id, created_at, updated_at
+),
+new_developer_messages_numbered AS (
+    SELECT 
+        id as message_id,
+        created_at,
+        updated_at,
+        ROW_NUMBER() OVER (ORDER BY created_at) as rn
+    FROM new_developer_messages
+),
+new_developer_messages_data_numbered AS (
+    SELECT 
+        content,
+        run_id,
+        hash,
+        idx,
+        ROW_NUMBER() OVER (ORDER BY idx) as rn
+    FROM new_developer_messages_data
+),
+new_developer_messages_matched AS (
+    SELECT 
+        n.message_id,
+        nd.content,
+        nd.run_id,
+        nd.hash,
+        n.created_at,
+        n.updated_at
+    FROM new_developer_messages_numbered n
+    JOIN new_developer_messages_data_numbered nd ON n.rn = nd.rn
+),
+insert_developer_contents AS (
+    INSERT INTO contents (content, created_at, updated_at)
+    SELECT 
+        nd.content,
+        nd.created_at,
+        nd.updated_at
+    FROM new_developer_messages_matched nd
+    RETURNING id as content_id, content, created_at, updated_at
+),
+insert_developer_message_contents AS (
+    INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
+    SELECT 
+        nd.message_id,
+        ic.content_id,
+        0,
+        ic.created_at,
+        ic.updated_at
+    FROM new_developer_messages_matched nd
+    JOIN insert_developer_contents ic ON ic.content = nd.content
+),
+developer_message_final AS (
+    SELECT message_id, run_id FROM existing_developer_messages
+    UNION ALL
+    SELECT message_id, run_id FROM new_developer_messages_matched
+),
+link_developer_messages_to_run AS (
+    INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
+    SELECT dmf.message_id, dmf.run_id, NOW(), NOW()
+    FROM developer_message_final dmf
+    ON CONFLICT (message_id, run_id) 
+    DO UPDATE SET updated_at = NOW()
+    RETURNING message_id, run_id
+),
+-- Create user messages from user_instructions array
+user_message_content_array AS (
+    SELECT 
+        t.content,
+        lg.run_id,
+        t.idx
+    FROM params p
+    CROSS JOIN link_group lg
+    CROSS JOIN LATERAL unnest(p.user_instructions) WITH ORDINALITY AS t(content, idx)
+    WHERE p.user_instructions IS NOT NULL
+      AND array_length(p.user_instructions, 1) > 0
+),
+user_message_hash_array AS (
+    SELECT 
+        umc.content,
+        umc.run_id,
+        umc.idx,
+        message_content_hash(umc.content, 'user') as hash
+    FROM user_message_content_array umc
+),
+existing_user_messages AS (
+    SELECT DISTINCT ON (umh.hash)
+        m.id as message_id,
+        umh.run_id,
+        umh.hash
+    FROM message m
+    JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
+    JOIN contents cnt ON cnt.id = mc.content_id
+    JOIN user_message_hash_array umh ON message_content_hash(cnt.content, 'user') = umh.hash
+    WHERE m.role = 'user'
+    ORDER BY umh.hash, m.created_at DESC
+),
+new_user_messages_data AS (
+    SELECT 
+        umh.content,
+        umh.run_id,
+        umh.idx,
+        umh.hash
+    FROM user_message_hash_array umh
+    WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
+),
+new_user_messages AS (
+    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    SELECT 'user'::message_role, false, false, NOW(), NOW()
+    FROM new_user_messages_data
+    RETURNING id, created_at, updated_at
+),
+new_user_messages_numbered AS (
+    SELECT 
+        id as message_id,
+        created_at,
+        updated_at,
+        ROW_NUMBER() OVER (ORDER BY created_at) as rn
+    FROM new_user_messages
+),
+new_user_messages_data_numbered AS (
+    SELECT 
+        content,
+        run_id,
+        hash,
+        idx,
+        ROW_NUMBER() OVER (ORDER BY idx) as rn
+    FROM new_user_messages_data
+),
+new_user_messages_matched AS (
+    SELECT 
+        n.message_id,
+        nd.content,
+        nd.run_id,
+        nd.hash,
+        n.created_at,
+        n.updated_at
+    FROM new_user_messages_numbered n
+    JOIN new_user_messages_data_numbered nd ON n.rn = nd.rn
+),
 insert_user_contents AS (
     INSERT INTO contents (content, created_at, updated_at)
     SELECT 
-        p.user_instructions,
-        cum.created_at,
-        cum.updated_at
-    FROM create_user_message cum
-    CROSS JOIN params p
-    WHERE p.user_instructions IS NOT NULL
-      AND p.user_instructions != ''
-    RETURNING id as contents_id, created_at, updated_at
+        nd.content,
+        nd.created_at,
+        nd.updated_at
+    FROM new_user_messages_matched nd
+    RETURNING id as content_id, content, created_at, updated_at
 ),
 insert_user_message_contents AS (
     INSERT INTO message_contents (message_id, content_id, idx, created_at, updated_at)
     SELECT 
-        cum.message_id,
-        ic.contents_id,
+        nd.message_id,
+        ic.content_id,
         0,
         ic.created_at,
         ic.updated_at
-    FROM create_user_message cum
-    CROSS JOIN params p
-    CROSS JOIN insert_user_contents ic
-    WHERE p.user_instructions IS NOT NULL
-      AND p.user_instructions != ''
+    FROM new_user_messages_matched nd
+    JOIN insert_user_contents ic ON ic.content = nd.content
 ),
--- Link user message to run
-link_user_message_to_run AS (
+user_message_final AS (
+    SELECT message_id, run_id FROM existing_user_messages
+    UNION ALL
+    SELECT message_id, run_id FROM new_user_messages_matched
+),
+link_user_messages_to_run AS (
     INSERT INTO message_runs (message_id, run_id, created_at, updated_at)
-    SELECT cum.message_id, lg.run_id, NOW(), NOW()
-    FROM create_user_message cum
-    CROSS JOIN link_group lg
-    WHERE cum.message_id IS NOT NULL
+    SELECT umf.message_id, umf.run_id, NOW(), NOW()
+    FROM user_message_final umf
     ON CONFLICT (message_id, run_id) 
     DO UPDATE SET updated_at = NOW()
     RETURNING message_id, run_id
@@ -227,7 +397,7 @@ link_existing_messages AS (
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()
 ),
--- Build message_ids array: includes new user message (if created) + context message_ids
+-- Build message_ids array: includes all developer messages + all user messages + context message_ids
 final_message_ids AS (
     SELECT 
         COALESCE(
@@ -235,10 +405,15 @@ final_message_ids AS (
             ARRAY[]::uuid[]
         ) as message_ids
     FROM (
-        -- New user message (if created)
-        SELECT cum.message_id as msg_id
-        FROM create_user_message cum
-        WHERE cum.message_id IS NOT NULL
+        -- Developer messages (if created)
+        SELECT ldmm.message_id as msg_id
+        FROM link_developer_messages_to_run ldmm
+        WHERE ldmm.message_id IS NOT NULL
+        UNION ALL
+        -- User messages (if created)
+        SELECT lumm.message_id as msg_id
+        FROM link_user_messages_to_run lumm
+        WHERE lumm.message_id IS NOT NULL
         UNION ALL
         -- Context message IDs from params
         SELECT unnest(p.message_ids) as msg_id

@@ -598,6 +598,137 @@ if data["type"] == "tool_call_complete":
 4. **Tool Result Retrieval**: Handlers fetch actual results from DB, not just arguments
 5. **Reduced Abstraction**: Resources own their client communication logic
 
+## Eval Mode Support
+
+### Overview
+
+Eval mode allows benchmarks to reuse the artifact generation infrastructure as a single source of truth, while preventing resource handlers from processing eval runs. When `eval_mode=True`, resource handlers skip processing, allowing benchmark handlers to track completion via `group_id` linkage.
+
+### Architecture Principles
+
+1. **Artifacts Stay Agnostic**: Artifacts folder remains simulation/eval agnostic - only passes `eval_mode` flag through events
+2. **Group ID Links Everything**: Use existing `group_id` to link eval runs - no enriched payload changes needed
+3. **Resource Handlers Skip Evals**: Resource handlers check `eval_mode` and return early if `True`
+4. **Benchmark Handlers Filter**: Benchmark handlers listen to `artifact_generation_*` events and only process when `eval_mode=True`
+5. **Tool Execution Unchanged**: Tools still execute normally in `artifacts/complete.py` - only resource post-processing is skipped
+
+### Flow Diagram
+
+```
+benchmark_next emits agent_eval_start
+  → eval handler calls generate_artifact with eval_mode=True
+  → artifacts/generate.py creates run streams LLM
+  → artifacts/generate.py emits generate_progress with eval_mode=True
+  → artifacts/progress.py emits artifact_generation_progress with eval_mode=True
+  → artifacts/complete.py executes tools normally
+  → artifacts/complete.py emits generate_complete with eval_mode=True
+  → artifacts/complete.py emits resource_complete with eval_mode=True
+  → personas/complete.py checks eval_mode → Skip processing (return early)
+  → artifacts/complete.py emits artifact_generation_complete with eval_mode=True
+  → benchmark/complete.py checks eval_mode → Process and emit benchmark_eval_complete
+  → next.py receives benchmark_eval_complete and tracks completion
+```
+
+### Implementation
+
+**1. Eval Mode Flag Passing**
+
+The `eval_mode` boolean flag is extracted in `artifacts/generate.py` and passed through all events:
+
+```python
+# In _generate_artifact_impl
+eval_mode = data.get("eval_mode", False)
+
+# Pass to modality handlers
+await _handle_text_generation(..., eval_mode=eval_mode)
+
+# Include in all emit calls
+await internal_sio.emit("generate_progress", {
+    ...,
+    "eval_mode": eval_mode,
+})
+```
+
+**2. Resource Handler Skipping**
+
+Resource handlers check `eval_mode` and return early if `True`:
+
+```python
+# In personas/complete.py
+@internal_sio.on("resource_complete")
+async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
+    eval_mode = data.get("eval_mode", False)
+    if eval_mode:
+        return  # Don't process evals - benchmark handlers will handle them
+    
+    # ... normal processing ...
+```
+
+**3. Benchmark Handler Filtering**
+
+Benchmark handlers listen to `artifact_generation_*` events and only process when `eval_mode=True`:
+
+```python
+# In benchmark/complete.py
+@sio.on("artifact_generation_complete")
+async def handle_benchmark_complete(data: dict[str, Any]) -> None:
+    eval_mode = data.get("eval_mode", False)
+    if not eval_mode:
+        return  # Not an eval - skip
+    
+    # Extract group_id for linking
+    group_id = data.get("group_id")
+    
+    # Emit benchmark_eval_complete for next.py to track
+    await internal_sio.emit("benchmark_eval_complete", {
+        "group_id": group_id_str,
+        "run_id": run_id,
+        "success": True,
+    })
+```
+
+**4. Eval Start Routing**
+
+Eval handlers route `{agent_name}_eval_start` events to `generate_artifact` with `eval_mode=True`:
+
+```python
+# In benchmark/eval.py
+@internal_sio.on("simulation_eval_start")
+async def simulation_eval_start_internal(data: dict[str, Any]) -> None:
+    # Extract eval context
+    agent_id = data.get("agent_id")
+    group_id = data.get("group_id")
+    
+    # Route to generate_artifact with eval_mode=True
+    await internal_sio.emit("generate_artifact", {
+        "sid": sid,
+        "agent_id": str(agent_id),
+        "resource_types": ["text"],
+        "artifact_type": "eval",
+        "group_id": str(group_id),
+        "eval_mode": True,  # CRITICAL: Enable eval mode
+    })
+```
+
+### Benefits
+
+1. **Single Source of Truth**: Benchmarks reuse artifact generation infrastructure
+2. **No Duplication**: No need to duplicate generation logic for benchmarks
+3. **Clean Separation**: Resource handlers skip evals, benchmark handlers process them
+4. **Group ID Linking**: `group_id` links all related data (runs, tests, attempts, eval contexts)
+5. **Backward Compatible**: `eval_mode` defaults to `False` for existing flows
+
+### Files Changed
+
+- `server/app/socket/v4/artifacts/generate.py` - Add eval_mode parameter passing
+- `server/app/socket/v4/artifacts/progress.py` - Add eval_mode to events
+- `server/app/socket/v4/artifacts/complete.py` - Add eval_mode to events
+- `server/app/socket/v4/personas/complete.py` - Skip when eval_mode=True
+- `server/app/socket/v4/benchmark/progress.py` - NEW: Listen to artifact_generation_progress
+- `server/app/socket/v4/benchmark/complete.py` - NEW: Listen to artifact_generation_complete
+- `server/app/socket/v4/benchmark/error.py` - NEW: Listen to artifact_generation_error
+- `server/app/socket/v4/benchmark/eval.py` - NEW: Route eval_start to generate_artifact
+
 ## Database Integration
 
 ### SQL Functions

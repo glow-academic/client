@@ -21,13 +21,11 @@ from app.infra.v4.websocket.remove_active_run import remove_active_run
 from app.infra.v4.websocket.store_active_run import store_active_run
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import IMAGE_FOLDER, VIDEO_FOLDER, get_internal_sio
-from app.socket.v4.artifacts.session_store import (
-    create_session,
-    get_session_by_run_id,
-    remove_session,
-)
-from app.socket.v4.artifacts.frames import start_client_ws_sender
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
+from app.socket.v4.artifacts.frames import start_client_ws_sender
+from app.socket.v4.artifacts.session_store import (create_session,
+                                                   get_session_by_run_id,
+                                                   remove_session)
 from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
                            GetAudioRunContextAndCreateRunSqlRow,
                            GetGenerationRunContextAndCreateRunSqlParams,
@@ -318,6 +316,9 @@ async def _generate_artifact_impl(
     """Unified entry point for all artifact generation - handles ALL logic inline."""
     try:
         async with get_db_connection() as conn:
+            # Extract eval_mode flag (defaults to False for backward compatibility)
+            eval_mode = data.get("eval_mode", False)
+            
             # Handle resource_types array (new) or resource_type (legacy) for backward compatibility
             resource_types = data.get("resource_types")
             if not resource_types:
@@ -342,6 +343,19 @@ async def _generate_artifact_impl(
             if not agent_id:
                 raise ValueError("agent_id must be provided")
 
+            # Extract developer_instructions and user_instructions (handle backward compatibility)
+            developer_instructions = data.get("developer_instructions")  # list[str] | None
+            user_instructions = data.get("user_instructions")  # list[str] | None
+            # Backward compatibility: if user_instructions not provided, check instructions
+            if user_instructions is None:
+                instructions_value = data.get("instructions")
+                if instructions_value:
+                    # Convert single string to array for backward compatibility
+                    if isinstance(instructions_value, str):
+                        user_instructions = [instructions_value]
+                    elif isinstance(instructions_value, list):
+                        user_instructions = instructions_value
+
             # Process each resource_type
             for resource_type in resource_types:
                 try:
@@ -354,9 +368,8 @@ async def _generate_artifact_impl(
                         group_id=uuid.UUID(data["group_id"])
                         if data.get("group_id")
                         else None,
-                        user_instructions=data.get(
-                            "instructions"
-                        ),  # Renamed from user_instructions
+                        developer_instructions=developer_instructions,
+                        user_instructions=user_instructions,
                     )
                     result = cast(
                         GetGenerationRunContextAndCreateRunSqlRow,
@@ -463,6 +476,7 @@ async def _generate_artifact_impl(
                         group_id=uuid.UUID(group_id) if group_id else None,
                         trace_id=trace_id,
                         tool_choice="required" if modality == "call" else "auto",
+                        eval_mode=eval_mode,
                     )
                 elif modality == "image":
                     await _handle_image_generation(
@@ -474,6 +488,7 @@ async def _generate_artifact_impl(
                         agent_id=uuid.UUID(agent_id) if agent_id else None,
                         artifact_type=artifact_type,
                         trace_id=trace_id,
+                        eval_mode=eval_mode,
                     )
                 elif modality == "video":
                     await _handle_video_generation(
@@ -484,6 +499,7 @@ async def _generate_artifact_impl(
                         run_id=uuid.UUID(run_id),
                         artifact_type=artifact_type,
                         trace_id=trace_id,
+                        eval_mode=eval_mode,
                     )
                 elif modality == "audio":
                     await _handle_audio_generation(
@@ -495,6 +511,7 @@ async def _generate_artifact_impl(
                         agent_id=uuid.UUID(agent_id) if agent_id else None,
                         resource_type=resource_type,
                         artifact_type=artifact_type,
+                        eval_mode=eval_mode,
                     )
                 else:
                     await emit_to_internal(
@@ -536,6 +553,7 @@ async def _handle_text_generation(
     group_id: uuid.UUID | None,
     trace_id: str | None,
     tool_choice: str = "auto",
+    eval_mode: bool = False,
 ) -> None:
     """Handle text generation using litellm directly."""
     if not LITELLM_AVAILABLE:
@@ -682,6 +700,7 @@ async def _handle_text_generation(
             "group_id": str(group_id) if group_id else None,
             "type": "start",
             "message": f"Starting {result.agent_name or 'text'} generation",
+            "eval_mode": eval_mode,
         },
     )
 
@@ -744,6 +763,7 @@ async def _handle_text_generation(
                         "run_id": str(run_id),
                         "group_id": str(group_id) if group_id else None,
                         "type": "text_start",
+                        "eval_mode": eval_mode,
                     },
                     )
 
@@ -763,6 +783,7 @@ async def _handle_text_generation(
                             "group_id": str(group_id) if group_id else None,
                             "type": "text_delta",
                             "delta": delta,
+                            "eval_mode": eval_mode,
                         },
                         )
 
@@ -780,6 +801,7 @@ async def _handle_text_generation(
                         "group_id": str(group_id) if group_id else None,
                         "type": "text_complete",
                         "text": assistant_output,
+                        "eval_mode": eval_mode,
                     },
                     )
 
@@ -809,6 +831,7 @@ async def _handle_text_generation(
                         "group_id": str(group_id) if group_id else None,
                         "type": "tool_call_start",
                         "tool_call_id": tool_call_id,
+                        "eval_mode": eval_mode,
                     },
                     )
 
@@ -844,6 +867,7 @@ async def _handle_text_generation(
                         "delta": delta,
                         "tool_name": st.get("tool_name"),
                         "arguments_delta": delta,
+                        "eval_mode": eval_mode,
                     },
                     )
 
@@ -893,6 +917,7 @@ async def _handle_text_generation(
                             "arguments_delta": st["arguments"],
                             "call_id": tool_call_id,  # Add call_id for template rendering
                             "agent_id": str(agent_id) if agent_id else None,  # Add agent_id for tool execution
+                            "eval_mode": eval_mode,
                         },
                     )
 
@@ -911,6 +936,7 @@ async def _handle_text_generation(
                             "call_id": tool_call_id,  # external_call_id for lookup
                             "tool_name": tool_name,
                             "agent_id": str(agent_id) if agent_id else None,
+                            "eval_mode": eval_mode,
                         },
                     )
 
@@ -973,6 +999,7 @@ async def _handle_text_generation(
             "system_prompt": result.system_prompt or "",
             "input_items": input_items,
             "assistant_output": assistant_output,
+            "eval_mode": eval_mode,
         },
     )
 
@@ -986,6 +1013,7 @@ async def _handle_image_generation(
     agent_id: uuid.UUID | None,
     artifact_type: str | None,
     trace_id: str | None,
+    eval_mode: bool = False,
 ) -> None:
     """Handle image generation using LiteLLM."""
     if not LITELLM_AVAILABLE:
@@ -1041,6 +1069,7 @@ async def _handle_image_generation(
             "group_id": str(group_id_from_run) if group_id_from_run else None,
             "type": "start",
             "message": "Starting image generation",
+            "eval_mode": eval_mode,
         },
     )
 
@@ -1217,6 +1246,7 @@ async def _handle_image_generation(
                 "mime_type": mime_type,
                 "file_size": file_size,
                 "trace_id": trace_id,
+                "eval_mode": eval_mode,
             },
         )
 
@@ -1247,6 +1277,7 @@ async def _handle_video_generation(
     run_id: uuid.UUID,
     artifact_type: str | None,
     trace_id: str | None,
+    eval_mode: bool = False,
 ) -> None:
     """Handle video generation using OpenAI Sora API or LiteLLM."""
     video_id = uuid.UUID(data.get("videoId") or str(uuid.uuid4()))
@@ -1312,6 +1343,7 @@ async def _handle_video_generation(
             "status": "created",
             "progress": None,
             "video_id": str(video_id),
+            "eval_mode": eval_mode,
         },
     )
 
@@ -1376,6 +1408,7 @@ async def _handle_video_generation(
                     "status": video_status.status,
                     "progress": progress_value,
                     "video_id": str(video_id),
+                    "eval_mode": eval_mode,
                 },
             )
 
@@ -1413,6 +1446,7 @@ async def _handle_video_generation(
                         "video_id": str(video_id),
                         "file_path": file_path,
                         "upload_id": str(upload_id),
+                        "eval_mode": eval_mode,
                     },
                 )
                 return
@@ -1468,6 +1502,7 @@ async def _handle_video_generation(
                             "status": status,
                             "progress": None,
                             "video_id": str(video_id),
+                            "eval_mode": eval_mode,
                         },
                     )
 
@@ -1502,6 +1537,7 @@ async def _handle_video_generation(
                                 "video_id": str(video_id),
                                 "file_path": file_path,
                                 "upload_id": str(upload_id),
+                                "eval_mode": eval_mode,
                             },
                         )
                         return
@@ -1528,6 +1564,7 @@ async def _handle_audio_generation(
     agent_id: uuid.UUID | None,
     resource_type: str,
     artifact_type: str | None,
+    eval_mode: bool = False,
 ) -> None:
     """Handle audio generation using queue-based architecture with OpenAI Realtime WebSocket."""
     if not agent_id:
@@ -1612,6 +1649,7 @@ async def _handle_audio_generation(
                     "group_id": str(group_id_from_run) if group_id_from_run else None,
                     "type": "session_started",
                     "model": model_name,
+                    "eval_mode": eval_mode,
                 },
             )
 
@@ -1687,300 +1725,311 @@ async def _handle_audio_generation(
                             event = json.loads(message)
                             event_type = event.get("type")
 
-                    # Handle 14 OpenAI Realtime API events
-                    if event_type == "session.created":
-                        # Session created - ready to start
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "session_created",
-                            },
-                        )
-                    elif event_type == "session.updated":
-                        # Session updated - acknowledge
-                        pass
-                    elif event_type == "input_audio_buffer.speech_started":
-                        # User started speaking
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "user_speech_started",
-                                "item_id": event.get("item_id"),
-                                "audio_start_ms": event.get("audio_start_ms", 0),
-                            },
-                        )
-                    elif event_type == "input_audio_buffer.speech_stopped":
-                        # User stopped speaking - create upload_id for user audio
-                        item_id = event.get("item_id")
-                        if item_id:
-                            # TODO: Create upload_id and start TUS upload for user audio
-                            # For now, store item_id mapping (upload_id will be created when audio is ready)
-                            # upload_id = await _create_audio_upload(...)
-                            # session.item_id_to_upload_id[item_id] = str(upload_id)
-                            pass
-                        
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "user_speech_stopped",
-                                "item_id": item_id,
-                            },
-                        )
-                    elif (
-                        event_type
-                        == "conversation.item.input_audio_transcription.completed"
-                    ):
-                        # User transcription completed - retrieve upload_id and call member_progress
-                        item_id = event.get("item_id")
-                        transcript = event.get("transcript", "")
-                        upload_id = session.item_id_to_upload_id.get(item_id) if item_id else None
-                        
-                        # Call member_progress with transcript and upload_id (if available)
-                        if transcript and chat_id:
-                            try:
-                                from app.socket.v4.simulations.member_progress import (
-                                    MemberProgressPayload,
-                                    _member_progress_impl,
+                            # Handle 14 OpenAI Realtime API events
+                            if event_type == "session.created":
+                                # Session created - ready to start
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "session_created",
+                                        "eval_mode": eval_mode,
+                                    },
                                 )
-                                from app.infra.v4.websocket.find_profile_by_socket import (
-                                    find_profile_by_socket,
+                            elif event_type == "session.updated":
+                                # Session updated - acknowledge
+                                pass
+                            elif event_type == "input_audio_buffer.speech_started":
+                                # User started speaking
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "user_speech_started",
+                                        "item_id": event.get("item_id"),
+                                        "audio_start_ms": event.get("audio_start_ms", 0),
+                                        "eval_mode": eval_mode,
+                                    },
                                 )
+                            elif event_type == "input_audio_buffer.speech_stopped":
+                                # User stopped speaking - create upload_id for user audio
+                                item_id = event.get("item_id")
+                                if item_id:
+                                    # TODO: Create upload_id and start TUS upload for user audio
+                                    # For now, store item_id mapping (upload_id will be created when audio is ready)
+                                    # upload_id = await _create_audio_upload(...)
+                                    # session.item_id_to_upload_id[item_id] = str(upload_id)
+                                    pass
                                 
-                                profile_id_str = await find_profile_by_socket(sid)
-                                if profile_id_str:
-                                    await _member_progress_impl(
-                                        sid,
-                                        MemberProgressPayload(
-                                            chat_id=chat_id,
-                                            message=transcript,
-                                            voice_mode=True,
-                                            upload_id=upload_id,
-                                        ),
-                                        uuid.UUID(profile_id_str),
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "user_speech_stopped",
+                                        "item_id": item_id,
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif (
+                                event_type
+                                == "conversation.item.input_audio_transcription.completed"
+                            ):
+                                # User transcription completed - retrieve upload_id and call member_progress
+                                item_id = event.get("item_id")
+                                transcript = event.get("transcript", "")
+                                upload_id = session.item_id_to_upload_id.get(item_id) if item_id else None
+                                
+                                # Call member_progress with transcript and upload_id (if available)
+                                if transcript and chat_id:
+                                    try:
+                                        from app.infra.v4.websocket.find_profile_by_socket import \
+                                            find_profile_by_socket
+                                        from app.socket.v4.simulations.member_progress import (
+                                            MemberProgressPayload,
+                                            _member_progress_impl)
+                                        
+                                        profile_id_str = await find_profile_by_socket(sid)
+                                        if profile_id_str:
+                                            await _member_progress_impl(
+                                                sid,
+                                                MemberProgressPayload(
+                                                    chat_id=chat_id,
+                                                    message=transcript,
+                                                    voice_mode=True,
+                                                    upload_id=upload_id,
+                                                ),
+                                                uuid.UUID(profile_id_str),
+                                            )
+                                    except Exception as e:
+                                        # Log error but continue
+                                        await emit_to_internal(
+                                            "generate_error",
+                                            GenerateErrorApiRequest(
+                                                sid=sid,
+                                                error_message=f"Error calling member_progress: {str(e)}",
+                                                artifact_type=artifact_type,
+                                                group_id=str(group_id_from_run) if group_id_from_run else None,
+                                                resource_type=resource_type,
+                                            ),
+                                            sid=sid,
+                                        )
+                                
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "user_transcription_complete",
+                                        "item_id": item_id,
+                                        "transcript": transcript,
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif event_type == "response.created":
+                                # Response started
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "response_started",
+                                        "response_id": event.get("response_id"),
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif event_type == "response.output_item.added":
+                                # Output item added
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "output_item_added",
+                                        "item_id": event.get("item_id"),
+                                        "output_type": event.get("output_type"),
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif event_type == "response.output_item.done":
+                                # Output item done
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "output_item_done",
+                                        "item_id": event.get("item_id"),
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif event_type == "response.audio_transcript.delta":
+                                # Assistant transcription delta
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "audio_transcript_delta",
+                                        "delta": event.get("delta"),
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif event_type == "response.audio_transcript.done":
+                                # Assistant transcription complete
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "audio_transcript_done",
+                                        "transcript": event.get("transcript"),
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif event_type == "response.audio.delta":
+                                # Assistant audio delta - push to outbound_queue and emit generate_progress
+                                audio_delta = event.get("delta")
+                                if audio_delta:
+                                    # Decode base64 to PCM16 bytes for client
+                                    try:
+                                        pcm16_bytes = base64.b64decode(audio_delta)
+                                        await session.outbound_queue.put({
+                                            "type": "audio",
+                                            "pcm16": pcm16_bytes,
+                                        })
+                                    except Exception as e:
+                                        # If decoding fails, still emit generate_progress with base64
+                                        pass
+                                    
+                                    # Also emit generate_progress for simulations listeners
+                                    await internal_sio.emit(
+                                        "generate_progress",
+                                        {
+                                            "modality": "audio",
+                                            "sid": sid,
+                                            "artifact_type": artifact_type,
+                                            "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                            "resource_type": resource_type,
+                                            "run_id": str(run_id),
+                                            "type": "audio_delta",
+                                            "audio": audio_delta,  # Base64 encoded audio
+                                            "eval_mode": eval_mode,
+                                        },
                                     )
-                            except Exception as e:
-                                # Log error but continue
+                            elif event_type == "response.function_call_arguments.delta":
+                                # Tool call arguments delta
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "tool_call_progress",
+                                        "call_id": event.get("call_id"),
+                                        "arguments_delta": event.get("delta"),
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif event_type == "response.function_call.done":
+                                # Tool call complete
+                                await internal_sio.emit(
+                                    "generate_progress",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "tool_call_complete",
+                                        "call_id": event.get("call_id"),
+                                        "function_call": event.get("function_call"),
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                            elif event_type == "response.done":
+                                # Response complete - create upload_id for assistant audio
+                                response_id = event.get("response_id")
+                                if response_id:
+                                    # TODO: Create upload_id and start TUS upload for assistant audio
+                                    # For now, store response_id mapping (upload_id will be created when audio is ready)
+                                    # upload_id = await _create_audio_upload(...)
+                                    # session.response_id_to_upload_id[response_id] = str(upload_id)
+                                    pass
+                                
+                                await internal_sio.emit(
+                                    "generate_complete",
+                                    {
+                                        "modality": "audio",
+                                        "sid": sid,
+                                        "artifact_type": artifact_type,
+                                        "group_id": str(group_id_from_run) if group_id_from_run else None,
+                                        "resource_type": resource_type,
+                                        "run_id": str(run_id),
+                                        "type": "run_complete",
+                                        "eval_mode": eval_mode,
+                                    },
+                                )
+                                break  # Exit receive loop after completion
+                            elif event_type == "error":
+                                # Error event
+                                error_data = event.get("error", {})
                                 await emit_to_internal(
                                     "generate_error",
                                     GenerateErrorApiRequest(
                                         sid=sid,
-                                        error_message=f"Error calling member_progress: {str(e)}",
+                                        error_message=error_data.get(
+                                            "message", "Unknown error"
+                                        ),
                                         artifact_type=artifact_type,
                                         group_id=str(group_id_from_run) if group_id_from_run else None,
                                         resource_type=resource_type,
                                     ),
                                     sid=sid,
                                 )
-                        
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "user_transcription_complete",
-                                "item_id": item_id,
-                                "transcript": transcript,
-                            },
-                        )
-                    elif event_type == "response.created":
-                        # Response started
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "response_started",
-                                "response_id": event.get("response_id"),
-                            },
-                        )
-                    elif event_type == "response.output_item.added":
-                        # Output item added
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "output_item_added",
-                                "item_id": event.get("item_id"),
-                                "output_type": event.get("output_type"),
-                            },
-                        )
-                    elif event_type == "response.output_item.done":
-                        # Output item done
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "output_item_done",
-                                "item_id": event.get("item_id"),
-                            },
-                        )
-                    elif event_type == "response.audio_transcript.delta":
-                        # Assistant transcription delta
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "audio_transcript_delta",
-                                "delta": event.get("delta"),
-                            },
-                        )
-                    elif event_type == "response.audio_transcript.done":
-                        # Assistant transcription complete
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "audio_transcript_done",
-                                "transcript": event.get("transcript"),
-                            },
-                        )
-                    elif event_type == "response.audio.delta":
-                        # Assistant audio delta - push to outbound_queue and emit generate_progress
-                        audio_delta = event.get("delta")
-                        if audio_delta:
-                            # Decode base64 to PCM16 bytes for client
-                            try:
-                                pcm16_bytes = base64.b64decode(audio_delta)
-                                await session.outbound_queue.put({
-                                    "type": "audio",
-                                    "pcm16": pcm16_bytes,
-                                })
-                            except Exception as e:
-                                # If decoding fails, still emit generate_progress with base64
-                                pass
-                            
-                            # Also emit generate_progress for simulations listeners
-                            await internal_sio.emit(
-                                "generate_progress",
-                                {
-                                    "modality": "audio",
-                                    "sid": sid,
-                                    "artifact_type": artifact_type,
-                                    "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                    "resource_type": resource_type,
-                                    "run_id": str(run_id),
-                                    "type": "audio_delta",
-                                    "audio": audio_delta,  # Base64 encoded audio
-                                },
-                            )
-                    elif event_type == "response.function_call_arguments.delta":
-                        # Tool call arguments delta
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "tool_call_progress",
-                                "call_id": event.get("call_id"),
-                                "arguments_delta": event.get("delta"),
-                            },
-                        )
-                    elif event_type == "response.function_call.done":
-                        # Tool call complete
-                        await internal_sio.emit(
-                            "generate_progress",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "tool_call_complete",
-                                "call_id": event.get("call_id"),
-                                "function_call": event.get("function_call"),
-                            },
-                        )
-                    elif event_type == "response.done":
-                        # Response complete - create upload_id for assistant audio
-                        response_id = event.get("response_id")
-                        if response_id:
-                            # TODO: Create upload_id and start TUS upload for assistant audio
-                            # For now, store response_id mapping (upload_id will be created when audio is ready)
-                            # upload_id = await _create_audio_upload(...)
-                            # session.response_id_to_upload_id[response_id] = str(upload_id)
-                            pass
-                        
-                        await internal_sio.emit(
-                            "generate_complete",
-                            {
-                                "modality": "audio",
-                                "sid": sid,
-                                "artifact_type": artifact_type,
-                                "group_id": str(group_id_from_run) if group_id_from_run else None,
-                                "resource_type": resource_type,
-                                "run_id": str(run_id),
-                                "type": "run_complete",
-                            },
-                        )
-                        break  # Exit receive loop after completion
-                    elif event_type == "error":
-                        # Error event
-                        error_data = event.get("error", {})
-                        await emit_to_internal(
-                            "generate_error",
-                            GenerateErrorApiRequest(
-                                sid=sid,
-                                error_message=error_data.get(
-                                    "message", "Unknown error"
-                                ),
-                                artifact_type=artifact_type,
-                                group_id=str(group_id_from_run) if group_id_from_run else None,
-                                resource_type=resource_type,
-                            ),
-                            sid=sid,
-                        )
-                        break  # Exit on error
+                                break  # Exit on error
                         except json.JSONDecodeError:
                             # Skip invalid JSON
                             continue
@@ -1999,22 +2048,8 @@ async def _handle_audio_generation(
                             )
                             break
                 except asyncio.CancelledError:
-                    break
-                except Exception as e:
-                    # Emit error for unexpected exceptions in downlink loop
-                    await emit_to_internal(
-                        "generate_error",
-                        GenerateErrorApiRequest(
-                            sid=sid,
-                            error_message=f"Error in downlink loop: {str(e)}",
-                            artifact_type=artifact_type,
-                            group_id=str(group_id_from_run) if group_id_from_run else None,
-                            resource_type=resource_type,
-                        ),
-                        sid=sid,
-                    )
-                except asyncio.CancelledError:
-                    break
+                    # Task was cancelled - exit loop naturally
+                    pass
                 except Exception as e:
                     # Emit error for unexpected exceptions in downlink loop
                     await emit_to_internal(

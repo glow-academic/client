@@ -23,6 +23,11 @@ SQL_PATH = "app/sql/v4/personas/get_persona_resource_ids_by_group_id_complete.sq
 @internal_sio.on("resource_complete")  # type: ignore
 async def handle_persona_artifact_complete(data: dict[str, Any]) -> None:
     """Handle resource_complete internal event - filter by persona artifact_type and emit granular event."""
+    # Skip processing if in eval mode - benchmark handlers will handle evals
+    eval_mode = data.get("eval_mode", False)
+    if eval_mode:
+        return  # Don't process evals - benchmark handlers will handle them
+    
     # Filter by artifact_type (SQL will also validate, but early return for efficiency)
     artifact_type = data.get("artifact_type")
     if artifact_type != "persona":

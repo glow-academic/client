@@ -37,6 +37,7 @@ async def handle_artifact_progress(data: dict[str, Any]) -> None:
     # Extract modality and artifact_type from payload
     modality = data.get("modality", "text")
     artifact_type = data.get("artifact_type")
+    eval_mode = data.get("eval_mode", False)  # Extract eval_mode flag
 
     sid = data.get("sid", "")
     if not sid:
@@ -97,6 +98,7 @@ async def handle_artifact_progress(data: dict[str, Any]) -> None:
             "audio": data.get("audio"),  # Base64 audio data
             "call_id": data.get("call_id"),
             "function_call": data.get("function_call"),
+            "eval_mode": eval_mode,  # Add eval_mode flag
         },
         room=sid,
     )
@@ -133,6 +135,7 @@ async def handle_artifact_progress(data: dict[str, Any]) -> None:
         "audio": data.get("audio"),
         "call_id": data.get("call_id"),
         "function_call": data.get("function_call"),
+        "eval_mode": eval_mode,  # Add eval_mode flag
     }
 
     # Re-emit resource_progress for resource handlers to process
