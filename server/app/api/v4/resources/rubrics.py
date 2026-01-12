@@ -76,14 +76,14 @@ async def create_rubric(
                 ),
             )
 
-            if not result or not result.rubric_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create rubrics")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                rubrics={"id": str(result.rubric_id)},
+                rubrics={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

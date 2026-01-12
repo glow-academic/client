@@ -76,14 +76,14 @@ async def create_setting(
                 ),
             )
 
-            if not result or not result.setting_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create settings")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                settings={"id": str(result.setting_id)},
+                settings={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

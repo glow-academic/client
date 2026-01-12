@@ -76,14 +76,14 @@ async def create_cohort(
                 ),
             )
 
-            if not result or not result.cohort_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create cohorts")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                cohorts={"id": str(result.cohort_id)},
+                cohorts={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

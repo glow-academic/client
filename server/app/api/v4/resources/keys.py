@@ -76,14 +76,14 @@ async def create_key(
                 ),
             )
 
-            if not result or not result.key_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create keys")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                keys={"id": str(result.key_id)},
+                keys={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

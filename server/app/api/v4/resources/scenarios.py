@@ -76,14 +76,14 @@ async def create_scenario(
                 ),
             )
 
-            if not result or not result.scenario_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create scenarios")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                scenarios={"id": str(result.scenario_id)},
+                scenarios={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

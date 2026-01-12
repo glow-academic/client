@@ -76,14 +76,14 @@ async def create_simulation(
                 ),
             )
 
-            if not result or not result.simulation_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create simulations")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                simulations={"id": str(result.simulation_id)},
+                simulations={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

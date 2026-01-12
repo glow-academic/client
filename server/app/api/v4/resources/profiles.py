@@ -76,14 +76,14 @@ async def create_profile(
                 ),
             )
 
-            if not result or not result.profile_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create profiles")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                profiles={"id": str(result.profile_id)},
+                profiles={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

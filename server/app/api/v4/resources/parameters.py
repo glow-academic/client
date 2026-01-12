@@ -76,14 +76,14 @@ async def create_parameter(
                 ),
             )
 
-            if not result or not result.parameter_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create parameters")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                parameters={"id": str(result.parameter_id)},
+                parameters={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

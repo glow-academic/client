@@ -76,14 +76,14 @@ async def create_model(
                 ),
             )
 
-            if not result or not result.model_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create models")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                models={"id": str(result.model_id)},
+                models={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

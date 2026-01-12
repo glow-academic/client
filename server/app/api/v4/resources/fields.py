@@ -77,14 +77,14 @@ async def create_field(
                 ),
             )
 
-            if not result or not result.field_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create fields")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                fields={"id": str(result.field_id)},
+                fields={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

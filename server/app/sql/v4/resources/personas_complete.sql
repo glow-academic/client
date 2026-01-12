@@ -1,7 +1,7 @@
 -- Create personas resource
 -- Always INSERT operation (preserves all information)
--- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third)
--- Returns: persona_id (uuid)
+-- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), persona_id (uuid, required, third), mcp (boolean, optional, fourth)
+-- Returns: id (uuid) - unique resource id
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -20,15 +20,17 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_create_personas_v4(agent_id uuid,
     group_id uuid,
+    persona_id uuid,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
-    persona_id uuid
+    id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
-    v_persona_id uuid;
+    v_resource_id uuid;
+    v_artifact_id uuid;
     v_call_id uuid;
     v_tool_id uuid;
     v_template_id uuid;
@@ -41,6 +43,13 @@ DECLARE
     v_message_id uuid;
     v_run_id uuid;
 BEGIN
+    -- Use provided persona_id as artifact_id
+    v_artifact_id := api_create_personas_v4.persona_id;
+    
+    -- Validate that persona artifact exists
+    IF NOT EXISTS (SELECT 1 FROM persona WHERE id = v_artifact_id) THEN
+        RAISE EXCEPTION 'Persona artifact % does not exist', v_artifact_id;
+    END IF;
     -- Lookup tool_id from agent_tools + resource_tools
     SELECT t.id, tt.template_id, st.schema_id
     INTO v_tool_id, v_template_id, v_schema_id
@@ -123,9 +132,10 @@ BEGIN
     );
     
     -- INSERT into personas table (always insert, never update)
-    INSERT INTO personas(active, generated, mcp, call_id, created_at, updated_at)
-    VALUES (true, true, mcp, v_call_id, NOW(), NOW())
-    RETURNING id INTO v_persona_id;
+    -- Create resource with new unique id and persona_id FK
+    INSERT INTO personas(id, persona_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
+    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_personas_v4.group_id, NOW(), NOW())
+    RETURNING id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
@@ -154,6 +164,6 @@ BEGIN
         NOW(),
         NOW();
     
-    RETURN QUERY SELECT v_persona_id;
+    RETURN QUERY SELECT v_resource_id;
 END;
 $$;

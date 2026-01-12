@@ -76,14 +76,14 @@ async def create_persona(
                 ),
             )
 
-            if not result or not result.persona_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create personas")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                personas={"id": str(result.persona_id)},
+                personas={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

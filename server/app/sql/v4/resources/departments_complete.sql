@@ -1,7 +1,7 @@
 -- Create departments resource
 -- Always INSERT operation (preserves all information)
--- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third)
--- Returns: department_id (uuid)
+-- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), department_id (uuid, required, third), mcp (boolean, optional, fourth)
+-- Returns: id (uuid) - unique resource id
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -20,15 +20,17 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_create_departments_v4(agent_id uuid,
     group_id uuid,
+    department_id uuid,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
-    department_id uuid
+    id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
-    v_department_id uuid;
+    v_resource_id uuid;
+    v_artifact_id uuid;
     v_call_id uuid;
     v_tool_id uuid;
     v_template_id uuid;
@@ -41,6 +43,13 @@ DECLARE
     v_message_id uuid;
     v_run_id uuid;
 BEGIN
+    -- Use provided department_id as artifact_id
+    v_artifact_id := api_create_departments_v4.department_id;
+    
+    -- Validate that department artifact exists
+    IF NOT EXISTS (SELECT 1 FROM department WHERE id = v_artifact_id) THEN
+        RAISE EXCEPTION 'Department artifact % does not exist', v_artifact_id;
+    END IF;
     -- Lookup tool_id from agent_tools + resource_tools
     SELECT t.id, tt.template_id, st.schema_id
     INTO v_tool_id, v_template_id, v_schema_id
@@ -123,9 +132,11 @@ BEGIN
     );
     
     -- INSERT into departments table (always insert, never update)
-    INSERT INTO departments(active, generated, mcp, call_id, created_at, updated_at)
-    VALUES (true, true, mcp, v_call_id, NOW(), NOW())
-    RETURNING id INTO v_department_id;
+    -- INSERT into departments table (always insert, never update)
+    -- Create resource with new unique id and department_id FK
+    INSERT INTO departments(id, department_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
+    VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_departments_v4.group_id, NOW(), NOW())
+    RETURNING id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
@@ -154,6 +165,6 @@ BEGIN
         NOW(),
         NOW();
     
-    RETURN QUERY SELECT v_department_id;
+    RETURN QUERY SELECT v_resource_id;
 END;
 $$;

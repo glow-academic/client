@@ -77,14 +77,14 @@ async def create_department(
                 ),
             )
 
-            if not result or not result.department_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create departments")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                departments={"id": str(result.department_id)},
+                departments={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

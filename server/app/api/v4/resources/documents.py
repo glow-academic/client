@@ -77,14 +77,14 @@ async def create_document(
                 ),
             )
 
-            if not result or not result.document_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create documents")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                documents={"id": str(result.document_id)},
+                documents={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)

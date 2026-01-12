@@ -76,14 +76,14 @@ async def create_eval(
                 ),
             )
 
-            if not result or not result.eval_id:
+            if not result or not result.id:
                 raise ValueError("Failed to create evals")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                evals={"id": str(result.eval_id)},
+                evals={"id": str(result.id)},
             )
 
         # Convert SQL result to API response (auto-generated types)
