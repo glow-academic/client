@@ -158,29 +158,38 @@ export function Fields({
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => (
-          <div className="relative flex items-center justify-between w-full p-3 border rounded-md hover:bg-accent">
+          <div
+            className={cn(
+              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {/* Check icon - top right */}
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
+              </div>
+            )}
+
             {/* Suggested badge - top right */}
             {isSuggested(item.id) && !isSelected && (
               <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
                 Suggested
               </div>
             )}
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="flex-1 min-w-0">
-                <div className="truncate font-medium">{item.name}</div>
-                {item.description && (
-                  <div className="text-xs text-muted-foreground truncate mt-1">
-                    {item.description}
-                  </div>
-                )}
-              </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100 text-primary" : "opacity-0"
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-sm leading-tight">
+                {item.name}
+              </h3>
+              {item.description && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {item.description}
+                </p>
               )}
-            />
+            </div>
           </div>
         )}
         emptyMessage="No fields found."
