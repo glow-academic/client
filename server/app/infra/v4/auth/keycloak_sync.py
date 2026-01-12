@@ -358,7 +358,7 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
 
         # Step 2: Check if audience mapper exists, create if not
         try:
-            mappers = kc_admin.get_mappers_from_client_scope(scope_id=scope_id)
+            mappers = kc_admin.get_mappers_from_client_scope(scope_id)
             existing_mapper = next(
                 (m for m in mappers if m.get("name") == mapper_name), None
             )
@@ -407,7 +407,7 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
 
             try:
                 kc_admin.add_mapper_to_client_scope(
-                    scope_id=scope_id, payload=mapper_payload
+                    client_scope_id=scope_id, payload=mapper_payload
                 )
                 logger.info(
                     f"✅ Created audience mapper '{mapper_name}' for scope '{scope_name}'"
