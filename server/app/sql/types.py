@@ -10265,7 +10265,8 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
     message_ids: list[UUID] | None = None
     department_id: UUID | None = None
     group_id: UUID | None = None
-    user_instructions: str | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -10275,6 +10276,7 @@ class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
             self.message_ids,
             self.department_id,
             self.group_id,
+            self.developer_instructions,
             self.user_instructions,
         )
 
@@ -10293,7 +10295,8 @@ class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
     message_ids: list[UUID] | None = None
     department_id: UUID | None = None
     group_id: UUID | None = None
-    user_instructions: str | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
 
 class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
 
@@ -14884,6 +14887,70 @@ class GetPersonaApiResponse(BaseModel):
     examples: list[QGetPersonaV4Example] | None = None
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
+
+
+
+# Generated from: get_persona_generate_context
+
+class GetPersonaGenerateContextSqlParams(BaseModel):
+
+    profile_id: UUID
+    resource_types: list[str]
+    agent_id: UUID | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.resource_types,
+            self.agent_id,
+            self.group_id,
+            self.name_id,
+            self.description_id,
+            self.color_id,
+            self.icon_id,
+            self.instructions_id,
+            self.active_flag_id,
+            self.department_ids,
+            self.field_ids,
+            self.example_ids,
+        )
+
+class GetPersonaGenerateContextSqlRow(BaseModel):
+
+    agent_id: UUID | None = None
+    resources: Any | None = None
+    developer_instruction_templates: list[str] | None = None
+
+class GetPersonaGenerateContextApiRequest(BaseModel):
+
+    resource_types: list[str]
+    agent_id: UUID | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    instructions_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+
+class GetPersonaGenerateContextApiResponse(BaseModel):
+
+    agent_id: UUID | None = None
+    resources: Any | None = None
+    developer_instruction_templates: list[str] | None = None
 
 
 
@@ -30115,6 +30182,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaApiRequest",
         "GetPersonaApiResponse",
     ),
+    "app/sql/v4/personas/get_persona_generate_context_complete.sql": (
+        "GetPersonaGenerateContextSqlParams",
+        "GetPersonaGenerateContextSqlRow",
+        "GetPersonaGenerateContextApiRequest",
+        "GetPersonaGenerateContextApiResponse",
+    ),
     "app/sql/v4/personas/get_persona_generation_context_complete.sql": (
         "GetPersonaGenerationContextSqlParams",
         "GetPersonaGenerationContextSqlRow",
@@ -32809,6 +32882,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/personas/get_persona_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/personas/get_persona_generate_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload

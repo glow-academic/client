@@ -120,7 +120,7 @@ colors_resources AS (
             jsonb_agg(
                 jsonb_build_object(
                     'id', c.id::text,
-                    'color', c.color
+                    'color', c.hex_code
                 )
             ),
             '[]'::jsonb
@@ -136,7 +136,7 @@ icons_resources AS (
             jsonb_agg(
                 jsonb_build_object(
                     'id', i.id::text,
-                    'icon', i.icon
+                    'icon', i.value
                 )
             ),
             '[]'::jsonb
@@ -152,7 +152,7 @@ instructions_resources AS (
             jsonb_agg(
                 jsonb_build_object(
                     'id', inst.id::text,
-                    'instructions', inst.instructions
+                    'instructions', inst.template
                 )
             ),
             '[]'::jsonb
@@ -168,7 +168,7 @@ flags_resources AS (
             jsonb_agg(
                 jsonb_build_object(
                     'id', f.id::text,
-                    'name', (SELECT n.name FROM flag_names fn JOIN names n ON fn.name_id = n.id WHERE fn.flag_id = f.id LIMIT 1)
+                    'name', f.name
                 )
             ),
             '[]'::jsonb
@@ -185,7 +185,7 @@ departments_resources AS (
                 jsonb_build_object(
                     'id', d.id::text,
                     'name', (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
-                    'description', (SELECT desc.description FROM department_descriptions dd JOIN descriptions desc ON dd.description_id = desc.id WHERE dd.department_id = d.id LIMIT 1)
+                    'description', (SELECT desc_data.description FROM department_descriptions dd JOIN descriptions desc_data ON dd.description_id = desc_data.id WHERE dd.department_id = d.id LIMIT 1)
                 )
             ),
             '[]'::jsonb
@@ -202,7 +202,7 @@ fields_resources AS (
                 jsonb_build_object(
                     'id', f.id::text,
                     'name', (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-                    'description', (SELECT desc.description FROM field_descriptions fd JOIN descriptions desc ON fd.description_id = desc.id WHERE fd.field_id = f.id LIMIT 1)
+                    'description', (SELECT desc_data.description FROM field_descriptions fd JOIN descriptions desc_data ON fd.description_id = desc_data.id WHERE fd.field_id = f.id LIMIT 1)
                 )
             ),
             '[]'::jsonb
