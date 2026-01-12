@@ -371,43 +371,55 @@ useEffect(() => {
 
 ### 11. Full-Page Generation Event Listener
 
-**Pattern:** Listen for `"full-page-generate"` custom event from layout to trigger full generation.
+**Pattern:** Listen for `"full-page-generate"` custom event from layout to open the generation modal.
 
-**Purpose:** The layout's `FullPageGenerateButton` dispatches a custom event that page components listen to. This allows the layout (parent) to trigger generation in the page component (child) without tight coupling.
+**Purpose:** The layout's `FullPageGenerateButton` dispatches a custom event that page components listen to. This opens the `GenerateRegenerateModal` (same as "basic" and "content" sections), allowing users to select which resources to generate. This provides a consistent user experience across all generation entry points.
 
 **Implementation:**
 ```typescript
+// Step-to-resources mapping must include "all" entry
+const stepResources: Record<string, ResourceType[]> = useMemo(
+  () => ({
+    basic: ["names", "descriptions", "departments", "flags"],
+    fields: ["fields"],
+    color: ["colors"],
+    icon: ["icons"],
+    content: ["instructions", "examples"],
+    all: [
+      "names",
+      "descriptions",
+      "colors",
+      "icons",
+      "instructions",
+      "flags",
+      "fields",
+      "departments",
+      "examples",
+    ], // All resources for full-page generation
+  }),
+  []
+);
+
 // Listen for full-page-generate event from layout
 useEffect(() => {
   const handleFullPageGenerate = () => {
     if (personaData?.general_agent_id) {
-      // Trigger full generation with all resources
-      handleGenerateResources(
-        [
-          "names",
-          "descriptions",
-          "colors",
-          "icons",
-          "instructions",
-          "flags",
-          "fields",
-          "departments",
-          "examples",
-        ],
-        "general" // Use "general" agent type for full-page generation
-      );
+      // Open modal instead of directly generating
+      handleOpenStepCardModal("all", "generate");
     }
   };
   window.addEventListener("full-page-generate", handleFullPageGenerate);
   return () =>
     window.removeEventListener("full-page-generate", handleFullPageGenerate);
-}, [personaData?.general_agent_id, handleGenerateResources]);
+}, [personaData?.general_agent_id, handleOpenStepCardModal]);
 ```
 
 **Key Points:**
-- Use `"general"` agent type for full-page generation (not individual resource types)
-- Include all resources that can be generated
-- Check `general_agent_id` exists before triggering generation
+- Opens the `GenerateRegenerateModal` (same pattern as "basic" and "content" sections)
+- Requires `"all"` entry in `stepResources` mapping with all available resources
+- Users can select which resources to generate in the modal
+- Modal uses `determineAgentType` to select appropriate agent (returns `"general"` for all resources)
+- Check `general_agent_id` exists before opening modal
 - Clean up event listener on unmount
 
 **Naming Convention:**
@@ -518,18 +530,61 @@ useEffect(() => {
 
 ### 6. Using Wrong Agent Type for Full-Page Generation
 
-**Problem:** Using individual resource agent types instead of `"general"` for full-page generation.
+**Problem:** Using individual resource agent types instead of letting `determineAgentType` select the appropriate agent.
 
-**Solution:** Always use `"general"` agent type for full-page generation:
+**Solution:** The modal's `handleModalGenerate` uses `determineAgentType` which automatically returns `"general"` for all resources. Just ensure `"all"` entry exists in `stepResources`:
 ```typescript
-// ✅ CORRECT: Use "general" agent type
-handleGenerateResources(
-  ["names", "descriptions", "colors", /* ... */],
-  "general"
+// ✅ CORRECT: Add "all" to stepResources, modal handles agent selection
+const stepResources: Record<string, ResourceType[]> = useMemo(
+  () => ({
+    // ... other entries
+    all: ["names", "descriptions", "colors", /* ... */], // All resources
+  }),
+  []
 );
 
-// ❌ WRONG: Using individual agent types
-handleGenerateResources(["names", "descriptions"], "basic"); // Wrong agent type
+// Event listener opens modal
+handleOpenStepCardModal("all", "generate");
+
+// ❌ WRONG: Directly generating without modal
+handleGenerateResources(["names", "descriptions"], "basic"); // Bypasses user selection
+```
+
+### 7. Missing "all" Entry in stepResources
+
+**Problem:** Full-page generation fails if `"all"` entry doesn't exist in `stepResources`.
+
+**Solution:** Always include `"all"` entry with all available resources:
+```typescript
+// ✅ CORRECT: Include "all" entry
+const stepResources: Record<string, ResourceType[]> = useMemo(
+  () => ({
+    basic: ["names", "descriptions", "departments", "flags"],
+    content: ["instructions", "examples"],
+    all: [
+      "names",
+      "descriptions",
+      "colors",
+      "icons",
+      "instructions",
+      "flags",
+      "fields",
+      "departments",
+      "examples",
+    ],
+  }),
+  []
+);
+
+// ❌ WRONG: Missing "all" entry
+const stepResources: Record<string, ResourceType[]> = useMemo(
+  () => ({
+    basic: ["names", "descriptions", "departments", "flags"],
+    content: ["instructions", "examples"],
+    // Missing "all" - full-page generation will fail
+  }),
+  []
+);
 ```
 
 ## Related Documentation

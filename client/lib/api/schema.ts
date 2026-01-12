@@ -520,6 +520,11 @@ export interface paths {
         /**
          * Get Persona
          * @description Get persona information - handles both new (persona_id = NULL) and detail (persona_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
         post: operations["get_persona_api_v4_personas_get_post"];
         delete?: never;

@@ -2438,7 +2438,7 @@
           "personas"
         ],
         "summary": "Get Persona",
-        "description": "Get persona information - handles both new (persona_id = NULL) and detail (persona_id provided).",
+        "description": "Get persona information - handles both new (persona_id = NULL) and detail (persona_id provided).\n\nValidation Logic:\n- Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)\n- Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)\n- Frontend components check agent_id before showing generate button",
         "operationId": "get_persona_api_v4_personas_get_post",
         "parameters": [
           {

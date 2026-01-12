@@ -40,7 +40,13 @@ async def get_persona(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetPersonaApiResponse:
-    """Get persona information - handles both new (persona_id = NULL) and detail (persona_id provided)."""
+    """Get persona information - handles both new (persona_id = NULL) and detail (persona_id provided).
+    
+    Validation Logic:
+    - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+    - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+    - Frontend components check agent_id before showing generate button
+    """
     tags = ["personas"]  # From router tags
 
     # Generate cache key from path and parsed body

@@ -409,8 +409,8 @@ function MainLayoutContent({
             {/* DraftPicker and Generate Button - Show on create/edit pages */}
             {isCreateOrEditPage && artifactType && (
               <div className="pr-4 flex items-center gap-2">
-                <DraftPicker artifactType={artifactType} />
                 <FullPageGenerateButton />
+                <DraftPicker artifactType={artifactType} />
               </div>
             )}
 

@@ -261,7 +261,7 @@ export function Descriptions({
             {label}
             {required && <span className="text-destructive ml-1">*</span>}
           </Label>
-          {onGenerate && (
+          {onGenerate && agent_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

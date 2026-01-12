@@ -189,6 +189,7 @@ export function StepCard({
   // Build actions with reset button if configured
   const finalActions = (
     <>
+      {actions}
       {resetFields && resetFields.length > 0 && onReset && (
         <TooltipProvider>
           <Tooltip>
@@ -207,7 +208,6 @@ export function StepCard({
           </Tooltip>
         </TooltipProvider>
       )}
-      {actions}
     </>
   );
 

@@ -150,7 +150,7 @@ export function Departments({
               </span>
             )}
           </Label>
-          {onGenerate && (
+          {onGenerate && agent_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

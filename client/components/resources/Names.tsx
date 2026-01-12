@@ -251,7 +251,7 @@ export function Names({
           style={{ width: `${inputWidth}px` }}
           className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
         />
-        {onGenerate && (
+        {onGenerate && agent_id && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

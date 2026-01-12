@@ -187,7 +187,7 @@ export function Flags({
             onCheckedChange={handleChange}
             disabled={disabled}
           />
-          {onGenerate && (
+          {onGenerate && agent_id && (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

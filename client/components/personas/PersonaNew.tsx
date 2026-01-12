@@ -1011,32 +1011,6 @@ function PersonaNewComponent({
     clearGenerationCapability,
   ]);
 
-  // Listen for full-page-generate event from layout
-  useEffect(() => {
-    const handleFullPageGenerate = () => {
-      if (personaData?.general_agent_id) {
-        // Trigger full generation with all resources
-        handleGenerateResources(
-          [
-            "names",
-            "descriptions",
-            "colors",
-            "icons",
-            "instructions",
-            "flags",
-            "fields",
-            "departments",
-            "examples",
-          ],
-          "general"
-        );
-      }
-    };
-    window.addEventListener("full-page-generate", handleFullPageGenerate);
-    return () =>
-      window.removeEventListener("full-page-generate", handleFullPageGenerate);
-  }, [personaData?.general_agent_id, handleGenerateResources]);
-
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
@@ -1193,6 +1167,17 @@ function PersonaNewComponent({
       color: ["colors"],
       icon: ["icons"],
       content: ["instructions", "examples"],
+      all: [
+        "names",
+        "descriptions",
+        "colors",
+        "icons",
+        "instructions",
+        "flags",
+        "fields",
+        "departments",
+        "examples",
+      ], // All resources for full-page generation
     }),
     []
   );
@@ -1248,6 +1233,19 @@ function PersonaNewComponent({
     },
     [handleGenerateResources, determineAgentType]
   );
+
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      if (personaData?.general_agent_id) {
+        // Open modal instead of directly generating
+        handleOpenStepCardModal("all", "generate");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [personaData?.general_agent_id, handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(

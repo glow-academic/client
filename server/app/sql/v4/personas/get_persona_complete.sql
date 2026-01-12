@@ -2132,19 +2132,69 @@ general_agent_data AS (
     LIMIT 1
 ),
 -- Check for missing tools on required resources (after all agent selection CTEs and ui_flags)
+-- IMPORTANT: We check for TOOLS existence (not agents). Tools are required, agents are optional.
+-- If no tools exist for a resource, we error. If tools exist but no agent exists, that's fine (manual entry).
+tools_existence_check AS (
+    SELECT 
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'names'::resources 
+              AND t.active = true
+        ) as names_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'colors'::resources 
+              AND t.active = true
+        ) as colors_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'icons'::resources 
+              AND t.active = true
+        ) as icons_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'instructions'::resources 
+              AND t.active = true
+        ) as instructions_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'departments'::resources 
+              AND t.active = true
+        ) as departments_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'fields'::resources 
+              AND t.active = true
+        ) as fields_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'examples'::resources 
+              AND t.active = true
+        ) as examples_has_tools
+    FROM params x
+),
 missing_tools_check AS (
     SELECT 
         ARRAY_REMOVE(ARRAY[
-            CASE WHEN (SELECT agent_id FROM name_agent_data) IS NULL AND true THEN 'name' ELSE NULL END,
-            CASE WHEN (SELECT agent_id FROM color_agent_data) IS NULL AND true THEN 'color' ELSE NULL END,
-            CASE WHEN (SELECT agent_id FROM icon_agent_data) IS NULL AND true THEN 'icon' ELSE NULL END,
-            CASE WHEN (SELECT agent_id FROM instructions_agent_data) IS NULL AND true THEN 'instructions' ELSE NULL END,
-            CASE WHEN (SELECT agent_id FROM departments_agent_data) IS NULL AND uf.show_departments THEN 'departments' ELSE NULL END,
-            CASE WHEN (SELECT agent_id FROM fields_agent_data) IS NULL AND uf.show_fields THEN 'fields' ELSE NULL END,
-            CASE WHEN (SELECT agent_id FROM examples_agent_data) IS NULL AND (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN 'examples' ELSE NULL END
+            -- Check if tools exist (not agents). Error only if NO tools exist.
+            CASE WHEN NOT tec.names_has_tools THEN 'name' ELSE NULL END,
+            CASE WHEN NOT tec.colors_has_tools THEN 'color' ELSE NULL END,
+            CASE WHEN NOT tec.icons_has_tools THEN 'icon' ELSE NULL END,
+            CASE WHEN NOT tec.instructions_has_tools THEN 'instructions' ELSE NULL END,
+            CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
+            CASE WHEN NOT tec.fields_has_tools AND uf.show_fields THEN 'fields' ELSE NULL END,
+            CASE WHEN NOT tec.examples_has_tools AND (SELECT COUNT(*) FROM example_mapping_data) > 0 THEN 'examples' ELSE NULL END
         ]::text[], NULL) as missing_resources
     FROM params x
     CROSS JOIN ui_flags uf
+    CROSS JOIN tools_existence_check tec
 ),
 permissions_data_with_tools AS (
     SELECT 
@@ -2217,7 +2267,7 @@ SELECT
     (SELECT name_id FROM name_resource_data) as name_id,
     nrd.name_resource,
     CASE 
-        WHEN (SELECT agent_id FROM name_agent_data) IS NULL AND true THEN false
+        WHEN NOT tec.names_has_tools THEN false
         ELSE uf.show_name
     END as show_name,
     (SELECT agent_id FROM name_agent_data) as name_agent_id,
@@ -2242,7 +2292,7 @@ SELECT
     (SELECT color_id FROM color_resource_data) as color_id,
     (SELECT color_res FROM (SELECT crd.draft_color_resource as color_res UNION ALL SELECT crd.persona_color_resource LIMIT 1) sub WHERE color_res IS NOT NULL LIMIT 1) as color_resource,
     CASE 
-        WHEN (SELECT agent_id FROM color_agent_data) IS NULL AND true THEN false
+        WHEN NOT tec.colors_has_tools THEN false
         WHEN (SELECT COUNT(*) FROM colors_data) > 0 THEN true
         ELSE false
     END as show_color,
@@ -2260,7 +2310,7 @@ SELECT
     (SELECT icon_id FROM icon_resource_data) as icon_id,
     (SELECT icon_res FROM (SELECT ird.draft_icon_resource as icon_res UNION ALL SELECT ird.persona_icon_resource LIMIT 1) sub WHERE icon_res IS NOT NULL LIMIT 1) as icon_resource,
     CASE 
-        WHEN (SELECT agent_id FROM icon_agent_data) IS NULL AND true THEN false
+        WHEN NOT tec.icons_has_tools THEN false
         WHEN (SELECT COUNT(*) FROM icons_data) > 0 THEN true
         ELSE false
     END as show_icon,
@@ -2278,7 +2328,7 @@ SELECT
     (SELECT instructions_id FROM instructions_resource_data) as instructions_id,
     (SELECT inst_res FROM (SELECT instrd.draft_instructions_resource as inst_res UNION ALL SELECT instrd.persona_instructions_resource LIMIT 1) sub WHERE inst_res IS NOT NULL LIMIT 1) as instructions_resource,
     CASE 
-        WHEN (SELECT agent_id FROM instructions_agent_data) IS NULL AND true THEN false
+        WHEN NOT tec.instructions_has_tools THEN false
         ELSE uf.show_instructions
     END as show_instructions,
     (SELECT agent_id FROM instructions_agent_data) as instructions_agent_id,
@@ -2351,7 +2401,7 @@ SELECT
         '{}'::types.q_get_persona_v4_department[]
     ) as department_resources,
     CASE 
-        WHEN (SELECT agent_id FROM departments_agent_data) IS NULL AND uf.show_departments THEN false
+        WHEN NOT tec.departments_has_tools AND uf.show_departments THEN false
         WHEN EXISTS (SELECT 1 FROM department_mapping_data LIMIT 1) THEN true
         ELSE uf.show_departments
     END as show_departments,
@@ -2380,7 +2430,7 @@ SELECT
         '{}'::types.q_get_persona_v4_field[]
     ) as field_resources,
     CASE 
-        WHEN (SELECT agent_id FROM fields_agent_data) IS NULL AND uf.show_fields THEN false
+        WHEN NOT tec.fields_has_tools AND uf.show_fields THEN false
         ELSE uf.show_fields
     END as show_fields,
     (SELECT agent_id FROM fields_agent_data) as fields_agent_id,
@@ -2457,7 +2507,7 @@ SELECT
         '{}'::types.q_get_persona_v4_example[]
     ) as example_resources,
     CASE 
-        WHEN (SELECT agent_id FROM examples_agent_data) IS NULL AND true THEN false
+        WHEN NOT tec.examples_has_tools THEN false
         ELSE true
     END as show_examples,
     (SELECT agent_id FROM examples_agent_data) as examples_agent_id,
@@ -2480,6 +2530,7 @@ SELECT
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
+CROSS JOIN tools_existence_check tec
 LEFT JOIN persona_departments_data pdd ON true
 CROSS JOIN draft_group_data dgd
 CROSS JOIN name_resource_data nrd
