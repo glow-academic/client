@@ -256,9 +256,9 @@ export function Colors({
 
   return (
     <div className="space-y-4">
-      <Label htmlFor={id}>
+      <Label htmlFor={id} className="flex items-center gap-1">
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
+        {required && <span className="text-destructive">*</span>}
       </Label>
 
       {/* Color Grid */}

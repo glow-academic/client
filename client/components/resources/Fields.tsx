@@ -142,9 +142,9 @@ export function Fields({
   return (
     <div className="space-y-2">
       {label && (
-        <Label htmlFor={id}>
+        <Label htmlFor={id} className="flex items-center gap-1">
           {label}
-          {required && <span className="text-destructive ml-1">*</span>}
+          {required && <span className="text-destructive">*</span>}
           {description && (
             <span className="text-xs text-muted-foreground ml-2">
               {description}
