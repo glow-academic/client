@@ -158,13 +158,14 @@ export function Fields({
         onSelect={handleSelect}
         getId={(item) => item.id}
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full p-3 border rounded-md hover:bg-accent">
+          <div className="relative flex items-center justify-between w-full p-3 border rounded-md hover:bg-accent">
+            {/* Suggested badge - top right */}
+            {isSuggested(item.id) && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                Suggested
+              </div>
+            )}
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
               <div className="flex-1 min-w-0">
                 <div className="truncate font-medium">{item.name}</div>
                 {item.description && (

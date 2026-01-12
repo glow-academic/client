@@ -285,9 +285,9 @@ export function Icons({
                 </div>
               )}
 
-              {/* Suggested badge - top left */}
+              {/* Suggested badge - top right */}
               {isSuggested && !isSelected && (
-                <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
                   Suggested
                 </div>
               )}
