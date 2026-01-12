@@ -83,8 +83,7 @@ BEGIN
     
     -- Dynamically build arguments_raw from schema_fields and Jinja templates
     -- Build a JSONB object with all function parameters first (for lookup)
-    -- Schema only has 'id' field, so we use empty object since we don't have an id parameter
-    v_params_jsonb := '{}'::jsonb;
+    v_params_jsonb := jsonb_build_object('scenario_id', scenario_id);
     
     -- For each schema field, extract variable names from template or use field name directly
     FOR v_arg_key, v_arg_value IN

@@ -6709,196 +6709,6 @@ class GetCohortDetailApiResponse(BaseModel):
 
 
 
-# Generated from: get_cohort_new
-
-class GetCohortNewSqlParams(BaseModel):
-
-    profile_id: UUID
-    draft_id: UUID | None = None
-    simulation_search: str | None = None
-    simulation_show_selected: bool | None = None
-    current_simulation_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.draft_id,
-            self.simulation_search,
-            self.simulation_show_selected,
-            self.current_simulation_ids,
-        )
-
-class QGetCohortNewV4Cohort(BaseModel):
-
-    cohort_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetCohortNewV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    simulation_ids: list[str] | None
-    staff_ids: list[str] | None
-
-
-
-
-class QGetCohortNewV4DepartmentForStaff(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetCohortNewV4Profile(BaseModel):
-
-    profile_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetCohortNewV4StaffItem(BaseModel):
-
-    profile_id: UUID | None
-    first_name: str | None
-    last_name: str | None
-    emails: list[str] | None
-    primary_email: str | None
-    name: str | None
-    role: str | None
-    initials: str | None
-    active: bool | None
-    last_active: str | None
-    cohort_ids: list[str] | None
-    department_ids: list[str] | None
-    primary_department_id: UUID | None
-    requests_per_day: int | None
-    total_requests: int | None
-    requests_in_last_day: int | None
-    can_edit: bool | None
-    can_delete: bool | None
-    can_remove: bool | None
-
-class GetCohortNewSqlRow(BaseModel):
-
-    title: str | None = None
-    description: str | None = None
-    department_ids: list[str] | None = None
-    active: bool | None = None
-    can_edit: bool | None = None
-    profile_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    valid_department_ids: list[str] | None = None
-    valid_simulation_ids: list[str] | None = None
-    valid_profile_ids: list[str] | None = None
-    simulations: list[QGetCohortDetailV4Simulation] | None = None
-    simulations_for_picker: list[QGetCohortDetailV4SimulationForPicker] | None = None
-    profiles: list[QGetCohortNewV4Profile] | None = None
-    staff: list[QGetCohortNewV4StaffItem] | None = None
-    cohorts: list[QGetCohortNewV4Cohort] | None = None
-    departments_for_staff: list[QGetCohortNewV4DepartmentForStaff] | None = None
-    departments: list[QGetCohortNewV4Department] | None = None
-    primary_department_id: str | None = None
-    actor_name: str | None = None
-
-class GetCohortNewApiRequest(BaseModel):
-
-    draft_id: UUID | None = None
-    simulation_search: str | None = None
-    simulation_show_selected: bool | None = None
-    current_simulation_ids: list[UUID] | None = None
-
-class GetCohortNewApiResponse(BaseModel):
-
-    title: str | None = None
-    description: str | None = None
-    department_ids: list[str] | None = None
-    active: bool | None = None
-    can_edit: bool | None = None
-    profile_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    valid_department_ids: list[str] | None = None
-    valid_simulation_ids: list[str] | None = None
-    valid_profile_ids: list[str] | None = None
-    simulations: list[QGetCohortDetailV4Simulation] | None = None
-    simulations_for_picker: list[QGetCohortDetailV4SimulationForPicker] | None = None
-    profiles: list[QGetCohortNewV4Profile] | None = None
-    staff: list[QGetCohortNewV4StaffItem] | None = None
-    cohorts: list[QGetCohortNewV4Cohort] | None = None
-    departments_for_staff: list[QGetCohortNewV4DepartmentForStaff] | None = None
-    departments: list[QGetCohortNewV4Department] | None = None
-    primary_department_id: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: get_cohort_search
-
-class GetCohortSearchSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_cohort_id: UUID | None = None
-    p_query: str | None = None
-    p_dept_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    p_limit_count: int | None = 200
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_cohort_id,
-            self.p_query,
-            self.p_dept_ids,
-            self.p_limit_count,
-        )
-
-class QGetCohortSearchV4Cohort(BaseModel):
-
-    cohort_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetCohortSearchV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-class GetCohortSearchSqlRow(BaseModel):
-
-    staff: list[QGetCohortNewV4StaffItem] | None = None
-    cohorts: list[QGetCohortSearchV4Cohort] | None = None
-    departments: list[QGetCohortSearchV4Department] | None = None
-    actor_name: str | None = None
-
-class GetCohortSearchApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_cohort_id: UUID | None = None
-    p_query: str | None = None
-    p_dept_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    p_limit_count: int | None = 200
-
-class GetCohortSearchApiResponse(BaseModel):
-
-    staff: list[QGetCohortNewV4StaffItem] | None = None
-    cohorts: list[QGetCohortSearchV4Cohort] | None = None
-    departments: list[QGetCohortSearchV4Department] | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: get_cohorts_list
 
 class GetCohortsListSqlParams(BaseModel):
@@ -18620,12 +18430,14 @@ class AgentsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    artifact_agent_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.artifact_agent_id,
             self.mcp,
         )
 
@@ -18637,6 +18449,7 @@ class AgentsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    artifact_agent_id: UUID
     mcp: bool | None = False
 
 class AgentsApiResponse(BaseModel):
@@ -18716,28 +18529,31 @@ class CohortsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    cohort_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.cohort_id,
             self.mcp,
         )
 
 class CohortsSqlRow(BaseModel):
 
-    cohort_id: UUID | None = None
+    id: UUID | None = None
 
 class CohortsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    cohort_id: UUID
     mcp: bool | None = False
 
 class CohortsApiResponse(BaseModel):
 
-    cohort_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -18889,28 +18705,31 @@ class DepartmentsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    department_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.department_id,
             self.mcp,
         )
 
 class DepartmentsSqlRow(BaseModel):
 
-    department_id: UUID | None = None
+    id: UUID | None = None
 
 class DepartmentsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    department_id: UUID
     mcp: bool | None = False
 
 class DepartmentsApiResponse(BaseModel):
 
-    department_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -18954,28 +18773,31 @@ class DocumentsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    document_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.document_id,
             self.mcp,
         )
 
 class DocumentsSqlRow(BaseModel):
 
-    document_id: UUID | None = None
+    id: UUID | None = None
 
 class DocumentsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    document_id: UUID
     mcp: bool | None = False
 
 class DocumentsApiResponse(BaseModel):
 
-    document_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -18985,28 +18807,31 @@ class EvalsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    eval_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.eval_id,
             self.mcp,
         )
 
 class EvalsSqlRow(BaseModel):
 
-    eval_id: UUID | None = None
+    id: UUID | None = None
 
 class EvalsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    eval_id: UUID
     mcp: bool | None = False
 
 class EvalsApiResponse(BaseModel):
 
-    eval_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19090,28 +18915,31 @@ class FieldsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    field_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.field_id,
             self.mcp,
         )
 
 class FieldsSqlRow(BaseModel):
 
-    field_id: UUID | None = None
+    id: UUID | None = None
 
 class FieldsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    field_id: UUID
     mcp: bool | None = False
 
 class FieldsApiResponse(BaseModel):
 
-    field_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19383,28 +19211,31 @@ class KeysSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    key_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.key_id,
             self.mcp,
         )
 
 class KeysSqlRow(BaseModel):
 
-    key_id: UUID | None = None
+    id: UUID | None = None
 
 class KeysApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    key_id: UUID
     mcp: bool | None = False
 
 class KeysApiResponse(BaseModel):
 
-    key_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19414,28 +19245,31 @@ class ModelsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    model_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.model_id,
             self.mcp,
         )
 
 class ModelsSqlRow(BaseModel):
 
-    model_id: UUID | None = None
+    id: UUID | None = None
 
 class ModelsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    model_id: UUID
     mcp: bool | None = False
 
 class ModelsApiResponse(BaseModel):
 
-    model_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19550,28 +19384,31 @@ class ParametersSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    parameter_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.parameter_id,
             self.mcp,
         )
 
 class ParametersSqlRow(BaseModel):
 
-    parameter_id: UUID | None = None
+    id: UUID | None = None
 
 class ParametersApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    parameter_id: UUID
     mcp: bool | None = False
 
 class ParametersApiResponse(BaseModel):
 
-    parameter_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19581,28 +19418,31 @@ class PersonasSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    persona_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.persona_id,
             self.mcp,
         )
 
 class PersonasSqlRow(BaseModel):
 
-    persona_id: UUID | None = None
+    id: UUID | None = None
 
 class PersonasApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    persona_id: UUID
     mcp: bool | None = False
 
 class PersonasApiResponse(BaseModel):
 
-    persona_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19683,18 +19523,20 @@ class ProfilesSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    profile_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.profile_id,
             self.mcp,
         )
 
 class ProfilesSqlRow(BaseModel):
 
-    profile_id: UUID | None = None
+    id: UUID | None = None
 
 class ProfilesApiRequest(BaseModel):
 
@@ -19704,7 +19546,7 @@ class ProfilesApiRequest(BaseModel):
 
 class ProfilesApiResponse(BaseModel):
 
-    profile_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19831,28 +19673,31 @@ class RubricsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    rubric_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.rubric_id,
             self.mcp,
         )
 
 class RubricsSqlRow(BaseModel):
 
-    rubric_id: UUID | None = None
+    id: UUID | None = None
 
 class RubricsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    rubric_id: UUID
     mcp: bool | None = False
 
 class RubricsApiResponse(BaseModel):
 
-    rubric_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -19862,28 +19707,31 @@ class ScenariosSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    scenario_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.scenario_id,
             self.mcp,
         )
 
 class ScenariosSqlRow(BaseModel):
 
-    scenario_id: UUID | None = None
+    id: UUID | None = None
 
 class ScenariosApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    scenario_id: UUID
     mcp: bool | None = False
 
 class ScenariosApiResponse(BaseModel):
 
-    scenario_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -20016,28 +19864,31 @@ class SettingsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    setting_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.setting_id,
             self.mcp,
         )
 
 class SettingsSqlRow(BaseModel):
 
-    setting_id: UUID | None = None
+    id: UUID | None = None
 
 class SettingsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    setting_id: UUID
     mcp: bool | None = False
 
 class SettingsApiResponse(BaseModel):
 
-    setting_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -20047,28 +19898,31 @@ class SimulationsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    simulation_id: UUID
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.agent_id,
             self.group_id,
+            self.simulation_id,
             self.mcp,
         )
 
 class SimulationsSqlRow(BaseModel):
 
-    simulation_id: UUID | None = None
+    id: UUID | None = None
 
 class SimulationsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
+    simulation_id: UUID
     mcp: bool | None = False
 
 class SimulationsApiResponse(BaseModel):
 
-    simulation_id: UUID | None = None
+    id: UUID | None = None
 
 
 
@@ -29228,18 +29082,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetCohortDetailApiRequest",
         "GetCohortDetailApiResponse",
     ),
-    "app/sql/v4/cohorts/get_cohort_new_complete.sql": (
-        "GetCohortNewSqlParams",
-        "GetCohortNewSqlRow",
-        "GetCohortNewApiRequest",
-        "GetCohortNewApiResponse",
-    ),
-    "app/sql/v4/cohorts/get_cohort_search_complete.sql": (
-        "GetCohortSearchSqlParams",
-        "GetCohortSearchSqlRow",
-        "GetCohortSearchApiRequest",
-        "GetCohortSearchApiResponse",
-    ),
     "app/sql/v4/cohorts/get_cohorts_list_complete.sql": (
         "GetCohortsListSqlParams",
         "GetCohortsListSqlRow",
@@ -32062,16 +31904,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/cohorts/get_cohort_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/get_cohort_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/cohorts/get_cohort_search_complete.sql"]
     ) -> SqlString: ...
 
     @overload
