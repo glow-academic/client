@@ -7742,6 +7742,10 @@ export interface components {
             simulation_suggestions?: string[] | null;
             /** Simulations */
             simulations?: components["schemas"]["QGetCohortV4Simulation"][] | null;
+            /** Basic Agent Id */
+            basic_agent_id?: string | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
         };
         /** GetCohortSearchApiRequest */
         GetCohortSearchApiRequest: {

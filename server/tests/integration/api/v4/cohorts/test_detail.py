@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/detail endpoint."""
+"""Route tests for POST /api/v4/cohorts/get endpoint (detail mode)."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -34,18 +34,28 @@ async def test_get_cohort_detail(
     cohort_id = typed_cohort.cohort_id
 
     # v4 routes get profile_id from router dependency
+    # Use unified get endpoint with cohort_id provided for detail mode
     response = await client.post(
-        "/api/v4/cohorts/detail",
-        json={"cohortId": str(cohort_id)},
+        "/api/v4/cohorts/get",
+        json={
+            "cohort_id": str(cohort_id),
+            "draft_id": None,
+            "descriptions_search": None,
+            "simulation_search": None,
+            "simulation_show_selected": None,
+            "current_simulation_ids": None,
+            "mcp": False,
+        },
     )
 
     assert response.status_code == 200
     data = response.json()
 
     assert data is not None
-    assert "title" in data or "name" in data
-    assert "description" in data
-    assert "active" in data
+    assert "name_resource" in data or "name_id" in data
+    assert "description_resource" in data or "description_id" in data
+    assert "cohort_exists" in data
+    assert data["cohort_exists"] is True
 
 
 async def test_get_cohort_detail_not_found(
@@ -55,9 +65,18 @@ async def test_get_cohort_detail_not_found(
     await get_superadmin_alias(db)
 
     # v4 routes get profile_id from router dependency
+    # Use unified get endpoint with cohort_id provided for detail mode
     response = await client.post(
-        "/api/v4/cohorts/detail",
-        json={"cohortId": "00000000-0000-0000-0000-000000000000"},
+        "/api/v4/cohorts/get",
+        json={
+            "cohort_id": "00000000-0000-0000-0000-000000000000",
+            "draft_id": None,
+            "descriptions_search": None,
+            "simulation_search": None,
+            "simulation_show_selected": None,
+            "current_simulation_ids": None,
+            "mcp": False,
+        },
     )
 
     assert response.status_code == 404

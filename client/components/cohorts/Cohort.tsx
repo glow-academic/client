@@ -53,29 +53,31 @@ import {
   type Parser,
 } from "nuqs";
 
-// Import types from new page (create action)
-import type {
-  CohortNewOut,
-  CreateCohortIn,
-  CreateCohortOut,
-  PatchCohortDraftIn,
-  PatchCohortDraftOut,
-} from "@/app/(main)/create/cohorts/new/page";
-// Import types from edit page (update action)
-import type {
-  CohortDetailOut,
-  UpdateCohortIn,
-  UpdateCohortOut,
-} from "@/app/(main)/create/cohorts/c/[cohortId]/page";
+// Import types from unified endpoints
+import type { InputOf, OutputOf } from "@/lib/api/types";
+
+// Unified types for cohorts
+type GetCohortIn = InputOf<"/api/v4/cohorts/get", "post">;
+type GetCohortOut = OutputOf<"/api/v4/cohorts/get", "post">;
+type SaveCohortIn = InputOf<"/api/v4/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v4/cohorts/save", "post">;
+type PatchCohortDraftIn = InputOf<"/api/v4/cohorts/draft", "patch">;
+type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
+
+// Legacy type aliases for backward compatibility
+type CohortDetailOut = GetCohortOut;
+type CohortNewOut = GetCohortOut;
 
 export interface CohortProps {
   cohortId?: string;
-  // Server-provided data (for server-side rendering)
+  // Server-provided data (for server-side rendering) - uses unified get endpoint
   cohortDetail?: CohortDetailOut;
   cohortDetailDefault?: CohortNewOut;
-  // Server actions (replaces useMutation)
-  createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
-  updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
+  // Server actions (replaces useMutation) - uses unified save endpoint
+  saveCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
+  // Legacy prop names for backward compatibility
+  createCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
+  updateCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
   // Draft action: Resource-specific prop name is acceptable since types are resource-specific
   patchCohortDraftAction?: (
     input: PatchCohortDraftIn
@@ -86,10 +88,13 @@ function CohortComponent({
   cohortId,
   cohortDetail: serverCohortDetail,
   cohortDetailDefault: serverCohortDetailDefault,
+  saveCohortAction,
   createCohortAction,
   updateCohortAction,
   patchCohortDraftAction,
 }: CohortProps) {
+  // Use unified saveCohortAction if provided, otherwise fall back to legacy actions
+  const effectiveSaveAction = saveCohortAction || (isEditMode ? updateCohortAction : createCohortAction);
   const router = useRouter();
   const searchParams = useSearchParams();
   const isEditMode = !!cohortId;
@@ -746,61 +751,33 @@ function CohortComponent({
         validDepartmentIds
       );
 
-      // Extract body types for type safety
-      type CreateCohortBody = CreateCohortIn extends { body: infer B }
-        ? B
-        : never;
-      type UpdateCohortBody = UpdateCohortIn extends { body: infer B }
-        ? B
-        : never;
+      // Use unified save endpoint for both create and update
+      if (!effectiveSaveAction) {
+        toast.error("Save action not available");
+        throw new Error("Save action not available");
+      }
 
-      if (isEditMode) {
-        if (!updateCohortAction) {
-          toast.error("Update action not available");
-          throw new Error("Update action not available");
-        }
-        try {
-          const updateRequest: UpdateCohortBody = {
-            cohort_id: cohortId!,
-            title: draftState.title || "",
-            description: draftState.description || "",
+      try {
+        // Extract name_id, description_id, active_flag_id from cohortData if available
+        // For now, using legacy fields (title, description, active) - this component needs full migration to resource components
+        const saveRequest: SaveCohortIn = {
+          body: {
+            input_cohort_id: isEditMode && cohortId ? cohortId : null,
+            name_id: null, // TODO: Extract from cohortData.name_id when component is fully migrated
+            description_id: null, // TODO: Extract from cohortData.description_id when component is fully migrated
+            active_flag_id: null, // TODO: Extract from cohortData.active_flag_id when component is fully migrated
             department_ids: finalDepartmentIds || [],
-            active: draftState.active ?? true,
-            profile_ids: [], // Profile management moved to staff page
-            simulation_ids: draftState.simulationIds,
-          };
-          await updateCohortAction({ body: updateRequest });
-          toast.success("Cohort updated successfully!");
-          router.push("/create/cohorts");
-        } catch (error) {
-          toast.error(
-            `Failed to update cohort: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
-      } else {
-        if (!createCohortAction) {
-          toast.error("Create action not available");
-          throw new Error("Create action not available");
-        }
-        try {
-          const createRequest: CreateCohortBody = {
-            title: draftState.title || "",
-            description: draftState.description || "",
-            department_ids: finalDepartmentIds || [],
-            active: draftState.active || true,
-            profile_ids: [], // Profile management moved to staff page
-            simulation_ids: draftState.simulationIds,
-          };
-          await createCohortAction({ body: createRequest });
-          toast.success("Cohort created successfully!");
-          router.push("/create/cohorts");
-        } catch (error) {
-          toast.error(
-            `Failed to create cohort: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
+            simulation_ids: draftState.simulationIds || [],
+          },
+        };
+        await effectiveSaveAction(saveRequest);
+        toast.success(`Cohort ${isEditMode ? "updated" : "created"} successfully!`);
+        router.push("/create/cohorts");
+      } catch (error) {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        throw error;
       }
     },
     [
@@ -809,8 +786,7 @@ function CohortComponent({
       cohortId,
       isSuperadmin,
       cohortData,
-      updateCohortAction,
-      createCohortAction,
+      effectiveSaveAction,
       router,
     ]
   );

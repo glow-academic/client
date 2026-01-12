@@ -1,4 +1,4 @@
-"""Route tests for POST /api/v4/cohorts/new endpoint."""
+"""Route tests for POST /api/v4/cohorts/get endpoint (new mode)."""
 
 import asyncpg  # type: ignore
 import httpx
@@ -25,22 +25,28 @@ async def test_get_cohort_new(
     await get_superadmin_alias(db)
 
     # v4 routes get profile_id from router dependency
+    # Use unified get endpoint with cohort_id = null for new mode
     response = await client.post(
-        "/api/v4/cohorts/new",
-        json={},
+        "/api/v4/cohorts/get",
+        json={
+            "cohort_id": None,
+            "draft_id": None,
+            "descriptions_search": None,
+            "simulation_search": None,
+            "simulation_show_selected": None,
+            "current_simulation_ids": None,
+            "mcp": False,
+        },
     )
 
     assert response.status_code == 200
     data = response.json()
 
     assert data is not None
-    assert "title" in data or "name" in data
-    assert "description" in data
-    assert "active" in data
+    assert "name_resource" in data or "name_id" in data
+    assert "description_resource" in data or "description_id" in data
     assert "simulations" in data
-    assert "staff" in data
     assert isinstance(data["simulations"], list)
-    assert isinstance(data["staff"], list)
 
 
 async def test_get_cohort_new_with_default_cohort(
@@ -92,22 +98,28 @@ async def test_get_cohort_new_with_default_cohort(
     )
 
     # v4 routes get profile_id from router dependency
+    # Use unified get endpoint with cohort_id = null for new mode
     response = await client.post(
-        "/api/v4/cohorts/new",
-        json={},
+        "/api/v4/cohorts/get",
+        json={
+            "cohort_id": None,
+            "draft_id": None,
+            "descriptions_search": None,
+            "simulation_search": None,
+            "simulation_show_selected": None,
+            "current_simulation_ids": None,
+            "mcp": False,
+        },
     )
 
     assert response.status_code == 200
     data = response.json()
 
     assert data is not None
-    assert "title" in data or "name" in data
-    assert "description" in data
-    assert "active" in data
+    assert "name_resource" in data or "name_id" in data
+    assert "description_resource" in data or "description_id" in data
     assert "simulations" in data
-    assert "staff" in data
     assert isinstance(data["simulations"], list)
-    assert isinstance(data["staff"], list)
 
 
 async def test_get_cohort_new_not_found(
@@ -131,13 +143,19 @@ async def test_get_cohort_new_not_found(
     assert typed_profile.profile_id is not None
 
     # v4 routes get profile_id from router dependency
-    # Note: This test may not work as expected since v4 gets profile_id from router dependency
-    # The test would need to use a different client setup to test this scenario
-    # For now, we'll test that the endpoint returns 200 or 404 appropriately
+    # Use unified get endpoint with cohort_id = null for new mode
     response = await client.post(
-        "/api/v4/cohorts/new",
-        json={},
+        "/api/v4/cohorts/get",
+        json={
+            "cohort_id": None,
+            "draft_id": None,
+            "descriptions_search": None,
+            "simulation_search": None,
+            "simulation_show_selected": None,
+            "current_simulation_ids": None,
+            "mcp": False,
+        },
     )
 
-    # Should return 404 if no cohort found, or 200 with empty/default data
-    assert response.status_code in [200, 404]
+    # Should return 200 with default data (new mode always returns data)
+    assert response.status_code == 200

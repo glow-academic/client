@@ -12,10 +12,10 @@ from app.api.v4.cohorts.search import router as search_router
 
 router = APIRouter(prefix="/cohorts", tags=["cohorts"])
 
-# Include endpoint routers
+# Include endpoint routers (unified endpoints only)
 router.include_router(list_router)
-router.include_router(get_router)
-router.include_router(save_router)
+router.include_router(get_router)  # Unified: handles both new and detail
+router.include_router(save_router)  # Unified: handles both create and update
 router.include_router(duplicate_router)
 router.include_router(leave_router)
 router.include_router(delete_router)
