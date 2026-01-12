@@ -109,16 +109,20 @@ providers_agg AS (
     FROM provider_data pd
 ),
 provider_options_agg AS (
-    -- Get provider options from domain_providers (providers is now enum)
+    -- Get provider options from providers resource table
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (dp.provider::text, dp.provider::text)::types.q_list_providers_v4_provider_option
-                ORDER BY dp.provider::text
+                (p.id::text, n.name)::types.q_list_providers_v4_provider_option
+                ORDER BY n.name
             ),
             '{}'::types.q_list_providers_v4_provider_option[]
         ) as provider_options
-    FROM domain_providers dp
+    FROM providers p
+    JOIN provider pr ON pr.id = p.provider_id
+    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN names n ON n.id = pn.name_id
+    WHERE p.active = true
 )
 SELECT 
     pa.actor_name,

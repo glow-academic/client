@@ -164,7 +164,7 @@ context_data AS (
         -- Model data
         m.id::text as model_id,
         m.value as model_name,
-        COALESCE(dp.provider::text, '') as provider,
+        COALESCE(n_prov.name, '') as provider,
         COALESCE(e.base_url, '') as base_url,
         k.key as api_key,
 
@@ -204,13 +204,14 @@ context_data AS (
         AND mrl.model_id = m.id
     LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
     LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
-    LEFT JOIN model_domains md_j ON md_j.model_id = m.id
-    LEFT JOIN domains d ON d.id = md_j.domain_id
-    LEFT JOIN domain_providers dp ON dp.domain_id = d.id
-    -- Provider now via domains
+    LEFT JOIN model_providers mp ON mp.model_id = m.id
+    LEFT JOIN providers p_prov ON p_prov.id = mp.providers_id
+    LEFT JOIN provider pr_prov ON pr_prov.id = p_prov.provider_id
+    LEFT JOIN provider_names pn_prov ON pn_prov.provider_id = pr_prov.id
+    LEFT JOIN names n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s
     LEFT JOIN setting_provider_keys spk
-        ON spk.provider = dp.provider
+        ON spk.providers_id = p_prov.id
         AND spk.settings_id = act_s.settings_id
         AND spk.active = true
     LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true

@@ -14659,6 +14659,7 @@ class QGetPersonaV4DescriptionResource(BaseModel):
 
 class QGetPersonaV4Example(BaseModel):
 
+    id: UUID | None
     example: str | None
     idx: int | None
     generated: bool | None
@@ -14771,6 +14772,7 @@ class GetPersonaSqlRow(BaseModel):
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
+    flags: list[QGetPersonaV4FlagResource] | None = None
     department_ids: list[UUID] | None = None
     department_resources: list[QGetPersonaV4Department] | None = None
     show_departments: bool | None = None
@@ -14858,6 +14860,7 @@ class GetPersonaApiResponse(BaseModel):
     show_flag: bool | None = None
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
+    flags: list[QGetPersonaV4FlagResource] | None = None
     department_ids: list[UUID] | None = None
     department_resources: list[QGetPersonaV4Department] | None = None
     show_departments: bool | None = None
@@ -24436,7 +24439,7 @@ class IUpdateSettingsV4AuthValue(BaseModel):
 
 class IUpdateSettingsV4ProviderEnabled(BaseModel):
 
-    provider: Any | None
+    providers_id: UUID | None
     enabled: bool | None
 
 
@@ -24444,7 +24447,7 @@ class IUpdateSettingsV4ProviderEnabled(BaseModel):
 
 class IUpdateSettingsV4ProviderKey(BaseModel):
 
-    provider: Any | None
+    providers_id: UUID | None
     key_id: UUID | None
 
 class UpdateSettingsSqlParams(BaseModel):
@@ -24482,7 +24485,7 @@ class UpdateSettingsSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert provider_keys composite array to tuples for asyncpg
         provider_keys_tuples = [
-            (conn.provider, conn.key_id)
+            (conn.providers_id, conn.key_id)
             for conn in (self.provider_keys or [])
         ]
         # Convert auth_keys composite array to tuples for asyncpg
@@ -24492,7 +24495,7 @@ class UpdateSettingsSqlParams(BaseModel):
         ]
         # Convert provider_enabled composite array to tuples for asyncpg
         provider_enabled_tuples = [
-            (conn.provider, conn.enabled)
+            (conn.providers_id, conn.enabled)
             for conn in (self.provider_enabled or [])
         ]
         # Convert auth_enabled composite array to tuples for asyncpg

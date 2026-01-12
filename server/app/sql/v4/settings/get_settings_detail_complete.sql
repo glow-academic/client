@@ -259,32 +259,39 @@ settings_auths_data AS (
     FROM settings_auths_with_items sawi
 ),
 settings_providers_data AS (
-    -- Get linked providers for this settings (providers is now an enum)
+    -- Get linked providers for this settings (providers is now a resource table)
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (sp.provider::text, sp.provider::text, '', sp.provider::text, sp.active)::types.q_get_settings_detail_v4_provider
-                ORDER BY sp.provider::text
+                (p.id::text, n.name, COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), n.name, sp.active)::types.q_get_settings_detail_v4_provider
+                ORDER BY n.name
             ),
             '{}'::types.q_get_settings_detail_v4_provider[]
         ) as providers,
-        ARRAY_AGG(sp.provider::text ORDER BY sp.provider::text) as provider_ids
+        ARRAY_AGG(n.name ORDER BY n.name) as provider_ids
     FROM setting s
     JOIN setting_providers sp ON sp.settings_id = s.id AND sp.active = true
+    JOIN providers p ON p.id = sp.providers_id
+    JOIN provider pr ON pr.id = p.provider_id
+    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN names n ON n.id = pn.name_id
     WHERE s.id = (SELECT settings_id FROM params)
 ),
 all_providers_data AS (
-    -- Get ALL providers (not just linked ones) - providers is now an enum, get from domain_providers
+    -- Get ALL providers (not just linked ones) - providers is now a resource table
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (dp.provider::text, dp.provider::text, '', dp.provider::text, true)::types.q_get_settings_detail_v4_provider
-                ORDER BY dp.provider::text
+                (p.id::text, n.name, COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), n.name, true)::types.q_get_settings_detail_v4_provider
+                ORDER BY n.name
             ),
             '{}'::types.q_get_settings_detail_v4_provider[]
         ) as all_providers
-    FROM domain_providers dp
-    GROUP BY dp.provider
+    FROM providers p
+    JOIN provider pr ON pr.id = p.provider_id
+    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN names n ON n.id = pn.name_id
+    WHERE p.active = true
 ),
 all_auths_with_items AS (
     -- Get ALL auths (not just linked ones) with nested auth_items
@@ -324,12 +331,16 @@ settings_provider_keys_data AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (spk.provider::text, spk.key_id)::types.q_get_settings_detail_v4_provider_key
-                ORDER BY spk.provider::text
+                (n.name, spk.key_id)::types.q_get_settings_detail_v4_provider_key
+                ORDER BY n.name
             ),
             '{}'::types.q_get_settings_detail_v4_provider_key[]
         ) as provider_keys
     FROM setting_provider_keys spk
+    JOIN providers p ON p.id = spk.providers_id
+    JOIN provider pr ON pr.id = p.provider_id
+    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN names n ON n.id = pn.name_id
     WHERE spk.settings_id = (SELECT settings_id FROM params) AND spk.active = true
 ),
 settings_auth_keys_grouped AS (

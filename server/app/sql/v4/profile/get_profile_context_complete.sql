@@ -753,18 +753,22 @@ settings_resolution AS (
         JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
     ),
     settings_providers_data AS (
-        -- Get linked providers for this settings (providers is now an enum)
+        -- Get linked providers for this settings (providers is now a resource table)
         SELECT 
-            ARRAY_AGG(sp.provider::text ORDER BY sp.provider::text) as provider_ids,
+            ARRAY_AGG(n.name ORDER BY n.name) as provider_ids,
             COALESCE(
                 ARRAY_AGG(
-                    (sp.provider::text, sp.provider::text, '', sp.provider::text)::types.q_get_profile_context_v4_provider
-                    ORDER BY sp.provider::text
+                    (p.id::text, n.name, COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), n.name)::types.q_get_profile_context_v4_provider
+                    ORDER BY n.name
                 ),
                 '{}'::types.q_get_profile_context_v4_provider[]
             ) as providers
         FROM selected_settings ss
         JOIN setting_providers sp ON sp.settings_id = ss.settings_id AND sp.active = true
+        JOIN providers p ON p.id = sp.providers_id
+        JOIN provider pr ON pr.id = p.provider_id
+        JOIN provider_names pn ON pn.provider_id = pr.id
+        JOIN names n ON n.id = pn.name_id
     ),
     settings_default_guest_data AS (
         -- Get default guest account: try selected settings first, fall back to default settings

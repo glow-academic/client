@@ -98,17 +98,16 @@ active_settings AS (
 )
 SELECT 
     m.value as model_name,
-    COALESCE((SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1), '') as provider,
+    COALESCE((SELECT n.name FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN provider pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names n ON n.id = pn.name_id WHERE mp.model_id = m.id LIMIT 1), '') as provider,
     COALESCE((SELECT e.base_url FROM model_endpoints me_j JOIN endpoints e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
     k.key as api_key
 FROM agent a
 INNER JOIN agent_models am ON am.agent_id = a.id
 INNER JOIN models m ON m.id = am.model_id
-LEFT JOIN model_domains md_j ON md_j.model_id = m.id
-LEFT JOIN domains d ON d.id = md_j.domain_id
-LEFT JOIN domain_providers dp ON dp.domain_id = d.id
+LEFT JOIN model_providers mp ON mp.model_id = m.id
+LEFT JOIN providers p ON p.id = mp.providers_id
 CROSS JOIN active_settings act_s
-LEFT JOIN setting_provider_keys spk ON spk.provider = dp.provider 
+LEFT JOIN setting_provider_keys spk ON spk.providers_id = p.id 
     AND spk.settings_id = act_s.settings_id 
     AND spk.active = true
 LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true

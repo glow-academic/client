@@ -57,7 +57,7 @@ END $$;
 -- 3) Recreate types
 -- Input types for update
 CREATE TYPE types.i_update_settings_v4_provider_key AS (
-    provider providers,
+    providers_id uuid,
     key_id uuid
 );
 
@@ -72,7 +72,7 @@ CREATE TYPE types.i_update_settings_v4_auth_key AS (
 );
 
 CREATE TYPE types.i_update_settings_v4_provider_enabled AS (
-    provider providers,
+    providers_id uuid,
     enabled boolean
 );
 
@@ -346,26 +346,26 @@ settings_with_name AS (
 ),
 manage_setting_providers AS (
     -- Manage provider links based on provider_enabled array
-    INSERT INTO setting_providers (settings_id, provider, active, created_at, updated_at)
+    INSERT INTO setting_providers (settings_id, providers_id, active, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1),
-        pe.provider,
+        pe.providers_id,
         pe.enabled,
         NOW(),
         NOW()
     FROM params x
     CROSS JOIN UNNEST(x.provider_enabled) AS pe
     WHERE array_length(x.provider_enabled, 1) > 0
-    ON CONFLICT (settings_id, provider) DO UPDATE SET
+    ON CONFLICT (settings_id, providers_id) DO UPDATE SET
         active = EXCLUDED.active,
         updated_at = NOW()
 ),
 copy_setting_providers_fallback AS (
     -- Fallback: Copy setting_providers links from old settings to new (if provider_enabled not provided)
-    INSERT INTO setting_providers (settings_id, provider, active, created_at, updated_at)
+    INSERT INTO setting_providers (settings_id, providers_id, active, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1),
-        sp.provider,
+        sp.providers_id,
         sp.active,
         NOW(),
         NOW()
@@ -376,9 +376,9 @@ copy_setting_providers_fallback AS (
       AND NOT EXISTS (
           SELECT 1 FROM params x2
           CROSS JOIN UNNEST(x2.provider_enabled) AS pe
-          WHERE pe.provider = sp.provider
+          WHERE pe.providers_id = sp.providers_id
       )
-    ON CONFLICT (settings_id, provider) DO UPDATE SET
+    ON CONFLICT (settings_id, providers_id) DO UPDATE SET
         active = COALESCE(EXCLUDED.active, setting_providers.active),
         updated_at = NOW()
 ),
@@ -543,10 +543,10 @@ apply_provider_keys AS (
 ),
 insert_provider_keys AS (
     -- Insert new provider key mappings
-    INSERT INTO setting_provider_keys (settings_id, provider, key_id, active, created_at, updated_at)
+    INSERT INTO setting_provider_keys (settings_id, providers_id, key_id, active, created_at, updated_at)
     SELECT 
         (SELECT settings_id FROM insert_new LIMIT 1),
-        pk.provider,
+        pk.providers_id,
         pk.key_id,
         true,
         NOW(),
@@ -554,7 +554,7 @@ insert_provider_keys AS (
     FROM params x
     CROSS JOIN UNNEST(x.provider_keys) AS pk
     WHERE array_length(x.provider_keys, 1) > 0
-    ON CONFLICT (settings_id, provider, key_id) DO UPDATE SET
+    ON CONFLICT (settings_id, providers_id, key_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

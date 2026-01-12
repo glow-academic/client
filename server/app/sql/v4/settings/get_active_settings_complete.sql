@@ -183,14 +183,18 @@ settings_providers_data AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (sp.provider::text, sp.provider::text, '', sp.provider::text, sp.active)::types.q_get_settings_detail_v4_provider
-                ORDER BY sp.provider::text
+                (n.name, n.name, COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''), n.name, sp.active)::types.q_get_settings_detail_v4_provider
+                ORDER BY n.name
             ),
             '{}'::types.q_get_settings_detail_v4_provider[]
         ) as providers,
-        ARRAY_AGG(sp.provider::text ORDER BY sp.provider::text) as provider_ids
+        ARRAY_AGG(n.name ORDER BY n.name) as provider_ids
     FROM selected_settings ss
     JOIN setting_providers sp ON sp.settings_id = ss.settings_id AND sp.active = true
+    JOIN providers p ON p.id = sp.providers_id
+    JOIN provider pr ON pr.id = p.provider_id
+    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN names n ON n.id = pn.name_id
 ),
 settings_default_guest_data AS (
     -- Get default guest account: try selected settings first, fall back to default settings

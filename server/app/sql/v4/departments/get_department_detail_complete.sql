@@ -382,10 +382,9 @@ model_key_associations AS (
         spk.key_id
     FROM department_models dm
     LEFT JOIN department_settings_for_model_keys dsfmk ON true
-    LEFT JOIN model_domains md_j ON md_j.model_id = dm.model_id
-    LEFT JOIN domains d ON d.id = md_j.domain_id
-    LEFT JOIN domain_providers dp ON dp.domain_id = d.id
-    LEFT JOIN setting_provider_keys spk ON spk.provider = dp.provider 
+    LEFT JOIN model_providers mp ON mp.model_id = dm.model_id
+    LEFT JOIN providers p_prov ON p_prov.id = mp.providers_id
+    LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = dsfmk.settings_id 
         AND spk.active = true
     WHERE spk.key_id IS NOT NULL

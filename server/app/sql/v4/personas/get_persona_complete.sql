@@ -511,6 +511,18 @@ example_suggestions_data AS (
     -- Always return at least one row
     LIMIT 1
 ),
+-- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
+-- NOTE: These must be defined BEFORE they are referenced in other CTEs (e.g., colors_data references color_resource_data)
+color_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT dc.colors_id FROM draft_colors dc WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT pc.color_id FROM persona_colors pc WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1)
+        ) as color_id,
+        (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_color_resource,
+        (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_color_resource
+    FROM params
+),
 -- Colors (all available color options)
 colors_data AS (
     SELECT DISTINCT
@@ -538,6 +550,38 @@ colors_data AS (
         )
     ORDER BY c.name
 ),
+-- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
+-- NOTE: These must be defined BEFORE they are referenced in other CTEs (e.g., descriptions_data references description_resource_data, flags_data references flag_resource_data)
+description_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT pd.description_id FROM persona_descriptions pd WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1)
+        ) as description_id,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_description_resource
+    FROM params
+),
+flag_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT pf.flag_id FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
+        ) as active_flag_id,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
+    FROM params
+),
+icon_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT di.icons_id FROM draft_icons di WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT pi.icon_id FROM persona_icons pi WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1)
+        ) as icon_id,
+        (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM draft_icons di JOIN icons i ON di.icons_id = i.id WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_icon_resource,
+        (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_icon_resource
+    FROM params
+),
 -- Icons (all available icon options)
 icons_data AS (
     SELECT DISTINCT
@@ -564,6 +608,18 @@ icons_data AS (
             )
         )
     ORDER BY i.name
+),
+-- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
+-- NOTE: instructions_resource_data is defined here (before instructions_data) to avoid forward reference
+instructions_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT dinst.instructions_id FROM draft_instructions dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT pinst.instruction_id FROM persona_instructions pinst WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1)
+        ) as instructions_id,
+        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_persona_v4_instructions_resource FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_instructions_resource,
+        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_persona_v4_instructions_resource FROM persona_instructions pinst JOIN instructions inst ON pinst.instruction_id = inst.id WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_instructions_resource
+    FROM params
 ),
 -- Flags (all available flag options)
 flags_data AS (
@@ -803,6 +859,7 @@ instructions_suggestions_objects AS (
     LIMIT 1
 ),
 -- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
+-- NOTE: color_resource_data is defined earlier (before colors_data) to avoid forward reference
 name_resource_data AS (
     SELECT 
         COALESCE(
@@ -825,56 +882,6 @@ name_resource_data AS (
             ORDER BY priority
             LIMIT 1
         ) as name_resource
-    FROM params
-),
-description_resource_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pd.description_id FROM persona_descriptions pd WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-        ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_persona_v4_description_resource FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_description_resource
-    FROM params
-),
-color_resource_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT dc.colors_id FROM draft_colors dc WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pc.color_id FROM persona_colors pc WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-        ) as color_id,
-        (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM draft_colors dc JOIN colors c ON dc.colors_id = c.id WHERE dc.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_color_resource,
-        (SELECT ROW(c.id, c.name, c.description, c.hex_code, COALESCE(c.generated, false))::types.q_get_persona_v4_color_resource FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_color_resource
-    FROM params
-),
-icon_resource_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT di.icons_id FROM draft_icons di WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pi.icon_id FROM persona_icons pi WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-        ) as icon_id,
-        (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM draft_icons di JOIN icons i ON di.icons_id = i.id WHERE di.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_icon_resource,
-        (SELECT ROW(i.id, i.name, i.description, i.value, COALESCE(i.generated, false))::types.q_get_persona_v4_icon_resource FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_icon_resource
-    FROM params
-),
-instructions_resource_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT dinst.instructions_id FROM draft_instructions dinst WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pinst.instruction_id FROM persona_instructions pinst WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1)
-        ) as instructions_id,
-        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_persona_v4_instructions_resource FROM draft_instructions dinst JOIN instructions inst ON dinst.instructions_id = inst.id WHERE dinst.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_instructions_resource,
-        (SELECT ROW(inst.id, inst.template, COALESCE(inst.generated, false))::types.q_get_persona_v4_instructions_resource FROM persona_instructions pinst JOIN instructions inst ON pinst.instruction_id = inst.id WHERE pinst.persona_id = (SELECT persona_id FROM params) LIMIT 1) as persona_instructions_resource
-    FROM params
-),
-flag_resource_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pf.flag_id FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
-        ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
     FROM params
 ),
 -- Department suggestions based on generated flag from junction table (returns UUIDs)
@@ -2114,7 +2121,7 @@ SELECT
     -- Example resources (selected examples - same as examples array)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (emd.example, emd.idx, emd.generated)::types.q_get_persona_v4_example
+            (emd.id, emd.example, emd.idx, emd.generated)::types.q_get_persona_v4_example
             ORDER BY emd.idx
         )
         FROM example_mapping_data emd),
@@ -2132,7 +2139,7 @@ SELECT
     COALESCE(esd.example_suggestions, ARRAY[]::uuid[]) as example_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (emd.example, emd.idx, emd.generated)::types.q_get_persona_v4_example
+            (emd.id, emd.example, emd.idx, emd.generated)::types.q_get_persona_v4_example
             ORDER BY emd.idx
         ) FROM example_mapping_data emd),
         '{}'::types.q_get_persona_v4_example[]

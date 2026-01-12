@@ -183,11 +183,15 @@ all_units_data AS (
     ORDER BY unit_category, value, name
 ),
 providers_aggregated AS (
-    -- Get providers from domain_providers (providers is now enum)
+    -- Get providers from providers resource table
     SELECT 
-        ARRAY[]::uuid[] as valid_provider_ids,  -- Provider is enum, not UUID, so empty array
-        ARRAY_AGG((NULL::uuid, dp.provider::text, ''::text)::types.q_get_model_new_v4_provider ORDER BY dp.provider::text) as providers
-    FROM domain_providers dp
+        ARRAY_AGG(p.id ORDER BY n.name) as valid_provider_ids,
+        ARRAY_AGG((p.id, n.name, COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''))::types.q_get_model_new_v4_provider ORDER BY n.name) as providers
+    FROM providers p
+    JOIN provider pr ON pr.id = p.provider_id
+    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN names n ON n.id = pn.name_id
+    WHERE p.active = true
 ),
 departments_aggregated AS (
     SELECT 

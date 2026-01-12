@@ -160,9 +160,9 @@ model_data AS (
         (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
         EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active,
         m.value,
-        (SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider,
-        NULL::uuid as provider_id,  -- Provider is now enum, not UUID
-        (SELECT dp.provider::text FROM model_domains md_j JOIN domains d ON d.id = md_j.domain_id JOIN domain_providers dp ON dp.domain_id = d.id WHERE md_j.model_id = m.id LIMIT 1) as provider_name
+        (SELECT n.name FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN provider pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names n ON n.id = pn.name_id JOIN models m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
+        (SELECT p.id FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN models m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_id,
+        (SELECT n.name FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN provider pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names n ON n.id = pn.name_id JOIN models m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name
     FROM model m
     WHERE m.id = (SELECT model_id FROM params)
 ),
@@ -210,14 +210,17 @@ user_departments_data AS (
     AND pd.active = true
 ),
 providers_data AS (
-    -- Get all providers (enum values) from domain_providers
-    -- Since providers is now an enum, we use the enum value directly
+    -- Get all providers from providers resource table
     SELECT DISTINCT
-        dp.provider::text as provider_id,  -- Using text representation of enum as ID
-        dp.provider::text as name,  -- Provider enum value is the name
-        ''::text as description  -- No description for enum values
-    FROM domain_providers dp
-    ORDER BY dp.provider::text
+        p.id as provider_id,
+        n.name as name,
+        COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description
+    FROM providers p
+    JOIN provider pr ON pr.id = p.provider_id
+    JOIN provider_names pn ON pn.provider_id = pr.id
+    JOIN names n ON n.id = pn.name_id
+    WHERE p.active = true
+    ORDER BY n.name
 ),
 model_all_keys AS (
     -- Get keys via settings system: settings -> provider -> key
@@ -230,10 +233,13 @@ model_all_keys AS (
         EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         ARRAY_AGG(DISTINCT ds.department_id) FILTER (WHERE ds.department_id IS NOT NULL) as department_ids
     FROM model m
-    LEFT JOIN model_domains md_j ON md_j.model_id = m.id
-    LEFT JOIN domains d ON d.id = md_j.domain_id
-    LEFT JOIN domain_providers dp ON dp.domain_id = d.id
-    JOIN setting_provider_keys spk ON spk.provider = dp.provider AND spk.active = true
+    JOIN models m_res ON m_res.model_id = m.id
+    LEFT JOIN model_providers mp ON mp.model_id = m_res.id
+    LEFT JOIN providers p ON p.id = mp.providers_id
+    LEFT JOIN provider pr ON pr.id = p.provider_id
+    LEFT JOIN provider_names pn ON pn.provider_id = pr.id
+    LEFT JOIN names n_prov ON n_prov.id = pn.name_id
+    JOIN setting_provider_keys spk ON spk.providers_id = p.id AND spk.active = true
     JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
@@ -257,10 +263,10 @@ model_all_keys AS (
     AND NOT EXISTS (
         -- Exclude keys already included via setting_provider_keys for this model's provider
         SELECT 1 FROM model m2
-        JOIN model_domains md_j2 ON md_j2.model_id = m2.id
-        JOIN domains d2 ON d2.id = md_j2.domain_id
-        JOIN domain_providers dp2 ON dp2.domain_id = d2.id
-        JOIN setting_provider_keys spk2 ON spk2.provider = dp2.provider AND spk2.key_id = k.id AND spk2.active = true
+        JOIN models m_res2 ON m_res2.model_id = m2.id
+        JOIN model_providers mp2 ON mp2.model_id = m_res2.id
+        JOIN providers p2 ON p2.id = mp2.providers_id
+        JOIN setting_provider_keys spk2 ON spk2.providers_id = p2.id AND spk2.key_id = k.id AND spk2.active = true
         WHERE m2.id = (SELECT model_id FROM params)
     )
     AND (
