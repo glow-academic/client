@@ -2,32 +2,52 @@
  * app/(main)/create/cohorts/new/page.tsx
  * New cohort page for the cohorts section.
  * @AshokSaravanan222 & @siladiea
- * 06/08/2025
+ * 01/12/2026
  */
 
-import Cohort from "@/components/cohorts/Cohort";
+import NewCohort from "@/components/cohorts/NewCohort";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import {
   createLoader,
-  parseAsArrayOf,
   parseAsBoolean,
   parseAsString,
 } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortNewIn = InputOf<"/api/v4/cohorts/new", "post">;
-type CohortNewOut = OutputOf<"/api/v4/cohorts/new", "post">;
-type CreateCohortIn = InputOf<"/api/v4/cohorts/create", "post">;
-type CreateCohortOut = OutputOf<"/api/v4/cohorts/create", "post">;
+type GetCohortIn = InputOf<"/api/v4/cohorts/get", "post">;
+type GetCohortOut = OutputOf<"/api/v4/cohorts/get", "post">;
+type SaveCohortIn = InputOf<"/api/v4/cohorts/save", "post">;
+type SaveCohortOut = OutputOf<"/api/v4/cohorts/save", "post">;
 type PatchCohortDraftIn = InputOf<"/api/v4/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getCohortDefault = async (input: CohortNewIn): Promise<CohortNewOut> => {
-  return api.post("/cohorts/new", input, {
+const getCohortDefault = async (input: GetCohortIn): Promise<GetCohortOut> => {
+  return api.post("/cohorts/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -36,11 +56,11 @@ const getCohortDefault = async (input: CohortNewIn): Promise<CohortNewOut> => {
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
+async function saveCohort(input: SaveCohortIn): Promise<SaveCohortOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/cohorts/create", input);
+  return api.post("/cohorts/save", input);
 }
 
 async function patchCohortDraft(
@@ -51,7 +71,37 @@ async function patchCohortDraft(
   return api.patch("/cohorts/draft", input);
 }
 
-/** ---- Server action for searching profiles to add to cohort ---- */
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/names", input);
+}
+
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftFlags(
+  input: CreateDraftFlagsIn
+): Promise<CreateDraftFlagsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/flags", input);
+}
+
+async function createDraftDepartments(
+  input: CreateDraftDepartmentsIn
+): Promise<CreateDraftDepartmentsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/departments", input);
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -84,9 +134,8 @@ export default async function NewCohortPage({
   // Inline server-side parsers for cohort search params
   const cohortSearchParams = {
     draftId: parseAsString,
-    simulationIds: parseAsArrayOf(parseAsString),
-    departmentIds: parseAsArrayOf(parseAsString),
     // Search/filter params
+    descriptionSearch: parseAsString,
     simulationSearch: parseAsString,
     simulationShowSelected: parseAsBoolean,
   };
@@ -94,16 +143,19 @@ export default async function NewCohortPage({
   const q = loadCohortSearchParams(searchParamsObj);
 
   // Fetch default cohort detail server-side with filter params and draft_id
-  // Note: current_simulation_ids will be extracted from draft payload in SQL if draft exists
-  const input: CohortNewIn = {
+  // Note: cohort_id is null for new mode
+  const input: GetCohortIn = {
     body: {
+      cohort_id: null,
       draft_id: q.draftId ?? null,
+      descriptions_search: q.descriptionSearch ?? null,
       simulation_search: q.simulationSearch ?? null,
       simulation_show_selected: q.simulationShowSelected ?? null,
       current_simulation_ids: null, // Will be extracted from draft payload in SQL
-    } as CohortNewIn["body"],
+      mcp: false,
+    } as GetCohortIn["body"],
   };
-  const cohortDetailDefault = await getCohortDefault(input);
+  const cohortData = await getCohortDefault(input);
 
   return (
     <div
@@ -111,11 +163,15 @@ export default async function NewCohortPage({
       data-page="cohort-new"
       aria-label="Create new cohort page"
     >
-      <Cohort
+      <NewCohort
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        cohortDetailDefault={cohortDetailDefault}
-        createCohortAction={createCohort}
+        cohortData={cohortData}
+        saveCohortAction={saveCohort}
         patchCohortDraftAction={patchCohortDraft}
+        createNamesAction={createDraftNames}
+        createDescriptionsAction={createDraftDescriptions}
+        createFlagsAction={createDraftFlags}
+        createDepartmentsAction={createDraftDepartments}
       />
     </div>
   );
@@ -123,10 +179,10 @@ export default async function NewCohortPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CohortNewIn,
-  CohortNewOut,
-  CreateCohortIn,
-  CreateCohortOut,
+  GetCohortIn,
+  GetCohortOut,
+  SaveCohortIn,
+  SaveCohortOut,
   PatchCohortDraftIn,
   PatchCohortDraftOut,
 };

@@ -893,7 +893,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/detail": {
+    "/api/v4/cohorts/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -903,17 +903,22 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Cohort Detail
-         * @description Get cohort detail with staff, simulations, and mappings.
+         * Get Cohort
+         * @description Get cohort information - handles both new (cohort_id = NULL) and detail (cohort_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
-        post: operations["get_cohort_detail_api_v4_cohorts_detail_post"];
+        post: operations["get_cohort_api_v4_cohorts_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/cohorts/new": {
+    "/api/v4/cohorts/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -923,10 +928,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Cohort New
-         * @description Get default cohort detail with staff, simulations, and mappings.
+         * Save Cohort
+         * @description Save cohort - handles both create (cohort_id = NULL) and update (cohort_id provided).
          */
-        post: operations["get_cohort_new_api_v4_cohorts_new_post"];
+        post: operations["save_cohort_api_v4_cohorts_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -967,46 +972,6 @@ export interface paths {
          * @description Remove profile from cohort (leave cohort).
          */
         post: operations["leave_cohort_api_v4_cohorts_leave_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/cohorts/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Cohort
-         * @description Create a new cohort.
-         */
-        post: operations["create_cohort_api_v4_cohorts_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/cohorts/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Cohort
-         * @description Update an existing cohort.
-         */
-        post: operations["update_cohort_api_v4_cohorts_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6074,28 +6039,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** CreateCohortApiRequest */
-        CreateCohortApiRequest: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[];
-            /** Profile Ids */
-            profile_ids: string[];
-            /** Simulation Ids */
-            simulation_ids: string[];
-        };
-        /** CreateCohortApiResponse */
-        CreateCohortApiResponse: {
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** CreateDepartmentApiRequest */
         CreateDepartmentApiRequest: {
             /** Title */
@@ -7704,106 +7647,101 @@ export interface components {
         };
         /** GetCertificateDataApiRequest */
         GetCertificateDataApiRequest: Record<string, never>;
-        /** GetCohortDetailApiRequest */
-        GetCohortDetailApiRequest: {
-            /**
-             * Cohort Id
-             * Format: uuid
-             */
-            cohort_id: string;
-            /** Draft Id */
-            draft_id?: string | null;
+        /** GetCohortApiRequest */
+        GetCohortApiRequest: {
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Descriptions Search */
+            descriptions_search?: string | null;
             /** Simulation Search */
             simulation_search?: string | null;
             /** Simulation Show Selected */
             simulation_show_selected?: boolean | null;
             /** Current Simulation Ids */
             current_simulation_ids?: string[] | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
-        /** GetCohortDetailApiResponse */
-        GetCohortDetailApiResponse: {
+        /** GetCohortApiResponse */
+        GetCohortApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
             /** Cohort Exists */
             cohort_exists?: boolean | null;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Updated At */
-            updated_at?: string | null;
             /** Can Edit */
             can_edit?: boolean | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Valid Simulation Ids */
-            valid_simulation_ids?: string[] | null;
-            /** Simulations */
-            simulations?: components["schemas"]["QGetCohortDetailV4Simulation"][] | null;
-            /** Simulations For Picker */
-            simulations_for_picker?: components["schemas"]["QGetCohortDetailV4SimulationForPicker"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetCohortDetailV4Department"][] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** GetCohortNewApiRequest */
-        GetCohortNewApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Simulation Search */
-            simulation_search?: string | null;
-            /** Simulation Show Selected */
-            simulation_show_selected?: boolean | null;
-            /** Current Simulation Ids */
-            current_simulation_ids?: string[] | null;
-        };
-        /** GetCohortNewApiResponse */
-        GetCohortNewApiResponse: {
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetCohortV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetCohortV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetCohortV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetCohortV4DescriptionResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetCohortV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetCohortV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetCohortV4Department"][] | null;
             /** Simulation Ids */
             simulation_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Valid Simulation Ids */
-            valid_simulation_ids?: string[] | null;
-            /** Valid Profile Ids */
-            valid_profile_ids?: string[] | null;
+            /** Simulation Resources */
+            simulation_resources?: components["schemas"]["QGetCohortV4Simulation"][] | null;
+            /** Show Simulations */
+            show_simulations?: boolean | null;
+            /** Simulations Agent Id */
+            simulations_agent_id?: string | null;
+            /** Simulations Required */
+            simulations_required?: boolean | null;
+            /** Simulation Suggestions */
+            simulation_suggestions?: string[] | null;
             /** Simulations */
-            simulations?: components["schemas"]["QGetCohortDetailV4Simulation"][] | null;
-            /** Simulations For Picker */
-            simulations_for_picker?: components["schemas"]["QGetCohortDetailV4SimulationForPicker"][] | null;
-            /** Profiles */
-            profiles?: components["schemas"]["QGetCohortNewV4Profile"][] | null;
-            /** Staff */
-            staff?: components["schemas"]["QGetCohortNewV4StaffItem"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["QGetCohortNewV4Cohort"][] | null;
-            /** Departments For Staff */
-            departments_for_staff?: components["schemas"]["QGetCohortNewV4DepartmentForStaff"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetCohortNewV4Department"][] | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            simulations?: components["schemas"]["QGetCohortV4Simulation"][] | null;
         };
         /** GetCohortSearchApiRequest */
         GetCohortSearchApiRequest: {
@@ -11968,93 +11906,6 @@ export interface components {
             /** Pass Points */
             pass_points: number | null;
         };
-        /** QGetCohortDetailV4Department */
-        QGetCohortDetailV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Simulation Ids */
-            simulation_ids: string[] | null;
-        };
-        /** QGetCohortDetailV4Simulation */
-        QGetCohortDetailV4Simulation: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Position */
-            position: number | null;
-            /** Usage Count */
-            usage_count: number | null;
-            /** Success Rate */
-            success_rate: number | null;
-            /** Last Used */
-            last_used: string | null;
-            /** Can Remove */
-            can_remove: boolean | null;
-        };
-        /** QGetCohortDetailV4SimulationForPicker */
-        QGetCohortDetailV4SimulationForPicker: {
-            /** Simulation Id */
-            simulation_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Time Limit */
-            time_limit: number | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetCohortNewV4Cohort */
-        QGetCohortNewV4Cohort: {
-            /** Cohort Id */
-            cohort_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetCohortNewV4Department */
-        QGetCohortNewV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Simulation Ids */
-            simulation_ids: string[] | null;
-            /** Staff Ids */
-            staff_ids: string[] | null;
-        };
-        /** QGetCohortNewV4DepartmentForStaff */
-        QGetCohortNewV4DepartmentForStaff: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetCohortNewV4Profile */
-        QGetCohortNewV4Profile: {
-            /** Profile Id */
-            profile_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
         /** QGetCohortNewV4StaffItem */
         QGetCohortNewV4StaffItem: {
             /** Profile Id */
@@ -12113,6 +11964,61 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+        };
+        /** QGetCohortV4Department */
+        QGetCohortV4Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetCohortV4DescriptionResource */
+        QGetCohortV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetCohortV4FlagResource */
+        QGetCohortV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetCohortV4NameResource */
+        QGetCohortV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetCohortV4Simulation */
+        QGetCohortV4Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetCreateStaffDataV4Cohort */
         QGetCreateStaffDataV4Cohort: {
@@ -18373,6 +18279,31 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** SaveCohortApiRequest */
+        SaveCohortApiRequest: {
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Simulation Ids */
+            simulation_ids: string[];
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Input Cohort Id */
+            input_cohort_id?: string | null;
+        };
+        /** SaveCohortApiResponse */
+        SaveCohortApiResponse: {
+            /** Cohort Id */
+            cohort_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SavePersonaApiRequest */
         SavePersonaApiRequest: {
             /**
@@ -19274,35 +19205,6 @@ export interface components {
             name?: string | null;
             /** Message */
             message?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** UpdateCohortApiRequest */
-        UpdateCohortApiRequest: {
-            /**
-             * Cohort Id
-             * Format: uuid
-             */
-            cohort_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Department Ids */
-            department_ids: string[];
-            /** Profile Ids */
-            profile_ids: string[];
-            /** Simulation Ids */
-            simulation_ids: string[];
-        };
-        /** UpdateCohortApiResponse */
-        UpdateCohortApiResponse: {
-            /** Id */
-            id?: string | null;
-            /** Title */
-            title?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -21459,7 +21361,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_detail_api_v4_cohorts_detail_post: {
+    get_cohort_api_v4_cohorts_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21472,7 +21374,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetCohortDetailApiRequest"];
+                "application/json": components["schemas"]["GetCohortApiRequest"];
             };
         };
         responses: {
@@ -21482,7 +21384,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetCohortDetailApiResponse"];
+                    "application/json": components["schemas"]["GetCohortApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21496,7 +21398,7 @@ export interface operations {
             };
         };
     };
-    get_cohort_new_api_v4_cohorts_new_post: {
+    save_cohort_api_v4_cohorts_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21509,7 +21411,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetCohortNewApiRequest"];
+                "application/json": components["schemas"]["SaveCohortApiRequest"];
             };
         };
         responses: {
@@ -21519,7 +21421,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetCohortNewApiResponse"];
+                    "application/json": components["schemas"]["SaveCohortApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21594,80 +21496,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeaveCohortApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_cohort_api_v4_cohorts_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateCohortApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateCohortApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_cohort_api_v4_cohorts_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateCohortApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateCohortApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -6837,6 +6837,172 @@ class DuplicateCohortApiResponse(BaseModel):
 
 
 
+# Generated from: get_cohort
+
+class GetCohortSqlParams(BaseModel):
+
+    profile_id: UUID
+    cohort_id: UUID | None = None
+    descriptions_search: str | None = None
+    simulation_search: str | None = None
+    simulation_show_selected: bool | None = None
+    current_simulation_ids: list[UUID] | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.cohort_id,
+            self.descriptions_search,
+            self.simulation_search,
+            self.simulation_show_selected,
+            self.current_simulation_ids,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetCohortV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetCohortV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetCohortV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetCohortV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetCohortV4Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    generated: bool | None
+
+class GetCohortSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    cohort_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetCohortV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetCohortV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetCohortV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetCohortV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetCohortV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetCohortV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetCohortV4Department] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_resources: list[QGetCohortV4Simulation] | None = None
+    show_simulations: bool | None = None
+    simulations_agent_id: UUID | None = None
+    simulations_required: bool | None = None
+    simulation_suggestions: list[UUID] | None = None
+    simulations: list[QGetCohortV4Simulation] | None = None
+
+class GetCohortApiRequest(BaseModel):
+
+    cohort_id: UUID | None = None
+    descriptions_search: str | None = None
+    simulation_search: str | None = None
+    simulation_show_selected: bool | None = None
+    current_simulation_ids: list[UUID] | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetCohortApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    cohort_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetCohortV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetCohortV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetCohortV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetCohortV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetCohortV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetCohortV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetCohortV4Department] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_resources: list[QGetCohortV4Simulation] | None = None
+    show_simulations: bool | None = None
+    simulations_agent_id: UUID | None = None
+    simulations_required: bool | None = None
+    simulation_suggestions: list[UUID] | None = None
+    simulations: list[QGetCohortV4Simulation] | None = None
+
+
+
 # Generated from: get_cohort_detail
 
 class GetCohortDetailSqlParams(BaseModel):
@@ -7249,6 +7415,50 @@ class LeaveCohortApiRequest(BaseModel):
 class LeaveCohortApiResponse(BaseModel):
 
     cohort_title: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: save_cohort
+
+class SaveCohortSqlParams(BaseModel):
+
+    name_id: UUID
+    department_ids: list[UUID]
+    simulation_ids: list[UUID]
+    profile_id: UUID
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    input_cohort_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+            self.department_ids,
+            self.simulation_ids,
+            self.profile_id,
+            self.description_id,
+            self.active_flag_id,
+            self.input_cohort_id,
+        )
+
+class SaveCohortSqlRow(BaseModel):
+
+    cohort_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveCohortApiRequest(BaseModel):
+
+    name_id: UUID
+    department_ids: list[UUID]
+    simulation_ids: list[UUID]
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    input_cohort_id: UUID | None = None
+
+class SaveCohortApiResponse(BaseModel):
+
+    cohort_id: UUID | None = None
     actor_name: str | None = None
 
 
@@ -29428,6 +29638,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateCohortApiRequest",
         "DuplicateCohortApiResponse",
     ),
+    "app/sql/v4/cohorts/get_cohort_complete.sql": (
+        "GetCohortSqlParams",
+        "GetCohortSqlRow",
+        "GetCohortApiRequest",
+        "GetCohortApiResponse",
+    ),
     "app/sql/v4/cohorts/get_cohort_detail_complete.sql": (
         "GetCohortDetailSqlParams",
         "GetCohortDetailSqlRow",
@@ -29457,6 +29673,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LeaveCohortSqlRow",
         "LeaveCohortApiRequest",
         "LeaveCohortApiResponse",
+    ),
+    "app/sql/v4/cohorts/save_cohort_complete.sql": (
+        "SaveCohortSqlParams",
+        "SaveCohortSqlRow",
+        "SaveCohortApiRequest",
+        "SaveCohortApiResponse",
     ),
     "app/sql/v4/cohorts/update_cohort_complete.sql": (
         "UpdateCohortSqlParams",
@@ -32271,6 +32493,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/cohorts/get_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/cohorts/get_cohort_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -32292,6 +32519,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/cohorts/leave_cohort_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/cohorts/save_cohort_complete.sql"]
     ) -> SqlString: ...
 
     @overload
