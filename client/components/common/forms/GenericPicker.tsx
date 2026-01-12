@@ -77,6 +77,10 @@ export interface GenericPickerProps<T> extends PopoverProps {
   showClearAll?: boolean;
   /** Initial search term to prefill the search input */
   initialSearchTerm?: string;
+  /** Callback when search term changes (debounced) */
+  onSearchChange?: (term: string) => void;
+  /** Debounce delay in milliseconds for search changes */
+  debounceMs?: number;
 }
 
 export function GenericPicker<T>({
@@ -110,10 +114,13 @@ export function GenericPicker<T>({
   badgesPosition = "below",
   showClearAll = false,
   initialSearchTerm,
+  onSearchChange,
+  debounceMs = 300,
   ...props
 }: GenericPickerProps<T>) {
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState(initialSearchTerm || "");
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   
   // Sync search value when initialSearchTerm changes
   React.useEffect(() => {
@@ -121,6 +128,22 @@ export function GenericPicker<T>({
       setSearchValue(initialSearchTerm);
     }
   }, [initialSearchTerm]);
+
+  // Debounce search updates to parent
+  React.useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      onSearchChange?.(searchValue);
+    }, debounceMs);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchValue, debounceMs, onSearchChange]);
 
   // Normalize items to array format with id attached
   // When items is Record<string, T>, we add id property from the key

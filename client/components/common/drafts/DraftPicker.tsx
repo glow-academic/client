@@ -23,7 +23,7 @@ import { useProfile } from "@/contexts/profile-context";
 export interface DraftItem {
   id: string | null;
   resource_type: string | null;
-  payload: Record<string, unknown>;
+  payload: Record<string, unknown> | null; // Can be null when draft data is stored in junction tables
   version: number | null;
   updated_at: string | null;
 }
@@ -49,6 +49,11 @@ export function DraftPicker({
   // Get draft name from payload (resource-specific)
   const getDraftName = useCallback((draft: DraftItem): string => {
     const payload = draft.payload;
+    // Handle null payload (draft data is now stored in junction tables, not payload)
+    if (!payload || typeof payload !== "object") {
+      // Fallback to timestamp
+      return draft.updated_at ? new Date(draft.updated_at).toLocaleDateString() : "Draft";
+    }
     // Try common name fields (use bracket notation for index signature properties)
     if (typeof payload["name"] === "string" && payload["name"].trim()) {
       return payload["name"];

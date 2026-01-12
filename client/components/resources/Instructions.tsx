@@ -272,6 +272,7 @@ export function Instructions({
           buttonClassName="h-8"
           showLabel={false}
           initialSearchTerm={searchTerm}
+          onSearchChange={onSearchChange}
         />
       </div>
       {/* Textarea without generate button inside */}

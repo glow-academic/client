@@ -32,6 +32,7 @@ import {
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
+import { normalizeResourceTypeToArtifact } from "@/utils/resource-type-utils";
 import type {
   AttemptFullOut,
   CreateFeedbackIn,
@@ -357,6 +358,11 @@ function MainLayoutContent({
     return match ? match[2] : null; // Use second capture group (resource name)
   }, [pathname, isCreateOrEditPage]);
 
+  // Normalize resource type from plural URL form to singular artifact enum value
+  const normalizedResourceType = useMemo(() => {
+    return resourceType ? normalizeResourceTypeToArtifact(resourceType) : null;
+  }, [resourceType]);
+
   return (
     <>
       <SidebarProvider>
@@ -399,9 +405,9 @@ function MainLayoutContent({
             )}
 
             {/* DraftPicker - Show on create/edit pages */}
-            {isCreateOrEditPage && resourceType && (
+            {isCreateOrEditPage && normalizedResourceType && (
               <div className="pr-4">
-                <DraftPicker resourceType={resourceType} />
+                <DraftPicker resourceType={normalizedResourceType} />
               </div>
             )}
 
