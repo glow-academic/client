@@ -95,7 +95,7 @@ CREATE TYPE types.q_get_profile_context_v4_provider AS (
 
 CREATE TYPE types.q_get_profile_context_v4_draft AS (
     id uuid,
-    resource_type text,
+    artifact_type text,
     payload jsonb,
     version int,
     updated_at timestamptz
@@ -914,7 +914,7 @@ drafts_data AS (
     -- Draft data is now stored in draft_* junction tables, not in payload
     SELECT 
         d.id,
-        d.artifact::text as resource_type,
+        d.artifact::text as artifact_type,
         NULL::jsonb as payload,
         d.version,
         d.updated_at
@@ -926,7 +926,7 @@ drafts_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (dd.id, dd.resource_type, dd.payload, dd.version, dd.updated_at)::types.q_get_profile_context_v4_draft
+                (dd.id, dd.artifact_type, dd.payload, dd.version, dd.updated_at)::types.q_get_profile_context_v4_draft
                 ORDER BY dd.updated_at DESC
             ),
             '{}'::types.q_get_profile_context_v4_draft[]

@@ -14482,8 +14482,8 @@ export interface components {
         QGetProfileContextV4Draft: {
             /** Id */
             id: string | null;
-            /** Resource Type */
-            resource_type: string | null;
+            /** Artifact Type */
+            artifact_type: string | null;
             /** Payload */
             payload: unknown | null;
             /** Version */

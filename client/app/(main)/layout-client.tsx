@@ -15,6 +15,7 @@ import React, { useEffect, useMemo } from "react";
 
 import { SimulationControls } from "@/components/common/chat/SimulationControls";
 import { DraftPicker } from "@/components/common/drafts/DraftPicker";
+import { FullPageGenerateButton } from "@/components/common/drafts/FullPageGenerateButton";
 import { AccessControl } from "@/components/common/layout/AccessControl";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
@@ -26,13 +27,14 @@ import {
   BreadcrumbProvider,
   useBreadcrumbContext,
 } from "@/contexts/breadcrumb-context";
+import { GenerationProvider } from "@/contexts/generation-context";
 import { ProfileProviderClient, useProfile } from "@/contexts/profile-context";
 import {
   generateBreadcrumbs,
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
-import { normalizeResourceTypeToArtifact } from "@/utils/resource-type-utils";
+import { normalizeUrlPathToArtifactType } from "@/utils/resource-type-utils";
 import type {
   AttemptFullOut,
   CreateFeedbackIn,
@@ -350,18 +352,18 @@ function MainLayoutContent({
     );
   }, [pathname]);
 
-  const resourceType = useMemo(() => {
+  const urlPathSegment = useMemo(() => {
     if (!isCreateOrEditPage) return null;
     const match = pathname.match(
       /^\/(create|management|engine|system)\/([^/]+)/
     );
-    return match ? match[2] : null; // Use second capture group (resource name)
+    return match ? match[2] : null; // Use second capture group (URL path segment)
   }, [pathname, isCreateOrEditPage]);
 
-  // Normalize resource type from plural URL form to singular artifact enum value
-  const normalizedResourceType = useMemo(() => {
-    return resourceType ? normalizeResourceTypeToArtifact(resourceType) : null;
-  }, [resourceType]);
+  // Normalize URL path segment from plural form to singular artifact enum value
+  const artifactType = useMemo(() => {
+    return urlPathSegment ? normalizeUrlPathToArtifactType(urlPathSegment) : null;
+  }, [urlPathSegment]);
 
   return (
     <>
@@ -404,10 +406,11 @@ function MainLayoutContent({
               </div>
             )}
 
-            {/* DraftPicker - Show on create/edit pages */}
-            {isCreateOrEditPage && normalizedResourceType && (
-              <div className="pr-4">
-                <DraftPicker resourceType={normalizedResourceType} />
+            {/* DraftPicker and Generate Button - Show on create/edit pages */}
+            {isCreateOrEditPage && artifactType && (
+              <div className="pr-4 flex items-center gap-2">
+                <DraftPicker artifactType={artifactType} />
+                <FullPageGenerateButton />
               </div>
             )}
 
@@ -510,17 +513,19 @@ export function MainLayoutClient({
         sessionSnapshot={sessionSnapshot}
       >
         <BreadcrumbProvider>
-          <AnalyticsProvider>
-            <MainLayoutContent
-              attemptData={attemptData}
-              switchEffectiveProfileAction={switchEffectiveProfileAction}
-              createFeedbackAction={createFeedbackAction}
-              refreshAnalyticsAction={refreshAnalyticsAction}
-              searchSimulatableProfilesAction={searchSimulatableProfilesAction}
-            >
-              {children}
-            </MainLayoutContent>
-          </AnalyticsProvider>
+          <GenerationProvider>
+            <AnalyticsProvider>
+              <MainLayoutContent
+                attemptData={attemptData}
+                switchEffectiveProfileAction={switchEffectiveProfileAction}
+                createFeedbackAction={createFeedbackAction}
+                refreshAnalyticsAction={refreshAnalyticsAction}
+                searchSimulatableProfilesAction={searchSimulatableProfilesAction}
+              >
+                {children}
+              </MainLayoutContent>
+            </AnalyticsProvider>
+          </GenerationProvider>
         </BreadcrumbProvider>
       </ProfileProviderClient>
     </>

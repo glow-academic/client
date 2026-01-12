@@ -1,6 +1,6 @@
 /**
  * DraftPicker.tsx
- * Dropdown component for selecting drafts filtered by resource type
+ * Dropdown component for selecting drafts filtered by artifact type
  * Positioned for top-right corner (similar to SimulationControls)
  */
 
@@ -22,28 +22,28 @@ import { useProfile } from "@/contexts/profile-context";
 
 export interface DraftItem {
   id: string | null;
-  resource_type: string | null;
+  artifact_type: string | null;
   payload: Record<string, unknown> | null; // Can be null when draft data is stored in junction tables
   version: number | null;
   updated_at: string | null;
 }
 
 export interface DraftPickerProps {
-  resourceType: string;
+  artifactType: string;
   onCreateDraft?: () => void;
 }
 
 export function DraftPicker({
-  resourceType,
+  artifactType,
   onCreateDraft,
 }: DraftPickerProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { drafts, selectedDraftId, setSelectedDraftId } = useProfile();
 
-  // Filter drafts by resource type
+  // Filter drafts by artifact type
   const filteredDrafts = drafts.filter(
-    (draft) => draft.resource_type === resourceType
+    (draft) => draft.artifact_type === artifactType
   );
 
   // Get draft name from payload (resource-specific)
@@ -109,8 +109,8 @@ export function DraftPicker({
           <DropdownMenuItem disabled>No drafts available</DropdownMenuItem>
         ) : (
           filteredDrafts
-            .filter((draft): draft is typeof draft & { id: string; resource_type: string } => 
-              draft.id !== null && draft.resource_type !== null
+            .filter((draft): draft is typeof draft & { id: string; artifact_type: string } => 
+              draft.id !== null && draft.artifact_type !== null
             )
             .map((draft) => (
               <DropdownMenuItem

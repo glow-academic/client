@@ -1,22 +1,22 @@
 /**
  * Resource Type Utilities
  * 
- * Maps plural URL resource types to singular artifact enum values used in the database.
- * This ensures frontend resource types match the database artifacts enum.
+ * Maps plural URL paths to singular artifact enum values used in the database.
+ * This ensures frontend URL paths match the database artifacts enum.
  */
 
 /**
- * Normalizes a plural URL resource type to its singular artifact enum value.
+ * Normalizes a plural URL path segment to its singular artifact enum value.
  * 
- * @param resourceType - The resource type from URL path (e.g., "personas", "scenarios")
+ * @param urlPath - The URL path segment (e.g., "personas", "scenarios")
  * @returns The singular artifact enum value (e.g., "persona", "scenario")
  * 
  * @example
- * normalizeResourceTypeToArtifact("personas") // returns "persona"
- * normalizeResourceTypeToArtifact("scenarios") // returns "scenario"
- * normalizeResourceTypeToArtifact("auth") // returns "auth" (already singular)
+ * normalizeUrlPathToArtifactType("personas") // returns "persona"
+ * normalizeUrlPathToArtifactType("scenarios") // returns "scenario"
+ * normalizeUrlPathToArtifactType("auth") // returns "auth" (already singular)
  */
-export function normalizeResourceTypeToArtifact(resourceType: string): string {
+export function normalizeUrlPathToArtifactType(urlPath: string): string {
   const mapping: Record<string, string> = {
     // Standard plural to singular mappings
     personas: "persona",
@@ -45,5 +45,5 @@ export function normalizeResourceTypeToArtifact(resourceType: string): string {
   };
 
   // Return mapped value if exists, otherwise return as-is (might already be singular)
-  return mapping[resourceType] ?? resourceType;
+  return mapping[urlPath] ?? urlPath;
 }

@@ -16488,7 +16488,7 @@ class QGetProfileContextV4Department(BaseModel):
 class QGetProfileContextV4Draft(BaseModel):
 
     id: UUID | None
-    resource_type: str | None
+    artifact_type: str | None
     payload: Any | None
     version: int | None
     updated_at: str | None

@@ -66134,7 +66134,7 @@
             ],
             "title": "Id"
           },
-          "resource_type": {
+          "artifact_type": {
             "anyOf": [
               {
                 "type": "string"
@@ -66143,7 +66143,7 @@
                 "type": "null"
               }
             ],
-            "title": "Resource Type"
+            "title": "Artifact Type"
           },
           "payload": {
             "anyOf": [
@@ -66180,7 +66180,7 @@
         "type": "object",
         "required": [
           "id",
-          "resource_type",
+          "artifact_type",
           "payload",
           "version",
           "updated_at"

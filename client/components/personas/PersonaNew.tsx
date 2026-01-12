@@ -36,6 +36,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { ResourceType } from "@/lib/resources/types";
@@ -155,6 +156,8 @@ function PersonaNewComponent({
     isConnected,
   } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { setGenerationCapability, clearGenerationCapability } =
+    useGenerationContext();
 
   // Generation state for AI workflows - simplified using ResourceType
   const [generatingResources, setGeneratingResources] = useState<
@@ -985,6 +988,54 @@ function PersonaNewComponent({
     setEntityMetadata,
     clearEntityMetadata,
   ]);
+
+  // Set generation capability when persona data is loaded
+  useEffect(() => {
+    if (personaData?.general_agent_id) {
+      setGenerationCapability({
+        artifactType: "persona",
+        canGenerate: true,
+        agentId: personaData.general_agent_id,
+      });
+    } else {
+      setGenerationCapability({
+        artifactType: "persona",
+        canGenerate: false,
+        agentId: null,
+      });
+    }
+    return () => clearGenerationCapability();
+  }, [
+    personaData?.general_agent_id,
+    setGenerationCapability,
+    clearGenerationCapability,
+  ]);
+
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      if (personaData?.general_agent_id) {
+        // Trigger full generation with all resources
+        handleGenerateResources(
+          [
+            "names",
+            "descriptions",
+            "colors",
+            "icons",
+            "instructions",
+            "flags",
+            "fields",
+            "departments",
+            "examples",
+          ],
+          "general"
+        );
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [personaData?.general_agent_id, handleGenerateResources]);
 
   // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
