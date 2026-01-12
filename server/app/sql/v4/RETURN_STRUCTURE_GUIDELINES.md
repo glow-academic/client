@@ -92,6 +92,49 @@ This provides a single standard pattern for both single-select and multi-select 
 
 **Key Point:** The full array (`{resource}`) always comes **last** in the multi-select resource group, after IDs, resources, show flag, and suggestions.
 
+**⚠️ CRITICAL: Multi-Select Arrays Must Only Include Valid/Active Options**
+
+**The `{resource}` array must only include options that are valid for selection, not all linked options.**
+
+**Common Mistake:**
+- ❌ **WRONG**: Including all departments the user is linked to (even inactive ones)
+- ✅ **CORRECT**: Only including departments with active flag AND user is linked to them
+
+**Pattern for Departments:**
+```sql
+department_mapping_data AS (
+    SELECT 
+        d.department_id,
+        -- ... other fields
+    FROM params x
+    JOIN departments d ON (
+        -- Only include departments with active flag
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id 
+               WHERE df.department_id = d.department_id 
+                 AND fl.name = 'active' 
+                 AND df.type = 'active'::type_department_flags 
+                 AND df.value = true)
+        AND
+        -- AND user must be linked to the department
+        EXISTS (SELECT 1 FROM profile_departments pd 
+               WHERE pd.department_id = d.department_id 
+                 AND pd.profile_id = x.profile_id 
+                 AND pd.active = true)
+    )
+)
+```
+
+**Why This Matters:**
+- Users should only see options they can actually select
+- Inactive or invalid options create confusion and poor UX
+- The `{resource}` array represents "all valid options for this user", not "all options the user has access to"
+- This applies to all multi-select resources: departments, fields, examples
+
+**General Rule:**
+- The `{resource}` array should use the same filtering logic as `{resource}_mapping_data` CTE
+- Both `{resource}` and `{resource}_resources` should use the same source CTE to ensure consistency
+- If a resource is not valid for selection, it should not appear in the `{resource}` array
+
 ## Option Arrays
 
 **Single-select resources can have option arrays, but they come in two types:**
@@ -346,6 +389,8 @@ RETURNS TABLE (
     departments_required boolean,  -- true if show_departments is true
     department_suggestions uuid[],
     departments types.q_get_persona_v4_department[],  -- Array comes last; each includes generated, group_id
+    -- ⚠️ IMPORTANT: departments array must only include active departments user is linked to
+    -- Use department_mapping_data CTE that filters: active flag AND user link exists
     
     -- Multi-select resources: fields
     field_ids uuid[],
@@ -355,6 +400,8 @@ RETURNS TABLE (
     fields_required boolean,  -- true if show_fields is true
     field_suggestions uuid[],
     fields types.q_get_persona_v4_field[],  -- Array comes last; each includes generated, group_id
+    -- ⚠️ IMPORTANT: fields array must only include valid/active fields based on business logic
+    -- Use valid_fields_data or field_mapping_data CTE with proper filtering
     
     -- Multi-select resources: examples
     example_ids uuid[],
@@ -364,6 +411,8 @@ RETURNS TABLE (
     examples_required boolean,  -- true if show_examples is true
     example_suggestions uuid[],
     examples types.q_get_persona_v4_example[],  -- Array comes last; each includes generated, group_id
+    -- ⚠️ IMPORTANT: examples array must only include valid examples based on business logic
+    -- Use appropriate CTE with proper filtering for valid examples
     
     -- Multi-resource combination agent IDs (after all individual resources)
     basic_agent_id uuid,  -- Agent ID for generating names + descriptions + flags + departments together
@@ -564,11 +613,12 @@ END IF;
 8. **Suggestions are UUIDs**: All `{resource}_suggestions` fields are `uuid[]`, never `text[]`
 9. **Arrays come last**: For resources with option arrays, the array comes last in that resource's group
 10. **Multi-select arrays last**: The full `{resource}` array comes last in multi-select resource groups
-11. **SELECT matches RETURN**: SELECT clause order must match RETURN TABLE order exactly
-12. **Tool availability checks**: Required resources without tools disable editing with appropriate error messages (applies in both new and edit modes)
-13. **CROSS JOIN safety**: CTEs used in CROSS JOINs must always return at least one row (use `FROM params LIMIT 1` pattern)
-14. **MCP scoping**: MCP filtering only affects agent selection, not resource lists
-15. **Disabled state in both modes**: Frontend must check `can_edit` in both new and edit modes to display `disabled_reason`
+11. **Multi-select arrays are filtered**: The `{resource}` array must only include valid/active options, not all linked options (e.g., only active departments user is linked to, not all departments)
+12. **SELECT matches RETURN**: SELECT clause order must match RETURN TABLE order exactly
+13. **Tool availability checks**: Required resources without tools disable editing with appropriate error messages (applies in both new and edit modes)
+14. **CROSS JOIN safety**: CTEs used in CROSS JOINs must always return at least one row (use `FROM params LIMIT 1` pattern)
+15. **MCP scoping**: MCP filtering only affects agent selection, not resource lists
+16. **Disabled state in both modes**: Frontend must check `can_edit` in both new and edit modes to display `disabled_reason`
 
 ## Migration Checklist
 
@@ -586,6 +636,8 @@ When updating an existing SQL function to follow these guidelines:
 - [ ] Reorder fields to follow single-select/multi-select patterns
 - [ ] Move option arrays to come last in their resource groups
 - [ ] Move multi-select full arrays to come last in their groups
+- [ ] **Filter multi-select arrays**: Ensure `{resource}` arrays only include valid/active options (e.g., departments with active flag AND user is linked to them)
+- [ ] **Use same CTE for consistency**: Both `{resource}` and `{resource}_resources` should use the same `{resource}_mapping_data` CTE
 - [ ] Update SELECT clause to match RETURN TABLE order
 - [ ] Test SQL compilation with `make sql-compile`
 - [ ] Update frontend code if needed for UUID-based suggestions and agent IDs

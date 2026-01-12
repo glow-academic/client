@@ -308,31 +308,17 @@ persona_department_access_check AS (
 ),
 department_mapping_data AS (
     SELECT 
-        d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        d.department_id,
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
     JOIN departments d ON (
-        -- Include departments with active flag
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
-        OR
-        -- OR include departments user is linked to (even without active flag)
-        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
-        OR
-        -- OR superadmins see all departments (even without active flag)
-        up.role = 'superadmin'::profile_role
-    )
-    LEFT JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
-    WHERE (
-        -- Superadmins see all departments
-        up.role = 'superadmin'::profile_role
-        OR
-        -- Others only see departments they're linked to OR departments with active flag
-        pd.department_id IS NOT NULL
-        OR
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        -- Only include departments with active flag AND user is linked to them
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        AND
+        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
 ),
 primary_department_id_data AS (
@@ -340,6 +326,13 @@ primary_department_id_data AS (
     FROM params x
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.is_primary = TRUE
     LIMIT 1
+),
+-- Active departments for user (departments with active flag that user is linked to)
+active_departments_data AS (
+    SELECT ARRAY_AGG(DISTINCT d.department_id) as department_ids
+    FROM params x
+    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    WHERE EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
 ),
 -- Simplified parameter_mapping_data - only used for field_mapping_data
 parameter_mapping_data AS (
@@ -358,25 +351,25 @@ parameter_mapping_data AS (
 ),
 field_mapping_data AS (
     SELECT 
-        f.id as field_id,
-        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
-        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
+        f.field_id,
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1),
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), '') as description,
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1),
         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = pmd.parameter_id LIMIT 1) as parameter_name,
         COALESCE(f.generated, false) as generated
     FROM parameter_mapping_data pmd
-    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
-    JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1)
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 -- Valid fields data for new personas (based on departments, similar to documents endpoint)
 valid_fields_data AS (
     SELECT DISTINCT
-        f.id as field_id,
-        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
-        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) as parameter_id,
-        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1) as parameter_name,
+        f.field_id,
+        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1),
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), '') as description,
+        (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1) as parameter_id,
+        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1) LIMIT 1) as parameter_name,
         COALESCE(f.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
@@ -385,17 +378,17 @@ valid_fields_data AS (
         WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
           AND EXISTS (SELECT 1 FROM parameter_flags pf2 JOIN flags fl2 ON pf2.flag_id = fl2.id WHERE pf2.parameter_id = p.id AND fl2.name = 'persona_parameter' AND pf2.type = 'persona_parameter'::type_parameter_flags AND pf2.value = TRUE)
     )
-    LEFT JOIN fields f ON f.id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
-    LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
+    LEFT JOIN fields f ON f.field_id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    LEFT JOIN field_departments fd ON fd.field_id = f.field_id AND fd.active = true
     WHERE x.persona_id IS NULL
-      AND f.id IS NOT NULL  -- Filter out NULL fields
+      AND f.field_id IS NOT NULL  -- Filter out NULL fields
       AND (
         -- If user has no departments (superadmin), include only cross-department fields
         (NOT EXISTS (SELECT 1 FROM user_departments) AND up.role = 'superadmin'::profile_role
          AND NOT EXISTS (
              SELECT 1 FROM field_departments fd2 
-             WHERE fd2.field_id = f.id 
-             AND fd2.active = true
+             WHERE fd2.field_id = f.field_id 
+                 AND fd2.active = true
          ))
         OR
         -- If user has departments, include fields from those departments OR cross-department fields
@@ -404,7 +397,7 @@ valid_fields_data AS (
              -- Field is in a department the user has access to
              EXISTS (
                  SELECT 1 FROM field_departments fd2
-                 WHERE fd2.field_id = f.id
+                 WHERE fd2.field_id = f.field_id
                    AND fd2.active = true
                    AND fd2.department_id IN (SELECT department_id FROM user_departments)
              )
@@ -412,7 +405,7 @@ valid_fields_data AS (
              -- Field is cross-department (not in any department)
              NOT EXISTS (
                  SELECT 1 FROM field_departments fd2 
-                 WHERE fd2.field_id = f.id 
+                 WHERE fd2.field_id = f.field_id 
                  AND fd2.active = true
              )
          ))
@@ -1129,13 +1122,13 @@ field_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pf.field_id, MAX(pf.created_at) as created_at
                  FROM persona_fields pf
-                 JOIN fields f ON f.id = pf.field_id
+                 JOIN fields f ON f.field_id = pf.field_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pf.field_id IS NOT NULL
                    AND EXISTS (
                        SELECT 1 FROM field_flags ff
                        JOIN flags fl ON ff.flag_id = fl.id
-                       WHERE ff.field_id = f.id
+                       WHERE ff.field_id = f.field_id
                          AND fl.name = 'active'
                          AND ff.type = 'active'::type_field_flags
                          AND ff.value = true
@@ -2386,10 +2379,8 @@ SELECT
         FROM draft_payload_data),
         CASE 
             WHEN (SELECT persona_id FROM params) IS NULL THEN
-                CASE 
-                    WHEN up.role = 'superadmin' THEN NULL::uuid[]
-                    ELSE COALESCE(ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
-                END
+                -- For new personas, use active departments (or primary department as fallback)
+                COALESCE(add.department_ids, ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
             ELSE pdd.department_ids
         END
     ) as department_ids,
@@ -2411,10 +2402,8 @@ SELECT
                 FROM draft_payload_data),
                 CASE 
                     WHEN (SELECT persona_id FROM params) IS NULL THEN
-                        CASE 
-                            WHEN up.role = 'superadmin' THEN NULL::uuid[]
-                            ELSE COALESCE(ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
-                        END
+                        -- For new personas, use active departments (or primary department as fallback)
+                        COALESCE(add.department_ids, ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
                     ELSE pdd.department_ids
                 END
             )
@@ -2553,6 +2542,7 @@ CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
 CROSS JOIN tools_existence_check tec
 LEFT JOIN persona_departments_data pdd ON true
+CROSS JOIN active_departments_data add
 CROSS JOIN draft_group_data dgd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
