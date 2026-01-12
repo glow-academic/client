@@ -123,8 +123,6 @@ CREATE OR REPLACE FUNCTION api_get_persona_v4(
     icon_search text DEFAULT NULL,
     color_show_selected boolean DEFAULT NULL,
     icon_show_selected boolean DEFAULT NULL,
-    current_color text DEFAULT NULL,
-    current_icon text DEFAULT NULL,
     descriptions_search text DEFAULT NULL,
     instructions_search text DEFAULT NULL,
     field_search text DEFAULT NULL,
@@ -227,8 +225,6 @@ WITH params AS (
         icon_search AS icon_search,
         COALESCE(color_show_selected, false) AS color_show_selected,
         COALESCE(icon_show_selected, false) AS icon_show_selected,
-        current_color AS current_color,
-        current_icon AS current_icon,
         descriptions_search AS descriptions_search,
         instructions_search AS instructions_search,
         field_search AS field_search,
@@ -590,11 +586,10 @@ colors_data AS (
             (p.color_search IS NULL OR p.color_search = '' OR
              LOWER(c.name) LIKE '%' || LOWER(p.color_search) || '%' OR
              LOWER(c.hex_code) LIKE '%' || LOWER(p.color_search) || '%')
-            -- Show selected filter: if enabled and current_color provided, only show current color
+            -- Show selected filter: if enabled, only show selected color from draft/persona
             AND (
                 NOT p.color_show_selected OR
-                p.current_color IS NULL OR
-                UPPER(c.hex_code) = UPPER(COALESCE(p.current_color, ''))
+                c.id = (SELECT color_id FROM color_resource_data)
             )
         )
     ORDER BY c.name
@@ -649,11 +644,10 @@ icons_data AS (
             (p.icon_search IS NULL OR p.icon_search = '' OR
              LOWER(i.name) LIKE '%' || LOWER(p.icon_search) || '%' OR
              LOWER(i.value) LIKE '%' || LOWER(p.icon_search) || '%')
-            -- Show selected filter: if enabled and current_icon provided, only show current icon
+            -- Show selected filter: if enabled, only show selected icon from draft/persona
             AND (
                 NOT p.icon_show_selected OR
-                p.current_icon IS NULL OR
-                LOWER(i.value) = LOWER(COALESCE(p.current_icon, ''))
+                i.id = (SELECT icon_id FROM icon_resource_data)
             )
         )
     ORDER BY i.name

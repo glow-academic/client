@@ -37297,28 +37297,6 @@
             ],
             "title": "Icon Show Selected"
           },
-          "current_color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Color"
-          },
-          "current_icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Icon"
-          },
           "descriptions_search": {
             "anyOf": [
               {

@@ -14616,8 +14616,6 @@ class GetPersonaSqlParams(BaseModel):
     icon_search: str | None = None
     color_show_selected: bool | None = None
     icon_show_selected: bool | None = None
-    current_color: str | None = None
-    current_icon: str | None = None
     descriptions_search: str | None = None
     instructions_search: str | None = None
     field_search: str | None = None
@@ -14633,8 +14631,6 @@ class GetPersonaSqlParams(BaseModel):
             self.icon_search,
             self.color_show_selected,
             self.icon_show_selected,
-            self.current_color,
-            self.current_icon,
             self.descriptions_search,
             self.instructions_search,
             self.field_search,
@@ -14832,8 +14828,6 @@ class GetPersonaApiRequest(BaseModel):
     icon_search: str | None = None
     color_show_selected: bool | None = None
     icon_show_selected: bool | None = None
-    current_color: str | None = None
-    current_icon: str | None = None
     descriptions_search: str | None = None
     instructions_search: str | None = None
     field_search: str | None = None

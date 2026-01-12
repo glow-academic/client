@@ -791,21 +791,9 @@ function PersonaNewComponent({
   }, [socket, isConnected, personaData?.group_id]);
 
   // Multi-generation handler - accepts list of resource types and optional user instructions
-  const handleGenerateResources = useCallback(
-    async (resourceTypes: ResourceType[], userInstructions?: string) => {
-      if (!socket || !isConnected) {
-        toast.error("WebSocket not connected");
-        return;
-      }
-
-      // Set all resources as generating
-      setGeneratingResources((prev) => {
-        const next = new Set(prev);
-        resourceTypes.forEach((rt) => next.add(rt));
-        return next;
-      });
-
-      // Determine agent_type based on resource types
+  // Helper function to determine agent_type from resource types
+  const determineAgentType = useCallback(
+    (resourceTypes: ResourceType[]): string | null => {
       const basicResources: ResourceType[] = [
         "names",
         "descriptions",
@@ -835,14 +823,12 @@ function PersonaNewComponent({
         resourceTypes.length === allResourceTypes.length &&
         resourceTypes.every((rt) => allResourceTypes.includes(rt));
 
-      // Map resource types to agent_type
-      let agentType: string | null = null;
       if (isAllResources) {
-        agentType = "general";
+        return "general";
       } else if (isBasicCombo) {
-        agentType = "basic";
+        return "basic";
       } else if (isContentCombo) {
-        agentType = "content";
+        return "content";
       } else if (resourceTypes.length === 1) {
         // Single resource type - map to agent_type
         const agentTypeMap: Record<ResourceType, string> = {
@@ -858,9 +844,31 @@ function PersonaNewComponent({
         };
         const firstType = resourceTypes[0];
         if (firstType && firstType in agentTypeMap) {
-          agentType = agentTypeMap[firstType];
+          return agentTypeMap[firstType];
         }
       }
+      return null;
+    },
+    []
+  );
+
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      agentType: string | null,
+      userInstructions?: string
+    ) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
 
       // Read search params from formData
       const formData = formDataRef.current;
@@ -896,8 +904,6 @@ function PersonaNewComponent({
         color_show_selected: colorShowSelected || false,
         icon_show_selected: iconShowSelected || false,
         field_show_selected: fieldShowSelected || false,
-        current_color: null,
-        current_icon: null,
         mcp: false,
         persona_id: personaId || null,
       });
@@ -907,33 +913,48 @@ function PersonaNewComponent({
 
   // Individual generation handlers - generate directly without modals
   const handleGenerateName = useCallback(
-    async () => handleGenerateResources(["names"]),
-    [handleGenerateResources]
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
+    [handleGenerateResources, determineAgentType]
   );
 
   const handleGenerateDescription = useCallback(
-    async () => handleGenerateResources(["descriptions"]),
-    [handleGenerateResources]
+    async () =>
+      handleGenerateResources(
+        ["descriptions"],
+        determineAgentType(["descriptions"])
+      ),
+    [handleGenerateResources, determineAgentType]
   );
 
   const handleGenerateInstructions = useCallback(
-    async () => handleGenerateResources(["instructions"]),
-    [handleGenerateResources]
+    async () =>
+      handleGenerateResources(
+        ["instructions"],
+        determineAgentType(["instructions"])
+      ),
+    [handleGenerateResources, determineAgentType]
   );
 
   const handleGenerateDepartments = useCallback(
-    async () => handleGenerateResources(["departments"]),
-    [handleGenerateResources]
+    async () =>
+      handleGenerateResources(
+        ["departments"],
+        determineAgentType(["departments"])
+      ),
+    [handleGenerateResources, determineAgentType]
   );
 
   const handleGenerateFlags = useCallback(
-    async () => handleGenerateResources(["flags"]),
-    [handleGenerateResources]
+    async () =>
+      handleGenerateResources(["flags"], determineAgentType(["flags"])),
+    [handleGenerateResources, determineAgentType]
   );
 
   const handleGenerateExamples = useCallback(
-    async () => handleGenerateResources(["examples"]),
-    [handleGenerateResources]
+    async () =>
+      handleGenerateResources(["examples"], determineAgentType(["examples"])),
+    [handleGenerateResources, determineAgentType]
   );
 
   // GenericForm will manage URL state via nuqs parsers
@@ -1165,14 +1186,16 @@ function PersonaNewComponent({
   const handleModalGenerate = useCallback(
     async (selectedResources: string[], instructions: string) => {
       const resourceTypes = selectedResources as ResourceType[];
+      const agentType = determineAgentType(resourceTypes);
       await handleGenerateResources(
         resourceTypes,
+        agentType,
         instructions.trim() || undefined
       );
       setShowGenerateModal(false);
       setModalInstructions("");
     },
-    [handleGenerateResources]
+    [handleGenerateResources, determineAgentType]
   );
 
   // Steps configuration for GenericForm

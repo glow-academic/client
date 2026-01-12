@@ -100,8 +100,6 @@ async def _persona_generate_impl(
                 icon_search=data.icon_search,
                 color_show_selected=data.color_show_selected,
                 icon_show_selected=data.icon_show_selected,
-                current_color=data.current_color,
-                current_icon=data.current_icon,
                 descriptions_search=data.descriptions_search,
                 instructions_search=data.instructions_search,
                 field_search=data.field_search,

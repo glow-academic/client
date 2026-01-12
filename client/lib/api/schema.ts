@@ -8910,10 +8910,6 @@ export interface components {
             color_show_selected?: boolean | null;
             /** Icon Show Selected */
             icon_show_selected?: boolean | null;
-            /** Current Color */
-            current_color?: string | null;
-            /** Current Icon */
-            current_icon?: string | null;
             /** Descriptions Search */
             descriptions_search?: string | null;
             /** Instructions Search */
