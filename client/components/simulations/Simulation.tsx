@@ -3,6 +3,10 @@
  * Used to create and manage simulations for the admin dashboard
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
+ * 
+ * NOTE: NewSimulation.tsx is the preferred component for new development.
+ * This component is kept for backward compatibility but should be migrated to use
+ * NewSimulation.tsx which follows the standardized resource component patterns.
  */
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

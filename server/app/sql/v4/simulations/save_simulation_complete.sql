@@ -28,10 +28,7 @@ CREATE TYPE types.i_save_simulation_v4_scenario_rubric_grade_agent AS (
 
 -- 3) Recreate function
 CREATE OR REPLACE FUNCTION api_save_simulation_v4(
-    title text,
-    description text,
-    active boolean,
-    practice_simulation boolean,
+    name_id uuid,
     department_ids uuid[],
     scenario_ids uuid[],
     scenario_active_flags boolean[],
@@ -44,6 +41,9 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     simulation_voice_domain_id uuid,
     profile_id uuid,
     input_simulation_id uuid DEFAULT NULL,  -- NULL = create, UUID = update
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    practice_simulation boolean DEFAULT false,
     -- Update-only params (optional, only used in update mode)
     video_ids uuid[] DEFAULT NULL,
     video_active_flags boolean[] DEFAULT NULL,
@@ -85,14 +85,41 @@ BEGIN
         END IF;
     END IF;
     
+    -- Validate required resource IDs exist
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    END IF;
+    
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    END IF;
+    
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    END IF;
+    
+    -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
+    IF NOT is_create THEN
+        DELETE FROM simulation_names WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_descriptions WHERE simulation_id = v_simulation_id;
+        DELETE FROM simulation_departments WHERE simulation_id = v_simulation_id;
+        -- Update existing active flag if it exists
+        UPDATE simulation_flags SET
+            flag_id = COALESCE(api_save_simulation_v4.active_flag_id, simulation_flags.flag_id),
+            value = CASE WHEN api_save_simulation_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
+            updated_at = NOW()
+        WHERE simulation_id = v_simulation_id
+          AND type = 'active'::type_simulation_flags;
+    END IF;
+    
     -- Continue with simulation save using SQL (simulation already created/updated above)
     RETURN QUERY
     WITH params AS (
         SELECT
             v_simulation_id AS simulation_id,
-            title,
-            description,
-            active,
+            name_id,
+            description_id,
+            active_flag_id,
             practice_simulation,
             COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
             COALESCE(scenario_ids, ARRAY[]::uuid[]) AS scenario_ids,
@@ -161,79 +188,44 @@ BEGIN
         FROM params x
         CROSS JOIN user_profile up
     ),
-    -- Insert/update name in names table
-    name_resource AS (
-        INSERT INTO names (name, created_at, updated_at)
-        SELECT x.title, NOW(), NOW()
-        FROM params x
-        WHERE x.title IS NOT NULL AND x.title != ''
-        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-        RETURNING id as name_id
-    ),
-    -- Insert/update description in descriptions table
-    description_resource AS (
-        INSERT INTO descriptions (description, created_at, updated_at)
-        SELECT x.description, NOW(), NOW()
-        FROM params x
-        WHERE x.description IS NOT NULL AND x.description != ''
-        ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
-        RETURNING id as description_id
-    ),
-    -- Conditional: For update, remove old links first
-    update_simulation_name AS (
-        DELETE FROM simulation_names 
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-        AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
-    ),
+    -- Link simulation name (resource ID already validated)
     link_simulation_name AS (
         INSERT INTO simulation_names (simulation_id, name_id, created_at, updated_at)
         SELECT 
             x.simulation_id,
-            nr.name_id,
+            x.name_id,
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN name_resource nr
-        WHERE x.title IS NOT NULL AND x.title != ''
+        WHERE x.name_id IS NOT NULL
         ON CONFLICT (simulation_id, name_id) DO UPDATE SET updated_at = NOW()
     ),
-    -- Update simulation description
-    update_simulation_description AS (
-        DELETE FROM simulation_descriptions 
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-        AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
-    ),
+    -- Link simulation description (resource ID already validated)
     link_simulation_description AS (
         INSERT INTO simulation_descriptions (simulation_id, description_id, created_at, updated_at)
         SELECT 
             x.simulation_id,
-            dr.description_id,
+            x.description_id,
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN description_resource dr
-        WHERE x.description IS NOT NULL AND x.description != ''
+        WHERE x.description_id IS NOT NULL
         ON CONFLICT (simulation_id, description_id) DO UPDATE SET updated_at = NOW()
     ),
-    -- Update simulation active flag
-    update_simulation_active_flag AS (
-        DELETE FROM simulation_flags 
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-          AND type = 'active'::type_simulation_flags
-        AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
-    ),
+    -- Link simulation active flag (resource ID already validated)
     link_simulation_active_flag AS (
         INSERT INTO simulation_flags (simulation_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.simulation_id,
-            (SELECT id FROM flags WHERE name = 'active' LIMIT 1),
+            x.active_flag_id,
             'active'::type_simulation_flags,
-            x.active,
+            true,
             NOW(),
             NOW()
         FROM params x
-        WHERE x.active IS NOT NULL
+        WHERE x.active_flag_id IS NOT NULL
         ON CONFLICT (simulation_id, flag_id, type) DO UPDATE SET 
+            flag_id = EXCLUDED.flag_id,
             value = EXCLUDED.value,
             updated_at = NOW()
     ),

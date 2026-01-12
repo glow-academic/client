@@ -7,6 +7,7 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Simulation from "@/components/simulations/Simulation";
+import { NewSimulation } from "@/components/simulations/NewSimulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -23,6 +24,26 @@ type SaveSimulationIn = InputOf<"/api/v4/simulations/save", "post">;
 type SaveSimulationOut = OutputOf<"/api/v4/simulations/save", "post">;
 type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 
 // Export types for client component (type-only imports)
 export type {
@@ -78,8 +99,8 @@ export async function generateMetadata(
     };
     const simulation = await getSimulation(input);
     return {
-      title: `${simulation?.name || "Simulation"}`,
-      description: `${simulation?.name ? `${simulation.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
+      title: `${simulation?.name_resource?.name || "Simulation"}`,
+      description: `${simulation?.name_resource?.name ? `${simulation.name_resource.name} - ` : ""}Teaching practice simulation for graduate teaching assistant training. Practice pedagogical techniques and student interaction strategies through realistic educational scenarios and simulation-based learning.`,
     };
   } catch {
     // Fall through to default metadata
@@ -107,6 +128,38 @@ async function patchSimulationDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/simulations/draft", input);
+}
+
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/names", input);
+}
+
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftDepartments(
+  input: CreateDraftDepartmentsIn
+): Promise<CreateDraftDepartmentsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/departments", input);
+}
+
+async function createDraftFlags(
+  input: CreateDraftFlagsIn
+): Promise<CreateDraftFlagsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/flags", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -164,11 +217,15 @@ export default async function EditSimulationPage({
         data-page="simulation-edit"
         data-simulation-id={simulationId}
       >
-        <Simulation
+        <NewSimulation
           simulationId={simulationId}
           simulationData={simulationData}
           saveSimulationAction={saveSimulation}
           patchSimulationDraftAction={patchSimulationDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createDepartmentsAction={createDraftDepartments}
+          createFlagsAction={createDraftFlags}
         />
       </div>
     );

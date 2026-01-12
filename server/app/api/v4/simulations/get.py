@@ -99,9 +99,9 @@ async def get_simulation(
         if result.actor_name:
             audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
             # Only add simulation to audit context if simulation_id was provided (detail mode)
-            if simulation_id and result.name:
+            if simulation_id and result.name_resource and result.name_resource.name:
                 audit_ctx["simulation"] = {
-                    "name": result.name,
+                    "name": result.name_resource.name,
                     "id": str(simulation_id),
                 }
             audit_set(http_request, **audit_ctx)
@@ -124,7 +124,7 @@ async def get_simulation(
                     status_code=404, detail=f"Simulation {simulation_id} not found"
                 )
 
-            if not result.name:
+            if not result.name_resource or not result.name_resource.name:
                 # Simulation exists but user doesn't have access
                 raise HTTPException(
                     status_code=403,

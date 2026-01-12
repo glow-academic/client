@@ -83,11 +83,18 @@ async def save_simulation(
             if result.actor_name:
                 audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
                 # Only add simulation to audit context if input_simulation_id was provided (update mode)
-                # For create mode, we don't have the name yet, so we'll use the request title if available
+                # For create mode, we don't have the name yet, so we'll use a placeholder
                 if request.input_simulation_id:
-                    # Update mode: use request title (from request body)
+                    # Update mode: look up name from name_id if available
+                    simulation_name = "Simulation"
+                    if hasattr(request, "name_id") and request.name_id:
+                        name_row = await conn.fetchrow(
+                            "SELECT name FROM names WHERE id = $1", request.name_id
+                        )
+                        if name_row:
+                            simulation_name = name_row["name"]
                     audit_ctx["simulation"] = {
-                        "name": getattr(request, "title", "Simulation"),
+                        "name": simulation_name,
                         "id": str(result.simulation_id),
                     }
                 audit_set(http_request, **audit_ctx)

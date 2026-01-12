@@ -32,9 +32,76 @@ DROP TYPE IF EXISTS types.q_get_simulation_v4_department;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_parameter;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_agent;
 DROP TYPE IF EXISTS types.q_get_simulation_v4_video;
+-- Drop resource types (will be recreated)
+DROP TYPE IF EXISTS types.q_get_simulation_v4_name_resource;
+DROP TYPE IF EXISTS types.q_get_simulation_v4_description_resource;
+DROP TYPE IF EXISTS types.q_get_simulation_v4_flag_resource;
+DROP TYPE IF EXISTS types.q_get_simulation_v4_name_option;
+DROP TYPE IF EXISTS types.q_get_simulation_v4_description_option;
+DROP TYPE IF EXISTS types.q_get_simulation_v4_flag_option;
 
 -- 3) Recreate types
--- Create rubric_grade_agent type first (used by scenario type)
+-- Create resource types first (following RETURN_STRUCTURE_GUIDELINES.md)
+CREATE TYPE types.q_get_simulation_v4_name_resource AS (
+    id uuid,
+    name text,
+    generated boolean,
+    group_id uuid
+);
+
+CREATE TYPE types.q_get_simulation_v4_description_resource AS (
+    id uuid,
+    description text,
+    generated boolean,
+    group_id uuid
+);
+
+CREATE TYPE types.q_get_simulation_v4_flag_resource AS (
+    id uuid,
+    name text,
+    description text,
+    icon_id uuid,
+    generated boolean,
+    group_id uuid
+);
+
+CREATE TYPE types.q_get_simulation_v4_name_option AS (
+    id uuid,
+    name text,
+    generated boolean,
+    group_id uuid
+);
+
+CREATE TYPE types.q_get_simulation_v4_description_option AS (
+    id uuid,
+    description text,
+    generated boolean,
+    group_id uuid
+);
+
+CREATE TYPE types.q_get_simulation_v4_flag_option AS (
+    id uuid,
+    name text,
+    description text,
+    icon_id uuid,
+    generated boolean,
+    group_id uuid
+);
+
+-- Update department type to include generated and group_id
+DROP TYPE IF EXISTS types.q_get_simulation_v4_department;
+CREATE TYPE types.q_get_simulation_v4_department AS (
+    department_id uuid,
+    name text,
+    description text,
+    generated boolean,
+    group_id uuid,
+    scenario_ids uuid[],
+    rubric_ids uuid[],
+    cohort_ids uuid[]
+);
+
+-- Create rubric_grade_agent type (used by scenario type)
 CREATE TYPE types.q_get_simulation_v4_rubric_grade_agent AS (
     rubric_grade_agent_id uuid,
     rubric_id uuid,
@@ -120,14 +187,7 @@ CREATE TYPE types.q_get_simulation_v4_rubric AS (
     description text
 );
 
-CREATE TYPE types.q_get_simulation_v4_department AS (
-    department_id uuid,
-    name text,
-    description text,
-    scenario_ids uuid[],
-    rubric_ids uuid[],
-    cohort_ids uuid[]
-);
+-- Department type already created above with generated and group_id fields
 
 CREATE TYPE types.q_get_simulation_v4_parameter AS (
     parameter_id uuid,
@@ -167,12 +227,41 @@ RETURNS TABLE (
     can_edit boolean,
     disabled_reason text,
     group_id uuid,
-    -- Simulation fields
-    simulation_id uuid,
-    name text,
-    description text,
+    -- Single-select resources: name
+    name_id uuid,
+    name_resource types.q_get_simulation_v4_name_resource,
+    show_name boolean,
+    name_agent_id uuid,
+    name_required boolean,
+    name_suggestions uuid[],
+    names types.q_get_simulation_v4_name_option[],
+    -- Single-select resources: description
+    description_id uuid,
+    description_resource types.q_get_simulation_v4_description_resource,
+    show_description boolean,
+    description_agent_id uuid,
+    description_required boolean,
+    description_suggestions uuid[],
+    descriptions types.q_get_simulation_v4_description_option[],
+    -- Multi-select resources: departments
     department_ids uuid[],
-    valid_department_ids uuid[],
+    department_resources types.q_get_simulation_v4_department[],
+    show_departments boolean,
+    departments_agent_id uuid,
+    departments_required boolean,
+    department_suggestions uuid[],
+    departments types.q_get_simulation_v4_department[],
+    -- Single-select resources: flag (active)
+    active_flag_id uuid,
+    flag_resource types.q_get_simulation_v4_flag_resource,
+    show_flag boolean,
+    flag_agent_id uuid,
+    flag_required boolean,
+    flags types.q_get_simulation_v4_flag_option[],
+    -- Multi-resource combination agent IDs
+    general_agent_id uuid,
+    -- Simulation fields (keep existing complex resources)
+    simulation_id uuid,
     time_limit int,
     rubric_id uuid,
     valid_rubric_ids uuid[],
@@ -180,7 +269,6 @@ RETURNS TABLE (
     valid_scenario_ids uuid[],
     video_ids uuid[],
     valid_video_ids uuid[],
-    active boolean,
     practice_simulation boolean,
     simulation_text_domain_id uuid,
     simulation_voice_domain_id uuid,
@@ -190,13 +278,13 @@ RETURNS TABLE (
     in_use boolean,
     cohort_count bigint,
     primary_department_id uuid,
+    valid_department_ids uuid[],
     scenarios types.q_get_simulation_v4_scenario[],
     videos types.q_get_simulation_v4_video[],
     parameters types.q_get_simulation_v4_parameter_item[],
     parameter_items types.q_get_simulation_v4_parameter_item_detail[],
     scenarios_full types.q_get_simulation_v4_scenario_full[],
     rubrics types.q_get_simulation_v4_rubric[],
-    departments types.q_get_simulation_v4_department[],
     parameters_full types.q_get_simulation_v4_parameter[],
     fields types.q_get_simulation_v4_field[],
     agents types.q_get_simulation_v4_agent[],
@@ -839,10 +927,45 @@ department_cohort_ids AS (
     WHERE (cd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
     GROUP BY ud.id
 ),
+-- Department mapping data (filtered: active flag AND user linked) - following RETURN_STRUCTURE_GUIDELINES.md
+department_mapping_data AS (
+    SELECT 
+        d.id as department_id,
+        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        COALESCE(d.generated, false) as generated,
+        -- Get group_id from resource.call_id → calls → message_calls → message_runs → group_runs
+        (
+            SELECT gr.group_id
+            FROM calls c
+            JOIN message_calls mc ON mc.call_id = c.id
+            JOIN message_runs mr ON mr.message_id = mc.message_id
+            JOIN group_runs gr ON gr.run_id = mr.run_id
+            WHERE c.id = d.call_id
+            LIMIT 1
+        ) as group_id,
+        -- Include scenario_ids, rubric_ids, cohort_ids from existing CTEs
+        COALESCE(dsci.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
+        COALESCE(dri.rubric_ids, ARRAY[]::uuid[]) as rubric_ids,
+        COALESCE(dci.cohort_ids, ARRAY[]::uuid[]) as cohort_ids
+    FROM params x
+    CROSS JOIN user_context uc
+    JOIN departments d ON (
+        -- Only include departments with active flag AND user is linked to them
+        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        AND
+        EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
+    )
+    LEFT JOIN department_scenario_ids dsci ON dsci.department_id = d.id
+    LEFT JOIN department_rubric_ids dri ON dri.department_id = d.id
+    LEFT JOIN department_cohort_ids dci ON dci.department_id = d.id
+),
 departments_data AS (
     SELECT 
         ARRAY_AGG(
             (ud.id, ud.name, ud.description,
+             COALESCE((SELECT d.generated FROM departments d WHERE d.id = ud.id), false),
+             (SELECT gr.group_id FROM departments d JOIN calls c ON c.id = d.call_id JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE d.id = ud.id LIMIT 1),
              COALESCE(dsci.scenario_ids, ARRAY[]::uuid[]),
              COALESCE(dri.rubric_ids, ARRAY[]::uuid[]),
              COALESCE(dci.cohort_ids, ARRAY[]::uuid[])
@@ -1026,15 +1149,674 @@ default_member_agent AS (
     WHERE (SELECT COUNT(*) FROM valid_member_agents) = 1
     LIMIT 1
 ),
+-- Resource CTEs following RETURN_STRUCTURE_GUIDELINES.md
+-- Note: department_mapping_data will be defined after department_scenario_ids, etc. CTEs
+-- Name resource data
+name_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT sn.name_id FROM simulation_names sn WHERE sn.simulation_id = (SELECT simulation_id FROM params) LIMIT 1),
+            NULL::uuid
+        ) as name_id,
+        (
+            SELECT ROW(n.id, n.name, COALESCE(n.generated, false), 
+                (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = n.call_id LIMIT 1)
+            )::types.q_get_simulation_v4_name_resource
+            FROM simulation_names sn
+            JOIN names n ON sn.name_id = n.id
+            WHERE sn.simulation_id = (SELECT simulation_id FROM params)
+            LIMIT 1
+        ) as name_resource
+    FROM params
+),
+-- Description resource data
+description_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT sd.description_id FROM simulation_descriptions sd WHERE sd.simulation_id = (SELECT simulation_id FROM params) LIMIT 1),
+            NULL::uuid
+        ) as description_id,
+        (
+            SELECT ROW(d.id, d.description, COALESCE(d.generated, false),
+                (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = d.call_id LIMIT 1)
+            )::types.q_get_simulation_v4_description_resource
+            FROM simulation_descriptions sd
+            JOIN descriptions d ON sd.description_id = d.id
+            WHERE sd.simulation_id = (SELECT simulation_id FROM params)
+            LIMIT 1
+        ) as description_resource
+    FROM params
+),
+-- Flag resource data (active flag)
+flag_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT sf.flag_id FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE LIMIT 1),
+            NULL::uuid
+        ) as active_flag_id,
+        (
+            SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
+                (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
+            )::types.q_get_simulation_v4_flag_resource
+            FROM simulation_flags sf
+            JOIN flags f ON sf.flag_id = f.id
+            JOIN flags fl ON sf.flag_id = fl.id
+            WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE
+            LIMIT 1
+        ) as flag_resource
+    FROM params
+),
+-- Name suggestions: linked to simulations OR same group with generated=true
+name_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sn.name_id ORDER BY sn.created_at DESC)
+             FROM (
+                 SELECT DISTINCT sn.name_id, MAX(sn.created_at) as created_at
+                 FROM simulation_names sn
+                 JOIN names n ON n.id = sn.name_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE sn.name_id IS NOT NULL
+                   AND n.name IS NOT NULL
+                   AND n.name != ''
+                   AND (
+                       -- Option 1: Linked to simulations (validated by usage)
+                       -- Option 2: OR linked to same group with generated=true
+                       sn.generated = false
+                       OR
+                       (
+                           sn.generated = true
+                           AND n.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = n.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY sn.name_id
+                 ORDER BY MAX(sn.created_at) DESC
+                 LIMIT 20
+             ) sn),
+            ARRAY[]::uuid[]
+        ) as name_suggestions
+    FROM params
+    LIMIT 1
+),
+-- Description suggestions: linked to simulations OR same group with generated=true
+description_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sd.description_id ORDER BY sd.created_at DESC)
+             FROM (
+                 SELECT DISTINCT sd.description_id, MAX(sd.created_at) as created_at
+                 FROM simulation_descriptions sd
+                 JOIN descriptions d ON d.id = sd.description_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE sd.description_id IS NOT NULL
+                   AND d.description IS NOT NULL
+                   AND d.description != ''
+                   AND (
+                       -- Option 1: Linked to simulations (validated by usage)
+                       -- Option 2: OR linked to same group with generated=true
+                       sd.generated = false
+                       OR
+                       (
+                           sd.generated = true
+                           AND d.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = d.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY sd.description_id
+                 ORDER BY MAX(sd.created_at) DESC
+                 LIMIT 20
+             ) sd),
+            ARRAY[]::uuid[]
+        ) as description_suggestions
+    FROM params
+    LIMIT 1
+),
+-- Department suggestions: linked to simulations with active=true OR same group with generated=true
+department_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sd.department_id ORDER BY sd.created_at DESC)
+             FROM (
+                 SELECT DISTINCT sd.department_id, MAX(sd.created_at) as created_at
+                 FROM simulation_departments sd
+                 JOIN departments d ON d.id = sd.department_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE sd.department_id IS NOT NULL
+                   AND EXISTS (
+                       SELECT 1 FROM department_flags df
+                       JOIN flags fl ON df.flag_id = fl.id
+                       WHERE df.department_id = d.id
+                         AND fl.name = 'active'
+                         AND df.type = 'active'::type_department_flags
+                         AND df.value = true
+                   )
+                   AND (
+                       -- Option 1: Linked to simulations with active=true
+                       sd.active = true
+                       OR
+                       -- Option 2: Linked to same group with generated=true
+                       (
+                           sd.generated = true
+                           AND d.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = d.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY sd.department_id
+                 ORDER BY MAX(sd.created_at) DESC
+                 LIMIT 20
+             ) sd),
+            ARRAY[]::uuid[]
+        ) as department_suggestions
+    FROM params
+    LIMIT 1
+),
+-- Suggested resource objects CTEs
+names_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (n.id, n.name, COALESCE(n.generated, false), 
+                     (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = n.call_id LIMIT 1)
+                    )::types.q_get_simulation_v4_name_option
+                    ORDER BY array_position(nsd.name_suggestions, n.id)
+                )
+                FROM name_suggestions_data nsd
+                CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
+                JOIN names n ON n.id = suggestion_id
+                WHERE n.name IS NOT NULL AND n.name != ''
+            ),
+            ARRAY[]::types.q_get_simulation_v4_name_option[]
+        ) as names
+    FROM params
+    LIMIT 1
+),
+descriptions_suggestions_objects AS (
+    SELECT 
+        COALESCE(
+            (
+                SELECT ARRAY_AGG(
+                    (d.id, d.description, COALESCE(d.generated, false),
+                     (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = d.call_id LIMIT 1)
+                    )::types.q_get_simulation_v4_description_option
+                    ORDER BY array_position(dsd.description_suggestions, d.id)
+                )
+                FROM description_suggestions_data dsd
+                CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
+                JOIN descriptions d ON d.id = suggestion_id
+                WHERE d.description IS NOT NULL AND d.description != ''
+            ),
+            ARRAY[]::types.q_get_simulation_v4_description_option[]
+        ) as descriptions
+    FROM params
+    LIMIT 1
+),
+-- Agent selection helper CTEs (shared across all agent selections)
+simulation_department_for_agents AS (
+    SELECT sd.department_id
+    FROM params p
+    JOIN simulation_departments sd ON sd.simulation_id = p.simulation_id AND sd.active = true
+    WHERE p.simulation_id IS NOT NULL
+    LIMIT 1
+),
+profile_primary_department_for_agents AS (
+    SELECT pd.department_id
+    FROM params p
+    JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
+    WHERE p.simulation_id IS NULL
+    LIMIT 1
+),
+selected_department_for_agents AS (
+    SELECT 
+        COALESCE(
+            (SELECT department_id FROM simulation_department_for_agents),
+            (SELECT department_id FROM profile_primary_department_for_agents)
+        ) as department_id
+),
+user_departments_for_agents_sim AS (
+    SELECT pd.department_id
+    FROM params p
+    JOIN profile_departments pd ON pd.profile_id = p.profile_id AND pd.active = true
+),
+-- Agent selection for 'names' resource
+name_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'simulation'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'names'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'descriptions' resource
+description_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'simulation'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'descriptions'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'departments' resource
+departments_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'simulation'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'departments'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'flags' resource
+flag_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'simulation'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_tools at
+            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN resource_tools rt ON rt.tool_id = t.id
+            WHERE at.agent_id = a.id AND at.active = true
+              AND rt.resource = 'flags'::resources
+        )
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ea.agent_id,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ea.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ea.updated_at
+        FROM eligible_agents ea
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Agent selection for 'general' - agent with ALL simulation tools
+general_agent_data AS (
+    WITH eligible_agents AS (
+        SELECT DISTINCT a.id as agent_id, a.updated_at
+        FROM agent a
+        CROSS JOIN params p
+        CROSS JOIN selected_department_for_agents sd
+        WHERE EXISTS (
+            SELECT 1 FROM agent_flags af 
+            JOIN flags fl ON af.flag_id = fl.id 
+            WHERE af.agent_id = a.id 
+              AND fl.name = 'active' 
+              AND af.type = 'active'::type_agent_flags 
+              AND af.value = true
+        )
+        AND EXISTS (
+            SELECT 1 FROM agent_domains adom
+            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+            WHERE adom.agent_id = a.id
+              AND da.artifact = 'simulation'::artifacts
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM agent_departments ad
+                JOIN user_departments_for_agents_sim ud ON ad.department_id = ud.department_id
+                WHERE ad.agent_id = a.id AND ad.active = true
+            )
+            OR NOT EXISTS (
+                SELECT 1 FROM agent_departments ad2 
+                WHERE ad2.agent_id = a.id AND ad2.active = true
+            )
+        )
+    ),
+    agent_tool_resources AS (
+        SELECT 
+            ea.agent_id,
+            COALESCE(
+                ARRAY_AGG(DISTINCT rt.resource::text) FILTER (WHERE rt.resource IS NOT NULL),
+                ARRAY[]::text[]
+            ) as tool_resources,
+            ea.updated_at
+        FROM eligible_agents ea
+        LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
+        LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
+        LEFT JOIN resource_tools rt ON rt.tool_id = t.id
+        GROUP BY ea.agent_id, ea.updated_at
+    ),
+    agent_scores AS (
+        SELECT 
+            atr.agent_id,
+            atr.tool_resources,
+            ARRAY_LENGTH(
+                ARRAY(
+                    SELECT unnest(atr.tool_resources)
+                    EXCEPT
+                    SELECT unnest(ARRAY['names', 'descriptions', 'departments', 'flags']::text[])
+                ),
+                1
+            ) as unmatched_count,
+            atr.updated_at
+        FROM agent_tool_resources atr
+        WHERE ARRAY['names', 'descriptions', 'departments', 'flags']::text[] <@ atr.tool_resources
+    ),
+    agent_department_preference AS (
+        SELECT 
+            ascores.agent_id,
+            ascores.unmatched_count,
+            CASE 
+                WHEN sd.department_id IS NOT NULL 
+                     AND EXISTS (
+                         SELECT 1 FROM agent_departments ad
+                         WHERE ad.agent_id = ascores.agent_id 
+                           AND ad.department_id = sd.department_id 
+                           AND ad.active = true
+                     )
+                THEN 0
+                ELSE 1
+            END as dept_preference,
+            ascores.updated_at
+        FROM agent_scores ascores
+        CROSS JOIN selected_department_for_agents sd
+    )
+    SELECT adp.agent_id
+    FROM agent_department_preference adp
+    ORDER BY 
+        adp.unmatched_count ASC,
+        adp.dept_preference ASC,
+        adp.updated_at DESC,
+        adp.agent_id ASC
+    LIMIT 1
+),
+-- Check for missing tools on required resources
+tools_existence_check AS (
+    SELECT 
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'names'::resources 
+              AND t.active = true
+        ) as names_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'descriptions'::resources 
+              AND t.active = true
+        ) as descriptions_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'departments'::resources 
+              AND t.active = true
+        ) as departments_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool t ON t.id = rt.tool_id
+            WHERE rt.resource = 'flags'::resources 
+              AND t.active = true
+        ) as flags_has_tools
+    FROM params x
+),
+-- UI flags
+ui_flags AS (
+    SELECT 
+        true as show_name,  -- Always show name picker
+        true as show_description,  -- Always show description picker
+        CASE 
+            WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
+            ELSE false
+        END as show_departments,
+        true as show_flag  -- Flag is a boolean toggle that should be shown
+    FROM params x
+),
+missing_tools_check AS (
+    SELECT 
+        ARRAY_REMOVE(ARRAY[
+            CASE WHEN NOT tec.names_has_tools THEN 'name' ELSE NULL END,
+            CASE WHEN NOT tec.descriptions_has_tools THEN 'description' ELSE NULL END,
+            CASE WHEN NOT tec.departments_has_tools AND uf.show_departments THEN 'departments' ELSE NULL END,
+            CASE WHEN NOT tec.flags_has_tools THEN 'flag' ELSE NULL END
+        ]::text[], NULL) as missing_resources
+    FROM params x
+    CROSS JOIN ui_flags uf
+    CROSS JOIN tools_existence_check tec
+),
 -- Calculate can_edit and disabled_reason (following RETURN_STRUCTURE_GUIDELINES.md)
-permissions_final AS (
+permissions_data_with_tools AS (
     SELECT 
         CASE 
             -- New mode: check if user has valid departments
             WHEN (SELECT simulation_id FROM params) IS NULL THEN
                 CASE 
                     WHEN uc.role = 'superadmin'::profile_role THEN true
-                    WHEN (SELECT COUNT(*) FROM user_departments_for_mapping) > 0 THEN true
+                    WHEN (SELECT COUNT(*) FROM department_mapping_data) > 0 THEN true
                     ELSE false
                 END
             -- Detail mode: check department access and role
@@ -1044,13 +1826,13 @@ permissions_final AS (
                     WHEN uc.role IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN true
                     ELSE false
                 END
-        END as can_edit,
+        END as base_can_edit,
         CASE 
             -- New mode: check if user has valid departments
             WHEN (SELECT simulation_id FROM params) IS NULL THEN
                 CASE 
                     WHEN uc.role = 'superadmin'::profile_role THEN NULL::text
-                    WHEN (SELECT COUNT(*) FROM user_departments_for_mapping) = 0 THEN 'No accessible departments found for user'::text
+                    WHEN (SELECT COUNT(*) FROM department_mapping_data) = 0 THEN 'No accessible departments found for user'::text
                     ELSE NULL::text
                 END
             -- Detail mode: check department access and role
@@ -1060,35 +1842,53 @@ permissions_final AS (
                     WHEN uc.role NOT IN ('admin'::profile_role, 'instructional'::profile_role, 'superadmin'::profile_role) THEN 'Insufficient permissions to edit simulation'::text
                     ELSE NULL::text
                 END
-        END as disabled_reason
+        END as base_disabled_reason
     FROM user_context uc
+),
+permissions_final AS (
+    SELECT 
+        mtc.missing_resources,
+        CASE 
+            WHEN array_length(mtc.missing_resources, 1) > 0 THEN false
+            ELSE pd.base_can_edit
+        END as can_edit,
+        CASE 
+            WHEN array_length(mtc.missing_resources, 1) > 0 THEN
+                'No tool configured for ' || 
+                array_to_string(mtc.missing_resources, ', ') || 
+                '. Therefore we cannot proceed ahead.'::text
+            ELSE pd.base_disabled_reason
+        END as disabled_reason
+    FROM permissions_data_with_tools pd
+    CROSS JOIN missing_tools_check mtc
 )
 SELECT 
     -- Required fields (first 5) - following RETURN_STRUCTURE_GUIDELINES.md
     uc.actor_name::text as actor_name,
     (SELECT simulation_exists FROM simulation_exists_check) as simulation_exists,
-    (SELECT can_edit FROM permissions_final LIMIT 1) as can_edit,
-    (SELECT disabled_reason FROM permissions_final LIMIT 1) as disabled_reason,
-    (SELECT group_id FROM draft_group_data LIMIT 1) as group_id,
-    -- Simulation fields
-    COALESCE(sb.id, NULL::uuid) as simulation_id,
-    -- Merge draft payload over existing simulation data if draft_id provided, or use defaults for new mode
-    COALESCE(
-        (SELECT payload->>'title' FROM draft_payload_data),
-        sb.title,
-        COALESCE(
-            (SELECT payload->>'title' FROM draft_payload_data),
-            ''::text
-        )
-    ) as name,
-    COALESCE(
-        (SELECT payload->>'description' FROM draft_payload_data),
-        sb.description,
-        COALESCE(
-            (SELECT payload->>'description' FROM draft_payload_data),
-            ''::text
-        )
-    ) as description,
+    perm_final.can_edit,
+    perm_final.disabled_reason,
+    dgd.group_id,
+    -- Single-select resources: name
+    nrd.name_id,
+    nrd.name_resource,
+    CASE 
+        WHEN NOT tec.names_has_tools THEN false
+        ELSE uf.show_name
+    END as show_name,
+    (SELECT agent_id FROM name_agent_data) as name_agent_id,
+    true as name_required,
+    COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
+    COALESCE((SELECT names FROM names_suggestions_objects), ARRAY[]::types.q_get_simulation_v4_name_option[]) as names,
+    -- Single-select resources: description
+    drd.description_id,
+    drd.description_resource,
+    uf.show_description,
+    (SELECT agent_id FROM description_agent_data) as description_agent_id,
+    false as description_required,
+    COALESCE((SELECT description_suggestions FROM description_suggestions_data), ARRAY[]::uuid[]) as description_suggestions,
+    COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_simulation_v4_description_option[]) as descriptions,
+    -- Multi-select resources: departments
     COALESCE(
         (SELECT 
             CASE 
@@ -1103,9 +1903,79 @@ SELECT
         CASE 
             WHEN uc.role = 'superadmin'::profile_role THEN NULL::uuid[]
             ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
-        END
+        END,
+        ARRAY[]::uuid[]
     ) as department_ids,
-    COALESCE(dd.department_ids::uuid[], ARRAY[]::uuid[]) as valid_department_ids,
+    -- Department resources (selected departments filtered by department_ids)
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dmd.department_id, dmd.name, dmd.description, dmd.generated, dmd.group_id, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
+            ORDER BY dmd.name
+        )
+        FROM department_mapping_data dmd
+        WHERE dmd.department_id = ANY(
+            COALESCE(
+                (SELECT 
+                    CASE 
+                        WHEN payload->'departmentIds' IS NOT NULL AND jsonb_typeof(payload->'departmentIds') = 'array' THEN
+                            ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds'))::uuid[]
+                        WHEN payload->'department_ids' IS NOT NULL AND jsonb_typeof(payload->'department_ids') = 'array' THEN
+                            ARRAY(SELECT jsonb_array_elements_text(payload->'department_ids'))::uuid[]
+                        ELSE NULL
+                    END
+                FROM draft_payload_data),
+                sb.department_ids,
+                CASE 
+                    WHEN uc.role = 'superadmin'::profile_role THEN NULL::uuid[]
+                    ELSE COALESCE(ARRAY[pdi.department_id], ARRAY[]::uuid[])
+                END,
+                ARRAY[]::uuid[]
+            )
+        )),
+        '{}'::types.q_get_simulation_v4_department[]
+    ) as department_resources,
+    CASE 
+        WHEN NOT tec.departments_has_tools AND uf.show_departments THEN false
+        WHEN EXISTS (SELECT 1 FROM department_mapping_data LIMIT 1) THEN true
+        ELSE uf.show_departments
+    END as show_departments,
+    (SELECT agent_id FROM departments_agent_data) as departments_agent_id,
+    CASE 
+        WHEN uf.show_departments THEN true
+        ELSE false
+    END as departments_required,
+    COALESCE((SELECT department_suggestions FROM department_suggestions_data), ARRAY[]::uuid[]) as department_suggestions,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dmd.department_id, dmd.name, dmd.description, dmd.generated, dmd.group_id, dmd.scenario_ids, dmd.rubric_ids, dmd.cohort_ids)::types.q_get_simulation_v4_department
+            ORDER BY dmd.name
+        ) FROM (SELECT DISTINCT department_id, name, description, generated, group_id, scenario_ids, rubric_ids, cohort_ids FROM department_mapping_data) dmd),
+        '{}'::types.q_get_simulation_v4_department[]
+    ) as departments,
+    -- Single-select resources: flag (active)
+    frd.active_flag_id,
+    frd.flag_resource,
+    uf.show_flag,
+    (SELECT agent_id FROM flag_agent_data) as flag_agent_id,
+    false as flag_required,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false),
+             (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
+            )::types.q_get_simulation_v4_flag_option
+            ORDER BY f.name
+        ) FROM flags f 
+        WHERE EXISTS (
+            SELECT 1 FROM simulation_flags sf 
+            WHERE sf.flag_id = f.id
+              AND sf.type IN ('active'::type_simulation_flags, 'practice'::type_simulation_flags)
+        )),
+        '{}'::types.q_get_simulation_v4_flag_option[]
+    ) as flags,
+    -- Multi-resource combination agent IDs
+    (SELECT agent_id FROM general_agent_data) as general_agent_id,
+    -- Simulation fields (keep existing complex resources)
+    COALESCE(sb.id, NULL::uuid) as simulation_id,
     COALESCE(sb.time_limit, 0) as time_limit,
     COALESCE(sb.rubric_id, NULL::uuid) as rubric_id,
     COALESCE(rd.rubric_ids::uuid[], ARRAY[]::uuid[]) as valid_rubric_ids,
@@ -1125,14 +1995,6 @@ SELECT
     COALESCE(vs.ids::uuid[], ARRAY[]::uuid[]) as valid_scenario_ids,
     ARRAY[]::uuid[] as video_ids,
     COALESCE(vv.ids::uuid[], ARRAY[]::uuid[]) as valid_video_ids,
-    COALESCE(
-        (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-        sb.active,
-        COALESCE(
-            (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-            true
-        )
-    ) as active,
     COALESCE(
         (SELECT (payload->>'practiceSimulation')::boolean FROM draft_payload_data),
         (SELECT (payload->>'practice_simulation')::boolean FROM draft_payload_data),
@@ -1183,13 +2045,13 @@ SELECT
     END as in_use,
     COALESCE(cu.total_cohort_links, 0) as cohort_count,
     pdi.department_id as primary_department_id,
+    COALESCE(dd.department_ids::uuid[], ARRAY[]::uuid[]) as valid_department_ids,
     COALESCE(sd.scenarios, ARRAY[]::types.q_get_simulation_v4_scenario[]) as scenarios,
     COALESCE(vd.videos, ARRAY[]::types.q_get_simulation_v4_video[]) as videos,
     COALESCE(pild.parameter_items, ARRAY[]::types.q_get_simulation_v4_parameter_item[]) as parameters,
     COALESCE(pild.parameter_item_details, ARRAY[]::types.q_get_simulation_v4_parameter_item_detail[]) as parameter_items,
     COALESCE(sfd.scenarios_full, ARRAY[]::types.q_get_simulation_v4_scenario_full[]) as scenarios_full,
     COALESCE(rd.rubrics, ARRAY[]::types.q_get_simulation_v4_rubric[]) as rubrics,
-    COALESCE(dd.departments, ARRAY[]::types.q_get_simulation_v4_department[]) as departments,
     COALESCE(pfd.parameters, ARRAY[]::types.q_get_simulation_v4_parameter[]) as parameters_full,
     COALESCE(fd.fields, ARRAY[]::types.q_get_simulation_v4_field[]) as fields,
     COALESCE(ad.agents, ARRAY[]::types.q_get_simulation_v4_agent[]) as agents,
@@ -1208,6 +2070,8 @@ SELECT
     ) as scenario_settings
 FROM user_context uc
 CROSS JOIN permissions_final perm_final
+CROSS JOIN ui_flags uf
+CROSS JOIN tools_existence_check tec
 CROSS JOIN simulation_exists_check sec
 CROSS JOIN draft_group_data dgd
 CROSS JOIN cohort_usage cu
@@ -1221,6 +2085,14 @@ CROSS JOIN scenarios_full_data sfd
 CROSS JOIN departments_data dd
 CROSS JOIN agents_data ad
 CROSS JOIN videos_data vd
+CROSS JOIN name_resource_data nrd
+CROSS JOIN description_resource_data drd
+CROSS JOIN flag_resource_data frd
+CROSS JOIN name_suggestions_data nsd
+CROSS JOIN description_suggestions_data dsd
+CROSS JOIN department_suggestions_data dsd_dept
+CROSS JOIN names_suggestions_objects nso
+CROSS JOIN descriptions_suggestions_objects dso
 LEFT JOIN simulation_base sb ON sb.id = (SELECT simulation_id FROM params)
 LEFT JOIN scenarios_data sd ON sd.scenarios IS NOT NULL AND (SELECT simulation_id FROM params) IS NOT NULL
 LEFT JOIN primary_department_id pdi ON true
