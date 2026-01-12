@@ -169,7 +169,7 @@ default_cohort AS (
     FROM params x
     JOIN cohorts c ON EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
-    GROUP BY c.id
+    GROUP BY c.id, c.created_at
     HAVING 
         COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY(COALESCE((SELECT dept_ids FROM user_departments), ARRAY[]::uuid[]))) > 0
         OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)

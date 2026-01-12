@@ -7,7 +7,15 @@
 "use client";
 
 import { ReorderableList } from "@/components/common/forms/ReorderableList";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface ExamplesProps {
@@ -39,6 +47,8 @@ export interface ExamplesProps {
         body: { agent_id: string; group_id: string; example: string };
       }) => Promise<{ example_id?: string | null }>)
     | undefined;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // Optional: mapping of example_id -> example text (for initial display)
   exampleMapping?: Record<string, string>;
   // Legacy props for backward compatibility
@@ -63,6 +73,8 @@ export function Examples({
   group_id,
   agent_id,
   createExamplesAction,
+  onGenerate,
+  isGenerating = false,
   exampleMapping = {},
   // Legacy props for backward compatibility
   exampleIds,
@@ -242,13 +254,45 @@ export function Examples({
     return null;
   }
 
+  // Check if any example resource is generated
+  const hasGenerated = useMemo(() => {
+    return _example_resources?.some((e) => e.generated) ?? false;
+  }, [_example_resources]);
+
   return (
     <div className="space-y-2">
       {label && (
-        <Label htmlFor={id}>
-          {label}
-          {required && <span className="text-destructive ml-1">*</span>}
-        </Label>
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id}>
+            {label}
+            {required && <span className="text-destructive ml-1">*</span>}
+          </Label>
+          {onGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
       )}
       <ReorderableList
         items={internalTexts}

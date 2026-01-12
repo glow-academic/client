@@ -883,6 +883,21 @@ function PersonaNewComponent({
     [handleGenerateResources]
   );
 
+  const handleGenerateDepartments = useCallback(
+    async () => handleGenerateResources(["departments"]),
+    [handleGenerateResources]
+  );
+
+  const handleGenerateFlags = useCallback(
+    async () => handleGenerateResources(["flags"]),
+    [handleGenerateResources]
+  );
+
+  const handleGenerateExamples = useCallback(
+    async () => handleGenerateResources(["examples"]),
+    [handleGenerateResources]
+  );
+
   // GenericForm will manage URL state via nuqs parsers
   // We'll merge formState (resource IDs) with GenericForm's formData (URL params) when needed
 
@@ -1063,7 +1078,7 @@ function PersonaNewComponent({
   // Step-to-resources mapping for multi-generation
   const stepResources: Record<string, ResourceType[]> = useMemo(
     () => ({
-      basic: ["names", "descriptions"],
+      basic: ["names", "descriptions", "departments", "flags"],
       fields: ["fields"],
       color: ["colors"],
       icon: ["icons"],
@@ -1382,6 +1397,8 @@ function PersonaNewComponent({
                   onChange={(ids) =>
                     setFormState((prev) => ({ ...prev, department_ids: ids }))
                   }
+                  onGenerate={handleGenerateDepartments}
+                  isGenerating={isGenerating("departments")}
                   required={currentPersonaData?.departments_required ?? false}
                   group_id={currentPersonaData?.group_id ?? null}
                   agent_id={currentPersonaData?.departments_agent_id ?? null}
@@ -1400,6 +1417,8 @@ function PersonaNewComponent({
                       active_flag_id: flagId,
                     }))
                   }
+                  onGenerate={handleGenerateFlags}
+                  isGenerating={isGenerating("flags")}
                   label="Active"
                   helpText="Inactive personas will not be available for scenarios"
                   required={currentPersonaData?.flag_required ?? false}
@@ -1846,6 +1865,8 @@ function PersonaNewComponent({
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, example_ids: ids }))
                 }
+                onGenerate={handleGenerateExamples}
+                isGenerating={isGenerating("examples")}
                 maxItems={10}
                 addButtonLabel="Add example"
                 itemPlaceholder="Message"
@@ -1900,6 +1921,9 @@ function PersonaNewComponent({
       handleGenerateName,
       handleGenerateDescription,
       handleGenerateInstructions,
+      handleGenerateDepartments,
+      handleGenerateFlags,
+      handleGenerateExamples,
       isGenerating,
       stepResources,
       // Depend on individual formState fields instead of whole object to prevent callback recreation

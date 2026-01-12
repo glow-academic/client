@@ -8,10 +8,17 @@
 "use client";
 
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
 type CreateDraftDepartmentsIn = InputOf<"/api/v4/resources/departments", "post">;
@@ -51,6 +58,8 @@ export interface DepartmentsProps {
   createDepartmentsAction?:
     | ((input: CreateDraftDepartmentsIn) => Promise<CreateDraftDepartmentsOut>)
     | undefined;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // Legacy props for backward compatibility
   departmentIds?: string[];
 }
@@ -71,6 +80,8 @@ export function Departments({
   group_id,
   agent_id,
   createDepartmentsAction,
+  onGenerate,
+  isGenerating = false,
   // Legacy props for backward compatibility
   departmentIds,
 }: DepartmentsProps) {
@@ -121,18 +132,50 @@ export function Departments({
     return null;
   }
 
+  // Check if any department resource is generated
+  const hasGenerated = useMemo(() => {
+    return department_resources?.some((d) => d.generated) ?? false;
+  }, [department_resources]);
+
   return (
     <div className="space-y-2">
       {label && (
-        <Label htmlFor={id}>
-          {label}
-          {required && <span className="text-destructive ml-1">*</span>}
-          {description && (
-            <span className="text-xs text-muted-foreground ml-2">
-              {description}
-            </span>
+        <div className="flex items-center gap-2">
+          <Label htmlFor={id}>
+            {label}
+            {required && <span className="text-destructive ml-1">*</span>}
+            {description && (
+              <span className="text-xs text-muted-foreground ml-2">
+                {description}
+              </span>
+            )}
+          </Label>
+          {onGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {hasGenerated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
-        </Label>
+        </div>
       )}
       <GenericPicker<DepartmentItem>
         items={departmentItems}

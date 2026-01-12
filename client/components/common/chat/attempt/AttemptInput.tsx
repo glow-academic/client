@@ -38,21 +38,7 @@ import VoiceWaveform from "./VoiceWaveform";
 // type EventPayload<T extends keyof ServerToClientEvents> =
 //   ServerToClientEvents[T] extends (payload: infer P) => unknown ? P : never;
 // type StartVoiceResponsePayload = EventPayload<"simulation_voice_start_response">;
-import {
-  OpenAIAudioAdapter,
-  type AudioSessionConfig,
-} from "@/lib/adapters/audio";
-import {
-  OpenAIRealtimeWebRTC,
-  RealtimeAgent,
-  RealtimeSession,
-  tool,
-  type RealtimeItem,
-  type RealtimeSessionConfig,
-} from "@openai/agents/realtime";
 import { toast } from "sonner";
-import * as tus from "tus-js-client";
-import { z } from "zod";
 
 export interface AttemptInputProps {
   isAttemptOwner?: boolean;
@@ -111,40 +97,15 @@ export default function AttemptInput({
   const { socket } = useProfile();
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const realtimeSessionRef = useRef<RealtimeSession | null>(null);
-  const audioAdapterRef = useRef<OpenAIAudioAdapter | null>(null);
-  // Track which Realtime items we've already forwarded to the server
-  const processedItemIdsRef = useRef<Set<string>>(new Set());
-  // Use strongly typed tool context map from WebSocket event payload
-  // Fallback type until ws.json is regenerated with simulation_voice_start_response
-  type ToolContextMap = Record<
-    string,
-    {
-      persona_id: string;
-      profile_id: string | null;
-    }
-  >;
-  const toolContextMapRef = useRef<ToolContextMap>({});
-
-  // Audio recording refs
+  
+  // AudioWorklet refs
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);
   const userMediaStreamRef = useRef<MediaStream | null>(null);
-  const userRecorderRef = useRef<MediaRecorder | null>(null);
-  const userAudioChunksRef = useRef<BlobPart[]>([]);
-  // Map item_id to upload_id for linking audio to messages when transcript arrives
-  const audioUploadIdRef = useRef<Map<string, string>>(new Map());
-
-  // Assistant audio recording refs
-  const assistantAudioElementRef = useRef<HTMLAudioElement | null>(null);
-  const assistantAudioStreamRef = useRef<MediaStream | null>(null);
-  const assistantRecorderRef = useRef<MediaRecorder | null>(null);
-  const assistantAudioChunksRef = useRef<BlobPart[]>([]);
-  const assistantRecordingItemIdRef = useRef<string | null>(null);
-  // Track call_id -> message_id mapping for linking audio uploads
-  const callIdToMessageIdRef = useRef<Map<string, string>>(new Map());
-  // Track pending uploads waiting for message_id (call_id -> upload_id)
-  const pendingAudioUploadsRef = useRef<Map<string, string>>(new Map());
-  // Track the last call_id for final message linking
-  const lastCallIdRef = useRef<string | null>(null);
+  const audioPlaybackContextRef = useRef<AudioContext | null>(null);
+  const audioPlaybackSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const audioBufferQueueRef = useRef<Float32Array[]>([]);
+  const runIdRef = useRef<string | null>(null);
 
   const sanitizeInputLength = (value: string) =>
     value.length > MAX_INPUT_CHARS ? value.slice(0, MAX_INPUT_CHARS) : value;
@@ -192,164 +153,56 @@ export default function AttemptInput({
 
     if (!messageToSend || !currentChat || !isConnected) return;
 
-    // In voice mode: send to RealtimeSession instead of backend text path
-    if (voiceModeEnabled && realtimeSessionRef.current) {
-      const session = realtimeSessionRef.current;
-      try {
-        // Send text message to RealtimeSession
-        session.sendMessage({
-          type: "message",
-          role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: messageToSend,
-            },
-          ],
-        });
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Sent text to RealtimeSession:", messageToSend);
-
-        // The history_added listener will see this new user message and
-        // forward it to the server in one unified path.
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to send message to voice session";
-        // eslint-disable-next-line no-console
-        console.error("[Voice] Error sending text to RealtimeSession:", {
-          error: errorMessage,
-          error_object: error,
-        });
-        toast.error(errorMessage);
-        return; // don't clear input on failure
-      }
-    } else {
-      // Normal text mode: go through your existing backend
-      if (isSendingMessage) return;
-      sendMessage(messageToSend);
+    // In voice mode: text input is disabled, but if somehow we get here, just send normally
+    if (voiceModeEnabled) {
+      // Voice mode - text input should be disabled, but handle gracefully
+      console.warn("[Voice] Text message sent in voice mode - this should not happen");
     }
+
+    // Normal text mode: go through your existing backend
+    if (isSendingMessage) return;
+    sendMessage(messageToSend);
 
     setNewMessage("");
   };
   const handleStopMessage = () => stopMessage();
 
-  // TUS upload helper for audio files
-  const uploadAudioWithTus = async (
-    blob: Blob,
-    metadata: Record<string, string> = {}
-  ): Promise<string> => {
-    return new Promise<string>((resolve, reject) => {
-      let tusUploadInstance: tus.Upload | null = null;
-
-      tusUploadInstance = new tus.Upload(blob, {
-        endpoint: `/api/uploads/upload`,
-        retryDelays: [0, 3000, 5000, 10000, 20000],
-        metadata: {
-          filename: metadata["filename"] ?? "audio.webm",
-          filetype: metadata["filetype"] ?? blob.type,
-          ...metadata,
-        },
-        onError: (error) => {
-          reject(error);
-        },
-        onSuccess: async () => {
-          try {
-            const uploadUrl = tusUploadInstance?.url || "";
-            const tusUploadIdMatch = uploadUrl.match(/\/upload\/([^/]+)/);
-            if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
-              throw new Error("Could not extract TUS upload ID");
-            }
-            const tusUploadId = tusUploadIdMatch[1];
-
-            const res = await fetch(
-              `/api/uploads/upload/${tusUploadId}/finalize`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({}),
-              }
-            );
-
-            const json = await res.json();
-            if (!json.success || !json.upload_id) {
-              throw new Error(json.message || "Failed to finalize upload");
-            }
-
-            resolve(json.upload_id as string);
-          } catch (e) {
-            reject(e);
-          }
-        },
-      });
-
-      tusUploadInstance.start();
-    });
-  };
-
-  // Cleanup helper for Realtime session
-  // WebRTC transport handles mic/speaker automatically, so we only need to close the session
-  const cleanupRealtime = useCallback(() => {
-    const session = realtimeSessionRef.current;
-    realtimeSessionRef.current = null;
-
-    if (session) {
-      try {
-        // Correct way to tear down the session (closes WebRTC transport automatically)
-        session.close();
-        // eslint-disable-next-line no-console
-        console.log("[Voice] RealtimeSession closed");
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn("[Voice] Error closing session:", err);
-      }
-    }
-
-    processedItemIdsRef.current = new Set(); // reset
-    audioUploadIdRef.current.clear(); // reset audio upload mappings
-    callIdToMessageIdRef.current.clear(); // reset call_id -> message_id mappings
-    pendingAudioUploadsRef.current.clear(); // reset pending audio uploads
-    lastCallIdRef.current = null; // reset last call_id
-
-    // Cleanup audio recording
+  // Cleanup helper for AudioWorklet session
+  const cleanupRealtime = useCallback(async () => {
     try {
-      if (
-        userRecorderRef.current &&
-        userRecorderRef.current.state !== "inactive"
-      ) {
-        userRecorderRef.current.stop();
+      // Stop AudioWorklet capture
+      if (audioWorkletNodeRef.current) {
+        audioWorkletNodeRef.current.disconnect();
+        audioWorkletNodeRef.current = null;
       }
-      userRecorderRef.current = null;
-      userMediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-      userMediaStreamRef.current = null;
-      userAudioChunksRef.current = [];
 
-      // Cleanup assistant audio recording
-      if (
-        assistantRecorderRef.current &&
-        assistantRecorderRef.current.state !== "inactive"
-      ) {
-        assistantRecorderRef.current.stop();
+      if (audioContextRef.current) {
+        await audioContextRef.current.close();
+        audioContextRef.current = null;
       }
-      assistantRecorderRef.current = null;
-      assistantAudioStreamRef.current
-        ?.getTracks()
-        .forEach((track) => track.stop());
-      assistantAudioStreamRef.current = null;
-      assistantAudioChunksRef.current = [];
-      assistantRecordingItemIdRef.current = null;
 
-      // Cleanup assistant audio element
-      if (assistantAudioElementRef.current) {
-        assistantAudioElementRef.current.pause();
-        assistantAudioElementRef.current.srcObject = null;
-        assistantAudioElementRef.current.remove();
-        assistantAudioElementRef.current = null;
+      // Stop user media stream
+      if (userMediaStreamRef.current) {
+        userMediaStreamRef.current.getTracks().forEach((track) => track.stop());
+        userMediaStreamRef.current = null;
       }
+
+      // Stop audio playback
+      if (audioPlaybackSourceRef.current) {
+        audioPlaybackSourceRef.current.stop();
+        audioPlaybackSourceRef.current = null;
+      }
+
+      if (audioPlaybackContextRef.current) {
+        await audioPlaybackContextRef.current.close();
+        audioPlaybackContextRef.current = null;
+      }
+
+      audioBufferQueueRef.current = [];
+      runIdRef.current = null;
     } catch (err) {
       // eslint-disable-next-line no-console
-      console.warn("[Voice] Error cleaning up audio recorders:", err);
+      console.warn("[Voice] Error cleaning up audio:", err);
     }
 
     setVoiceModeEnabled(false);
@@ -404,7 +257,6 @@ export default function AttemptInput({
         throw new Error(stopResponse.message || "Failed to stop voice session");
       }
 
-      toolContextMapRef.current = {};
       await cleanupRealtime();
     } catch (error) {
       const errorMessage =
@@ -428,40 +280,14 @@ export default function AttemptInput({
 
     setIsStartingVoice(true);
     try {
-      // Start voice session on server - use new audio_session_start event
-      // eslint-disable-next-line no-console
-      console.log("[Voice] Emitting audio_session_start event:", {
-        chat_id: currentChat.id,
-      });
-
-      // Emit audio_session_start (new unified event)
-      socket.emit("audio_session_start", {
-        agent_id: "", // Will be determined by backend from chat context
-        resource_id: currentChat.id,
-        resource_type: "voice",
-      });
-
-      // Also emit old event for backward compatibility
+      // Emit simulation_voice_start event
       socket.emit("simulation_voice_start", { chat_id: currentChat.id });
 
-      // Wait for server response with ephemeral key, tools, instructions, config, and tool context map
-      // Type definition (will use auto-generated types after ws.json regeneration)
+      // Wait for server response
       type StartVoiceResponsePayload = {
         success: boolean;
         message: string;
-        ephemeral_key: string;
-        persona_tools: Array<{
-          name: string;
-          description: string;
-          parameters: string;
-        }>;
-        tool_context_map: ToolContextMap;
-        instructions: string;
-        model: string;
-        voice?: string | null;
-        transcription_model?: string | null;
-        transcription_prompt?: string | null;
-        history?: RealtimeItem[]; // Conversation history in RealtimeItem format
+        model?: string;
       };
       const responseData = await new Promise<StartVoiceResponsePayload>(
         (resolve, reject) => {
@@ -469,1525 +295,208 @@ export default function AttemptInput({
             reject(new Error("Timeout waiting for voice session start"));
           }, 10000);
 
-          socket.once("simulations_voice_start_response", (data) => {
+          socket.once("simulation_voice_start_response", (data) => {
             clearTimeout(timeout);
-            // eslint-disable-next-line no-console
-            console.log("[Voice] ===== FULL SERVER RESPONSE =====");
-            // eslint-disable-next-line no-console
-            console.log(
-              "[Voice] Received simulations_voice_start_response (FULL):",
-              JSON.stringify(data, null, 2)
-            );
-            // eslint-disable-next-line no-console
-            console.log("[Voice] Response summary:", {
-              success: data.success,
-              message: data.message,
-              ephemeral_key: data.ephemeral_key
-                ? `${data.ephemeral_key.substring(0, 20)}...`
-                : null,
-              persona_tools_count: data.persona_tools?.length || 0,
-              persona_tools: data.persona_tools,
-              tool_context_map: data.tool_context_map,
-              instructions_length: data.instructions?.length || 0,
-              instructions_full: data.instructions,
-              model: data.model,
-            });
-            // eslint-disable-next-line no-console
-            console.log("[Voice] ===== END SERVER RESPONSE =====");
             if (data.success) {
               resolve(data);
             } else {
-              reject(
-                new Error(data.message || "Failed to start voice session")
-              );
+              reject(new Error(data.message || "Failed to start voice session"));
             }
           });
 
           socket.once("simulations_voice_start_error", (data) => {
             clearTimeout(timeout);
-            // eslint-disable-next-line no-console
-            console.error(
-              "[Voice] Received simulations_voice_start_error:",
-              data
-            );
             reject(new Error(data.message || "Failed to start voice session"));
           });
         }
       );
 
-      // Store tool context map for later use
-      toolContextMapRef.current = responseData.tool_context_map || {};
-      // eslint-disable-next-line no-console
-      console.log(
-        "[Voice] Stored tool context map:",
-        toolContextMapRef.current
-      );
-
-      // Convert server tools to RealtimeAgent tools
-      // Parse parameters from server (JSON string) and convert to zod schema
-      // eslint-disable-next-line no-console
-      console.log("[Voice] Processing persona tools:", {
-        count: responseData.persona_tools.length,
-        tools: responseData.persona_tools.map((t) => ({
-          name: t.name,
-          description: t.description,
-          parameters_raw: t.parameters,
-        })),
+      // Get microphone access
+      const userMediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: 24000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
       });
+      userMediaStreamRef.current = userMediaStream;
 
-      const realtimeTools = responseData.persona_tools.map((toolDef) => {
-        // Parse parameters from server (it's a JSON string)
-        let parametersSchema: z.ZodObject<Record<string, z.ZodTypeAny>>;
-        try {
-          const paramsJson = JSON.parse(toolDef.parameters);
-          // eslint-disable-next-line no-console
-          console.log(
-            `[Voice] Parsed parameters for ${toolDef.name}:`,
-            paramsJson
-          );
+      // Create AudioContext for capture (24kHz mono)
+      const audioContext = new AudioContext({ sampleRate: 24000 });
+      audioContextRef.current = audioContext;
 
-          // Convert JSON schema to zod schema
-          // For now, we'll construct zod schema based on the JSON schema structure
-          if (paramsJson.type === "object" && paramsJson.properties) {
-            const zodProps: Record<string, z.ZodTypeAny> = {};
-
-            for (const [key, value] of Object.entries(paramsJson.properties)) {
-              const prop = value as { type: string; description?: string };
-
-              let zodType: z.ZodTypeAny;
-              switch (prop.type) {
-                case "string":
-                  zodType = z.string();
-                  break;
-                case "integer":
-                case "number":
-                  zodType = z.number();
-                  break;
-                case "boolean":
-                  zodType = z.boolean();
-                  break;
-                default:
-                  zodType = z.string(); // fallback
+      // Create AudioWorklet processor for PCM16 capture
+      const processorCode = `
+        class PCM16Processor extends AudioWorkletProcessor {
+          process(inputs) {
+            const input = inputs[0];
+            if (input.length > 0) {
+              const inputChannel = input[0];
+              // Convert Float32Array to Int16Array (PCM16)
+              const pcm16 = new Int16Array(inputChannel.length);
+              for (let i = 0; i < inputChannel.length; i++) {
+                const s = Math.max(-1, Math.min(1, inputChannel[i]));
+                pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
               }
-
-              // Add description if available
-              if (prop.description) {
-                zodType = zodType.describe(prop.description);
-              }
-
-              // Check if required
-              const isRequired = paramsJson.required?.includes(key) ?? true;
-              if (!isRequired) {
-                zodType = zodType.optional();
-              }
-
-              zodProps[key] = zodType;
+              // Send PCM16 data to main thread
+              this.port.postMessage({ pcm16: pcm16.buffer }, [pcm16.buffer]);
             }
-
-            parametersSchema = z.object(zodProps);
-          } else {
-            // Fallback: use default schema for persona tools
-            parametersSchema = z.object({
-              message: z
-                .string()
-                .describe(
-                  `Respond as the persona. This is the message that will be said.`
-                ),
-            });
+            return true;
           }
-        } catch (error) {
-          // If parsing fails, use default schema
-          // eslint-disable-next-line no-console
-          console.warn(
-            `Failed to parse parameters for tool ${toolDef.name}:`,
-            error
-          );
-          parametersSchema = z.object({
-            message: z
-              .string()
-              .describe(
-                `Respond as the persona. This is the message that will be said.`
-              ),
+        }
+        registerProcessor('pcm16-processor', PCM16Processor);
+      `;
+
+      // Create blob URL for processor code
+      const processorBlob = new Blob([processorCode], {
+        type: "application/javascript",
+      });
+      const processorUrl = URL.createObjectURL(processorBlob);
+
+      // Load AudioWorklet processor
+      await audioContext.audioWorklet.addModule(processorUrl);
+      URL.revokeObjectURL(processorUrl);
+
+      // Create AudioWorkletNode
+      const workletNode = new AudioWorkletNode(audioContext, "pcm16-processor");
+      audioWorkletNodeRef.current = workletNode;
+
+      // Connect microphone to worklet
+      const source = audioContext.createMediaStreamSource(userMediaStream);
+      source.connect(workletNode);
+
+      // Handle PCM16 data from worklet
+      workletNode.port.onmessage = (event) => {
+        if (!isMicMuted && socket && runIdRef.current) {
+          const pcm16Buffer = event.data.pcm16;
+          // Send binary frame to server
+          socket.emit("audio_frame_send", {
+            audio: pcm16Buffer,
+            run_id: runIdRef.current,
           });
         }
-
-        // Tool descriptions are minimal (how to use, when to call)
-        // Persona instructions are included in the main instructions field
-        const toolInstance = tool({
-          name: toolDef.name,
-          description: toolDef.description,
-          parameters: parametersSchema,
-          async execute(args) {
-            // The tool's execute function is called by RealtimeSession
-            // The actual forwarding to server happens in session.on("agent_tool_start") handler
-            // Just return a confirmation - streaming is handled via transport events (simulation_voice_assistant_delta/done)
-            // eslint-disable-next-line no-console
-            console.log(`[Voice] ===== TOOL EXECUTE CALLED =====`, {
-              tool_name: toolDef.name,
-              args,
-              args_type: typeof args,
-              args_stringified: JSON.stringify(args),
-            });
-            // eslint-disable-next-line no-console
-            console.log(`[Voice] ===== END TOOL EXECUTE =====`);
-            return `Tool ${toolDef.name} executed`;
-          },
-        });
-
-        // eslint-disable-next-line no-console
-        console.log(`[Voice] Created tool instance:`, {
-          name: toolInstance.name,
-          description: toolInstance.description,
-        });
-
-        return toolInstance;
-      });
-
-      // Create RealtimeAgent with tools and server-provided instructions
-      const agent = new RealtimeAgent({
-        name: "Voice Agent",
-        instructions:
-          responseData.instructions ||
-          "You are a voice agent that manages conversations between personas.",
-        tools: realtimeTools,
-      });
-
-      // eslint-disable-next-line no-console
-      console.log("[Voice] ===== REALTIME AGENT CREATION =====");
-      // eslint-disable-next-line no-console
-      console.log("[Voice] Created RealtimeAgent:", {
-        name: agent.name,
-        instructions_length: responseData.instructions?.length || 0,
-        instructions_full: responseData.instructions,
-        tools_count: realtimeTools.length,
-        tool_names: realtimeTools.map((t) => t.name),
-        tools_full: realtimeTools.map((t) => ({
-          name: t.name,
-          description: t.description,
-          // @ts-expect-error - accessing internal properties for debugging
-          parameters: t.parameters?._def?.shape || t.parameters,
-        })),
-      });
-      // eslint-disable-next-line no-console
-      console.log("[Voice] RealtimeAgent instance:", agent);
-      // eslint-disable-next-line no-console
-      console.log("[Voice] ===== END REALTIME AGENT =====");
-
-      // Map server fields to full RealtimeSessionConfigDefinition
-      // Build outputModalities array - Realtime API only supports ONE modality at a time
-      // For voice mode, default to "audio" for output (we can still get transcripts from input transcription)
-      const outputModalities: ("text" | "audio")[] = ["audio"];
-
-      // Build audio.input.transcription from transcription_model and transcription_prompt
-      const audioInputTranscription: {
-        model?: string;
-        prompt?: string;
-        language?: string;
-      } = {};
-      if (responseData.transcription_model) {
-        audioInputTranscription.model = responseData.transcription_model;
-      }
-      if (responseData.transcription_prompt) {
-        audioInputTranscription.prompt = responseData.transcription_prompt;
-      }
-
-      // Build audio config with input and output
-      const audioConfig: {
-        input?: {
-          format?: string | { type: string; rate: number };
-          transcription?: {
-            model?: string;
-            prompt?: string;
-            language?: string;
-          };
-        };
-        output?: {
-          format?: string | { type: string; rate: number };
-          voice?: string;
-          speed?: number;
-        };
-      } = {
-        input: {
-          format: "pcm16", // Default format
-          ...(Object.keys(audioInputTranscription).length > 0
-            ? { transcription: audioInputTranscription }
-            : {}),
-        },
-        output: {
-          format: "pcm16", // Default format
-          ...(responseData.voice ? { voice: responseData.voice } : {}),
-        },
       };
 
-      // Construct full config object
-      // Use strongly typed config that excludes tools - tools come from RealtimeAgent
-      // Explicitly exclude 'tools' from config type to enforce that tools come from agent
-      type RealtimeSessionConfigWithoutTools = Omit<
-        Partial<RealtimeSessionConfig>,
-        "tools"
-      >;
+      // Create AudioContext for playback (24kHz mono)
+      const playbackContext = new AudioContext({ sampleRate: 24000 });
+      audioPlaybackContextRef.current = playbackContext;
 
-      const config: RealtimeSessionConfigWithoutTools = {
-        model: responseData.model,
-        instructions: responseData.instructions,
-        // Tools are provided via RealtimeAgent, not config - TypeScript will error if we try to add tools
-        ...(outputModalities.length > 0 ? { outputModalities } : {}),
-        ...(Object.keys(audioConfig).length > 0 ? { audio: audioConfig } : {}),
-        ...(responseData.voice ? { voice: responseData.voice } : {}), // Backwards compatibility
-      };
-
-      // Create custom audio element for assistant audio capture
-      const assistantAudioEl = document.createElement("audio");
-      assistantAudioEl.autoplay = true;
-      assistantAudioEl.setAttribute("playsinline", "true");
-      // Optional: append to DOM for debugging (can be removed later)
-      assistantAudioEl.style.display = "none";
-      document.body.appendChild(assistantAudioEl);
-      assistantAudioElementRef.current = assistantAudioEl;
-
-      // Get user media stream for WebRTC transport
-      let userMediaStream: MediaStream;
-      try {
-        userMediaStream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-      } catch {
-        throw new Error("Failed to get microphone access for voice mode");
-      }
-
-      // Create custom WebRTC transport with audioElement for assistant audio capture
-      const transport = new OpenAIRealtimeWebRTC({
-        mediaStream: userMediaStream,
-        audioElement: assistantAudioEl,
-      });
-
-      // Create RealtimeSession with custom transport
-      const session = new RealtimeSession(agent, {
-        model: responseData.model,
-        config,
-        transport,
-      });
-
-      // eslint-disable-next-line no-console
-      console.log("[Voice] ===== REALTIME SESSION CREATION =====");
-      // eslint-disable-next-line no-console
-      console.log("[Voice] Created RealtimeSession:", {
-        model: responseData.model,
-        config,
-        agent_name: agent.name,
-      });
-
-      // Get the actual session config that will be sent to the API
-      session
-        .getInitialSessionConfig()
-        .then((actualConfig) => {
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] ===== ACTUAL SESSION CONFIG (what gets sent to API) ====="
-          );
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Actual session config:",
-            JSON.stringify(actualConfig, null, 2)
-          );
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Config tools count:",
-            actualConfig.tools?.length || 0
-          );
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Config tools:",
-            actualConfig.tools?.map((t) => {
-              if (t.type === "function") {
-                return {
-                  name: t.name,
-                  description: t.description,
-                  type: t.type,
-                };
-              } else {
-                return {
-                  type: t.type,
-                  server_label:
-                    "server_label" in t ? t.server_label : undefined,
-                };
-              }
-            }) || []
-          );
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Config instructions:",
-            actualConfig.instructions
-          );
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== END ACTUAL SESSION CONFIG =====");
-        })
-        .catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error("[Voice] Failed to get initial session config:", err);
-        });
-      // eslint-disable-next-line no-console
-      console.log("[Voice] ===== END REALTIME SESSION =====");
-
-      // Set up event listeners - library handles audio playback automatically
-      // Listen for ALL events to debug tool call issues
-      session.on("error", (error) => {
-        // eslint-disable-next-line no-console
-        console.error("[Voice] ===== REALTIME SESSION ERROR =====");
-        // eslint-disable-next-line no-console
-        console.error("[Voice] Error object:", error);
-        // eslint-disable-next-line no-console
-        console.error("[Voice] Error string:", String(error));
-        // eslint-disable-next-line no-console
-        console.error("[Voice] ===== END ERROR =====");
-      });
-
-      // Listen to ALL transport events for debugging
-      session.transport.on(
-        "*",
-        (event: { type: string; [key: string]: unknown }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== TRANSPORT EVENT =====");
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Transport event type:", event.type);
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Transport event data:", event);
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== END TRANSPORT EVENT =====");
-        }
-      );
-
-      // Listen for speech started event and transport to server
-      session.transport.on(
-        "input_audio_buffer.speech_started",
-        (evt: {
-          type: "input_audio_buffer.speech_started";
-          event_id: string;
-          item_id: string;
-          audio_start_ms: number;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== SPEECH STARTED =====");
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Speech started event:", {
-            type: evt.type,
-            item_id: evt.item_id,
-            audio_start_ms: evt.audio_start_ms,
-          });
-
-          if (!socket || !currentChat?.id) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport event"
-            );
-            return;
-          }
-
-          // Transport event to server (AttemptMessages will handle optimistic UI)
-          socket.emit("simulation_voice_user_start", {
-            chat_id: currentChat.id,
-            item_id: evt.item_id,
-          });
-
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Transported simulation_voice_user_start to server:",
-            {
-              chat_id: currentChat.id,
-              item_id: evt.item_id,
-            }
-          );
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== END SPEECH STARTED =====");
-
-          // Start user audio recording
-          (async () => {
-            try {
-              if (!userMediaStreamRef.current) {
-                userMediaStreamRef.current =
-                  await navigator.mediaDevices.getUserMedia({ audio: true });
-              }
-
-              if (!userRecorderRef.current) {
-                userRecorderRef.current = new MediaRecorder(
-                  userMediaStreamRef.current,
-                  {
-                    mimeType: "audio/webm;codecs=opus",
-                  }
-                );
-
-                userRecorderRef.current.ondataavailable = (e) => {
-                  if (e.data.size > 0) {
-                    userAudioChunksRef.current.push(e.data);
-                  }
-                };
-              }
-
-              userAudioChunksRef.current = [];
-              userRecorderRef.current.start();
-              // eslint-disable-next-line no-console
-              console.log(
-                "[Voice] Started user audio recording for item:",
-                evt.item_id
-              );
-            } catch (err) {
-              // eslint-disable-next-line no-console
-              console.error(
-                "[Voice] Failed to start user audio recording:",
-                err
-              );
-            }
-          })();
-        }
-      );
-
-      // Listen for tool call argument deltas and forward to server
-      session.transport.on(
-        "response.function_call_arguments.delta",
-        (evt: {
-          type: "response.function_call_arguments.delta";
-          call_id: string;
-          item_id: string;
-          delta: string;
-          response_id: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== TOOL CALL DELTA =====");
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Tool call delta event:", {
-            call_id: evt.call_id,
-            item_id: evt.item_id,
-            delta_length: evt.delta.length,
-            response_id: evt.response_id,
-          });
-
-          if (!socket || !currentChat?.id) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] Missing socket or chat_id, cannot forward delta event"
-            );
-            return;
-          }
-
-          // Forward delta event to server
-          socket.emit("simulation_voice_assistant_delta", {
-            chat_id: currentChat.id,
-            call_id: evt.call_id,
-            item_id: evt.item_id,
-            delta: evt.delta,
-            response_id: evt.response_id,
-          });
-
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Forwarded tool call delta to server");
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== END TOOL CALL DELTA =====");
-        }
-      );
-
-      // Listen for tool call argument completion and forward to server
-      session.transport.on(
-        "response.function_call_arguments.done",
-        (evt: {
-          type: "response.function_call_arguments.done";
-          call_id: string;
-          item_id: string;
-          arguments: string;
-          response_id: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== TOOL CALL DONE =====");
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Tool call done event:", {
-            call_id: evt.call_id,
-            item_id: evt.item_id,
-            arguments_length: evt.arguments.length,
-            response_id: evt.response_id,
-          });
-
-          if (!socket || !currentChat?.id) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] Missing socket or chat_id, cannot forward done event"
-            );
-            return;
-          }
-
-          // Track this as the last call_id for final message linking
-          lastCallIdRef.current = evt.call_id;
-
-          // Stop recording temporarily to splice audio for this tool call
-          const isRecordingActive =
-            assistantRecorderRef.current &&
-            assistantRecorderRef.current.state !== "inactive";
-
-          if (isRecordingActive && assistantRecorderRef.current) {
-            const recorder = assistantRecorderRef.current;
-
-            try {
-              recorder.stop();
-
-              recorder.onstop = async () => {
-                try {
-                  // Get accumulated chunks for this tool call
-                  const chunks = [...assistantAudioChunksRef.current];
-
-                  if (chunks.length > 0) {
-                    const blob = new Blob(chunks, {
-                      type: "audio/webm",
-                    });
-
-                    // Clear chunks for next tool call
-                    assistantAudioChunksRef.current = [];
-
-                    // Upload audio segment
-                    const uploadId = await uploadAudioWithTus(blob, {
-                      filename: `assistant-${evt.call_id}.webm`,
-                      filetype: "audio/webm",
-                      role: "assistant",
-                      subfolder: "audio",
-                    });
-
-                    // Store pending upload - will link when message_id arrives
-                    pendingAudioUploadsRef.current.set(evt.call_id, uploadId);
-
-                    // eslint-disable-next-line no-console
-                    console.log(
-                      "[Voice] Uploaded audio segment for tool call:",
-                      {
-                        call_id: evt.call_id,
-                        upload_id: uploadId,
-                      }
-                    );
-                  }
-
-                  // Restart recording for next tool call
-                  if (assistantRecorderRef.current) {
-                    assistantAudioChunksRef.current = [];
-                    assistantRecorderRef.current.start();
-                    // eslint-disable-next-line no-console
-                    console.log(
-                      "[Voice] Restarted recording for next tool call"
-                    );
-                  }
-                } catch (err) {
-                  // eslint-disable-next-line no-console
-                  console.error("[Voice] Failed to upload audio segment:", err);
-                  // Still restart recording even if upload failed
-                  if (assistantRecorderRef.current) {
-                    assistantAudioChunksRef.current = [];
-                    assistantRecorderRef.current.start();
-                  }
-                }
-              };
-            } catch (err) {
-              // eslint-disable-next-line no-console
-              console.error(
-                "[Voice] Error stopping recorder for tool call:",
-                err
-              );
-            }
-          }
-
-          // Forward done event to server
-          socket.emit("simulation_voice_assistant_done", {
-            chat_id: currentChat.id,
-            call_id: evt.call_id,
-            item_id: evt.item_id,
-            arguments: evt.arguments,
-            response_id: evt.response_id,
-          });
-
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Forwarded tool call done to server");
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== END TOOL CALL DONE =====");
-        }
-      );
-
-      // Listen for assistant audio playback start (WebRTC - audio comes as media stream)
-      // Simplified: Just start recording when audio plays, stop when response.done fires
-      // We'll link the response_id from response.done when we stop recording
-      if (assistantAudioEl) {
-        assistantAudioEl.addEventListener("playing", () => {
-          // Start recording if not already recording (record continuously)
-          if (
-            assistantRecorderRef.current &&
-            assistantRecorderRef.current.state === "inactive"
-          ) {
-            try {
-              // If we were recording before, keep the chunks; otherwise start fresh
-              if (!assistantRecordingItemIdRef.current) {
-                assistantAudioChunksRef.current = [];
-              }
-              assistantRecorderRef.current.start();
-
-              // eslint-disable-next-line no-console
-              console.log(
-                "[Voice] Started assistant audio recording (will link response_id from response.done)"
-              );
-            } catch (err) {
-              // eslint-disable-next-line no-console
-              console.error(
-                "[Voice] Failed to start assistant audio recording:",
-                err
-              );
-            }
-          }
-        });
-      }
-
-      // Listen for speech stopped event to stop user audio recording
-      session.transport.on(
-        "input_audio_buffer.speech_stopped",
-        async (evt: {
-          type: "input_audio_buffer.speech_stopped";
-          event_id: string;
-          item_id: string;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Speech stopped event:", {
-            type: evt.type,
-            item_id: evt.item_id,
-          });
-
-          if (
-            !userRecorderRef.current ||
-            userRecorderRef.current.state === "inactive"
-          ) {
-            return;
-          }
-
-          try {
-            userRecorderRef.current.stop();
-
-            userRecorderRef.current.onstop = async () => {
-              try {
-                const blob = new Blob(userAudioChunksRef.current, {
-                  type: "audio/webm",
-                });
-                userAudioChunksRef.current = [];
-
-                if (!socket || !currentChat?.id) {
-                  // eslint-disable-next-line no-console
-                  console.warn(
-                    "[Voice] Missing socket or chat_id, cannot upload user audio"
-                  );
-                  return;
-                }
-
-                const uploadId = await uploadAudioWithTus(blob, {
-                  filename: `user-${evt.item_id}.webm`,
-                  filetype: "audio/webm",
-                  role: "user",
-                  subfolder: "audio",
-                });
-
-                // Store upload_id for this item_id to link when transcript arrives
-                audioUploadIdRef.current.set(evt.item_id, uploadId);
-
-                // eslint-disable-next-line no-console
-                console.log("[Voice] Uploaded user audio:", {
-                  item_id: evt.item_id,
-                  upload_id: uploadId,
-                });
-              } catch (err) {
-                // eslint-disable-next-line no-console
-                console.error("[Voice] Failed to upload user audio:", err);
-              }
-            };
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error("[Voice] Error stopping user audio recorder:", err);
-          }
-        }
-      );
-
-      // Listen for audio transcription completion events
-      // These fire when mic audio is transcribed (not from history_added)
-      session.transport.on(
-        "conversation.item.input_audio_transcription.completed",
-        (evt: {
-          type: "conversation.item.input_audio_transcription.completed";
-          transcript: string;
-          item_id: string;
-          content_index: number;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] ===== INPUT AUDIO TRANSCRIPTION COMPLETED ====="
-          );
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Transcription event:", {
-            type: evt.type,
-            transcript: evt.transcript,
-            item_id: evt.item_id,
-            content_index: evt.content_index,
-          });
-
-          const transcript = (evt.transcript || "").trim();
-          if (!transcript) {
-            // eslint-disable-next-line no-console
-            console.warn("[Voice] Empty transcript, skipping");
-            return;
-          }
-
-          if (!socket || !currentChat?.id) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport transcript"
-            );
-            return;
-          }
-
-          // Get upload_id for this item_id if it exists
-          const uploadId = audioUploadIdRef.current.get(evt.item_id);
-
-          // Transport transcript to server via member_progress
-          // This will:
-          // 1. Upsert user message and run (with audio=true)
-          // 2. Link run to group and system/developer messages
-          // 3. Trigger simulation_voice_generate
-          socket.emit("member_progress", {
-            chat_id: currentChat.id,
-            message: transcript,
-            voice_mode: true,
-            upload_id: uploadId || undefined,
-          });
-
-          // Clean up stored upload_id after sending
-          if (uploadId) {
-            audioUploadIdRef.current.delete(evt.item_id);
-          }
-
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Transported user transcript to member_progress:",
-            {
-              chat_id: currentChat.id,
-              transcript_length: transcript.length,
-              upload_id: uploadId || undefined,
-            }
-          );
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== END TRANSCRIPTION COMPLETED =====");
-        }
-      );
-
-      // Listen for audio transcription delta events (streaming partials)
-      session.transport.on(
-        "conversation.item.input_audio_transcription.delta",
-        (evt: {
-          type: "conversation.item.input_audio_transcription.delta";
-          delta: string;
-          item_id: string;
-          content_index: number;
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== INPUT AUDIO TRANSCRIPTION DELTA =====");
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Transcription delta:", {
-            type: evt.type,
-            delta: evt.delta,
-            item_id: evt.item_id,
-            content_index: evt.content_index,
-          });
-
-          if (!socket || !currentChat?.id) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] Missing socket or chat_id, cannot transport delta event"
-            );
-            return;
-          }
-
-          // Transport delta event to server (AttemptMessages will handle optimistic UI updates)
-          socket.emit("simulation_voice_user_delta", {
-            chat_id: currentChat.id,
-            item_id: evt.item_id,
-            delta: evt.delta,
-            content_index: evt.content_index,
-          });
-
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Transported simulation_voice_user_delta to server:",
-            {
-              chat_id: currentChat.id,
-              item_id: evt.item_id,
-              delta: evt.delta.substring(0, 50),
-            }
-          );
-          // eslint-disable-next-line no-console
-          console.log("[Voice] ===== END TRANSCRIPTION DELTA =====");
-        }
-      );
-
-      // Listen for tool calls using agent_tool_start event
-      session.on("agent_tool_start", (_runCtx, _agent, toolDef, args) => {
-        // eslint-disable-next-line no-console
-        console.log("[Voice] agent_tool_start:", {
-          tool_name: toolDef.name,
-          args,
-        });
-
-        // Extract actual arguments from the args parameter
-        // The SDK may wrap arguments in different structures, so we need to handle both cases
-        let actualArguments: Record<string, unknown> = {};
-
-        // Check if args has a toolCall property with nested arguments
-        if (
-          args &&
-          typeof args === "object" &&
-          "toolCall" in args &&
-          args.toolCall &&
-          typeof args.toolCall === "object"
-        ) {
-          const toolCall = args.toolCall as {
-            arguments?: string | Record<string, unknown>;
-          };
-          // If arguments is a JSON string, parse it
-          if (typeof toolCall.arguments === "string") {
-            try {
-              actualArguments = JSON.parse(toolCall.arguments);
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.warn(
-                "[Voice] Failed to parse toolCall.arguments as JSON:",
-                e
-              );
-              actualArguments = args as Record<string, unknown>;
-            }
-          } else if (toolCall.arguments) {
-            actualArguments = toolCall.arguments as Record<string, unknown>;
-          } else {
-            // Fallback: use args directly
-            actualArguments = args as Record<string, unknown>;
-          }
-        } else {
-          // If args is already the flat arguments object, use it directly
-          actualArguments = args as Record<string, unknown>;
-        }
-
-        // eslint-disable-next-line no-console
-        console.log("[Voice] Extracted actual arguments:", actualArguments);
-
-        // Handle debug_info tool separately
-        if (toolDef.name === "debug_info") {
-          const content = actualArguments["content"] as string;
-          if (!content) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `[Voice] No content in arguments for debug_info tool`
-            );
-            return;
-          }
-
-          // Emit debug_info event to server
-          socket.emit("simulation_voice_debug_info", {
-            chat_id: currentChat.id,
-            content: content,
-          });
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Emitted simulation_voice_debug_info to server:",
-            {
-              chat_id: currentChat.id,
-              content: content.substring(0, 100),
-            }
-          );
-          return;
-        }
-
-        // Handle speak tool - now handled via transport events (response.function_call_arguments.delta/done)
-        // The transport events are forwarded to simulation_voice_assistant_delta/simulation_voice_assistant_done handlers
-        if (toolDef.name === "create_content") {
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] speak tool detected - streaming handled via transport events"
-          );
-          return;
-        }
-
-        // Unknown tool
-        // eslint-disable-next-line no-console
-        console.warn(`[Voice] Unknown tool: ${toolDef.name}`);
-      });
-
-      session.on(
-        "agent_tool_end",
-        (_runCtx, _agent, toolDef, result, rawResult) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] agent_tool_end:", {
-            tool_name: toolDef.name,
-            result,
-            rawResult,
-          });
-        }
-      );
-
-      session.on("audio_interrupted", () => {
-        // eslint-disable-next-line no-console
-        console.log("[Voice] RealtimeSession audio_interrupted event");
-
-        // Stop assistant audio recording if active
-        if (
-          assistantRecorderRef.current &&
-          assistantRecorderRef.current.state !== "inactive"
-        ) {
-          try {
-            assistantRecorderRef.current.stop();
-            assistantRecordingItemIdRef.current = null;
-            assistantAudioChunksRef.current = [];
-
-            // eslint-disable-next-line no-console
-            console.log(
-              "[Voice] Stopped assistant audio recording due to interruption"
-            );
-          } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error(
-              "[Voice] Error stopping assistant audio recorder on interruption:",
-              err
-            );
-          }
-        }
-
-        // Notify server of interruption via simulation_text_stop
-        socket.emit("simulation_text_stop", {
-          chat_id: currentChat.id,
-        });
-      });
-
-      // Assistant finished speaking (natural completion)
-      // Listen for response.done which fires when the entire response completes
-      // This includes usage data and signals the end of the response cycle
-      session.transport.on(
-        "response.done",
-        (evt: {
-          type: "response.done";
-          event_id: string;
-          response: {
-            id: string;
-            conversation_id: string;
-            usage: {
-              input_token_details: {
-                audio_tokens: number;
-                text_tokens: number;
-                image_tokens: number;
-                cached_tokens: number;
-                cached_tokens_details?: {
-                  audio_tokens: number;
-                  text_tokens: number;
-                  image_tokens: number;
-                };
-              };
-              output_token_details: {
-                audio_tokens: number;
-                text_tokens: number;
-              };
-              input_tokens: number;
-              output_tokens: number;
-            };
-          };
-        }) => {
-          // eslint-disable-next-line no-console
-          console.log("[Voice] response.done (response complete):", {
-            event_id: evt.event_id,
-            response_id: evt.response.id,
-            conversation_id: evt.response.conversation_id,
-            usage: evt.response.usage,
-          });
-
-          if (!socket || !currentChat?.id) return;
-
-          // Extract usage details
-          const inputTokenDetails = evt.response.usage.input_token_details;
-          const outputTokenDetails = evt.response.usage.output_token_details;
-          const cachedDetails = inputTokenDetails.cached_tokens_details || {
-            audio_tokens: 0,
-            text_tokens: 0,
-            image_tokens: 0,
-          };
-
-          // Handle final audio segment (remaining audio after all tool calls)
-          const isRecordingActive =
-            assistantRecorderRef.current &&
-            assistantRecorderRef.current.state !== "inactive";
-
-          if (isRecordingActive && assistantRecorderRef.current) {
-            const recorder = assistantRecorderRef.current;
-
-            try {
-              recorder.stop();
-
-              recorder.onstop = async () => {
-                try {
-                  // Get remaining chunks for final message
-                  const chunks = [...assistantAudioChunksRef.current];
-                  assistantAudioChunksRef.current = [];
-
-                  if (chunks.length > 0 && lastCallIdRef.current) {
-                    const blob = new Blob(chunks, {
-                      type: "audio/webm",
-                    });
-
-                    // Upload final audio segment
-                    const uploadId = await uploadAudioWithTus(blob, {
-                      filename: `assistant-final-${evt.response.id}.webm`,
-                      filetype: "audio/webm",
-                      role: "assistant",
-                      subfolder: "audio",
-                    });
-
-                    // Store pending upload for final message (will link when message_id arrives)
-                    // Use a special key to identify final message
-                    pendingAudioUploadsRef.current.set(
-                      `final-${lastCallIdRef.current}`,
-                      uploadId
-                    );
-
-                    // eslint-disable-next-line no-console
-                    console.log("[Voice] Uploaded final audio segment:", {
-                      response_id: evt.response.id,
-                      upload_id: uploadId,
-                    });
-                  }
-                } catch (err) {
-                  // eslint-disable-next-line no-console
-                  console.error(
-                    "[Voice] Failed to upload final audio segment:",
-                    err
-                  );
-                }
-              };
-            } catch (err) {
-              // eslint-disable-next-line no-console
-              console.error(
-                "[Voice] Error stopping recorder for final audio:",
-                err
-              );
-            }
-          }
-
-          // Send usage data to backend for run creation and token tracking
-          socket.emit("simulation_voice_user_speech", {
-            chat_id: currentChat.id,
-            event_id: evt.event_id,
-            response_id: evt.response.id,
-            conversation_id: evt.response.conversation_id,
-            usage: {
-              input_token_details: {
-                audio_tokens: inputTokenDetails.audio_tokens || 0,
-                text_tokens: inputTokenDetails.text_tokens || 0,
-                image_tokens: inputTokenDetails.image_tokens || 0,
-                cached_tokens: inputTokenDetails.cached_tokens || 0,
-                cached_tokens_details: {
-                  audio_tokens: cachedDetails.audio_tokens || 0,
-                  text_tokens: cachedDetails.text_tokens || 0,
-                  image_tokens: cachedDetails.image_tokens || 0,
-                },
-              },
-              output_token_details: {
-                audio_tokens: outputTokenDetails.audio_tokens || 0,
-                text_tokens: outputTokenDetails.text_tokens || 0,
-              },
-              input_tokens: evt.response.usage.input_tokens,
-              output_tokens: evt.response.usage.output_tokens,
-            },
-          });
-        }
-      );
-
-      // Listen for simulation_new_message events to link audio uploads to messages
-      socket.on(
-        "simulation_new_message",
-        (data: {
-          message_id: string;
-          chat_id: string;
-          role: string;
-          content: string;
-          completed: boolean;
-          created_at: string;
-          persona_id?: string;
-        }) => {
-          // Only handle assistant messages for voice mode
-          if (data.role !== "assistant" || data.chat_id !== currentChat?.id) {
-            return;
-          }
-
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Received simulation_new_message:", {
-            message_id: data.message_id,
-            chat_id: data.chat_id,
-            role: data.role,
-          });
-
-          // Try to find matching call_id for this message
-          // We'll match by order: first pending upload -> first message
-          const pendingEntries = Array.from(
-            pendingAudioUploadsRef.current.entries()
-          );
-
-          if (pendingEntries.length > 0) {
-            // Get the first pending upload (oldest)
-            const firstEntry = pendingEntries[0];
-            if (!firstEntry) {
-              return;
-            }
-            const [callId, uploadId] = firstEntry;
-
-            // Remove from pending
-            pendingAudioUploadsRef.current.delete(callId);
-
-            // Store mapping
-            if (!callId.startsWith("final-")) {
-              callIdToMessageIdRef.current.set(callId, data.message_id);
-            }
-
-            // Link audio upload to message
-            socket.emit("simulation_voice_assistant_audio_link", {
-              chat_id: data.chat_id,
-              message_id: data.message_id,
-              upload_id: uploadId,
-            });
-
-            // eslint-disable-next-line no-console
-            console.log("[Voice] Linked audio upload to message:", {
-              call_id: callId,
-              message_id: data.message_id,
-              upload_id: uploadId,
-            });
-          } else {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] No pending audio upload found for message:",
-              data.message_id
-            );
-          }
-        }
-      );
-
-      // Unify *all* user messages (typed or microphone transcripts)
-      session.on("history_added", (item: RealtimeItem) => {
-        try {
-          // Only care about message items
-          if (!item || item.type !== "message") return;
-
-          // Only forward user messages
-          if (item.role !== "user") return;
-
-          // Avoid double-processing the same item
-          if (processedItemIdsRef.current.has(item.itemId)) return;
-          processedItemIdsRef.current.add(item.itemId);
-
-          // RealtimeMessageItem.content: array of input_text or input_audio
-          // We want either the text or the transcript.
-          const contentArray = item.content as Array<
-            | { type: "input_text"; text: string }
-            | {
-                type: "input_audio";
-                audio?: string | null;
-                transcript: string | null;
-              }
-          >;
-
-          const textParts: string[] = [];
-
-          for (let i = 0; i < (contentArray ?? []).length; i++) {
-            const c = contentArray[i];
-            if (!c) continue;
-
-            if (c.type === "input_text" && typeof c.text === "string") {
-              textParts.push(c.text);
-            } else if (
-              c.type === "input_audio" &&
-              typeof c.transcript === "string" &&
-              c.transcript.trim().length > 0
-            ) {
-              textParts.push(c.transcript);
-            }
-          }
-
-          const finalText = textParts.join(" ").trim();
-          if (!finalText) return;
-          if (!socket || !currentChat?.id) return;
-
-          // Emit to member_progress with voice_mode=true
-          socket.emit("member_progress", {
-            chat_id: currentChat.id,
-            message: finalText,
-            voice_mode: true,
-            upload_id: undefined,
-          });
-
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Forwarded user message to member_progress:", {
-            itemId: item.itemId,
-            message: finalText.substring(0, 100),
-          });
-        } catch (err) {
-          // eslint-disable-next-line no-console
-          console.error("[Voice] Error in history_added handler:", err);
-        }
-      });
-
-      // Connect session with ephemeral key
-      // WebRTC transport will automatically handle mic/speaker
-      // eslint-disable-next-line no-console
-      console.log("[Voice] Connecting RealtimeSession with ephemeral key...");
-      // eslint-disable-next-line no-console
-      console.log("[Voice] ===== CONNECTING SESSION =====");
-      // eslint-disable-next-line no-console
-      console.log("[Voice] About to connect with ephemeral key:", {
-        ephemeral_key_preview:
-          responseData.ephemeral_key?.substring(0, 20) + "...",
-        config_instructions: config.instructions,
-        config_instructions_length: config.instructions?.length || 0,
-      });
-
-      await session.connect({ apiKey: responseData.ephemeral_key });
-
-      // eslint-disable-next-line no-console
-      console.log("[Voice] RealtimeSession connected successfully");
-      // eslint-disable-next-line no-console
-      console.log("[Voice] ===== END CONNECTION =====");
-
-      // Set up assistant audio capture from the audio element
-      // Wait a bit for the audio element to start receiving audio
-      setTimeout(() => {
-        try {
-          // Check if captureStream is available
-          const audioElWithCapture = assistantAudioEl as HTMLAudioElement & {
-            captureStream?: () => MediaStream;
-            mozCaptureStream?: () => MediaStream;
-          };
-          const captureStream =
-            audioElWithCapture.captureStream?.() ||
-            audioElWithCapture.mozCaptureStream?.();
-
-          if (!captureStream) {
-            // eslint-disable-next-line no-console
-            console.warn(
-              "[Voice] captureStream() not supported in this browser"
-            );
-            return;
-          }
-
-          assistantAudioStreamRef.current = captureStream;
-
-          // Create MediaRecorder for assistant audio
-          const assistantRecorder = new MediaRecorder(captureStream, {
-            mimeType: "audio/webm;codecs=opus",
-          });
-
-          assistantRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) {
-              assistantAudioChunksRef.current.push(e.data);
-            }
-          };
-
-          assistantRecorderRef.current = assistantRecorder;
-
-          // If audio is already playing, start recording immediately
-          if (
-            !assistantAudioEl.paused &&
-            assistantRecorderRef.current.state === "inactive"
-          ) {
-            try {
-              assistantAudioChunksRef.current = [];
-              assistantRecorderRef.current.start();
-
-              // eslint-disable-next-line no-console
-              console.log(
-                "[Voice] Started recording immediately (audio was already playing)"
-              );
-            } catch (err) {
-              // eslint-disable-next-line no-console
-              console.error(
-                "[Voice] Failed to start recording immediately:",
-                err
-              );
-            }
-          }
-
-          // eslint-disable-next-line no-console
-          console.log("[Voice] Set up assistant audio capture successfully");
-        } catch (err) {
-          // eslint-disable-next-line no-console
-          console.error(
-            "[Voice] Failed to set up assistant audio capture:",
-            err
-          );
-        }
-      }, 1000); // Wait 1 second for audio to start flowing
-
-      // Reset history with existing conversation history after connecting
-      // This ensures the RealtimeSession sees the same history as the React chat
-      // resetHistory is the officially supported way to load existing chat history
-      // Must be called after connect() because it sends events to the API
-      if (responseData.history && responseData.history.length > 0) {
-        // eslint-disable-next-line no-console
-        console.log(
-          "[Voice] Resetting history with",
-          responseData.history.length,
-          "items"
-        );
-        // eslint-disable-next-line no-console
-        console.log("[Voice] History items:", responseData.history);
-        // resetHistory is available on the transport layer, not directly on session
-        session.transport.resetHistory([], responseData.history);
-        // eslint-disable-next-line no-console
-        console.log("[Voice] History reset completed");
-      } else {
-        // eslint-disable-next-line no-console
-        console.log("[Voice] No history to reset (new chat)");
-      }
-
-      realtimeSessionRef.current = session;
-
-      // Get microphone stream for waveform visualization
-      // This is separate from the RealtimeSession's WebRTC stream
-      try {
-        if (!userMediaStreamRef.current) {
-          userMediaStreamRef.current =
-            await navigator.mediaDevices.getUserMedia({ audio: true });
-          // eslint-disable-next-line no-console
-          console.log(
-            "[Voice] Got microphone stream for waveform visualization"
-          );
-        }
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          "[Voice] Failed to get microphone stream for visualization:",
-          err
-        );
-        // Continue anyway - waveform will just not show audio levels
-      }
-
-      // Ensure we start unmuted when entering voice mode
-      try {
-        session.mute(false);
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn(
-          "[Voice] mute(false) failed (transport might not support mute):",
-          e
-        );
-      }
-      setIsMicMuted(false);
       setVoiceModeEnabled(true);
+      setIsMicMuted(false);
+      setIsStartingVoice(false);
 
-      // eslint-disable-next-line no-console
-      console.log("[Voice] Voice mode enabled successfully", {
-        chat_id: currentChat.id,
-        tools_count: realtimeTools.length,
-        session_connected: true,
-      });
+      console.log("[Voice] Voice mode enabled successfully");
     } catch (error) {
-      // Log error for debugging (ESLint allows in catch blocks)
       const errorMessage =
         error instanceof Error ? error.message : "Failed to start voice mode";
-
-      // eslint-disable-next-line no-console
-      console.error("[Voice] Error starting voice mode:", {
-        error: errorMessage,
-        error_object: error,
-        chat_id: currentChat.id,
-      });
+      console.error("[Voice] Error starting voice mode:", errorMessage);
       toast.error(errorMessage);
-      // Cleanup on error
       await cleanupRealtime();
     } finally {
       setIsStartingVoice(false);
     }
-  }, [cleanupRealtime, currentChat?.id, isConnected, socket]);
+  }, [cleanupRealtime, currentChat?.id, isConnected, socket, isMicMuted]);
 
-  // Listen for audio_session_started event and initialize adapter
+  // Cleanup event listeners when voice mode is disabled
   useEffect(() => {
-    if (!socket || !isConnected || !currentChat?.id) return;
+    if (!voiceModeEnabled || !socket) return;
 
-    const handleAudioSessionStarted = async (
-      data: AudioSessionConfig & {
-        success?: boolean;
-        resource_id?: string;
-        resource_type?: string;
+    const handleAssistantAudioDelta = (data: {
+      chat_id: string;
+      audio: ArrayBuffer | string;
+    }) => {
+      if (data.chat_id !== currentChat?.id) return;
+
+      try {
+        // Decode audio data (can be binary ArrayBuffer or base64 string)
+        let audioBuffer: ArrayBuffer;
+        if (typeof data.audio === "string") {
+          // Base64 string - decode to binary
+          const binaryString = atob(data.audio);
+          audioBuffer = new ArrayBuffer(binaryString.length);
+          const view = new Uint8Array(audioBuffer);
+          for (let i = 0; i < binaryString.length; i++) {
+            view[i] = binaryString.charCodeAt(i);
+          }
+        } else {
+          audioBuffer = data.audio;
+        }
+
+        // Convert PCM16 Int16Array to Float32Array for Web Audio API
+        const pcm16 = new Int16Array(audioBuffer);
+        const float32 = new Float32Array(pcm16.length);
+        for (let i = 0; i < pcm16.length; i++) {
+          float32[i] = pcm16[i] / (pcm16[i] < 0 ? 0x8000 : 0x7FFF);
+        }
+
+        // Queue audio buffer for playback
+        audioBufferQueueRef.current.push(float32);
+
+        // Play queued audio buffers
+        if (!audioPlaybackSourceRef.current) {
+          playQueuedAudio();
+        }
+      } catch (err) {
+        console.error("[Voice] Error handling audio delta:", err);
       }
-    ) => {
-      if (!data.success || !data.ephemeral_key) {
-        console.warn("[Voice] Invalid audio_session_started event:", data);
+    };
+
+    const playQueuedAudio = async () => {
+      if (audioBufferQueueRef.current.length === 0) {
+        audioPlaybackSourceRef.current = null;
         return;
       }
 
+      const float32 = audioBufferQueueRef.current.shift();
+      if (!float32 || !audioPlaybackContextRef.current) return;
+
       try {
-        // Initialize adapter with config from backend
-        const adapter = new OpenAIAudioAdapter({
-          config: data as AudioSessionConfig,
-          eventEmitter: (eventType, payload) => {
-            // Forward events to backend via Socket.IO
-            if (socket) {
-              socket.emit("audio_webrtc_event", {
-                event_type: eventType,
-                ...payload,
-                run_id: data.run_id,
-              });
-            }
-          },
-          chatId: currentChat.id,
-        });
+        const audioBuffer = audioPlaybackContextRef.current.createBuffer(
+          1, // mono
+          float32.length,
+          24000 // 24kHz
+        );
+        audioBuffer.copyToChannel(float32, 0);
 
-        // Initialize session
-        await adapter.initializeSession(data as AudioSessionConfig);
+        const source = audioPlaybackContextRef.current.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioPlaybackContextRef.current.destination);
+        audioPlaybackSourceRef.current = source;
 
-        // Subscribe to adapter events for UI updates
-        adapter.on("audio_user_start", (payload) => {
-          console.log("[Voice] Adapter: audio_user_start", payload);
-          // Component can handle UI updates here
-        });
+        source.onended = () => {
+          audioPlaybackSourceRef.current = null;
+          playQueuedAudio();
+        };
 
-        adapter.on("audio_user_complete", (payload) => {
-          console.log("[Voice] Adapter: audio_user_complete", payload);
-          // Component can handle UI updates here
-        });
-
-        adapter.on("audio_assistant_progress", (payload) => {
-          console.log("[Voice] Adapter: audio_assistant_progress", payload);
-          // Component can handle UI updates here
-        });
-
-        adapter.on("audio_error", (payload) => {
-          console.error("[Voice] Adapter: audio_error", payload);
-          toast.error(
-            (payload as { error_message?: string }).error_message ||
-              "Audio error occurred"
-          );
-        });
-
-        // Store adapter reference
-        audioAdapterRef.current = adapter;
-        setVoiceModeEnabled(true);
-        setIsStartingVoice(false);
-
-        console.log("[Voice] Adapter initialized successfully");
-      } catch (error) {
-        console.error("[Voice] Failed to initialize adapter:", error);
-        toast.error("Failed to initialize audio adapter");
-        setIsStartingVoice(false);
+        source.start(0);
+      } catch (err) {
+        console.error("[Voice] Error playing audio:", err);
+        audioPlaybackSourceRef.current = null;
+        playQueuedAudio();
       }
     };
 
-    socket.on("audio_session_started", handleAudioSessionStarted);
+    const handleGenerateProgress = (data: {
+      run_id?: string;
+      chat_id?: string;
+      type?: string;
+    }) => {
+      if (data.run_id && data.chat_id === currentChat?.id) {
+        runIdRef.current = data.run_id;
+      }
+    };
+
+    socket.on("simulation_voice_assistant_delta", handleAssistantAudioDelta);
+    socket.on("simulation_voice_assistant_start", handleGenerateProgress);
+    socket.on("simulation_voice_user_start", handleGenerateProgress);
 
     return () => {
-      socket.off("audio_session_started", handleAudioSessionStarted);
-      // Cleanup adapter on unmount
-      if (audioAdapterRef.current) {
-        audioAdapterRef.current.disconnect().catch(console.error);
-        audioAdapterRef.current = null;
-      }
+      socket.off("simulation_voice_assistant_delta", handleAssistantAudioDelta);
+      socket.off("simulation_voice_assistant_start", handleGenerateProgress);
+      socket.off("simulation_voice_user_start", handleGenerateProgress);
     };
-  }, [socket, isConnected, currentChat?.id]);
+  }, [voiceModeEnabled, socket, currentChat?.id]);
 
   // Voice mode handlers
   const handleVoiceToggle = useCallback(async () => {
@@ -1998,27 +507,22 @@ export default function AttemptInput({
     }
 
     // Voice mode is enabled → toggle mute
-    const session = realtimeSessionRef.current;
-    if (!session) {
-      // eslint-disable-next-line no-console
-      console.warn("[Voice] No RealtimeSession present while toggling mute");
+    if (!socket || !runIdRef.current) {
+      console.warn("[Voice] No socket or run_id present while toggling mute");
       return;
     }
 
-    const currentlyMuted = session.muted ?? isMicMuted;
-    const nextMuted = !currentlyMuted;
+    const nextMuted = !isMicMuted;
+    setIsMicMuted(nextMuted);
 
-    try {
-      session.mute(nextMuted);
-      setIsMicMuted(nextMuted);
-      // eslint-disable-next-line no-console
-      console.log("[Voice] Toggled mute:", { nextMuted });
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error("[Voice] Error toggling mute:", e);
-      toast.error("Could not toggle microphone mute");
-    }
-  }, [startVoiceMode, voiceModeEnabled, isMicMuted]);
+    // Send mute control message to server
+    socket.emit("mic.set_muted", {
+      muted: nextMuted,
+      run_id: runIdRef.current,
+    });
+
+    console.log("[Voice] Toggled mute:", { nextMuted });
+  }, [startVoiceMode, voiceModeEnabled, isMicMuted, socket]);
 
   // Cleanup on unmount or chat change
   useEffect(() => {

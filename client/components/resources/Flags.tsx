@@ -7,10 +7,17 @@
 
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
-import { Power } from "lucide-react";
+import { Loader2, Power, Sparkles } from "lucide-react";
 import React, { useCallback, useEffect, useRef } from "react";
 
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
@@ -39,6 +46,8 @@ export interface FlagsProps {
   createFlagsAction?:
     | ((input: CreateDraftFlagsIn) => Promise<CreateDraftFlagsOut>)
     | undefined;
+  onGenerate?: () => void | Promise<void>;
+  isGenerating?: boolean;
   // Legacy props for backward compatibility
   flagResource?: {
     id: string;
@@ -65,6 +74,8 @@ export function Flags({
   group_id,
   agent_id,
   createFlagsAction,
+  onGenerate,
+  isGenerating = false,
   // Legacy props for backward compatibility
   flagResource,
   flagId,
@@ -176,6 +187,30 @@ export function Flags({
             onCheckedChange={handleChange}
             disabled={disabled}
           />
+          {onGenerate && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={onGenerate}
+                    disabled={disabled || isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {resource?.generated ? "Regenerate" : "Generate"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
         {helpText && (
           <p className="text-xs text-muted-foreground pl-5">{helpText}</p>
