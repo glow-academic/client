@@ -294,12 +294,21 @@ export function Descriptions({
           onSelect={(ids) => {
             onDescriptionIdChange(ids[0] || null);
           }}
-          getId={(item) => (typeof item === 'string' ? item : item.id)}
+          getId={(item) => (typeof item === 'string' ? item : item.id || '')}
           getLabel={(item) => {
             if (typeof item === 'string') {
               return `Description ${item.slice(0, 8)}...`;
             }
-            return item.description || `Description ${item.id.slice(0, 8)}...`;
+            return item.description || `Description ${item.id?.slice(0, 8)}...`;
+          }}
+          getSearchText={(item) => {
+            if (typeof item === 'string') {
+              return `Description ${item.slice(0, 8)}... ${item}`;
+            }
+            // Include ID in search text (hidden from user) to make items distinguishable internally
+            const desc = item.description || '';
+            const id = item.id || '';
+            return `${desc} ${id}`;
           }}
           placeholder="Descriptions"
           disabled={disabled}

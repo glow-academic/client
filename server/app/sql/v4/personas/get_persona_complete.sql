@@ -374,7 +374,7 @@ field_mapping_data AS (
 ),
 -- Valid fields data for new personas (based on departments, similar to documents endpoint)
 valid_fields_data AS (
-    SELECT 
+    SELECT DISTINCT
         f.id as field_id,
         (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
         COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
@@ -391,6 +391,7 @@ valid_fields_data AS (
     LEFT JOIN fields f ON f.id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE x.persona_id IS NULL
+      AND f.id IS NOT NULL  -- Filter out NULL fields
       AND (
         -- If user has no departments (superadmin), include only cross-department fields
         (NOT EXISTS (SELECT 1 FROM user_departments) AND up.role = 'superadmin'::profile_role
@@ -403,8 +404,16 @@ valid_fields_data AS (
         -- If user has departments, include fields from those departments OR cross-department fields
         (EXISTS (SELECT 1 FROM user_departments)
          AND (
-             fd.department_id IN (SELECT department_id FROM user_departments)
-             OR NOT EXISTS (
+             -- Field is in a department the user has access to
+             EXISTS (
+                 SELECT 1 FROM field_departments fd2
+                 WHERE fd2.field_id = f.id
+                   AND fd2.active = true
+                   AND fd2.department_id IN (SELECT department_id FROM user_departments)
+             )
+             OR
+             -- Field is cross-department (not in any department)
+             NOT EXISTS (
                  SELECT 1 FROM field_departments fd2 
                  WHERE fd2.field_id = f.id 
                  AND fd2.active = true
@@ -2130,7 +2139,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (dd.id, dd.description, dd.generated)::types.q_get_persona_v4_description_resource
             ORDER BY dd.description
-        ) FROM descriptions_data dd),
+        ) FROM (SELECT DISTINCT id, description, generated FROM descriptions_data) dd),
         COALESCE((SELECT descriptions FROM descriptions_suggestions_objects), ARRAY[]::types.q_get_persona_v4_description_resource[])
     ) as descriptions,
     -- Single-select resources: color
@@ -2148,7 +2157,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (cod.id, cod.name, cod.description, cod.hex_code, cod.generated)::types.q_get_persona_v4_color_option
             ORDER BY cod.name
-        ) FROM colors_data cod),
+        ) FROM (SELECT DISTINCT id, name, description, hex_code, generated FROM colors_data) cod),
         '{}'::types.q_get_persona_v4_color_option[]
     ) as colors,
     -- Single-select resources: icon
@@ -2166,7 +2175,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (iod.id, iod.name, iod.description, iod.value, iod.generated)::types.q_get_persona_v4_icon_option
             ORDER BY iod.name
-        ) FROM icons_data iod),
+        ) FROM (SELECT DISTINCT id, name, description, value, generated FROM icons_data) iod),
         '{}'::types.q_get_persona_v4_icon_option[]
     ) as icons,
     -- Single-select resources: instructions
@@ -2183,7 +2192,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (id.id, id.template, id.generated)::types.q_get_persona_v4_instructions_resource
             ORDER BY id.template
-        ) FROM instructions_data id),
+        ) FROM (SELECT DISTINCT id, template, generated FROM instructions_data) id),
         COALESCE((SELECT instructions FROM instructions_suggestions_objects), ARRAY[]::types.q_get_persona_v4_instructions_resource[])
     ) as instructions,
     -- Single-select resources: flag
@@ -2196,7 +2205,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (fd.id, fd.name, fd.description, fd.icon_id, fd.generated)::types.q_get_persona_v4_flag_resource
             ORDER BY fd.name
-        ) FROM flags_data fd),
+        ) FROM (SELECT DISTINCT id, name, description, icon_id, generated FROM flags_data) fd),
         '{}'::types.q_get_persona_v4_flag_resource[]
     ) as flags,
     -- Multi-select resources: departments
@@ -2260,7 +2269,7 @@ SELECT
         (SELECT ARRAY_AGG(
             (dmd.department_id, dmd.name, dmd.description, dmd.generated)::types.q_get_persona_v4_department
             ORDER BY dmd.name
-        ) FROM department_mapping_data dmd),
+        ) FROM (SELECT DISTINCT department_id, name, description, generated FROM department_mapping_data) dmd),
         '{}'::types.q_get_persona_v4_department[]
     ) as departments,
     -- Multi-select resources: fields
@@ -2271,8 +2280,7 @@ SELECT
             (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
             ORDER BY fmd.name
         )
-        FROM field_mapping_data fmd
-        WHERE fmd.field_id = ANY(fid.field_ids)),
+        FROM (SELECT DISTINCT field_id, name, description, generated FROM field_mapping_data WHERE field_id = ANY(fid.field_ids)) fmd),
         '{}'::types.q_get_persona_v4_field[]
     ) as field_resources,
     CASE 
@@ -2292,44 +2300,52 @@ SELECT
                 (SELECT ARRAY_AGG(
                     (vfd.field_id, vfd.name, vfd.description, vfd.generated)::types.q_get_persona_v4_field
                     ORDER BY vfd.name
-                ) FROM valid_fields_data vfd
-                CROSS JOIN params p
-                WHERE 
-                    -- Search filter: if field_search provided, match name or description
-                    (p.field_search IS NULL OR p.field_search = '' OR
-                     LOWER(vfd.name) LIKE '%' || LOWER(p.field_search) || '%' OR
-                     LOWER(vfd.description) LIKE '%' || LOWER(p.field_search) || '%')
-                    -- Show selected filter: if enabled, only show selected fields
-                    AND (
-                        NOT p.field_show_selected OR
-                        vfd.field_id IN (
-                            SELECT jsonb_array_elements_text(payload->'field_ids')::uuid
-                            FROM draft_payload_data
-                            WHERE payload->'field_ids' IS NOT NULL
+                ) FROM (
+                    SELECT DISTINCT vfd.field_id, vfd.name, vfd.description, vfd.generated
+                    FROM valid_fields_data vfd
+                    CROSS JOIN params p
+                    WHERE 
+                        vfd.field_id IS NOT NULL
+                        -- Search filter: if field_search provided, match name or description
+                        AND (p.field_search IS NULL OR p.field_search = '' OR
+                         LOWER(vfd.name) LIKE '%' || LOWER(p.field_search) || '%' OR
+                         LOWER(vfd.description) LIKE '%' || LOWER(p.field_search) || '%')
+                        -- Show selected filter: if enabled, only show selected fields
+                        AND (
+                            NOT p.field_show_selected OR
+                            vfd.field_id IN (
+                                SELECT jsonb_array_elements_text(payload->'field_ids')::uuid
+                                FROM draft_payload_data
+                                WHERE payload->'field_ids' IS NOT NULL
+                            )
                         )
-                    ))
+                ) vfd)
             ELSE
                 -- For existing personas, use field_mapping_data with search/filter
                 (SELECT ARRAY_AGG(
                     (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
                     ORDER BY fmd.name
-                ) FROM field_mapping_data fmd
-                CROSS JOIN params p
-                WHERE 
-                    -- Search filter: if field_search provided, match name or description
-                    (p.field_search IS NULL OR p.field_search = '' OR
-                     LOWER(fmd.name) LIKE '%' || LOWER(p.field_search) || '%' OR
-                     LOWER(fmd.description) LIKE '%' || LOWER(p.field_search) || '%')
-                    -- Show selected filter: if enabled, only show selected fields
-                    AND (
-                        NOT p.field_show_selected OR
-                        fmd.field_id IN (
-                            SELECT pf.field_id
-                            FROM persona_fields pf
-                            WHERE pf.persona_id = (SELECT persona_id FROM params)
-                              AND pf.field_id IS NOT NULL
+                ) FROM (
+                    SELECT DISTINCT fmd.field_id, fmd.name, fmd.description, fmd.generated
+                    FROM field_mapping_data fmd
+                    CROSS JOIN params p
+                    WHERE 
+                        fmd.field_id IS NOT NULL
+                        -- Search filter: if field_search provided, match name or description
+                        AND (p.field_search IS NULL OR p.field_search = '' OR
+                         LOWER(fmd.name) LIKE '%' || LOWER(p.field_search) || '%' OR
+                         LOWER(fmd.description) LIKE '%' || LOWER(p.field_search) || '%')
+                        -- Show selected filter: if enabled, only show selected fields
+                        AND (
+                            NOT p.field_show_selected OR
+                            fmd.field_id IN (
+                                SELECT pf.field_id
+                                FROM persona_fields pf
+                                WHERE pf.persona_id = (SELECT persona_id FROM params)
+                                  AND pf.field_id IS NOT NULL
+                            )
                         )
-                    ))
+                ) fmd)
         END,
         '{}'::types.q_get_persona_v4_field[]
     ) as fields,
@@ -2341,7 +2357,7 @@ SELECT
             (emd.id, emd.example, emd.idx, emd.generated)::types.q_get_persona_v4_example
             ORDER BY emd.idx
         )
-        FROM example_mapping_data emd),
+        FROM (SELECT DISTINCT id, example, idx, generated FROM example_mapping_data) emd),
         '{}'::types.q_get_persona_v4_example[]
     ) as example_resources,
     CASE 
