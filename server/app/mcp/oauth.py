@@ -20,8 +20,17 @@ APP_PREFIX = os.getenv("APP_PREFIX", "")
 KEYCLOAK_INTERNAL_URL = os.getenv("KEYCLOAK_INTERNAL_URL", "http://keycloak:8080")
 KEYCLOAK_REALM = os.getenv("KEYCLOAK_REALM", "master")
 
-# MCP resource URL (canonical - must match what clients use)
-MCP_RESOURCE = f"{ORIGIN}{APP_PREFIX}/mcp"
+# Detect local dev environment (same pattern as keycloak_sync.py)
+origin_check = os.getenv("ORIGIN", "http://localhost:3000")
+is_local_dev = "localhost" in origin_check.lower()
+
+# MCP resource URL - use server port (8000) in dev, ORIGIN in prod
+if is_local_dev:
+    MCP_SERVER_BASE = "http://localhost:8000"
+else:
+    MCP_SERVER_BASE = ORIGIN
+
+MCP_RESOURCE = f"{MCP_SERVER_BASE}{APP_PREFIX}/mcp"
 KEYCLOAK_ISSUER = f"{ORIGIN}{APP_PREFIX}/auth/realms/{KEYCLOAK_REALM}"
 PRM_URL = f"{MCP_RESOURCE}/.well-known/oauth-protected-resource"
 
@@ -152,14 +161,38 @@ def verify_token(token: str) -> dict[str, Any]:
         if not key:
             raise ValueError("No matching JWK found")
 
-        # Decode without audience check first to inspect token claims
+        # Decode without audience/issuer check first to inspect token claims
+        # We'll validate issuer manually to handle both direct Keycloak URL and proxied URL
         claims = jwt.decode(
             token,
             key,
             algorithms=[headers.get("alg", "RS256")],
-            issuer=KEYCLOAK_ISSUER,
-            options={"verify_at_hash": False, "verify_aud": False},  # Temporarily disable audience
+            options={"verify_at_hash": False, "verify_aud": False, "verify_iss": False},  # Disable issuer check temporarily
         )
+        
+        # Validate issuer manually - accept both direct Keycloak URL and proxied URL
+        token_issuer = claims.get("iss", "")
+        expected_issuers = [
+            KEYCLOAK_ISSUER,  # Expected issuer (via proxy)
+            f"{KEYCLOAK_INTERNAL_URL}/auth/realms/{KEYCLOAK_REALM}",  # Direct Keycloak URL
+            "http://localhost:8080/auth/realms/master",  # Fallback for local dev
+        ]
+        
+        if token_issuer and token_issuer not in expected_issuers:
+            # Check if it's just a port difference (localhost:8080 vs localhost:3000)
+            token_issuer_base = token_issuer.replace(":8080", "").replace(":3000", "")
+            expected_issuer_base = KEYCLOAK_ISSUER.replace(":8080", "").replace(":3000", "")
+            if token_issuer_base != expected_issuer_base:
+                logger.warning(
+                    f"Token issuer mismatch: got {token_issuer}, expected one of {expected_issuers}"
+                )
+                raise ValueError(
+                    f"Token issuer {token_issuer} does not match expected issuer {KEYCLOAK_ISSUER}"
+                )
+            else:
+                logger.debug(
+                    f"Token issuer port difference accepted: {token_issuer} vs {KEYCLOAK_ISSUER}"
+                )
         
         # Check audience manually with better error messages
         token_audience = claims.get("aud")
@@ -168,7 +201,14 @@ def verify_token(token: str) -> dict[str, Any]:
             audiences = token_audience if isinstance(token_audience, list) else [token_audience]
             
             # Check if MCP_RESOURCE is in audience
-            if MCP_RESOURCE not in audiences:
+            # Also check variations (with/without port, http/https) for flexibility
+            mcp_resource_variations = [
+                MCP_RESOURCE,
+                MCP_RESOURCE.replace(":3000", "").replace(":8000", ""),  # Without port
+                MCP_RESOURCE.replace("http://", "https://"),  # HTTPS variant
+            ]
+            
+            if not any(variant in audiences for variant in mcp_resource_variations):
                 # Allow client_id as fallback (for backward compatibility)
                 client_id = claims.get("azp") or claims.get("client_id")
                 if client_id and client_id in audiences:
@@ -178,7 +218,7 @@ def verify_token(token: str) -> dict[str, Any]:
                     )
                 else:
                     logger.warning(
-                        f"Token audience mismatch: expected {MCP_RESOURCE}, "
+                        f"Token audience mismatch: expected {MCP_RESOURCE} (or variations), "
                         f"got {audiences}. Client ID: {client_id}. "
                         f"Token issuer: {claims.get('iss')}"
                     )
@@ -186,6 +226,10 @@ def verify_token(token: str) -> dict[str, Any]:
                         f"Token audience {audiences} does not match MCP resource {MCP_RESOURCE}. "
                         f"Configure Keycloak client scope with audience mapper for: {MCP_RESOURCE}"
                     )
+            else:
+                logger.debug(
+                    f"Token audience validated: {audiences} includes MCP resource"
+                )
         else:
             logger.warning(
                 f"Token missing audience claim. Expected: {MCP_RESOURCE}. "
@@ -280,5 +324,14 @@ class McpOAuthMiddleware(BaseHTTPMiddleware):
             logger.warning(f"MCP OAuth token validation failed: {e}")
             return oauth_401()
 
+        # Rewrite path for Cursor compatibility
+        # Cursor expects /mcp/messages and /mcp/sse/messages
+        # FastMCP handles requests at /mcp directly
+        # So we rewrite these paths to /mcp before forwarding
+        if path in [f"{mcp_path}/messages", f"{mcp_path}/sse/messages", "/mcp/messages", "/mcp/sse/messages"]:
+            # Rewrite the path to /mcp for FastMCP
+            request.scope["path"] = mcp_path
+            request.scope["raw_path"] = mcp_path.encode()
+        
         # Continue to MCP server
         return await call_next(request)

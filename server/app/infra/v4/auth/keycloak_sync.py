@@ -294,7 +294,7 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
         # Ensure we're in master realm
         kc_admin.change_current_realm(realm_name="master")
 
-        # Get MCP resource URL from oauth module
+        # Get MCP resource URL from oauth module (which handles localhost detection)
         mcp_resource_url = MCP_RESOURCE
 
         # Step 1: Check if client scope exists, create if not
@@ -507,6 +507,48 @@ async def ensure_mcp_client_scope(kc_admin: Any) -> None:
 
     except Exception as e:
         logger.warning(f"Could not ensure MCP client scope: {e}")
+
+
+async def ensure_mcp_token_lifespan(kc_admin: Any) -> None:
+    """Ensure master realm has appropriate access token lifespan for MCP.
+    
+    Configures the access token lifespan in the master realm to a longer duration
+    (default 24 hours) to avoid frequent token refreshes for MCP clients.
+    
+    Args:
+        kc_admin: KeycloakAdmin instance (must be in master realm)
+    """
+    if not is_mcp_enabled():
+        logger.debug("MCP is disabled, skipping token lifespan configuration")
+        return
+    
+    try:
+        kc_admin.change_current_realm(realm_name="master")
+        
+        # Get current realm configuration
+        realm = kc_admin.get_realm("master")
+        current_lifespan = realm.get("accessTokenLifespan", 60)  # Default is 60 seconds
+        
+        # Read desired lifespan from environment (default: 24 hours = 86400 seconds)
+        desired_lifespan = int(os.getenv("MCP_TOKEN_LIFESPAN", "86400"))
+        
+        if current_lifespan < desired_lifespan:
+            # Update realm with new token lifespan
+            kc_admin.update_realm(
+                realm_name="master",
+                payload={"accessTokenLifespan": desired_lifespan},
+            )
+            logger.info(
+                f"✅ Updated master realm access token lifespan: {current_lifespan}s → {desired_lifespan}s "
+                f"({desired_lifespan // 3600}h)"
+            )
+        else:
+            logger.debug(
+                f"Master realm access token lifespan already configured: {current_lifespan}s "
+                f"({current_lifespan // 3600}h)"
+            )
+    except Exception as e:
+        logger.warning(f"Could not ensure MCP token lifespan: {e}")
 
 
 async def sync_department_realm_by_settings(
@@ -1093,6 +1135,9 @@ async def sync_keycloak(department_id: str | None = None) -> None:
 
         # Ensure MCP client scope is configured (after client is ensured)
         await ensure_mcp_client_scope(kc_admin)
+        
+        # Ensure MCP token lifespan is configured (after client scope)
+        await ensure_mcp_token_lifespan(kc_admin)
 
         # Determine which settings to sync (settings-based realms, not department-based)
         # Sync each settings that has providers with keys

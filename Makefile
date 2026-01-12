@@ -405,6 +405,20 @@ fresh-db:
 	@echo "  cd database && yarn start:clean"
 
 
+# MCP setup for Cursor IDE
+mcp: check-venv
+	@echo "Setting up MCP for Cursor IDE..."
+	@echo "1. Configuring Keycloak token lifespan..."
+	@$(VENV_PYTHON) server/scripts/configure-mcp-token-lifespan.py || echo "⚠️  Could not configure token lifespan (Keycloak may not be running)"
+	@echo "2. Getting token and updating Cursor config..."
+	@$(VENV_PYTHON) scripts/setup-cursor-mcp.py
+	@echo ""
+	@echo "✅ MCP setup complete!"
+	@echo "   - Token lifetime: $(shell $(VENV_PYTHON) -c 'import os; from dotenv import load_dotenv; load_dotenv(); print(f\"{int(os.getenv(\"MCP_TOKEN_LIFESPAN\", \"86400\")) // 3600} hours\")' 2>/dev/null || echo '24 hours') (configurable via MCP_TOKEN_LIFESPAN)"
+	@echo "   - Cursor config updated at ~/.cursor/mcp.json"
+	@echo "   - Restart Cursor IDE to use the new configuration"
+
+
 # Show help
 help:
 	@echo "GLOW - Graduate Learning Orientation Workshop"
@@ -447,6 +461,7 @@ help:
 	@echo ""
 	@echo "Utilities:"
 	@echo "  cleanup      - Clean up generated files and cache"
+	@echo "  mcp          - Setup MCP for Cursor IDE (configure Keycloak token lifespan and update Cursor config)"
 	@echo ""
 	@echo "Code generation:"
 	@echo "  generate-tests  - Generate pytest tests"
