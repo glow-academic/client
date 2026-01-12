@@ -221,8 +221,8 @@ export function Names({
     internalValue || placeholder || defaultName || "Enter name";
 
   return (
-    <div className="flex-1">
-      <div className="flex items-center gap-2">
+    <div className="flex-1 items-end">
+      <div className="flex items-end gap-1">
         {/* Hidden span to measure text width - positioned off-screen but in normal flow */}
         <span
           ref={measureRef}
@@ -249,7 +249,7 @@ export function Names({
           required={required}
           disabled={disabled}
           style={{ width: `${inputWidth}px` }}
-          className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-1 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
+          className="text-2xl font-semibold border-none outline-none bg-transparent px-2 py-0.5 hover:bg-muted/50 rounded transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:bg-muted/50 focus:ring-2 focus:ring-primary/20"
         />
         {onGenerate && agent_id && (
           <TooltipProvider>
@@ -259,6 +259,7 @@ export function Names({
                   type="button"
                   variant="ghost"
                   size="icon"
+                  className="h-8 w-8"
                   onClick={onGenerate}
                   disabled={disabled || isGenerating}
                 >

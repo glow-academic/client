@@ -7,6 +7,7 @@
 
 "use client";
 
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,8 +19,7 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Loader2, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type CreateDraftDescriptionsIn = InputOf<
   "/api/v4/resources/descriptions",
@@ -226,7 +226,8 @@ export function Descriptions({
         if (desc.id) {
           mapping[desc.id] = {
             id: desc.id,
-            description: desc.description || `Description ${desc.id.slice(0, 8)}...`,
+            description:
+              desc.description || `Description ${desc.id.slice(0, 8)}...`,
           };
         }
       });
@@ -242,11 +243,12 @@ export function Descriptions({
     });
     return mapping;
   }, [descriptions, suggestionsList]);
-  
+
   // Use descriptions array for GenericPicker items if available
-  const pickerItems = descriptions && descriptions.length > 0 
-    ? descriptions 
-    : Object.values(suggestionsMapping);
+  const pickerItems =
+    descriptions && descriptions.length > 0
+      ? descriptions
+      : Object.values(suggestionsMapping);
 
   // Don't render if show_description is false (AFTER all hooks)
   if (!show) {
@@ -255,11 +257,11 @@ export function Descriptions({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-end justify-between">
         <div className="flex items-center gap-2">
-          <Label htmlFor={id}>
+          <Label htmlFor={id} className="flex items-center gap-1">
             {label}
-            {required && <span className="text-destructive ml-1">*</span>}
+            {required && <span className="text-destructive">*</span>}
           </Label>
           {onGenerate && agent_id && (
             <TooltipProvider>
@@ -269,14 +271,14 @@ export function Descriptions({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-6 w-6"
                     onClick={onGenerate}
                     disabled={disabled || isGenerating}
                   >
                     {isGenerating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Sparkles className="h-4 w-4" />
+                      <Sparkles className="h-3.5 w-3.5" />
                     )}
                   </Button>
                 </TooltipTrigger>
@@ -294,20 +296,20 @@ export function Descriptions({
           onSelect={(ids) => {
             onDescriptionIdChange(ids[0] || null);
           }}
-          getId={(item) => (typeof item === 'string' ? item : item.id || '')}
+          getId={(item) => (typeof item === "string" ? item : item.id || "")}
           getLabel={(item) => {
-            if (typeof item === 'string') {
+            if (typeof item === "string") {
               return `Description ${item.slice(0, 8)}...`;
             }
             return item.description || `Description ${item.id?.slice(0, 8)}...`;
           }}
           getSearchText={(item) => {
-            if (typeof item === 'string') {
+            if (typeof item === "string") {
               return `Description ${item.slice(0, 8)}... ${item}`;
             }
             // Include ID in search text (hidden from user) to make items distinguishable internally
-            const desc = item.description || '';
-            const id = item.id || '';
+            const desc = item.description || "";
+            const id = item.id || "";
             return `${desc} ${id}`;
           }}
           placeholder="Descriptions"

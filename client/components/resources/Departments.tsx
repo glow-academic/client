@@ -21,8 +21,14 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { useCallback, useMemo } from "react";
 
-type CreateDraftDepartmentsIn = InputOf<"/api/v4/resources/departments", "post">;
-type CreateDraftDepartmentsOut = OutputOf<"/api/v4/resources/departments", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
 
 export interface DepartmentItem {
   id: string;
@@ -141,9 +147,9 @@ export function Departments({
     <div className="space-y-2">
       {label && (
         <div className="flex items-center gap-2">
-          <Label htmlFor={id}>
+          <Label htmlFor={id} className="flex items-center gap-1">
             {label}
-            {required && <span className="text-destructive ml-1">*</span>}
+            {required && <span className="text-destructive">*</span>}
             {description && (
               <span className="text-xs text-muted-foreground ml-2">
                 {description}
@@ -158,14 +164,14 @@ export function Departments({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-6 w-6"
                     onClick={onGenerate}
                     disabled={disabled || isGenerating}
                   >
                     {isGenerating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Sparkles className="h-4 w-4" />
+                      <Sparkles className="h-3.5 w-3.5" />
                     )}
                   </Button>
                 </TooltipTrigger>

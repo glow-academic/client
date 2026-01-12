@@ -263,9 +263,9 @@ export function Examples({
     <div className="space-y-2">
       {label && (
         <div className="flex items-center gap-2">
-          <Label htmlFor={id}>
+          <Label htmlFor={id} className="flex items-center gap-1">
             {label}
-            {required && <span className="text-destructive ml-1">*</span>}
+            {required && <span className="text-destructive">*</span>}
           </Label>
           {onGenerate && agent_id && (
             <TooltipProvider>
@@ -275,14 +275,14 @@ export function Examples({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-6 w-6"
                     onClick={onGenerate}
                     disabled={disabled || isGenerating}
                   >
                     {isGenerating ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <Sparkles className="h-4 w-4" />
+                      <Sparkles className="h-3.5 w-3.5" />
                     )}
                   </Button>
                 </TooltipTrigger>

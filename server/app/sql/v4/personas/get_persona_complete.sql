@@ -334,6 +334,54 @@ active_departments_data AS (
     JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
     WHERE EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
 ),
+-- Field suggestions: linked to personas with active=true OR same group with generated=true
+-- NOTE: Must be defined before field_mapping_data and valid_fields_data which reference it
+field_suggestions_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at DESC)
+             FROM (
+                 SELECT DISTINCT pf.field_id, MAX(pf.created_at) as created_at
+                 FROM persona_fields pf
+                 JOIN fields f ON f.field_id = pf.field_id
+                 CROSS JOIN draft_group_data dgd
+                 WHERE pf.field_id IS NOT NULL
+                   AND EXISTS (
+                       SELECT 1 FROM field_flags ff
+                       JOIN flags fl ON ff.flag_id = fl.id
+                       WHERE ff.field_id = f.field_id
+                         AND fl.name = 'active'
+                         AND ff.type = 'active'::type_field_flags
+                         AND ff.value = true
+                   )
+                   AND (
+                       -- Option 1: Linked to personas with active=true
+                       pf.active = true
+                       OR
+                       -- Option 2: Linked to same group with generated=true
+                       (
+                           pf.generated = true
+                           AND f.generated = true
+                           AND EXISTS (
+                               SELECT 1 FROM calls c
+                               JOIN message_calls mc ON mc.call_id = c.id
+                               JOIN message_runs mr ON mr.message_id = mc.message_id
+                               JOIN group_runs gr ON gr.run_id = mr.run_id
+                               WHERE c.id = f.call_id
+                                 AND gr.group_id = dgd.group_id
+                           )
+                       )
+                   )
+                 GROUP BY pf.field_id
+                 ORDER BY MAX(pf.created_at) DESC
+                 LIMIT 20
+             ) pf),
+            ARRAY[]::uuid[]
+        ) as field_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
 -- Simplified parameter_mapping_data - only used for field_mapping_data
 parameter_mapping_data AS (
     SELECT 
@@ -356,8 +404,14 @@ field_mapping_data AS (
         COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), '') as description,
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1),
         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = pmd.parameter_id LIMIT 1) as parameter_name,
-        COALESCE(f.generated, false) as generated
+        COALESCE(f.generated, false) as generated,
+        -- Add sort priority: suggested fields first (1), then others (2)
+        CASE 
+            WHEN f.field_id = ANY(fsd_for_map.field_suggestions) THEN 1
+            ELSE 2
+        END as sort_priority
     FROM parameter_mapping_data pmd
+    CROSS JOIN field_suggestions_data fsd_for_map
     JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
     JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1)
     WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
@@ -370,9 +424,15 @@ valid_fields_data AS (
         COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.field_id LIMIT 1), '') as description,
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1) as parameter_id,
         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1) LIMIT 1) as parameter_name,
-        COALESCE(f.generated, false) as generated
+        COALESCE(f.generated, false) as generated,
+        -- Add sort priority: suggested fields first (1), then others (2)
+        CASE 
+            WHEN f.field_id = ANY(fsd_for_sort.field_suggestions) THEN 1
+            ELSE 2
+        END as sort_priority
     FROM params x
     CROSS JOIN user_profile up
+    CROSS JOIN field_suggestions_data fsd_for_sort
     LEFT JOIN parameter_fields pf_pf ON pf_pf.parameter_id IN (
         SELECT p.id FROM parameter p 
         WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
@@ -636,6 +696,18 @@ colors_data AS (
     ORDER BY sort_priority, c.name
     LIMIT 30  -- Multiple of 3 for nice grid layout
 ),
+colors_agg AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (c.id, c.name, c.description, c.hex_code, c.generated)::types.q_get_persona_v4_color_option
+                ORDER BY c.sort_priority, c.name
+            ),
+            '{}'::types.q_get_persona_v4_color_option[]
+        ) AS colors,
+        COUNT(*)::int AS colors_count
+    FROM colors_data c
+),
 -- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
 -- NOTE: These must be defined BEFORE they are referenced in other CTEs (e.g., descriptions_data references description_resource_data, flags_data references flag_resource_data)
 description_resource_data AS (
@@ -742,6 +814,18 @@ icons_data AS (
       )
     ORDER BY sort_priority, i.name
     LIMIT 189  -- Multiple of 3 for nice grid layout (63 rows x 3 columns)
+),
+icons_agg AS (
+    SELECT
+        COALESCE(
+            ARRAY_AGG(
+                (i.id, i.name, i.description, i.value, i.generated)::types.q_get_persona_v4_icon_option
+                ORDER BY i.sort_priority, i.name
+            ),
+            '{}'::types.q_get_persona_v4_icon_option[]
+        ) AS icons,
+        COUNT(*)::int AS icons_count
+    FROM icons_data i
 ),
 -- Resource data CTEs - query from persona_* tables or draft_* tables if draft_id provided
 -- NOTE: instructions_resource_data is defined here (before instructions_data) to avoid forward reference
@@ -1110,53 +1194,6 @@ department_suggestions_data AS (
              ) pd),
             ARRAY[]::uuid[]
         ) as department_suggestions
-    FROM params
-    -- Always return at least one row
-    LIMIT 1
-),
--- Field suggestions: linked to personas with active=true OR same group with generated=true
-field_suggestions_data AS (
-    SELECT 
-        COALESCE(
-            (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at DESC)
-             FROM (
-                 SELECT DISTINCT pf.field_id, MAX(pf.created_at) as created_at
-                 FROM persona_fields pf
-                 JOIN fields f ON f.field_id = pf.field_id
-                 CROSS JOIN draft_group_data dgd
-                 WHERE pf.field_id IS NOT NULL
-                   AND EXISTS (
-                       SELECT 1 FROM field_flags ff
-                       JOIN flags fl ON ff.flag_id = fl.id
-                       WHERE ff.field_id = f.field_id
-                         AND fl.name = 'active'
-                         AND ff.type = 'active'::type_field_flags
-                         AND ff.value = true
-                   )
-                   AND (
-                       -- Option 1: Linked to personas with active=true
-                       pf.active = true
-                       OR
-                       -- Option 2: Linked to same group with generated=true
-                       (
-                           pf.generated = true
-                           AND f.generated = true
-                           AND EXISTS (
-                               SELECT 1 FROM calls c
-                               JOIN message_calls mc ON mc.call_id = c.id
-                               JOIN message_runs mr ON mr.message_id = mc.message_id
-                               JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = f.call_id
-                                 AND gr.group_id = dgd.group_id
-                           )
-                       )
-                   )
-                 GROUP BY pf.field_id
-                 ORDER BY MAX(pf.created_at) DESC
-                 LIMIT 20
-             ) pf),
-            ARRAY[]::uuid[]
-        ) as field_suggestions
     FROM params
     -- Always return at least one row
     LIMIT 1
@@ -2307,19 +2344,13 @@ SELECT
     (SELECT color_res FROM (SELECT crd.draft_color_resource as color_res UNION ALL SELECT crd.persona_color_resource LIMIT 1) sub WHERE color_res IS NOT NULL LIMIT 1) as color_resource,
     CASE 
         WHEN NOT tec.colors_has_tools THEN false
-        WHEN (SELECT COUNT(*) FROM colors_data) > 0 THEN true
+        WHEN cag.colors_count > 0 THEN true
         ELSE false
     END as show_color,
     (SELECT agent_id FROM color_agent_data) as color_agent_id,
     true as color_required,
     COALESCE((SELECT color_suggestions FROM color_suggestions_data), ARRAY[]::uuid[]) as color_suggestions,
-    COALESCE(
-        (SELECT ARRAY_AGG(
-            (cod.id, cod.name, cod.description, cod.hex_code, cod.generated)::types.q_get_persona_v4_color_option
-            ORDER BY cod.sort_priority, cod.name
-        ) FROM (SELECT DISTINCT id, name, description, hex_code, generated, sort_priority FROM colors_data) cod),
-        '{}'::types.q_get_persona_v4_color_option[]
-    ) as colors,
+    cag.colors as colors,
     -- Single-select resources: icon
     (SELECT icon_id FROM icon_resource_data) as icon_id,
     (SELECT icon_res FROM (SELECT ird.draft_icon_resource as icon_res UNION ALL SELECT ird.persona_icon_resource LIMIT 1) sub WHERE icon_res IS NOT NULL LIMIT 1) as icon_resource,
@@ -2379,8 +2410,8 @@ SELECT
         FROM draft_payload_data),
         CASE 
             WHEN (SELECT persona_id FROM params) IS NULL THEN
-                -- For new personas, use active departments (or primary department as fallback)
-                COALESCE(add.department_ids, ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
+                -- For new personas, leave department_ids empty (no auto-selection)
+                ARRAY[]::uuid[]
             ELSE pdd.department_ids
         END
     ) as department_ids,
@@ -2402,8 +2433,8 @@ SELECT
                 FROM draft_payload_data),
                 CASE 
                     WHEN (SELECT persona_id FROM params) IS NULL THEN
-                        -- For new personas, use active departments (or primary department as fallback)
-                        COALESCE(add.department_ids, ARRAY[(SELECT department_id FROM primary_department_id_data)], ARRAY[]::uuid[])
+                        -- For new personas, leave department_ids empty (no auto-selection)
+                        ARRAY[]::uuid[]
                     ELSE pdd.department_ids
                 END
             )
@@ -2434,9 +2465,9 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
-            ORDER BY fmd.name
+            ORDER BY fmd.sort_priority, fmd.name
         )
-        FROM (SELECT DISTINCT field_id, name, description, generated FROM field_mapping_data WHERE field_id = ANY(fid.field_ids)) fmd),
+        FROM (SELECT DISTINCT field_id, name, description, generated, sort_priority FROM field_mapping_data WHERE field_id = ANY(fid.field_ids)) fmd),
         '{}'::types.q_get_persona_v4_field[]
     ) as field_resources,
     CASE 
@@ -2455,9 +2486,9 @@ SELECT
                 -- For new personas, use valid_fields_data with search/filter
                 (SELECT ARRAY_AGG(
                     (vfd.field_id, vfd.name, vfd.description, vfd.generated)::types.q_get_persona_v4_field
-                    ORDER BY vfd.name
+                    ORDER BY vfd.sort_priority, vfd.name
                 ) FROM (
-                    SELECT DISTINCT vfd.field_id, vfd.name, vfd.description, vfd.generated
+                    SELECT DISTINCT vfd.field_id, vfd.name, vfd.description, vfd.generated, vfd.sort_priority
                     FROM valid_fields_data vfd
                     CROSS JOIN params p
                     WHERE 
@@ -2480,9 +2511,9 @@ SELECT
                 -- For existing personas, use field_mapping_data with search/filter
                 (SELECT ARRAY_AGG(
                     (fmd.field_id, fmd.name, fmd.description, fmd.generated)::types.q_get_persona_v4_field
-                    ORDER BY fmd.name
+                    ORDER BY fmd.sort_priority, fmd.name
                 ) FROM (
-                    SELECT DISTINCT fmd.field_id, fmd.name, fmd.description, fmd.generated
+                    SELECT DISTINCT fmd.field_id, fmd.name, fmd.description, fmd.generated, fmd.sort_priority
                     FROM field_mapping_data fmd
                     CROSS JOIN params p
                     WHERE 
@@ -2558,8 +2589,8 @@ CROSS JOIN instructions_suggestions_data insd
 CROSS JOIN names_suggestions_objects nso
 CROSS JOIN descriptions_suggestions_objects dso
 CROSS JOIN instructions_suggestions_objects iso
-CROSS JOIN colors_data cod
-CROSS JOIN icons_data iod
+CROSS JOIN colors_agg cag
+CROSS JOIN icons_agg iag
 CROSS JOIN department_suggestions_data dsd_dept
 CROSS JOIN field_ids_data fid
 CROSS JOIN field_suggestions_data fsd
