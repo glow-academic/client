@@ -13,15 +13,15 @@ from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from app.sql.types import (GetDepartmentsForProfileSqlParams,
                            GetDepartmentsForProfileSqlRow,
+                           GetDomainAgentIdV4SqlParams,
+                           GetDomainAgentIdV4SqlRow,
                            GetRandomizationRangesSqlParams,
                            GetRandomizationRangesSqlRow,
                            GetScenarioDepartmentsSqlParams,
                            GetScenarioDepartmentsSqlRow,
-                           RandomizeScenarioSqlParams, RandomizeScenarioSqlRow,
-                           SocketGetDomainAgentIdSqlParams,
-                           SocketGetDomainAgentIdSqlRow,
-                           SocketGetScenarioParameterIdsSqlParams,
-                           SocketGetScenarioParameterIdsSqlRow)
+                           GetScenarioParameterIdsV4SqlParams,
+                           GetScenarioParameterIdsV4SqlRow,
+                           RandomizeScenarioSqlParams, RandomizeScenarioSqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed, load_sql
@@ -181,7 +181,7 @@ async def _generate_scenario_impl(
                 parameter_ids: list[uuid.UUID] = []
                 if field_ids:
                     # Get parameter_ids from fields table directly
-                    param_params = SocketGetScenarioParameterIdsSqlParams(
+                    param_params = GetScenarioParameterIdsV4SqlParams(
                         field_ids=[uuid.UUID(fid) for fid in field_ids]
                     )
                     from utils.sql_helper import load_sql
@@ -336,7 +336,7 @@ async def _generate_scenario_impl(
 
             # Get agent_id from scenario domain
             scenario_domain_id = uuid.UUID(data.scenarioDomainId)
-            domain_params = SocketGetDomainAgentIdSqlParams(domain_id=scenario_domain_id)
+            domain_params = GetDomainAgentIdV4SqlParams(domain_id=scenario_domain_id)
             domain_result = cast(
                 SocketGetDomainAgentIdSqlRow,
                 await execute_sql_typed(

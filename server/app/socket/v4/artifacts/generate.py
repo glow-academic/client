@@ -8,7 +8,6 @@ from typing import Any, AsyncIterator, cast
 
 import httpx
 import websockets
-from jinja2 import Environment, TemplateError
 from agents.items import TResponseInputItem
 from app.infra.v4.artifacts import (convert_tools_to_openai_format,
                                     convert_tools_to_responses_format,
@@ -27,27 +26,24 @@ from app.socket.v4.artifacts.frames import start_client_ws_sender
 from app.socket.v4.artifacts.session_store import (create_session,
                                                    get_session_by_run_id,
                                                    remove_session)
-from app.sql.types import (
-    GetAudioRunContextAndCreateRunSqlParams,
-    GetAudioRunContextAndCreateRunSqlRow,
-    GetGenerationRunContextAndCreateRunSqlParams,
-    GetGenerationRunContextAndCreateRunSqlRow,
-    GetImageGenerationContextAndCreateUploadSqlParams,
-    GetImageGenerationContextAndCreateUploadSqlRow,
-    GetMessagesByIdsSqlParams,
-    GetMessagesByIdsSqlRow,
-    GetMessagesByRunIdSqlParams,
-    GetMessagesByRunIdSqlRow,
-    GetTextRunContextForExistingRunSqlParams,
-    GetTextRunContextForExistingRunSqlRow,
-    GetVideoRunContextAndCreateRunSqlParams,
-    GetVideoRunContextAndCreateRunSqlRow,
-    IGetTextRunContextAndCreateRunV4Tool,
-    InfrastructureArtifactsGetGroupIdFromRunSqlParams,
-    InfrastructureArtifactsGetGroupIdFromRunSqlRow,
-    InsertUploadSqlParams,
-    InsertUploadSqlRow,
-)
+from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
+                           GetAudioRunContextAndCreateRunSqlRow,
+                           GetGenerationRunContextAndCreateRunSqlParams,
+                           GetGenerationRunContextAndCreateRunSqlRow,
+                           GetImageGenerationContextAndCreateUploadSqlParams,
+                           GetImageGenerationContextAndCreateUploadSqlRow,
+                           GetMessagesByIdsSqlParams, GetMessagesByIdsSqlRow,
+                           GetMessagesByRunIdSqlParams,
+                           GetMessagesByRunIdSqlRow,
+                           GetTextRunContextForExistingRunSqlParams,
+                           GetTextRunContextForExistingRunSqlRow,
+                           GetVideoRunContextAndCreateRunSqlParams,
+                           GetVideoRunContextAndCreateRunSqlRow,
+                           IGetTextRunContextAndCreateRunV4Tool,
+                           InfraArtifactsGetGroupIdFromRunSqlParams,
+                           InfraArtifactsGetGroupIdFromRunSqlRow,
+                           InsertUploadSqlParams, InsertUploadSqlRow)
+from jinja2 import Environment, TemplateError
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -1098,11 +1094,11 @@ async def _handle_image_generation(
         raise ValueError(f"Failed to decrypt API key: {str(e)}")
 
     # Get group_id from run
-    group_params = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+    group_params = InfraArtifactsGetGroupIdFromRunSqlParams(
         run_id=uuid.UUID(run_id)
     )
     group_result = cast(
-        InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+        InfraArtifactsGetGroupIdFromRunSqlRow,
         await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
     )
     group_id_from_run = str(group_result.group_id) if group_result and group_result.group_id else None
@@ -1303,11 +1299,11 @@ async def _handle_image_generation(
     except Exception as e:
         # Get group_id from run for error reporting
         try:
-            group_params = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+            group_params = InfraArtifactsGetGroupIdFromRunSqlParams(
                 run_id=uuid.UUID(run_id)
             )
             group_result = cast(
-                InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+                InfraArtifactsGetGroupIdFromRunSqlRow,
                 await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
             )
             group_id_from_run = str(group_result.group_id) if group_result and group_result.group_id else None
@@ -1380,11 +1376,11 @@ async def _handle_video_generation(
         raise ValueError(f"Failed to decrypt API key: {str(e)}")
 
     # Get group_id from run
-    group_params = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+    group_params = InfraArtifactsGetGroupIdFromRunSqlParams(
         run_id=uuid.UUID(run_id)
     )
     group_result = cast(
-        InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+        InfraArtifactsGetGroupIdFromRunSqlRow,
         await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
     )
     group_id_from_run = str(group_result.group_id) if group_result and group_result.group_id else None
@@ -1668,11 +1664,11 @@ async def _handle_audio_generation(
     from urllib.parse import quote
 
     # Get group_id and chat_id from run
-    group_params_audio = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+    group_params_audio = InfraArtifactsGetGroupIdFromRunSqlParams(
         run_id=uuid.UUID(run_id)
     )
     group_result_audio = cast(
-        InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+        InfraArtifactsGetGroupIdFromRunSqlRow,
         await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params_audio),
     )
     group_id_from_run = str(group_result_audio.group_id) if group_result_audio and group_result_audio.group_id else None
@@ -2150,11 +2146,11 @@ async def _handle_audio_generation(
     except Exception as e:
         # Get group_id from run for error reporting
         try:
-            group_params_error = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+            group_params_error = InfraArtifactsGetGroupIdFromRunSqlParams(
                 run_id=uuid.UUID(run_id)
             )
             group_result_error = cast(
-                InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+                InfraArtifactsGetGroupIdFromRunSqlRow,
                 await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params_error),
             )
             group_id_from_run = str(group_result_error.group_id) if group_result_error and group_result_error.group_id else None

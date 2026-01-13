@@ -3,19 +3,15 @@
 import uuid
 from typing import Any, cast
 
+from app.infra.v4.activity.websocket_logger import log_websocket_activity
+from app.infra.v4.websocket.cancel_active_run import cancel_active_run
+from app.main import sio
+from app.sql.types import (GetTestDetailsV4SqlParams, GetTestDetailsV4SqlRow,
+                           MarkTestCompleteV4SqlParams)
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import execute_sql_typed
-
-from app.infra.v4.activity.websocket_logger import log_websocket_activity
-from app.infra.v4.websocket.cancel_active_run import cancel_active_run
-from app.main import sio
-from app.sql.types import (
-    SocketGetTestDetailsSqlParams,
-    SocketGetTestDetailsSqlRow,
-    SocketMarkTestCompleteSqlParams,
-)
 
 logger = get_logger(__name__)
 
@@ -77,11 +73,11 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
             attempt_id_uuid = uuid.UUID(attempt_id)
 
             # Get active test for this attempt
-            test_details_params = SocketGetTestDetailsSqlParams(
+            test_details_params = GetTestDetailsV4SqlParams(
                 attempt_id=attempt_id_uuid
             )
             test_details_result = cast(
-                SocketGetTestDetailsSqlRow,
+                GetTestDetailsV4SqlRow,
                 await execute_sql_typed(
                     conn,
                     "app/sql/v4/benchmark/get_test_details_v4_complete.sql",
@@ -102,7 +98,7 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     await cancel_active_run(run_id)
 
                 # Mark test as completed
-                mark_params = SocketMarkTestCompleteSqlParams(
+                mark_params = MarkTestCompleteV4SqlParams(
                     test_id=uuid.UUID(test_id)
                 )
                 await execute_sql_typed(

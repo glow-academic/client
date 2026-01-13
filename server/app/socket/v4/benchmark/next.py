@@ -3,24 +3,18 @@
 import uuid
 from typing import Any, cast
 
+from app.infra.v4.websocket.get_db_connection import get_db_connection
+from app.main import get_internal_sio, sio
+from app.sql.types import (CreateTestV4SqlParams, GetAgentNameV4SqlParams,
+                           GetAgentNameV4SqlRow,
+                           GetEvalAttemptInfiniteModeV4SqlParams,
+                           GetEvalAttemptInfiniteModeV4SqlRow,
+                           GetTestByTraceIdV4SqlParams,
+                           GetTestByTraceIdV4SqlRow, GetToolNameV4SqlParams,
+                           GetToolNameV4SqlRow, LinkAttemptTestV4SqlParams)
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.sql_helper import execute_sql_typed, load_sql
-
-from app.infra.v4.websocket.get_db_connection import get_db_connection
-from app.main import get_internal_sio, sio
-from app.sql.types import (
-    SocketCreateTestSqlParams,
-    SocketGetAgentNameSqlParams,
-    SocketGetAgentNameSqlRow,
-    SocketGetEvalAttemptInfiniteModeSqlParams,
-    SocketGetEvalAttemptInfiniteModeSqlRow,
-    SocketGetTestByTraceIdSqlParams,
-    SocketGetTestByTraceIdSqlRow,
-    SocketGetToolNameSqlParams,
-    SocketGetToolNameSqlRow,
-    SocketLinkAttemptTestSqlParams,
-)
 
 internal_sio = get_internal_sio()
 
@@ -67,11 +61,11 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             eval_id_uuid = uuid.UUID(eval_id)
 
             # Get attempt data (infinite_mode)
-            attempt_params = SocketGetEvalAttemptInfiniteModeSqlParams(
+            attempt_params = GetEvalAttemptInfiniteModeV4SqlParams(
                 attempt_id=attempt_id_uuid
             )
             attempt_result = cast(
-                SocketGetEvalAttemptInfiniteModeSqlRow,
+                GetEvalAttemptInfiniteModeV4SqlRow,
                 await execute_sql_typed(
                     conn,
                     "app/sql/v4/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql",
@@ -88,12 +82,12 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
 
             # Create or get test record
             trace_id = f"benchmark_{attempt_id}_{run_id or group_id}"
-            test_params = SocketGetTestByTraceIdSqlParams(
+            test_params = GetTestByTraceIdV4SqlParams(
                 attempt_id=attempt_id_uuid,
                 trace_id=trace_id,
             )
             test_result = cast(
-                SocketGetTestByTraceIdSqlRow,
+                GetTestByTraceIdV4SqlRow,
                 await execute_sql_typed(
                     conn,
                     "app/sql/v4/benchmark/get_test_by_trace_id_v4_complete.sql",
@@ -108,7 +102,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             if not test_row:
                 # Create new test
                 test_id_uuid = uuid.uuid4()
-                create_test_params = SocketCreateTestSqlParams(
+                create_test_params = CreateTestV4SqlParams(
                     test_id=test_id_uuid,
                     title=f"Benchmark Test {attempt_id[:8]}",
                     trace_id=trace_id,
@@ -120,7 +114,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                     params=create_test_params,
                 )
                 # Link to attempt
-                link_params = SocketLinkAttemptTestSqlParams(
+                link_params = LinkAttemptTestV4SqlParams(
                     attempt_id=attempt_id_uuid,
                     test_id=test_id_uuid,
                 )
@@ -177,7 +171,7 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                         tool_id=uuid.UUID(tool_id)
                     )
                     tool_name_result = cast(
-                        SocketGetToolNameSqlRow,
+                        GetToolNameV4SqlRow,
                         await execute_sql_typed(
                             conn,
                             "app/sql/v4/benchmark/get_tool_name_v4_complete.sql",
@@ -215,11 +209,11 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 ):
                     agent_id = agent_info["agent_id"]
                     # Get agent name from agent_id to determine which eval handler to call
-                    agent_name_params = SocketGetAgentNameSqlParams(
+                    agent_name_params = GetAgentNameV4SqlParams(
                         agent_id=uuid.UUID(agent_id)
                     )
                     agent_name_result = cast(
-                        SocketGetAgentNameSqlRow,
+                        GetAgentNameV4SqlRow,
                         await execute_sql_typed(
                             conn,
                             "app/sql/v4/benchmark/get_agent_name_v4_complete.sql",

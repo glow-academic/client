@@ -9,9 +9,8 @@ from app.infra.v4.activity.audit import jinja
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
 from app.main import get_pool
-from app.sql.types import (
-    InfrastructureActivityGetProfileNameForLoggingSqlParams,
-    InfrastructureActivityGetProfileNameForLoggingSqlRow)
+from app.sql.types import (InfraActivityGetProfileNameForLoggingSqlParams,
+                           InfraActivityGetProfileNameForLoggingSqlRow)
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import execute_sql_typed
 
@@ -56,11 +55,11 @@ async def log_websocket_activity(
 
         # Get actor_name from database
         async with pool.acquire() as conn:
-            params = InfrastructureActivityGetProfileNameForLoggingSqlParams(
+            params = InfraActivityGetProfileNameForLoggingSqlParams(
                 profile_id=uuid.UUID(profile_id)
             )
             result = cast(
-                InfrastructureActivityGetProfileNameForLoggingSqlRow,
+                InfraActivityGetProfileNameForLoggingSqlRow,
                 await execute_sql_typed(conn, SQL_PATH, params=params),
             )
             actor_name = result.actor_name if result else None

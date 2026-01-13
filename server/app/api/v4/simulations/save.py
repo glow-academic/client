@@ -8,7 +8,7 @@ import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
-from app.sql.types import (ApiGetNameByIdSqlParams, ApiGetNameByIdSqlRow,
+from app.sql.types import (GetNameByIdSqlParams, GetNameByIdSqlRow,
                            SaveSimulationApiRequest, SaveSimulationApiResponse,
                            SaveSimulationSqlParams, SaveSimulationSqlRow,
                            load_sql_query)
@@ -89,9 +89,9 @@ async def save_simulation(
                     # Update mode: look up name from name_id if available
                     simulation_name = "Simulation"
                     if hasattr(request, "name_id") and request.name_id:
-                        name_params = ApiGetNameByIdSqlParams(name_id=request.name_id)
+                        name_params = GetNameByIdSqlParams(name_id=request.name_id)
                         name_result = cast(
-                            ApiGetNameByIdSqlRow,
+                            GetNameByIdSqlRow,
                             await execute_sql_typed(conn, GET_NAME_SQL_PATH, params=name_params),
                         )
                         if name_result and name_result.name:

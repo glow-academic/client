@@ -2883,7 +2883,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/detail": {
+    "/api/v4/agents/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -2893,17 +2893,22 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Agent Detail
-         * @description Get agent detail with debug info and metadata.
+         * Get Agent
+         * @description Get agent information - handles both new (agent_id = NULL) and detail (agent_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
-        post: operations["get_agent_detail_api_v4_agents_detail_post"];
+        post: operations["get_agent_api_v4_agents_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/agents/new": {
+    "/api/v4/agents/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -2913,50 +2918,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Agent New
-         * @description Get default agent detail metadata for creating new agents.
+         * Save Agent
+         * @description Save agent - handles both create (agent_id = NULL) and update (agent_id provided).
          */
-        post: operations["get_agent_new_api_v4_agents_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/agents/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Agent
-         * @description Create a new agent.
-         */
-        post: operations["create_agent_api_v4_agents_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/agents/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Agent
-         * @description Update an agent.
-         */
-        post: operations["update_agent_api_v4_agents_update_post"];
+        post: operations["save_agent_api_v4_agents_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6038,41 +6003,6 @@ export interface components {
             /** Conversation Id */
             conversation_id?: string | null;
         };
-        /** CreateAgentApiRequest */
-        CreateAgentApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Model Id
-             * Format: uuid
-             */
-            model_id: string;
-            /** Active */
-            active: boolean;
-            /** Artifact Name */
-            artifact_name: string;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Temperature Level Id */
-            temperature_level_id?: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id?: string | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
-        };
-        /** CreateAgentApiResponse */
-        CreateAgentApiResponse: {
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** CreateAnalyticsViewFunctionApiRequest */
         CreateAnalyticsViewFunctionApiRequest: Record<string, never>;
         /** CreateAnalyticsViewFunctionApiResponse */
@@ -7394,126 +7324,148 @@ export interface components {
             /** Total Pages */
             total_pages?: number | null;
         };
-        /** GetAgentDetailApiRequest */
-        GetAgentDetailApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetAgentDetailApiResponse */
-        GetAgentDetailApiResponse: {
-            /** Agent Exists */
-            agent_exists?: boolean | null;
+        /** GetAgentApiRequest */
+        GetAgentApiRequest: {
             /** Agent Id */
             agent_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Model Id */
-            model_id?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Role */
-            role?: string | null;
-            /** Selected Temperature Level Id */
-            selected_temperature_level_id?: string | null;
-            /** Temperature */
-            temperature?: number | null;
-            /** Selected Reasoning Level Id */
-            selected_reasoning_level_id?: string | null;
-            /** Reasoning */
-            reasoning?: string | null;
-            /** Selected Voice Ids */
-            selected_voice_ids?: string[] | null;
-            /** Valid Voices */
-            valid_voices?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Temperature Lower */
-            temperature_lower?: number | null;
-            /** Temperature Upper */
-            temperature_upper?: number | null;
-            /** Valid Model Ids */
-            valid_model_ids?: string[] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetAgentDetailV4Department"][] | null;
-            /** Prompts */
-            prompts?: components["schemas"]["QGetAgentDetailV4Prompt"][] | null;
-            /** Department Prompt Links */
-            department_prompt_links?: components["schemas"]["QGetAgentDetailV4DepartmentPromptLink"][] | null;
-            /** Debug Info */
-            debug_info?: components["schemas"]["QGetAgentDetailV4DebugInfo"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetAgentDetailV4Model"][] | null;
-            /** Reasoning Options */
-            reasoning_options?: components["schemas"]["QGetAgentDetailV4ReasoningOption"][] | null;
-            /** Temperature Levels */
-            temperature_levels?: components["schemas"]["QGetAgentDetailV4TemperatureLevel"][] | null;
-            /** Available Voices */
-            available_voices?: components["schemas"]["QGetAgentDetailV4AvailableVoice"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-        };
-        /** GetAgentNewApiRequest */
-        GetAgentNewApiRequest: {
             /** Draft Id */
             draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
-        /** GetAgentNewApiResponse */
-        GetAgentNewApiResponse: {
+        /** GetAgentApiResponse */
+        GetAgentApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            /** User Role */
-            user_role?: string | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Valid Model Ids */
-            valid_model_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Models */
-            models?: components["schemas"]["QGetAgentNewV4Model"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetAgentNewV4Department"][] | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Prompt Id */
-            prompt_id?: string | null;
+            /** Agent Exists */
+            agent_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetAgentV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetAgentV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetAgentV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetAgentV4DescriptionResource"][] | null;
             /** Model Id */
             model_id?: string | null;
+            model_resource?: components["schemas"]["QGetAgentV4ModelResource"] | null;
+            /** Show Models */
+            show_models?: boolean | null;
+            /** Models Agent Id */
+            models_agent_id?: string | null;
+            /** Models Required */
+            models_required?: boolean | null;
+            /** Model Suggestions */
+            model_suggestions?: string[] | null;
+            /** Models */
+            models?: components["schemas"]["QGetAgentV4Model"][] | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            prompt_resource?: components["schemas"]["QGetAgentV4PromptResource"] | null;
+            /** Show Prompts */
+            show_prompts?: boolean | null;
+            /** Prompts Agent Id */
+            prompts_agent_id?: string | null;
+            /** Prompts Required */
+            prompts_required?: boolean | null;
+            /** Prompt Suggestions */
+            prompt_suggestions?: string[] | null;
+            /** Prompts */
+            prompts?: components["schemas"]["QGetAgentV4Prompt"][] | null;
+            /** Instructions Id */
+            instructions_id?: string | null;
+            instructions_resource?: components["schemas"]["QGetAgentV4InstructionsResource"] | null;
+            /** Show Instructions */
+            show_instructions?: boolean | null;
+            /** Instructions Agent Id */
+            instructions_agent_id?: string | null;
+            /** Instructions Required */
+            instructions_required?: boolean | null;
+            /** Instructions Suggestions */
+            instructions_suggestions?: string[] | null;
+            /** Instructions */
+            instructions?: components["schemas"]["QGetAgentV4InstructionsResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetAgentV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetAgentV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetAgentV4Department"][] | null;
+            /** System Prompt */
+            system_prompt?: string | null;
             /** Active */
             active?: boolean | null;
             /** Role */
             role?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
             /** Temperature Level Id */
             temperature_level_id?: string | null;
             /** Reasoning Level Id */
             reasoning_level_id?: string | null;
             /** Voice Ids */
             voice_ids?: string[] | null;
-            /** Draft Version */
-            draft_version?: number | null;
+            /** Valid Model Ids */
+            valid_model_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Temperature Levels */
+            temperature_levels?: unknown | null;
+            /** Reasoning Options */
+            reasoning_options?: unknown | null;
+            /** Available Voices */
+            available_voices?: unknown | null;
+            /** Debug Info */
+            debug_info?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
         };
         /** GetAgentsListApiRequest */
         GetAgentsListApiRequest: Record<string, never>;
@@ -10633,13 +10585,13 @@ export interface components {
             /** Departments */
             departments?: components["schemas"]["QListSimulationsV4Department"][] | null;
             /** Cohorts */
-            cohorts?: unknown | null;
+            cohorts?: components["schemas"]["QListSimulationsV4Cohort"][] | null;
             /** Rubric Options */
-            rubric_options?: unknown | null;
+            rubric_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Cohort Options */
-            cohort_options?: unknown | null;
+            cohort_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
             /** Department Options */
-            department_options?: unknown | null;
+            department_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
         };
         /** GetStaffApiRequest */
         GetStaffApiRequest: {
@@ -11833,107 +11785,50 @@ export interface components {
             /** Profile Id */
             profile_id: string | null;
         };
-        /** QGetAgentDetailV4AvailableVoice */
-        QGetAgentDetailV4AvailableVoice: {
-            /** Id */
-            id: string | null;
-            /** Voice */
-            voice: string | null;
-        };
-        /** QGetAgentDetailV4DebugInfo */
-        QGetAgentDetailV4DebugInfo: {
-            /** Created At */
-            created_at: string | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Content */
-            content: string | null;
-        };
-        /** QGetAgentDetailV4Department */
-        QGetAgentDetailV4Department: {
+        /** QGetAgentV4Department */
+        QGetAgentV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetAgentDetailV4DepartmentPromptLink */
-        QGetAgentDetailV4DepartmentPromptLink: {
-            /** Department Id */
-            department_id: string | null;
-            /** Prompt Id */
-            prompt_id: string | null;
-        };
-        /** QGetAgentDetailV4Model */
-        QGetAgentDetailV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Input Modalities */
-            input_modalities: string[] | null;
-            /** Output Modalities */
-            output_modalities: string[] | null;
-            /** Temperature Lower */
-            temperature_lower: number | null;
-            /** Temperature Upper */
-            temperature_upper: number | null;
-            /** Temperature Levels */
-            temperature_levels: unknown | null;
-            /** Reasoning Options */
-            reasoning_options: unknown | null;
-            /** Available Voices */
-            available_voices: unknown | null;
-        };
-        /** QGetAgentDetailV4Prompt */
-        QGetAgentDetailV4Prompt: {
-            /** Prompt Id */
-            prompt_id: string | null;
-            /** System Prompt */
-            system_prompt: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Updated At */
-            updated_at: string | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-            /** Can Delete */
-            can_delete: boolean | null;
-        };
-        /** QGetAgentDetailV4ReasoningOption */
-        QGetAgentDetailV4ReasoningOption: {
+        /** QGetAgentV4DescriptionResource */
+        QGetAgentV4DescriptionResource: {
             /** Id */
             id: string | null;
-            /** Reasoning Level */
-            reasoning_level: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetAgentDetailV4TemperatureLevel */
-        QGetAgentDetailV4TemperatureLevel: {
+        /** QGetAgentV4FlagResource */
+        QGetAgentV4FlagResource: {
             /** Id */
             id: string | null;
-            /** Temperature */
-            temperature: string | null;
-            /** Is Upper */
-            is_upper: boolean | null;
-        };
-        /** QGetAgentNewV4Department */
-        QGetAgentNewV4Department: {
-            /** Department Id */
-            department_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetAgentNewV4Model */
-        QGetAgentNewV4Model: {
+        /** QGetAgentV4InstructionsResource */
+        QGetAgentV4InstructionsResource: {
+            /** Id */
+            id: string | null;
+            /** Template */
+            template: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAgentV4Model */
+        QGetAgentV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
@@ -11956,6 +11851,62 @@ export interface components {
             reasoning_options: unknown | null;
             /** Available Voices */
             available_voices: unknown | null;
+        };
+        /** QGetAgentV4ModelResource */
+        QGetAgentV4ModelResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAgentV4NameResource */
+        QGetAgentV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAgentV4Prompt */
+        QGetAgentV4Prompt: {
+            /** Prompt Id */
+            prompt_id: string | null;
+            /** System Prompt */
+            system_prompt: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAgentV4PromptResource */
+        QGetAgentV4PromptResource: {
+            /** Id */
+            id: string | null;
+            /** System Prompt */
+            system_prompt: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetAuthDetailV4AuthItem */
         QGetAuthDetailV4AuthItem: {
@@ -15364,9 +15315,20 @@ export interface components {
             /** Active */
             active: boolean | null;
             /** Options */
-            options: unknown | null;
+            options: components["schemas"]["QGetScenarioNewV4QuestionOption"][] | null;
             /** Times */
             times: number[] | null;
+        };
+        /** QGetScenarioNewV4QuestionOption */
+        QGetScenarioNewV4QuestionOption: {
+            /** Id */
+            id: string | null;
+            /** Option Text */
+            option_text: string | null;
+            /** Type */
+            type: string | null;
+            /** Is Correct */
+            is_correct: boolean | null;
         };
         /** QGetScenarioNewV4ScenarioImage */
         QGetScenarioNewV4ScenarioImage: {
@@ -17311,6 +17273,15 @@ export interface components {
             /** Department Ids */
             department_ids: string[] | null;
         };
+        /** QListSimulationsV4Cohort */
+        QListSimulationsV4Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
         /** QListSimulationsV4Department */
         QListSimulationsV4Department: {
             /** Department Id */
@@ -17341,6 +17312,13 @@ export interface components {
             parameter_id: string | null;
             /** Parameter Name */
             parameter_name: string | null;
+        };
+        /** QListSimulationsV4Option */
+        QListSimulationsV4Option: {
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string | null;
         };
         /** QListSimulationsV4Persona */
         QListSimulationsV4Persona: {
@@ -18632,6 +18610,45 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** SaveAgentApiRequest */
+        SaveAgentApiRequest: {
+            /** Name */
+            name: string;
+            /**
+             * Model Id
+             * Format: uuid
+             */
+            model_id: string;
+            /** Description */
+            description?: string | null;
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** System Prompt */
+            system_prompt?: string | null;
+            /** Instructions Id */
+            instructions_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Artifact Name */
+            artifact_name?: string | null;
+            /** Input Agent Id */
+            input_agent_id?: string | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+        };
+        /** SaveAgentApiResponse */
+        SaveAgentApiResponse: {
+            /** Agent Id */
+            agent_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SaveCohortApiRequest */
         SaveCohortApiRequest: {
             /**
@@ -19725,48 +19742,6 @@ export interface components {
         TimesApiResponse: {
             /** Time Id */
             time_id?: string | null;
-        };
-        /** UpdateAgentApiRequest */
-        UpdateAgentApiRequest: {
-            /**
-             * Agent Id
-             * Format: uuid
-             */
-            agent_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /**
-             * Model Id
-             * Format: uuid
-             */
-            model_id: string;
-            /** Active */
-            active: boolean;
-            /** Artifact Name */
-            artifact_name: string;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Department Ids For Prompt */
-            department_ids_for_prompt?: string[] | null;
-            /** Temperature Level Id */
-            temperature_level_id?: string | null;
-            /** Reasoning Level Id */
-            reasoning_level_id?: string | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
-        };
-        /** UpdateAgentApiResponse */
-        UpdateAgentApiResponse: {
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
         /** UpdateAuthApiRequest */
         UpdateAuthApiRequest: {
@@ -25555,7 +25530,7 @@ export interface operations {
             };
         };
     };
-    get_agent_detail_api_v4_agents_detail_post: {
+    get_agent_api_v4_agents_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25568,7 +25543,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAgentDetailApiRequest"];
+                "application/json": components["schemas"]["GetAgentApiRequest"];
             };
         };
         responses: {
@@ -25578,7 +25553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAgentDetailApiResponse"];
+                    "application/json": components["schemas"]["GetAgentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25592,7 +25567,7 @@ export interface operations {
             };
         };
     };
-    get_agent_new_api_v4_agents_new_post: {
+    save_agent_api_v4_agents_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25605,7 +25580,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAgentNewApiRequest"];
+                "application/json": components["schemas"]["SaveAgentApiRequest"];
             };
         };
         responses: {
@@ -25615,81 +25590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAgentNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_agent_api_v4_agents_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAgentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateAgentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_agent_api_v4_agents_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateAgentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateAgentApiResponse"];
+                    "application/json": components["schemas"]["SaveAgentApiResponse"];
                 };
             };
             /** @description Validation Error */

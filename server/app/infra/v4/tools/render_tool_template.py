@@ -4,21 +4,18 @@ import uuid
 from typing import Any, cast
 
 import asyncpg
+from app.sql.types import (InfraToolsGetSchemaFieldsV4SqlParams,
+                           InfraToolsGetSchemaFieldsV4SqlRow,
+                           InfraToolsGetSchemaIdFromTemplateV4SqlParams,
+                           InfraToolsGetSchemaIdFromTemplateV4SqlRow,
+                           InfraToolsGetTemplateIdV4SqlParams,
+                           InfraToolsGetTemplateIdV4SqlRow,
+                           InfraToolsGetToolCallResultV4SqlParams,
+                           InfraToolsGetToolCallResultV4SqlRow)
 from jinja2 import Environment, TemplateError, TemplateSyntaxError
 from jinja2.environment import Template as JinjaTemplate
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import execute_sql_typed
-
-from app.sql.types import (
-    InfrastructureToolsGetSchemaFieldsSqlParams,
-    InfrastructureToolsGetSchemaFieldsSqlRow,
-    InfrastructureToolsGetSchemaIdFromTemplateSqlParams,
-    InfrastructureToolsGetSchemaIdFromTemplateSqlRow,
-    InfrastructureToolsGetTemplateIdSqlParams,
-    InfrastructureToolsGetTemplateIdSqlRow,
-    InfrastructureToolsGetToolCallResultSqlParams,
-    InfrastructureToolsGetToolCallResultSqlRow,
-)
 
 logger = get_logger(__name__)
 
@@ -81,9 +78,9 @@ async def render_tool_template(
         TemplateError: If template rendering fails (logged but not raised)
     """
     # Get tool's template_id
-    tool_params = InfrastructureToolsGetTemplateIdSqlParams(tool_id=tool_id)
+    tool_params = InfraToolsGetTemplateIdV4SqlParams(tool_id=tool_id)
     tool_result = cast(
-        InfrastructureToolsGetTemplateIdSqlRow,
+        InfraToolsGetTemplateIdV4SqlRow,
         await execute_sql_typed(conn, GET_TEMPLATE_ID_SQL_PATH, params=tool_params),
     )
 
@@ -96,11 +93,11 @@ async def render_tool_template(
     template_id = tool_result.template_id
 
     # Get schema linked to template via schema_templates
-    schema_params = InfrastructureToolsGetSchemaIdFromTemplateSqlParams(
+    schema_params = InfraToolsGetSchemaIdFromTemplateV4SqlParams(
         template_id=template_id
     )
     schema_result = cast(
-        InfrastructureToolsGetSchemaIdFromTemplateSqlRow,
+        InfraToolsGetSchemaIdFromTemplateV4SqlRow,
         await execute_sql_typed(conn, GET_SCHEMA_ID_SQL_PATH, params=schema_params),
     )
 
@@ -223,11 +220,11 @@ async def get_rendered_template_values(
     Returns:
         Dictionary of rendered values if found, None otherwise
     """
-    result_params = InfrastructureToolsGetToolCallResultSqlParams(
+    result_params = InfraToolsGetToolCallResultV4SqlParams(
         tool_call_id=tool_call_id
     )
     result_result = cast(
-        InfrastructureToolsGetToolCallResultSqlRow,
+        InfraToolsGetToolCallResultV4SqlRow,
         await execute_sql_typed(conn, GET_TOOL_CALL_RESULT_SQL_PATH, params=result_params),
     )
     result_record = {

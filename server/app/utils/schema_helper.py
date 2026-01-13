@@ -12,21 +12,20 @@ import uuid
 from typing import Any, cast
 
 import asyncpg
-from app.sql.types import (ApiGetSchemaWithFieldsSqlParams,
-                           ApiGetSchemaWithFieldsSqlRow,
-                           ApiGetTemplateSchemaSqlParams,
-                           ApiGetTemplateSchemaSqlRow,
-                           UtilsCreateSchemaFieldItemSqlParams,
-                           UtilsCreateSchemaFieldSqlParams,
-                           UtilsCreateSchemaSqlParams,
-                           UtilsCreateTemplateArrayItemSqlParams,
-                           UtilsCreateTemplateSqlParams,
-                           UtilsCreateTemplateValueSqlParams,
-                           UtilsGetTemplateArrayItemsSqlParams,
-                           UtilsGetTemplateArrayItemsSqlRow,
-                           UtilsGetTemplateValuesSqlParams,
-                           UtilsGetTemplateValuesSqlRow,
-                           UtilsLinkSchemaTemplateSqlParams)
+from app.sql.types import (CreateSchemaFieldItemV4SqlParams,
+                           CreateSchemaFieldV4SqlParams,
+                           CreateSchemaV4SqlParams,
+                           CreateTemplateArrayItemV4SqlParams,
+                           CreateTemplateV4SqlParams,
+                           CreateTemplateValueV4SqlParams,
+                           GetSchemaWithFieldsSqlParams,
+                           GetSchemaWithFieldsSqlRow,
+                           GetTemplateArrayItemsV4SqlParams,
+                           GetTemplateArrayItemsV4SqlRow,
+                           GetTemplateSchemaSqlParams, GetTemplateSchemaSqlRow,
+                           GetTemplateValuesV4SqlParams,
+                           GetTemplateValuesV4SqlRow,
+                           LinkSchemaTemplateV4SqlParams)
 from utils.sql_helper import execute_sql_typed, load_sql
 
 
@@ -48,7 +47,7 @@ async def get_schema_with_fields(
     """
     # Call function directly since it returns multiple rows
     # For RETURNS TABLE functions that return multiple rows, use conn.fetch with function call
-    params = ApiGetSchemaWithFieldsSqlParams(schema_id=schema_id)
+    params = GetSchemaWithFieldsSqlParams(schema_id=schema_id)
     sql = load_sql("app/sql/v4/schemas/get_schema_with_fields_complete.sql")
     rows = await conn.fetch(sql, schema_id)
 
@@ -153,9 +152,9 @@ async def get_template_schema(
         Schema tree dictionary or None if template has no schema
     """
     # Call function directly since it returns a single row
-    params = ApiGetTemplateSchemaSqlParams(template_id=template_id)
+    params = GetTemplateSchemaSqlParams(template_id=template_id)
     row_result = cast(
-        ApiGetTemplateSchemaSqlRow,
+        GetTemplateSchemaSqlRow,
         await execute_sql_typed(
             conn,
             "app/sql/v4/templates/get_template_schema_complete.sql",
@@ -191,7 +190,7 @@ async def get_template_values(
         Dictionary of template values (compatible with template_args format)
     """
     # Get all scalar values
-    values_params = UtilsGetTemplateValuesSqlParams(template_id=template_id)
+    values_params = GetTemplateValuesV4SqlParams(template_id=template_id)
     values_sql = load_sql("app/sql/v4/utils/get_template_values_v4_complete.sql")
     values_rows_raw = await conn.fetch(values_sql, template_id)
     values_rows = [
@@ -206,7 +205,7 @@ async def get_template_values(
     ]
 
     # Get all array items
-    array_params = UtilsGetTemplateArrayItemsSqlParams(template_id=template_id)
+    array_params = GetTemplateArrayItemsV4SqlParams(template_id=template_id)
     array_sql = load_sql("app/sql/v4/utils/get_template_array_items_v4_complete.sql")
     array_items_rows_raw = await conn.fetch(array_sql, template_id)
     array_items_rows = [
@@ -272,7 +271,7 @@ async def create_template_with_values(
     """
     # Create template record
     template_id = uuid.uuid4()
-    create_template_params = UtilsCreateTemplateSqlParams(
+    create_template_params = CreateTemplateV4SqlParams(
         template_id=template_id,
         name=name,
     )
@@ -312,7 +311,7 @@ async def create_template_with_values(
                             )
 
                             # Link array item
-                            array_item_params = UtilsCreateTemplateArrayItemSqlParams(
+                            array_item_params = CreateTemplateArrayItemV4SqlParams(
                                 template_id=template_id,
                                 schema_field_id=field_id,
                                 item_template_id=item_template_id,
@@ -326,7 +325,7 @@ async def create_template_with_values(
         else:
             # Handle scalar values
             if field_type == "string":
-                value_params = UtilsCreateTemplateValueSqlParams(
+                value_params = CreateTemplateValueV4SqlParams(
                     template_id=template_id,
                     schema_field_id=field_id,
                     string_value=str(value),
@@ -339,7 +338,7 @@ async def create_template_with_values(
                     params=value_params,
                 )
             elif field_type == "number":
-                value_params = UtilsCreateTemplateValueSqlParams(
+                value_params = CreateTemplateValueV4SqlParams(
                     template_id=template_id,
                     schema_field_id=field_id,
                     string_value=None,
@@ -352,7 +351,7 @@ async def create_template_with_values(
                     params=value_params,
                 )
             elif field_type == "boolean":
-                value_params = UtilsCreateTemplateValueSqlParams(
+                value_params = CreateTemplateValueV4SqlParams(
                     template_id=template_id,
                     schema_field_id=field_id,
                     string_value=None,
@@ -381,7 +380,7 @@ async def link_template_to_schema(
         template_id: UUID of the template
         schema_id: UUID of the schema
     """
-    link_params = UtilsLinkSchemaTemplateSqlParams(
+    link_params = LinkSchemaTemplateV4SqlParams(
         schema_id=schema_id,
         template_id=template_id,
     )
@@ -423,7 +422,7 @@ async def create_schema_from_dict(
     """
     # Create schema record
     schema_id = uuid.uuid4()
-    create_schema_params = UtilsCreateSchemaSqlParams(schema_id=schema_id)
+    create_schema_params = CreateSchemaV4SqlParams(schema_id=schema_id)
     await execute_sql_typed(
         conn,
         "app/sql/v4/utils/create_schema_v4_complete.sql",
@@ -440,7 +439,7 @@ async def create_schema_from_dict(
         placeholder = field.get("placeholder")
 
         # Insert schema_field
-        field_params = UtilsCreateSchemaFieldSqlParams(
+        field_params = CreateSchemaFieldV4SqlParams(
             field_id=field_id,
             schema_id=schema_id,
             name=field["name"],
@@ -459,7 +458,7 @@ async def create_schema_from_dict(
         # If array type, recursively create item schema and link via schema_field_items
         if field_type == "array" and "item" in field:
             item_schema_id = await create_schema_from_dict(conn, field["item"])
-            item_params = UtilsCreateSchemaFieldItemSqlParams(
+            item_params = CreateSchemaFieldItemV4SqlParams(
                 schema_field_id=field_id,
                 item_schema_id=item_schema_id,
             )

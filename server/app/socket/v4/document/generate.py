@@ -11,10 +11,10 @@ from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (SocketGetDocumentAgentIdSqlParams,
-                           SocketGetDocumentAgentIdSqlRow,
-                           SocketGetDocumentDepartmentSqlParams,
-                           SocketGetDocumentDepartmentSqlRow)
+from app.sql.types import (GetDocumentAgentIdV4SqlParams,
+                           GetDocumentAgentIdV4SqlRow,
+                           GetDocumentDepartmentV4SqlParams,
+                           GetDocumentDepartmentV4SqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
@@ -56,7 +56,7 @@ async def _generate_document_impl(
                     document_id=uuid.UUID(data.document_id)
                 )
                 dept_result = cast(
-                    SocketGetDocumentDepartmentSqlRow,
+                    GetDocumentDepartmentV4SqlRow,
                     await execute_sql_typed(conn, GET_DOCUMENT_DEPARTMENT_SQL_PATH, params=dept_params),
                 )
                 if not dept_result or not dept_result.department_id:
@@ -148,11 +148,11 @@ async def _generate_document_impl(
                     agent_id = uuid.UUID(result.agent_id)
                 else:
                     # Fallback: get agent_id from document's domain
-                    agent_params = SocketGetDocumentAgentIdSqlParams(
+                    agent_params = GetDocumentAgentIdV4SqlParams(
                         document_id=uuid.UUID(data.document_id)
                     )
                     agent_result = cast(
-                        SocketGetDocumentAgentIdSqlRow,
+                        GetDocumentAgentIdV4SqlRow,
                         await execute_sql_typed(conn, GET_DOCUMENT_AGENT_ID_SQL_PATH, params=agent_params),
                     )
                     agent_id = agent_result.agent_id if agent_result else None

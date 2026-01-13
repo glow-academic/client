@@ -10,10 +10,10 @@ from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
 from app.socket.v4.simulations.error import SimulationErrorPayload
-from app.sql.types import (GetSimulationRunContextSqlParams,
-                           GetSimulationRunContextSqlRow,
-                           SocketGetGroupIdFromChatGroupSqlParams,
-                           SocketGetGroupIdFromChatGroupSqlRow)
+from app.sql.types import (GetGroupIdFromChatGroupV4SqlParams,
+                           GetGroupIdFromChatGroupV4SqlRow,
+                           GetSimulationRunContextSqlParams,
+                           GetSimulationRunContextSqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
@@ -84,7 +84,7 @@ async def _simulation_voice_generate_impl(
             # Get group_id from chat (if exists)
             group_params = SocketGetGroupIdFromChatGroupSqlParams(chat_id=chat_id_uuid)
             group_result = cast(
-                SocketGetGroupIdFromChatGroupSqlRow,
+                GetGroupIdFromChatGroupV4SqlRow,
                 await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
             )
             group_id = str(group_result.group_id) if group_result and group_result.group_id else None

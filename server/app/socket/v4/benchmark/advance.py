@@ -6,7 +6,7 @@ from typing import Any, cast
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
-from app.sql.types import SocketGetTestByIdSqlParams, SocketGetTestByIdSqlRow
+from app.sql.types import GetTestByIdV4SqlParams, GetTestByIdV4SqlRow
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
@@ -87,9 +87,9 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
             attempt_id_uuid = uuid.UUID(attempt_id)
 
             # Verify test exists
-            test_params = SocketGetTestByIdSqlParams(test_id=test_id_uuid)
+            test_params = GetTestByIdV4SqlParams(test_id=test_id_uuid)
             test_result = cast(
-                SocketGetTestByIdSqlRow,
+                GetTestByIdV4SqlRow,
                 await execute_sql_typed(
                     conn,
                     "app/sql/v4/benchmark/get_test_by_id_v4_complete.sql",

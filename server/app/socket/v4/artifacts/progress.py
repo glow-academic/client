@@ -6,18 +6,15 @@ from typing import Any, cast
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio, sio
-from app.sql.types import (
-    GetImageGenerationContextAndCreateUploadSqlParams,
-    GetImageGenerationContextAndCreateUploadSqlRow,
-    GetVideoRunContextAndCreateRunSqlParams,
-    GetVideoRunContextAndCreateRunSqlRow,
-    InfrastructureArtifactsGetGroupIdFromRunSqlParams,
-    InfrastructureArtifactsGetGroupIdFromRunSqlRow,
-    InsertUploadSqlParams,
-    InsertUploadSqlRow,
-    TextToolProgressUpdateSqlParams,
-    TextToolProgressUpdateSqlRow,
-)
+from app.sql.types import (GetImageGenerationContextAndCreateUploadSqlParams,
+                           GetImageGenerationContextAndCreateUploadSqlRow,
+                           GetVideoRunContextAndCreateRunSqlParams,
+                           GetVideoRunContextAndCreateRunSqlRow,
+                           InfraArtifactsGetGroupIdFromRunSqlParams,
+                           InfraArtifactsGetGroupIdFromRunSqlRow,
+                           InsertUploadSqlParams, InsertUploadSqlRow,
+                           TextToolProgressUpdateSqlParams,
+                           TextToolProgressUpdateSqlRow)
 from fastapi import APIRouter
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -204,11 +201,11 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
 
         async with get_db_connection() as conn:
             # Get group_id from run (resource_id no longer needed)
-            group_params = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+            group_params = InfraArtifactsGetGroupIdFromRunSqlParams(
                 run_id=uuid.UUID(run_id)
             )
             group_result = cast(
-                InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+                InfraArtifactsGetGroupIdFromRunSqlRow,
                 await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
             )
             group_id = str(group_result.group_id) if group_result and group_result.group_id else None
