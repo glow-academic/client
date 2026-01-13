@@ -12,12 +12,10 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentNewIn = InputOf<"/api/v4/agents/new", "post">;
-type AgentNewOut = OutputOf<"/api/v4/agents/new", "post">;
-type CreateAgentIn = InputOf<"/api/v4/agents/create", "post">;
-type CreateAgentOut = OutputOf<"/api/v4/agents/create", "post">;
-type UpdateAgentIn = InputOf<"/api/v4/agents/update", "post">;
-type UpdateAgentOut = OutputOf<"/api/v4/agents/update", "post">;
+type GetAgentIn = InputOf<"/api/v4/agents/get", "post">;
+type GetAgentOut = OutputOf<"/api/v4/agents/get", "post">;
+type SaveAgentIn = InputOf<"/api/v4/agents/save", "post">;
+type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
 type DeleteAgentPromptIn = InputOf<"/api/v4/prompts/delete", "post">;
 type DeleteAgentPromptOut = OutputOf<"/api/v4/prompts/delete", "post">;
 type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
@@ -26,10 +24,10 @@ type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getAgentDefault = async (
-  input: AgentNewIn
-): Promise<AgentNewOut> => {
-  return api.post("/agents/new", input, {
+const getAgent = async (
+  input: GetAgentIn
+): Promise<GetAgentOut> => {
+  return api.post("/agents/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -38,18 +36,11 @@ const getAgentDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
+async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/create", input);
-}
-
-async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/update", input);
+  return api.post("/agents/save", input);
 }
 
 async function deleteAgentPrompt(
@@ -103,13 +94,14 @@ export default async function NewAgentPage({
   const loadAgentSearchParams = createLoader(agentSearchParams);
   const q = loadAgentSearchParams(searchParamsObj);
 
-  // Fetch default agent detail server-side with draft_id
-  const input: AgentNewIn = {
+  // Fetch default agent detail server-side with draft_id (agent_id = null for new mode)
+  const input: GetAgentIn = {
     body: {
+      agent_id: null,
       draft_id: q.draftId ?? null,
-    } as AgentNewIn["body"],
+    } as GetAgentIn["body"],
   };
-  const agentDetailDefault = await getAgentDefault(input);
+  const agentDetailDefault = await getAgent(input);
 
   return (
     <div
@@ -120,8 +112,7 @@ export default async function NewAgentPage({
       <Agent
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         agentDetailDefault={agentDetailDefault}
-        createAgentAction={createAgent}
-        updateAgentAction={updateAgent}
+        saveAgentAction={saveAgent}
         deleteAgentPromptAction={deleteAgentPrompt}
         patchAgentDraftAction={patchAgentDraft}
       />
@@ -131,14 +122,12 @@ export default async function NewAgentPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AgentNewIn,
-  AgentNewOut,
-  CreateAgentIn,
-  CreateAgentOut,
+  GetAgentIn,
+  GetAgentOut,
+  SaveAgentIn,
+  SaveAgentOut,
   DeleteAgentPromptIn,
   DeleteAgentPromptOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
-  UpdateAgentIn,
-  UpdateAgentOut,
 };

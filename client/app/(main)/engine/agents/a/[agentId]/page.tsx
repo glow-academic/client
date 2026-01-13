@@ -13,14 +13,10 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentDetailIn = InputOf<"/api/v4/agents/detail", "post">;
-type AgentDetailOut = OutputOf<"/api/v4/agents/detail", "post">;
-type AgentNewIn = InputOf<"/api/v4/agents/new", "post">;
-type AgentNewOut = OutputOf<"/api/v4/agents/new", "post">;
-type CreateAgentIn = InputOf<"/api/v4/agents/create", "post">;
-type CreateAgentOut = OutputOf<"/api/v4/agents/create", "post">;
-type UpdateAgentIn = InputOf<"/api/v4/agents/update", "post">;
-type UpdateAgentOut = OutputOf<"/api/v4/agents/update", "post">;
+type GetAgentIn = InputOf<"/api/v4/agents/get", "post">;
+type GetAgentOut = OutputOf<"/api/v4/agents/get", "post">;
+type SaveAgentIn = InputOf<"/api/v4/agents/save", "post">;
+type SaveAgentOut = OutputOf<"/api/v4/agents/save", "post">;
 type DeleteAgentPromptIn = InputOf<"/api/v4/prompts/delete", "post">;
 type DeleteAgentPromptOut = OutputOf<"/api/v4/prompts/delete", "post">;
 type PatchAgentDraftIn = InputOf<"/api/v4/agents/draft", "patch">;
@@ -30,9 +26,9 @@ type PatchAgentDraftOut = OutputOf<"/api/v4/agents/draft", "patch">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getAgent = async (
-  input: AgentDetailIn
-): Promise<AgentDetailOut> => {
-  return api.post("/agents/detail", input, {
+  input: GetAgentIn
+): Promise<GetAgentOut> => {
+  return api.post("/agents/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -48,10 +44,10 @@ export async function generateMetadata(
   const { agentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const input: AgentDetailIn = {
+    const input: GetAgentIn = {
       body: {
         agent_id: agentId,
-      } as AgentDetailIn["body"],
+      } as GetAgentIn["body"],
     };
     const agent = await getAgent(input);
     return {
@@ -70,18 +66,11 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
+async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/create", input);
-}
-
-async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/agents/update", input);
+  return api.post("/agents/save", input);
 }
 
 async function deleteAgentPrompt(
@@ -133,11 +122,11 @@ export default async function AgentEditPage({
 
   // Fetch agent detail (always fresh - source of truth) with draft_id
   try {
-    const input: AgentDetailIn = {
+    const input: GetAgentIn = {
       body: {
         agent_id: agentId,
         draft_id: q.draftId ?? null,
-      } as AgentDetailIn["body"],
+      } as GetAgentIn["body"],
     };
     const agentDetail = agentId ? await getAgent(input) : null;
 
@@ -146,8 +135,7 @@ export default async function AgentEditPage({
         <Agent
           agentId={agentId}
           {...(agentDetail && { agentDetail })}
-          createAgentAction={createAgent}
-          updateAgentAction={updateAgent}
+          saveAgentAction={saveAgent}
           deleteAgentPromptAction={deleteAgentPrompt}
           patchAgentDraftAction={patchAgentDraft}
         />
@@ -176,16 +164,12 @@ export default async function AgentEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AgentDetailIn,
-  AgentDetailOut,
-  AgentNewIn,
-  AgentNewOut,
-  CreateAgentIn,
-  CreateAgentOut,
+  GetAgentIn,
+  GetAgentOut,
+  SaveAgentIn,
+  SaveAgentOut,
   DeleteAgentPromptIn,
   DeleteAgentPromptOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
-  UpdateAgentIn,
-  UpdateAgentOut,
 };

@@ -65,16 +65,13 @@ import AgentDebugInfo from "./AgentDebugInfo";
 
 // Type-only import from server page
 import type {
-  AgentDetailOut,
-  AgentNewOut,
-  CreateAgentIn,
-  CreateAgentOut,
+  GetAgentOut,
+  SaveAgentIn,
+  SaveAgentOut,
   DeleteAgentPromptIn,
   DeleteAgentPromptOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
-  UpdateAgentIn,
-  UpdateAgentOut,
 } from "@/app/(main)/engine/agents/a/[agentId]/page";
 
 // Build model_mapping type from models array
@@ -101,10 +98,9 @@ type AgentModelMapping = Record<
 export interface AgentProps {
   agentId?: string;
   // Optional server-provided data and actions (for server-side rendering)
-  agentDetail?: AgentDetailOut;
-  agentDetailDefault?: AgentNewOut;
-  createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
-  updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
+  agentDetail?: GetAgentOut; // For edit mode (agent_id provided)
+  agentDetailDefault?: GetAgentOut; // For new mode (agent_id = null)
+  saveAgentAction?: (input: SaveAgentIn) => Promise<SaveAgentOut>;
   deleteAgentPromptAction?: (
     input: DeleteAgentPromptIn
   ) => Promise<DeleteAgentPromptOut>;
@@ -126,8 +122,7 @@ export default function Agent({
   agentId,
   agentDetail: serverAgentDetail,
   agentDetailDefault: serverAgentDetailDefault,
-  createAgentAction,
-  updateAgentAction,
+  saveAgentAction,
   deleteAgentPromptAction,
   patchAgentDraftAction,
 }: AgentProps) {
@@ -438,31 +433,20 @@ export default function Agent({
   });
 
   // Extract body types from server action types for type safety
-  type CreateAgentBody = CreateAgentIn extends { body: infer B } ? B : never;
-  type UpdateAgentBody = UpdateAgentIn extends { body: infer B } ? B : never;
+  type SaveAgentBody = SaveAgentIn extends { body: infer B } ? B : never;
   type DeleteAgentPromptBody = DeleteAgentPromptIn extends { body: infer B }
     ? B
     : never;
 
   // Use server actions directly (no mutations needed)
-  const handleCreateAgent = useCallback(
-    async (body: CreateAgentBody) => {
-      if (!createAgentAction) {
-        throw new Error("createAgentAction is required");
+  const handleSaveAgent = useCallback(
+    async (body: SaveAgentBody) => {
+      if (!saveAgentAction) {
+        throw new Error("saveAgentAction is required");
       }
-      await createAgentAction({ body });
+      await saveAgentAction({ body });
     },
-    [createAgentAction]
-  );
-
-  const handleUpdateAgent = useCallback(
-    async (body: UpdateAgentBody) => {
-      if (!updateAgentAction) {
-        throw new Error("updateAgentAction is required");
-      }
-      await updateAgentAction({ body });
-    },
-    [updateAgentAction]
+    [saveAgentAction]
   );
 
   const handleDeleteAgentPrompt = async (body: DeleteAgentPromptBody) => {
@@ -1326,7 +1310,7 @@ export default function Agent({
           // Never create default prompts - always create department-specific overrides
           const shouldCreateNewPrompt = hasPromptChanges;
 
-          // Update existing agent using v3 API
+          // Save agent using unified v4 API (handles both create and update)
           // Ensure profileId exists - required for API calls
           if (!effectiveProfile?.id) {
             toast.error("Profile not loaded. Please refresh the page.");
@@ -1334,64 +1318,33 @@ export default function Agent({
           }
 
           // Note: profileId is added by the server action
-          await handleUpdateAgent({
-            agent_id: agentId,
+          // Use input_agent_id = null for create, agent_id for update
+          await handleSaveAgent({
+            input_agent_id: isEditMode ? agentId : null,
             name: draftState.name!,
-            description: draftState.description!,
+            description: draftState.description || null,
+            model_id: draftState.modelId!.trim(),
             prompt_id: shouldCreateNewPrompt
               ? null
               : draftState.promptId || null,
             system_prompt: draftState.systemPrompt!,
-            model_id: draftState.modelId!.trim(),
-            active: draftState.active ?? true,
-            role: draftState.role || "assistant",
+            instructions_id: null, // Not used for agents
+            active_flag_id: null, // Will be set based on active boolean
             department_ids: finalDepartmentIds,
-            department_ids_for_prompt: departmentsForPromptOverride,
-            model_temperature_level_id:
+            artifact_name: draftState.role || "assistant",
+            temperature_level_id:
               draftState.model_temperature_level_id || null,
-            model_reasoning_level_id:
+            reasoning_level_id:
               draftState.model_reasoning_level_id || null,
-            model_voice_ids:
+            voice_ids:
               draftState.model_voice_ids &&
               draftState.model_voice_ids.length > 0
                 ? draftState.model_voice_ids
-                : null,
+                : [],
           });
-          toast.success("Agent updated successfully!");
+          toast.success(`Agent ${isEditMode ? "updated" : "created"} successfully!`);
           resetFormAndState();
           router.push("/engine/agents");
-        } else {
-          // Ensure profileId exists - required for API calls
-          if (!effectiveProfile?.id) {
-            toast.error("Profile not loaded. Please refresh the page.");
-            throw new Error("Profile not loaded");
-          }
-
-          // Create new agent using v3 API
-          // Note: profileId is added by the server action
-          await handleCreateAgent({
-            name: draftState.name!,
-            description: draftState.description!,
-            prompt_id: draftState.promptId || null,
-            system_prompt: draftState.systemPrompt!,
-            model_id: draftState.modelId!.trim(),
-            active: draftState.active ?? true,
-            role: draftState.role || "assistant",
-            department_ids: finalDepartmentIds,
-            model_temperature_level_id:
-              draftState.model_temperature_level_id || null,
-            model_reasoning_level_id:
-              draftState.model_reasoning_level_id || null,
-            model_voice_ids:
-              draftState.model_voice_ids &&
-              draftState.model_voice_ids.length > 0
-                ? draftState.model_voice_ids
-                : null,
-          });
-          toast.success("Agent created successfully!");
-          resetFormAndState();
-          router.push(`/engine/agents`);
-        }
       } catch (error) {
         const msg = error instanceof Error ? error.message : "Unknown error";
         toast.error(
@@ -1409,22 +1362,23 @@ export default function Agent({
       isSuperadmin,
       effectiveProfile,
       hasPromptChanges,
-      handleUpdateAgent,
-      handleCreateAgent,
+      handleSaveAgent,
       resetFormAndState,
       router,
     ]
   );
 
-  const isReadonly = useMemo(() => {
-    if (!isEditMode) return false;
-    if (!agentData) return true;
-    // can_edit only exists on AgentDetailOut, not AgentNewOut
+  // Extract disabled state from can_edit flag (check in both new and edit modes)
+  const disabled = useMemo(() => {
+    if (!agentData) return false;
+    // can_edit exists on unified GetAgentOut response
     if ("can_edit" in agentData) {
       return !agentData.can_edit;
     }
-    return false; // AgentNewOut means creating new, so not readonly
-  }, [isEditMode, agentData]);
+    return false;
+  }, [agentData]);
+
+  const isReadonly = disabled; // Alias for backward compatibility
 
   // Step status calculation for GenericForm
   const getStepStatus = useCallback(
