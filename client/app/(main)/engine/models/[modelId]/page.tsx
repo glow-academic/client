@@ -12,19 +12,19 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelDetailIn = InputOf<"/api/v4/models/detail", "post">;
-type ModelDetailOut = OutputOf<"/api/v4/models/detail", "post">;
+type GetModelIn = InputOf<"/api/v4/models/get", "post">;
+type GetModelOut = OutputOf<"/api/v4/models/get", "post">;
 
-type UpdateModelIn = InputOf<"/api/v4/models/update", "post">;
-type UpdateModelOut = OutputOf<"/api/v4/models/update", "post">;
+type SaveModelIn = InputOf<"/api/v4/models/save", "post">;
+type SaveModelOut = OutputOf<"/api/v4/models/save", "post">;
 type PatchModelDraftIn = InputOf<"/api/v4/models/draft", "patch">;
 type PatchModelDraftOut = OutputOf<"/api/v4/models/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
-const getModel = async (input: ModelDetailIn): Promise<ModelDetailOut> => {
-  return api.post("/models/detail", input, {
+const getModel = async (input: GetModelIn): Promise<GetModelOut> => {
+  return api.post("/models/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -40,9 +40,10 @@ export async function generateMetadata(
   const { modelId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const input: ModelDetailIn = {
+    const input: GetModelIn = {
       body: {
         model_id: modelId,
+        draft_id: null,
       },
     };
     const model = await getModel(input);
@@ -64,12 +65,12 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateModel(input: UpdateModelIn): Promise<UpdateModelOut> {
+async function saveModel(input: SaveModelIn): Promise<SaveModelOut> {
   "use server";
-  // Input body already has snake_case from API schema (model_id, not modelId)
+  // Input body already has snake_case from API schema (input_model_id, not modelId)
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/update", input);
+  return api.post("/models/save", input);
 }
 
 async function patchModelDraft(
@@ -111,8 +112,8 @@ export default async function ModelEditPage({
   const loadModelSearchParams = createLoader(modelSearchParams);
   const q = loadModelSearchParams(searchParamsObj);
 
-  // Fetch model data with draft_id
-  const input: ModelDetailIn = {
+  // Fetch model data with draft_id (model_id provided for detail mode)
+  const input: GetModelIn = {
     body: {
       model_id: modelId,
       draft_id: q.draftId ?? null,
@@ -125,7 +126,7 @@ export default async function ModelEditPage({
       <Model
         modelId={modelId}
         modelDetail={model}
-        updateModelAction={updateModel}
+        saveModelAction={saveModel}
         patchModelDraftAction={patchModelDraft}
       />
     </div>
@@ -134,10 +135,10 @@ export default async function ModelEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  ModelDetailIn,
-  ModelDetailOut,
-  UpdateModelIn,
-  UpdateModelOut,
+  GetModelIn,
+  GetModelOut,
   PatchModelDraftIn,
   PatchModelDraftOut,
+  SaveModelIn,
+  SaveModelOut,
 };

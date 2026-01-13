@@ -15215,6 +15215,237 @@ class DuplicateModelApiResponse(BaseModel):
 
 
 
+# Generated from: get_model
+
+class GetModelSqlParams(BaseModel):
+
+    profile_id: UUID
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.model_id,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetModelV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4KeyOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4KeyResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4Modalities(BaseModel):
+
+    input: list[str] | None
+    output: list[str] | None
+
+
+
+
+class QGetModelV4Pricing(BaseModel):
+
+    pricing_type: str | None
+    unit_id: UUID | None
+    unit_name: str | None
+    unit_category: str | None
+    price: float | None
+
+
+
+
+class QGetModelV4ProviderOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4ProviderResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4Unit(BaseModel):
+
+    unit_id: UUID | None
+    name: str | None
+    unit_category: str | None
+    value: int | None
+
+
+
+
+class QGetModelV4VoiceOption(BaseModel):
+
+    id: UUID | None
+    voice: str | None
+    generated: bool | None
+
+
+
+
+class QGetModelV4VoiceResource(BaseModel):
+
+    id: UUID | None
+    voice: str | None
+    generated: bool | None
+
+class GetModelSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    model_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    image_model: bool | None = None
+    provider: str | None = None
+    provider_name: str | None = None
+    value: str | None = None
+    base_url: str | None = None
+    temperature_lower: float | None = None
+    temperature_upper: float | None = None
+    temperature_values: list[str] | None = None
+    pricing: list[QGetModelV4Pricing] | None = None
+    modalities: QGetModelV4Modalities | None = None
+    reasoning_levels: list[str] | None = None
+    qualities: list[str] | None = None
+    units: list[QGetModelV4Unit] | None = None
+    draft_version: int | None = None
+    provider_id: UUID | None = None
+    provider_resource: QGetModelV4ProviderResource | None = None
+    show_provider: bool | None = None
+    provider_agent_id: UUID | None = None
+    provider_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetModelV4ProviderOption] | None = None
+    key_id: UUID | None = None
+    key_resource: QGetModelV4KeyResource | None = None
+    show_key: bool | None = None
+    key_agent_id: UUID | None = None
+    key_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetModelV4KeyOption] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetModelV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetModelV4Department] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetModelV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetModelV4VoiceOption] | None = None
+
+class GetModelApiRequest(BaseModel):
+
+    model_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetModelApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    model_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    image_model: bool | None = None
+    provider: str | None = None
+    provider_name: str | None = None
+    value: str | None = None
+    base_url: str | None = None
+    temperature_lower: float | None = None
+    temperature_upper: float | None = None
+    temperature_values: list[str] | None = None
+    pricing: list[QGetModelV4Pricing] | None = None
+    modalities: QGetModelV4Modalities | None = None
+    reasoning_levels: list[str] | None = None
+    qualities: list[str] | None = None
+    units: list[QGetModelV4Unit] | None = None
+    draft_version: int | None = None
+    provider_id: UUID | None = None
+    provider_resource: QGetModelV4ProviderResource | None = None
+    show_provider: bool | None = None
+    provider_agent_id: UUID | None = None
+    provider_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetModelV4ProviderOption] | None = None
+    key_id: UUID | None = None
+    key_resource: QGetModelV4KeyResource | None = None
+    show_key: bool | None = None
+    key_agent_id: UUID | None = None
+    key_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetModelV4KeyOption] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetModelV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetModelV4Department] | None = None
+    voice_ids: list[UUID] | None = None
+    voice_resources: list[QGetModelV4VoiceResource] | None = None
+    show_voices: bool | None = None
+    voices_agent_id: UUID | None = None
+    voices_required: bool | None = None
+    voice_suggestions: list[UUID] | None = None
+    voices: list[QGetModelV4VoiceOption] | None = None
+
+
+
 # Generated from: get_model_detail
 
 class GetModelDetailSqlParams(BaseModel):
@@ -15521,6 +15752,98 @@ class ListModelsApiResponse(BaseModel):
     models: list[QListModelsV4Model] | None = None
     provider_options: list[QListModelsV4ProviderOption] | None = None
     status_options: list[QListModelsV4StatusOption] | None = None
+
+
+
+# Generated from: save_model
+
+class ISaveModelV4Pricing(BaseModel):
+
+    pricing_type: str | None
+    unit_id: UUID | None
+    price: float | None
+
+
+
+
+class ISaveModelV4TemperatureBounds(BaseModel):
+
+    bounds_type: str | None
+    lower_bound: float | None
+    upper_bound: float | None
+    values_array: list[float] | None
+
+class SaveModelSqlParams(BaseModel):
+
+    provider_id: UUID
+    name: str
+    description: str
+    active: bool
+    value: str
+    profile_id: UUID
+    input_model_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    base_url: str | None = None
+    temperature_bounds: ISaveModelV4TemperatureBounds | None = None
+    pricing: list[ISaveModelV4Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voice_ids: list[UUID] | None = None
+    qualities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert pricing composite array to tuples for asyncpg
+        pricing_tuples = [
+            (conn.pricing_type, conn.unit_id, conn.price)
+            for conn in (self.pricing or [])
+        ]
+        return (
+            self.provider_id,
+            self.name,
+            self.description,
+            self.active,
+            self.value,
+            self.profile_id,
+            self.input_model_id,
+            self.department_ids,
+            self.base_url,
+            self.temperature_bounds,
+            pricing_tuples,
+            self.input_modalities,
+            self.output_modalities,
+            self.reasoning_levels,
+            self.voice_ids,
+            self.qualities,
+        )
+
+class SaveModelSqlRow(BaseModel):
+
+    model_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveModelApiRequest(BaseModel):
+
+    provider_id: UUID
+    name: str
+    description: str
+    active: bool
+    value: str
+    input_model_id: UUID | None = None
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    base_url: str | None = None
+    temperature_bounds: ISaveModelV4TemperatureBounds | None = None
+    pricing: list[ISaveModelV4Pricing] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    input_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    output_modalities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    reasoning_levels: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    voice_ids: list[UUID] | None = None
+    qualities: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SaveModelApiResponse(BaseModel):
+
+    model_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -33150,6 +33473,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateModelApiRequest",
         "DuplicateModelApiResponse",
     ),
+    "app/sql/v4/models/get_model_complete.sql": (
+        "GetModelSqlParams",
+        "GetModelSqlRow",
+        "GetModelApiRequest",
+        "GetModelApiResponse",
+    ),
     "app/sql/v4/models/get_model_detail_complete.sql": (
         "GetModelDetailSqlParams",
         "GetModelDetailSqlRow",
@@ -33167,6 +33496,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ListModelsSqlRow",
         "ListModelsApiRequest",
         "ListModelsApiResponse",
+    ),
+    "app/sql/v4/models/save_model_complete.sql": (
+        "SaveModelSqlParams",
+        "SaveModelSqlRow",
+        "SaveModelApiRequest",
+        "SaveModelApiResponse",
     ),
     "app/sql/v4/models/update_model_complete.sql": (
         "UpdateModelSqlParams",
@@ -36190,6 +36525,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/models/get_model_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/models/get_model_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -36201,6 +36541,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/models/list_models_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/models/save_model_complete.sql"]
     ) -> SqlString: ...
 
     @overload

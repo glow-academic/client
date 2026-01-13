@@ -14461,15 +14461,15 @@
         ]
       }
     },
-    "/api/v4/models/detail": {
+    "/api/v4/models/get": {
       "post": {
         "tags": [
           "v4",
           "models"
         ],
-        "summary": "Get Model Detail",
-        "description": "Get detailed model information.",
-        "operationId": "get_model_detail_api_v4_models_detail_post",
+        "summary": "Get Model",
+        "description": "Get model information - handles both new (model_id = NULL) and detail (model_id provided).\n\nValidation Logic:\n- Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)\n- Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)\n- Frontend components check agent_id before showing generate button",
+        "operationId": "get_model_api_v4_models_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -14525,7 +14525,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetModelDetailApiRequest"
+                "$ref": "#/components/schemas/GetModelApiRequest"
               }
             }
           }
@@ -14536,7 +14536,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetModelDetailApiResponse"
+                  "$ref": "#/components/schemas/GetModelApiResponse"
                 }
               }
             }
@@ -14558,15 +14558,15 @@
         ]
       }
     },
-    "/api/v4/models/new": {
+    "/api/v4/models/save": {
       "post": {
         "tags": [
           "v4",
           "models"
         ],
-        "summary": "Get Model New",
-        "description": "Get default model detail for creation mode (provider mapping).",
-        "operationId": "get_model_new_api_v4_models_new_post",
+        "summary": "Save Model",
+        "description": "Save model - handles both create (model_id = NULL) and update (model_id provided).",
+        "operationId": "save_model_api_v4_models_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -14622,7 +14622,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetModelNewApiRequest"
+                "$ref": "#/components/schemas/SaveModelApiRequest"
               }
             }
           }
@@ -14633,201 +14633,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetModelNewApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
-      }
-    },
-    "/api/v4/models/create": {
-      "post": {
-        "tags": [
-          "v4",
-          "models"
-        ],
-        "summary": "Create Model",
-        "description": "Create a new model.",
-        "operationId": "create_model_api_v4_models_create_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateModelApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateModelApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
-      }
-    },
-    "/api/v4/models/update": {
-      "post": {
-        "tags": [
-          "v4",
-          "models"
-        ],
-        "summary": "Update Model",
-        "description": "Update an existing model.",
-        "operationId": "update_model_api_v4_models_update_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateModelApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateModelApiResponse"
+                  "$ref": "#/components/schemas/SaveModelApiResponse"
                 }
               }
             }
@@ -25220,189 +25026,6 @@
           "message"
         ],
         "title": "CreateFeedbackResponse"
-      },
-      "CreateModelApiRequest": {
-        "properties": {
-          "provider_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Provider Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "base_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Url"
-          },
-          "temperature_bounds": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ICreateModelV4TemperatureBounds"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "pricing": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ICreateModelV4Pricing"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pricing"
-          },
-          "input_modalities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Modalities"
-          },
-          "output_modalities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Modalities"
-          },
-          "reasoning_levels": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels"
-          },
-          "voices": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices"
-          },
-          "qualities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Qualities"
-          }
-        },
-        "type": "object",
-        "required": [
-          "provider_id",
-          "name",
-          "description",
-          "active",
-          "value"
-        ],
-        "title": "CreateModelApiRequest"
-      },
-      "CreateModelApiResponse": {
-        "properties": {
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "CreateModelApiResponse"
       },
       "CreateOrUpdateProfileApiRequest": {
         "properties": {
@@ -35825,11 +35448,18 @@
         "type": "object",
         "title": "GetLoginDataApiResponse"
       },
-      "GetModelDetailApiRequest": {
+      "GetModelApiRequest": {
         "properties": {
           "model_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Model Id"
           },
           "draft_id": {
@@ -35843,16 +35473,36 @@
               }
             ],
             "title": "Draft Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
           }
         },
         "type": "object",
-        "required": [
-          "model_id"
-        ],
-        "title": "GetModelDetailApiRequest"
+        "title": "GetModelApiRequest"
       },
-      "GetModelDetailApiResponse": {
+      "GetModelApiResponse": {
         "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
           "model_exists": {
             "anyOf": [
               {
@@ -35863,6 +35513,40 @@
               }
             ],
             "title": "Model Exists"
+          },
+          "can_edit": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Edit"
+          },
+          "disabled_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disabled Reason"
+          },
+          "group_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Id"
           },
           "name": {
             "anyOf": [
@@ -35919,18 +35603,6 @@
             ],
             "title": "Provider"
           },
-          "provider_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Id"
-          },
           "provider_name": {
             "anyOf": [
               {
@@ -35963,120 +35635,6 @@
               }
             ],
             "title": "Base Url"
-          },
-          "valid_provider_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Provider Ids"
-          },
-          "providers": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelDetailV4Provider"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Providers"
-          },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelDetailV4Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "valid_key_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Key Ids"
-          },
-          "keys": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelDetailV4Key"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Keys"
-          },
-          "default_key_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Key Id"
           },
           "temperature_lower": {
             "anyOf": [
@@ -36118,7 +35676,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetModelDetailV4Pricing"
+                  "$ref": "#/components/schemas/QGetModelV4Pricing"
                 },
                 "type": "array"
               },
@@ -36131,7 +35689,7 @@
           "modalities": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/QGetModelDetailV4Modalities"
+                "$ref": "#/components/schemas/QGetModelV4Modalities"
               },
               {
                 "type": "null"
@@ -36152,20 +35710,6 @@
             ],
             "title": "Reasoning Levels"
           },
-          "voices": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelDetailV4Voice"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices"
-          },
           "qualities": {
             "anyOf": [
               {
@@ -36184,7 +35728,7 @@
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetModelDetailV4Unit"
+                  "$ref": "#/components/schemas/QGetModelV4Unit"
                 },
                 "type": "array"
               },
@@ -36193,17 +35737,6 @@
               }
             ],
             "title": "Units"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
           },
           "draft_version": {
             "anyOf": [
@@ -36215,14 +35748,8 @@
               }
             ],
             "title": "Draft Version"
-          }
-        },
-        "type": "object",
-        "title": "GetModelDetailApiResponse"
-      },
-      "GetModelNewApiRequest": {
-        "properties": {
-          "draft_id": {
+          },
+          "provider_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -36232,15 +35759,53 @@
                 "type": "null"
               }
             ],
-            "title": "Draft Id"
-          }
-        },
-        "type": "object",
-        "title": "GetModelNewApiRequest"
-      },
-      "GetModelNewApiResponse": {
-        "properties": {
-          "valid_provider_ids": {
+            "title": "Provider Id"
+          },
+          "provider_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetModelV4ProviderResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_provider": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Provider"
+          },
+          "provider_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Agent Id"
+          },
+          "provider_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Required"
+          },
+          "provider_suggestions": {
             "anyOf": [
               {
                 "items": {
@@ -36253,13 +35818,13 @@
                 "type": "null"
               }
             ],
-            "title": "Valid Provider Ids"
+            "title": "Provider Suggestions"
           },
           "providers": {
             "anyOf": [
               {
                 "items": {
-                  "$ref": "#/components/schemas/QGetModelNewV4Provider"
+                  "$ref": "#/components/schemas/QGetModelV4ProviderOption"
                 },
                 "type": "array"
               },
@@ -36269,119 +35834,7 @@
             ],
             "title": "Providers"
           },
-          "valid_department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Department Ids"
-          },
-          "departments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelNewV4Department"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Departments"
-          },
-          "valid_model_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Model Ids"
-          },
-          "models": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelNewV4Model"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Models"
-          },
-          "valid_key_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid Key Ids"
-          },
-          "keys": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelNewV4Key"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Keys"
-          },
-          "units": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetModelNewV4Unit"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Units"
-          },
-          "user_role": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "User Role"
-          },
-          "primary_department_id": {
+          "key_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -36391,33 +35844,268 @@
                 "type": "null"
               }
             ],
-            "title": "Primary Department Id"
+            "title": "Key Id"
           },
-          "actor_name": {
+          "key_resource": {
             "anyOf": [
               {
-                "type": "string"
+                "$ref": "#/components/schemas/QGetModelV4KeyResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_key": {
+            "anyOf": [
+              {
+                "type": "boolean"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Actor Name"
+            "title": "Show Key"
           },
-          "draft_version": {
+          "key_agent_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Draft Version"
+            "title": "Key Agent Id"
+          },
+          "key_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Required"
+          },
+          "key_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Suggestions"
+          },
+          "keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4KeyOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keys"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "department_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Resources"
+          },
+          "show_departments": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Departments"
+          },
+          "departments_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments Agent Id"
+          },
+          "departments_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments Required"
+          },
+          "department_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Suggestions"
+          },
+          "departments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4Department"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departments"
+          },
+          "voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Ids"
+          },
+          "voice_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4VoiceResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Resources"
+          },
+          "show_voices": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Voices"
+          },
+          "voices_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Agent Id"
+          },
+          "voices_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Required"
+          },
+          "voice_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Suggestions"
+          },
+          "voices": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetModelV4VoiceOption"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices"
           }
         },
         "type": "object",
-        "title": "GetModelNewApiResponse"
+        "title": "GetModelApiResponse"
       },
       "GetParameterApiRequest": {
         "properties": {
@@ -49184,110 +48872,6 @@
         ],
         "title": "ICreateAuthV4AuthItem"
       },
-      "ICreateModelV4Pricing": {
-        "properties": {
-          "pricing_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pricing Type"
-          },
-          "unit_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit Id"
-          },
-          "price": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Price"
-          }
-        },
-        "type": "object",
-        "required": [
-          "pricing_type",
-          "unit_id",
-          "price"
-        ],
-        "title": "ICreateModelV4Pricing"
-      },
-      "ICreateModelV4TemperatureBounds": {
-        "properties": {
-          "bounds_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bounds Type"
-          },
-          "lower_bound": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lower Bound"
-          },
-          "upper_bound": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upper Bound"
-          },
-          "values_array": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "number"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Values Array"
-          }
-        },
-        "type": "object",
-        "required": [
-          "bounds_type",
-          "lower_bound",
-          "upper_bound",
-          "values_array"
-        ],
-        "title": "ICreateModelV4TemperatureBounds"
-      },
       "ICreateRubricV4Standard": {
         "properties": {
           "name": {
@@ -49470,6 +49054,110 @@
           "target_field"
         ],
         "title": "IProcessCsvV4ColumnMapping"
+      },
+      "ISaveModelV4Pricing": {
+        "properties": {
+          "pricing_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Type"
+          },
+          "unit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Id"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          }
+        },
+        "type": "object",
+        "required": [
+          "pricing_type",
+          "unit_id",
+          "price"
+        ],
+        "title": "ISaveModelV4Pricing"
+      },
+      "ISaveModelV4TemperatureBounds": {
+        "properties": {
+          "bounds_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bounds Type"
+          },
+          "lower_bound": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lower Bound"
+          },
+          "upper_bound": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upper Bound"
+          },
+          "values_array": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Values Array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bounds_type",
+          "lower_bound",
+          "upper_bound",
+          "values_array"
+        ],
+        "title": "ISaveModelV4TemperatureBounds"
       },
       "ISaveParameterV4FieldConnection": {
         "properties": {
@@ -49656,110 +49344,6 @@
           "key_id"
         ],
         "title": "IUpdateAuthV4AuthItem"
-      },
-      "IUpdateModelV4Pricing": {
-        "properties": {
-          "pricing_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pricing Type"
-          },
-          "unit_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit Id"
-          },
-          "price": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Price"
-          }
-        },
-        "type": "object",
-        "required": [
-          "pricing_type",
-          "unit_id",
-          "price"
-        ],
-        "title": "IUpdateModelV4Pricing"
-      },
-      "IUpdateModelV4TemperatureBounds": {
-        "properties": {
-          "bounds_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bounds Type"
-          },
-          "lower_bound": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lower Bound"
-          },
-          "upper_bound": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Upper Bound"
-          },
-          "values_array": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "number"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Values Array"
-          }
-        },
-        "type": "object",
-        "required": [
-          "bounds_type",
-          "lower_bound",
-          "upper_bound",
-          "values_array"
-        ],
-        "title": "IUpdateModelV4TemperatureBounds"
       },
       "IUpdateRubricV4Standard": {
         "properties": {
@@ -62493,7 +62077,7 @@
         ],
         "title": "QGetLoginDataV4Provider"
       },
-      "QGetModelDetailV4Department": {
+      "QGetModelV4Department": {
         "properties": {
           "department_id": {
             "anyOf": [
@@ -62528,19 +62112,31 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
           "department_id",
           "name",
-          "description"
+          "description",
+          "generated"
         ],
-        "title": "QGetModelDetailV4Department"
+        "title": "QGetModelV4Department"
       },
-      "QGetModelDetailV4Key": {
+      "QGetModelV4KeyOption": {
         "properties": {
-          "key_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -62550,7 +62146,7 @@
                 "type": "null"
               }
             ],
-            "title": "Key Id"
+            "title": "Id"
           },
           "name": {
             "anyOf": [
@@ -62610,20 +62206,129 @@
               }
             ],
             "title": "Department Ids"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
-          "key_id",
+          "id",
           "name",
           "description",
           "key_masked",
           "active",
-          "department_ids"
+          "department_ids",
+          "generated"
         ],
-        "title": "QGetModelDetailV4Key"
+        "title": "QGetModelV4KeyOption"
       },
-      "QGetModelDetailV4Modalities": {
+      "QGetModelV4KeyResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "key_masked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Masked"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "key_masked",
+          "active",
+          "department_ids",
+          "generated"
+        ],
+        "title": "QGetModelV4KeyResource"
+      },
+      "QGetModelV4Modalities": {
         "properties": {
           "input": {
             "anyOf": [
@@ -62659,9 +62364,9 @@
           "input",
           "output"
         ],
-        "title": "QGetModelDetailV4Modalities"
+        "title": "QGetModelV4Modalities"
       },
-      "QGetModelDetailV4Pricing": {
+      "QGetModelV4Pricing": {
         "properties": {
           "pricing_type": {
             "anyOf": [
@@ -62728,11 +62433,11 @@
           "unit_category",
           "price"
         ],
-        "title": "QGetModelDetailV4Pricing"
+        "title": "QGetModelV4Pricing"
       },
-      "QGetModelDetailV4Provider": {
+      "QGetModelV4ProviderOption": {
         "properties": {
-          "provider_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -62742,7 +62447,7 @@
                 "type": "null"
               }
             ],
-            "title": "Provider Id"
+            "title": "Id"
           },
           "name": {
             "anyOf": [
@@ -62765,17 +62470,86 @@
               }
             ],
             "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
-          "provider_id",
+          "id",
           "name",
-          "description"
+          "description",
+          "generated"
         ],
-        "title": "QGetModelDetailV4Provider"
+        "title": "QGetModelV4ProviderOption"
       },
-      "QGetModelDetailV4Unit": {
+      "QGetModelV4ProviderResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "generated"
+        ],
+        "title": "QGetModelV4ProviderResource"
+      },
+      "QGetModelV4Unit": {
         "properties": {
           "unit_id": {
             "anyOf": [
@@ -62830,11 +62604,11 @@
           "unit_category",
           "value"
         ],
-        "title": "QGetModelDetailV4Unit"
+        "title": "QGetModelV4Unit"
       },
-      "QGetModelDetailV4Voice": {
+      "QGetModelV4VoiceOption": {
         "properties": {
-          "voice_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -62844,7 +62618,7 @@
                 "type": "null"
               }
             ],
-            "title": "Voice Id"
+            "title": "Id"
           },
           "voice": {
             "anyOf": [
@@ -62856,108 +62630,8 @@
               }
             ],
             "title": "Voice"
-          }
-        },
-        "type": "object",
-        "required": [
-          "voice_id",
-          "voice"
-        ],
-        "title": "QGetModelDetailV4Voice"
-      },
-      "QGetModelNewV4Department": {
-        "properties": {
-          "department_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Id"
           },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "department_id",
-          "name",
-          "description"
-        ],
-        "title": "QGetModelNewV4Department"
-      },
-      "QGetModelNewV4Key": {
-        "properties": {
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "key_masked": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Masked"
-          },
-          "active": {
+          "generated": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -62966,38 +62640,20 @@
                 "type": "null"
               }
             ],
-            "title": "Active"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
-          "key_id",
-          "name",
-          "description",
-          "key_masked",
-          "active",
-          "department_ids"
+          "id",
+          "voice",
+          "generated"
         ],
-        "title": "QGetModelNewV4Key"
+        "title": "QGetModelV4VoiceOption"
       },
-      "QGetModelNewV4Model": {
+      "QGetModelV4VoiceResource": {
         "properties": {
-          "model_id": {
+          "id": {
             "anyOf": [
               {
                 "type": "string",
@@ -63007,9 +62663,9 @@
                 "type": "null"
               }
             ],
-            "title": "Model Id"
+            "title": "Id"
           },
-          "name": {
+          "voice": {
             "anyOf": [
               {
                 "type": "string"
@@ -63018,129 +62674,27 @@
                 "type": "null"
               }
             ],
-            "title": "Name"
+            "title": "Voice"
           },
-          "description": {
+          "generated": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "boolean"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description"
+            "title": "Generated"
           }
         },
         "type": "object",
         "required": [
-          "model_id",
-          "name",
-          "description"
+          "id",
+          "voice",
+          "generated"
         ],
-        "title": "QGetModelNewV4Model"
-      },
-      "QGetModelNewV4Provider": {
-        "properties": {
-          "provider_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          }
-        },
-        "type": "object",
-        "required": [
-          "provider_id",
-          "name",
-          "description"
-        ],
-        "title": "QGetModelNewV4Provider"
-      },
-      "QGetModelNewV4Unit": {
-        "properties": {
-          "unit_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "unit_category": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Unit Category"
-          },
-          "value": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value"
-          }
-        },
-        "type": "object",
-        "required": [
-          "unit_id",
-          "name",
-          "unit_category",
-          "value"
-        ],
-        "title": "QGetModelNewV4Unit"
+        "title": "QGetModelV4VoiceResource"
       },
       "QGetParameterV4Department": {
         "properties": {
@@ -89795,6 +89349,202 @@
         "type": "object",
         "title": "SaveFieldApiResponse"
       },
+      "SaveModelApiRequest": {
+        "properties": {
+          "provider_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Provider Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "input_model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Model Id"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "temperature_bounds": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ISaveModelV4TemperatureBounds"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pricing": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ISaveModelV4Pricing"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing"
+          },
+          "input_modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Modalities"
+          },
+          "output_modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Modalities"
+          },
+          "reasoning_levels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels"
+          },
+          "voice_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Ids"
+          },
+          "qualities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider_id",
+          "name",
+          "description",
+          "active",
+          "value"
+        ],
+        "title": "SaveModelApiRequest"
+      },
+      "SaveModelApiResponse": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "SaveModelApiResponse"
+      },
       "SaveParameterApiRequest": {
         "properties": {
           "name": {
@@ -92710,205 +92460,6 @@
         },
         "type": "object",
         "title": "UpdateEvalApiResponse"
-      },
-      "UpdateModelApiRequest": {
-        "properties": {
-          "model_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Model Id"
-          },
-          "provider_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Provider Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "base_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Base Url"
-          },
-          "temperature_bounds": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/IUpdateModelV4TemperatureBounds"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "pricing": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/IUpdateModelV4Pricing"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Pricing"
-          },
-          "input_modalities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Input Modalities"
-          },
-          "output_modalities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Output Modalities"
-          },
-          "reasoning_levels": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reasoning Levels"
-          },
-          "voices": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voices"
-          },
-          "qualities": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Qualities"
-          }
-        },
-        "type": "object",
-        "required": [
-          "model_id",
-          "provider_id",
-          "name",
-          "description",
-          "active",
-          "value"
-        ],
-        "title": "UpdateModelApiRequest"
-      },
-      "UpdateModelApiResponse": {
-        "properties": {
-          "model_exists": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Exists"
-          },
-          "model_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Name"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "UpdateModelApiResponse"
       },
       "UpdateProfileApiRequest": {
         "properties": {

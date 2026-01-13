@@ -5,25 +5,25 @@
  * 06/08/2025
  */
 
-import Model from "@/components/models/Model";
+import NewModel from "@/components/models/NewModel";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelNewIn = InputOf<"/api/v4/models/new", "post">;
-type ModelNewOut = OutputOf<"/api/v4/models/new", "post">;
-type CreateModelIn = InputOf<"/api/v4/models/create", "post">;
-type CreateModelOut = OutputOf<"/api/v4/models/create", "post">;
+type GetModelIn = InputOf<"/api/v4/models/get", "post">;
+type GetModelOut = OutputOf<"/api/v4/models/get", "post">;
+type SaveModelIn = InputOf<"/api/v4/models/save", "post">;
+type SaveModelOut = OutputOf<"/api/v4/models/save", "post">;
 type PatchModelDraftIn = InputOf<"/api/v4/models/draft", "patch">;
 type PatchModelDraftOut = OutputOf<"/api/v4/models/draft", "patch">;
 
 /** ---- Direct fetch for default model data (provider mapping for picker) ---- */
 const getModelDetailDefault = async (
-  input: ModelNewIn
-): Promise<ModelNewOut> => {
-  return api.post("/models/new", input, {
+  input: GetModelIn
+): Promise<GetModelOut> => {
+  return api.post("/models/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -41,11 +41,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createModel(input: CreateModelIn): Promise<CreateModelOut> {
+async function saveModel(input: SaveModelIn): Promise<SaveModelOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/models/create", input);
+  return api.post("/models/save", input);
 }
 
 async function patchModelDraft(
@@ -84,9 +84,10 @@ export default async function NewModelPage({
   const loadModelSearchParams = createLoader(modelSearchParams);
   const q = loadModelSearchParams(searchParamsObj);
 
-  // Fetch default model data with draft_id
-  const input: ModelNewIn = {
+  // Fetch default model data with draft_id (model_id = null for new mode)
+  const input: GetModelIn = {
     body: {
+      model_id: null,
       draft_id: q.draftId ?? null,
     },
   };
@@ -94,9 +95,9 @@ export default async function NewModelPage({
 
   return (
     <div className="space-y-6">
-      <Model
-        modelDetailDefault={modelDetailDefault}
-        createModelAction={createModel}
+      <NewModel
+        modelData={modelDetailDefault}
+        saveModelAction={saveModel}
         patchModelDraftAction={patchModelDraft}
       />
     </div>
@@ -105,10 +106,10 @@ export default async function NewModelPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateModelIn,
-  CreateModelOut,
-  ModelNewIn,
-  ModelNewOut,
+  GetModelIn,
+  GetModelOut,
   PatchModelDraftIn,
   PatchModelDraftOut,
+  SaveModelIn,
+  SaveModelOut,
 };

@@ -3008,7 +3008,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/detail": {
+    "/api/v4/models/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3018,17 +3018,22 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Model Detail
-         * @description Get detailed model information.
+         * Get Model
+         * @description Get model information - handles both new (model_id = NULL) and detail (model_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
-        post: operations["get_model_detail_api_v4_models_detail_post"];
+        post: operations["get_model_api_v4_models_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/models/new": {
+    "/api/v4/models/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -3038,50 +3043,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Model New
-         * @description Get default model detail for creation mode (provider mapping).
+         * Save Model
+         * @description Save model - handles both create (model_id = NULL) and update (model_id provided).
          */
-        post: operations["get_model_new_api_v4_models_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/models/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Model
-         * @description Create a new model.
-         */
-        post: operations["create_model_api_v4_models_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/models/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Model
-         * @description Update an existing model.
-         */
-        post: operations["update_model_api_v4_models_update_post"];
+        post: operations["save_model_api_v4_models_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6135,46 +6100,6 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** CreateModelApiRequest */
-        CreateModelApiRequest: {
-            /**
-             * Provider Id
-             * Format: uuid
-             */
-            provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Value */
-            value: string;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Base Url */
-            base_url?: string | null;
-            temperature_bounds?: components["schemas"]["ICreateModelV4TemperatureBounds"] | null;
-            /** Pricing */
-            pricing?: components["schemas"]["ICreateModelV4Pricing"][] | null;
-            /** Input Modalities */
-            input_modalities?: string[] | null;
-            /** Output Modalities */
-            output_modalities?: string[] | null;
-            /** Reasoning Levels */
-            reasoning_levels?: string[] | null;
-            /** Voices */
-            voices?: string[] | null;
-            /** Qualities */
-            qualities?: string[] | null;
-        };
-        /** CreateModelApiResponse */
-        CreateModelApiResponse: {
-            /** Model Id */
-            model_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** CreateOrUpdateProfileApiRequest */
         CreateOrUpdateProfileApiRequest: {
             /**
@@ -8592,20 +8517,30 @@ export interface components {
             /** Realm Name */
             realm_name?: string | null;
         };
-        /** GetModelDetailApiRequest */
-        GetModelDetailApiRequest: {
-            /**
-             * Model Id
-             * Format: uuid
-             */
-            model_id: string;
+        /** GetModelApiRequest */
+        GetModelApiRequest: {
+            /** Model Id */
+            model_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
-        /** GetModelDetailApiResponse */
-        GetModelDetailApiResponse: {
+        /** GetModelApiResponse */
+        GetModelApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
             /** Model Exists */
             model_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Name */
             name?: string | null;
             /** Description */
@@ -8616,30 +8551,12 @@ export interface components {
             image_model?: boolean | null;
             /** Provider */
             provider?: string | null;
-            /** Provider Id */
-            provider_id?: string | null;
             /** Provider Name */
             provider_name?: string | null;
             /** Value */
             value?: string | null;
             /** Base Url */
             base_url?: string | null;
-            /** Valid Provider Ids */
-            valid_provider_ids?: string[] | null;
-            /** Providers */
-            providers?: components["schemas"]["QGetModelDetailV4Provider"][] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetModelDetailV4Department"][] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Key Ids */
-            valid_key_ids?: string[] | null;
-            /** Keys */
-            keys?: components["schemas"]["QGetModelDetailV4Key"][] | null;
-            /** Default Key Id */
-            default_key_id?: string | null;
             /** Temperature Lower */
             temperature_lower?: number | null;
             /** Temperature Upper */
@@ -8647,54 +8564,70 @@ export interface components {
             /** Temperature Values */
             temperature_values?: string[] | null;
             /** Pricing */
-            pricing?: components["schemas"]["QGetModelDetailV4Pricing"][] | null;
-            modalities?: components["schemas"]["QGetModelDetailV4Modalities"] | null;
+            pricing?: components["schemas"]["QGetModelV4Pricing"][] | null;
+            modalities?: components["schemas"]["QGetModelV4Modalities"] | null;
             /** Reasoning Levels */
             reasoning_levels?: string[] | null;
-            /** Voices */
-            voices?: components["schemas"]["QGetModelDetailV4Voice"][] | null;
             /** Qualities */
             qualities?: string[] | null;
             /** Units */
-            units?: components["schemas"]["QGetModelDetailV4Unit"][] | null;
-            /** Actor Name */
-            actor_name?: string | null;
+            units?: components["schemas"]["QGetModelV4Unit"][] | null;
             /** Draft Version */
             draft_version?: number | null;
-        };
-        /** GetModelNewApiRequest */
-        GetModelNewApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetModelNewApiResponse */
-        GetModelNewApiResponse: {
-            /** Valid Provider Ids */
-            valid_provider_ids?: string[] | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            provider_resource?: components["schemas"]["QGetModelV4ProviderResource"] | null;
+            /** Show Provider */
+            show_provider?: boolean | null;
+            /** Provider Agent Id */
+            provider_agent_id?: string | null;
+            /** Provider Required */
+            provider_required?: boolean | null;
+            /** Provider Suggestions */
+            provider_suggestions?: string[] | null;
             /** Providers */
-            providers?: components["schemas"]["QGetModelNewV4Provider"][] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetModelNewV4Department"][] | null;
-            /** Valid Model Ids */
-            valid_model_ids?: string[] | null;
-            /** Models */
-            models?: components["schemas"]["QGetModelNewV4Model"][] | null;
-            /** Valid Key Ids */
-            valid_key_ids?: string[] | null;
+            providers?: components["schemas"]["QGetModelV4ProviderOption"][] | null;
+            /** Key Id */
+            key_id?: string | null;
+            key_resource?: components["schemas"]["QGetModelV4KeyResource"] | null;
+            /** Show Key */
+            show_key?: boolean | null;
+            /** Key Agent Id */
+            key_agent_id?: string | null;
+            /** Key Required */
+            key_required?: boolean | null;
+            /** Key Suggestions */
+            key_suggestions?: string[] | null;
             /** Keys */
-            keys?: components["schemas"]["QGetModelNewV4Key"][] | null;
-            /** Units */
-            units?: components["schemas"]["QGetModelNewV4Unit"][] | null;
-            /** User Role */
-            user_role?: string | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
+            keys?: components["schemas"]["QGetModelV4KeyOption"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetModelV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetModelV4Department"][] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Voice Resources */
+            voice_resources?: components["schemas"]["QGetModelV4VoiceResource"][] | null;
+            /** Show Voices */
+            show_voices?: boolean | null;
+            /** Voices Agent Id */
+            voices_agent_id?: string | null;
+            /** Voices Required */
+            voices_required?: boolean | null;
+            /** Voice Suggestions */
+            voice_suggestions?: string[] | null;
+            /** Voices */
+            voices?: components["schemas"]["QGetModelV4VoiceOption"][] | null;
         };
         /** GetParameterApiRequest */
         GetParameterApiRequest: {
@@ -11019,26 +10952,6 @@ export interface components {
             /** Key Id */
             key_id: string | null;
         };
-        /** ICreateModelV4Pricing */
-        ICreateModelV4Pricing: {
-            /** Pricing Type */
-            pricing_type: string | null;
-            /** Unit Id */
-            unit_id: string | null;
-            /** Price */
-            price: number | null;
-        };
-        /** ICreateModelV4TemperatureBounds */
-        ICreateModelV4TemperatureBounds: {
-            /** Bounds Type */
-            bounds_type: string | null;
-            /** Lower Bound */
-            lower_bound: number | null;
-            /** Upper Bound */
-            upper_bound: number | null;
-            /** Values Array */
-            values_array: number[] | null;
-        };
         /** ICreateRubricV4Standard */
         ICreateRubricV4Standard: {
             /** Name */
@@ -11074,6 +10987,26 @@ export interface components {
             /** Target Field */
             target_field: string | null;
         };
+        /** ISaveModelV4Pricing */
+        ISaveModelV4Pricing: {
+            /** Pricing Type */
+            pricing_type: string | null;
+            /** Unit Id */
+            unit_id: string | null;
+            /** Price */
+            price: number | null;
+        };
+        /** ISaveModelV4TemperatureBounds */
+        ISaveModelV4TemperatureBounds: {
+            /** Bounds Type */
+            bounds_type: string | null;
+            /** Lower Bound */
+            lower_bound: number | null;
+            /** Upper Bound */
+            upper_bound: number | null;
+            /** Values Array */
+            values_array: number[] | null;
+        };
         /** ISaveParameterV4FieldConnection */
         ISaveParameterV4FieldConnection: {
             /** Field Id */
@@ -11108,26 +11041,6 @@ export interface components {
             active: boolean | null;
             /** Key Id */
             key_id: string | null;
-        };
-        /** IUpdateModelV4Pricing */
-        IUpdateModelV4Pricing: {
-            /** Pricing Type */
-            pricing_type: string | null;
-            /** Unit Id */
-            unit_id: string | null;
-            /** Price */
-            price: number | null;
-        };
-        /** IUpdateModelV4TemperatureBounds */
-        IUpdateModelV4TemperatureBounds: {
-            /** Bounds Type */
-            bounds_type: string | null;
-            /** Lower Bound */
-            lower_bound: number | null;
-            /** Upper Bound */
-            upper_bound: number | null;
-            /** Values Array */
-            values_array: number[] | null;
         };
         /** IUpdateRubricV4Standard */
         IUpdateRubricV4Standard: {
@@ -13706,19 +13619,21 @@ export interface components {
             /** Is Default */
             is_default: boolean | null;
         };
-        /** QGetModelDetailV4Department */
-        QGetModelDetailV4Department: {
+        /** QGetModelV4Department */
+        QGetModelV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetModelDetailV4Key */
-        QGetModelDetailV4Key: {
-            /** Key Id */
-            key_id: string | null;
+        /** QGetModelV4KeyOption */
+        QGetModelV4KeyOption: {
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
             /** Description */
@@ -13729,16 +13644,35 @@ export interface components {
             active: boolean | null;
             /** Department Ids */
             department_ids: string[] | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetModelDetailV4Modalities */
-        QGetModelDetailV4Modalities: {
+        /** QGetModelV4KeyResource */
+        QGetModelV4KeyResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Key Masked */
+            key_masked: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4Modalities */
+        QGetModelV4Modalities: {
             /** Input */
             input: string[] | null;
             /** Output */
             output: string[] | null;
         };
-        /** QGetModelDetailV4Pricing */
-        QGetModelDetailV4Pricing: {
+        /** QGetModelV4Pricing */
+        QGetModelV4Pricing: {
             /** Pricing Type */
             pricing_type: string | null;
             /** Unit Id */
@@ -13750,17 +13684,30 @@ export interface components {
             /** Price */
             price: number | null;
         };
-        /** QGetModelDetailV4Provider */
-        QGetModelDetailV4Provider: {
-            /** Provider Id */
-            provider_id: string | null;
+        /** QGetModelV4ProviderOption */
+        QGetModelV4ProviderOption: {
+            /** Id */
+            id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetModelDetailV4Unit */
-        QGetModelDetailV4Unit: {
+        /** QGetModelV4ProviderResource */
+        QGetModelV4ProviderResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetModelV4Unit */
+        QGetModelV4Unit: {
             /** Unit Id */
             unit_id: string | null;
             /** Name */
@@ -13770,65 +13717,23 @@ export interface components {
             /** Value */
             value: number | null;
         };
-        /** QGetModelDetailV4Voice */
-        QGetModelDetailV4Voice: {
-            /** Voice Id */
-            voice_id: string | null;
+        /** QGetModelV4VoiceOption */
+        QGetModelV4VoiceOption: {
+            /** Id */
+            id: string | null;
             /** Voice */
             voice: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetModelNewV4Department */
-        QGetModelNewV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetModelNewV4Key */
-        QGetModelNewV4Key: {
-            /** Key Id */
-            key_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Key Masked */
-            key_masked: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
-        };
-        /** QGetModelNewV4Model */
-        QGetModelNewV4Model: {
-            /** Model Id */
-            model_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetModelNewV4Provider */
-        QGetModelNewV4Provider: {
-            /** Provider Id */
-            provider_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetModelNewV4Unit */
-        QGetModelNewV4Unit: {
-            /** Unit Id */
-            unit_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Unit Category */
-            unit_category: string | null;
-            /** Value */
-            value: number | null;
+        /** QGetModelV4VoiceResource */
+        QGetModelV4VoiceResource: {
+            /** Id */
+            id: string | null;
+            /** Voice */
+            voice: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetParameterV4Department */
         QGetParameterV4Department: {
@@ -18729,6 +18634,48 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** SaveModelApiRequest */
+        SaveModelApiRequest: {
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Active */
+            active: boolean;
+            /** Value */
+            value: string;
+            /** Input Model Id */
+            input_model_id?: string | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Base Url */
+            base_url?: string | null;
+            temperature_bounds?: components["schemas"]["ISaveModelV4TemperatureBounds"] | null;
+            /** Pricing */
+            pricing?: components["schemas"]["ISaveModelV4Pricing"][] | null;
+            /** Input Modalities */
+            input_modalities?: string[] | null;
+            /** Output Modalities */
+            output_modalities?: string[] | null;
+            /** Reasoning Levels */
+            reasoning_levels?: string[] | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
+            /** Qualities */
+            qualities?: string[] | null;
+        };
+        /** SaveModelApiResponse */
+        SaveModelApiResponse: {
+            /** Model Id */
+            model_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SaveParameterApiRequest */
         SaveParameterApiRequest: {
             /** Name */
@@ -19873,53 +19820,6 @@ export interface components {
             eval_id?: string | null;
             /** Eval Name */
             eval_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** UpdateModelApiRequest */
-        UpdateModelApiRequest: {
-            /**
-             * Model Id
-             * Format: uuid
-             */
-            model_id: string;
-            /**
-             * Provider Id
-             * Format: uuid
-             */
-            provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Value */
-            value: string;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Base Url */
-            base_url?: string | null;
-            temperature_bounds?: components["schemas"]["IUpdateModelV4TemperatureBounds"] | null;
-            /** Pricing */
-            pricing?: components["schemas"]["IUpdateModelV4Pricing"][] | null;
-            /** Input Modalities */
-            input_modalities?: string[] | null;
-            /** Output Modalities */
-            output_modalities?: string[] | null;
-            /** Reasoning Levels */
-            reasoning_levels?: string[] | null;
-            /** Voices */
-            voices?: string[] | null;
-            /** Qualities */
-            qualities?: string[] | null;
-        };
-        /** UpdateModelApiResponse */
-        UpdateModelApiResponse: {
-            /** Model Exists */
-            model_exists?: boolean | null;
-            /** Model Name */
-            model_name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -25752,7 +25652,7 @@ export interface operations {
             };
         };
     };
-    get_model_detail_api_v4_models_detail_post: {
+    get_model_api_v4_models_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25765,7 +25665,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetModelDetailApiRequest"];
+                "application/json": components["schemas"]["GetModelApiRequest"];
             };
         };
         responses: {
@@ -25775,7 +25675,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetModelDetailApiResponse"];
+                    "application/json": components["schemas"]["GetModelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25789,7 +25689,7 @@ export interface operations {
             };
         };
     };
-    get_model_new_api_v4_models_new_post: {
+    save_model_api_v4_models_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25802,7 +25702,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetModelNewApiRequest"];
+                "application/json": components["schemas"]["SaveModelApiRequest"];
             };
         };
         responses: {
@@ -25812,81 +25712,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetModelNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_model_api_v4_models_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateModelApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateModelApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_model_api_v4_models_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateModelApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateModelApiResponse"];
+                    "application/json": components["schemas"]["SaveModelApiResponse"];
                 };
             };
             /** @description Validation Error */
