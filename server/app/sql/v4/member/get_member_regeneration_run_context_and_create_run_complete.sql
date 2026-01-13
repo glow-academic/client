@@ -176,9 +176,10 @@ resolved_dept AS (
 ),
 profile_rate_limit AS (
     SELECT 
-        prl.requests_per_day as req_per_day
+        rl.requests_per_day as req_per_day
     FROM profile prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
+    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
     CROSS JOIN params p
     WHERE prof.id = (SELECT ap.profile_id FROM attempt_profiles ap 
                   JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 

@@ -111,9 +111,10 @@ run_profile AS (
 -- Get rate limit info (for display, not validation)
 profile_rate_limit AS (
     SELECT 
-        prl.requests_per_day as req_per_day
+        rl.requests_per_day as req_per_day
     FROM run_profile rp
     LEFT JOIN profile_request_limits prl ON prl.profile_id = rp.profile_id AND prl.active = true
+    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
 ),
 runs_today AS (
     SELECT 

@@ -195,19 +195,36 @@ insert_activity AS (
     FROM profile_update pu
     WHERE (SELECT last_active FROM params) IS NOT NULL
 ),
+placeholder_call_id AS (
+    -- Get a placeholder call_id for request_limit creation
+    SELECT id FROM calls LIMIT 1
+),
+request_limit_resource AS (
+    -- Create request_limit resource first
+    INSERT INTO request_limits (requests_per_day, call_id, created_at, updated_at)
+    SELECT 
+        (SELECT requests_per_day FROM params),
+        (SELECT id FROM placeholder_call_id),
+        NOW(),
+        NOW()
+    WHERE (SELECT requests_per_day FROM params) IS NOT NULL
+    RETURNING id as request_limit_id, requests_per_day
+),
 request_limit_upsert AS (
     -- Upsert request limit if provided
-    INSERT INTO profile_request_limits (profile_id, requests_per_day, active)
+    -- Link request_limit to profile via profile_request_limits junction table
+    INSERT INTO profile_request_limits (profile_id, request_limit_id, active)
     SELECT 
         pu.id,
-        (SELECT requests_per_day FROM params),
+        rlr.request_limit_id,
         true
     FROM profile_update pu
+    CROSS JOIN request_limit_resource rlr
     WHERE (SELECT requests_per_day FROM params) IS NOT NULL
       AND EXISTS (SELECT 1 FROM profile_update)
     ON CONFLICT (profile_id)
     DO UPDATE SET 
-        requests_per_day = EXCLUDED.requests_per_day,
+        request_limit_id = EXCLUDED.request_limit_id,
         active = true,
         updated_at = NOW()
 ),
@@ -230,20 +247,33 @@ all_emails_data AS (
     FROM unnest((SELECT emails FROM params)) WITH ORDINALITY AS e(email, ord)
     WHERE (SELECT emails FROM params) IS NOT NULL
 ),
+email_resources AS (
+    -- Create email resources first
+    INSERT INTO emails (email, call_id, created_at, updated_at)
+    SELECT DISTINCT
+        aed.email,
+        (SELECT id FROM calls LIMIT 1),
+        NOW(),
+        NOW()
+    FROM all_emails_data aed
+    WHERE (SELECT emails FROM params) IS NOT NULL
+    ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
+    RETURNING id as email_id, email
+),
 email_insert AS (
-    -- Insert/update all emails
-    INSERT INTO profile_emails (profile_id, email, is_primary, active)
+    -- Link emails to profile via profile_emails junction table
+    INSERT INTO profile_emails (profile_id, email_id, is_primary, active)
     SELECT 
         pu.id,
-        aed.email,
+        er.email_id,
         aed.is_primary,
         true
     FROM profile_update pu
     CROSS JOIN all_emails_data aed
+    JOIN email_resources er ON er.email = aed.email
     WHERE (SELECT emails FROM params) IS NOT NULL
       AND EXISTS (SELECT 1 FROM profile_update)
-    ON CONFLICT (email) DO UPDATE SET
-        profile_id = EXCLUDED.profile_id,
+    ON CONFLICT (profile_id, email_id) DO UPDATE SET
         is_primary = EXCLUDED.is_primary,
         active = true,
         updated_at = NOW()

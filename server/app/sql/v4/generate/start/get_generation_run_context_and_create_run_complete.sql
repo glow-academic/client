@@ -88,9 +88,10 @@ agent_model_modalities AS (
 -- Get rate limit for profile
 profile_rate_limit AS (
     SELECT 
-        prl.requests_per_day as req_per_day
+        rl.requests_per_day as req_per_day
     FROM profile prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
+    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
     WHERE prof.id = (SELECT profile_id FROM params)
 ),
 -- Count runs today for rate limiting

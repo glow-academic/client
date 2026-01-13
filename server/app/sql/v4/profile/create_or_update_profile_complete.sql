@@ -92,7 +92,7 @@ primary_email AS (
 ),
 existing_profile AS (
     -- Find existing profile by primary email in profile_emails table
-    SELECT pe.profile_id as id FROM profile_emails pe WHERE pe.email = (SELECT email FROM primary_email) AND pe.active = true LIMIT 1
+    SELECT pe.profile_id as id FROM profile_emails pe JOIN emails e ON pe.email_id = e.id WHERE e.email = (SELECT email FROM primary_email) AND pe.active = true LIMIT 1
 ),
 -- Insert/update first_name in names table
 first_name_resource AS (
@@ -206,19 +206,32 @@ all_emails_data AS (
         CASE WHEN ord = (SELECT primary_email_index + 1 FROM params) THEN true ELSE false END as is_primary
     FROM unnest((SELECT emails FROM params)) WITH ORDINALITY AS e(email, ord)
 ),
+email_resources AS (
+    -- Create email resources first
+    INSERT INTO emails (email, call_id, created_at, updated_at)
+    SELECT DISTINCT
+        aed.email,
+        (SELECT id FROM calls LIMIT 1),
+        NOW(),
+        NOW()
+    FROM all_emails_data aed
+    WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
+    ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
+    RETURNING id as email_id, email
+),
 email_upsert AS (
-    -- Insert or update all emails
-    INSERT INTO profile_emails (profile_id, email, is_primary, active)
+    -- Link emails to profile via profile_emails junction table
+    INSERT INTO profile_emails (profile_id, email_id, is_primary, active)
     SELECT 
         pu.id,
-        aed.email,
+        er.email_id,
         aed.is_primary,
         true
     FROM profile_upsert pu
     CROSS JOIN all_emails_data aed
+    JOIN email_resources er ON er.email = aed.email
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (email) DO UPDATE SET
-        profile_id = EXCLUDED.profile_id,
+    ON CONFLICT (profile_id, email_id) DO UPDATE SET
         is_primary = EXCLUDED.is_primary,
         active = true,
         updated_at = NOW()

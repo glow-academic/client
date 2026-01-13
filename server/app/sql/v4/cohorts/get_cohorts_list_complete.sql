@@ -308,7 +308,7 @@ profile_mapping_data AS (
     SELECT 
         p.id as profile_id,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
-        COALESCE((SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1), '') as description
+        COALESCE((SELECT e.email FROM profile_emails pe JOIN emails e ON pe.email_id = e.id WHERE pe.profile_id = p.id AND pe.is_primary = true AND pe.active = true LIMIT 1), '') as description
     FROM profile p
     WHERE p.id IN (SELECT profile_id FROM all_profile_ids)
 ),

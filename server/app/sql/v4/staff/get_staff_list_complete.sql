@@ -286,25 +286,26 @@ staff_rows AS (
         COALESCE(
             ARRAY(
                 SELECT email FROM (
-                    SELECT DISTINCT ON (pe2.email) 
-                        pe2.email,
+                    SELECT DISTINCT ON (e2.email) 
+                        e2.email,
                         pe2.is_primary,
                         pe2.created_at
-                    FROM profile_emails pe2 
+                    FROM profile_emails pe2
+                    JOIN emails e2 ON pe2.email_id = e2.id
                     WHERE pe2.profile_id = p.id AND pe2.active = true 
-                    ORDER BY pe2.email, pe2.is_primary DESC, pe2.created_at
+                    ORDER BY e2.email, pe2.is_primary DESC, pe2.created_at
                 ) distinct_emails
                 ORDER BY is_primary DESC, created_at
             ),
             ARRAY[]::text[]
         ) as emails,
-        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
+        (SELECT e2.email FROM profile_emails pe2 JOIN emails e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
         p.role,
         COALESCE(SUBSTRING((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) FROM 1 FOR 1), '') || COALESCE(SUBSTRING((SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) FROM 1 FOR 1), '') as initials,
         EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         pa.last_active,
-        prl.requests_per_day,
+        rl.requests_per_day,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day,
         COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         COALESCE(
@@ -319,6 +320,7 @@ staff_rows AS (
     FROM profile p
     LEFT JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
+    LEFT JOIN emails e ON pe.email_id = e.id
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
@@ -327,6 +329,7 @@ staff_rows AS (
     LEFT JOIN profile_all_cohort_links pacl_all ON pacl_all.profile_id = p.id
     LEFT JOIN recent_runs rr ON rr.profile_id = p.id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active 
         FROM profile_activity 
@@ -349,7 +352,7 @@ staff_rows AS (
         (up.role = 'guest' AND p.role = 'guest')
     )
     GROUP BY p.id, p.role, EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
-             pa.last_active, prl.requests_per_day,
+             pa.last_active, rl.requests_per_day,
              pc.cohort_ids, pda.department_ids, ppd.department_id, ptr.total_requests,
              pacl.active_cohort_count, pacl_all.total_cohort_links, rr.run_count, up.role
     ORDER BY p.id, (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1)

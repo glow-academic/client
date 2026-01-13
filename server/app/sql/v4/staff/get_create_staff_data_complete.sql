@@ -171,19 +171,20 @@ staff_rows AS (
         COALESCE(
             ARRAY(
                 SELECT email FROM (
-                    SELECT DISTINCT ON (pe2.email) 
-                        pe2.email,
+                    SELECT DISTINCT ON (e2.email) 
+                        e2.email,
                         pe2.is_primary,
                         pe2.created_at
-                    FROM profile_emails pe2 
+                    FROM profile_emails pe2
+                    JOIN emails e2 ON pe2.email_id = e2.id
                     WHERE pe2.profile_id = p.id AND pe2.active = true 
-                    ORDER BY pe2.email, pe2.is_primary DESC, pe2.created_at
+                    ORDER BY e2.email, pe2.is_primary DESC, pe2.created_at
                 ) distinct_emails
                 ORDER BY is_primary DESC, created_at
             ),
             ARRAY[]::text[]
         ) as emails,
-        (SELECT email FROM profile_emails WHERE profile_id = p.id AND is_primary = true AND active = true LIMIT 1) as primary_email,
+        (SELECT e2.email FROM profile_emails pe2 JOIN emails e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
         p.role,
         EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,

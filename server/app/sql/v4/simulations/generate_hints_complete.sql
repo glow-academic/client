@@ -135,9 +135,10 @@ best_agent AS (
 profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
     SELECT 
-        prl.requests_per_day as req_per_day
+        rl.requests_per_day as req_per_day
     FROM profile p
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
     WHERE p.id = profile_id
 ),
 runs_today AS (

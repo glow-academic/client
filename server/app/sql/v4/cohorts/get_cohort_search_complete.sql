@@ -169,8 +169,8 @@ staff_data AS (
         p.id as profile_id,
         (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
         (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
-        ARRAY_AGG(pe.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
-        (SELECT pe.email FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.is_primary = true AND pe.active = true LIMIT 1) as primary_email,
+        ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT e2.email FROM profile_emails pe2 JOIN emails e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
         p.role,
         COALESCE(SUBSTRING((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) FROM 1 FOR 1), '') || COALESCE(SUBSTRING((SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) FROM 1 FOR 1), '') as initials,
@@ -179,7 +179,7 @@ staff_data AS (
         COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
         COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
         (SELECT pd2.department_id FROM profile_departments pd2 WHERE pd2.profile_id = p.id AND pd2.active = true AND pd2.is_primary = true LIMIT 1) as primary_department_id,
-        prl.requests_per_day as requests_per_day,
+        rl.requests_per_day as requests_per_day,
         COALESCE(ptr.total_requests, 0) as total_requests,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day,
         false as can_edit,
@@ -189,11 +189,13 @@ staff_data AS (
     JOIN profiles p ON true
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
+    LEFT JOIN emails e ON pe.email_id = e.id
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
     LEFT JOIN recent_runs rr ON rr.profile_id = p.id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
+    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active
         FROM profile_activity
@@ -215,7 +217,7 @@ staff_data AS (
         OR (
             (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) ILIKE '%' || x.query || '%'
             OR (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) ILIKE '%' || x.query || '%'
-            OR EXISTS (SELECT 1 FROM profile_emails pe WHERE pe.profile_id = p.id AND pe.active = true AND pe.email ILIKE '%' || x.query || '%')
+            OR EXISTS (SELECT 1 FROM profile_emails pe_search JOIN emails e_search ON pe_search.email_id = e_search.id WHERE pe_search.profile_id = p.id AND pe_search.active = true AND e_search.email ILIKE '%' || x.query || '%')
             OR p.role::text ILIKE '%' || x.query || '%'
             OR (COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) ILIKE '%' || x.query || '%'
         )
@@ -231,7 +233,7 @@ staff_data AS (
         OR EXISTS (SELECT 1 FROM profile_departments pd_filter WHERE pd_filter.profile_id = p.id AND pd_filter.department_id = ANY(x.dept_filter) AND pd_filter.active = true)
     )
     GROUP BY p.id, (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), p.role, EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE),
-             pa.last_active, prl.requests_per_day,
+             pa.last_active, rl.requests_per_day,
              pc.cohort_ids, pda.department_ids, ptr.total_requests, rr.run_count
     ORDER BY p.id, (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1)
     LIMIT (SELECT limit_count FROM params LIMIT 1)

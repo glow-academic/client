@@ -59,9 +59,10 @@ profile_from_department AS (
 profile_rate_limit AS (
     -- Get rate limit for the profile
     SELECT 
-        prl.requests_per_day as req_per_day
+        rl.requests_per_day as req_per_day
     FROM profile_from_department pfd
     LEFT JOIN profile_request_limits prl ON prl.profile_id = pfd.profile_id AND prl.active = true
+    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
 ),
 runs_today AS (
     -- Count model runs for this profile since start of day

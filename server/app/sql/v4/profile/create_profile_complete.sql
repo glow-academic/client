@@ -167,18 +167,39 @@ all_emails_data AS (
         CASE WHEN ord = (SELECT primary_email_index + 1 FROM params) THEN true ELSE false END as is_primary
     FROM unnest((SELECT emails FROM params)) WITH ORDINALITY AS e(email, ord)
 ),
+placeholder_call_id AS (
+    -- Get a placeholder call_id for email creation
+    SELECT id FROM calls LIMIT 1
+),
+email_resources AS (
+    -- Create email resources first
+    INSERT INTO emails (email, call_id, created_at, updated_at)
+    SELECT DISTINCT
+        aed.email,
+        (SELECT id FROM placeholder_call_id),
+        NOW(),
+        NOW()
+    FROM all_emails_data aed
+    WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
+    ON CONFLICT (email) DO UPDATE SET updated_at = NOW()
+    RETURNING id as email_id, email
+),
 email_insert AS (
-    -- Insert all emails into profile_emails
-    INSERT INTO profile_emails (profile_id, email, is_primary, active)
+    -- Link emails to profile via profile_emails junction table
+    INSERT INTO profile_emails (profile_id, email_id, is_primary, active)
     SELECT 
         pi.id,
-        aed.email,
+        er.email_id,
         aed.is_primary,
         true
     FROM profile_insert pi
     CROSS JOIN all_emails_data aed
+    JOIN email_resources er ON er.email = aed.email
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
-    ON CONFLICT (email) DO NOTHING  -- Skip if email already exists (shouldn't happen due to email_check)
+    ON CONFLICT (profile_id, email_id) DO UPDATE SET 
+        is_primary = EXCLUDED.is_primary,
+        active = true,
+        updated_at = NOW()
 ),
 cohort_insert AS (
     -- Insert cohort relationships if provided and profile was created

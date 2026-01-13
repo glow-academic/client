@@ -110,10 +110,11 @@ resolved_dept AS (
 profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
     SELECT 
-        prl.requests_per_day as req_per_day
+        rl.requests_per_day as req_per_day
     FROM attempt_profiles ap 
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
     LEFT JOIN profile_request_limits prl ON prl.profile_id = ap.profile_id AND prl.active = true
+    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
     WHERE ac.chat_id = chat_id AND ap.active = true
     LIMIT 1
 ),
