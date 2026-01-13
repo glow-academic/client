@@ -2875,174 +2875,6 @@ class DuplicateAgentApiResponse(BaseModel):
 
 
 
-# Generated from: get_agent_detail
-
-class GetAgentDetailSqlParams(BaseModel):
-
-    agent_id: UUID
-    profile_id: UUID
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.profile_id,
-            self.draft_id,
-        )
-
-class QGetAgentDetailV4AvailableVoice(BaseModel):
-
-    id: str | None
-    voice: str | None
-
-
-
-
-class QGetAgentDetailV4DebugInfo(BaseModel):
-
-    created_at: str | None
-    model_id: str | None
-    content: str | None
-
-
-
-
-class QGetAgentDetailV4Department(BaseModel):
-
-    department_id: str | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetAgentDetailV4DepartmentPromptLink(BaseModel):
-
-    department_id: str | None
-    prompt_id: str | None
-
-
-
-
-class QGetAgentDetailV4Model(BaseModel):
-
-    model_id: str | None
-    name: str | None
-    description: str | None
-    input_modalities: list[str] | None
-    output_modalities: list[str] | None
-    temperature_lower: float | None
-    temperature_upper: float | None
-    temperature_levels: Any | None
-    reasoning_options: Any | None
-    available_voices: Any | None
-
-
-
-
-class QGetAgentDetailV4Prompt(BaseModel):
-
-    prompt_id: str | None
-    system_prompt: str | None
-    name: str | None
-    description: str | None
-    created_at: str | None
-    updated_at: str | None
-    department_ids: list[str] | None
-    can_delete: bool | None
-
-
-
-
-class QGetAgentDetailV4ReasoningOption(BaseModel):
-
-    id: str | None
-    reasoning_level: str | None
-
-
-
-
-class QGetAgentDetailV4TemperatureLevel(BaseModel):
-
-    id: str | None
-    temperature: str | None
-    is_upper: bool | None
-
-class GetAgentDetailSqlRow(BaseModel):
-
-    agent_exists: bool | None = None
-    agent_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    system_prompt: str | None = None
-    prompt_id: str | None = None
-    model_id: str | None = None
-    active: bool | None = None
-    role: str | None = None
-    selected_temperature_level_id: str | None = None
-    temperature: float | None = None
-    selected_reasoning_level_id: str | None = None
-    reasoning: str | None = None
-    selected_voice_ids: list[str] | None = None
-    valid_voices: list[str] | None = None
-    department_ids: list[str] | None = None
-    valid_department_ids: list[str] | None = None
-    can_edit: bool | None = None
-    temperature_lower: float | None = None
-    temperature_upper: float | None = None
-    valid_model_ids: list[str] | None = None
-    actor_name: str | None = None
-    departments: list[QGetAgentDetailV4Department] | None = None
-    prompts: list[QGetAgentDetailV4Prompt] | None = None
-    department_prompt_links: list[QGetAgentDetailV4DepartmentPromptLink] | None = None
-    debug_info: list[QGetAgentDetailV4DebugInfo] | None = None
-    models: list[QGetAgentDetailV4Model] | None = None
-    reasoning_options: list[QGetAgentDetailV4ReasoningOption] | None = None
-    temperature_levels: list[QGetAgentDetailV4TemperatureLevel] | None = None
-    available_voices: list[QGetAgentDetailV4AvailableVoice] | None = None
-    draft_version: int | None = None
-
-class GetAgentDetailApiRequest(BaseModel):
-
-    agent_id: UUID
-    draft_id: UUID | None = None
-
-class GetAgentDetailApiResponse(BaseModel):
-
-    agent_exists: bool | None = None
-    agent_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    system_prompt: str | None = None
-    prompt_id: str | None = None
-    model_id: str | None = None
-    active: bool | None = None
-    role: str | None = None
-    selected_temperature_level_id: str | None = None
-    temperature: float | None = None
-    selected_reasoning_level_id: str | None = None
-    reasoning: str | None = None
-    selected_voice_ids: list[str] | None = None
-    valid_voices: list[str] | None = None
-    department_ids: list[str] | None = None
-    valid_department_ids: list[str] | None = None
-    can_edit: bool | None = None
-    temperature_lower: float | None = None
-    temperature_upper: float | None = None
-    valid_model_ids: list[str] | None = None
-    actor_name: str | None = None
-    departments: list[QGetAgentDetailV4Department] | None = None
-    prompts: list[QGetAgentDetailV4Prompt] | None = None
-    department_prompt_links: list[QGetAgentDetailV4DepartmentPromptLink] | None = None
-    debug_info: list[QGetAgentDetailV4DebugInfo] | None = None
-    models: list[QGetAgentDetailV4Model] | None = None
-    reasoning_options: list[QGetAgentDetailV4ReasoningOption] | None = None
-    temperature_levels: list[QGetAgentDetailV4TemperatureLevel] | None = None
-    available_voices: list[QGetAgentDetailV4AvailableVoice] | None = None
-    draft_version: int | None = None
-
-
-
 # Generated from: get_agent_model_info
 
 class GetAgentModelInfoSqlParams(BaseModel):
@@ -3073,92 +2905,6 @@ class GetAgentModelInfoApiResponse(BaseModel):
     provider: str | None = None
     base_url: str | None = None
     api_key: str | None = None
-
-
-
-# Generated from: get_agent_new
-
-class GetAgentNewSqlParams(BaseModel):
-
-    profile_id: UUID
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.draft_id,
-        )
-
-class QGetAgentNewV4Department(BaseModel):
-
-    department_id: str | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetAgentNewV4Model(BaseModel):
-
-    model_id: str | None
-    name: str | None
-    description: str | None
-    active: bool | None
-    temperature_lower: float | None
-    temperature_upper: float | None
-    input_modalities: list[str] | None
-    output_modalities: list[str] | None
-    temperature_levels: Any | None
-    reasoning_options: Any | None
-    available_voices: Any | None
-
-class GetAgentNewSqlRow(BaseModel):
-
-    actor_name: str | None = None
-    user_role: str | None = None
-    primary_department_id: str | None = None
-    valid_model_ids: list[str] | None = None
-    valid_department_ids: list[str] | None = None
-    models: list[QGetAgentNewV4Model] | None = None
-    departments: list[QGetAgentNewV4Department] | None = None
-    name: str | None = None
-    description: str | None = None
-    system_prompt: str | None = None
-    prompt_id: str | None = None
-    model_id: str | None = None
-    active: bool | None = None
-    role: str | None = None
-    department_ids: list[str] | None = None
-    model_temperature_level_id: str | None = None
-    model_reasoning_level_id: str | None = None
-    model_voice_ids: list[str] | None = None
-    draft_version: int | None = None
-
-class GetAgentNewApiRequest(BaseModel):
-
-    draft_id: UUID | None = None
-
-class GetAgentNewApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    user_role: str | None = None
-    primary_department_id: str | None = None
-    valid_model_ids: list[str] | None = None
-    valid_department_ids: list[str] | None = None
-    models: list[QGetAgentNewV4Model] | None = None
-    departments: list[QGetAgentNewV4Department] | None = None
-    name: str | None = None
-    description: str | None = None
-    system_prompt: str | None = None
-    prompt_id: str | None = None
-    model_id: str | None = None
-    active: bool | None = None
-    role: str | None = None
-    department_ids: list[str] | None = None
-    model_temperature_level_id: str | None = None
-    model_reasoning_level_id: str | None = None
-    model_voice_ids: list[str] | None = None
-    draft_version: int | None = None
 
 
 
@@ -3200,51 +2946,6 @@ class GetAgentToolsApiResponse(BaseModel):
     argument_descriptions: Any | None = None
     argument_defaults: Any | None = None
     active: bool | None = None
-
-
-
-# Generated from: get_agents_list
-
-class GetAgentsListSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class QListAgentsV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    reasoning: str | None
-    temperature: float | None
-    model_id: UUID | None
-    role: str | None
-    updated_at: str | None
-    department_ids: list[str] | None
-    can_edit: bool | None
-    can_duplicate: bool | None
-    can_delete: bool | None
-    model_name: str | None
-    model_description: str | None
-    actor_name: str | None
-
-class GetAgentsListSqlRow(BaseModel):
-
-    actor_name: str | None = None
-    agents: list[QListAgentsV4Agent] | None = None
-
-class GetAgentsListApiRequest(BaseModel):
-
-    pass
-
-class GetAgentsListApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    agents: list[QListAgentsV4Agent] | None = None
 
 
 
@@ -4590,171 +4291,6 @@ class UpdateChatCreatedAtApiRequest(BaseModel):
 class UpdateChatCreatedAtApiResponse(BaseModel):
 
     chat_id: str | None = None
-
-
-
-# Generated from: get_audio_regeneration_run_context_and_create_run
-
-class GetAudioRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    upload_id: UUID
-    agent_id: UUID
-    group_id: UUID
-    profile_id: UUID | None = None
-    department_id: UUID | None = None
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.upload_id,
-            self.agent_id,
-            self.group_id,
-            self.profile_id,
-            self.department_id,
-            self.user_instructions,
-        )
-
-class IAudioRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetAudioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IAudioRegenRunContextCreateRunV4Msg] | None = None
-
-class GetAudioRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    upload_id: UUID
-    agent_id: UUID
-    group_id: UUID
-    department_id: UUID | None = None
-    user_instructions: str | None = None
-
-class GetAudioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IAudioRegenRunContextCreateRunV4Msg] | None = None
-
-
-
-# Generated from: get_audio_run_context_and_create_run
-
-class GetAudioRunContextAndCreateRunSqlParams(BaseModel):
-
-    upload_id: UUID
-    agent_id: UUID
-    profile_id: UUID | None = None
-    department_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.upload_id,
-            self.agent_id,
-            self.profile_id,
-            self.department_id,
-        )
-
-class GetAudioRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    run_id: str | None = None
-
-class GetAudioRunContextAndCreateRunApiRequest(BaseModel):
-
-    upload_id: UUID
-    agent_id: UUID
-    department_id: UUID | None = None
-
-class GetAudioRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    run_id: str | None = None
 
 
 
@@ -8957,200 +8493,6 @@ class GetDocumentDetailApiResponse(BaseModel):
 
 
 
-# Generated from: get_document_regeneration_run_context_and_create_run
-
-class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-    document_domain_id: UUID
-    group_id: UUID
-    document_id: UUID | None = None
-    document_name: str | None = None
-    document_description: str | None = None
-    field_ids: list[UUID] | None = None
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-            self.document_domain_id,
-            self.group_id,
-            self.document_id,
-            self.document_name,
-            self.document_description,
-            self.field_ids,
-            self.user_instructions,
-        )
-
-class IDocumentRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetDocumentRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    previous_messages: list[IDocumentRegenRunContextCreateRunV4Msg] | None = None
-
-class GetDocumentRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    department_id: UUID
-    document_domain_id: UUID
-    group_id: UUID
-    document_id: UUID | None = None
-    document_name: str | None = None
-    document_description: str | None = None
-    field_ids: list[UUID] | None = None
-    user_instructions: str | None = None
-
-class GetDocumentRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    previous_messages: list[IDocumentRegenRunContextCreateRunV4Msg] | None = None
-
-
-
-# Generated from: get_document_run_context_and_create_run
-
-class GetDocumentRunContextAndCreateRunSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-    document_id: UUID | None = None
-    document_name: str | None = None
-    document_description: str | None = None
-    field_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-            self.document_id,
-            self.document_name,
-            self.document_description,
-            self.field_ids,
-        )
-
-class IGetDocumentRunContextAndCreateRunV4Field(BaseModel):
-
-    item_name: str | None
-    item_description: str | None
-    param_name: str | None
-    param_description: str | None
-
-
-
-
-class IGetDocumentRunContextAndCreateRunV4Tool(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    tool_type: str | None
-    agent_role: str | None
-    arguments: Any | None
-    argument_descriptions: Any | None
-    argument_defaults: Any | None
-    active: bool | None
-
-class GetDocumentRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetDocumentRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_template: str | None = None
-    developer_instruction_schema_id: UUID | None = None
-    department_name: str | None = None
-    template_context_fields: list[IGetDocumentRunContextAndCreateRunV4Field] | None = None
-    developer_message_id: UUID | None = None
-
-class GetDocumentRunContextAndCreateRunApiRequest(BaseModel):
-
-    department_id: UUID
-    document_id: UUID | None = None
-    document_name: str | None = None
-    document_description: str | None = None
-    field_ids: list[UUID] | None = None
-
-class GetDocumentRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetDocumentRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_template: str | None = None
-    developer_instruction_schema_id: UUID | None = None
-    department_name: str | None = None
-    template_context_fields: list[IGetDocumentRunContextAndCreateRunV4Field] | None = None
-    developer_message_id: UUID | None = None
-
-
-
 # Generated from: get_document_template_context
 
 class GetDocumentTemplateContextSqlParams(BaseModel):
@@ -10460,203 +9802,6 @@ class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
 
 
 
-# Generated from: get_text_run_context_and_create_run
-
-class GetTextRunContextAndCreateRunSqlParams(BaseModel):
-
-    agent_id: UUID
-    profile_id: UUID
-    department_id: UUID | None = None
-    upload_id: UUID | None = None
-    group_id: UUID | None = None
-    user_instructions: str | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources composite array to tuples for asyncpg
-        resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.resources or [])
-        ]
-        return (
-            self.agent_id,
-            self.profile_id,
-            self.department_id,
-            self.upload_id,
-            self.group_id,
-            self.user_instructions,
-            resources_tuples,
-        )
-
-class IGetTextRunContextAndCreateRunV4Tool(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    tool_type: str | None
-    agent_role: str | None
-    arguments: Any | None
-    argument_descriptions: Any | None
-    argument_defaults: Any | None
-    active: bool | None
-
-class GetTextRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    developer_message_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-class GetTextRunContextAndCreateRunApiRequest(BaseModel):
-
-    agent_id: UUID
-    department_id: UUID | None = None
-    upload_id: UUID | None = None
-    group_id: UUID | None = None
-    user_instructions: str | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-class GetTextRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    developer_message_id: UUID | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-
-
-# Generated from: get_text_run_context_for_existing_run
-
-class GetTextRunContextForExistingRunSqlParams(BaseModel):
-
-    run_id: UUID
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    group_id: UUID | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources composite array to tuples for asyncpg
-        resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.resources or [])
-        ]
-        return (
-            self.run_id,
-            self.agent_id,
-            self.message_ids,
-            self.group_id,
-            resources_tuples,
-        )
-
-class GetTextRunContextForExistingRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-class GetTextRunContextForExistingRunApiRequest(BaseModel):
-
-    run_id: UUID
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    group_id: UUID | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-class GetTextRunContextForExistingRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-
-
 # Generated from: get_text_tool_call_results
 
 class GetTextToolCallResultsSqlParams(BaseModel):
@@ -11000,66 +10145,6 @@ class FindStandardByGroupAndScoreApiResponse(BaseModel):
 
 
 
-# Generated from: get_audio_grading_run_context
-
-class GetAudioGradingRunContextSqlParams(BaseModel):
-
-    agent_id: UUID
-    department_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.department_id,
-        )
-
-class GetAudioGradingRunContextSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-
-class GetAudioGradingRunContextApiRequest(BaseModel):
-
-    agent_id: UUID
-    department_id: UUID
-
-class GetAudioGradingRunContextApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-
-
-
 # Generated from: get_feedback_totals_for_grade
 
 class GetFeedbackTotalsForGradeSqlParams(BaseModel):
@@ -11082,280 +10167,6 @@ class GetFeedbackTotalsForGradeApiRequest(BaseModel):
 class GetFeedbackTotalsForGradeApiResponse(BaseModel):
 
     total: int | None = None
-
-
-
-# Generated from: get_grading_regeneration_run_context_and_create_run
-
-class GetGradingRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    chat_id: UUID
-    department_id: UUID
-    profile_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.department_id,
-            self.profile_id,
-            self.group_id,
-            self.user_instructions,
-        )
-
-class QGetGradingRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-
-
-
-class QGetGradingRegenRunContextCreateRunV4Standard(BaseModel):
-
-    id: str | None
-    name: str | None
-    description: str | None
-    points: int | None
-    standard_group_id: str | None
-
-
-
-
-class QGetGradingRegenRunContextCreateRunV4StandardGroup(BaseModel):
-
-    id: str | None
-    name: str | None
-    short_name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-    rubric_id: str | None
-
-class GetGradingRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    chat_id: str | None = None
-    scenario_id: str | None = None
-    chat_attempt_id: str | None = None
-    title: str | None = None
-    trace_id: str | None = None
-    chat_created_at: str | None = None
-    completed: bool | None = None
-    problem_statement: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    total_chats: int | None = None
-    simulation_id_out: str | None = None
-    rubric_id_out: str | None = None
-    simulation_rubric_id: str | None = None
-    department_id_out: str | None = None
-    time_limit: int | None = None
-    rubric_grade_agent_id: str | None = None
-    grade_agent_id: str | None = None
-    audio_agent_id: str | None = None
-    rubric_name: str | None = None
-    rubric_description: str | None = None
-    rubric_points: int | None = None
-    rubric_pass_points: int | None = None
-    standard_groups: list[QGetGradingRegenRunContextCreateRunV4StandardGroup] | None = None
-    standards: list[QGetGradingRegenRunContextCreateRunV4Standard] | None = None
-    previous_messages: list[QGetGradingRegenRunContextCreateRunV4Msg] | None = None
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id_out: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-
-class GetGradingRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    chat_id: UUID
-    department_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-class GetGradingRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    chat_id: str | None = None
-    scenario_id: str | None = None
-    chat_attempt_id: str | None = None
-    title: str | None = None
-    trace_id: str | None = None
-    chat_created_at: str | None = None
-    completed: bool | None = None
-    problem_statement: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    total_chats: int | None = None
-    simulation_id_out: str | None = None
-    rubric_id_out: str | None = None
-    simulation_rubric_id: str | None = None
-    department_id_out: str | None = None
-    time_limit: int | None = None
-    rubric_grade_agent_id: str | None = None
-    grade_agent_id: str | None = None
-    audio_agent_id: str | None = None
-    rubric_name: str | None = None
-    rubric_description: str | None = None
-    rubric_points: int | None = None
-    rubric_pass_points: int | None = None
-    standard_groups: list[QGetGradingRegenRunContextCreateRunV4StandardGroup] | None = None
-    standards: list[QGetGradingRegenRunContextCreateRunV4Standard] | None = None
-    previous_messages: list[QGetGradingRegenRunContextCreateRunV4Msg] | None = None
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id_out: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-
-
-
-# Generated from: get_grading_run_context_and_create_run
-
-class GetGradingRunContextAndCreateRunSqlParams(BaseModel):
-
-    chat_id: UUID
-    department_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.department_id,
-            self.profile_id,
-        )
-
-class QGetGradingRunContextAndCreateRunV4Standard(BaseModel):
-
-    id: str | None
-    name: str | None
-    description: str | None
-    points: int | None
-    standard_group_id: str | None
-
-
-
-
-class QGetGradingRunContextAndCreateRunV4StandardGroup(BaseModel):
-
-    id: str | None
-    name: str | None
-    short_name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-    rubric_id: str | None
-
-class GetGradingRunContextAndCreateRunSqlRow(BaseModel):
-
-    chat_id: str | None = None
-    scenario_id: str | None = None
-    chat_attempt_id: str | None = None
-    title: str | None = None
-    trace_id: str | None = None
-    chat_created_at: str | None = None
-    completed: bool | None = None
-    problem_statement: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    total_chats: int | None = None
-    simulation_id_out: str | None = None
-    rubric_id_out: str | None = None
-    simulation_rubric_id: str | None = None
-    department_id_out: str | None = None
-    time_limit: int | None = None
-    rubric_grade_agent_id: str | None = None
-    grade_agent_id: str | None = None
-    audio_agent_id: str | None = None
-    rubric_name: str | None = None
-    rubric_description: str | None = None
-    rubric_points: int | None = None
-    rubric_pass_points: int | None = None
-    standard_groups: list[QGetGradingRunContextAndCreateRunV4StandardGroup] | None = None
-    standards: list[QGetGradingRunContextAndCreateRunV4Standard] | None = None
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id_out: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-
-class GetGradingRunContextAndCreateRunApiRequest(BaseModel):
-
-    chat_id: UUID
-    department_id: UUID
-
-class GetGradingRunContextAndCreateRunApiResponse(BaseModel):
-
-    chat_id: str | None = None
-    scenario_id: str | None = None
-    chat_attempt_id: str | None = None
-    title: str | None = None
-    trace_id: str | None = None
-    chat_created_at: str | None = None
-    completed: bool | None = None
-    problem_statement: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    total_chats: int | None = None
-    simulation_id_out: str | None = None
-    rubric_id_out: str | None = None
-    simulation_rubric_id: str | None = None
-    department_id_out: str | None = None
-    time_limit: int | None = None
-    rubric_grade_agent_id: str | None = None
-    grade_agent_id: str | None = None
-    audio_agent_id: str | None = None
-    rubric_name: str | None = None
-    rubric_description: str | None = None
-    rubric_points: int | None = None
-    rubric_pass_points: int | None = None
-    standard_groups: list[QGetGradingRunContextAndCreateRunV4StandardGroup] | None = None
-    standards: list[QGetGradingRunContextAndCreateRunV4Standard] | None = None
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id_out: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
 
 
 
@@ -11714,147 +10525,6 @@ class CompleteImageGenerationApiRequest(BaseModel):
 class CompleteImageGenerationApiResponse(BaseModel):
 
     upload_id: UUID | None = None
-
-
-
-# Generated from: get_image_generation_context_and_create_upload
-
-class GetImageGenerationContextAndCreateUploadSqlParams(BaseModel):
-
-    image_id: UUID
-    agent_id: UUID
-    profile_id: UUID | None = None
-    department_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.image_id,
-            self.agent_id,
-            self.profile_id,
-            self.department_id,
-        )
-
-class GetImageGenerationContextAndCreateUploadSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    run_id: str | None = None
-
-class GetImageGenerationContextAndCreateUploadApiRequest(BaseModel):
-
-    image_id: UUID
-    agent_id: UUID
-    department_id: UUID | None = None
-
-class GetImageGenerationContextAndCreateUploadApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    run_id: str | None = None
-
-
-
-# Generated from: get_image_regeneration_run_context_and_create_run
-
-class GetImageRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    image_id: UUID
-    agent_id: UUID
-    group_id: UUID
-    profile_id: UUID | None = None
-    department_id: UUID | None = None
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.image_id,
-            self.agent_id,
-            self.group_id,
-            self.profile_id,
-            self.department_id,
-            self.user_instructions,
-        )
-
-class IImageRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetImageRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IImageRegenRunContextCreateRunV4Msg] | None = None
-
-class GetImageRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    image_id: UUID
-    agent_id: UUID
-    group_id: UUID
-    department_id: UUID | None = None
-    user_instructions: str | None = None
-
-class GetImageRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IImageRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -12758,213 +11428,6 @@ class GetLogsBundleApiResponse(BaseModel):
 
 
 
-# Generated from: get_member_regeneration_run_context_and_create_run
-
-class GetMemberRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    chat_id: UUID
-    profile_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.profile_id,
-            self.group_id,
-            self.user_instructions,
-        )
-
-class IMemberRegenRunContextCreateRunV4Document(BaseModel):
-
-    id: str | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-
-
-
-
-class IMemberRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetMemberRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[IMemberRegenRunContextCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IMemberRegenRunContextCreateRunV4Msg] | None = None
-
-class GetMemberRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    chat_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-class GetMemberRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[IMemberRegenRunContextCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IMemberRegenRunContextCreateRunV4Msg] | None = None
-
-
-
-# Generated from: get_member_run_context_and_create_run
-
-class GetMemberRunContextAndCreateRunSqlParams(BaseModel):
-
-    chat_id: UUID
-    profile_id: UUID
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.profile_id,
-            self.group_id,
-        )
-
-class QGetMemberRunContextAndCreateRunV4Document(BaseModel):
-
-    id: str | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-
-class GetMemberRunContextAndCreateRunSqlRow(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[QGetMemberRunContextAndCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-
-class GetMemberRunContextAndCreateRunApiRequest(BaseModel):
-
-    chat_id: UUID
-    group_id: UUID | None = None
-
-class GetMemberRunContextAndCreateRunApiResponse(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[QGetMemberRunContextAndCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-
-
-
 # Generated from: member_progress_upsert
 
 class MemberProgressUpsertSqlParams(BaseModel):
@@ -13543,156 +12006,6 @@ class DuplicateModelApiResponse(BaseModel):
     model_id: UUID | None = None
     original_name: str | None = None
     actor_name: str | None = None
-
-
-
-# Generated from: get_model_detail
-
-class GetModelDetailSqlParams(BaseModel):
-
-    model_id: UUID
-    profile_id: UUID
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_id,
-            self.profile_id,
-            self.draft_id,
-        )
-
-class QGetModelDetailV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetModelDetailV4Key(BaseModel):
-
-    key_id: UUID | None
-    name: str | None
-    description: str | None
-    key_masked: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-
-
-
-
-class QGetModelDetailV4Modalities(BaseModel):
-
-    input: list[str] | None
-    output: list[str] | None
-
-
-
-
-class QGetModelDetailV4Pricing(BaseModel):
-
-    pricing_type: str | None
-    unit_id: UUID | None
-    unit_name: str | None
-    unit_category: str | None
-    price: float | None
-
-
-
-
-class QGetModelDetailV4Provider(BaseModel):
-
-    provider_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetModelDetailV4Unit(BaseModel):
-
-    unit_id: UUID | None
-    name: str | None
-    unit_category: str | None
-    value: int | None
-
-
-
-
-class QGetModelDetailV4Voice(BaseModel):
-
-    voice_id: UUID | None
-    voice: str | None
-
-class GetModelDetailSqlRow(BaseModel):
-
-    model_exists: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    image_model: bool | None = None
-    provider: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    value: str | None = None
-    base_url: str | None = None
-    valid_provider_ids: list[UUID] | None = None
-    providers: list[QGetModelDetailV4Provider] | None = None
-    valid_department_ids: list[UUID] | None = None
-    departments: list[QGetModelDetailV4Department] | None = None
-    department_ids: list[UUID] | None = None
-    valid_key_ids: list[UUID] | None = None
-    keys: list[QGetModelDetailV4Key] | None = None
-    default_key_id: UUID | None = None
-    temperature_lower: float | None = None
-    temperature_upper: float | None = None
-    temperature_values: list[str] | None = None
-    pricing: list[QGetModelDetailV4Pricing] | None = None
-    modalities: QGetModelDetailV4Modalities | None = None
-    reasoning_levels: list[str] | None = None
-    voices: list[QGetModelDetailV4Voice] | None = None
-    qualities: list[str] | None = None
-    units: list[QGetModelDetailV4Unit] | None = None
-    actor_name: str | None = None
-    draft_version: int | None = None
-
-class GetModelDetailApiRequest(BaseModel):
-
-    model_id: UUID
-    draft_id: UUID | None = None
-
-class GetModelDetailApiResponse(BaseModel):
-
-    model_exists: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    image_model: bool | None = None
-    provider: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    value: str | None = None
-    base_url: str | None = None
-    valid_provider_ids: list[UUID] | None = None
-    providers: list[QGetModelDetailV4Provider] | None = None
-    valid_department_ids: list[UUID] | None = None
-    departments: list[QGetModelDetailV4Department] | None = None
-    department_ids: list[UUID] | None = None
-    valid_key_ids: list[UUID] | None = None
-    keys: list[QGetModelDetailV4Key] | None = None
-    default_key_id: UUID | None = None
-    temperature_lower: float | None = None
-    temperature_upper: float | None = None
-    temperature_values: list[str] | None = None
-    pricing: list[QGetModelDetailV4Pricing] | None = None
-    modalities: QGetModelDetailV4Modalities | None = None
-    reasoning_levels: list[str] | None = None
-    voices: list[QGetModelDetailV4Voice] | None = None
-    qualities: list[str] | None = None
-    units: list[QGetModelDetailV4Unit] | None = None
-    actor_name: str | None = None
-    draft_version: int | None = None
 
 
 
@@ -17352,84 +15665,6 @@ class UpdateProfileToInactiveApiResponse(BaseModel):
 
     profile_exists: bool | None = None
     profile_id: UUID | None = None
-
-
-
-# Generated from: get_prompt_run_context_and_create_run
-
-class GetPromptRunContextAndCreateRunSqlParams(BaseModel):
-
-    chat_id: UUID
-    profile_id: UUID
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.profile_id,
-            self.group_id,
-        )
-
-class GetPromptRunContextAndCreateRunSqlRow(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-
-class GetPromptRunContextAndCreateRunApiRequest(BaseModel):
-
-    chat_id: UUID
-    group_id: UUID | None = None
-
-class GetPromptRunContextAndCreateRunApiResponse(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
 
 
 
@@ -21144,211 +19379,6 @@ class GetRubricNewApiResponse(BaseModel):
 
 
 
-# Generated from: get_rubric_regeneration_run_context_and_create_run
-
-class GetRubricRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-    rubric_agent_id: UUID
-    group_id: UUID
-    rubric_id: UUID
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-            self.rubric_agent_id,
-            self.group_id,
-            self.rubric_id,
-            self.user_instructions,
-        )
-
-class IRubricRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-
-
-
-class IRubricRegenRunContextCreateRunV4Sg(BaseModel):
-
-    id: str | None
-    name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-
-
-
-
-class IRubricRegenRunContextCreateRunV4Std(BaseModel):
-
-    id: str | None
-    name: str | None
-    points: int | None
-    standard_group_id: str | None
-
-class GetRubricRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    standard_groups: list[IRubricRegenRunContextCreateRunV4Sg] | None = None
-    standards: list[IRubricRegenRunContextCreateRunV4Std] | None = None
-    previous_messages: list[IRubricRegenRunContextCreateRunV4Msg] | None = None
-
-class GetRubricRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    department_id: UUID
-    rubric_agent_id: UUID
-    group_id: UUID
-    rubric_id: UUID
-    user_instructions: str | None = None
-
-class GetRubricRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    standard_groups: list[IRubricRegenRunContextCreateRunV4Sg] | None = None
-    standards: list[IRubricRegenRunContextCreateRunV4Std] | None = None
-    previous_messages: list[IRubricRegenRunContextCreateRunV4Msg] | None = None
-
-
-
-# Generated from: get_rubric_run_context_and_create_run
-
-class IGetRubricRunContextAndCreateRunV4Standard(BaseModel):
-
-    id: str | None
-    name: str | None
-    points: int | None
-    standard_group_id: str | None
-
-
-
-
-class IGetRubricRunContextAndCreateRunV4StandardGroup(BaseModel):
-
-    id: str | None
-    name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-
-class GetRubricRunContextAndCreateRunSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-    rubric_agent_id: UUID
-    group_id: UUID | None = None
-    rubric_id: UUID | None = None
-    standard_groups: list[IGetRubricRunContextAndCreateRunV4StandardGroup] | None = None
-    standards: list[IGetRubricRunContextAndCreateRunV4Standard] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert standard_groups composite array to tuples for asyncpg
-        standard_groups_tuples = [
-            (conn.id, conn.name, conn.description, conn.points, conn.pass_points)
-            for conn in (self.standard_groups or [])
-        ]
-        # Convert standards composite array to tuples for asyncpg
-        standards_tuples = [
-            (conn.id, conn.name, conn.points, conn.standard_group_id)
-            for conn in (self.standards or [])
-        ]
-        return (
-            self.department_id,
-            self.profile_id,
-            self.rubric_agent_id,
-            self.group_id,
-            self.rubric_id,
-            standard_groups_tuples,
-            standards_tuples,
-        )
-
-class GetRubricRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-
-class GetRubricRunContextAndCreateRunApiRequest(BaseModel):
-
-    department_id: UUID
-    rubric_agent_id: UUID
-    group_id: UUID | None = None
-    rubric_id: UUID | None = None
-    standard_groups: list[IGetRubricRunContextAndCreateRunV4StandardGroup] | None = None
-    standards: list[IGetRubricRunContextAndCreateRunV4Standard] | None = None
-
-class GetRubricRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-
-
-
 # Generated from: get_rubric_tool_call_results
 
 class GetRubricToolCallResultsSqlParams(BaseModel):
@@ -23212,296 +21242,6 @@ class GetScenarioQuestionsApiResponse(BaseModel):
 
 
 
-# Generated from: get_scenario_regeneration_run_context_and_create_run
-
-class GetScenarioRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-    agent_id: UUID
-    group_id: UUID
-    persona_id: UUID | None = None
-    document_ids: list[UUID] | None = None
-    parameter_item_ids: list[UUID] | None = None
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-            self.agent_id,
-            self.group_id,
-            self.persona_id,
-            self.document_ids,
-            self.parameter_item_ids,
-            self.user_instructions,
-        )
-
-class IGetScenarioRegenerationRunContextAndCreateRunV4Doc(BaseModel):
-
-    id: str | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-    template: bool | None
-    schema_id: UUID | None
-
-
-
-
-class IGetScenarioRegenerationRunContextAndCreateRunV4Docum(BaseModel):
-
-    document_id: str | None
-    document_name: str | None
-    schema_id: UUID | None
-    html_id: str | None
-
-
-
-
-class IGetScenarioRegenerationRunContextAndCreateRunV4Param(BaseModel):
-
-    item_name: str | None
-    item_description: str | None
-    param_name: str | None
-    param_description: str | None
-
-
-
-
-class IScenarioRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetScenarioRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    persona_description: str | None = None
-    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV4Doc] | None = None
-    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV4Docum] | None = None
-    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV4Param] | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    previous_messages: list[IScenarioRegenRunContextCreateRunV4Msg] | None = None
-
-class GetScenarioRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    department_id: UUID
-    agent_id: UUID
-    group_id: UUID
-    persona_id: UUID | None = None
-    document_ids: list[UUID] | None = None
-    parameter_item_ids: list[UUID] | None = None
-    user_instructions: str | None = None
-
-class GetScenarioRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    persona_description: str | None = None
-    documents: list[IGetScenarioRegenerationRunContextAndCreateRunV4Doc] | None = None
-    document_templates: list[IGetScenarioRegenerationRunContextAndCreateRunV4Docum] | None = None
-    parameter_items: list[IGetScenarioRegenerationRunContextAndCreateRunV4Param] | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-    previous_messages: list[IScenarioRegenRunContextCreateRunV4Msg] | None = None
-
-
-
-# Generated from: get_scenario_run_context_and_create_run
-
-class GetScenarioRunContextAndCreateRunSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-    agent_id: UUID
-    group_id: UUID | None = None
-    persona_id: UUID | None = None
-    document_ids: list[UUID] | None = None
-    parameter_item_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-            self.agent_id,
-            self.group_id,
-            self.persona_id,
-            self.document_ids,
-            self.parameter_item_ids,
-        )
-
-class IGetScenarioRunContextAndCreateRunV4Document(BaseModel):
-
-    id: str | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-    template: bool | None
-    schema_id: UUID | None
-
-
-
-
-class IGetScenarioRunContextAndCreateRunV4DocumentTemplate(BaseModel):
-
-    document_id: str | None
-    document_name: str | None
-    document_description: str | None
-    document_domain_id: str | None
-    schema_id: UUID | None
-    html_id: str | None
-    template_file_path: str | None
-
-
-
-
-class IGetScenarioRunContextAndCreateRunV4ParameterItem(BaseModel):
-
-    item_name: str | None
-    item_description: str | None
-    param_name: str | None
-    param_description: str | None
-
-class GetScenarioRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    persona_description: str | None = None
-    documents: list[IGetScenarioRunContextAndCreateRunV4Document] | None = None
-    document_templates: list[IGetScenarioRunContextAndCreateRunV4DocumentTemplate] | None = None
-    parameter_items: list[IGetScenarioRunContextAndCreateRunV4ParameterItem] | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-
-class GetScenarioRunContextAndCreateRunApiRequest(BaseModel):
-
-    department_id: UUID
-    agent_id: UUID
-    group_id: UUID | None = None
-    persona_id: UUID | None = None
-    document_ids: list[UUID] | None = None
-    parameter_item_ids: list[UUID] | None = None
-
-class GetScenarioRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    persona_description: str | None = None
-    documents: list[IGetScenarioRunContextAndCreateRunV4Document] | None = None
-    document_templates: list[IGetScenarioRunContextAndCreateRunV4DocumentTemplate] | None = None
-    parameter_items: list[IGetScenarioRunContextAndCreateRunV4ParameterItem] | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    trace_id: str | None = None
-
-
-
 # Generated from: get_scenario_videos
 
 class GetScenarioVideosSqlParams(BaseModel):
@@ -25087,129 +22827,6 @@ class TextCompleteFinalizeApiResponse(BaseModel):
 
 
 
-# Generated from: get_voice_regeneration_run_context_and_create_run
-
-class GetVoiceRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    chat_id: UUID
-    profile_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.profile_id,
-            self.group_id,
-            self.user_instructions,
-        )
-
-class IGetVoiceRegenerationRunContextAndCreateRunV4Document(BaseModel):
-
-    id: str | None
-    name: str | None
-    url: str | None
-    type: str | None
-    created_at: str | None
-
-
-
-
-class IGetVoiceRegenerationRunContextAndCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetVoiceRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    chat_id: UUID | None = None
-    chat_title: str | None = None
-    created_at: str | None = None
-    trace_id: str | None = None
-    attempt_id: UUID | None = None
-    simulation_id: UUID | None = None
-    scenario_id: UUID | None = None
-    problem_statement: str | None = None
-    department_id: UUID | None = None
-    persona_id: UUID | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    voice_system_prompt: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    custom_model: str | None = None
-    voice_model_id: UUID | None = None
-    voice_model_name: str | None = None
-    voice_custom_model: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    voice_provider_id: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    settings_id: UUID | None = None
-    api_key: str | None = None
-    voice_api_key: str | None = None
-    profile_id: UUID | None = None
-    agent_id: UUID | None = None
-    voice_agent_id: UUID | None = None
-    documents: list[IGetVoiceRegenerationRunContextAndCreateRunV4Document] | None = None
-    run_id: str | None = None
-    previous_messages: list[IGetVoiceRegenerationRunContextAndCreateRunV4Msg] | None = None
-
-class GetVoiceRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    chat_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-class GetVoiceRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    chat_id: UUID | None = None
-    chat_title: str | None = None
-    created_at: str | None = None
-    trace_id: str | None = None
-    attempt_id: UUID | None = None
-    simulation_id: UUID | None = None
-    scenario_id: UUID | None = None
-    problem_statement: str | None = None
-    department_id: UUID | None = None
-    persona_id: UUID | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    voice_system_prompt: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    custom_model: str | None = None
-    voice_model_id: UUID | None = None
-    voice_model_name: str | None = None
-    voice_custom_model: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    voice_provider_id: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    settings_id: UUID | None = None
-    api_key: str | None = None
-    voice_api_key: str | None = None
-    profile_id: UUID | None = None
-    agent_id: UUID | None = None
-    voice_agent_id: UUID | None = None
-    documents: list[IGetVoiceRegenerationRunContextAndCreateRunV4Document] | None = None
-    run_id: str | None = None
-    previous_messages: list[IGetVoiceRegenerationRunContextAndCreateRunV4Msg] | None = None
-
-
-
 # Generated from: get_voice_run_context
 
 class GetVoiceRunContextSqlParams(BaseModel):
@@ -25585,53 +23202,6 @@ class DuplicateSimulationApiResponse(BaseModel):
 
 
 
-# Generated from: generate_hints
-
-class GenerateHintsSqlParams(BaseModel):
-
-    message_id: UUID
-    chat_id: UUID
-    department_id: UUID
-    profile_id: UUID
-    group_id: UUID | None = None
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_id,
-            self.chat_id,
-            self.department_id,
-            self.profile_id,
-            self.group_id,
-            self.user_instructions,
-        )
-
-class GenerateHintsSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_role: str | None = None
-    chat_id: str | None = None
-    group_id: UUID | None = None
-    developer_instruction_template: str | None = None
-
-class GenerateHintsApiRequest(BaseModel):
-
-    message_id: UUID
-    chat_id: UUID
-    department_id: UUID
-    group_id: UUID | None = None
-    user_instructions: str | None = None
-
-class GenerateHintsApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_role: str | None = None
-    chat_id: str | None = None
-    group_id: UUID | None = None
-    developer_instruction_template: str | None = None
-
-
-
 # Generated from: get_chat_basic
 
 class GetChatBasicSqlParams(BaseModel):
@@ -25711,117 +23281,6 @@ class GetHintMessageIdApiRequest(BaseModel):
 class GetHintMessageIdApiResponse(BaseModel):
 
     message_id: UUID | None = None
-
-
-
-# Generated from: get_hint_regeneration_run_context_and_create_run
-
-class GetHintRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    message_id: UUID
-    chat_id: UUID
-    department_id: UUID
-    profile_id: UUID
-    hint_agent_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.message_id,
-            self.chat_id,
-            self.department_id,
-            self.profile_id,
-            self.hint_agent_id,
-            self.group_id,
-            self.user_instructions,
-        )
-
-class IHintRegenRunContextCreateRunV4Document(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-
-
-
-
-class IHintRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetHintRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    message_id: str | None = None
-    message_created_at: str | None = None
-    chat_id: str | None = None
-    attempt_id: str | None = None
-    scenario_id: str | None = None
-    trace_id: str | None = None
-    chat_title: str | None = None
-    simulation_id: str | None = None
-    problem_statement: str | None = None
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    provider_id: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[IHintRegenRunContextCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IHintRegenRunContextCreateRunV4Msg] | None = None
-
-class GetHintRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    message_id: UUID
-    chat_id: UUID
-    department_id: UUID
-    hint_agent_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-class GetHintRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    message_id: str | None = None
-    message_created_at: str | None = None
-    chat_id: str | None = None
-    attempt_id: str | None = None
-    scenario_id: str | None = None
-    trace_id: str | None = None
-    chat_title: str | None = None
-    simulation_id: str | None = None
-    problem_statement: str | None = None
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    provider_id: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[IHintRegenRunContextCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IHintRegenRunContextCreateRunV4Msg] | None = None
 
 
 
@@ -26656,360 +24115,6 @@ class GetSimulationMetadataForChatApiResponse(BaseModel):
 
 
 
-# Generated from: get_simulation_regeneration_run_context_and_create_run
-
-class GetSimulationRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    chat_id: UUID
-    profile_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.profile_id,
-            self.group_id,
-            self.user_instructions,
-        )
-
-class QGetSimRegenRunContextCreateRunV4Document(BaseModel):
-
-    id: str | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-
-
-
-
-class QGetSimRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetSimulationRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    voice_system_prompt: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    voice_model_id: str | None = None
-    voice_model_name: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    voice_api_key: str | None = None
-    voice_custom_model: str | None = None
-    voice_provider_name: str | None = None
-    voice_agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[QGetSimRegenRunContextCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[QGetSimRegenRunContextCreateRunV4Msg] | None = None
-
-class GetSimulationRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    chat_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-class GetSimulationRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    voice_system_prompt: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    voice_model_id: str | None = None
-    voice_model_name: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    voice_api_key: str | None = None
-    voice_custom_model: str | None = None
-    voice_provider_name: str | None = None
-    voice_agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[QGetSimRegenRunContextCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[QGetSimRegenRunContextCreateRunV4Msg] | None = None
-
-
-
-# Generated from: get_simulation_run_context_and_create_run
-
-class GetSimulationRunContextAndCreateRunSqlParams(BaseModel):
-
-    chat_id: UUID
-    profile_id: UUID
-    group_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-            self.profile_id,
-            self.group_id,
-        )
-
-class QGetSimulationRunContextAndCreateRunV4Document(BaseModel):
-
-    id: str | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-
-class GetSimulationRunContextAndCreateRunSqlRow(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    voice_system_prompt: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    voice_model_id: str | None = None
-    voice_model_name: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    voice_api_key: str | None = None
-    voice_custom_model: str | None = None
-    voice_provider_name: str | None = None
-    voice_agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[QGetSimulationRunContextAndCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-
-class GetSimulationRunContextAndCreateRunApiRequest(BaseModel):
-
-    chat_id: UUID
-    group_id: UUID | None = None
-
-class GetSimulationRunContextAndCreateRunApiResponse(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    voice_system_prompt: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    voice_model_id: str | None = None
-    voice_model_name: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    voice_api_key: str | None = None
-    voice_custom_model: str | None = None
-    voice_provider_name: str | None = None
-    voice_agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: list[QGetSimulationRunContextAndCreateRunV4Document] | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-
-
-
-# Generated from: get_simulation_run_context
-
-class GetSimulationRunContextSqlParams(BaseModel):
-
-    chat_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.chat_id,
-        )
-
-class GetSimulationRunContextSqlRow(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    voice_system_prompt: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    voice_model_id: str | None = None
-    voice_model_name: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    voice_api_key: str | None = None
-    voice_custom_model: str | None = None
-    voice_provider_name: str | None = None
-    voice_agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: Any | None = None
-
-class GetSimulationRunContextApiRequest(BaseModel):
-
-    chat_id: UUID
-
-class GetSimulationRunContextApiResponse(BaseModel):
-
-    chat_id: str | None = None
-    chat_title: str | None = None
-    trace_id: str | None = None
-    attempt_id: str | None = None
-    simulation_id: str | None = None
-    scenario_id: str | None = None
-    department_id: str | None = None
-    problem_statement: str | None = None
-    persona_id: str | None = None
-    persona_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    agent_id: str | None = None
-    voice_system_prompt: str | None = None
-    voice_temperature: float | None = None
-    voice_reasoning: str | None = None
-    voice_model_id: str | None = None
-    voice_model_name: str | None = None
-    voice_provider: str | None = None
-    voice_base_url: str | None = None
-    voice_api_key: str | None = None
-    voice_custom_model: str | None = None
-    voice_provider_name: str | None = None
-    voice_agent_id: str | None = None
-    image_input_enabled: bool | None = None
-    copy_paste_allowed: bool | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    documents: Any | None = None
-
-
-
 # Generated from: get_simulation_scenarios_ordered
 
 class GetSimulationScenariosOrderedSqlParams(BaseModel):
@@ -27364,111 +24469,6 @@ class SimulationTextStopRunApiResponse(BaseModel):
     success: bool | None = None
     cancelled_message_id: UUID | None = None
     final_content: str | None = None
-
-
-
-# Generated from: start_simulation_attempt
-
-class StartSimulationAttemptSqlParams(BaseModel):
-
-    simulation_id: UUID
-    infinite_mode: bool
-    profile_id: UUID | None = None
-    scenario_id_override: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.infinite_mode,
-            self.profile_id,
-            self.scenario_id_override,
-        )
-
-class QStartSimulationAttemptV4Document(BaseModel):
-
-    id: str | None
-    name: str | None
-    file_path: str | None
-    mime_type: str | None
-
-
-
-
-class QStartSimulationAttemptV4ParameterItem(BaseModel):
-
-    id: str | None
-    name: str | None
-    description: str | None
-    parameter_id: str | None
-    parameter_name: str | None
-
-class QStartSimulationAttemptV4ScenarioMetadata(BaseModel):
-
-    persona_id: str | None
-    persona_name: str | None
-    persona_system_prompt: str | None
-    persona_temperature: float | None
-    persona_reasoning: str | None
-    persona_color: str | None
-    persona_icon: str | None
-    model_id: str | None
-    model_name: str | None
-    provider: str | None
-    provider_base_url: str | None
-    provider_api_key: str | None
-    documents: list[QStartSimulationAttemptV4Document] | None
-    parameter_items: list[QStartSimulationAttemptV4ParameterItem] | None
-    active: bool | None
-    default_scenario: bool | None
-    generated: bool | None
-
-
-
-
-class QStartSimulationAttemptV4SimulationData(BaseModel):
-
-    id: str | None
-    title: str | None
-    description: str | None
-    active: bool | None
-    practice_simulation: bool | None
-    rubric_id: str | None
-
-class StartSimulationAttemptSqlRow(BaseModel):
-
-    attempt_id: str | None = None
-    chat_id: str | None = None
-    chat_title: str | None = None
-    scenario_id: str | None = None
-    scenario_name: str | None = None
-    problem_statement: str | None = None
-    needs_generation: bool | None = None
-    content_type: str | None = None
-    video_id: str | None = None
-    trace_id: str | None = None
-    simulation_data: QStartSimulationAttemptV4SimulationData | None = None
-    scenario_metadata: QStartSimulationAttemptV4ScenarioMetadata | None = None
-
-class StartSimulationAttemptApiRequest(BaseModel):
-
-    simulation_id: UUID
-    infinite_mode: bool
-    scenario_id_override: UUID | None = None
-
-class StartSimulationAttemptApiResponse(BaseModel):
-
-    attempt_id: str | None = None
-    chat_id: str | None = None
-    chat_title: str | None = None
-    scenario_id: str | None = None
-    scenario_name: str | None = None
-    problem_statement: str | None = None
-    needs_generation: bool | None = None
-    content_type: str | None = None
-    video_id: str | None = None
-    trace_id: str | None = None
-    simulation_data: QStartSimulationAttemptV4SimulationData | None = None
-    scenario_metadata: QStartSimulationAttemptV4ScenarioMetadata | None = None
 
 
 
@@ -28666,134 +25666,6 @@ class GetClassificationContextApiResponse(BaseModel):
 
 
 
-# Generated from: get_upload_classification_regeneration_run_context_and_create_run
-
-class GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    upload_id: UUID
-    profile_id: UUID
-    group_id: UUID
-    department_id: UUID | None = None
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.upload_id,
-            self.profile_id,
-            self.group_id,
-            self.department_id,
-            self.user_instructions,
-        )
-
-class IGetUploadClassRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    upload_id: UUID | None = None
-    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV4Msg] | None = None
-
-class GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    upload_id: UUID
-    group_id: UUID
-    department_id: UUID | None = None
-    user_instructions: str | None = None
-
-class GetUploadClassificationRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-    upload_id: UUID | None = None
-    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV4Msg] | None = None
-
-
-
-# Generated from: get_upload_classification_run_context_and_create_run
-
-class GetUploadClassificationRunContextAndCreateRunSqlParams(BaseModel):
-
-    profile_id: UUID
-    department_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.department_id,
-        )
-
-class GetUploadClassificationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-
-class GetUploadClassificationRunContextAndCreateRunApiRequest(BaseModel):
-
-    department_id: UUID | None = None
-
-class GetUploadClassificationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    run_id: str | None = None
-
-
-
 # Generated from: get_upload_file_info
 
 class GetUploadFileInfoSqlParams(BaseModel):
@@ -28956,147 +25828,6 @@ class CreateVideoBasicApiRequest(BaseModel):
 class CreateVideoBasicApiResponse(BaseModel):
 
     id: UUID | None = None
-
-
-
-# Generated from: get_video_regeneration_run_context_and_create_run
-
-class GetVideoRegenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    video_id: UUID
-    group_id: UUID
-    profile_id: UUID | None = None
-    user_instructions: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.video_id,
-            self.group_id,
-            self.profile_id,
-            self.user_instructions,
-        )
-
-class IVideoRegenRunContextCreateRunV4Msg(BaseModel):
-
-    role: str | None
-    content: str | None
-
-class GetVideoRegenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IVideoRegenRunContextCreateRunV4Msg] | None = None
-
-class GetVideoRegenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    video_id: UUID
-    group_id: UUID
-    user_instructions: str | None = None
-
-class GetVideoRegenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    run_id: str | None = None
-    group_id: UUID | None = None
-    previous_messages: list[IVideoRegenRunContextCreateRunV4Msg] | None = None
-
-
-
-# Generated from: get_video_run_context_and_create_run
-
-class GetVideoRunContextAndCreateRunSqlParams(BaseModel):
-
-    video_id: UUID
-    profile_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.video_id,
-            self.profile_id,
-        )
-
-class GetVideoRunContextAndCreateRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    run_id: str | None = None
-
-class GetVideoRunContextAndCreateRunApiRequest(BaseModel):
-
-    video_id: UUID
-
-class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    custom_model: str | None = None
-    provider_id: str | None = None
-    provider_name: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: str | None = None
-    department_id: UUID | None = None
-    run_id: str | None = None
 
 
 
@@ -29456,35 +26187,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateAgentApiRequest",
         "DuplicateAgentApiResponse",
     ),
-    "app/sql/v4/agents/get_agent_detail_complete.sql": (
-        "GetAgentDetailSqlParams",
-        "GetAgentDetailSqlRow",
-        "GetAgentDetailApiRequest",
-        "GetAgentDetailApiResponse",
-    ),
     "app/sql/v4/agents/get_agent_model_info_complete.sql": (
         "GetAgentModelInfoSqlParams",
         "GetAgentModelInfoSqlRow",
         "GetAgentModelInfoApiRequest",
         "GetAgentModelInfoApiResponse",
     ),
-    "app/sql/v4/agents/get_agent_new_complete.sql": (
-        "GetAgentNewSqlParams",
-        "GetAgentNewSqlRow",
-        "GetAgentNewApiRequest",
-        "GetAgentNewApiResponse",
-    ),
     "app/sql/v4/agents/get_agent_tools_complete.sql": (
         "GetAgentToolsSqlParams",
         "GetAgentToolsSqlRow",
         "GetAgentToolsApiRequest",
         "GetAgentToolsApiResponse",
-    ),
-    "app/sql/v4/agents/get_agents_list_complete.sql": (
-        "GetAgentsListSqlParams",
-        "GetAgentsListSqlRow",
-        "GetAgentsListApiRequest",
-        "GetAgentsListApiResponse",
     ),
     "app/sql/v4/agents/hint_debug_complete_complete.sql": (
         "HintDebugCompleteSqlParams",
@@ -29623,18 +26336,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateChatCreatedAtSqlRow",
         "UpdateChatCreatedAtApiRequest",
         "UpdateChatCreatedAtApiResponse",
-    ),
-    "app/sql/v4/audio/get_audio_regeneration_run_context_and_create_run_complete.sql": (
-        "GetAudioRegenerationRunContextAndCreateRunSqlParams",
-        "GetAudioRegenerationRunContextAndCreateRunSqlRow",
-        "GetAudioRegenerationRunContextAndCreateRunApiRequest",
-        "GetAudioRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql": (
-        "GetAudioRunContextAndCreateRunSqlParams",
-        "GetAudioRunContextAndCreateRunSqlRow",
-        "GetAudioRunContextAndCreateRunApiRequest",
-        "GetAudioRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/auth/create_auth_complete.sql": (
         "CreateAuthSqlParams",
@@ -29996,18 +26697,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentDetailApiRequest",
         "GetDocumentDetailApiResponse",
     ),
-    "app/sql/v4/documents/get_document_regeneration_run_context_and_create_run_complete.sql": (
-        "GetDocumentRegenerationRunContextAndCreateRunSqlParams",
-        "GetDocumentRegenerationRunContextAndCreateRunSqlRow",
-        "GetDocumentRegenerationRunContextAndCreateRunApiRequest",
-        "GetDocumentRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql": (
-        "GetDocumentRunContextAndCreateRunSqlParams",
-        "GetDocumentRunContextAndCreateRunSqlRow",
-        "GetDocumentRunContextAndCreateRunApiRequest",
-        "GetDocumentRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/v4/documents/get_document_template_context_complete.sql": (
         "GetDocumentTemplateContextSqlParams",
         "GetDocumentTemplateContextSqlRow",
@@ -30176,18 +26865,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetGenerationRunContextAndCreateRunApiRequest",
         "GetGenerationRunContextAndCreateRunApiResponse",
     ),
-    "app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql": (
-        "GetTextRunContextAndCreateRunSqlParams",
-        "GetTextRunContextAndCreateRunSqlRow",
-        "GetTextRunContextAndCreateRunApiRequest",
-        "GetTextRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql": (
-        "GetTextRunContextForExistingRunSqlParams",
-        "GetTextRunContextForExistingRunSqlRow",
-        "GetTextRunContextForExistingRunApiRequest",
-        "GetTextRunContextForExistingRunApiResponse",
-    ),
     "app/sql/v4/generate/text/get_text_tool_call_results_complete.sql": (
         "GetTextToolCallResultsSqlParams",
         "GetTextToolCallResultsSqlRow",
@@ -30248,29 +26925,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "FindStandardByGroupAndScoreApiRequest",
         "FindStandardByGroupAndScoreApiResponse",
     ),
-    "app/sql/v4/grading/get_audio_grading_run_context_complete.sql": (
-        "GetAudioGradingRunContextSqlParams",
-        "GetAudioGradingRunContextSqlRow",
-        "GetAudioGradingRunContextApiRequest",
-        "GetAudioGradingRunContextApiResponse",
-    ),
     "app/sql/v4/grading/get_feedback_totals_for_grade_complete.sql": (
         "GetFeedbackTotalsForGradeSqlParams",
         "GetFeedbackTotalsForGradeSqlRow",
         "GetFeedbackTotalsForGradeApiRequest",
         "GetFeedbackTotalsForGradeApiResponse",
-    ),
-    "app/sql/v4/grading/get_grading_regeneration_run_context_and_create_run_complete.sql": (
-        "GetGradingRegenerationRunContextAndCreateRunSqlParams",
-        "GetGradingRegenerationRunContextAndCreateRunSqlRow",
-        "GetGradingRegenerationRunContextAndCreateRunApiRequest",
-        "GetGradingRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/grading/get_grading_run_context_and_create_run_complete.sql": (
-        "GetGradingRunContextAndCreateRunSqlParams",
-        "GetGradingRunContextAndCreateRunSqlRow",
-        "GetGradingRunContextAndCreateRunApiRequest",
-        "GetGradingRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/grading/update_grade_final_complete.sql": (
         "UpdateGradeFinalSqlParams",
@@ -30301,18 +26960,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CompleteImageGenerationSqlRow",
         "CompleteImageGenerationApiRequest",
         "CompleteImageGenerationApiResponse",
-    ),
-    "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql": (
-        "GetImageGenerationContextAndCreateUploadSqlParams",
-        "GetImageGenerationContextAndCreateUploadSqlRow",
-        "GetImageGenerationContextAndCreateUploadApiRequest",
-        "GetImageGenerationContextAndCreateUploadApiResponse",
-    ),
-    "app/sql/v4/images/get_image_regeneration_run_context_and_create_run_complete.sql": (
-        "GetImageRegenerationRunContextAndCreateRunSqlParams",
-        "GetImageRegenerationRunContextAndCreateRunSqlRow",
-        "GetImageRegenerationRunContextAndCreateRunApiRequest",
-        "GetImageRegenerationRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/images/insert_image_complete.sql": (
         "InsertImageSqlParams",
@@ -30470,18 +27117,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLogsBundleApiRequest",
         "GetLogsBundleApiResponse",
     ),
-    "app/sql/v4/member/get_member_regeneration_run_context_and_create_run_complete.sql": (
-        "GetMemberRegenerationRunContextAndCreateRunSqlParams",
-        "GetMemberRegenerationRunContextAndCreateRunSqlRow",
-        "GetMemberRegenerationRunContextAndCreateRunApiRequest",
-        "GetMemberRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/member/get_member_run_context_and_create_run_complete.sql": (
-        "GetMemberRunContextAndCreateRunSqlParams",
-        "GetMemberRunContextAndCreateRunSqlRow",
-        "GetMemberRunContextAndCreateRunApiRequest",
-        "GetMemberRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/v4/member/member_progress_upsert_complete.sql": (
         "MemberProgressUpsertSqlParams",
         "MemberProgressUpsertSqlRow",
@@ -30565,12 +27200,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateModelSqlRow",
         "DuplicateModelApiRequest",
         "DuplicateModelApiResponse",
-    ),
-    "app/sql/v4/models/get_model_detail_complete.sql": (
-        "GetModelDetailSqlParams",
-        "GetModelDetailSqlRow",
-        "GetModelDetailApiRequest",
-        "GetModelDetailApiResponse",
     ),
     "app/sql/v4/models/get_model_new_complete.sql": (
         "GetModelNewSqlParams",
@@ -30883,12 +27512,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateProfileToInactiveSqlRow",
         "UpdateProfileToInactiveApiRequest",
         "UpdateProfileToInactiveApiResponse",
-    ),
-    "app/sql/v4/prompt/get_prompt_run_context_and_create_run_complete.sql": (
-        "GetPromptRunContextAndCreateRunSqlParams",
-        "GetPromptRunContextAndCreateRunSqlRow",
-        "GetPromptRunContextAndCreateRunApiRequest",
-        "GetPromptRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/prompt/tools/prompt_tool_complete_finalize_complete.sql": (
         "PromptToolCompleteFinalizeSqlParams",
@@ -31322,18 +27945,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricNewApiRequest",
         "GetRubricNewApiResponse",
     ),
-    "app/sql/v4/rubric/get_rubric_regeneration_run_context_and_create_run_complete.sql": (
-        "GetRubricRegenerationRunContextAndCreateRunSqlParams",
-        "GetRubricRegenerationRunContextAndCreateRunSqlRow",
-        "GetRubricRegenerationRunContextAndCreateRunApiRequest",
-        "GetRubricRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/rubric/get_rubric_run_context_and_create_run_complete.sql": (
-        "GetRubricRunContextAndCreateRunSqlParams",
-        "GetRubricRunContextAndCreateRunSqlRow",
-        "GetRubricRunContextAndCreateRunApiRequest",
-        "GetRubricRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/v4/rubric/get_rubric_tool_call_results_complete.sql": (
         "GetRubricToolCallResultsSqlParams",
         "GetRubricToolCallResultsSqlRow",
@@ -31489,18 +28100,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioQuestionsSqlRow",
         "GetScenarioQuestionsApiRequest",
         "GetScenarioQuestionsApiResponse",
-    ),
-    "app/sql/v4/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql": (
-        "GetScenarioRegenerationRunContextAndCreateRunSqlParams",
-        "GetScenarioRegenerationRunContextAndCreateRunSqlRow",
-        "GetScenarioRegenerationRunContextAndCreateRunApiRequest",
-        "GetScenarioRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/scenario/get_scenario_run_context_and_create_run_complete.sql": (
-        "GetScenarioRunContextAndCreateRunSqlParams",
-        "GetScenarioRunContextAndCreateRunSqlRow",
-        "GetScenarioRunContextAndCreateRunApiRequest",
-        "GetScenarioRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/scenario/get_scenario_videos_complete.sql": (
         "GetScenarioVideosSqlParams",
@@ -31664,12 +28263,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TextCompleteFinalizeApiRequest",
         "TextCompleteFinalizeApiResponse",
     ),
-    "app/sql/v4/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql": (
-        "GetVoiceRegenerationRunContextAndCreateRunSqlParams",
-        "GetVoiceRegenerationRunContextAndCreateRunSqlRow",
-        "GetVoiceRegenerationRunContextAndCreateRunApiRequest",
-        "GetVoiceRegenerationRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/v4/simulation_voice/get_voice_run_context_complete.sql": (
         "GetVoiceRunContextSqlParams",
         "GetVoiceRunContextSqlRow",
@@ -31718,12 +28311,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateSimulationApiRequest",
         "DuplicateSimulationApiResponse",
     ),
-    "app/sql/v4/simulations/generate_hints_complete.sql": (
-        "GenerateHintsSqlParams",
-        "GenerateHintsSqlRow",
-        "GenerateHintsApiRequest",
-        "GenerateHintsApiResponse",
-    ),
     "app/sql/v4/simulations/get_chat_basic_complete.sql": (
         "GetChatBasicSqlParams",
         "GetChatBasicSqlRow",
@@ -31741,12 +28328,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetHintMessageIdSqlRow",
         "GetHintMessageIdApiRequest",
         "GetHintMessageIdApiResponse",
-    ),
-    "app/sql/v4/simulations/get_hint_regeneration_run_context_and_create_run_complete.sql": (
-        "GetHintRegenerationRunContextAndCreateRunSqlParams",
-        "GetHintRegenerationRunContextAndCreateRunSqlRow",
-        "GetHintRegenerationRunContextAndCreateRunApiRequest",
-        "GetHintRegenerationRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/simulations/get_latest_message_complete.sql": (
         "GetLatestMessageSqlParams",
@@ -31820,24 +28401,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationMetadataForChatApiRequest",
         "GetSimulationMetadataForChatApiResponse",
     ),
-    "app/sql/v4/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql": (
-        "GetSimulationRegenerationRunContextAndCreateRunSqlParams",
-        "GetSimulationRegenerationRunContextAndCreateRunSqlRow",
-        "GetSimulationRegenerationRunContextAndCreateRunApiRequest",
-        "GetSimulationRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql": (
-        "GetSimulationRunContextAndCreateRunSqlParams",
-        "GetSimulationRunContextAndCreateRunSqlRow",
-        "GetSimulationRunContextAndCreateRunApiRequest",
-        "GetSimulationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/simulations/get_simulation_run_context_complete.sql": (
-        "GetSimulationRunContextSqlParams",
-        "GetSimulationRunContextSqlRow",
-        "GetSimulationRunContextApiRequest",
-        "GetSimulationRunContextApiResponse",
-    ),
     "app/sql/v4/simulations/get_simulation_scenarios_ordered_complete.sql": (
         "GetSimulationScenariosOrderedSqlParams",
         "GetSimulationScenariosOrderedSqlRow",
@@ -31873,12 +28436,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SimulationTextStopRunSqlRow",
         "SimulationTextStopRunApiRequest",
         "SimulationTextStopRunApiResponse",
-    ),
-    "app/sql/v4/simulations/start_simulation_attempt_complete.sql": (
-        "StartSimulationAttemptSqlParams",
-        "StartSimulationAttemptSqlRow",
-        "StartSimulationAttemptApiRequest",
-        "StartSimulationAttemptApiResponse",
     ),
     "app/sql/v4/simulations/update_chat_completed_complete.sql": (
         "UpdateChatCompletedSqlParams",
@@ -32006,18 +28563,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetClassificationContextApiRequest",
         "GetClassificationContextApiResponse",
     ),
-    "app/sql/v4/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql": (
-        "GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams",
-        "GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow",
-        "GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest",
-        "GetUploadClassificationRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/uploads/get_upload_classification_run_context_and_create_run_complete.sql": (
-        "GetUploadClassificationRunContextAndCreateRunSqlParams",
-        "GetUploadClassificationRunContextAndCreateRunSqlRow",
-        "GetUploadClassificationRunContextAndCreateRunApiRequest",
-        "GetUploadClassificationRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/v4/uploads/get_upload_file_info_complete.sql": (
         "GetUploadFileInfoSqlParams",
         "GetUploadFileInfoSqlRow",
@@ -32047,18 +28592,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateVideoBasicSqlRow",
         "CreateVideoBasicApiRequest",
         "CreateVideoBasicApiResponse",
-    ),
-    "app/sql/v4/videos/get_video_regeneration_run_context_and_create_run_complete.sql": (
-        "GetVideoRegenerationRunContextAndCreateRunSqlParams",
-        "GetVideoRegenerationRunContextAndCreateRunSqlRow",
-        "GetVideoRegenerationRunContextAndCreateRunApiRequest",
-        "GetVideoRegenerationRunContextAndCreateRunApiResponse",
-    ),
-    "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql": (
-        "GetVideoRunContextAndCreateRunSqlParams",
-        "GetVideoRunContextAndCreateRunSqlRow",
-        "GetVideoRunContextAndCreateRunApiRequest",
-        "GetVideoRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/voice/get_chat_personas_complete.sql": (
         "GetChatPersonasSqlParams",
@@ -32381,27 +28914,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/get_agent_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/agents/get_agent_model_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/get_agent_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/agents/get_agent_tools_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/agents/get_agents_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32517,16 +29035,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/attempts/update_chat_created_at_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/audio/get_audio_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32831,16 +29339,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/get_document_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/documents/get_document_template_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -32981,16 +29479,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/generate/text/get_text_tool_call_results_complete.sql"]
     ) -> SqlString: ...
 
@@ -33041,22 +29529,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/grading/get_audio_grading_run_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/grading/get_feedback_totals_for_grade_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/grading/get_grading_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/grading/get_grading_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33082,16 +29555,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/images/complete_image_generation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/images/get_image_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33226,16 +29689,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/member/get_member_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/member/get_member_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/member/member_progress_upsert_complete.sql"]
     ) -> SqlString: ...
 
@@ -33302,11 +29755,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/models/duplicate_model_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/models/get_model_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33567,11 +30015,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/profile/update_profile_to_inactive_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/prompt/get_prompt_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33936,16 +30379,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/rubric/get_rubric_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/rubric/get_rubric_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/rubric/get_rubric_tool_call_results_complete.sql"]
     ) -> SqlString: ...
 
@@ -34072,16 +30505,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/get_scenario_questions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/get_scenario_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/scenario/get_scenario_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -34221,11 +30644,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulation_voice/get_voice_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/simulation_voice/get_voice_run_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -34266,11 +30684,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/generate_hints_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_chat_basic_complete.sql"]
     ) -> SqlString: ...
 
@@ -34282,11 +30695,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_hint_message_id_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_hint_regeneration_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -34351,21 +30759,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_simulation_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_simulation_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/get_simulation_run_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_simulation_scenarios_ordered_complete.sql"]
     ) -> SqlString: ...
 
@@ -34392,11 +30785,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/simulation_text_stop_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/simulations/start_simulation_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -34506,16 +30894,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/uploads/get_upload_classification_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/uploads/get_upload_file_info_complete.sql"]
     ) -> SqlString: ...
 
@@ -34537,16 +30915,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/videos/create_video_basic_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/videos/get_video_regeneration_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
