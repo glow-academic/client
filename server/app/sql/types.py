@@ -5221,6 +5221,183 @@ class DuplicateAuthApiResponse(BaseModel):
 
 
 
+# Generated from: get_auth
+
+class GetAuthSqlParams(BaseModel):
+
+    profile_id: UUID
+    auth_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.auth_id,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetAuthV4AuthItem(BaseModel):
+
+    auth_item_id: UUID | None
+    name: str | None
+    description: str | None
+    position: int | None
+    active: bool | None
+    value_masked: str | None
+    key_id: str | None
+    encrypted: bool | None
+
+
+
+
+class QGetAuthV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetAuthV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetAuthV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetAuthV4Protocol(BaseModel):
+
+    id: UUID | None
+    value: str | None
+    generated: bool | None
+
+
+
+
+class QGetAuthV4Slug(BaseModel):
+
+    id: UUID | None
+    value: str | None
+    generated: bool | None
+
+class GetAuthSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    auth_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetAuthV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetAuthV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetAuthV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetAuthV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetAuthV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flag_suggestions: list[UUID] | None = None
+    protocol_ids: list[UUID] | None = None
+    protocol_resources: list[QGetAuthV4Protocol] | None = None
+    show_protocols: bool | None = None
+    protocols_agent_id: UUID | None = None
+    protocols_required: bool | None = None
+    protocol_suggestions: list[UUID] | None = None
+    protocols: list[QGetAuthV4Protocol] | None = None
+    slug_ids: list[UUID] | None = None
+    slug_resources: list[QGetAuthV4Slug] | None = None
+    show_slugs: bool | None = None
+    slugs_agent_id: UUID | None = None
+    slugs_required: bool | None = None
+    slug_suggestions: list[UUID] | None = None
+    slugs: list[QGetAuthV4Slug] | None = None
+    auth_items: list[QGetAuthV4AuthItem] | None = None
+    auth_item_ids: Any | None = None
+    auth_item_active_states: Any | None = None
+    auth_item_encrypted_states: Any | None = None
+    draft_version: int | None = None
+
+class GetAuthApiRequest(BaseModel):
+
+    auth_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetAuthApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    auth_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetAuthV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetAuthV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetAuthV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetAuthV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetAuthV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flag_suggestions: list[UUID] | None = None
+    protocol_ids: list[UUID] | None = None
+    protocol_resources: list[QGetAuthV4Protocol] | None = None
+    show_protocols: bool | None = None
+    protocols_agent_id: UUID | None = None
+    protocols_required: bool | None = None
+    protocol_suggestions: list[UUID] | None = None
+    protocols: list[QGetAuthV4Protocol] | None = None
+    slug_ids: list[UUID] | None = None
+    slug_resources: list[QGetAuthV4Slug] | None = None
+    show_slugs: bool | None = None
+    slugs_agent_id: UUID | None = None
+    slugs_required: bool | None = None
+    slug_suggestions: list[UUID] | None = None
+    slugs: list[QGetAuthV4Slug] | None = None
+    auth_items: list[QGetAuthV4AuthItem] | None = None
+    auth_item_ids: Any | None = None
+    auth_item_active_states: Any | None = None
+    auth_item_encrypted_states: Any | None = None
+    draft_version: int | None = None
+
+
+
 # Generated from: get_auth_detail
 
 class GetAuthDetailSqlParams(BaseModel):
@@ -5432,6 +5609,67 @@ class GetLoginDataApiResponse(BaseModel):
     show_default_account: bool | None = None
     default_department_id: str | None = None
     realm_name: str | None = None
+
+
+
+# Generated from: save_auth
+
+class ISaveAuthV4AuthItem(BaseModel):
+
+    name: str | None
+    description: str | None
+    encrypted: bool | None
+    position: int | None
+    active: bool | None
+    key_id: UUID | None
+
+class SaveAuthSqlParams(BaseModel):
+
+    name_id: UUID
+    profile_id: UUID
+    input_auth_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    protocol_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    slug_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_items: list[ISaveAuthV4AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert auth_items composite array to tuples for asyncpg
+        auth_items_tuples = [
+            (conn.name, conn.description, conn.encrypted, conn.position, conn.active, conn.key_id)
+            for conn in (self.auth_items or [])
+        ]
+        return (
+            self.name_id,
+            self.profile_id,
+            self.input_auth_id,
+            self.description_id,
+            self.active_flag_id,
+            self.protocol_ids,
+            self.slug_ids,
+            auth_items_tuples,
+        )
+
+class SaveAuthSqlRow(BaseModel):
+
+    auth_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveAuthApiRequest(BaseModel):
+
+    name_id: UUID
+    input_auth_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    protocol_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    slug_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    auth_items: list[ISaveAuthV4AuthItem] | None = Field(default_factory=list)  # type: ignore[arg-type]
+
+class SaveAuthApiResponse(BaseModel):
+
+    auth_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -32841,6 +33079,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateAuthApiRequest",
         "DuplicateAuthApiResponse",
     ),
+    "app/sql/v4/auth/get_auth_complete.sql": (
+        "GetAuthSqlParams",
+        "GetAuthSqlRow",
+        "GetAuthApiRequest",
+        "GetAuthApiResponse",
+    ),
     "app/sql/v4/auth/get_auth_detail_complete.sql": (
         "GetAuthDetailSqlParams",
         "GetAuthDetailSqlRow",
@@ -32864,6 +33108,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetLoginDataSqlRow",
         "GetLoginDataApiRequest",
         "GetLoginDataApiResponse",
+    ),
+    "app/sql/v4/auth/save_auth_complete.sql": (
+        "SaveAuthSqlParams",
+        "SaveAuthSqlRow",
+        "SaveAuthApiRequest",
+        "SaveAuthApiResponse",
     ),
     "app/sql/v4/auth/update_auth_complete.sql": (
         "UpdateAuthSqlParams",
@@ -36097,6 +36347,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/auth/get_auth_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/auth/get_auth_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -36113,6 +36368,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/auth/get_login_data_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/auth/save_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload

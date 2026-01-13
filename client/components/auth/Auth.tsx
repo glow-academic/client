@@ -2,6 +2,10 @@
  * Auth.tsx
  * Used to create and manage auth entries - supports both creation and editing
  * Migrated to GenericForm pattern with nuqs, draft autosave, and contentSections
+ *
+ * @deprecated This component is maintained for backward compatibility.
+ * Please use NewAuth.tsx instead, which follows the Persona.tsx pattern
+ * with proper resource components and unified get/save endpoints.
  */
 "use client";
 
@@ -393,11 +397,7 @@ function AuthComponent({
       authItemSearch: urlParams.authItemSearch || null,
       authItemShowSelected: urlParams.authItemShowSelected ?? false,
     } as Record<string, unknown>;
-  }, [
-    draftState,
-    urlParams.authItemSearch,
-    urlParams.authItemShowSelected,
-  ]);
+  }, [draftState, urlParams.authItemSearch, urlParams.authItemShowSelected]);
 
   // Wrapper for setFormData that updates draftState for form fields, urlParams for navigation
   const setFormData = useCallback(
@@ -545,34 +545,33 @@ function AuthComponent({
   }, [draftState]);
 
   // Handler for card grid changes
-  const handleItemsChange = useCallback(
-    (items: AuthItemCard[]) => {
-      const newAuthItemIds: string[] = [];
-      const newAuthItemData: Record<string, { name: string; description: string }> =
-        {};
-      const newAuthItemActiveStates: Record<string, boolean> = {};
-      const newAuthItemEncryptedStates: Record<string, boolean> = {};
+  const handleItemsChange = useCallback((items: AuthItemCard[]) => {
+    const newAuthItemIds: string[] = [];
+    const newAuthItemData: Record<
+      string,
+      { name: string; description: string }
+    > = {};
+    const newAuthItemActiveStates: Record<string, boolean> = {};
+    const newAuthItemEncryptedStates: Record<string, boolean> = {};
 
-      items.forEach((item) => {
-        newAuthItemIds.push(item.id);
-        newAuthItemData[item.id] = {
-          name: item.name,
-          description: item.description || "",
-        };
-        newAuthItemActiveStates[item.id] = item.active;
-        newAuthItemEncryptedStates[item.id] = item.encrypted;
-      });
+    items.forEach((item) => {
+      newAuthItemIds.push(item.id);
+      newAuthItemData[item.id] = {
+        name: item.name,
+        description: item.description || "",
+      };
+      newAuthItemActiveStates[item.id] = item.active;
+      newAuthItemEncryptedStates[item.id] = item.encrypted;
+    });
 
-      setDraftState((prev) => ({
-        ...prev,
-        authItemIds: newAuthItemIds,
-        authItemData: newAuthItemData,
-        authItemActiveStates: newAuthItemActiveStates,
-        authItemEncryptedStates: newAuthItemEncryptedStates,
-      }));
-    },
-    []
-  );
+    setDraftState((prev) => ({
+      ...prev,
+      authItemIds: newAuthItemIds,
+      authItemData: newAuthItemData,
+      authItemActiveStates: newAuthItemActiveStates,
+      authItemEncryptedStates: newAuthItemEncryptedStates,
+    }));
+  }, []);
 
   // Form initialization function for GenericForm
   const initializeForm = useCallback(
@@ -592,8 +591,10 @@ function AuthComponent({
       const authItemIds: string[] = [];
       const authItemActiveStates: Record<string, boolean> = {};
       const authItemEncryptedStates: Record<string, boolean> = {};
-      const authItemData: Record<string, { name: string; description: string }> =
-        {};
+      const authItemData: Record<
+        string,
+        { name: string; description: string }
+      > = {};
 
       if (authDetail.auth_items && Array.isArray(authDetail.auth_items)) {
         const sortedItems = [...authDetail.auth_items].sort(
@@ -700,12 +701,8 @@ function AuthComponent({
       });
 
       // Extract body types from server action types for type safety
-      type CreateAuthBody = CreateAuthIn extends { body: infer B }
-        ? B
-        : never;
-      type UpdateAuthBody = UpdateAuthIn extends { body: infer B }
-        ? B
-        : never;
+      type CreateAuthBody = CreateAuthIn extends { body: infer B } ? B : never;
+      type UpdateAuthBody = UpdateAuthIn extends { body: infer B } ? B : never;
 
       if (isEditMode) {
         if (!updateAuthAction) {
@@ -718,12 +715,12 @@ function AuthComponent({
             name: draftState.name,
             description: draftState.description,
             active: draftState.active ?? false,
-          auth_type: "oidc", // Default auth type (required by database)
-          slug: slug,
-          auth_items,
+            auth_type: "oidc", // Default auth type (required by database)
+            slug: slug,
+            auth_items,
           };
           await updateAuthAction({ body: updateRequest });
-        toast.success("Auth updated successfully!");
+          toast.success("Auth updated successfully!");
           router.push("/system/auth");
         } catch (error) {
           toast.error(
@@ -741,15 +738,15 @@ function AuthComponent({
             name: draftState.name,
             description: draftState.description,
             active: draftState.active ?? false,
-          auth_type: "oidc", // Default auth type (required by database)
-          slug: slug,
-          auth_items,
+            auth_type: "oidc", // Default auth type (required by database)
+            slug: slug,
+            auth_items,
           };
           await createAuthAction({ body: createRequest });
-        toast.success("Auth created successfully!");
-      router.push("/system/auth");
-    } catch (error) {
-      toast.error(
+          toast.success("Auth created successfully!");
+          router.push("/system/auth");
+        } catch (error) {
+          toast.error(
             `Failed to create auth: ${error instanceof Error ? error.message : "Unknown error"}`
           );
           throw error;
@@ -770,9 +767,7 @@ function AuthComponent({
   // Step status logic (for GenericForm)
   const getStepStatus = useCallback(
     (stepId: string, formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!(
-        formData["name"] as string | null | undefined
-      )?.trim();
+      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
       const hasItems =
         ((formData["authItemIds"] as string[] | null | undefined) || [])
           .length > 0;
@@ -880,7 +875,7 @@ function AuthComponent({
     }) => {
       switch (stepId) {
         case "basic":
-  return (
+          return (
             <StepCard
               stepStatus={stepStatus}
               stepNumber={stepNumber}
@@ -901,41 +896,41 @@ function AuthComponent({
               resetLabel="Reset"
             >
               <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  data-testid="input-auth-description"
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    data-testid="input-auth-description"
                     value={
                       (stepFormData["description"] as
                         | string
                         | null
                         | undefined) || ""
                     }
-                  onChange={(e) =>
+                    onChange={(e) =>
                       setStepFormData({
                         description: e.target.value || null,
                       })
-                  }
-                  placeholder="Describe this authentication method"
-                  rows={3}
-                  disabled={isReadonly}
-                />
-            </div>
+                    }
+                    placeholder="Describe this authentication method"
+                    rows={3}
+                    disabled={isReadonly}
+                  />
+                </div>
 
-            {/* Active Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="active"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                    <Switch
-                      id="active"
+                {/* Active Switch */}
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="active"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                        Active
+                      </Label>
+                      <Switch
+                        id="active"
                         checked={
                           (stepFormData["active"] as
                             | boolean
@@ -944,18 +939,18 @@ function AuthComponent({
                           (authData as { active?: boolean })?.active ??
                           false
                         }
-                      onCheckedChange={(checked) =>
+                        onCheckedChange={(checked) =>
                           setStepFormData({ active: checked })
-                      }
-                      disabled={isReadonly}
+                        }
+                        disabled={isReadonly}
                         data-testid="switch-auth-active"
-                    />
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Enable this authentication method
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Enable this authentication method
-                </p>
-              </div>
-            </div>
               </div>
             </StepCard>
           );
@@ -977,11 +972,11 @@ function AuthComponent({
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
-            <AuthItemCardGrid
-              items={authItemCards}
-              onItemsChange={handleItemsChange}
-              readonly={isReadonly}
-            />
+              <AuthItemCardGrid
+                items={authItemCards}
+                onItemsChange={handleItemsChange}
+                readonly={isReadonly}
+              />
             </StepCard>
           );
 
@@ -1024,14 +1019,14 @@ function AuthComponent({
               | null
               | undefined) || {};
 
-              return (
+          return (
             <StepCard
               stepStatus="completed"
               stepNumber={3}
               stepTitle="Active Auth Items"
               stepDescription="Enable or disable auth items."
               isReadonly={isReadonly}
-                  isEditMode={isEditMode}
+              isEditMode={isEditMode}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {itemIds.map((itemId) => {
@@ -1076,8 +1071,8 @@ function AuthComponent({
                         </div>
                       </div>
                     </Card>
-              );
-            })}
+                  );
+                })}
               </div>
             </StepCard>
           );
@@ -1137,8 +1132,8 @@ function AuthComponent({
                           )}
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-          <Button
-            type="button"
+                          <Button
+                            type="button"
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
@@ -1159,7 +1154,7 @@ function AuthComponent({
                             disabled={!canMoveUp || isReadonly}
                           >
                             <ArrowUp className="h-3.5 w-3.5" />
-          </Button>
+                          </Button>
                           <Button
                             type="button"
                             variant="ghost"
@@ -1182,9 +1177,9 @@ function AuthComponent({
                             disabled={!canMoveDown || isReadonly}
                           >
                             <ArrowDown className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-    </div>
+                          </Button>
+                        </div>
+                      </div>
                     </Card>
                   );
                 })}
@@ -1317,7 +1312,9 @@ function AuthComponent({
         )}
 
         <GenericForm
-          nuqsParsers={authSearchParamsClient as Record<string, Parser<unknown>>}
+          nuqsParsers={
+            authSearchParamsClient as Record<string, Parser<unknown>>
+          }
           steps={steps}
           getStepStatus={getStepStatus}
           formData={formData}

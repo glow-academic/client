@@ -1,28 +1,45 @@
 /**
  * app/(main)/system/auth/new/page.tsx
- * Auth create page
+ * Auth create page - uses unified get/save endpoints and NewAuth component
  */
-import Auth from "@/components/auth/Auth";
+import NewAuth from "@/components/auth/NewAuth";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthNewIn = InputOf<"/api/v4/auth/new", "post">;
-type AuthNewOut = OutputOf<"/api/v4/auth/new", "post">;
-
-type CreateAuthIn = InputOf<"/api/v4/auth/create", "post">;
-type CreateAuthOut = OutputOf<"/api/v4/auth/create", "post">;
-
+type GetAuthIn = InputOf<"/api/v4/auth/get", "post">;
+type GetAuthOut = OutputOf<"/api/v4/auth/get", "post">;
+type SaveAuthIn = InputOf<"/api/v4/auth/save", "post">;
+type SaveAuthOut = OutputOf<"/api/v4/auth/save", "post">;
 type PatchAuthDraftIn = InputOf<"/api/v4/auth/draft", "patch">;
 type PatchAuthDraftOut = OutputOf<"/api/v4/auth/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
+type CreateDraftProtocolsOut = OutputOf<
+  "/api/v4/resources/protocols",
+  "post"
+>;
+type CreateDraftSlugsIn = InputOf<"/api/v4/resources/slugs", "post">;
+type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for create pages.
  */
-const getAuthDefault = async (input: AuthNewIn): Promise<AuthNewOut> => {
-  return api.post("/auth/new", input, {
+const getAuthDefault = async (input: GetAuthIn): Promise<GetAuthOut> => {
+  return api.post("/auth/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -39,11 +56,11 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createAuth(input: CreateAuthIn): Promise<CreateAuthOut> {
+async function saveAuth(input: SaveAuthIn): Promise<SaveAuthOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/auth/create", input);
+  return api.post("/auth/save", input);
 }
 
 async function patchAuthDraft(
@@ -52,6 +69,46 @@ async function patchAuthDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/auth/draft", input);
+}
+
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/names", input);
+}
+
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftFlags(
+  input: CreateDraftFlagsIn
+): Promise<CreateDraftFlagsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/flags", input);
+}
+
+async function createDraftProtocols(
+  input: CreateDraftProtocolsIn
+): Promise<CreateDraftProtocolsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/protocols", input);
+}
+
+async function createDraftSlugs(
+  input: CreateDraftSlugsIn
+): Promise<CreateDraftSlugsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/slugs", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -82,22 +139,27 @@ export default async function AuthCreatePage({
   const loadAuthSearchParams = createLoader(authSearchParams);
   const q = loadAuthSearchParams(searchParamsObj);
 
-  // Fetch default auth detail with draft_id
-  const input: AuthNewIn = {
+  // Fetch default auth detail with draft_id (auth_id = NULL for new mode)
+  const input: GetAuthIn = {
     body: {
+      auth_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-    } as AuthNewIn["body"],
+    } as GetAuthIn["body"],
   };
-  const authDetailDefault = await getAuthDefault(input);
+  const authData = await getAuthDefault(input);
 
   return (
     <div className="space-y-6" data-page="auth-create">
-      <Auth
+      <NewAuth
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        mode="create"
-        authDetailDefault={authDetailDefault}
-        createAuthAction={createAuth}
+        authData={authData}
+        saveAuthAction={saveAuth}
         patchAuthDraftAction={patchAuthDraft}
+        createNamesAction={createDraftNames}
+        createDescriptionsAction={createDraftDescriptions}
+        createFlagsAction={createDraftFlags}
+        createProtocolsAction={createDraftProtocols}
+        createSlugsAction={createDraftSlugs}
       />
     </div>
   );
@@ -105,10 +167,20 @@ export default async function AuthCreatePage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  AuthNewIn,
-  AuthNewOut,
-  CreateAuthIn,
-  CreateAuthOut,
+  GetAuthIn,
+  GetAuthOut,
+  SaveAuthIn,
+  SaveAuthOut,
   PatchAuthDraftIn,
   PatchAuthDraftOut,
+  CreateDraftNamesIn,
+  CreateDraftNamesOut,
+  CreateDraftDescriptionsIn,
+  CreateDraftDescriptionsOut,
+  CreateDraftFlagsIn,
+  CreateDraftFlagsOut,
+  CreateDraftProtocolsIn,
+  CreateDraftProtocolsOut,
+  CreateDraftSlugsIn,
+  CreateDraftSlugsOut,
 };

@@ -1,0 +1,289 @@
+-- Unified save auth function - handles both create (auth_id = NULL) and update (auth_id provided)
+-- Converted to function
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_save_auth_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_save_auth_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Drop types WITHOUT CASCADE
+-- Drop all types matching prefix pattern to handle type additions/removals
+-- If any other object depends on them, this will ERROR and stop the migration (good)
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT typname 
+        FROM pg_type 
+        WHERE typname LIKE 'i_save_auth_v4_%'
+          AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
+    LOOP
+        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+    END LOOP;
+END $$;
+
+-- 3) Recreate types
+CREATE TYPE types.i_save_auth_v4_auth_item AS (
+    name text,
+    description text,
+    encrypted boolean,
+    position integer,
+    active boolean,
+    key_id uuid  -- NULL allowed by default in PostgreSQL
+);
+
+-- 4) Recreate function
+CREATE OR REPLACE FUNCTION api_save_auth_v4(
+    name_id uuid,
+    profile_id uuid,
+    input_auth_id uuid DEFAULT NULL,
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL,
+    protocol_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    slug_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    auth_items types.i_save_auth_v4_auth_item[] DEFAULT ARRAY[]::types.i_save_auth_v4_auth_item[]
+)
+RETURNS TABLE (
+    auth_id uuid,
+    actor_name text
+)
+LANGUAGE plpgsql
+VOLATILE
+AS $$
+DECLARE
+    v_auth_id uuid;
+    v_actor_name text;
+    is_create boolean;
+BEGIN
+    -- Determine if create or update
+    is_create := (input_auth_id IS NULL);
+    
+    -- Create or update auth first (outside CTE)
+    IF is_create THEN
+        -- CREATE path
+        INSERT INTO auths (id)
+        VALUES (uuidv7())
+        RETURNING id INTO v_auth_id;
+    ELSE
+        -- UPDATE path
+        v_auth_id := input_auth_id;
+        UPDATE auths
+        SET updated_at = NOW()
+        WHERE id = v_auth_id;
+    END IF;
+    
+    -- Validate required resource IDs exist (same for both)
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    END IF;
+    
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    END IF;
+    
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    END IF;
+    
+    -- Validate protocol_ids exist
+    IF COALESCE(array_length(protocol_ids, 1), 0) > 0 THEN
+        IF NOT EXISTS (SELECT 1 FROM protocols WHERE id = ANY(protocol_ids)) THEN
+            RAISE EXCEPTION 'One or more protocol resources not found';
+        END IF;
+    END IF;
+    
+    -- Validate slug_ids exist
+    IF COALESCE(array_length(slug_ids, 1), 0) > 0 THEN
+        IF NOT EXISTS (SELECT 1 FROM slugs WHERE id = ANY(slug_ids)) THEN
+            RAISE EXCEPTION 'One or more slug resources not found';
+        END IF;
+    END IF;
+    
+    -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
+    IF NOT is_create THEN
+        DELETE FROM auth_names WHERE auth_id = v_auth_id;
+        DELETE FROM auth_descriptions WHERE auth_id = v_auth_id;
+        DELETE FROM auth_protocols WHERE auth_id = v_auth_id;
+        DELETE FROM auth_slugs WHERE auth_id = v_auth_id;
+        DELETE FROM auth_items WHERE auth_id = v_auth_id;
+        -- Update existing active flag if it exists
+        UPDATE auth_flags SET
+            flag_id = COALESCE(api_save_auth_v4.active_flag_id, auth_flags.flag_id),
+            value = CASE WHEN api_save_auth_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
+            updated_at = NOW()
+        WHERE auth_id = v_auth_id
+          AND type = 'active'::type_auth_flags;
+    END IF;
+    
+    -- Continue with auth save using SQL (auth already created/updated above)
+    RETURN QUERY
+    WITH params AS (
+        SELECT
+            v_auth_id AS auth_id,
+            name_id,
+            description_id,
+            active_flag_id,
+            COALESCE(protocol_ids, ARRAY[]::uuid[]) AS protocol_ids,
+            COALESCE(slug_ids, ARRAY[]::uuid[]) AS slug_ids,
+            COALESCE(auth_items, ARRAY[]::types.i_save_auth_v4_auth_item[]) AS auth_items,
+            profile_id
+    ),
+    user_profile AS (
+        SELECT 
+            p.role,
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        FROM params x
+        JOIN profile p ON p.id = x.profile_id
+    ),
+    actor_profile AS (
+        SELECT 
+            x.profile_id,
+            up.actor_name
+        FROM params x
+        CROSS JOIN user_profile up
+    ),
+    -- Link auth to name
+    link_auth_name AS (
+        INSERT INTO auth_names (auth_id, name_id, created_at, updated_at)
+        SELECT 
+            x.auth_id,
+            x.name_id,
+            NOW(),
+            NOW()
+        FROM params x
+        WHERE x.name_id IS NOT NULL
+        ON CONFLICT ON CONSTRAINT auth_names_pkey DO UPDATE SET updated_at = NOW()
+    ),
+    -- Link auth to description
+    link_auth_description AS (
+        INSERT INTO auth_descriptions (auth_id, description_id, created_at, updated_at)
+        SELECT 
+            x.auth_id,
+            x.description_id,
+            NOW(),
+            NOW()
+        FROM params x
+        WHERE x.description_id IS NOT NULL
+        ON CONFLICT ON CONSTRAINT auth_descriptions_pkey DO UPDATE SET updated_at = NOW()
+    ),
+    -- Insert or update auth active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
+    insert_auth_active_flag AS (
+        INSERT INTO auth_flags (auth_id, flag_id, type, value, created_at, updated_at)
+        SELECT 
+            x.auth_id,
+            COALESCE(x.active_flag_id, f.id),
+            'active'::type_auth_flags,
+            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN flags f
+        WHERE f.name = 'active'
+        ON CONFLICT ON CONSTRAINT auth_flags_pkey DO UPDATE SET 
+            flag_id = COALESCE(EXCLUDED.flag_id, auth_flags.flag_id),
+            value = EXCLUDED.value,
+            updated_at = NOW()
+    ),
+    -- Link protocols (old ones already deleted above if update)
+    link_protocols AS (
+        INSERT INTO auth_protocols (auth_id, protocol_id, created_at, updated_at)
+        SELECT 
+            x.auth_id,
+            protocol_id,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.protocol_ids) as protocol_id
+        WHERE COALESCE(array_length(x.protocol_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT auth_protocols_pkey DO UPDATE SET
+            updated_at = NOW()
+    ),
+    -- Link slugs (old ones already deleted above if update)
+    link_slugs AS (
+        INSERT INTO auth_slugs (auth_id, slug_id, created_at, updated_at)
+        SELECT 
+            x.auth_id,
+            slug_id,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN UNNEST(x.slug_ids) as slug_id
+        WHERE COALESCE(array_length(x.slug_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT auth_slugs_pkey DO UPDATE SET
+            updated_at = NOW()
+    ),
+    -- Handle auth_items (special handling - not a standard resource)
+    items_expanded AS (
+        -- Expand composite type array with row numbers for matching
+        SELECT 
+            row_number() OVER () as item_idx,
+            item.name as item_name,
+            item.description as item_description,
+            COALESCE(item.encrypted, true) as item_encrypted,
+            COALESCE(item.position, row_number() OVER ()) as item_position,
+            COALESCE(item.active, true) as item_active,
+            item.key_id as item_key_id
+        FROM params x
+        CROSS JOIN LATERAL unnest(x.auth_items) AS item
+    ),
+    new_items AS (
+        -- Create all items (standalone table) - one per auth item
+        INSERT INTO items (
+            name,
+            description,
+            encrypted,
+            position,
+            active,
+            created_at,
+            updated_at
+        )
+        SELECT 
+            ie.item_name,
+            ie.item_description,
+            ie.item_encrypted,
+            ie.item_position,
+            ie.item_active,
+            NOW(),
+            NOW()
+        FROM items_expanded ie
+        RETURNING id as item_id
+    ),
+    items_with_idx AS (
+        -- Match created items back to their expanded data using row numbers
+        SELECT 
+            ROW_NUMBER() OVER (ORDER BY ni.item_id) as item_idx,
+            ni.item_id
+        FROM new_items ni
+    ),
+    -- Link auth to items via junction table
+    link_auth_items AS (
+        INSERT INTO auth_items (auth_id, item_id, created_at, updated_at)
+        SELECT 
+            x.auth_id,
+            iwi.item_id,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN items_expanded ie
+        JOIN items_with_idx iwi ON iwi.item_idx = ie.item_idx
+        WHERE COALESCE(array_length(x.auth_items, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT auth_items_pkey DO UPDATE SET updated_at = NOW()
+    )
+    SELECT 
+        x.auth_id AS auth_id,
+        ap.actor_name AS actor_name
+    FROM params x
+    CROSS JOIN actor_profile ap;
+END;
+$$;

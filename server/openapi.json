@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "GLOW API",
-    "description": "Auto-generated OpenAPI schema from FastAPI v4 API",
+    "description": "Auto-generated OpenAPI schema",
     "version": "0.1.0"
   },
   "paths": {
@@ -96,11 +96,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/update": {
@@ -193,11 +189,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/create": {
@@ -290,11 +282,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/delete": {
@@ -387,11 +375,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/upsert": {
@@ -484,11 +468,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/new": {
@@ -581,11 +561,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/email": {
@@ -678,11 +654,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/context": {
@@ -775,11 +747,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/emulate": {
@@ -872,11 +840,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/profile/simulatable": {
@@ -969,11 +933,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "profile"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/list": {
@@ -1066,11 +1026,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/detail": {
@@ -1163,11 +1119,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/new": {
@@ -1260,11 +1212,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/create": {
@@ -1357,11 +1305,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/update": {
@@ -1454,11 +1398,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/duplicate": {
@@ -1551,11 +1491,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/scenarios/delete": {
@@ -1648,11 +1584,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "scenarios"
-        ]
+        }
       }
     },
     "/api/v4/simulations/list": {
@@ -1745,11 +1677,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/get": {
@@ -1842,11 +1770,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/save": {
@@ -1939,11 +1863,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/duplicate": {
@@ -2036,11 +1956,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/simulations/delete": {
@@ -2133,11 +2049,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "simulations"
-        ]
+        }
       }
     },
     "/api/v4/personas/list": {
@@ -2230,11 +2142,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/get": {
@@ -2327,11 +2235,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/save": {
@@ -2424,11 +2328,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/duplicate": {
@@ -2521,11 +2421,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/delete": {
@@ -2618,11 +2514,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/personas/draft": {
@@ -2715,11 +2607,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "personas"
-        ]
+        }
       }
     },
     "/api/v4/auth/list": {
@@ -2812,22 +2700,18 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
-    "/api/v4/auth/detail": {
+    "/api/v4/auth/get": {
       "post": {
         "tags": [
           "v4",
           "auth"
         ],
-        "summary": "Get Auth Detail",
-        "description": "Get detailed auth information with nested items and keys.",
-        "operationId": "get_auth_detail_api_v4_auth_detail_post",
+        "summary": "Get Auth",
+        "description": "Get auth information - handles both new (auth_id = NULL) and detail (auth_id provided).\n\nValidation Logic:\n- Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)\n- Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)\n- Frontend components check agent_id before showing generate button",
+        "operationId": "get_auth_api_v4_auth_get_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2883,7 +2767,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetAuthDetailApiRequest"
+                "$ref": "#/components/schemas/GetAuthApiRequest"
               }
             }
           }
@@ -2894,7 +2778,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetAuthDetailApiResponse"
+                  "$ref": "#/components/schemas/GetAuthApiResponse"
                 }
               }
             }
@@ -2909,22 +2793,18 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
-    "/api/v4/auth/new": {
+    "/api/v4/auth/save": {
       "post": {
         "tags": [
           "v4",
           "auth"
         ],
-        "summary": "Get Auth New",
-        "description": "Get default auth detail for creation mode.",
-        "operationId": "get_auth_new_api_v4_auth_new_post",
+        "summary": "Save Auth",
+        "description": "Save auth - handles both create (auth_id = NULL) and update (auth_id provided).",
+        "operationId": "save_auth_api_v4_auth_save_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2980,7 +2860,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GetAuthNewApiRequest"
+                "$ref": "#/components/schemas/SaveAuthApiRequest"
               }
             }
           }
@@ -2991,7 +2871,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetAuthNewApiResponse"
+                  "$ref": "#/components/schemas/SaveAuthApiResponse"
                 }
               }
             }
@@ -3006,205 +2886,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
-      }
-    },
-    "/api/v4/auth/create": {
-      "post": {
-        "tags": [
-          "v4",
-          "auth"
-        ],
-        "summary": "Create Auth",
-        "description": "Create a new auth entry with nested items.",
-        "operationId": "create_auth_api_v4_auth_create_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateAuthApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateAuthApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
-      }
-    },
-    "/api/v4/auth/update": {
-      "post": {
-        "tags": [
-          "v4",
-          "auth"
-        ],
-        "summary": "Update Auth",
-        "description": "Update an existing auth entry (replace all items).",
-        "operationId": "update_auth_api_v4_auth_update_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateAuthApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateAuthApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/duplicate": {
@@ -3297,11 +2979,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/delete": {
@@ -3394,11 +3072,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/auth/login": {
@@ -3491,11 +3165,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "auth"
-        ]
+        }
       }
     },
     "/api/v4/departments/list": {
@@ -3588,11 +3258,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/get": {
@@ -3685,11 +3351,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/save": {
@@ -3782,11 +3444,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/duplicate": {
@@ -3879,11 +3537,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/departments/delete": {
@@ -3976,11 +3630,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "departments"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/list": {
@@ -4073,11 +3723,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/get": {
@@ -4170,11 +3816,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/save": {
@@ -4267,11 +3909,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/duplicate": {
@@ -4364,11 +4002,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/leave": {
@@ -4461,11 +4095,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/delete": {
@@ -4558,11 +4188,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/cohorts/search": {
@@ -4655,11 +4281,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "cohorts"
-        ]
+        }
       }
     },
     "/api/v4/documents/list": {
@@ -4752,11 +4374,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/get": {
@@ -4849,11 +4467,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/save": {
@@ -4946,11 +4560,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/detail": {
@@ -5045,11 +4655,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/create": {
@@ -5142,11 +4748,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/delete": {
@@ -5239,11 +4841,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/update": {
@@ -5336,11 +4934,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents/certificate": {
@@ -5431,11 +5025,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/documents_render": {
@@ -5530,11 +5120,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "documents"
-        ]
+        }
       }
     },
     "/api/v4/resources/agents": {
@@ -5627,11 +5213,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/audios": {
@@ -5724,11 +5306,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/cohorts": {
@@ -5821,11 +5399,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/evals": {
@@ -5918,11 +5492,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/keys": {
@@ -6015,11 +5585,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/models": {
@@ -6112,11 +5678,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/parameters": {
@@ -6209,11 +5771,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/personas": {
@@ -6306,11 +5864,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/profiles": {
@@ -6403,11 +5957,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/rubrics": {
@@ -6500,11 +6050,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_positions": {
@@ -6597,11 +6143,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenario_rubric_grade_agents": {
@@ -6694,11 +6236,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/scenarios": {
@@ -6791,11 +6329,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/settings": {
@@ -6888,11 +6422,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulation_scenario_flags": {
@@ -6985,11 +6515,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/simulations": {
@@ -7082,11 +6608,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/names": {
@@ -7179,11 +6701,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/colors": {
@@ -7276,11 +6794,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/flags": {
@@ -7373,11 +6887,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/departments": {
@@ -7470,11 +6980,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/descriptions": {
@@ -7567,11 +7073,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/documents": {
@@ -7664,11 +7166,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/examples": {
@@ -7761,11 +7259,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/fields": {
@@ -7858,11 +7352,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/icons": {
@@ -7955,11 +7445,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/points": {
@@ -8052,11 +7538,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/thresholds": {
@@ -8149,11 +7631,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/content": {
@@ -8246,11 +7724,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/html": {
@@ -8343,11 +7817,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/hints": {
@@ -8440,11 +7910,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/images": {
@@ -8537,11 +8003,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/videos": {
@@ -8634,11 +8096,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/objectives": {
@@ -8731,11 +8189,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/options": {
@@ -8828,11 +8282,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/problem_statements": {
@@ -8925,11 +8375,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/prompts": {
@@ -9022,11 +8468,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/questions": {
@@ -9119,11 +8561,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/responses": {
@@ -9216,11 +8654,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/analyses": {
@@ -9313,11 +8747,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/instructions": {
@@ -9410,11 +8840,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/improvements": {
@@ -9507,11 +8933,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/strengths": {
@@ -9604,11 +9026,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/feedbacks": {
@@ -9701,11 +9119,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/conversations": {
@@ -9798,11 +9212,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/debug_info": {
@@ -9895,11 +9305,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/schemas": {
@@ -9992,11 +9398,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/schema_fields": {
@@ -10089,11 +9491,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/schema_field_items": {
@@ -10186,11 +9584,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/templates": {
@@ -10283,11 +9677,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/template_array_items": {
@@ -10380,11 +9770,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/template_values": {
@@ -10477,11 +9863,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/standard_groups": {
@@ -10574,11 +9956,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/resources/times": {
@@ -10671,11 +10049,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
+        }
       }
     },
     "/api/v4/evals/create": {
@@ -10768,11 +10142,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/delete": {
@@ -10865,11 +10235,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/detail": {
@@ -10962,11 +10328,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/list": {
@@ -11059,11 +10421,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/new": {
@@ -11156,11 +10514,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/evals/update": {
@@ -11253,11 +10607,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "evals"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/list": {
@@ -11350,11 +10700,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/get": {
@@ -11447,11 +10793,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/save": {
@@ -11544,11 +10886,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/detail": {
@@ -11641,11 +10979,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/new": {
@@ -11738,11 +11072,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/duplicate": {
@@ -11835,11 +11165,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/create": {
@@ -11932,11 +11258,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/update": {
@@ -12029,11 +11351,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/rubrics/delete": {
@@ -12126,11 +11444,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "rubrics"
-        ]
+        }
       }
     },
     "/api/v4/tools/list": {
@@ -12223,11 +11537,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/get": {
@@ -12320,11 +11630,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/save": {
@@ -12417,11 +11723,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/duplicate": {
@@ -12514,11 +11816,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/delete": {
@@ -12611,11 +11909,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/tools/draft": {
@@ -12708,11 +12002,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "tools"
-        ]
+        }
       }
     },
     "/api/v4/settings/list": {
@@ -12805,11 +12095,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/detail": {
@@ -12902,11 +12188,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/settings/update": {
@@ -12999,11 +12281,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "settings"
-        ]
+        }
       }
     },
     "/api/v4/analytics/refresh": {
@@ -13096,11 +12374,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics"
-        ]
+        }
       }
     },
     "/api/v4/analytics/view": {
@@ -13193,11 +12467,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "analytics"
-        ]
+        }
       }
     },
     "/api/v4/activity/bundle": {
@@ -13290,11 +12560,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/activity/list": {
@@ -13387,11 +12653,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "activity"
-        ]
+        }
       }
     },
     "/api/v4/dashboard/overview": {
@@ -13484,11 +12746,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/dashboard/history": {
@@ -13581,11 +12839,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "dashboard"
-        ]
+        }
       }
     },
     "/api/v4/reports/export": {
@@ -13677,12 +12931,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "reports",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/reports": {
@@ -13775,11 +13024,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/reports/overview": {
@@ -13872,11 +13117,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/reports/history": {
@@ -13969,11 +13210,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "reports"
-        ]
+        }
       }
     },
     "/api/v4/leaderboard/bundle": {
@@ -14066,11 +13303,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "leaderboard"
-        ]
+        }
       }
     },
     "/api/v4/agents/list": {
@@ -14163,11 +13396,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/get": {
@@ -14260,11 +13489,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/save": {
@@ -14357,11 +13582,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/duplicate": {
@@ -14454,11 +13675,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/agents/delete": {
@@ -14551,11 +13768,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "agents"
-        ]
+        }
       }
     },
     "/api/v4/keys/decrypt": {
@@ -14648,11 +13861,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "keys"
-        ]
+        }
       }
     },
     "/api/v4/models/list": {
@@ -14745,11 +13954,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/get": {
@@ -14842,11 +14047,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/save": {
@@ -14939,11 +14140,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/delete": {
@@ -15036,11 +14233,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/models/duplicate": {
@@ -15133,11 +14326,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "models"
-        ]
+        }
       }
     },
     "/api/v4/providers/list": {
@@ -15230,11 +14419,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/get": {
@@ -15327,11 +14512,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/save": {
@@ -15424,11 +14605,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/draft": {
@@ -15521,11 +14698,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/providers/delete": {
@@ -15618,11 +14791,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "providers"
-        ]
+        }
       }
     },
     "/api/v4/parameters/list": {
@@ -15715,11 +14884,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/get": {
@@ -15812,11 +14977,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/save": {
@@ -15909,11 +15070,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/duplicate": {
@@ -16006,11 +15163,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/parameters/delete": {
@@ -16103,11 +15256,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "parameters"
-        ]
+        }
       }
     },
     "/api/v4/fields/list": {
@@ -16200,11 +15349,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/get": {
@@ -16297,11 +15442,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/save": {
@@ -16394,11 +15535,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/duplicate": {
@@ -16491,11 +15628,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/fields/delete": {
@@ -16588,11 +15721,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "fields"
-        ]
+        }
       }
     },
     "/api/v4/feedback/create": {
@@ -16685,11 +15814,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v4/feedback/list": {
@@ -16782,11 +15907,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v4/feedback/resolve": {
@@ -16879,11 +16000,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "feedback"
-        ]
+        }
       }
     },
     "/api/v4/health/bundle": {
@@ -16976,11 +16093,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "health"
-        ]
+        }
       }
     },
     "/api/v4/attempts/archive": {
@@ -17073,11 +16186,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/attempts/simulation": {
@@ -17170,11 +16279,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/attempts/eval": {
@@ -17267,11 +16372,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "attempts"
-        ]
+        }
       }
     },
     "/api/v4/prompts/delete": {
@@ -17364,11 +16465,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "prompts"
-        ]
+        }
       }
     },
     "/api/v4/staff/save": {
@@ -17461,11 +16558,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/get": {
@@ -17558,11 +16651,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/list": {
@@ -17655,11 +16744,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/detail": {
@@ -17752,11 +16837,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/new": {
@@ -17849,11 +16930,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/search": {
@@ -17946,11 +17023,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/csv": {
@@ -18043,11 +17116,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/data/create": {
@@ -18140,11 +17209,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/create": {
@@ -18237,11 +17302,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/update": {
@@ -18334,11 +17395,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/delete": {
@@ -18431,11 +17488,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/staff/upsert": {
@@ -18528,11 +17581,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "staff"
-        ]
+        }
       }
     },
     "/api/v4/benchmark/overview": {
@@ -18625,11 +17674,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/benchmark/history": {
@@ -18722,11 +17767,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "benchmark"
-        ]
+        }
       }
     },
     "/api/v4/home/overview": {
@@ -18819,11 +17860,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/home/history": {
@@ -18916,11 +17953,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "home"
-        ]
+        }
       }
     },
     "/api/v4/practice/overview": {
@@ -19013,11 +18046,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v4/practice/history": {
@@ -19110,11 +18139,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "practice"
-        ]
+        }
       }
     },
     "/api/v4/pricing/analytics": {
@@ -19207,11 +18232,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/pricing/runs": {
@@ -19304,11 +18325,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/pricing/detail": {
@@ -19401,11 +18418,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "pricing"
-        ]
+        }
       }
     },
     "/api/v4/uploads/upload": {
@@ -19486,11 +18499,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -19569,11 +18578,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/upload/{upload_id}": {
@@ -19663,11 +18668,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "head": {
         "tags": [
@@ -19755,11 +18756,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       },
       "patch": {
         "tags": [
@@ -19847,11 +18844,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/upload/{upload_id}/finalize": {
@@ -19943,11 +18936,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/api/v4/uploads/download/{upload_id}": {
@@ -20049,11 +19038,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "v4",
-          "uploads"
-        ]
+        }
       }
     },
     "/socket/v4/client/connect": {
@@ -20080,11 +19065,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/disconnect": {
@@ -20111,11 +19092,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/enter": {
@@ -20163,12 +19140,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/join": {
@@ -20216,12 +19188,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/leave": {
@@ -20269,12 +19236,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/start": {
@@ -20322,12 +19284,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/end": {
@@ -20375,12 +19332,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/next": {
@@ -20428,12 +19380,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/advance": {
@@ -20481,12 +19428,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/stop": {
@@ -20534,12 +19476,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/voice_stop": {
@@ -20587,12 +19524,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/simulations/member/progress": {
@@ -20640,12 +19572,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/enter": {
@@ -20693,12 +19620,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/join": {
@@ -20746,12 +19668,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/leave": {
@@ -20799,12 +19716,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/start": {
@@ -20852,12 +19764,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/advance": {
@@ -20905,12 +19812,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/stop": {
@@ -20958,12 +19860,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/next": {
@@ -21011,12 +19908,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/end": {
@@ -21064,12 +19956,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/run_start": {
@@ -21117,12 +20004,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/client/benchmark/runs_start_all": {
@@ -21170,12 +20052,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-client",
-          "socket-client"
-        ]
+        }
       }
     },
     "/socket/v4/server/connection_confirmed": {
@@ -21222,11 +20099,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/generate_error": {
@@ -21273,11 +20146,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/enter_response": {
@@ -21325,12 +20194,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/enter_error": {
@@ -21378,12 +20242,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/joined": {
@@ -21431,12 +20290,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/join_error": {
@@ -21484,12 +20338,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/leave_error": {
@@ -21537,12 +20386,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/start_error": {
@@ -21590,12 +20434,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/started": {
@@ -21643,12 +20482,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/end_error": {
@@ -21696,12 +20530,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/ended": {
@@ -21749,12 +20578,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/end_all_started": {
@@ -21802,12 +20626,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/end_chat_started": {
@@ -21855,12 +20674,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/end_all_completed": {
@@ -21908,12 +20722,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/next_error": {
@@ -21961,12 +20770,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/advance_error": {
@@ -22014,12 +20818,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/advanced": {
@@ -22067,12 +20866,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/stopped": {
@@ -22120,12 +20914,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/message_cancelled": {
@@ -22173,12 +20962,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/stop_error": {
@@ -22226,12 +21010,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/voice_stop_response": {
@@ -22279,12 +21058,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/voice_stop_error": {
@@ -22332,12 +21106,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/simulations/member/progress_error": {
@@ -22385,12 +21154,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/enter_response": {
@@ -22438,12 +21202,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/enter_error": {
@@ -22491,12 +21250,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/joined": {
@@ -22544,12 +21298,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/join_error": {
@@ -22597,12 +21346,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/leave_error": {
@@ -22650,12 +21394,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/advance_error": {
@@ -22703,12 +21442,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/advanced": {
@@ -22756,12 +21490,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/stopped": {
@@ -22809,12 +21538,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/stop_error": {
@@ -22862,12 +21586,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/completed": {
@@ -22915,12 +21634,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/end_error": {
@@ -22968,12 +21682,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/run_started": {
@@ -23021,12 +21730,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/run_start_error": {
@@ -23074,12 +21778,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_started": {
@@ -23127,12 +21826,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/socket/v4/server/benchmark/runs_start_all_error": {
@@ -23180,12 +21874,7 @@
               }
             }
           }
-        },
-        "x-cache-tags": [
-          "socket",
-          "socket-server",
-          "socket-server"
-        ]
+        }
       }
     },
     "/": {
@@ -24782,115 +23471,6 @@
         },
         "type": "object",
         "title": "CreateAnalyticsViewFunctionApiResponse"
-      },
-      "CreateAuthApiRequest": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "auth_type": {
-            "type": "string",
-            "title": "Auth Type"
-          },
-          "slug": {
-            "type": "string",
-            "title": "Slug"
-          },
-          "auth_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/ICreateAuthV4AuthItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "active",
-          "auth_type",
-          "slug"
-        ],
-        "title": "CreateAuthApiRequest"
-      },
-      "CreateAuthApiResponse": {
-        "properties": {
-          "success": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Success"
-          },
-          "auth_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "CreateAuthApiResponse"
       },
       "CreateDocumentApiRequest": {
         "properties": {
@@ -29828,11 +28408,18 @@
         "type": "object",
         "title": "GetAgentsListApiResponse"
       },
-      "GetAuthDetailApiRequest": {
+      "GetAuthApiRequest": {
         "properties": {
           "auth_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Auth Id"
           },
           "draft_id": {
@@ -29846,16 +28433,36 @@
               }
             ],
             "title": "Draft Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
           }
         },
         "type": "object",
-        "required": [
-          "auth_id"
-        ],
-        "title": "GetAuthDetailApiRequest"
+        "title": "GetAuthApiRequest"
       },
-      "GetAuthDetailApiResponse": {
+      "GetAuthApiResponse": {
         "properties": {
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
           "auth_exists": {
             "anyOf": [
               {
@@ -29866,39 +28473,6 @@
               }
             ],
             "title": "Auth Exists"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
           },
           "can_edit": {
             "anyOf": [
@@ -29911,21 +28485,7 @@
             ],
             "title": "Can Edit"
           },
-          "auth_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetAuthDetailV4AuthItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Items"
-          },
-          "actor_name": {
+          "disabled_reason": {
             "anyOf": [
               {
                 "type": "string"
@@ -29934,18 +28494,458 @@
                 "type": "null"
               }
             ],
-            "title": "Actor Name"
+            "title": "Disabled Reason"
           },
-          "draft_version": {
+          "group_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Draft Version"
+            "title": "Group Id"
+          },
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "name_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetAuthV4NameResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_name": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Name"
+          },
+          "name_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Agent Id"
+          },
+          "name_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Required"
+          },
+          "name_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Suggestions"
+          },
+          "names": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthV4NameResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Names"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "description_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetAuthV4DescriptionResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_description": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Description"
+          },
+          "description_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Agent Id"
+          },
+          "description_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Required"
+          },
+          "description_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Suggestions"
+          },
+          "descriptions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthV4DescriptionResource"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descriptions"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "flag_resource": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QGetAuthV4FlagResource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "show_flag": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Flag"
+          },
+          "flag_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Agent Id"
+          },
+          "flag_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Required"
+          },
+          "flag_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Suggestions"
+          },
+          "protocol_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Ids"
+          },
+          "protocol_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthV4Protocol"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Resources"
+          },
+          "show_protocols": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Protocols"
+          },
+          "protocols_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocols Agent Id"
+          },
+          "protocols_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocols Required"
+          },
+          "protocol_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Suggestions"
+          },
+          "protocols": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthV4Protocol"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocols"
+          },
+          "slug_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug Ids"
+          },
+          "slug_resources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthV4Slug"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug Resources"
+          },
+          "show_slugs": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Show Slugs"
+          },
+          "slugs_agent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slugs Agent Id"
+          },
+          "slugs_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slugs Required"
+          },
+          "slug_suggestions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug Suggestions"
+          },
+          "slugs": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthV4Slug"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slugs"
+          },
+          "auth_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/QGetAuthV4AuthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Items"
           },
           "auth_item_ids": {
             "anyOf": [
@@ -29973,10 +28973,21 @@
               }
             ],
             "title": "Auth Item Encrypted States"
+          },
+          "draft_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Version"
           }
         },
         "type": "object",
-        "title": "GetAuthDetailApiResponse"
+        "title": "GetAuthApiResponse"
       },
       "GetAuthListApiRequest": {
         "properties": {},
@@ -30013,137 +29024,6 @@
         },
         "type": "object",
         "title": "GetAuthListApiResponse"
-      },
-      "GetAuthNewApiRequest": {
-        "properties": {
-          "draft_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Id"
-          }
-        },
-        "type": "object",
-        "title": "GetAuthNewApiRequest"
-      },
-      "GetAuthNewApiResponse": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "can_edit": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Can Edit"
-          },
-          "auth_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/QGetAuthNewV4AuthItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Items"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "draft_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Version"
-          },
-          "auth_item_ids": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Item Ids"
-          },
-          "auth_item_active_states": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Item Active States"
-          },
-          "auth_item_encrypted_states": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Item Encrypted States"
-          }
-        },
-        "type": "object",
-        "title": "GetAuthNewApiResponse"
       },
       "GetBenchmarkHistoryApiRequest": {
         "properties": {
@@ -50563,87 +49443,6 @@
         ],
         "title": "IBulkCreateStaffV4Profile"
       },
-      "ICreateAuthV4AuthItem": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "encrypted": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Encrypted"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "encrypted",
-          "position",
-          "active",
-          "key_id"
-        ],
-        "title": "ICreateAuthV4AuthItem"
-      },
       "ICreateRubricV4Standard": {
         "properties": {
           "name": {
@@ -50826,6 +49625,87 @@
           "target_field"
         ],
         "title": "IProcessCsvV4ColumnMapping"
+      },
+      "ISaveAuthV4AuthItem": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "encrypted": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Encrypted"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "key_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "encrypted",
+          "position",
+          "active",
+          "key_id"
+        ],
+        "title": "ISaveAuthV4AuthItem"
       },
       "ISaveModelV4Pricing": {
         "properties": {
@@ -51035,87 +49915,6 @@
           "audio_agent_id"
         ],
         "title": "ISaveSimulationV4ScenarioRubricGradeAgent"
-      },
-      "IUpdateAuthV4AuthItem": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "encrypted": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Encrypted"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "description",
-          "encrypted",
-          "position",
-          "active",
-          "key_id"
-        ],
-        "title": "IUpdateAuthV4AuthItem"
       },
       "IUpdateRubricV4Standard": {
         "properties": {
@@ -54020,111 +52819,6 @@
         ],
         "title": "QGetAgentV4PromptResource"
       },
-      "QGetAuthDetailV4AuthItem": {
-        "properties": {
-          "auth_item_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Item Id"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "position": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Position"
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "value_masked": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Value Masked"
-          },
-          "key_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Key Id"
-          },
-          "encrypted": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Encrypted"
-          }
-        },
-        "type": "object",
-        "required": [
-          "auth_item_id",
-          "name",
-          "description",
-          "position",
-          "active",
-          "value_masked",
-          "key_id",
-          "encrypted"
-        ],
-        "title": "QGetAuthDetailV4AuthItem"
-      },
       "QGetAuthListV4Auth": {
         "properties": {
           "auth_id": {
@@ -54302,7 +52996,7 @@
         ],
         "title": "QGetAuthListV4AuthItem"
       },
-      "QGetAuthNewV4AuthItem": {
+      "QGetAuthV4AuthItem": {
         "properties": {
           "auth_item_id": {
             "anyOf": [
@@ -54405,7 +53099,257 @@
           "key_id",
           "encrypted"
         ],
-        "title": "QGetAuthNewV4AuthItem"
+        "title": "QGetAuthV4AuthItem"
+      },
+      "QGetAuthV4DescriptionResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "generated"
+        ],
+        "title": "QGetAuthV4DescriptionResource"
+      },
+      "QGetAuthV4FlagResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "icon_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon Id"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "icon_id",
+          "generated"
+        ],
+        "title": "QGetAuthV4FlagResource"
+      },
+      "QGetAuthV4NameResource": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "generated"
+        ],
+        "title": "QGetAuthV4NameResource"
+      },
+      "QGetAuthV4Protocol": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetAuthV4Protocol"
+      },
+      "QGetAuthV4Slug": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "value",
+          "generated"
+        ],
+        "title": "QGetAuthV4Slug"
       },
       "QGetBenchmarkHistoryV4Attempt": {
         "properties": {
@@ -92044,6 +90988,129 @@
         "type": "object",
         "title": "SaveAgentApiResponse"
       },
+      "SaveAuthApiRequest": {
+        "properties": {
+          "name_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Name Id"
+          },
+          "input_auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Auth Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "active_flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active Flag Id"
+          },
+          "protocol_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocol Ids"
+          },
+          "slug_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug Ids"
+          },
+          "auth_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ISaveAuthV4AuthItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name_id"
+        ],
+        "title": "SaveAuthApiRequest"
+      },
+      "SaveAuthApiResponse": {
+        "properties": {
+          "auth_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auth Id"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          }
+        },
+        "type": "object",
+        "title": "SaveAuthApiResponse"
+      },
       "SaveCohortApiRequest": {
         "properties": {
           "name_id": {
@@ -95339,120 +94406,6 @@
         },
         "type": "object",
         "title": "TimesApiResponse"
-      },
-      "UpdateAuthApiRequest": {
-        "properties": {
-          "auth_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Auth Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "active": {
-            "type": "boolean",
-            "title": "Active"
-          },
-          "auth_type": {
-            "type": "string",
-            "title": "Auth Type"
-          },
-          "slug": {
-            "type": "string",
-            "title": "Slug"
-          },
-          "auth_items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/IUpdateAuthV4AuthItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "auth_id",
-          "name",
-          "description",
-          "active",
-          "auth_type",
-          "slug"
-        ],
-        "title": "UpdateAuthApiRequest"
-      },
-      "UpdateAuthApiResponse": {
-        "properties": {
-          "auth_exists": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auth Exists"
-          },
-          "success": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Success"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          }
-        },
-        "type": "object",
-        "title": "UpdateAuthApiResponse"
       },
       "UpdateDocumentApiRequest": {
         "properties": {

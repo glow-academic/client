@@ -593,7 +593,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/detail": {
+    "/api/v4/auth/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -603,17 +603,22 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Auth Detail
-         * @description Get detailed auth information with nested items and keys.
+         * Get Auth
+         * @description Get auth information - handles both new (auth_id = NULL) and detail (auth_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
-        post: operations["get_auth_detail_api_v4_auth_detail_post"];
+        post: operations["get_auth_api_v4_auth_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/auth/new": {
+    "/api/v4/auth/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -623,50 +628,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Auth New
-         * @description Get default auth detail for creation mode.
+         * Save Auth
+         * @description Save auth - handles both create (auth_id = NULL) and update (auth_id provided).
          */
-        post: operations["get_auth_new_api_v4_auth_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/auth/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Auth
-         * @description Create a new auth entry with nested items.
-         */
-        post: operations["create_auth_api_v4_auth_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/auth/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Auth
-         * @description Update an existing auth entry (replace all items).
-         */
-        post: operations["update_auth_api_v4_auth_update_post"];
+        post: operations["save_auth_api_v4_auth_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6041,34 +6006,6 @@ export interface components {
             /** Status */
             status?: string | null;
         };
-        /** CreateAuthApiRequest */
-        CreateAuthApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Auth Type */
-            auth_type: string;
-            /** Slug */
-            slug: string;
-            /** Auth Items */
-            auth_items?: components["schemas"]["ICreateAuthV4AuthItem"][] | null;
-        };
-        /** CreateAuthApiResponse */
-        CreateAuthApiResponse: {
-            /** Success */
-            success?: boolean | null;
-            /** Auth Id */
-            auth_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** CreateDocumentApiRequest */
         CreateDocumentApiRequest: {
             /** Name */
@@ -7456,40 +7393,105 @@ export interface components {
             /** Agents */
             agents?: components["schemas"]["QListAgentsV4Agent"][] | null;
         };
-        /** GetAuthDetailApiRequest */
-        GetAuthDetailApiRequest: {
-            /**
-             * Auth Id
-             * Format: uuid
-             */
-            auth_id: string;
+        /** GetAuthApiRequest */
+        GetAuthApiRequest: {
+            /** Auth Id */
+            auth_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
-        /** GetAuthDetailApiResponse */
-        GetAuthDetailApiResponse: {
-            /** Auth Exists */
-            auth_exists?: boolean | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Auth Items */
-            auth_items?: components["schemas"]["QGetAuthDetailV4AuthItem"][] | null;
+        /** GetAuthApiResponse */
+        GetAuthApiResponse: {
             /** Actor Name */
             actor_name?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
+            /** Auth Exists */
+            auth_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetAuthV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetAuthV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetAuthV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetAuthV4DescriptionResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetAuthV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flag Suggestions */
+            flag_suggestions?: string[] | null;
+            /** Protocol Ids */
+            protocol_ids?: string[] | null;
+            /** Protocol Resources */
+            protocol_resources?: components["schemas"]["QGetAuthV4Protocol"][] | null;
+            /** Show Protocols */
+            show_protocols?: boolean | null;
+            /** Protocols Agent Id */
+            protocols_agent_id?: string | null;
+            /** Protocols Required */
+            protocols_required?: boolean | null;
+            /** Protocol Suggestions */
+            protocol_suggestions?: string[] | null;
+            /** Protocols */
+            protocols?: components["schemas"]["QGetAuthV4Protocol"][] | null;
+            /** Slug Ids */
+            slug_ids?: string[] | null;
+            /** Slug Resources */
+            slug_resources?: components["schemas"]["QGetAuthV4Slug"][] | null;
+            /** Show Slugs */
+            show_slugs?: boolean | null;
+            /** Slugs Agent Id */
+            slugs_agent_id?: string | null;
+            /** Slugs Required */
+            slugs_required?: boolean | null;
+            /** Slug Suggestions */
+            slug_suggestions?: string[] | null;
+            /** Slugs */
+            slugs?: components["schemas"]["QGetAuthV4Slug"][] | null;
+            /** Auth Items */
+            auth_items?: components["schemas"]["QGetAuthV4AuthItem"][] | null;
             /** Auth Item Ids */
             auth_item_ids?: unknown | null;
             /** Auth Item Active States */
             auth_item_active_states?: unknown | null;
             /** Auth Item Encrypted States */
             auth_item_encrypted_states?: unknown | null;
+            /** Draft Version */
+            draft_version?: number | null;
         };
         /** GetAuthListApiRequest */
         GetAuthListApiRequest: Record<string, never>;
@@ -7499,34 +7501,6 @@ export interface components {
             actor_name?: string | null;
             /** Auths */
             auths?: components["schemas"]["QGetAuthListV4Auth"][] | null;
-        };
-        /** GetAuthNewApiRequest */
-        GetAuthNewApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetAuthNewApiResponse */
-        GetAuthNewApiResponse: {
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Auth Items */
-            auth_items?: components["schemas"]["QGetAuthNewV4AuthItem"][] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Auth Item Ids */
-            auth_item_ids?: unknown | null;
-            /** Auth Item Active States */
-            auth_item_active_states?: unknown | null;
-            /** Auth Item Encrypted States */
-            auth_item_encrypted_states?: unknown | null;
         };
         /** GetBenchmarkHistoryApiRequest */
         GetBenchmarkHistoryApiRequest: {
@@ -11225,21 +11199,6 @@ export interface components {
             /** Primary Department Index */
             primary_department_index: number | null;
         };
-        /** ICreateAuthV4AuthItem */
-        ICreateAuthV4AuthItem: {
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Encrypted */
-            encrypted: boolean | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Key Id */
-            key_id: string | null;
-        };
         /** ICreateRubricV4Standard */
         ICreateRubricV4Standard: {
             /** Name */
@@ -11274,6 +11233,21 @@ export interface components {
             csv_column: string | null;
             /** Target Field */
             target_field: string | null;
+        };
+        /** ISaveAuthV4AuthItem */
+        ISaveAuthV4AuthItem: {
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Encrypted */
+            encrypted: boolean | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Key Id */
+            key_id: string | null;
         };
         /** ISaveModelV4Pricing */
         ISaveModelV4Pricing: {
@@ -11314,21 +11288,6 @@ export interface components {
             grade_agent_id: string | null;
             /** Audio Agent Id */
             audio_agent_id: string | null;
-        };
-        /** IUpdateAuthV4AuthItem */
-        IUpdateAuthV4AuthItem: {
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Encrypted */
-            encrypted: boolean | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Key Id */
-            key_id: string | null;
         };
         /** IUpdateRubricV4Standard */
         IUpdateRubricV4Standard: {
@@ -12157,25 +12116,6 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
-        /** QGetAuthDetailV4AuthItem */
-        QGetAuthDetailV4AuthItem: {
-            /** Auth Item Id */
-            auth_item_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Value Masked */
-            value_masked: string | null;
-            /** Key Id */
-            key_id: string | null;
-            /** Encrypted */
-            encrypted: boolean | null;
-        };
         /** QGetAuthListV4Auth */
         QGetAuthListV4Auth: {
             /** Auth Id */
@@ -12208,8 +12148,8 @@ export interface components {
             /** Description */
             description: string | null;
         };
-        /** QGetAuthNewV4AuthItem */
-        QGetAuthNewV4AuthItem: {
+        /** QGetAuthV4AuthItem */
+        QGetAuthV4AuthItem: {
             /** Auth Item Id */
             auth_item_id: string | null;
             /** Name */
@@ -12226,6 +12166,55 @@ export interface components {
             key_id: string | null;
             /** Encrypted */
             encrypted: boolean | null;
+        };
+        /** QGetAuthV4DescriptionResource */
+        QGetAuthV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAuthV4FlagResource */
+        QGetAuthV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAuthV4NameResource */
+        QGetAuthV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAuthV4Protocol */
+        QGetAuthV4Protocol: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetAuthV4Slug */
+        QGetAuthV4Slug: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetBenchmarkHistoryV4Attempt */
         QGetBenchmarkHistoryV4Attempt: {
@@ -19086,6 +19075,33 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** SaveAuthApiRequest */
+        SaveAuthApiRequest: {
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Input Auth Id */
+            input_auth_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Protocol Ids */
+            protocol_ids?: string[] | null;
+            /** Slug Ids */
+            slug_ids?: string[] | null;
+            /** Auth Items */
+            auth_items?: components["schemas"]["ISaveAuthV4AuthItem"][] | null;
+        };
+        /** SaveAuthApiResponse */
+        SaveAuthApiResponse: {
+            /** Auth Id */
+            auth_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SaveCohortApiRequest */
         SaveCohortApiRequest: {
             /**
@@ -20305,39 +20321,6 @@ export interface components {
         TimesApiResponse: {
             /** Time Id */
             time_id?: string | null;
-        };
-        /** UpdateAuthApiRequest */
-        UpdateAuthApiRequest: {
-            /**
-             * Auth Id
-             * Format: uuid
-             */
-            auth_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Auth Type */
-            auth_type: string;
-            /** Slug */
-            slug: string;
-            /** Auth Items */
-            auth_items?: components["schemas"]["IUpdateAuthV4AuthItem"][] | null;
-        };
-        /** UpdateAuthApiResponse */
-        UpdateAuthApiResponse: {
-            /** Auth Exists */
-            auth_exists?: boolean | null;
-            /** Success */
-            success?: boolean | null;
-            /** Name */
-            name?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
         /** UpdateDocumentApiRequest */
         UpdateDocumentApiRequest: {
@@ -21769,7 +21752,7 @@ export interface operations {
             };
         };
     };
-    get_auth_detail_api_v4_auth_detail_post: {
+    get_auth_api_v4_auth_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21782,7 +21765,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAuthDetailApiRequest"];
+                "application/json": components["schemas"]["GetAuthApiRequest"];
             };
         };
         responses: {
@@ -21792,7 +21775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAuthDetailApiResponse"];
+                    "application/json": components["schemas"]["GetAuthApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -21806,7 +21789,7 @@ export interface operations {
             };
         };
     };
-    get_auth_new_api_v4_auth_new_post: {
+    save_auth_api_v4_auth_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -21819,7 +21802,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetAuthNewApiRequest"];
+                "application/json": components["schemas"]["SaveAuthApiRequest"];
             };
         };
         responses: {
@@ -21829,81 +21812,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetAuthNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_auth_api_v4_auth_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateAuthApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateAuthApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_auth_api_v4_auth_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateAuthApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateAuthApiResponse"];
+                    "application/json": components["schemas"]["SaveAuthApiResponse"];
                 };
             };
             /** @description Validation Error */
