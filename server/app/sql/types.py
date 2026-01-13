@@ -13371,6 +13371,61 @@ class LinkSystemDeveloperMessagesToRunApiResponse(BaseModel):
 
 
 
+# Generated from: log_run
+
+class LogRunSqlParams(BaseModel):
+
+    run_id: UUID
+    input_text_tokens: int
+    input_audio_tokens: int
+    input_image_tokens: int
+    output_text_tokens: int
+    output_audio_tokens: int
+    cached_text_tokens: int
+    cached_audio_tokens: int
+    department_id: UUID | None = None
+    developer_contents: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    assistant_output: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.input_text_tokens,
+            self.input_audio_tokens,
+            self.input_image_tokens,
+            self.output_text_tokens,
+            self.output_audio_tokens,
+            self.cached_text_tokens,
+            self.cached_audio_tokens,
+            self.department_id,
+            self.developer_contents,
+            self.assistant_output,
+        )
+
+class LogRunSqlRow(BaseModel):
+
+    success: int | None = None
+
+class LogRunApiRequest(BaseModel):
+
+    run_id: UUID
+    input_text_tokens: int
+    input_audio_tokens: int
+    input_image_tokens: int
+    output_text_tokens: int
+    output_audio_tokens: int
+    cached_text_tokens: int
+    cached_audio_tokens: int
+    department_id: UUID | None = None
+    developer_contents: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    assistant_output: str | None = None
+
+class LogRunApiResponse(BaseModel):
+
+    success: int | None = None
+
+
+
 # Generated from: create_model
 
 class ICreateModelV4Pricing(BaseModel):
@@ -20341,6 +20396,40 @@ class SchemasApiRequest(BaseModel):
 class SchemasApiResponse(BaseModel):
 
     schema_id: UUID | None = None
+
+
+
+# Generated from: settings
+
+class SettingsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    setting_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.setting_id,
+            self.mcp,
+        )
+
+class SettingsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class SettingsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    setting_id: UUID
+    mcp: bool | None = False
+
+class SettingsApiResponse(BaseModel):
+
+    id: UUID | None = None
 
 
 
@@ -30492,6 +30581,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "LinkSystemDeveloperMessagesToRunApiRequest",
         "LinkSystemDeveloperMessagesToRunApiResponse",
     ),
+    "app/sql/v4/model_runs/log_run_complete.sql": (
+        "LogRunSqlParams",
+        "LogRunSqlRow",
+        "LogRunApiRequest",
+        "LogRunApiResponse",
+    ),
     "app/sql/v4/models/create_model_complete.sql": (
         "CreateModelSqlParams",
         "CreateModelSqlRow",
@@ -31169,6 +31264,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SchemasSqlRow",
         "SchemasApiRequest",
         "SchemasApiResponse",
+    ),
+    "app/sql/v4/resources/settings_complete.sql": (
+        "SettingsSqlParams",
+        "SettingsSqlRow",
+        "SettingsApiRequest",
+        "SettingsApiResponse",
     ),
     "app/sql/v4/resources/simulation_scenario_flags_complete.sql": (
         "SimulationScenarioFlagsSqlParams",
@@ -33224,6 +33325,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/model_runs/log_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/models/create_model_complete.sql"]
     ) -> SqlString: ...
 
@@ -33785,6 +33891,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/schemas_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/settings_complete.sql"]
     ) -> SqlString: ...
 
     @overload

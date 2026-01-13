@@ -109,7 +109,12 @@ async function renderTemplate(
 ): Promise<RenderTemplateOut> {
   "use server";
   // _render endpoint is not in OpenAPI schema, use type assertion for endpoint path
-  const result = await (api.post as (path: string, input: RenderTemplateIn) => Promise<Record<string, unknown>>)("/documents/_render", input);
+  const result = await (
+    api.post as (
+      path: string,
+      input: RenderTemplateIn
+    ) => Promise<Record<string, unknown>>
+  )("/documents/_render", input);
   // API returns dict[str, Any], assert to our expected type
   return result as RenderTemplateOut;
 }
@@ -177,7 +182,10 @@ export default async function DocumentEditPage({
       // Check if there are template arg params (JSON format)
       // Use template_schema from API response, fallback to template_args for backward compatibility
       // Note: template_schema is added dynamically by the API, so we need type assertion
-      const docDetail = documentDetail as GetDocumentOut & { template_schema?: TemplateSchema | null; template_args?: TemplateSchema | null };
+      const docDetail = documentDetail as GetDocumentOut & {
+        template_schema?: TemplateSchema | null;
+        template_args?: TemplateSchema | null;
+      };
       const templateSchema =
         (docDetail.template_schema as TemplateSchema | null) ||
         (docDetail.template_args as TemplateSchema | null);
