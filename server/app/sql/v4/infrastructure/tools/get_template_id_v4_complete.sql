@@ -24,7 +24,9 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT template_id
-    FROM tools
-    WHERE tools.id = $1
+    SELECT tt.template_id
+    FROM tools t
+    JOIN tool_templates tt ON tt.tool_id = t.tool_id
+    WHERE t.id = $1
+    LIMIT 1
 $$;

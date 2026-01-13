@@ -24,7 +24,8 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT DISTINCT parameter_id 
-    FROM fields 
-    WHERE fields.id = ANY($1) AND fields.parameter_id IS NOT NULL
+    SELECT DISTINCT pf.parameter_id 
+    FROM fields f
+    JOIN parameter_fields pf ON pf.field_id = f.field_id
+    WHERE f.id = ANY($1)
 $$;

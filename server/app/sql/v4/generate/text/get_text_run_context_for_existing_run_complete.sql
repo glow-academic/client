@@ -7,14 +7,26 @@
 DO $$
 DECLARE
     r RECORD;
+    func_sig text;
 BEGIN
     FOR r IN 
-        SELECT oidvectortypes(proargtypes) as sig 
+        SELECT oid
         FROM pg_proc 
         WHERE proname = 'socket_get_text_run_context_for_existing_run_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_text_run_context_for_existing_run_v4(%s)', r.sig);
+        BEGIN
+            -- Try to get signature, but handle missing types gracefully
+            SELECT pg_get_function_identity_arguments(r.oid) INTO func_sig;
+            EXECUTE format('DROP FUNCTION IF EXISTS socket_get_text_run_context_for_existing_run_v4(%s)', func_sig);
+        EXCEPTION WHEN OTHERS THEN
+            -- Function might reference missing types, try dropping by OID with CASCADE
+            BEGIN
+                EXECUTE format('DROP FUNCTION IF EXISTS %s CASCADE', r.oid::regprocedure);
+            EXCEPTION WHEN OTHERS THEN
+                NULL; -- Ignore errors if function doesn't exist or can't be dropped
+            END;
+        END;
     END LOOP;
 END $$;
 

@@ -21,14 +21,14 @@ CREATE OR REPLACE FUNCTION utils_get_template_array_items_v4(
 RETURNS TABLE (
     name text,
     item_template_id uuid,
-    position integer
+    "position" integer
 )
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT sf.name, tai.item_template_id, tai.position
+    SELECT sf.name, tai.item_template_id, tai."position"
     FROM template_array_items tai
     JOIN schema_fields sf ON sf.id = tai.schema_field_id
     WHERE tai.template_id = $1
-    ORDER BY sf.position, tai.position
+    ORDER BY sf."position", tai."position"
 $$;

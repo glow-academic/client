@@ -29,8 +29,8 @@ STABLE
 AS $$
     SELECT r.id, 
            (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) as name,
-           r.points,
-           r.pass_points
-    FROM rubrics r
+           (SELECT p.value FROM rubric_points rp JOIN points p ON p.id = rp.point_id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1)::integer as points,
+           (SELECT p.value FROM rubric_points rp JOIN points p ON p.id = rp.point_id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::integer as pass_points
+    FROM rubric r
     WHERE r.id = $1
 $$;

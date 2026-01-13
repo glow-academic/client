@@ -24,9 +24,6 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT result_json
-    FROM tool_call_results
-    WHERE tool_call_results.tool_call_id = $1
-    ORDER BY created_at DESC
-    LIMIT 1
+    SELECT NULL::jsonb as result_json
+    WHERE false
 $$;

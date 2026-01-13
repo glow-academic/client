@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION utils_create_schema_field_v4(
     name text,
     field_type text,
     required boolean,
-    position integer,
+    position_value integer,
     description text DEFAULT NULL,
     placeholder text DEFAULT NULL
 )
@@ -30,8 +30,8 @@ LANGUAGE sql
 VOLATILE
 AS $$
     INSERT INTO schema_fields (
-        id, schema_id, name, field_type, required, position, description, placeholder,
+        id, schema_id, name, field_type, required, "position", description,
         created_at, updated_at
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+    VALUES ($1, $2, $3, $4::schema_field_type, $5, $6, $7, NOW(), NOW())
 $$;

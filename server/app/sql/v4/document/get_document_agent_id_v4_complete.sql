@@ -24,8 +24,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT d.agent_id
-    FROM documents doc
-    JOIN domains d ON d.id = doc.document_domain_id
+    SELECT ad.agent_id
+    FROM document doc
+    JOIN document_agent_domains dad ON dad.document_id = doc.id
+    JOIN agent_domains ad ON ad.domain_id = dad.agent_domain_id
     WHERE doc.id = $1
+    LIMIT 1
 $$;

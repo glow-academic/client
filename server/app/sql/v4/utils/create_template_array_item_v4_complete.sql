@@ -19,14 +19,14 @@ CREATE OR REPLACE FUNCTION utils_create_template_array_item_v4(
     template_id uuid,
     schema_field_id uuid,
     item_template_id uuid,
-    position integer
+    position_value integer
 )
 RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
     INSERT INTO template_array_items (
-        template_id, schema_field_id, item_template_id, position,
+        template_id, schema_field_id, item_template_id, "position",
         created_at, updated_at
     )
     VALUES ($1, $2, $3, $4, NOW(), NOW())

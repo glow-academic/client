@@ -24,7 +24,9 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT d.agent_id
+    SELECT ad.agent_id
     FROM domains d
+    JOIN agent_domains ad ON ad.domain_id = d.id
     WHERE d.id = $1
+    LIMIT 1
 $$;

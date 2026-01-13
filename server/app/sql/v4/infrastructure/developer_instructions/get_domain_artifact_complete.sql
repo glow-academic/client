@@ -25,8 +25,9 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT d.artifact::text
-    FROM domains d
-    WHERE d.agent_id = $1
+    SELECT da.artifact::text
+    FROM agent_domains ad
+    JOIN domain_artifacts da ON da.domain_id = ad.domain_id
+    WHERE ad.agent_id = $1
     LIMIT 1
 $$;

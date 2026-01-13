@@ -23,6 +23,8 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    UPDATE eval_groups SET completed = true, updated_at = NOW()
+    -- Note: eval_groups table doesn't have completed column
+    -- Completion is tracked via eval_runs.completed
+    UPDATE eval_groups SET updated_at = NOW()
     WHERE eval_groups.eval_id = $1 AND eval_groups.group_id = $2
 $$;
