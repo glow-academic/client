@@ -1,4 +1,4 @@
--- Update rubric with departments, standard groups, and standards in a single transaction
+-- UPDATE rubric_artifact with departments, standard groups, and standards in a single transaction
 -- Converted to function with input composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -98,9 +98,9 @@ WITH params AS (
 user_profile AS (
     SELECT
         p.role,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
@@ -131,7 +131,7 @@ actor_profile AS (
 ),
 get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT x.name, NOW(), NOW()
     FROM params x
     WHERE x.name IS NOT NULL AND x.name != ''
@@ -140,7 +140,7 @@ get_or_create_name AS (
 ),
 get_or_create_description AS (
     -- Get or create description in descriptions table
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT x.description, NOW(), NOW()
     FROM params x
     WHERE x.description IS NOT NULL AND x.description != ''
@@ -150,13 +150,13 @@ get_or_create_description AS (
 get_active_flag AS (
     -- Get the active flag ID
     SELECT id as flag_id
-    FROM flags
+    FROM flags_resource
     WHERE name = 'active'
     LIMIT 1
 ),
 get_or_create_points AS (
     -- Get or create points in points table
-    INSERT INTO points (value, created_at, updated_at)
+    INSERT INTO points_resource (value, created_at, updated_at)
     SELECT DISTINCT x.points, NOW(), NOW()
     FROM params x
     WHERE x.points IS NOT NULL
@@ -165,7 +165,7 @@ get_or_create_points AS (
 ),
 get_or_create_pass_points AS (
     -- Get or create pass_points in points table
-    INSERT INTO points (value, created_at, updated_at)
+    INSERT INTO points_resource (value, created_at, updated_at)
     SELECT DISTINCT x.pass_points, NOW(), NOW()
     FROM params x
     WHERE x.pass_points IS NOT NULL
@@ -173,7 +173,7 @@ get_or_create_pass_points AS (
     RETURNING id as pass_point_id, value as pass_point_value
 ),
 update_rubric AS (
-    UPDATE rubric r SET
+    UPDATE rubric_artifact r SET
         rubric_domain_id = x.rubric_domain_id,
         updated_at = NOW()
     FROM params x
@@ -181,7 +181,7 @@ update_rubric AS (
     RETURNING r.id as rubric_id
 ),
 update_rubric_name AS (
-    -- Update rubric name (delete old, insert new)
+    -- UPDATE rubric_artifact name (delete old, insert new)
     DELETE FROM rubric_names
     WHERE rubric_id = (SELECT rubric_id FROM update_rubric LIMIT 1)
     RETURNING rubric_id
@@ -195,7 +195,7 @@ link_rubric_name AS (
     WHERE gocn.name_id IS NOT NULL
 ),
 update_rubric_description AS (
-    -- Update rubric description (delete old, insert new if provided)
+    -- UPDATE rubric_artifact description (delete old, insert new if provided)
     DELETE FROM rubric_descriptions
     WHERE rubric_id = (SELECT rubric_id FROM update_rubric LIMIT 1)
     RETURNING rubric_id
@@ -218,7 +218,7 @@ update_rubric_active_flag AS (
     ON CONFLICT (rubric_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
 ),
 update_rubric_points AS (
-    -- Update points (delete old, insert new)
+    -- UPDATE points_resource (delete old, insert new)
     DELETE FROM rubric_points
     WHERE rubric_id = (SELECT rubric_id FROM update_rubric LIMIT 1) AND type = 'total'::type_rubric_points
     RETURNING rubric_id
@@ -249,7 +249,7 @@ link_rubric_pass_points AS (
 ),
 rubric_with_name AS (
     -- Get rubric_id and name for RETURNING clause
-    SELECT ur.rubric_id, COALESCE(gocn.name_value, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = ur.rubric_id LIMIT 1)) as rubric_name
+    SELECT ur.rubric_id, COALESCE(gocn.name_value, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = ur.rubric_id LIMIT 1)) as rubric_name
     FROM update_rubric ur
     LEFT JOIN get_or_create_name gocn ON true
 ),
@@ -316,7 +316,7 @@ calls_with_order AS (
     FROM placeholder_calls ptc
 ),
 new_standard_groups AS (
-    INSERT INTO standard_groups (
+    INSERT INTO standard_groups_resource (
         name,
         short_name,
         description,

@@ -1,4 +1,4 @@
--- Update model with department links, endpoint, and all related data
+-- UPDATE model_artifact with department links, endpoint, and all related data
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -82,7 +82,7 @@ DECLARE
     updated_model_name text;
 BEGIN
     -- Check if model exists
-    SELECT EXISTS(SELECT 1 FROM model WHERE id = model_id) INTO model_exists_check;
+    SELECT EXISTS(SELECT 1 FROM model_artifact WHERE id = model_id) INTO model_exists_check;
     
     IF NOT model_exists_check THEN
         RETURN QUERY SELECT false::boolean, ''::text, ''::text;
@@ -91,15 +91,15 @@ BEGIN
 
     -- Validate permissions
     IF NOT validate_department_update_permissions(
-        (SELECT role::text FROM profile WHERE id = profile_id),
+        (SELECT role::text FROM profile_artifact WHERE id = profile_id),
         ARRAY(SELECT department_id::text FROM model_departments WHERE model_id = api_update_model_v4.model_id AND active = true),
         ARRAY(SELECT department_id::text FROM profile_departments WHERE profile_id = api_update_model_v4.profile_id AND active = true)
     ) THEN
-        RAISE EXCEPTION 'Insufficient permissions to update model';
+        RAISE EXCEPTION 'Insufficient permissions to UPDATE model_artifact';
     END IF;
 
-    -- Update model
-    UPDATE model SET
+    -- UPDATE model_artifact
+    UPDATE model_artifact SET
         provider_id = api_update_model_v4.provider_id,
         name = api_update_model_v4.name,
         description = api_update_model_v4.description,
@@ -253,8 +253,8 @@ BEGIN
     SELECT 
         true::boolean as model_exists,
         updated_model_name as model_name,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
-    FROM profile p
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+    FROM profile_artifact p
     WHERE p.id = profile_id;
 END;
 $$;

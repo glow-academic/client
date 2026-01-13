@@ -38,9 +38,9 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id AS profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 usage_check AS (
     SELECT COUNT(*) as usage_count
@@ -49,12 +49,12 @@ usage_check AS (
 ),
 cohort_title AS (
     -- Get cohort title before deletion
-    SELECT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
+    SELECT (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
     FROM params x
-    JOIN cohort c ON c.id = x.cohort_id
+    JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
 delete_result AS (
-    DELETE FROM cohort c
+    DELETE FROM cohort_artifact c
     USING params x
     CROSS JOIN usage_check uc
     WHERE c.id = x.cohort_id 

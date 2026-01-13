@@ -98,16 +98,16 @@ scenario_dept AS (
         (SELECT sd.department_id FROM scenario_departments sd 
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
     FROM params p
-    JOIN chat sc ON sc.id = p.chat_id
+    JOIN chat_artifact sc ON sc.id = p.chat_id
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
 ),
 profile_dept AS (
-    -- Get first department from profile's accessible departments
+    -- Get first department FROM profile_artifact's accessible departments
     SELECT d.id as department_id
     FROM params p
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id
     JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
@@ -118,7 +118,7 @@ profile_dept AS (
 any_active_dept AS (
     -- Get any active department as last resort
     SELECT d.id as department_id
-    FROM department d
+    FROM department_artifact d
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     LIMIT 1
 ),
@@ -143,7 +143,7 @@ profile_from_attempt AS (
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -163,7 +163,7 @@ profile_primary_department AS (
 dept_specific_settings AS (
     -- Get department-specific settings (if primary_department_id exists)
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
@@ -174,13 +174,13 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys k ON k.id = spk.key_id
+    JOIN keys_resource k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -190,7 +190,7 @@ dept_specific_settings_with_keys AS (
 default_settings_with_keys AS (
     -- Default settings that have keys
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
@@ -208,7 +208,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 documents_data AS (
@@ -217,18 +217,18 @@ documents_data AS (
         s.id as scenario_id,
         COALESCE(
             ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), d.created_at)::types.i_get_voice_run_context_v4_document
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), d.created_at)::types.i_get_voice_run_context_v4_document
                 ORDER BY d.created_at
             ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true AND EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = true)),
             ARRAY[]::types.i_get_voice_run_context_v4_document[]
         ) as documents
     FROM params p
-    JOIN chat sc ON sc.id = p.chat_id
+    JOIN chat_artifact sc ON sc.id = p.chat_id
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
-    LEFT JOIN documents d ON d.id = sd.document_id
+    LEFT JOIN documents_resource d ON d.id = sd.document_id
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     GROUP BY s.id
@@ -249,20 +249,20 @@ SELECT
     -- Persona data (text fields - kept for compatibility)
     -- Get persona from scenario_personas (chats don't have persona_id directly)
     (SELECT p_persona.id FROM scenario_personas sp 
-     JOIN personas p_persona ON p_persona.id = sp.persona_id 
+     JOIN personas_resource p_persona ON p_persona.id = sp.persona_id 
      WHERE sp.scenario_id = s.id AND sp.active = true 
        AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p_persona.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
      LIMIT 1) as persona_id,
-    (SELECT (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p_persona.id LIMIT 1) FROM scenario_personas sp 
-     JOIN personas p_persona ON p_persona.id = sp.persona_id 
+    (SELECT (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p_persona.id LIMIT 1) FROM scenario_personas sp 
+     JOIN personas_resource p_persona ON p_persona.id = sp.persona_id 
      WHERE sp.scenario_id = s.id AND sp.active = true 
        AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p_persona.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
      LIMIT 1) as persona_name,
-    -- Persona fields not available directly FROM persona table (return NULL for compatibility)
+    -- Persona fields not available directly FROM persona_artifact table (return NULL for compatibility)
     NULL::text as system_prompt,
     NULL::float as temperature,
     NULL::text as reasoning,
-    -- Voice persona fields (preferred for voice mode) - not available FROM persona table
+    -- Voice persona fields (preferred for voice mode) - not available FROM persona_artifact table
     NULL::text as voice_system_prompt,
     NULL::float as voice_temperature,
     NULL::text as voice_reasoning,
@@ -274,19 +274,19 @@ SELECT
     NULL::uuid as voice_model_id,
     NULL::text as voice_model_name,
     NULL::text as voice_custom_model,
-    -- Provider data (text fields - kept for compatibility) - not available FROM persona
+    -- Provider data (text fields - kept for compatibility) - not available FROM persona_artifact
     NULL::uuid as provider_id,
     NULL::text as provider_name,
     NULL::text as base_url,
-    -- Voice provider fields (preferred for voice mode) - not available FROM persona
+    -- Voice provider fields (preferred for voice mode) - not available FROM persona_artifact
     NULL::uuid as voice_provider_id,
     NULL::text as voice_provider,
     NULL::text as voice_base_url,
     -- Settings data (for API keys)
     st.id as settings_id,
-    -- API keys (text - kept for compatibility) - not available FROM persona
+    -- API keys (text - kept for compatibility) - not available FROM persona_artifact
     NULL::text as api_key,
-    -- Voice API keys (preferred for voice mode) - not available FROM persona
+    -- Voice API keys (preferred for voice mode) - not available FROM persona_artifact
     NULL::text as voice_api_key,
     -- Profile data
     pf.profile_id,
@@ -297,21 +297,21 @@ SELECT
     -- Documents data (composite type array)
     COALESCE(dd.documents, ARRAY[]::types.i_get_voice_run_context_v4_document[]) as documents
 FROM params p_params
-JOIN chat sc ON sc.id = p_params.chat_id
+JOIN chat_artifact sc ON sc.id = p_params.chat_id
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-INNER JOIN scenarios s ON s.id = sc.scenario_id
-INNER JOIN simulation sim ON sim.id = sa.simulation_id
+INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
+INNER JOIN simulation_artifact sim ON sim.id = sa.simulation_id
 LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
 LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
 LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
 LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
 LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
 LEFT JOIN groups g ON g.id = cg.group_id
 LEFT JOIN active_settings ast ON true
-LEFT JOIN setting st ON st.id = ast.settings_id
+LEFT JOIN setting_artifact st ON st.id = ast.settings_id
 LEFT JOIN profile_from_attempt pf ON true
 LEFT JOIN documents_data dd ON dd.scenario_id = s.id
 WHERE sc.id = p_params.chat_id

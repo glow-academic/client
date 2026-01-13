@@ -23,6 +23,6 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO templates (id, name, created_at, updated_at)
+    INSERT INTO templates_resource (id, name, created_at, updated_at)
     VALUES ($1, $2, NOW(), NOW())
 $$;

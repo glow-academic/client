@@ -21,16 +21,16 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 agent_info AS (
     SELECT 
         a.id, 
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name
     FROM params x 
-    JOIN agents a ON a.id = x.agent_id
+    JOIN agents_resource a ON a.id = x.agent_id
 ),
 usage_check AS (
     SELECT COUNT(*) as usage_count
@@ -38,11 +38,11 @@ usage_check AS (
     JOIN agent_departments ON agent_departments.agent_id = x.agent_id AND agent_departments.active = true
 ),
 delete_result AS (
-    DELETE FROM agent 
+    DELETE FROM agent_artifact 
     USING params x
-    WHERE agent.id = x.agent_id 
+    WHERE agent_artifact.id = x.agent_id 
       AND (SELECT usage_count FROM usage_check) = 0
-    RETURNING agent.id
+    RETURNING agent_artifact.id
 )
 SELECT 
     (SELECT usage_count FROM usage_check) as usage_count,

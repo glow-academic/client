@@ -37,18 +37,18 @@ CREATE MATERIALIZED VIEW analytics AS
 WITH RECURSIVE scenario_roots AS (
   -- Map every scenario.id to its root_id using scenario_tree (self-edge = root)
   SELECT s.id, st.parent_id, s.id AS root_id
-  FROM scenario s
+  FROM scenario_artifact s
   JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id = s.id -- self-edge = root
   UNION ALL
   SELECT s1.id, st.parent_id, sr.root_id
-  FROM scenario s1
+  FROM scenario_artifact s1
   JOIN scenario_tree st ON st.child_id = s1.id AND st.parent_id <> s1.id
   JOIN scenario_roots sr ON st.parent_id = sr.id
 ),
 root_map AS (
   SELECT s.id AS leaf_scenario_id,
          COALESCE(sr.root_id, s.id) AS root_scenario_id
-  FROM scenario s
+  FROM scenario_artifact s
   LEFT JOIN scenario_roots sr ON s.id = sr.id
 ),
 latest_grade AS (
@@ -58,20 +58,20 @@ latest_grade AS (
          COALESCE(t.time_taken, 0)::numeric AS time_taken_seconds,
          rga.rubric_id,
          g.created_at
-  FROM grade g
+  FROM grade_artifact g
   LEFT JOIN rubric_grade_agents rga ON rga.id = g.rubric_grade_agent_id
   LEFT JOIN grade_times gt ON gt.grade_id = g.id AND gt.active = TRUE
-  LEFT JOIN times t ON t.id = gt.time_id
-  JOIN run r ON r.id = g.run_id
+  LEFT JOIN times_resource t ON t.id = gt.time_id
+  JOIN run_artifact r ON r.id = g.run_id
   JOIN group_runs gr ON gr.run_id = r.id
   JOIN grade_groups gg ON gg.group_id = gr.group_id
-  JOIN chat c ON c.id = gg.chat_id
+  JOIN chat_artifact c ON c.id = gg.chat_id
   -- Simulation grades only (derive from relationship via grade_groups → groups → group_runs → runs)
   ORDER BY c.id, g.created_at DESC
 ),
 -- only ACTIVE simulations
 active_sims AS (
-  SELECT s.* FROM simulation s
+  SELECT s.* FROM simulation_artifact s
   WHERE EXISTS (
     SELECT 1 FROM simulation_flags sf
     WHERE sf.simulation_id = s.id
@@ -81,7 +81,7 @@ active_sims AS (
 ),
 -- only ACTIVE scenarios
 active_scenarios AS (
-  SELECT s.* FROM scenario s
+  SELECT s.* FROM scenario_artifact s
   WHERE EXISTS (
     SELECT 1 FROM scenario_flags sf
     WHERE sf.scenario_id = s.id
@@ -98,12 +98,12 @@ cohorts_expanded AS (
         AND cf.type = 'active'::type_cohort_flags
         AND cf.value = TRUE
     ) AS active
-  FROM cohort c
+  FROM cohort_artifact c
 ),
 -- sims -> active cohorts using junction table
 cohorts_by_sim AS (
   SELECT s.id AS simulation_id,
-         ARRAY(SELECT DISTINCT c.id FROM cohort c
+         ARRAY(SELECT DISTINCT c.id FROM cohort_artifact c
                JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
                WHERE EXISTS (
                  SELECT 1 FROM cohort_flags cf
@@ -118,7 +118,7 @@ profile_cohorts_for_sim AS (
   SELECT sa.id AS attempt_id, ap.profile_id, sa.simulation_id,
          ARRAY(
            SELECT c.id
-           FROM cohort c
+           FROM cohort_artifact c
            JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = sa.simulation_id
            JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
            WHERE EXISTS (
@@ -151,13 +151,13 @@ message_counts AS (
     COUNT(*)::int                                AS num_messages_total,
     COUNT(*) FILTER (WHERE m.role = 'user')::int    AS num_query_messages,
     COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
-  FROM chat c
+  FROM chat_artifact c
   JOIN chat_groups cg ON cg.chat_id = c.id
   JOIN groups g ON g.id = cg.group_id
   JOIN group_runs gr ON gr.group_id = g.id
-  JOIN run r ON r.id = gr.run_id
+  JOIN run_artifact r ON r.id = gr.run_id
   JOIN message_runs mr ON mr.run_id = r.id
-  JOIN message m ON m.id = mr.message_id
+  JOIN message_artifact m ON m.id = mr.message_id
   GROUP BY c.id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
@@ -175,13 +175,13 @@ message_deltas AS (
       ELSE NULL
     END AS delta_seconds,
     m.created_at
-  FROM chat c
+  FROM chat_artifact c
   JOIN chat_groups cg ON cg.chat_id = c.id
   JOIN groups g ON g.id = cg.group_id
   JOIN group_runs gr ON gr.group_id = g.id
-  JOIN run r ON r.id = gr.run_id
+  JOIN run_artifact r ON r.id = gr.run_id
   JOIN message_runs mr ON mr.run_id = r.id
-  JOIN message m ON m.id = mr.message_id
+  JOIN message_artifact m ON m.id = mr.message_id
 ),
 message_deltas_agg AS (
   SELECT chat_id,
@@ -261,7 +261,7 @@ SELECT
   rm.leaf_scenario_id           AS leaf_scenario_id,
 
   sfp.persona_id                AS persona_id,
-  (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) AS persona_color,
+  (SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) AS persona_color,
 
   EXISTS (
     SELECT 1 FROM simulation_flags sf
@@ -284,18 +284,18 @@ SELECT
   lg.time_taken_seconds         AS time_taken_seconds,
 
   lg.rubric_id                  AS rubric_id,
-  (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS rubric_points,
-  (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS rubric_pass_points,
+  (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS rubric_points,
+  (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS rubric_pass_points,
   CASE
-    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) = 0 THEN NULL
-    ELSE (lg.score / (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1)::numeric) * 100.0
+    WHEN lg.score IS NULL OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL 
+         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) = 0 THEN NULL
+    ELSE (lg.score / (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1)::numeric) * 100.0
   END                           AS grade_percent,
   CASE
     WHEN lg.score IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL 
-         OR (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) IS NULL THEN NULL
-    ELSE (lg.score >= (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric)
+         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) IS NULL 
+         OR (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) IS NULL THEN NULL
+    ELSE (lg.score >= (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric)
   END                           AS passed,
 
   (sc.completed OR lg.simulation_chat_id IS NOT NULL)
@@ -320,23 +320,23 @@ SELECT
     scfd.department_id,
     pfd.department_id
   ) AS department_id
-FROM chat sc
+FROM chat_artifact sc
 JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
 JOIN simulation_attempts sa ON sa.id = cfa.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
-JOIN profile pr ON pr.id = ap.profile_id
+JOIN profile_artifact pr ON pr.id = ap.profile_id
 JOIN active_scenarios s       ON s.id = sc.scenario_id           -- enforce active scenario
 JOIN root_map rm              ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
-LEFT JOIN personas p          ON p.id = sfp.persona_id
+LEFT JOIN personas_resource p          ON p.id = sfp.persona_id
 LEFT JOIN latest_grade lg     ON lg.simulation_chat_id = sc.id
 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = sa.simulation_id
   AND sssrga_fallback.scenario_id = s.id
   AND lg.rubric_id IS NULL
-LEFT JOIN scenario_rubric_grade_agents srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
+LEFT JOIN scenario_rubric_grade_agents_resource srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
 LEFT JOIN rubric_grade_agents rga_fallback ON rga_fallback.id = srga_fallback.grade_agent_id
-LEFT JOIN rubrics r           ON r.id = COALESCE(lg.rubric_id, rga_fallback.rubric_id)
+LEFT JOIN rubrics_resource r           ON r.id = COALESCE(lg.rubric_id, rga_fallback.rubric_id)
 LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id
 LEFT JOIN message_counts mc   ON mc.chat_id = sc.id
@@ -410,10 +410,10 @@ CREATE INDEX analytics_attempt_created_at_idx
 
 -- Latest grade per chat fast path (via grade_groups → groups → group_runs → runs)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
-  ON grade (run_id, created_at DESC);
+  ON grade_artifact (run_id, created_at DESC);
 
 -- Feedback lookup by grade (via grade_feedbacks junction table)
--- Note: grade_id column removed from feedbacks table, use grade_feedbacks junction table instead
+-- Note: grade_id column removed FROM feedbacks_resource table, use grade_feedbacks junction table instead
 
 -- Standards mapping
 CREATE INDEX IF NOT EXISTS standards_group_idx
@@ -439,7 +439,7 @@ CREATE INDEX analytics_simulation_idx
 -- Additional indexes for skill performance optimization
 -- Latest grade per (run, rubric_grade_agent) fast path
 CREATE INDEX IF NOT EXISTS grades_run_rubric_grade_agent_created_idx
-  ON grade (run_id, rubric_grade_agent_id, created_at DESC);
+  ON grade_artifact (run_id, rubric_grade_agent_id, created_at DESC);
 
 -- Group id + rubric (via junction table - we filter rsg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
@@ -465,7 +465,7 @@ CREATE INDEX IF NOT EXISTS message_runs_run_created_idx
   ON message_runs (run_id, created_at);
 
 CREATE INDEX IF NOT EXISTS chats_id_created_idx
-  ON chat (id, created_at);
+  ON chat_artifact (id, created_at);
 
 CREATE INDEX IF NOT EXISTS group_runs_group_id_idx
   ON group_runs (group_id);
@@ -483,11 +483,11 @@ CREATE INDEX analytics_is_practice_is_archived_is_general_idx
 
 -- Common joins
 CREATE INDEX IF NOT EXISTS simulations_id_idx
-  ON simulations (id);
+  ON simulations_resource (id);
 
-CREATE INDEX IF NOT EXISTS rubrics_id_idx ON rubrics (id);
-CREATE INDEX IF NOT EXISTS scenarios_id_idx ON scenarios (id);
-CREATE INDEX IF NOT EXISTS personas_id_idx ON personas (id);
+CREATE INDEX IF NOT EXISTS rubrics_id_idx ON rubrics_resource (id);
+CREATE INDEX IF NOT EXISTS scenarios_id_idx ON scenarios_resource (id);
+CREATE INDEX IF NOT EXISTS personas_id_idx ON personas_resource (id);
 
 -- Junction table indexes for analytics performance
 CREATE INDEX IF NOT EXISTS attempt_profiles_attempt_active_idx

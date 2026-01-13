@@ -28,7 +28,7 @@ STABLE
 AS $$
 SELECT ss.scenario_id, COALESCE(sp.value, 999999) as position_val
 FROM simulation_scenarios ss
-LEFT JOIN scenario_positions sp ON sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id
+LEFT JOIN scenario_positions_resource sp ON sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id
 WHERE ss.simulation_id = api_get_simulation_scenarios_ordered_v4.simulation_id
 ORDER BY COALESCE(sp.value, 999999)
 $$;

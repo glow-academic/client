@@ -20,16 +20,16 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_agent AS (
     SELECT 
         a.id as source_id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
-        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1),
-        (SELECT m.id FROM agent_models am JOIN models m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1),
+        (SELECT m.id FROM agent_models am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
         COALESCE(da.artifact::text, '') as role,  -- Derive from domain_artifacts via agent_domains
         ap.prompt_id,
         COALESCE(pr.system_prompt, '') as system_prompt,
@@ -38,16 +38,16 @@ source_agent AS (
         arl.reasoning_level_id,
         da.artifact  -- Need artifact for linking
     FROM params x
-    JOIN agents a ON a.id = x.agent_id
+    JOIN agents_resource a ON a.id = x.agent_id
     LEFT JOIN agent_domains adom ON adom.agent_id = a.id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-    LEFT JOIN prompts pr ON pr.id = ap.prompt_id
+    LEFT JOIN prompts_resource pr ON pr.id = ap.prompt_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
 ),
 new_prompt AS (
-    INSERT INTO prompts (name, description, system_prompt, created_at, updated_at)
+    INSERT INTO prompts_resource (name, description, system_prompt, created_at, updated_at)
     SELECT 
         COALESCE(pr.name, 'Agent Prompt') || ' Copy',
         COALESCE(pr.description, ''),
@@ -55,21 +55,21 @@ new_prompt AS (
         NOW(), 
         NOW()
     FROM source_agent sa
-    LEFT JOIN prompts pr ON pr.id = sa.prompt_id
+    LEFT JOIN prompts_resource pr ON pr.id = sa.prompt_id
     RETURNING id as prompt_id
 ),
--- Insert name into names table and get ID
+-- Insert name INTO names_resource table and get ID
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT sa.name || ' Copy', NOW(), NOW()
     FROM source_agent sa
     WHERE sa.name IS NOT NULL AND sa.name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Insert description into descriptions table and get ID
+-- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT sa.description, NOW(), NOW()
     FROM source_agent sa
     WHERE sa.description IS NOT NULL AND sa.description != ''
@@ -78,7 +78,7 @@ description_resource AS (
 ),
 new_agent AS (
     -- Create agent (without name/description/model_id/active columns)
-    INSERT INTO agent (created_at, updated_at)
+    INSERT INTO agent_artifact (created_at, updated_at)
     SELECT 
         NOW(),
         NOW()
@@ -133,7 +133,7 @@ link_agent_active_flag AS (
         NOW(),
         NOW()
     FROM new_agent na
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
         value = false,

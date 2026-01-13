@@ -39,8 +39,8 @@ BEGIN
         sf.template::text as template
     FROM tool_templates tt
     JOIN schema_templates st ON st.template_id = tt.template_id
-    JOIN schemas s ON s.id = st.schema_id
-    JOIN schema_fields sf ON sf.schema_id = s.id
+    JOIN schemas_resource s ON s.id = st.schema_id
+    JOIN schema_fields_resource sf ON sf.schema_id = s.id
     WHERE tt.tool_id = api_get_resource_output_schema_fields_v4.tool_id
       AND sf.active = true
     ORDER BY sf."position";

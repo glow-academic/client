@@ -46,15 +46,15 @@ DECLARE
     v_group_id uuid;
 BEGIN
     -- Validate resource IDs exist (error if missing and provided)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', description_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
     

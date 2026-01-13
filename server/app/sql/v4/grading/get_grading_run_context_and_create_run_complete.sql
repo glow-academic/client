@@ -128,7 +128,7 @@ chat_info AS (
         g.trace_id,
         sc.created_at,
         sc.completed
-    FROM chat sc
+    FROM chat_artifact sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
     LEFT JOIN groups g ON g.id = cg.group_id
@@ -152,7 +152,7 @@ scenario_rubric_grade_agent AS (
     FROM chat_info ci
     CROSS JOIN attempt_info ai
     JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ai.simulation_id AND sssrga.scenario_id = ci.scenario_id
-    JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
     LEFT JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
     LIMIT 1
@@ -179,7 +179,7 @@ simulation_info AS (
                    AND ssf.value = true)),
             0
         ) as time_limit
-    FROM simulation s
+    FROM simulation_artifact s
     CROSS JOIN scenario_rubric_grade_agent srga
     WHERE s.id = (SELECT simulation_id FROM attempt_info)
 ),
@@ -187,7 +187,7 @@ best_agent AS (
     -- Use grade_agent_id from rubric_grade_agents (for text grading)
     SELECT a.id as agent_id
     FROM simulation_info si
-    JOIN agents a ON a.id = si.grade_agent_id::uuid
+    JOIN agents_resource a ON a.id = si.grade_agent_id::uuid
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) AND si.grade_agent_id IS NOT NULL
     LIMIT 1
 ),
@@ -197,14 +197,14 @@ profile_rate_limit AS (
         rl.requests_per_day as req_per_day
     FROM params p
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.profile_id AND prl.active = true
-    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
 ),
 runs_today AS (
     -- Count model runs for this profile since start of day
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run mr
+    FROM run_artifact mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -220,7 +220,7 @@ profile_primary_department AS (
 ),
 default_settings AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -230,7 +230,7 @@ default_settings AS (
 ),
 dept_specific_settings AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
@@ -241,12 +241,12 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys k ON k.id = spk.key_id
+    JOIN keys_resource k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -256,7 +256,7 @@ dept_specific_settings_with_keys AS (
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true)
       AND NOT EXISTS (
@@ -273,7 +273,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT s.id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
+            (SELECT s.id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true) LIMIT 1)
         ) as settings_id
 ),
 standard_groups_data AS (
@@ -289,9 +289,9 @@ standard_groups_data AS (
     FROM chat_info ci
     CROSS JOIN attempt_info ai
     CROSS JOIN simulation_info si
-    INNER JOIN rubrics r ON r.id = si.rubric_id
+    INNER JOIN rubrics_resource r ON r.id = si.rubric_id
     LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = r.id AND rsg.active = true
-    LEFT JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    LEFT JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
     WHERE sg.id IS NOT NULL
 ),
 standards_data AS (
@@ -305,9 +305,9 @@ standards_data AS (
     FROM chat_info ci
     CROSS JOIN attempt_info ai
     CROSS JOIN simulation_info si
-    INNER JOIN rubrics r ON r.id = si.rubric_id
+    INNER JOIN rubrics_resource r ON r.id = si.rubric_id
     LEFT JOIN rubric_standard_groups rsg ON rsg.rubric_id = r.id AND rsg.active = true
-    LEFT JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    LEFT JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
     LEFT JOIN standards std ON std.standard_group_id = sg.id
     WHERE std.id IS NOT NULL
 ),
@@ -342,14 +342,14 @@ context_data AS (
         
         -- Rubric data
         r.id::text as rubric_id,
-        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) as rubric_name,
-        (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) as rubric_description,
-        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1) as rubric_points,
-        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass' LIMIT 1) as rubric_pass_points,
+        (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) as rubric_name,
+        (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) as rubric_description,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1) as rubric_points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass' LIMIT 1) as rubric_pass_points,
         
         -- Agent data (via department_agents junction for 'grade' role)
         a.id::text as agent_id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,
@@ -374,41 +374,41 @@ context_data AS (
     CROSS JOIN simulation_info si
     CROSS JOIN best_agent ba
     CROSS JOIN params p
-    INNER JOIN scenarios sc ON sc.id = ci.scenario_id
+    INNER JOIN scenarios_resource sc ON sc.id = ci.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = sc.id AND sps.active = true
-    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
-    INNER JOIN rubrics r ON r.id = si.rubric_id
-    INNER JOIN agents a ON a.id = ba.agent_id
+    LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
+    INNER JOIN rubrics_resource r ON r.id = si.rubric_id
+    INNER JOIN agents_resource a ON a.id = ba.agent_id
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
-    LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
+    LEFT JOIN prompts_resource pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-    LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
+    LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     -- Use department-specific prompt if available, otherwise use default
-    LEFT JOIN prompts pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
+    LEFT JOIN prompts_resource pr_prompt ON pr_prompt.id = COALESCE(pr_prompt_dept.id, pr_prompt_default.id)
     INNER JOIN agent_models am ON am.agent_id = a.id
-    INNER JOIN models m ON m.id = am.model_id
+    INNER JOIN models_resource m ON m.id = am.model_id
     -- Join temperature from junction table
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id 
-LEFT JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id AND tl.active = true
+LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
     -- Join reasoning from junction table
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
-LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
+LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
-    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
+    LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
     LEFT JOIN model_providers mp ON mp.model_id = m.id
-    LEFT JOIN providers p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider pr_prov ON pr_prov.id = p_prov.provider_id
+    LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
     LEFT JOIN provider_names pn_prov ON pn_prov.provider_id = pr_prov.id
-    LEFT JOIN names n_prov ON n_prov.id = pn_prov.name_id
+    LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
@@ -440,7 +440,7 @@ standards_aggregated AS (
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO run (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id

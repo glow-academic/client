@@ -1,4 +1,4 @@
--- UPDATE setting: deactivate current active row, insert new active row
+-- UPDATE setting_artifact: deactivate current active row, insert new active row
 -- Converted to function with composite types (NO JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -166,20 +166,20 @@ WITH params AS (
 actor_profile AS (
     SELECT
         p.id as profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 active_flag_id AS (
     -- Get the active flag ID
-    SELECT id as flag_id FROM flags WHERE name = 'active' LIMIT 1
+    SELECT id as flag_id FROM flags_resource WHERE name = 'active' LIMIT 1
 ),
 old_settings_id AS (
     -- Capture old settings ID before deactivating (using setting_flags)
     SELECT s.id as old_id 
-    FROM setting s
+    FROM setting_artifact s
     JOIN setting_flags sf ON sf.setting_id = s.id
-    JOIN flags fl ON sf.flag_id = fl.id
+    JOIN flags_resource fl ON sf.flag_id = fl.id
     CROSS JOIN active_flag_id afi
     WHERE fl.name = 'active' 
       AND sf.type = 'active'::type_setting_flags 
@@ -191,7 +191,7 @@ deactivate_current AS (
     -- Deactivate the current active settings row (update setting_flags)
     UPDATE setting_flags
     SET value = FALSE, updated_at = NOW()
-    FROM flags fl
+    FROM flags_resource fl
     CROSS JOIN active_flag_id afi
     WHERE setting_flags.flag_id = fl.id
       AND fl.name = 'active'
@@ -201,7 +201,7 @@ deactivate_current AS (
 ),
 get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT x.name, NOW(), NOW()
     FROM params x
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
@@ -209,7 +209,7 @@ get_or_create_name AS (
 ),
 get_or_create_description AS (
     -- Get or create description in descriptions table
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT x.description, NOW(), NOW()
     FROM params x
     WHERE x.description IS NOT NULL AND x.description != ''
@@ -218,7 +218,7 @@ get_or_create_description AS (
 ),
 get_or_create_colors AS (
     -- Get or create colors in colors table for each color type
-    INSERT INTO colors (hex_code, created_at, updated_at)
+    INSERT INTO colors_resource (hex_code, created_at, updated_at)
     SELECT DISTINCT color_value, NOW(), NOW()
     FROM params x
     CROSS JOIN LATERAL (
@@ -244,7 +244,7 @@ get_or_create_colors AS (
 ),
 get_or_create_thresholds AS (
     -- Get or create thresholds in thresholds table for each threshold type
-    INSERT INTO thresholds (value, created_at, updated_at)
+    INSERT INTO thresholds_resource (value, created_at, updated_at)
     SELECT DISTINCT threshold_value, NOW(), NOW()
     FROM params x
     CROSS JOIN LATERAL (
@@ -260,13 +260,13 @@ get_or_create_thresholds AS (
 get_guest_login_flag AS (
     -- Get the guest_login_enabled flag ID
     SELECT id as flag_id
-    FROM flags
+    FROM flags_resource
     WHERE name = 'guest_login_enabled'
     LIMIT 1
 ),
 insert_new AS (
     -- Insert new settings row (only id, created_at remain)
-    INSERT INTO setting (created_at)
+    INSERT INTO setting_artifact (created_at)
     SELECT NOW()
     FROM params
     RETURNING id as settings_id

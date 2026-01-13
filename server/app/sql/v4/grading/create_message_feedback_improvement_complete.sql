@@ -35,7 +35,7 @@ DECLARE
     improvement_id_val uuid;
 BEGIN
     -- Create improvement record
-    INSERT INTO improvements 
+    INSERT INTO improvements_resource 
     (name, description, tool_call_id, created_at)
     VALUES (name, description, tool_call_id, NOW())
     RETURNING id INTO improvement_id_val;

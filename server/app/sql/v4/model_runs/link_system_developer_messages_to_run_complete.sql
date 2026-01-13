@@ -47,22 +47,22 @@ WITH run_info AS (
         (SELECT rp.persona_id FROM run_personas rp WHERE rp.run_id = r.id AND rp.active = true LIMIT 1) as persona_id,
         COALESCE(
             department_id,
-            -- Try to get department from chat
-            (SELECT sd.department_id FROM run r2
+            -- Try to get department FROM chat_artifact
+            (SELECT sd.department_id FROM run_artifact r2
              JOIN group_runs gr ON gr.run_id = r2.id
              JOIN groups g ON g.id = gr.group_id
              JOIN chat_groups cg ON cg.group_id = g.id
-             JOIN chat c ON c.id = cg.chat_id
+             JOIN chat_artifact c ON c.id = cg.chat_id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
              WHERE r2.id = r.id LIMIT 1),
-            -- Try to get department from profile
+            -- Try to get department FROM profile_artifact
             (SELECT pd.department_id FROM run_profiles rpf
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
              WHERE rpf.run_id = r.id AND rpf.active = true LIMIT 1),
             -- Fallback to any active department
-            (SELECT id FROM department d WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
+            (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
         ) as department_id
-    FROM run r
+    FROM run_artifact r
     WHERE r.id = run_id
 ),
 -- Get system prompt for persona runs
@@ -77,16 +77,16 @@ persona_system_prompt AS (
         END as system_prompt
     FROM run_info ri
     JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true
-    JOIN personas p ON p.id = rp.persona_id
+    JOIN personas_resource p ON p.id = rp.persona_id
     LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
-    LEFT JOIN instructions pi_inst ON pi_inst.id = pi.instruction_id
-    JOIN agents a ON a.id = ri.agent_id
+    LEFT JOIN instructions_resource pi_inst ON pi_inst.id = pi.instruction_id
+    JOIN agents_resource a ON a.id = ri.agent_id
     LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
         AND adp.department_id = ri.department_id
         AND adp.active = true
-    LEFT JOIN prompts pr_dept ON pr_dept.id = adp.prompt_id
+    LEFT JOIN prompts_resource pr_dept ON pr_dept.id = adp.prompt_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-    LEFT JOIN prompts pr_default ON pr_default.id = ap.prompt_id
+    LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.persona_id IS NOT NULL
     AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) IS NOT NULL
     AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) != ''
@@ -96,13 +96,13 @@ agent_system_prompt AS (
     SELECT 
         COALESCE(pr_dept.system_prompt, pr_default.system_prompt) as system_prompt
     FROM run_info ri
-    JOIN agents a ON a.id = ri.agent_id
+    JOIN agents_resource a ON a.id = ri.agent_id
     LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
         AND adp.department_id = ri.department_id
         AND adp.active = true
-    LEFT JOIN prompts pr_dept ON pr_dept.id = adp.prompt_id
+    LEFT JOIN prompts_resource pr_dept ON pr_dept.id = adp.prompt_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-    LEFT JOIN prompts pr_default ON pr_default.id = ap.prompt_id
+    LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.agent_id IS NOT NULL
     AND ri.persona_id IS NULL
     AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) IS NOT NULL
@@ -120,7 +120,7 @@ system_message_hash AS (
 ),
 existing_system_message AS (
     SELECT m.id as system_message_id
-    FROM message m
+    FROM message_artifact m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         JOIN contents cnt ON cnt.id = mc.content_id
     JOIN system_message_hash smh ON message_content_hash(cnt.content, 'system') = smh.hash
@@ -128,7 +128,7 @@ existing_system_message AS (
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'system'::message_role, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
@@ -211,15 +211,15 @@ link_system AS (
 scenario_developer_template AS (
     SELECT i.template
     FROM run_info ri
-    JOIN agents a ON a.id = ri.agent_id
+    JOIN agents_resource a ON a.id = ri.agent_id
     JOIN agent_instructions ai ON ai.agent_id = a.id
-    JOIN instructions i ON i.id = ai.instruction_id
+    JOIN instructions_resource i ON i.id = ai.instruction_id
     WHERE i.active = true
     LIMIT 1
 ),
 scenario_developer_content AS (
     SELECT DISTINCT
-        -- Use template from instructions if available, otherwise fallback to hardcoded
+        -- Use template FROM instructions_resource if available, otherwise fallback to hardcoded
         COALESCE(
             REPLACE(sdt.template, '{{ problem_statement }}', ps.problem_statement),
             'The following is the scenario for the chat: ' || ps.problem_statement
@@ -228,9 +228,9 @@ scenario_developer_content AS (
     JOIN group_runs gr ON gr.run_id = ri.run_id
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chat c ON c.id = cg.chat_id
+    JOIN chat_artifact c ON c.id = cg.chat_id
     JOIN scenario_problem_statements sps ON sps.scenario_id = c.scenario_id AND sps.active = true
-    JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+    JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     CROSS JOIN LATERAL (SELECT template FROM scenario_developer_template LIMIT 1) sdt
     WHERE chat_id IS NOT NULL
     AND c.id = chat_id
@@ -244,7 +244,7 @@ scenario_developer_hash AS (
 ),
 existing_scenario_developer_message AS (
     SELECT m.id as developer_message_id
-    FROM message m
+    FROM message_artifact m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         JOIN contents cnt ON cnt.id = mc.content_id
     JOIN scenario_developer_hash sdh ON message_content_hash(cnt.content, 'developer') = sdh.hash
@@ -252,7 +252,7 @@ existing_scenario_developer_message AS (
     LIMIT 1
 ),
 new_scenario_developer_message AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM scenario_developer_content sdc
     WHERE NOT EXISTS (SELECT 1 FROM existing_scenario_developer_message)

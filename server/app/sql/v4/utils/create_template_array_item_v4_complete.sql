@@ -25,7 +25,7 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO template_array_items (
+    INSERT INTO template_array_items_resource (
         template_id, schema_field_id, item_template_id, "position",
         created_at, updated_at
     )

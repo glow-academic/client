@@ -56,7 +56,7 @@ WITH params AS (
         api_insert_scenario_variant_v4.image_domain_id AS image_domain_id
 ),
 get_or_create_name AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT p.name, NOW(), NOW()
     FROM params p
     WHERE p.name IS NOT NULL AND p.name != ''
@@ -65,12 +65,12 @@ get_or_create_name AS (
 ),
 get_flag_ids AS (
     SELECT 
-        (SELECT id FROM flags WHERE name = 'active' LIMIT 1) as active_flag_id,
-        (SELECT id FROM flags WHERE name = 'objectives_enabled' LIMIT 1) as objectives_enabled_flag_id,
-        (SELECT id FROM flags WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id
+        (SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1) as active_flag_id,
+        (SELECT id FROM flags_resource WHERE name = 'objectives_enabled' LIMIT 1) as objectives_enabled_flag_id,
+        (SELECT id FROM flags_resource WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id
 ),
 new_scenario AS (
-    INSERT INTO scenario (
+    INSERT INTO scenario_artifact (
         created_at,
         updated_at
     )
@@ -117,8 +117,8 @@ SELECT
     ''::text as description,
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as root_scenario_id,
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as parent_scenario_id,
-    (SELECT created_at FROM scenario WHERE id = ns.id LIMIT 1) as created_at,
-    (SELECT updated_at FROM scenario WHERE id = ns.id LIMIT 1) as updated_at,
+    (SELECT created_at FROM scenario_artifact WHERE id = ns.id LIMIT 1) as created_at,
+    (SELECT updated_at FROM scenario_artifact WHERE id = ns.id LIMIT 1) as updated_at,
     NULL::uuid as profile_id,
     (SELECT sd.department_id FROM scenario_departments sd WHERE sd.scenario_id = ns.id AND sd.active = true LIMIT 1) as department_id
 FROM new_scenario ns

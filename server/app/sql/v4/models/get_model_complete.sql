@@ -185,7 +185,7 @@ model_exists_check AS (
     SELECT 
         CASE 
             WHEN (SELECT model_id FROM params) IS NULL THEN NULL::boolean
-            ELSE EXISTS(SELECT 1 FROM model WHERE id = (SELECT model_id FROM params))::boolean
+            ELSE EXISTS(SELECT 1 FROM model_artifact WHERE id = (SELECT model_id FROM params))::boolean
         END as model_exists
 ),
 draft_payload_data AS (
@@ -220,8 +220,8 @@ resolve_profile_id AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params)::uuid as profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
-    FROM profile p
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+    FROM profile_artifact p
     WHERE p.id = (SELECT profile_id FROM params)::uuid
 ),
 user_profile AS (
@@ -229,7 +229,7 @@ user_profile AS (
         p.role,
         ap.actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
     CROSS JOIN actor_profile ap
 ),
 user_departments AS (
@@ -241,9 +241,9 @@ user_departments AS (
 user_departments_data AS (
     SELECT DISTINCT 
         d.id, 
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, 
-        (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) as description
-    FROM department d
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, 
+        (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) as description
+    FROM department_artifact d
     JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -253,13 +253,13 @@ user_departments_data AS (
 -- Model data (only if model_id provided)
 model_data AS (
     SELECT 
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
-        (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
+        (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active,
         m.value,
-        (SELECT n.name FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN provider pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names n ON n.id = pn.name_id JOIN models m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
-        (SELECT n.name FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN provider pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names n ON n.id = pn.name_id JOIN models m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name
-    FROM model m
+        (SELECT n.name FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
+        (SELECT n.name FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name
+    FROM model_artifact m
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
 ),
@@ -275,9 +275,9 @@ image_model_check AS (
 model_endpoint_data AS (
     SELECT 
         COALESCE(e.base_url, '') as base_url
-    FROM model m
+    FROM model_artifact m
     LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
-    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
+    LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     LIMIT 1
@@ -303,7 +303,7 @@ model_temperature_data AS (
         MAX(tl.temperature) FILTER (WHERE tl.is_upper = true) as temperature_upper,
         ARRAY_AGG(DISTINCT tl.temperature::text ORDER BY tl.temperature::text) FILTER (WHERE tl.is_upper = false) as temperature_values
     FROM model_temperature_levels mtl
-    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE mtl.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND tl.active = true
@@ -344,7 +344,7 @@ model_reasoning_levels_data AS (
             END
         ) as reasoning_levels
     FROM model_reasoning_levels mrl
-    JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id
+    JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id
     WHERE mrl.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND rl.active = true
@@ -368,7 +368,7 @@ model_voices_data AS (
         v.id as voice_id,
         v.voice::text as voice
     FROM model_voices mv
-    JOIN voices v ON v.id = mv.voice_id
+    JOIN voices_resource v ON v.id = mv.voice_id
     WHERE mv.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND v.active = true
@@ -389,11 +389,11 @@ providers_data AS (
     SELECT DISTINCT
         p.id as provider_id,
         n.name as name,
-        COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description
-    FROM providers p
-    JOIN provider pr ON pr.id = p.provider_id
+        COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description
+    FROM providers_resource p
+    JOIN provider_artifact pr ON pr.id = p.provider_id
     JOIN provider_names pn ON pn.provider_id = pr.id
-    JOIN names n ON n.id = pn.name_id
+    JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true
     ORDER BY n.name
 ),
@@ -405,8 +405,8 @@ provider_resource_data AS (
             ELSE (
                 SELECT p.id 
                 FROM model_providers mp 
-                JOIN providers p ON p.id = mp.providers_id 
-                JOIN models m_res ON m_res.id = mp.model_id 
+                JOIN providers_resource p ON p.id = mp.providers_id 
+                JOIN models_resource m_res ON m_res.id = mp.model_id 
                 WHERE m_res.model_id = (SELECT model_id FROM params) 
                 LIMIT 1
             )
@@ -417,15 +417,15 @@ provider_resource_data AS (
                 SELECT ROW(
                     p.id,
                     n.name,
-                    COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
+                    COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''),
                     false
                 )::types.q_get_model_v4_provider_resource
                 FROM model_providers mp 
-                JOIN providers p ON p.id = mp.providers_id 
-                JOIN provider pr ON pr.id = p.provider_id
+                JOIN providers_resource p ON p.id = mp.providers_id 
+                JOIN provider_artifact pr ON pr.id = p.provider_id
                 JOIN provider_names pn ON pn.provider_id = pr.id
-                JOIN names n ON n.id = pn.name_id
-                JOIN models m_res ON m_res.id = mp.model_id 
+                JOIN names_resource n ON n.id = pn.name_id
+                JOIN models_resource m_res ON m_res.id = mp.model_id 
                 WHERE m_res.model_id = (SELECT model_id FROM params) 
                 LIMIT 1
             )
@@ -445,26 +445,26 @@ model_all_keys AS (
     -- For each department that has this model, get keys from their settings
     SELECT DISTINCT
         spk.key_id,
-        (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
+        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
         k.key,
-        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         ARRAY_AGG(DISTINCT ds.department_id) FILTER (WHERE ds.department_id IS NOT NULL) as department_ids
-    FROM model m
-    JOIN models m_res ON m_res.model_id = m.id
+    FROM model_artifact m
+    JOIN models_resource m_res ON m_res.model_id = m.id
     LEFT JOIN model_providers mp ON mp.model_id = m_res.id
-    LEFT JOIN providers p ON p.id = mp.providers_id
-    LEFT JOIN provider pr ON pr.id = p.provider_id
+    LEFT JOIN providers_resource p ON p.id = mp.providers_id
+    LEFT JOIN provider_artifact pr ON pr.id = p.provider_id
     LEFT JOIN provider_names pn ON pn.provider_id = pr.id
-    LEFT JOIN names n_prov ON n_prov.id = pn.name_id
+    LEFT JOIN names_resource n_prov ON n_prov.id = pn.name_id
     JOIN setting_provider_keys spk ON spk.providers_id = p.id AND spk.active = true
-    JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
-    JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND ds.active = true
-    GROUP BY spk.key_id, (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1), k.key, COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''), EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
+    GROUP BY spk.key_id, (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1), k.key, COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''), EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
     
     UNION ALL
     
@@ -472,22 +472,22 @@ model_all_keys AS (
     -- Works for both new and detail modes
     SELECT DISTINCT
         k.id as key_id,
-        (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
+        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
         k.key,
-        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
         NULL::uuid[] as department_ids
-    FROM key k
+    FROM key_artifact k
     CROSS JOIN resolve_profile_id rpi
     WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND (
         (SELECT model_id FROM params) IS NULL
         OR NOT EXISTS (
             -- Exclude keys already included via setting_provider_keys for this model's provider
-            SELECT 1 FROM model m2
-            JOIN models m_res2 ON m_res2.model_id = m2.id
+            SELECT 1 FROM model_artifact m2
+            JOIN models_resource m_res2 ON m_res2.model_id = m2.id
             JOIN model_providers mp2 ON mp2.model_id = m_res2.id
-            JOIN providers p2 ON p2.id = mp2.providers_id
+            JOIN providers_resource p2 ON p2.id = mp2.providers_id
             JOIN setting_provider_keys spk2 ON spk2.providers_id = p2.id AND spk2.key_id = k.id AND spk2.active = true
             WHERE m2.id = (SELECT model_id FROM params)
         )
@@ -502,14 +502,14 @@ model_all_keys AS (
         -- Include keys with settings links that match user's departments
         EXISTS (
             SELECT 1 FROM setting_provider_keys spk4
-            JOIN setting s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s4.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+            JOIN setting_artifact s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s4.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
             JOIN department_settings ds4 ON ds4.settings_id = s4.id AND ds4.active = true
             JOIN user_departments ud ON ud.department_id = ds4.department_id
             WHERE spk4.key_id = k.id AND spk4.active = true
         )
         OR
         -- Superadmin can see all keys
-        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profile p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND p.role = 'superadmin'::profile_role)
+        EXISTS (SELECT 1 FROM resolve_profile_id rpi2 JOIN profile_artifact p ON p.id = rpi2.resolved_profile_id WHERE rpi2.resolved_profile_id = rpi.resolved_profile_id AND p.role = 'superadmin'::profile_role)
     )
 ),
 keys_data AS (
@@ -542,7 +542,7 @@ all_voices_data AS (
     SELECT 
         id as voice_id,
         voice::text as voice
-    FROM voices
+    FROM voices_resource
     WHERE active = true
     ORDER BY voice::text
 ),
@@ -558,7 +558,7 @@ voice_resources_data AS (
             ORDER BY v.voice::text
         ) as voice_resources
     FROM model_voices mv
-    JOIN voices v ON v.id = mv.voice_id
+    JOIN voices_resource v ON v.id = mv.voice_id
     WHERE mv.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND v.active = true
@@ -570,7 +570,7 @@ voice_ids_data AS (
             ELSE ARRAY_AGG(v.id ORDER BY v.voice::text)::uuid[]
         END as voice_ids
     FROM model_voices mv
-    JOIN voices v ON v.id = mv.voice_id
+    JOIN voices_resource v ON v.id = mv.voice_id
     WHERE mv.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND v.active = true
@@ -594,25 +594,25 @@ tools_existence_check AS (
     SELECT 
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'providers'::resources 
               AND t.active = true
         ) as providers_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'keys'::resources 
               AND t.active = true
         ) as keys_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'departments'::resources 
               AND t.active = true
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'voices'::resources 
               AND t.active = true
         ) as voices_has_tools

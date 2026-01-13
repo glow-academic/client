@@ -31,8 +31,8 @@ AS $$
         sf.id,
         sf.name::text as name,
         sf.field_type::text as field_type
-    FROM schema_fields sf
-    JOIN schemas s ON s.id = sf.schema_id
+    FROM schema_fields_resource sf
+    JOIN schemas_resource s ON s.id = sf.schema_id
     JOIN schema_templates st ON st.schema_id = s.id
     WHERE st.template_id = template_id
     ORDER BY sf.position;

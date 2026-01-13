@@ -40,7 +40,7 @@ WITH questions_data AS (
 create_questions AS (
     -- Create questions (or get existing if they match exactly)
     -- Note: time column is required, default to 0 (will be updated via save_question_timestamps)
-    INSERT INTO questions (question_text, allow_multiple, time, active, created_at, updated_at)
+    INSERT INTO questions_resource (question_text, allow_multiple, time, active, created_at, updated_at)
     SELECT DISTINCT
         qd.question_text,
         qd.allow_multiple,
@@ -59,7 +59,7 @@ get_existing_questions AS (
         q.id as question_id,
         q.question_text,
         q.allow_multiple
-    FROM questions q
+    FROM questions_resource q
     JOIN questions_data qd ON q.question_text = qd.question_text 
         AND q.allow_multiple = qd.allow_multiple
     WHERE q.active = true
@@ -70,7 +70,7 @@ all_questions AS (
     SELECT * FROM get_existing_questions
 ),
 options_data AS (
-    -- Extract options from questions (only for choice questions)
+    -- Extract options FROM questions_resource (only for choice questions)
     SELECT 
         aq.question_id,
         opt->>'option_text' as option_text,
@@ -84,7 +84,7 @@ options_data AS (
 create_options AS (
     -- Create options with is_correct (reusable across questions)
     -- If same option_text appears with different is_correct values, prefer true
-    INSERT INTO options (option_text, is_correct, active, created_at, updated_at)
+    INSERT INTO options_resource (option_text, is_correct, active, created_at, updated_at)
     SELECT DISTINCT ON (od.option_text)
         od.option_text,
         BOOL_OR(od.is_correct) as is_correct,  -- If any instance is true, set to true
@@ -102,7 +102,7 @@ get_existing_options AS (
     SELECT 
         o.id as option_id,
         o.option_text
-    FROM options o
+    FROM options_resource o
     JOIN options_data od ON o.option_text = od.option_text
     WHERE o.active = true
 ),

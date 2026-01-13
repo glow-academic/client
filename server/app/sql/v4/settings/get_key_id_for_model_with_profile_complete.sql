@@ -28,7 +28,7 @@ STABLE
 AS $$
 WITH default_settings AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -46,7 +46,7 @@ profile_primary_department AS (
 ),
 dept_specific_settings AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
@@ -58,18 +58,18 @@ active_settings AS (
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 )
 SELECT spk.key_id::text as key_id
-FROM model m
+FROM model_artifact m
 LEFT JOIN model_providers mp ON mp.model_id = m.id
-LEFT JOIN providers p_prov ON p_prov.id = mp.providers_id
+LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
 CROSS JOIN active_settings act_s
 JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
     AND spk.settings_id = act_s.settings_id 
     AND spk.active = true
-JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 WHERE m.id = model_id
 LIMIT 1
 $$;

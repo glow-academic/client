@@ -83,13 +83,13 @@ latest_run AS (
     SELECT r.id
     FROM selected_group sg
     JOIN group_runs gr ON gr.group_id = sg.group_id
-    JOIN run r ON r.id = gr.run_id
+    JOIN run_artifact r ON r.id = gr.run_id
     ORDER BY r.created_at DESC
     LIMIT 1
 ),
 create_run_if_needed AS (
     -- Create a new run if none exists
-    INSERT INTO run (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, p.key_id, p.agent_id
     FROM params p
     WHERE NOT EXISTS (SELECT 1 FROM latest_run)

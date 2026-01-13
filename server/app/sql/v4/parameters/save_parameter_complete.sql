@@ -59,16 +59,16 @@ BEGIN
     -- Determine if create or update
     is_create := (input_parameter_id IS NULL);
     
-    -- Create or update parameter first (outside CTE)
+    -- Create or UPDATE parameter_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO parameter (created_at, updated_at)
+        INSERT INTO parameter_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_parameter_id;
     ELSE
         -- UPDATE path
         v_parameter_id := input_parameter_id;
-        UPDATE parameter
+        UPDATE parameter_artifact
         SET updated_at = NOW()
         WHERE id = v_parameter_id;
         
@@ -102,9 +102,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
@@ -146,7 +146,7 @@ BEGIN
     ),
     -- Insert/update name in names table
     name_resource AS (
-        INSERT INTO names (name, created_at, updated_at)
+        INSERT INTO names_resource (name, created_at, updated_at)
         SELECT name, NOW(), NOW()
         FROM params
         WHERE name IS NOT NULL AND name != ''
@@ -155,7 +155,7 @@ BEGIN
     ),
     -- Insert/update description in descriptions table
     description_resource AS (
-        INSERT INTO descriptions (description, created_at, updated_at)
+        INSERT INTO descriptions_resource (description, created_at, updated_at)
         SELECT description, NOW(), NOW()
         FROM params
         WHERE description IS NOT NULL AND description != ''
@@ -221,7 +221,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'active'
           AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'active'::type_parameter_flags)
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
@@ -247,7 +247,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'simulation_parameter'
           AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'simulation_parameter'::type_parameter_flags)
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
@@ -273,7 +273,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'document_parameter'
           AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'document_parameter'::type_parameter_flags)
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
@@ -299,7 +299,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'persona_parameter'
           AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'persona_parameter'::type_parameter_flags)
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
@@ -325,7 +325,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'scenario_parameter'
           AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'scenario_parameter'::type_parameter_flags)
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
@@ -351,7 +351,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'video_parameter'
           AND NOT EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = x.parameter_id AND pf.type = 'video_parameter'::type_parameter_flags)
         ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 

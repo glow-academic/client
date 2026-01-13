@@ -57,14 +57,14 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 prompt_name_lookup AS (
     SELECT name as prompt_name 
     FROM params x
-    JOIN prompts p ON p.id = x.prompt_id
+    JOIN prompts_resource p ON p.id = x.prompt_id
 ),
 prompt_info AS (
     -- Check if this prompt is active (default or department-specific)
@@ -87,7 +87,7 @@ latest_default_prompt AS (
     -- Get the latest default prompt (by updated_at) for fallback
     SELECT prompt_id::text
     FROM agent_prompts ap
-    JOIN prompts pr ON pr.id = ap.prompt_id
+    JOIN prompts_resource pr ON pr.id = ap.prompt_id
     WHERE ap.agent_id = (SELECT agent_id FROM params)
     AND ap.prompt_id != (SELECT prompt_id FROM params)
     ORDER BY pr.updated_at DESC
@@ -151,7 +151,7 @@ check_other_links AS (
 ),
 deleted_prompt AS (
     -- Delete prompt record if no other links exist
-    DELETE FROM prompts
+    DELETE FROM prompts_resource
     WHERE id = (SELECT prompt_id FROM params)
     AND (SELECT can_delete_prompt FROM check_other_links) = true
     RETURNING id

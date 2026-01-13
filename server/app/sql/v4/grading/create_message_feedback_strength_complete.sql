@@ -35,7 +35,7 @@ DECLARE
     strength_id_val uuid;
 BEGIN
     -- Create strength record
-    INSERT INTO strengths 
+    INSERT INTO strengths_resource 
     (name, description, tool_call_id, created_at)
     VALUES (name, description, tool_call_id, NOW())
     RETURNING id INTO strength_id_val;

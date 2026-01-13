@@ -96,9 +96,9 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT role FROM params x JOIN profile p ON p.id = x.profile_id), 'guest') as role,
+        COALESCE((SELECT role FROM params x JOIN profile_artifact p ON p.id = x.profile_id), 'guest') as role,
         COALESCE(
-            (SELECT (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) FROM params x JOIN profile p ON p.id = x.profile_id),
+            (SELECT (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) FROM params x JOIN profile_artifact p ON p.id = x.profile_id),
             'System'
         ) as actor_name
     FROM params
@@ -111,18 +111,18 @@ user_departments AS (
 profile_cohorts AS (
     SELECT
         cp.profile_id,
-        ARRAY_AGG(cp.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
+        ARRAY_AGG(cp.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
     FROM cohort_profiles cp
-    JOIN cohort c ON c.id = cp.cohort_id
+    JOIN cohort_artifact c ON c.id = cp.cohort_id
     WHERE cp.active = true
     GROUP BY cp.profile_id
 ),
 profile_departments_agg AS (
     SELECT
         pd.profile_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as department_ids
+        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)) as department_ids
     FROM profile_departments pd
-    JOIN departments d ON d.id = pd.department_id
+    JOIN departments_resource d ON d.id = pd.department_id
     WHERE pd.active = true
     GROUP BY pd.profile_id
 ),
@@ -130,7 +130,7 @@ recent_runs AS (
     SELECT
         rp.profile_id,
         COUNT(*) as run_count
-    FROM run r
+    FROM run_artifact r
     JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     WHERE r.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY rp.profile_id
@@ -145,35 +145,35 @@ profile_total_runs AS (
 ),
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
-    FROM cohort c
+    FROM cohort_artifact c
     WHERE EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
 ),
 cohorts_data AS (
     SELECT 
         c.id as cohort_id,
-        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
-    FROM cohort c
+        (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description
+    FROM cohort_artifact c
     WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
 ),
 departments_data AS (
     SELECT 
         d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM department d
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
+    FROM department_artifact d
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 staff_data AS (
     SELECT DISTINCT ON (p.id)
         p.id as profile_id,
-        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
-        (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
+        (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
-        (SELECT e2.email FROM profile_emails pe2 JOIN emails e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
+        (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as name,
         p.role,
-        COALESCE(SUBSTRING((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) FROM 1 FOR 1), '') || COALESCE(SUBSTRING((SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) FROM 1 FOR 1), '') as initials,
+        COALESCE(SUBSTRING((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) FROM 1 FOR 1), '') || COALESCE(SUBSTRING((SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) FROM 1 FOR 1), '') as initials,
         EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         pa.last_active as last_active,
         COALESCE(pc.cohort_ids, ARRAY[]::text[]) as cohort_ids,
@@ -186,16 +186,16 @@ staff_data AS (
         false as can_delete,
         false as can_remove
     FROM params x
-    JOIN profiles p ON true
+    JOIN profiles_resource p ON true
     JOIN profile_departments pd ON pd.profile_id = p.id AND pd.active = true
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
-    LEFT JOIN emails e ON pe.email_id = e.id
+    LEFT JOIN emails_resource e ON pe.email_id = e.id
     LEFT JOIN profile_cohorts pc ON pc.profile_id = p.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
     LEFT JOIN recent_runs rr ON rr.profile_id = p.id
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active
         FROM profile_activity
@@ -215,11 +215,11 @@ staff_data AS (
     AND (
         x.query IS NULL
         OR (
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) ILIKE '%' || x.query || '%'
-            OR (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) ILIKE '%' || x.query || '%'
-            OR EXISTS (SELECT 1 FROM profile_emails pe_search JOIN emails e_search ON pe_search.email_id = e_search.id WHERE pe_search.profile_id = p.id AND pe_search.active = true AND e_search.email ILIKE '%' || x.query || '%')
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) ILIKE '%' || x.query || '%'
+            OR (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) ILIKE '%' || x.query || '%'
+            OR EXISTS (SELECT 1 FROM profile_emails pe_search JOIN emails_resource e_search ON pe_search.email_id = e_search.id WHERE pe_search.profile_id = p.id AND pe_search.active = true AND e_search.email ILIKE '%' || x.query || '%')
             OR p.role::text ILIKE '%' || x.query || '%'
-            OR (COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) ILIKE '%' || x.query || '%'
+            OR (COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) ILIKE '%' || x.query || '%'
         )
     )
     -- Cohort exclusion filter (if cohort_id provided)
@@ -232,10 +232,10 @@ staff_data AS (
         array_length(x.dept_filter, 1) IS NULL
         OR EXISTS (SELECT 1 FROM profile_departments pd_filter WHERE pd_filter.profile_id = p.id AND pd_filter.department_id = ANY(x.dept_filter) AND pd_filter.active = true)
     )
-    GROUP BY p.id, (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), p.role, EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE),
+    GROUP BY p.id, (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), p.role, EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE),
              pa.last_active, rl.requests_per_day,
              pc.cohort_ids, pda.department_ids, ptr.total_requests, rr.run_count
-    ORDER BY p.id, (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1)
+    ORDER BY p.id, (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1)
     LIMIT (SELECT limit_count FROM params LIMIT 1)
 )
 SELECT 

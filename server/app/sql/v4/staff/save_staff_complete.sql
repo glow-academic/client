@@ -45,7 +45,7 @@ BEGIN
     -- Determine if create or update
     is_create := (input_staff_id IS NULL);
     
-    -- Create or update profile first (outside CTE)
+    -- Create or UPDATE profile_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path - create a group first, then create profile
         -- Create a new group for this staff member
@@ -54,32 +54,32 @@ BEGIN
         RETURNING id INTO v_group_id;
         
         -- Create profile with group_id
-        INSERT INTO profile (created_at, updated_at, role, group_id)
+        INSERT INTO profile_artifact (created_at, updated_at, role, group_id)
         VALUES (NOW(), NOW(), COALESCE(role::profile_role, 'instructional'::profile_role), v_group_id)
         RETURNING id INTO v_staff_id;
     ELSE
         -- UPDATE path
         v_staff_id := input_staff_id;
-        UPDATE profile
+        UPDATE profile_artifact
         SET updated_at = NOW(),
-            role = COALESCE(role::profile_role, profile.role)
+            role = COALESCE(role::profile_role, profile_artifact.role)
         WHERE id = v_staff_id;
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF first_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = first_name_id) THEN
+    IF first_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = first_name_id) THEN
         RAISE EXCEPTION 'First name resource not found: %', first_name_id;
     END IF;
     
-    IF last_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = last_name_id) THEN
+    IF last_name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = last_name_id) THEN
         RAISE EXCEPTION 'Last name resource not found: %', last_name_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
     
-    IF request_limit_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM request_limits WHERE id = request_limit_id) THEN
+    IF request_limit_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM request_limits_resource WHERE id = request_limit_id) THEN
         RAISE EXCEPTION 'Request limit resource not found: %', request_limit_id;
     END IF;
     
@@ -121,9 +121,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
@@ -189,7 +189,7 @@ BEGIN
         WHERE x.last_name_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT profile_names_pkey DO UPDATE SET updated_at = NOW()
     ),
-    -- Insert or update profile active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
+    -- Insert or UPDATE profile_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_profile_active_flag AS (
         INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
         SELECT 
@@ -200,7 +200,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'active'
         ON CONFLICT ON CONSTRAINT profile_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, profile_flags.flag_id),

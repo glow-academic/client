@@ -1,6 +1,6 @@
 -- Create eval grade record
 -- Converted to PostgreSQL function
--- Note: eval_id removed FROM grade table - derive from test_runs → tests → attempt_tests → eval_attempts → evals
+-- Note: eval_id removed FROM grade_artifact table - derive from test_runs → tests → attempt_tests → eval_attempts → evals
 -- Drop function if exists (handles signature variations)
 DO $$
 DECLARE
@@ -40,9 +40,9 @@ DECLARE
     v_end_reason text;
 BEGIN
     -- Get chat title if run is linked to a chat
-    SELECT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) INTO v_chat_title
+    SELECT (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) INTO v_chat_title
     FROM chat_runs cr
-    JOIN chat c ON c.id = cr.chat_id
+    JOIN chat_artifact c ON c.id = cr.chat_id
     WHERE cr.run_id = run_id
     LIMIT 1;
     
@@ -54,25 +54,25 @@ BEGIN
     END;
     
     -- Create conversation
-    INSERT INTO conversations (end_reason, created_at, updated_at)
+    INSERT INTO conversations_resource (end_reason, created_at, updated_at)
     VALUES (v_end_reason, NOW(), NOW())
     RETURNING id INTO v_conversation_id;
     
     -- Create time record if time_taken is provided
     IF time_taken IS NOT NULL AND time_taken > 0 THEN
-        INSERT INTO times (time_taken, active, created_at, updated_at)
+        INSERT INTO times_resource (time_taken, active, created_at, updated_at)
         VALUES (time_taken::integer, TRUE, NOW(), NOW())
         ON CONFLICT DO NOTHING
         RETURNING id INTO v_time_id;
         
         -- Get existing time if conflict occurred
         IF v_time_id IS NULL THEN
-            SELECT id INTO v_time_id FROM times WHERE time_taken = time_taken::integer AND active = TRUE LIMIT 1;
+            SELECT id INTO v_time_id FROM times_resource WHERE time_taken = time_taken::integer AND active = TRUE LIMIT 1;
         END IF;
     END IF;
     
-    -- Create grade (time_taken removed FROM grade table)
-    INSERT INTO grade (run_id, rubric_grade_agent_id, description, passed, score, created_at)
+    -- Create grade (time_taken removed FROM grade_artifact table)
+    INSERT INTO grade_artifact (run_id, rubric_grade_agent_id, description, passed, score, created_at)
     VALUES (run_id, rubric_grade_agent_id, description, passed, score::integer, NOW())
     RETURNING id INTO v_grade_id;
     

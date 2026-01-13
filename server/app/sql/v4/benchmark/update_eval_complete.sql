@@ -1,4 +1,4 @@
--- Update eval with optional runs and departments changes
+-- UPDATE eval_artifact with optional runs and departments changes
 -- Converted to function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -53,9 +53,9 @@ WITH params AS (
 user_profile AS (
     SELECT
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     SELECT COALESCE(ARRAY_AGG(department_id::text), ARRAY[]::text[]) as department_ids
@@ -79,7 +79,7 @@ validate_update_permissions AS (
 ),
 get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT p.name, NOW(), NOW()
     FROM params p
     WHERE p.name IS NOT NULL AND p.name != ''
@@ -88,7 +88,7 @@ get_or_create_name AS (
 ),
 get_or_create_description AS (
     -- Get or create description in descriptions table
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT p.description, NOW(), NOW()
     FROM params p
     WHERE p.description IS NOT NULL AND p.description != ''
@@ -98,30 +98,30 @@ get_or_create_description AS (
 get_active_flag AS (
     -- Get the active flag ID
     SELECT id as flag_id
-    FROM flags
+    FROM flags_resource
     WHERE name = 'active'
     LIMIT 1
 ),
 get_dynamic_flag AS (
     -- Get the dynamic flag ID
     SELECT id as flag_id
-    FROM flags
+    FROM flags_resource
     WHERE name = 'dynamic'
     LIMIT 1
 ),
 get_groups_flag AS (
     -- Get the groups flag ID
     SELECT id as flag_id
-    FROM flags
+    FROM flags_resource
     WHERE name = 'groups'
     LIMIT 1
 ),
 update_eval AS (
-    UPDATE eval SET
+    UPDATE eval_artifact SET
         updated_at = NOW()
     FROM params p
-    WHERE eval.id = p.eval_id
-    RETURNING eval.id as eval_id
+    WHERE eval_artifact.id = p.eval_id
+    RETURNING eval_artifact.id as eval_id
 ),
 update_eval_groups_flag AS (
     -- Update groups flag
@@ -133,7 +133,7 @@ update_eval_groups_flag AS (
     ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()
 ),
 update_eval_name AS (
-    -- Update eval name (delete old, insert new)
+    -- UPDATE eval_artifact name (delete old, insert new)
     DELETE FROM eval_names
     WHERE eval_id = (SELECT eval_id FROM update_eval LIMIT 1)
     RETURNING eval_id
@@ -147,7 +147,7 @@ link_eval_name AS (
     WHERE gocn.name_id IS NOT NULL
 ),
 update_eval_description AS (
-    -- Update eval description (delete old, insert new if provided)
+    -- UPDATE eval_artifact description (delete old, insert new if provided)
     DELETE FROM eval_descriptions
     WHERE eval_id = (SELECT eval_id FROM update_eval LIMIT 1)
     RETURNING eval_id
@@ -180,7 +180,7 @@ update_eval_dynamic_flag AS (
 ),
 eval_with_name AS (
     -- Get eval_id and name for RETURNING clause
-    SELECT ue.eval_id, COALESCE(gocn.name_value, (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = ue.eval_id LIMIT 1)) as eval_name
+    SELECT ue.eval_id, COALESCE(gocn.name_value, (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = ue.eval_id LIMIT 1)) as eval_name
     FROM update_eval ue
     LEFT JOIN get_or_create_name gocn ON true
 ),

@@ -154,18 +154,18 @@ draft_payload_data AS (
 agent_exists_check AS (
     -- Check if agent exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM agent WHERE id = (SELECT agent_id FROM params)
+        SELECT 1 FROM agent_artifact WHERE id = (SELECT agent_id FROM params)
     )::boolean as agent_exists
 ),
 agent_info AS (
     SELECT 
         a.id::text as agent_id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) AS name,
-        (SELECT d.description FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) AS description,
-        (SELECT m.id::text FROM agent_models am JOIN models m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) AS model_id,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) AS name,
+        (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) AS description,
+        (SELECT m.id::text FROM agent_models am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) AS model_id,
         EXISTS (
             SELECT 1 FROM agent_flags af
-            JOIN flags f ON af.flag_id = f.id
+            JOIN flags_resource f ON af.flag_id = f.id
             WHERE af.agent_id = a.id
               AND f.name = 'active'
               AND af.type = 'active'::type_agent_flags
@@ -173,7 +173,7 @@ agent_info AS (
         ) AS active,
         COALESCE(da.artifact::text, '') as role  -- Derive from domain_artifacts via agent_domains
     FROM params x
-    JOIN agents a ON a.id = x.agent_id
+    JOIN agents_resource a ON a.id = x.agent_id
     LEFT JOIN agent_domains adom ON adom.agent_id = a.id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
 ),
@@ -186,7 +186,7 @@ agent_active_prompt AS (
         pr.updated_at as prompt_updated_at
     FROM params x
     JOIN agent_prompts ap ON ap.agent_id = x.agent_id AND ap.active = true
-    JOIN prompts pr ON pr.id = ap.prompt_id
+    JOIN prompts_resource pr ON pr.id = ap.prompt_id
     LIMIT 1
 ),
 agent_all_prompts AS (
@@ -201,7 +201,7 @@ agent_all_prompts AS (
         pr.updated_at as prompt_updated_at
     FROM params x
     JOIN agent_prompts ap ON ap.agent_id = x.agent_id
-    JOIN prompts pr ON pr.id = ap.prompt_id
+    JOIN prompts_resource pr ON pr.id = ap.prompt_id
     UNION
     -- Also get all prompts from agent_department_prompts (department-specific prompts)
     SELECT DISTINCT
@@ -214,7 +214,7 @@ agent_all_prompts AS (
         pr.updated_at as prompt_updated_at
     FROM params x
     JOIN agent_department_prompts adp ON adp.agent_id = x.agent_id AND adp.active = true
-    JOIN prompts pr ON pr.id = adp.prompt_id
+    JOIN prompts_resource pr ON pr.id = adp.prompt_id
 ),
 prompt_departments_data AS (
     SELECT 
@@ -273,9 +273,9 @@ debug_data AS (
         mrm.model_id::text,
         di.content
     FROM params x
-    JOIN run mr ON mr.agent_id = x.agent_id
+    JOIN run_artifact mr ON mr.agent_id = x.agent_id
     JOIN run_debug_info rdi ON rdi.run_id = mr.id
-    JOIN debug_info di ON di.id = rdi.debug_info_id
+    JOIN debug_info_resource di ON di.id = rdi.debug_info_id
     JOIN run_models mrm ON mrm.run_id = mr.id
     WHERE mrm.active = true
     ORDER BY di.created_at DESC
@@ -284,10 +284,10 @@ debug_data AS (
 all_models AS (
     SELECT 
         id::text as model_id,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = model.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = model.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = model.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
-    FROM model
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = model_artifact.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = model_artifact.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = model_artifact.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
+    FROM model_artifact
 ),
 model_modalities_data AS (
     SELECT 
@@ -301,17 +301,17 @@ user_profile AS (
     SELECT 
         role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 user_departments AS (
-    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 user_has_agent_access AS (
@@ -322,7 +322,7 @@ user_has_agent_access AS (
         JOIN user_departments ud ON ud.id = ad.department_id::uuid
     ) OR EXISTS(
         SELECT 1 FROM params x
-        JOIN profile p ON p.id = x.profile_id AND p.role = 'superadmin'::profile_role
+        JOIN profile_artifact p ON p.id = x.profile_id AND p.role = 'superadmin'::profile_role
     ) OR (
         -- Default agents (no department links) are accessible to all
         SELECT COUNT(*) FROM params x
@@ -346,7 +346,7 @@ agent_selected_voices AS (
         v.id::text as voice_id,
         v.voice::text as voice
     FROM agent_voices av
-    JOIN voices v ON v.id = av.voice_id
+    JOIN voices_resource v ON v.id = av.voice_id
     WHERE av.active = true AND v.active = true
 ),
 agent_selected_temperature AS (
@@ -355,7 +355,7 @@ agent_selected_temperature AS (
         atl.temperature_level_id::text as selected_temperature_level_id,
         tl.temperature as selected_temperature
     FROM agent_temperature_levels atl
-    JOIN temperature_levels tl ON tl.id = atl.temperature_level_id
+    JOIN temperature_levels_resource tl ON tl.id = atl.temperature_level_id
     WHERE atl.active = true AND tl.active = true
 ),
 agent_selected_reasoning AS (
@@ -364,7 +364,7 @@ agent_selected_reasoning AS (
         arl.reasoning_level_id::text as selected_reasoning_level_id,
         rl.reasoning_level::text as selected_reasoning
     FROM agent_reasoning_levels arl
-    JOIN reasoning_levels rl ON rl.id = arl.reasoning_level_id
+    JOIN reasoning_levels_resource rl ON rl.id = arl.reasoning_level_id
     WHERE arl.active = true AND rl.active = true
 ),
 model_temperature_levels_data_with_ids AS (
@@ -374,7 +374,7 @@ model_temperature_levels_data_with_ids AS (
         tl.temperature::text as temperature_value,
         tl.is_upper::boolean as is_upper
     FROM model_temperature_levels mtl
-    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE tl.active = true
 ),
 model_temperature_levels_bounds AS (
@@ -383,7 +383,7 @@ model_temperature_levels_bounds AS (
         MIN(tl.temperature) FILTER (WHERE tl.is_upper = false)::float as temperature_lower,
         MAX(tl.temperature) FILTER (WHERE tl.is_upper = true)::float as temperature_upper
     FROM model_temperature_levels mtl
-    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE tl.active = true
     GROUP BY mtl.model_id
 ),
@@ -393,7 +393,7 @@ model_reasoning_levels_data_with_ids AS (
         rl.id::text as reasoning_level_id,
         rl.reasoning_level::text as reasoning_level_value
     FROM model_reasoning_levels mrl
-    JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id
+    JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id
     WHERE rl.active = true
 ),
 model_voices_data_flat AS (
@@ -402,7 +402,7 @@ model_voices_data_flat AS (
         v.id::text as voice_id,
         v.voice::text as voice_value
     FROM model_voices mv
-    JOIN voices v ON v.id = mv.voice_id
+    JOIN voices_resource v ON v.id = mv.voice_id
     WHERE v.active = true
 ),
 models_agg AS (

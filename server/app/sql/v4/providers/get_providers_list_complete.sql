@@ -76,9 +76,9 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 provider_data AS (
     -- Providers is now an enum, not a table - return empty results
@@ -109,7 +109,7 @@ providers_agg AS (
     FROM provider_data pd
 ),
 provider_options_agg AS (
-    -- Get provider options from providers resource table
+    -- Get provider options FROM providers_resource resource table
     SELECT 
         COALESCE(
             ARRAY_AGG(
@@ -118,10 +118,10 @@ provider_options_agg AS (
             ),
             '{}'::types.q_list_providers_v4_provider_option[]
         ) as provider_options
-    FROM providers p
-    JOIN provider pr ON pr.id = p.provider_id
+    FROM providers_resource p
+    JOIN provider_artifact pr ON pr.id = p.provider_id
     JOIN provider_names pn ON pn.provider_id = pr.id
-    JOIN names n ON n.id = pn.name_id
+    JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true
 )
 SELECT 

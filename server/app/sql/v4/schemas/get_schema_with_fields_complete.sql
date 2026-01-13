@@ -39,9 +39,9 @@ SELECT
     sf.required,
     sf."position",
     sfi.item_schema_id
-FROM schemas s
-JOIN schema_fields sf ON sf.schema_id = s.id
-LEFT JOIN schema_field_items sfi ON sfi.schema_field_id = sf.id
+FROM schemas_resource s
+JOIN schema_fields_resource sf ON sf.schema_id = s.id
+LEFT JOIN schema_field_items_resource sfi ON sfi.schema_field_id = sf.id
 WHERE s.id = $1
 ORDER BY sf."position", sf.name
 $$;

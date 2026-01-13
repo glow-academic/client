@@ -1,7 +1,7 @@
 -- Insert message feedback highlight items
 -- Converted to PostgreSQL function pattern with composite types (no JSONB)
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
--- Note: message_feedback_id now references strengths(id)
+-- Note: message_feedback_id now REFERENCES strengths_resource(id)
 -- 1) Drop function first (breaks dependency on types)
 DO $$
 DECLARE

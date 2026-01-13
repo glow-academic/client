@@ -78,7 +78,7 @@ developer_instruction_templates_data AS (
         ) as templates
     FROM selected_agent sa
     JOIN agent_instructions ai ON ai.agent_id = sa.agent_id
-    JOIN instructions i ON i.id = ai.instruction_id
+    JOIN instructions_resource i ON i.id = ai.instruction_id
     WHERE i.active = true
 ),
 -- Fetch resources with whitelist: names
@@ -94,7 +94,7 @@ names_resources AS (
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN names n ON n.id = p.name_id
+    JOIN names_resource n ON n.id = p.name_id
     WHERE p.name_id IS NOT NULL
 ),
 -- Fetch resources with whitelist: descriptions
@@ -110,7 +110,7 @@ descriptions_resources AS (
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN descriptions d ON d.id = p.description_id
+    JOIN descriptions_resource d ON d.id = p.description_id
     WHERE p.description_id IS NOT NULL
 ),
 -- Fetch resources with whitelist: colors
@@ -126,7 +126,7 @@ colors_resources AS (
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN colors c ON c.id = p.color_id
+    JOIN colors_resource c ON c.id = p.color_id
     WHERE p.color_id IS NOT NULL
 ),
 -- Fetch resources with whitelist: icons
@@ -142,7 +142,7 @@ icons_resources AS (
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN icons i ON i.id = p.icon_id
+    JOIN icons_resource i ON i.id = p.icon_id
     WHERE p.icon_id IS NOT NULL
 ),
 -- Fetch resources with whitelist: instructions
@@ -158,7 +158,7 @@ instructions_resources AS (
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN instructions inst ON inst.id = p.instructions_id
+    JOIN instructions_resource inst ON inst.id = p.instructions_id
     WHERE p.instructions_id IS NOT NULL
 ),
 -- Fetch resources with whitelist: flags
@@ -174,7 +174,7 @@ flags_resources AS (
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN flags f ON f.id = p.active_flag_id
+    JOIN flags_resource f ON f.id = p.active_flag_id
     WHERE p.active_flag_id IS NOT NULL
 ),
 -- Fetch resources with whitelist: departments
@@ -184,14 +184,14 @@ departments_resources AS (
             jsonb_agg(
                 jsonb_build_object(
                     'id', d.id::text,
-                    'name', (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
-                    'description', (SELECT desc_data.description FROM department_descriptions dd JOIN descriptions desc_data ON dd.description_id = desc_data.id WHERE dd.department_id = d.id LIMIT 1)
+                    'name', (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
+                    'description', (SELECT desc_data.description FROM department_descriptions dd JOIN descriptions_resource desc_data ON dd.description_id = desc_data.id WHERE dd.department_id = d.id LIMIT 1)
                 )
             ),
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN departments d ON d.id = ANY(p.department_ids)
+    JOIN departments_resource d ON d.id = ANY(p.department_ids)
     WHERE p.department_ids IS NOT NULL
 ),
 -- Fetch resources with whitelist: fields
@@ -201,14 +201,14 @@ fields_resources AS (
             jsonb_agg(
                 jsonb_build_object(
                     'id', f.id::text,
-                    'name', (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-                    'description', (SELECT desc_data.description FROM field_descriptions fd JOIN descriptions desc_data ON fd.description_id = desc_data.id WHERE fd.field_id = f.id LIMIT 1)
+                    'name', (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+                    'description', (SELECT desc_data.description FROM field_descriptions fd JOIN descriptions_resource desc_data ON fd.description_id = desc_data.id WHERE fd.field_id = f.id LIMIT 1)
                 )
             ),
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN fields f ON f.id = ANY(p.field_ids)
+    JOIN fields_resource f ON f.id = ANY(p.field_ids)
     WHERE p.field_ids IS NOT NULL
 ),
 -- Fetch resources with whitelist: examples
@@ -224,7 +224,7 @@ examples_resources AS (
             '[]'::jsonb
         ) as resources
     FROM params p
-    JOIN examples e ON e.id = ANY(p.example_ids)
+    JOIN examples_resource e ON e.id = ANY(p.example_ids)
     WHERE p.example_ids IS NOT NULL
 ),
 -- Combine all resources into single JSONB object

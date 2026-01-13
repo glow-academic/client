@@ -28,7 +28,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT id, name, field_type, template
-    FROM schema_fields
-    WHERE schema_fields.schema_id = $1
+    FROM schema_fields_resource
+    WHERE schema_fields_resource.schema_id = $1
     ORDER BY position
 $$;

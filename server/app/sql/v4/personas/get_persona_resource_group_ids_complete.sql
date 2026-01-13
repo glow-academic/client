@@ -44,15 +44,15 @@ names_group_ids AS (
     SELECT 
         'names'::text as resource_type,
         COALESCE(
-            (SELECT n.id FROM draft_names dn JOIN names n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT n.id FROM draft_names dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pn.name_id FROM persona_names pn WHERE pn.persona_id = (SELECT persona_id FROM params) LIMIT 1)
         ) as resource_id,
         gr.group_id
     FROM params x
     LEFT JOIN draft_names dn ON dn.draft_id = x.draft_id
-    LEFT JOIN names n_draft ON n_draft.id = dn.names_id
+    LEFT JOIN names_resource n_draft ON n_draft.id = dn.names_id
     LEFT JOIN persona_names pn ON pn.persona_id = x.persona_id
-    LEFT JOIN names n_persona ON n_persona.id = pn.name_id
+    LEFT JOIN names_resource n_persona ON n_persona.id = pn.name_id
     LEFT JOIN calls c ON c.id = COALESCE(n_draft.call_id, n_persona.call_id)
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -71,9 +71,9 @@ descriptions_group_ids AS (
         gr.group_id
     FROM params x
     LEFT JOIN draft_descriptions dd ON dd.draft_id = x.draft_id
-    LEFT JOIN descriptions d_draft ON d_draft.id = dd.descriptions_id
+    LEFT JOIN descriptions_resource d_draft ON d_draft.id = dd.descriptions_id
     LEFT JOIN persona_descriptions pd ON pd.persona_id = x.persona_id
-    LEFT JOIN descriptions d_persona ON d_persona.id = pd.description_id
+    LEFT JOIN descriptions_resource d_persona ON d_persona.id = pd.description_id
     LEFT JOIN calls c ON c.id = COALESCE(d_draft.call_id, d_persona.call_id)
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -92,9 +92,9 @@ colors_group_ids AS (
         gr.group_id
     FROM params x
     LEFT JOIN draft_colors dc ON dc.draft_id = x.draft_id
-    LEFT JOIN colors c_draft ON c_draft.id = dc.colors_id
+    LEFT JOIN colors_resource c_draft ON c_draft.id = dc.colors_id
     LEFT JOIN persona_colors pc ON pc.persona_id = x.persona_id
-    LEFT JOIN colors c_persona ON c_persona.id = pc.color_id
+    LEFT JOIN colors_resource c_persona ON c_persona.id = pc.color_id
     LEFT JOIN calls c ON c.id = COALESCE(c_draft.call_id, c_persona.call_id)
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -113,9 +113,9 @@ icons_group_ids AS (
         gr.group_id
     FROM params x
     LEFT JOIN draft_icons di ON di.draft_id = x.draft_id
-    LEFT JOIN icons i_draft ON i_draft.id = di.icons_id
+    LEFT JOIN icons_resource i_draft ON i_draft.id = di.icons_id
     LEFT JOIN persona_icons pi ON pi.persona_id = x.persona_id
-    LEFT JOIN icons i_persona ON i_persona.id = pi.icon_id
+    LEFT JOIN icons_resource i_persona ON i_persona.id = pi.icon_id
     LEFT JOIN calls c ON c.id = COALESCE(i_draft.call_id, i_persona.call_id)
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -134,9 +134,9 @@ instructions_group_ids AS (
         gr.group_id
     FROM params x
     LEFT JOIN draft_instructions dinst ON dinst.draft_id = x.draft_id
-    LEFT JOIN instructions inst_draft ON inst_draft.id = dinst.instructions_id
+    LEFT JOIN instructions_resource inst_draft ON inst_draft.id = dinst.instructions_id
     LEFT JOIN persona_instructions pinst ON pinst.persona_id = x.persona_id
-    LEFT JOIN instructions inst_persona ON inst_persona.id = pinst.instruction_id
+    LEFT JOIN instructions_resource inst_persona ON inst_persona.id = pinst.instruction_id
     LEFT JOIN calls c ON c.id = COALESCE(inst_draft.call_id, inst_persona.call_id)
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -155,10 +155,10 @@ flags_group_ids AS (
         gr.group_id
     FROM params x
     LEFT JOIN draft_flags df ON df.draft_id = x.draft_id
-    LEFT JOIN flags f_draft ON f_draft.id = df.flags_id
+    LEFT JOIN flags_resource f_draft ON f_draft.id = df.flags_id
     LEFT JOIN persona_flags pf ON pf.persona_id = x.persona_id
-    LEFT JOIN flags f_persona ON f_persona.id = pf.flag_id
-    LEFT JOIN flags fl ON fl.id = COALESCE(f_draft.id, f_persona.id)
+    LEFT JOIN flags_resource f_persona ON f_persona.id = pf.flag_id
+    LEFT JOIN flags_resource fl ON fl.id = COALESCE(f_draft.id, f_persona.id)
     LEFT JOIN calls c ON c.id = COALESCE(f_draft.call_id, f_persona.call_id)
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -176,7 +176,7 @@ departments_group_ids AS (
     FROM params x
     LEFT JOIN draft_departments dd ON dd.draft_id = x.draft_id
     LEFT JOIN persona_departments pd ON pd.persona_id = x.persona_id AND pd.active = true
-    JOIN departments d ON (
+    JOIN departments_resource d ON (
         (x.draft_id IS NOT NULL AND dd.departments_id = d.id)
         OR (x.persona_id IS NOT NULL AND pd.department_id = d.id)
     )
@@ -195,7 +195,7 @@ fields_group_ids AS (
         gr.group_id
     FROM params x
     LEFT JOIN persona_fields pf ON pf.persona_id = x.persona_id AND pf.active = true
-    JOIN fields f ON (x.persona_id IS NOT NULL AND pf.field_id = f.id)
+    JOIN fields_resource f ON (x.persona_id IS NOT NULL AND pf.field_id = f.id)
     LEFT JOIN calls c ON c.id = pf.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -211,7 +211,7 @@ examples_group_ids AS (
         gr.group_id
     FROM params x
     LEFT JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
-    JOIN examples e ON e.id = pe.example_id
+    JOIN examples_resource e ON e.id = pe.example_id
     LEFT JOIN calls c ON c.id = pe.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id

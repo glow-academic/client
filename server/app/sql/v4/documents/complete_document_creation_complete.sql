@@ -15,17 +15,17 @@ RETURNS TABLE (
 )
 LANGUAGE sql
 AS $$
-WITH -- Insert name into names table and get ID
+WITH -- Insert name INTO names_resource table and get ID
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT api_complete_document_creation_v4.child_name, NOW(), NOW()
     WHERE api_complete_document_creation_v4.child_name IS NOT NULL AND api_complete_document_creation_v4.child_name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Insert description into descriptions table and get ID
+-- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT api_complete_document_creation_v4.child_description, NOW(), NOW()
     WHERE api_complete_document_creation_v4.child_description IS NOT NULL AND api_complete_document_creation_v4.child_description != ''
     ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
@@ -33,7 +33,7 @@ description_resource AS (
 ),
 create_child_document AS (
     -- Create child document (without name/description/active/template/document_domain_id columns)
-    INSERT INTO document (
+    INSERT INTO document_artifact (
         id, created_at, updated_at
     )
     VALUES (gen_random_uuid(), NOW(), NOW())
@@ -86,7 +86,7 @@ link_document_active_flag AS (
         NOW(),
         NOW()
     FROM create_child_document ccd
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
         value = true,
@@ -103,7 +103,7 @@ link_document_template_flag AS (
         NOW(),
         NOW()
     FROM create_child_document ccd
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'template'
     ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
         value = false,

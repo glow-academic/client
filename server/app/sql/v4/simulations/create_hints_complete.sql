@@ -70,7 +70,7 @@ hints_with_next_idx AS (
     FROM hint_texts_array hta
 ),
 inserted_hint_entities AS (
-    INSERT INTO hints (hint, created_at, updated_at)
+    INSERT INTO hints_resource (hint, created_at, updated_at)
     SELECT DISTINCT
         hwni.hint_text,
         NOW(),
@@ -89,7 +89,7 @@ inserted_hints AS (
         NOW()
     FROM hints_with_next_idx hwni
     JOIN inserted_hint_entities ihe ON ihe.hint = hwni.hint_text
-    RETURNING message_id, idx, (SELECT hint FROM hints WHERE id = hint_id) as hint
+    RETURNING message_id, idx, (SELECT hint FROM hints_resource WHERE id = hint_id) as hint
 )
 SELECT 
     COALESCE(

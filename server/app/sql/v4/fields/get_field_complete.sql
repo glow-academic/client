@@ -86,7 +86,7 @@ field_exists_check AS (
     SELECT 
         CASE 
             WHEN (SELECT field_id FROM params) IS NULL THEN NULL::boolean
-            ELSE EXISTS(SELECT 1 FROM fields WHERE id = (SELECT field_id FROM params))::boolean
+            ELSE EXISTS(SELECT 1 FROM fields_resource WHERE id = (SELECT field_id FROM params))::boolean
         END as field_exists
 ),
 -- Draft data
@@ -115,9 +115,9 @@ user_profile AS (
     SELECT 
         up.id,
         up.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = up.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = up.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = up.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = up.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profile up ON up.id = x.profile_id
+    JOIN profile_artifact up ON up.id = x.profile_id
 ),
 user_departments AS (
     SELECT department_id
@@ -143,17 +143,17 @@ field_parameters_data AS (
             ELSE ARRAY[]::text[]
         END as parameter_ids
     FROM params x
-    JOIN fields f ON f.id = x.field_id
+    JOIN fields_resource f ON f.id = x.field_id
     WHERE x.field_id IS NOT NULL
 ),
 -- Conditional: Get field conditional parameters only if field_id provided
 field_conditional_parameters_data AS (
     SELECT 
         fcp.field_id,
-        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)) as conditional_parameter_ids
+        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)) as conditional_parameter_ids
     FROM params x
     JOIN field_conditional_parameters fcp ON fcp.field_id = x.field_id AND fcp.active = true
-    JOIN parameters p ON p.id = fcp.conditional_parameter_id
+    JOIN parameters_resource p ON p.id = fcp.conditional_parameter_id
     WHERE x.field_id IS NOT NULL
     GROUP BY fcp.field_id
 ),
@@ -161,9 +161,9 @@ field_conditional_parameters_data AS (
 valid_departments_data AS (
     SELECT 
         d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM department d
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
+    FROM department_artifact d
     WHERE d.id IN (SELECT department_id FROM user_departments)
        OR EXISTS (SELECT 1 FROM user_profile WHERE role = 'superadmin'::profile_role)
 ),
@@ -171,9 +171,9 @@ valid_departments_data AS (
 valid_parameters_data AS (
     SELECT 
         p.id as parameter_id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
-    FROM parameter p
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
+    FROM parameter_artifact p
     WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 -- User has field access check (only for detail mode)
@@ -187,7 +187,7 @@ user_has_field_access AS (
         AND pd.active = true
     ) OR EXISTS(
         SELECT 1 FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
         WHERE p.role = 'superadmin'::profile_role
     ) OR (
         SELECT NOT EXISTS(
@@ -249,7 +249,7 @@ SELECT
         (SELECT payload->>'name' FROM draft_payload_data),
         CASE 
             WHEN (SELECT field_id FROM params) IS NOT NULL THEN
-                (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1)
+                (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.field_id LIMIT 1)
             ELSE 'New Field'
         END
     ) as name,
@@ -257,7 +257,7 @@ SELECT
         (SELECT payload->>'description' FROM draft_payload_data),
         CASE 
             WHEN (SELECT field_id FROM params) IS NOT NULL THEN
-                (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
+                (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
             ELSE ''
         END
     ) as description,
@@ -310,7 +310,7 @@ CROSS JOIN draft_group_data dgd
 CROSS JOIN can_edit_data ced
 CROSS JOIN disabled_reason_data drd
 LEFT JOIN params x ON true
-LEFT JOIN fields f ON f.id = x.field_id 
+LEFT JOIN fields_resource f ON f.id = x.field_id 
     AND (
         (SELECT field_id FROM params) IS NULL 
         OR EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)

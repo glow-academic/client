@@ -37,31 +37,31 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id AS profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_cohort AS (
     -- Get original cohort data
     SELECT 
         c.id,
-        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title,
-        (SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description
+        (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title,
+        (SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description
     FROM params x
-    JOIN cohort c ON c.id = x.cohort_id
+    JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
--- Insert title into names table
+-- Insert title INTO names_resource table
 new_title_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT title || ' Copy', NOW(), NOW()
     FROM original_cohort
     WHERE title IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
--- Insert description into descriptions table
+-- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM original_cohort
     WHERE description IS NOT NULL AND description != ''
@@ -70,7 +70,7 @@ new_description_resource AS (
 ),
 new_cohort AS (
     -- Create duplicate cohort without title, description, active columns
-    INSERT INTO cohort (created_at, updated_at)
+    INSERT INTO cohort_artifact (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM original_cohort
     RETURNING id
@@ -110,7 +110,7 @@ link_cohort_active_flag AS (
         NOW(),
         NOW()
     FROM new_cohort nc
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (cohort_id, flag_id, type) DO UPDATE SET 
         value = FALSE,

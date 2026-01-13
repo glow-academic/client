@@ -582,27 +582,27 @@ WITH params AS (
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(profile_id, NULL::uuid) AS profile_id
 ),
--- Get actor name from profile
+-- Get actor name FROM profile_artifact
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
             'System'
         ) as actor_name
 ),
 -- Get thresholds from active settings (defaults if no settings found)
 settings_thresholds AS (
     SELECT 
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1), 85) AS success_threshold,
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1), 80) AS warning_threshold,
-        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1), 70) AS danger_threshold
-    FROM setting s
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'success'::type_setting_thresholds LIMIT 1), 85) AS success_threshold,
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning'::type_setting_thresholds LIMIT 1), 80) AS warning_threshold,
+        COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger'::type_setting_thresholds LIMIT 1), 70) AS danger_threshold
+    FROM setting_artifact s
     WHERE EXISTS (
         SELECT 1 FROM setting_flags sf
-        JOIN flags f ON sf.flag_id = f.id
+        JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.setting_id = s.id
-          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
           AND sf.type = 'active'::type_setting_flags
           AND sf.value = TRUE
     )
@@ -612,12 +612,12 @@ settings_thresholds AS (
 -- Gets simulations linked to cohorts + practice simulations without cohorts
 filtered_simulation_ids AS (
     SELECT DISTINCT s.id AS simulation_id
-    FROM simulation s
+    FROM simulation_artifact s
     WHERE EXISTS (
         SELECT 1 FROM simulation_flags sf
-        JOIN flags f ON sf.flag_id = f.id
+        JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.simulation_id = s.id
-          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
           AND sf.type = 'active'::type_simulation_flags
           AND sf.value = TRUE
     )
@@ -634,9 +634,9 @@ filtered_simulation_ids AS (
           -- Always include practice simulations without cohorts
           (EXISTS (
             SELECT 1 FROM simulation_flags sf
-            JOIN flags f ON sf.flag_id = f.id
+            JOIN flags_resource f ON sf.flag_id = f.id
             WHERE sf.simulation_id = s.id
-              AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+              AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
               AND sf.type = 'practice'::type_simulation_flags
               AND sf.value = TRUE
           )
@@ -669,7 +669,7 @@ filt AS (
         )
         -- Dashboard never filters by profile - always filter by roles
                     AND a.profile_role = ANY((SELECT roles FROM params)::profile_role[])
-        -- Filter by simulation_ids FROM cohort (new filtering order)
+        -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                     AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
         -- Filter by department_ids (empty array = all departments)
                     AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
@@ -743,7 +743,7 @@ filt AS (
                 )
                 -- Dashboard never filters by profile - always filter by roles
                 AND a.profile_role = ANY((SELECT roles FROM params)::profile_role[])
-                -- Filter by simulation_ids FROM cohort (new filtering order)
+                -- Filter by simulation_ids FROM cohort_artifact (new filtering order)
                 AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR a.simulation_id IN (SELECT simulation_id FROM filtered_simulation_ids))
                 -- Filter by department_ids (empty array = all departments)
                 AND (cardinality((SELECT department_ids FROM params)::uuid[]) = 0 OR a.department_id = ANY((SELECT department_ids FROM params)::uuid[]))
@@ -812,22 +812,22 @@ filt AS (
                     sg.id,
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
-                    (sg.score::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0)) * 100.0 AS norm
-                FROM grade sg
+                    (sg.score::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = rga.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0)) * 100.0 AS norm
+                FROM grade_artifact sg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = sg.rubric_grade_agent_id
-                JOIN run r_stag ON r_stag.id = sg.run_id
+                JOIN run_artifact r_stag ON r_stag.id = sg.run_id
                 JOIN group_runs gr_stag ON gr_stag.run_id = r_stag.id
                 JOIN groups g_stag ON g_stag.id = gr_stag.group_id
                 JOIN chat_groups cg_stag ON cg_stag.group_id = g_stag.id
-                JOIN chat c_stag ON c_stag.id = cg_stag.chat_id
+                JOIN chat_artifact c_stag ON c_stag.id = cg_stag.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
-                LEFT JOIN rubrics r ON r.id = rga.rubric_id
+                LEFT JOIN rubrics_resource r ON r.id = rga.rubric_id
                 WHERE EXISTS (
-                    SELECT 1 FROM run r_check
+                    SELECT 1 FROM run_artifact r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN groups g_check ON g_check.id = gr_check.group_id
                     JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-                    JOIN chat c_check ON c_check.id = cg_check.chat_id
+                    JOIN chat_artifact c_check ON c_check.id = cg_check.chat_id
                     WHERE r_check.id = sg.run_id
                 )
             ),
@@ -1262,8 +1262,8 @@ filt AS (
             -- Persona Performance
             persona_agg AS (
                 SELECT f.persona_id,
-                       (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = f.persona_id LIMIT 1) AS name,
-                       COALESCE((SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = f.persona_id LIMIT 1), '#3b82f6') AS color,
+                       (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = f.persona_id LIMIT 1) AS name,
+                       COALESCE((SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = f.persona_id LIMIT 1), '#3b82f6') AS color,
                        AVG(f.grade_percent)::float AS avg_score,
                        COUNT(DISTINCT f.chat_id)::int AS sessions,
                        ARRAY_AGG(DISTINCT f.simulation_id::text) AS simulation_ids,
@@ -1303,8 +1303,8 @@ filt AS (
             ),
             persona_colors_agg_converted AS (
                 SELECT ARRAY_AGG(
-                    ((SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = pa.persona_id LIMIT 1), COALESCE((SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = pa.persona_id LIMIT 1), '#3b82f6'))::types.q_get_dashboard_bundle_v4_persona_color
-                    ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = pa.persona_id LIMIT 1)
+                    ((SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.persona_id LIMIT 1), COALESCE((SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = pa.persona_id LIMIT 1), '#3b82f6'))::types.q_get_dashboard_bundle_v4_persona_color
+                    ORDER BY (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.persona_id LIMIT 1)
                 ) AS colors
                 FROM (SELECT DISTINCT persona_id FROM persona_agg) pa
             ),
@@ -1313,11 +1313,11 @@ filt AS (
             -- Get all chats that have grades in the date range (not filtered by analytics attempt_created_at)
             filtered_chats AS (
                 SELECT DISTINCT c.id AS chat_id
-                FROM grade scg
-                JOIN run r ON r.id = scg.run_id
+                FROM grade_artifact scg
+                JOIN run_artifact r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chat c ON c.id = gg.chat_id
+                JOIN chat_artifact c ON c.id = gg.chat_id
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE scg.created_at >= (SELECT start_date FROM params)
@@ -1348,7 +1348,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chat c
+                FROM chat_artifact c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats)
@@ -1360,11 +1360,11 @@ filt AS (
                     rga.rubric_id
                 FROM simulation_scenarios ss
                 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-                LEFT JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+                LEFT JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
                 LEFT JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
                 WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
                   AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info)
-                ORDER BY ss.simulation_id, (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
+                ORDER BY ss.simulation_id, (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
             ),
             latest_grade_per_chat AS (
                 SELECT DISTINCT ON (c.id)
@@ -1375,27 +1375,27 @@ filt AS (
                         rga_fallback_scenario.rubric_id,
                         sfsr.rubric_id
                     ) AS rubric_id
-                FROM grade scg
+                FROM grade_artifact scg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-                JOIN run r ON r.id = scg.run_id
+                JOIN run_artifact r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chat c ON c.id = gg.chat_id
+                JOIN chat_artifact c ON c.id = gg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN chat_scenario_info csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = csi.simulation_id
                   AND sssrga_fallback.scenario_id = csi.scenario_id
                   AND rga.rubric_id IS NULL
-                LEFT JOIN scenario_rubric_grade_agents srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
+                LEFT JOIN scenario_rubric_grade_agents_resource srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
                 LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = srga_fallback.grade_agent_id
                 LEFT JOIN sim_first_scenario_rubric_heatmap sfsr ON sfsr.simulation_id = csi.simulation_id
                   AND rga.rubric_id IS NULL
                   AND rga_fallback_scenario.rubric_id IS NULL
                 WHERE EXISTS (
-                    SELECT 1 FROM run r_check
+                    SELECT 1 FROM run_artifact r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chat c_check ON c_check.id = gg_check.chat_id
+                    JOIN chat_artifact c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = scg.run_id
                 )
                   AND COALESCE(
@@ -1414,10 +1414,10 @@ filt AS (
                     (100.0 * SUM(scf.total)::float8 / NULLIF(sg.points::float8, 0))::float8 AS pct
                 FROM latest_grade_per_chat lg
                 JOIN grade_feedbacks gf ON gf.grade_id = lg.id
-                JOIN feedbacks scf ON scf.id = gf.feedback_id
+                JOIN feedbacks_resource scf ON scf.id = gf.feedback_id
                 JOIN standards s ON s.id = scf.standard_id
                 JOIN rubric_standard_groups rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
-                JOIN standard_groups sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
+                JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
                 GROUP BY lg.chat_id, rsg.rubric_id, sg.id, sg.name, sg.points
             ),
             corrs_upper AS (
@@ -1445,7 +1445,7 @@ filt AS (
                 SELECT DISTINCT pgg.rubric_id, sg.id, sg.name, sg.short_name
                 FROM per_grade_group pgg
                 JOIN rubric_standard_groups rsg ON rsg.rubric_id = pgg.rubric_id AND rsg.standard_group_id = pgg.group_id AND rsg.active = true
-                JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+                JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
             ),
             valid_rubric_ids_list AS (
                 SELECT DISTINCT rubric_id FROM rubric_groups
@@ -1588,8 +1588,8 @@ filt AS (
             simulation_with_depts AS (
                 SELECT 
                     s.id,
-                    (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS title,
-                    (SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1) AS description,
+                    (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS title,
+                    (SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1) AS description,
                     COALESCE(
                         (SELECT SUM(stl.time_limit_seconds)
                          FROM scenario_time_limits stl
@@ -1601,7 +1601,7 @@ filt AS (
                         ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) FILTER (WHERE sd.department_id IS NOT NULL),
                         ARRAY[]::text[]
                     ) AS dept_ids
-                FROM simulation s
+                FROM simulation_artifact s
                 LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
                   AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
@@ -1610,7 +1610,7 @@ filt AS (
                       OR sd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
                       OR NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
                   )
-                GROUP BY s.id, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1)
+                GROUP BY s.id, (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1), (SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1)
             ),
             simulations_converted AS (
                 SELECT COALESCE(
@@ -1628,12 +1628,12 @@ filt AS (
             rubrics_converted AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
-                        (r.id::text, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), ''))::types.q_get_dashboard_bundle_v4_rubric
-                        ORDER BY (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
+                        (r.id::text, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), ''))::types.q_get_dashboard_bundle_v4_rubric
+                        ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
                     ),
                     '{}'::types.q_get_dashboard_bundle_v4_rubric[]
                 ) AS rubrics_array
-                FROM rubric r
+                FROM rubric_artifact r
                 WHERE r.id IN (SELECT rubric_id FROM rubric_ids)
                   AND EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
             ),
@@ -1641,36 +1641,36 @@ filt AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
                         (p.id::text, 
-                         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), 
-                         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), ''), 
+                         (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1), 
+                         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), ''), 
                          false, 
                          EXISTS (
                              SELECT 1 FROM parameter_flags pf
-                             JOIN flags f ON pf.flag_id = f.id
+                             JOIN flags_resource f ON pf.flag_id = f.id
                              WHERE pf.parameter_id = p.id
-                               AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'document_parameter'
+                               AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'document_parameter'
                                AND pf.type = 'document_parameter'::type_parameter_flags
                                AND pf.value = TRUE
                          ),
                          EXISTS (
                              SELECT 1 FROM parameter_flags pf
-                             JOIN flags f ON pf.flag_id = f.id
+                             JOIN flags_resource f ON pf.flag_id = f.id
                              WHERE pf.parameter_id = p.id
-                               AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'persona_parameter'
+                               AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'persona_parameter'
                                AND pf.type = 'persona_parameter'::type_parameter_flags
                                AND pf.value = TRUE
                          )
                         )::types.q_get_dashboard_bundle_v4_parameter
-                        ORDER BY (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
+                        ORDER BY (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
                     ),
                     '{}'::types.q_get_dashboard_bundle_v4_parameter[]
                 ) AS parameters_array
-                FROM parameter p
+                FROM parameter_artifact p
                 WHERE EXISTS (
                     SELECT 1 FROM parameter_flags pf
-                    JOIN flags f ON pf.flag_id = f.id
+                    JOIN flags_resource f ON pf.flag_id = f.id
                     WHERE pf.parameter_id = p.id
-                      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+                      AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
                       AND pf.type = 'active'::type_parameter_flags
                       AND pf.value = TRUE
                 )
@@ -1678,14 +1678,14 @@ filt AS (
                       cardinality((SELECT department_ids FROM params)) = 0 
                       OR EXISTS (
                           SELECT 1 
-                          FROM field f
+                          FROM field_artifact f
                           JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.field_id = f.id
                           JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
                           WHERE fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
                       )
                       OR NOT EXISTS (
                           SELECT 1 
-                          FROM field f
+                          FROM field_artifact f
                           JOIN parameter_fields pf ON pf.parameter_id = p.id AND pf.field_id = f.id
                           JOIN field_departments fd2 ON fd2.field_id = f.id AND fd2.active = true
                       )
@@ -1695,18 +1695,18 @@ filt AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
                         (f.id::text, 
-                         (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), 
-                         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), ''), 
+                         (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), 
+                         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), ''), 
                          (SELECT pf.parameter_id::text FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
-                         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1)
+                         (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) LIMIT 1)
                         )::types.q_get_dashboard_bundle_v4_field
-                        ORDER BY (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
+                        ORDER BY (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
                     ),
                     '{}'::types.q_get_dashboard_bundle_v4_field[]
                 ) AS fields_array
-                FROM field f
+                FROM field_artifact f
                 LEFT JOIN parameter_fields pf_link ON pf_link.field_id = f.id
-                LEFT JOIN parameters p ON p.id = pf_link.parameter_id
+                LEFT JOIN parameters_resource p ON p.id = pf_link.parameter_id
                 LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
                 WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags
                       AND pf.value = TRUE
@@ -2247,17 +2247,17 @@ filt AS (
             cohort_list AS (
                 SELECT DISTINCT 
                     c.id, 
-                    (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS title,
+                    (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS title,
                     ARRAY(
                         SELECT cp.profile_id 
                         FROM cohort_profiles cp
-                        JOIN profile p ON p.id = cp.profile_id
+                        JOIN profile_artifact p ON p.id = cp.profile_id
                         WHERE cp.cohort_id = c.id
                             AND cp.active = true
                             AND p.role = ANY((SELECT roles FROM params)::profile_role[])
                     ) AS profile_ids,
                     ARRAY(SELECT cs.simulation_id FROM cohort_simulations cs WHERE cs.cohort_id = c.id AND cs.active = true) AS simulation_ids
-                FROM cohort c
+                FROM cohort_artifact c
                 JOIN (SELECT DISTINCT c_id FROM filt_with_cohorts) fc ON fc.c_id = c.id
             ),
             cohort_attempts AS (
@@ -2272,7 +2272,7 @@ filt AS (
             cohort_agg AS (
                 SELECT
                     cl.id AS cohort_id,
-                    (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = cl.id LIMIT 1) AS cohort_name,
+                    (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = cl.id LIMIT 1) AS cohort_name,
                     COALESCE(cardinality(cl.profile_ids), 0) AS total_students_declared,
                     cardinality(cl.profile_ids) AS total_students_seen,
                     COUNT(DISTINCT ca.attempt_id) AS total_attempts,
@@ -2311,7 +2311,7 @@ filt AS (
                     cardinality(cl.simulation_ids) AS required_simulations
                 FROM cohort_list cl
                 LEFT JOIN cohort_attempts ca ON ca.cohort_id = cl.id
-                GROUP BY cl.id, (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = cl.id LIMIT 1), cl.profile_ids, cl.simulation_ids
+                GROUP BY cl.id, (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = cl.id LIMIT 1), cl.profile_ids, cl.simulation_ids
             ),
             cohort_performance_cohort_data_agg AS (
                 SELECT COALESCE(
@@ -2427,7 +2427,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chat c
+                FROM chat_artifact c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filt_for_skills)
@@ -2439,11 +2439,11 @@ filt AS (
                     rga.rubric_id
                 FROM simulation_scenarios ss
                 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-                LEFT JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+                LEFT JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
                 LEFT JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
                 WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
                   AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_skills)
-                ORDER BY ss.simulation_id, (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
+                ORDER BY ss.simulation_id, (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
             ),
             latest_grade_for_skills AS (
                 SELECT DISTINCT ON (c.id, COALESCE(rga.rubric_id, rga_fallback_scenario.rubric_id, sfsr.rubric_id))
@@ -2455,26 +2455,26 @@ filt AS (
                            sfsr.rubric_id
                        ) AS rubric_id,
                        scg.created_at
-                FROM grade scg
+                FROM grade_artifact scg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-                JOIN run r ON r.id = scg.run_id
+                JOIN run_artifact r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chat c ON c.id = gg.chat_id
+                JOIN chat_artifact c ON c.id = gg.chat_id
                 LEFT JOIN chat_scenario_info_skills csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = csi.simulation_id
                   AND sssrga_fallback.scenario_id = csi.scenario_id
                   AND rga.rubric_id IS NULL
-                LEFT JOIN scenario_rubric_grade_agents srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
+                LEFT JOIN scenario_rubric_grade_agents_resource srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
                 LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = srga_fallback.grade_agent_id
                 LEFT JOIN sim_first_scenario_rubric_skills sfsr ON sfsr.simulation_id = csi.simulation_id
                   AND rga.rubric_id IS NULL
                   AND srga_fallback.id IS NULL
                 WHERE EXISTS (
-                    SELECT 1 FROM run r_check
+                    SELECT 1 FROM run_artifact r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chat c_check ON c_check.id = gg_check.chat_id
+                    JOIN chat_artifact c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = scg.run_id
                 )
                   AND c.id IN (SELECT chat_id FROM filt_for_skills)
@@ -2501,10 +2501,10 @@ filt AS (
                 FROM latest_grade_for_skills lg
                 JOIN filt_for_skills f ON f.chat_id = lg.chat_id
                 JOIN grade_feedbacks gf ON gf.grade_id = lg.grade_id
-                JOIN feedbacks scf ON scf.id = gf.feedback_id
+                JOIN feedbacks_resource scf ON scf.id = gf.feedback_id
                 JOIN standards s ON s.id = scf.standard_id
                 JOIN rubric_standard_groups rsg ON rsg.rubric_id = lg.rubric_id AND rsg.active = true
-                JOIN standard_groups sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
+                JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
                 GROUP BY lg.rubric_id, sg.id, sg.name, f.simulation_id, lg.grade_id, sg.points
             ),
             radar_rows AS (
@@ -2514,7 +2514,7 @@ filt AS (
                     sg.description AS group_description,
                     AVG(pgg.pct)::float8 AS avg_pct
                 FROM per_grade_group_skills pgg
-                JOIN standard_groups sg ON sg.id = pgg.group_id
+                JOIN standard_groups_resource sg ON sg.id = pgg.group_id
                 GROUP BY pgg.rubric_id, sg.short_name, sg.description
             ),
             skill_group_stats AS (
@@ -2528,7 +2528,7 @@ filt AS (
                     SUM(pgg.points) AS points_sum,
                     ROUND(AVG(pgg.pct))::int AS avg_pct
                 FROM per_grade_group_skills pgg
-                JOIN standard_groups sg ON sg.id = pgg.group_id
+                JOIN standard_groups_resource sg ON sg.id = pgg.group_id
                 GROUP BY pgg.rubric_id, sg.id, sg.name, sg.description, pgg.simulation_id
             ),
             radar_data_per_rubric AS (
@@ -2609,7 +2609,7 @@ filt AS (
             -- Scenario Performance (FULL IMPLEMENTATION with categorical parameters)
             param_ids_categorical AS (
                 SELECT id
-                FROM parameter p
+                FROM parameter_artifact p
                 WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
             ),
             cat_map AS (
@@ -2617,10 +2617,10 @@ filt AS (
                     f.id AS parameter_item_id,
                     (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
                     s.id AS scenario_id
-                FROM field f
+                FROM field_artifact f
                 JOIN param_ids_categorical p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
                 JOIN scenario_fields sf ON sf.field_id = f.id
-                JOIN scenarios s ON s.id = sf.scenario_id
+                JOIN scenarios_resource s ON s.id = sf.scenario_id
                 WHERE EXISTS (SELECT 1 FROM scenario_flags sf2 WHERE sf2.scenario_id = s.id AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
             ),
             scenario_seen AS (
@@ -2692,7 +2692,7 @@ filt AS (
             ),
             
             -- Scenario Stats (NUMERICAL PARAMETERS - mostly empty as functionality disabled)
-            nums AS (SELECT id FROM parameter WHERE false),
+            nums AS (SELECT id FROM parameter_artifact WHERE false),
             num_map AS (SELECT NULL::uuid AS scenario_id, NULL::uuid AS parameter_id, NULL::numeric AS level WHERE false),
             num_map_seen AS (
                 SELECT nm.*
@@ -2788,15 +2788,15 @@ filt AS (
             sim_perf AS (
                 SELECT f.simulation_id,
                        f.scenario_id,
-                       (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1) AS scenario_name,
+                       (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1) AS scenario_name,
                        COALESCE(AVG(f.grade_percent), 0)::float AS avg_score,
                        COALESCE((100.0 * AVG((f.completed OR f.grade_percent IS NOT NULL)::int)), 0)::float AS success_rate,
                        COUNT(*)::int AS total_attempts,
                        SUM((f.completed OR f.grade_percent IS NOT NULL)::int)::int AS completed_attempts
                 FROM filt f
-                JOIN scenarios sc ON sc.id = f.scenario_id
+                JOIN scenarios_resource sc ON sc.id = f.scenario_id
                 WHERE f.simulation_id IS NOT NULL AND f.scenario_id IS NOT NULL
-                GROUP BY f.simulation_id, f.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1)
+                GROUP BY f.simulation_id, f.scenario_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1)
             ),
             simulation_performance_scenario_facts_agg AS (
                 SELECT COALESCE(
@@ -2857,9 +2857,9 @@ filt AS (
                 SELECT 
                     s.id AS simulation_id,
                     COUNT(DISTINCT sc.id)::int AS scenario_count
-                FROM simulation s
+                FROM simulation_artifact s
                 JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
-                JOIN scenarios sc ON sc.id = ss_link.scenario_id
+                JOIN scenarios_resource sc ON sc.id = ss_link.scenario_id
                 JOIN scen_seen ss ON ss.scenario_id = sc.id
                 WHERE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags sf2 WHERE sf2.scenario_id = sc.id AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
                 GROUP BY s.id
@@ -2870,13 +2870,13 @@ filt AS (
                     p.id AS parameter_id,
                     f.id AS parameter_item_id,
                     COUNT(a.chat_id)::int AS cnt
-                FROM simulation s
+                FROM simulation_artifact s
                 JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
-                JOIN scenarios sc ON sc.id = ss_link.scenario_id
+                JOIN scenarios_resource sc ON sc.id = ss_link.scenario_id
                 JOIN scen_seen ss ON ss.scenario_id = sc.id
                 JOIN scenario_fields sf ON sf.scenario_id = sc.id
-                JOIN fields f ON f.id = sf.field_id
-                JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
+                JOIN fields_resource f ON f.id = sf.field_id
+                JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
                 JOIN analytics a ON a.scenario_id = sc.id
                 WHERE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags sf2 WHERE sf2.scenario_id = sc.id AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
                 GROUP BY s.id, p.id, f.id
@@ -2884,13 +2884,13 @@ filt AS (
             simulation_facts AS (
                 SELECT
                     s.id AS simulation_id,
-                    (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_title,
+                    (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_title,
                     COALESCE(ROUND(ss.avg_score), 0)::int AS avg_score,
                     COALESCE(ROUND(ss.pass_rate), 0)::int AS pass_rate,
                     COALESCE(ROUND(ss.completion_rate), 0)::int AS completion_rate,
                     COALESCE(ss.attempts, 0) AS total_attempts,
                     COALESCE(sc_seen.scenario_count, 0) AS scenario_count
-                FROM simulation s
+                FROM simulation_artifact s
                 LEFT JOIN sim_summary ss ON ss.simulation_id = s.id
                 LEFT JOIN sim_scenarios_seen sc_seen ON sc_seen.simulation_id = s.id
                 WHERE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)

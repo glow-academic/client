@@ -62,7 +62,7 @@ RETURNS TABLE (
     can_edit boolean,
     disabled_reason text,
     group_id uuid,
-    -- Tool basic fields (from tool table)
+    -- Tool basic fields (FROM tool_artifact table)
     name text,
     description text,
     active boolean,
@@ -103,7 +103,7 @@ tool_exists_check AS (
     SELECT 
         CASE 
             WHEN (SELECT tool_id FROM params) IS NULL THEN NULL::boolean
-            ELSE EXISTS(SELECT 1 FROM tool WHERE id = (SELECT tool_id FROM params))::boolean
+            ELSE EXISTS(SELECT 1 FROM tool_artifact WHERE id = (SELECT tool_id FROM params))::boolean
         END as tool_exists
 ),
 -- Draft data is now stored in draft_* junction tables, not in payload
@@ -130,11 +130,11 @@ draft_group_data AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
--- Tool data (from tool table)
+-- Tool data (FROM tool_artifact table)
 tool_data AS (
     SELECT 
         t.id,
@@ -143,7 +143,7 @@ tool_data AS (
         t.active,
         t.updated_at
     FROM params x
-    LEFT JOIN tool t ON t.id = x.tool_id
+    LEFT JOIN tool_artifact t ON t.id = x.tool_id
     WHERE x.tool_id IS NOT NULL
     LIMIT 1
 ),
@@ -187,7 +187,7 @@ schema_suggestions_data AS (
              FROM (
                  SELECT DISTINCT ts.schema_id, MAX(ts.created_at) as created_at
                  FROM tool_schemas ts
-                 JOIN schemas s ON s.id = ts.schema_id
+                 JOIN schemas_resource s ON s.id = ts.schema_id
                  CROSS JOIN draft_group_data dgd
                  WHERE ts.schema_id IS NOT NULL
                    AND s.active = true
@@ -227,7 +227,7 @@ template_suggestions_data AS (
              FROM (
                  SELECT DISTINCT tt.template_id, MAX(tt.created_at) as created_at
                  FROM tool_templates tt
-                 JOIN templates t ON t.id = tt.template_id
+                 JOIN templates_resource t ON t.id = tt.template_id
                  CROSS JOIN draft_group_data dgd
                  WHERE tt.template_id IS NOT NULL
                    AND t.active = true
@@ -267,7 +267,7 @@ schema_mapping_data AS (
         COALESCE(ts.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
-    JOIN schemas s ON s.active = true
+    JOIN schemas_resource s ON s.active = true
     LEFT JOIN tool_schemas ts ON ts.schema_id = s.id AND ts.tool_id = x.tool_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all schemas for new tools
 ),
@@ -278,7 +278,7 @@ template_mapping_data AS (
         COALESCE(tt.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
-    JOIN templates t ON t.active = true
+    JOIN templates_resource t ON t.active = true
     LEFT JOIN tool_templates tt ON tt.template_id = t.id AND tt.tool_id = x.tool_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all templates for new tools
 ),
@@ -316,7 +316,7 @@ user_departments_for_agents AS (
 schemas_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -341,7 +341,7 @@ schemas_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'schemas'::resources
@@ -387,7 +387,7 @@ schemas_agent_data AS (
 templates_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -412,7 +412,7 @@ templates_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'templates'::resources
@@ -461,13 +461,13 @@ tools_existence_check AS (
     SELECT 
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'schemas'::resources 
               AND t.active = true
         ) as schemas_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'templates'::resources 
               AND t.active = true
         ) as templates_has_tools

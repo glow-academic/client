@@ -179,19 +179,19 @@ profile_role_check AS (
         (SELECT resolved_profile_id FROM resolve_profile_id) as raw_profile_id,
         CASE 
             WHEN (SELECT resolved_profile_id FROM resolve_profile_id) IS NULL THEN NULL::uuid
-            WHEN (SELECT role FROM profile WHERE id = (SELECT resolved_profile_id FROM resolve_profile_id)) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
+            WHEN (SELECT role FROM profile_artifact WHERE id = (SELECT resolved_profile_id FROM resolve_profile_id)) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
             ELSE (SELECT resolved_profile_id FROM resolve_profile_id)
         END as effective_profile_id
 ),
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile ON profile.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.profile_id
     WHERE x.profile_id IS NOT NULL
 ),
 runs_base AS (
@@ -207,7 +207,7 @@ runs_base AS (
         EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         sa.archived,
         gr.group_id
-    FROM run mr
+    FROM run_artifact mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
@@ -220,14 +220,14 @@ runs_base AS (
         SELECT DISTINCT c.id AS chat_id
         FROM groups g2
         JOIN chat_groups cg ON cg.group_id = g2.id
-        JOIN chat c ON c.id = cg.chat_id
+        JOIN chat_artifact c ON c.id = cg.chat_id
         WHERE g2.id = g.id
         LIMIT 1
     ) chat_lookup ON true
-    LEFT JOIN chat c ON c.id = chat_lookup.chat_id
+    LEFT JOIN chat_artifact c ON c.id = chat_lookup.chat_id
     LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
     LEFT JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    LEFT JOIN simulation sim ON sim.id = sa.simulation_id
+    LEFT JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     CROSS JOIN params p
     WHERE 
         -- Date filters (always required)
@@ -256,7 +256,7 @@ runs_base AS (
             OR p.roles IS NULL
             OR COALESCE(array_length(p.roles, 1), 0) = 0
             OR mrp.profile_id IN (
-                SELECT id FROM profile WHERE role::text = ANY(p.roles)
+                SELECT id FROM profile_artifact WHERE role::text = ANY(p.roles)
             )
         )
         -- Cohort filter (via cohort_profiles)
@@ -311,7 +311,7 @@ runs_with_debug AS (
         ) as debug_info
     FROM runs_base mrb
     LEFT JOIN run_debug_info rdi ON rdi.run_id = mrb.run_id
-    LEFT JOIN debug_info di ON di.id = rdi.debug_info_id
+    LEFT JOIN debug_info_resource di ON di.id = rdi.debug_info_id
     GROUP BY mrb.run_id, mrb.created_at, mrb.input_tokens, mrb.output_tokens, mrb.model_id, mrb.profile_id, mrb.agent_id, mrb.persona_id, mrb.practice_simulation, mrb.archived, mrb.group_id
 ),
 -- Calculate run costs using run_pricing_usage and model_pricing
@@ -345,16 +345,16 @@ runs_with_names AS (
         mrwd.archived,
         mrwd.group_id,
         mrwd.debug_info,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as profile_name,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as profile_name,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
         COALESCE(rc.run_cost, 0) as run_cost
     FROM runs_with_debug mrwd
-    LEFT JOIN models m ON m.id = mrwd.model_id
-    LEFT JOIN profile p ON p.id = mrwd.profile_id
-    LEFT JOIN agents a ON a.id = mrwd.agent_id
-    LEFT JOIN personas per ON per.id = mrwd.persona_id
+    LEFT JOIN models_resource m ON m.id = mrwd.model_id
+    LEFT JOIN profile_artifact p ON p.id = mrwd.profile_id
+    LEFT JOIN agents_resource a ON a.id = mrwd.agent_id
+    LEFT JOIN personas_resource per ON per.id = mrwd.persona_id
     LEFT JOIN run_costs rc ON rc.run_id = mrwd.run_id
 ),
 -- Apply search filter (across model name, agent name, persona name, profile name, debug info)
@@ -451,37 +451,37 @@ groups_with_runs AS (
 model_options_cte AS (
     SELECT 
         m.id AS model_id,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) AS model_name,
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) AS model_name,
         COUNT(DISTINCT mrf.run_id) AS count
     FROM runs_filtered mrf
-    JOIN models m ON m.id = mrf.model_id
+    JOIN models_resource m ON m.id = mrf.model_id
     WHERE mrf.model_id IS NOT NULL
-    GROUP BY m.id, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)
+    GROUP BY m.id, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)
     ORDER BY model_name
 ),
 -- Get all unique profile options from filtered runs (before pagination)
 profile_options_cte AS (
     SELECT 
         p.id AS profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') AS profile_name,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') AS profile_name,
         COUNT(DISTINCT mrf.run_id) AS count
     FROM runs_filtered mrf
-    JOIN profile p ON p.id = mrf.profile_id
+    JOIN profile_artifact p ON p.id = mrf.profile_id
     WHERE mrf.profile_id IS NOT NULL
-    GROUP BY p.id, (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first'::type_profile_names LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last'::type_profile_names LIMIT 1)
+    GROUP BY p.id, (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first'::type_profile_names LIMIT 1), (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last'::type_profile_names LIMIT 1)
     ORDER BY profile_name
 ),
 -- Get all unique actor options (agents + personas) from filtered runs (before pagination)
 actor_options_cte AS (
     SELECT 
         COALESCE(a.id, per.id) AS actor_id,
-        COALESCE((SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1)) AS actor_name,
+        COALESCE((SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1)) AS actor_name,
         COUNT(DISTINCT mrf.run_id) AS count
     FROM runs_filtered mrf
-    LEFT JOIN agents a ON a.id = mrf.agent_id
-    LEFT JOIN personas per ON per.id = mrf.persona_id
+    LEFT JOIN agents_resource a ON a.id = mrf.agent_id
+    LEFT JOIN personas_resource per ON per.id = mrf.persona_id
     WHERE mrf.agent_id IS NOT NULL OR mrf.persona_id IS NOT NULL
-    GROUP BY COALESCE(a.id, per.id), COALESCE((SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1))
+    GROUP BY COALESCE(a.id, per.id), COALESCE((SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1))
     ORDER BY actor_name
 ),
 -- Add pagination and sorting
@@ -576,35 +576,35 @@ SELECT
     ) as actor_options,
     COALESCE(
         (SELECT ARRAY_AGG(
-            DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''), COALESCE(mpa.input_ppm, 0.0), COALESCE(mpa.output_ppm, 0.0))::types.q_get_pricing_runs_v4_model
+            DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''), COALESCE(mpa.input_ppm, 0.0), COALESCE(mpa.output_ppm, 0.0))::types.q_get_pricing_runs_v4_model
         ) 
         FROM (SELECT DISTINCT model_id FROM runs_filtered WHERE model_id IS NOT NULL) mrf
-        JOIN models m ON m.id = mrf.model_id
+        JOIN models_resource m ON m.id = mrf.model_id
         LEFT JOIN model_pricing_aggregated mpa ON mpa.model_id = m.id),
         '{}'::types.q_get_pricing_runs_v4_model[]
     ) as models,
     COALESCE(
         (SELECT ARRAY_AGG(
-            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''))::types.q_get_pricing_runs_v4_profile
+            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''))::types.q_get_pricing_runs_v4_profile
         )
         FROM (SELECT DISTINCT mrf.profile_id FROM runs_filtered mrf WHERE mrf.profile_id IS NOT NULL) prf
-        JOIN profile p ON p.id = prf.profile_id),
+        JOIN profile_artifact p ON p.id = prf.profile_id),
         '{}'::types.q_get_pricing_runs_v4_profile[]
     ) as profiles,
     COALESCE(
         (SELECT ARRAY_AGG(
-            DISTINCT (a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_runs_v4_agent
+            DISTINCT (a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_runs_v4_agent
         )
         FROM (SELECT DISTINCT agent_id FROM runs_filtered WHERE agent_id IS NOT NULL) agt
-        JOIN agents a ON a.id = agt.agent_id),
+        JOIN agents_resource a ON a.id = agt.agent_id),
         '{}'::types.q_get_pricing_runs_v4_agent[]
     ) as agents,
     COALESCE(
         (SELECT ARRAY_AGG(
-            DISTINCT (per.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1))::types.q_get_pricing_runs_v4_persona
+            DISTINCT (per.id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1))::types.q_get_pricing_runs_v4_persona
         )
         FROM (SELECT DISTINCT persona_id FROM runs_filtered WHERE persona_id IS NOT NULL) pers
-        JOIN personas per ON per.id = pers.persona_id),
+        JOIN personas_resource per ON per.id = pers.persona_id),
         '{}'::types.q_get_pricing_runs_v4_persona[]
     ) as personas
 FROM params

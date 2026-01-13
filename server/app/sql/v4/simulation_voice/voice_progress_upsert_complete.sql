@@ -75,7 +75,7 @@ WITH params AS (
 get_tool_id AS (
     SELECT id as tool_id
     FROM params p
-    JOIN tool t ON t.name = p.tool_name AND t.active = true
+    JOIN tool_artifact t ON t.name = p.tool_name AND t.active = true
     WHERE p.tool_name IS NOT NULL
     LIMIT 1
 ),
@@ -132,12 +132,12 @@ finalize_tool_call AS (
 get_existing_message AS (
     SELECT m.id as message_id
     FROM params p
-    JOIN message m ON m.id = p.message_id
+    JOIN message_artifact m ON m.id = p.message_id
     WHERE p.message_id IS NOT NULL
     LIMIT 1
 ),
 create_message_if_needed AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'assistant'::message_role, p.is_complete, true, NOW(), NOW()
     FROM params p
     WHERE p.message_id IS NULL
@@ -163,7 +163,7 @@ link_call_to_message AS (
     CROSS JOIN selected_message sm
     ON CONFLICT (message_id, call_id) DO NOTHING
 ),
--- Insert or update message content
+-- Insert or UPDATE message_artifact content
 insert_content_if_needed AS (
     INSERT INTO contents (content, created_at, updated_at)
     SELECT p.message_contents, NOW(), NOW()
@@ -203,7 +203,7 @@ update_message_content AS (
 ),
 -- Mark message as completed if is_complete
 complete_message AS (
-    UPDATE message m
+    UPDATE message_artifact m
     SET completed = p_params.is_complete,
         updated_at = NOW()
     FROM params p_params
@@ -258,7 +258,7 @@ create_message_branch AS (
 ),
 -- Create audio record and link to upload if upload_id provided
 create_audio_if_provided_voice AS (
-    INSERT INTO audios (created_at, updated_at, active, generated, call_id)
+    INSERT INTO audios_resource (created_at, updated_at, active, generated, call_id)
     SELECT NOW(), NOW(), true, false, NULL
     FROM params p
     WHERE p.upload_id IS NOT NULL

@@ -1,4 +1,4 @@
--- Update rubric name
+-- UPDATE rubric_artifact name
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -48,14 +48,14 @@ VOLATILE
 AS $$
 WITH get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT socket_update_rubric_name_v4.name, NOW(), NOW()
     WHERE socket_update_rubric_name_v4.name IS NOT NULL AND socket_update_rubric_name_v4.name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name as name_value
 ),
 update_rubric_name AS (
-    -- Update rubric name (delete old, insert new)
+    -- UPDATE rubric_artifact name (delete old, insert new)
     DELETE FROM rubric_names
     WHERE rubric_id = socket_update_rubric_name_v4.rubric_id
     RETURNING rubric_id
@@ -68,12 +68,12 @@ link_rubric_name AS (
     WHERE gocn.name_id IS NOT NULL
 ),
 update_rubric AS (
-    UPDATE rubric
+    UPDATE rubric_artifact
     SET updated_at = NOW()
     WHERE id = socket_update_rubric_name_v4.rubric_id
     RETURNING id as rubric_id
 )
-SELECT ur.rubric_id, COALESCE(gocn.name_value, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = ur.rubric_id LIMIT 1)) as name
+SELECT ur.rubric_id, COALESCE(gocn.name_value, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = ur.rubric_id LIMIT 1)) as name
 FROM update_rubric ur
 LEFT JOIN get_or_create_name gocn ON true
 $$;

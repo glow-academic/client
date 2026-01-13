@@ -110,9 +110,9 @@ rubric_active_simulation_links AS (
         COUNT(DISTINCT ss.simulation_id) as active_simulation_count
     FROM simulation_scenarios ss
     JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-    JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    JOIN simulation s ON s.id = ss.simulation_id
+    JOIN simulation_artifact s ON s.id = ss.simulation_id
     WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true) AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) AND rga.rubric_id IS NOT NULL
     GROUP BY rga.rubric_id
 ),
@@ -122,7 +122,7 @@ rubric_all_simulation_links AS (
         COUNT(DISTINCT ss.simulation_id) as total_simulation_links
     FROM simulation_scenarios ss
     JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-    JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
     WHERE rga.rubric_id IS NOT NULL
     GROUP BY rga.rubric_id
@@ -137,7 +137,7 @@ simulation_department_access_for_rubrics AS (
             WHEN NOT EXISTS (SELECT 1 FROM simulation_departments sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true) THEN true
             ELSE false
         END as has_access
-    FROM simulation s
+    FROM simulation_artifact s
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     GROUP BY s.id
@@ -146,15 +146,15 @@ rubric_simulations_distinct AS (
     SELECT DISTINCT ON (rga.rubric_id, s.id)
         rga.rubric_id,
         s.id as simulation_id,
-        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as simulation_title
-    FROM simulation s
+        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as simulation_title
+    FROM simulation_artifact s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
     INNER JOIN simulation_scenarios ss ON ss.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
     INNER JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-    INNER JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    INNER JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     INNER JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) AND rga.rubric_id IS NOT NULL
-    ORDER BY rga.rubric_id, s.id, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
+    ORDER BY rga.rubric_id, s.id, (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
 ),
 rubric_simulations_data AS (
     SELECT 
@@ -174,17 +174,17 @@ rubric_departments_data AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 rubric_data AS (
     SELECT 
         r.id as rubric_id,
-        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
-        (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1),
-        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
-        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points,
+        (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
+        (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1),
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points,
         COALESCE(rdd.department_ids, NULL) as department_ids,
         COALESCE(rsd.simulation_ids, ARRAY[]::text[]) as simulation_ids,
         COALESCE(rasl.active_simulation_count, 0) as active_simulation_count,
@@ -203,14 +203,14 @@ rubric_data AS (
             WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true
             ELSE false
         END as can_duplicate
-    FROM rubric r
+    FROM rubric_artifact r
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     LEFT JOIN rubric_departments_data rdd ON rdd.rubric_id = r.id
     LEFT JOIN rubric_simulations_data rsd ON rsd.rubric_id = r.id
     LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
     LEFT JOIN rubric_all_simulation_links rasl_all ON rasl_all.rubric_id = r.id
     CROSS JOIN user_profile up
-    GROUP BY r.id, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
+    GROUP BY r.id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count, rasl_all.total_simulation_links, up.role
     HAVING 
         COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
@@ -223,7 +223,7 @@ rubric_standard_group_ids AS (
         rsg.rubric_id,
         ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.position, sg.name) as standard_group_ids
     FROM rubric_standard_groups rsg
-    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
     WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
     GROUP BY rsg.rubric_id
 ),
@@ -262,7 +262,7 @@ standard_groups_distinct AS (
     SELECT DISTINCT ON (sg.id)
         sg.id, rsg.rubric_id, sg.name, COALESCE(sg.description, '') as description, sg.points, sg.pass_points, rsg.position
     FROM rubric_standard_groups rsg
-    JOIN standard_groups sg ON sg.id = rsg.standard_group_id
+    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
     WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
     ORDER BY sg.id, rsg.rubric_id, rsg.position, sg.name
 ),
@@ -279,10 +279,10 @@ standard_groups_aggregated AS (
 ),
 standards_distinct AS (
     SELECT DISTINCT ON (s.id)
-        s.id, s.standard_group_id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description, s.points
+        s.id, s.standard_group_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description, s.points
     FROM standards s
     WHERE s.standard_group_id IN (SELECT standard_group_id FROM all_standard_group_ids)
-    ORDER BY s.id, s.standard_group_id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
+    ORDER BY s.id, s.standard_group_id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),
 standards_aggregated AS (
     SELECT 
@@ -297,10 +297,10 @@ standards_aggregated AS (
 ),
 departments_distinct AS (
     SELECT DISTINCT ON (d.id)
-        d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM department d
+        d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
+    FROM department_artifact d
     WHERE d.id IN (SELECT department_id FROM assigned_department_ids)
-    ORDER BY d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)
+    ORDER BY d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)
 ),
 departments_aggregated AS (
     SELECT 
@@ -316,8 +316,8 @@ departments_aggregated AS (
 simulations_with_time_limit AS (
     SELECT DISTINCT ON (s.id)
         s.id, 
-        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name, 
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
+        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name, 
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -325,11 +325,11 @@ simulations_with_time_limit AS (
              WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)),
             0
         )::int as time_limit
-    FROM simulation s
+    FROM simulation_artifact s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) 
       AND s.id IN (SELECT simulation_id FROM all_simulation_ids)
-    ORDER BY s.id, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
+    ORDER BY s.id, (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
 ),
 simulations_aggregated AS (
     SELECT 
@@ -344,19 +344,19 @@ simulations_aggregated AS (
 ),
 -- Filter simulation_options to only include assigned simulations (with disambiguation for duplicate names)
 simulation_name_counts AS (
-    SELECT (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name, COUNT(*) as count
-    FROM simulation s
+    SELECT (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name, COUNT(*) as count
+    FROM simulation_artifact s
     WHERE s.id IN (SELECT simulation_id FROM assigned_simulation_ids)
-    GROUP BY (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
+    GROUP BY (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
 ),
 simulation_options_with_disambiguation AS (
     SELECT DISTINCT ON (s.id)
         s.id,
         CASE 
-            WHEN snc.count > 1 THEN (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) || ' (' || RIGHT(s.id::text, 8) || ')'
-            ELSE (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
+            WHEN snc.count > 1 THEN (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) || ' (' || RIGHT(s.id::text, 8) || ')'
+            ELSE (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
         END as name,
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -364,12 +364,12 @@ simulation_options_with_disambiguation AS (
              WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)),
             0
         )::int as time_limit
-    FROM simulation s
+    FROM simulation_artifact s
     INNER JOIN simulation_department_access_for_rubrics sdar ON sdar.simulation_id = s.id AND sdar.has_access = true
-    LEFT JOIN simulation_name_counts snc ON snc.name = (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
+    LEFT JOIN simulation_name_counts snc ON snc.name = (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) 
       AND s.id IN (SELECT simulation_id FROM assigned_simulation_ids)
-    ORDER BY s.id, (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
+    ORDER BY s.id, (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1)
 ),
 simulation_options_aggregated AS (
     SELECT 

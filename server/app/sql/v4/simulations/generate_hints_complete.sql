@@ -74,21 +74,21 @@ WITH params AS (
 ),
 target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, cnt.content, m.created_at
-    FROM message m
+    FROM message_artifact m
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     JOIN message_runs mr ON mr.message_id = m.id
-    JOIN run r ON r.id = mr.run_id
+    JOIN run_artifact r ON r.id = mr.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chat c ON c.id = cg.chat_id
+    JOIN chat_artifact c ON c.id = cg.chat_id
     CROSS JOIN params p
     WHERE m.id = p.message_id AND c.id = p.chat_id
 ),
 chat_info AS (
     SELECT sc.id, ac.attempt_id, sc.scenario_id, g.trace_id, sc.title
-    FROM chat sc
+    FROM chat_artifact sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
     LEFT JOIN groups g ON g.id = cg.group_id
@@ -101,9 +101,9 @@ attempt_info AS (
 ),
 scenario_info AS (
     SELECT s.id, ps.problem_statement
-    FROM scenario s
+    FROM scenario_artifact s
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+    LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     JOIN chat_info ci ON ci.scenario_id = s.id
 ),
 profile_info AS (
@@ -116,7 +116,7 @@ profile_info AS (
 ),
 best_agent AS (
     SELECT a.id as agent_id
-    FROM agent a
+    FROM agent_artifact a
     INNER JOIN agent_domains adom ON adom.agent_id = a.id
     INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)  -- hint maps to message artifact
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -136,9 +136,9 @@ profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
     SELECT 
         rl.requests_per_day as req_per_day
-    FROM profile p
+    FROM profile_artifact p
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     WHERE p.id = profile_id
 ),
 runs_today AS (
@@ -146,7 +146,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run mr
+    FROM run_artifact mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = profile_id
       AND mrp.active = true
@@ -155,7 +155,7 @@ runs_today AS (
 -- Get active settings for profile (for key lookup via setting_provider_keys)
 default_settings AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -173,7 +173,7 @@ profile_primary_department AS (
 ),
 dept_specific_settings AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
@@ -184,12 +184,12 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys k ON k.id = spk.key_id
+    JOIN keys_resource k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -199,7 +199,7 @@ dept_specific_settings_with_keys AS (
 ),
 default_settings_with_keys AS (
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
@@ -216,25 +216,25 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 -- Document data for composite type aggregation
 document_data AS (
     SELECT 
         d.id as document_id,
-        (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+        (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         u.file_path,
         u.mime_type
     FROM scenario_info si
     CROSS JOIN scenario_documents sd
-    JOIN documents d ON d.id = sd.document_id
+    JOIN documents_resource d ON d.id = sd.document_id
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     WHERE sd.scenario_id = si.id AND sd.active = true
 ),
 -- Get or create group (for trace_id and group_id)
--- If group_id provided (regeneration), use existing group; otherwise create/get from chat
+-- If group_id provided (regeneration), use existing group; otherwise create/get FROM chat_artifact
 existing_group_from_param AS (
     SELECT g.id as group_id, g.trace_id
     FROM params p
@@ -273,12 +273,12 @@ group_data AS (
             gen_random_uuid()::text
         ) as trace_id
 ),
--- Build tool arguments from schemas
+-- Build tool arguments FROM schemas_resource
 tool_schema_data AS (
     SELECT 
         t.id as tool_id,
         ts.schema_id,
-        -- Build arguments JSONB from schema_fields
+        -- Build arguments JSONB FROM schema_fields_resource
         COALESCE(
             jsonb_object_agg(
                 sf.name,
@@ -296,7 +296,7 @@ tool_schema_data AS (
             ) FILTER (WHERE sf.name IS NOT NULL),
             '{}'::jsonb
         ) as arguments,
-        -- Build argument_descriptions JSONB from schema_fields.description
+        -- Build argument_descriptions JSONB FROM schema_fields_resource.description
         COALESCE(
             jsonb_object_agg(
                 sf.name,
@@ -305,7 +305,7 @@ tool_schema_data AS (
             ) FILTER (WHERE sf.name IS NOT NULL AND sf.description != ''),
             '{}'::jsonb
         ) as argument_descriptions,
-        -- Build argument_defaults JSONB from schema_fields.default_value
+        -- Build argument_defaults JSONB FROM schema_fields_resource.default_value
         COALESCE(
             jsonb_object_agg(
                 sf.name,
@@ -333,10 +333,10 @@ tool_schema_data AS (
             ) FILTER (WHERE sf.name IS NOT NULL AND sf.default_value != ''),
             '{}'::jsonb
         ) as argument_defaults
-    FROM tool t
+    FROM tool_artifact t
     LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
-    LEFT JOIN schemas s ON s.id = ts.schema_id
-    LEFT JOIN schema_fields sf ON sf.schema_id = s.id
+    LEFT JOIN schemas_resource s ON s.id = ts.schema_id
+    LEFT JOIN schema_fields_resource sf ON sf.schema_id = s.id
     GROUP BY t.id, ts.schema_id
 ),
 -- Get agent tools as composite type array
@@ -352,7 +352,7 @@ agent_tools_data AS (
         ) as tools
     FROM best_agent ba
     LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
-    LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN agent_domains adom ON adom.agent_id = ba.agent_id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
@@ -366,11 +366,11 @@ developer_instruction_data AS (
         i.template as developer_instruction_template,
         ins.schema_id as developer_instruction_schema_id
     FROM best_agent ba
-    INNER JOIN agents a ON a.id = ba.agent_id
+    INNER JOIN agents_resource a ON a.id = ba.agent_id
     LEFT JOIN agent_domains adom_dev ON adom_dev.agent_id = a.id
     LEFT JOIN domain_artifacts da_dev ON da_dev.domain_id = adom_dev.domain_id
     LEFT JOIN agent_instructions ai ON ai.agent_id = a.id
-    LEFT JOIN instructions i ON i.id = ai.instruction_id AND i.active = true
+    LEFT JOIN instructions_resource i ON i.id = ai.instruction_id AND i.active = true
     LEFT JOIN instruction_schemas ins ON ins.instruction_id = i.id
     LIMIT 1
 ),
@@ -378,9 +378,9 @@ developer_instruction_data AS (
 department_data AS (
     SELECT 
         p_params.department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as department_name
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as department_name
     FROM params p_params
-    LEFT JOIN departments d ON d.id = p_params.department_id
+    LEFT JOIN departments_resource d ON d.id = p_params.department_id
 ),
 -- Context data - minimal (no rate limit, no run creation)
 context_data AS (
@@ -395,7 +395,7 @@ context_data AS (
     CROSS JOIN scenario_info si
     CROSS JOIN best_agent ba
     CROSS JOIN params p_params
-    INNER JOIN agents a ON a.id = ba.agent_id
+    INNER JOIN agents_resource a ON a.id = ba.agent_id
     LEFT JOIN agent_domains adom_ctx ON adom_ctx.agent_id = a.id
     LEFT JOIN domain_artifacts da_ctx ON da_ctx.domain_id = adom_ctx.domain_id
     -- NO rate limit check - handled in generate/start.py

@@ -26,7 +26,7 @@ WITH tool_schema_data AS (
     SELECT 
         t.id as tool_id,
         ts.schema_id,
-        -- Build arguments JSONB from schema_fields
+        -- Build arguments JSONB FROM schema_fields_resource
         COALESCE(
             jsonb_object_agg(
                 sf.name,
@@ -44,7 +44,7 @@ WITH tool_schema_data AS (
             ) FILTER (WHERE sf.name IS NOT NULL),
             '{}'::jsonb
         ) as arguments,
-        -- Build argument_descriptions JSONB from schema_fields.description
+        -- Build argument_descriptions JSONB FROM schema_fields_resource.description
         COALESCE(
             jsonb_object_agg(
                 sf.name,
@@ -53,7 +53,7 @@ WITH tool_schema_data AS (
             ) FILTER (WHERE sf.name IS NOT NULL AND sf.description != ''),
             '{}'::jsonb
         ) as argument_descriptions,
-        -- Build argument_defaults JSONB from schema_fields.default_value
+        -- Build argument_defaults JSONB FROM schema_fields_resource.default_value
         COALESCE(
             jsonb_object_agg(
                 sf.name,
@@ -82,10 +82,10 @@ WITH tool_schema_data AS (
             '{}'::jsonb
         ) as argument_defaults
     FROM agent_tools at
-    JOIN tool t ON t.id = at.tool_id
+    JOIN tool_artifact t ON t.id = at.tool_id
     LEFT JOIN tool_schemas ts ON ts.tool_id = t.id
-    LEFT JOIN schemas s ON s.id = ts.schema_id
-    LEFT JOIN schema_fields sf ON sf.schema_id = s.id
+    LEFT JOIN schemas_resource s ON s.id = ts.schema_id
+    LEFT JOIN schema_fields_resource sf ON sf.schema_id = s.id
     WHERE at.agent_id = socket_get_agent_tools_v4.agent_id
       AND at.active = TRUE
       AND t.active = TRUE
@@ -102,7 +102,7 @@ SELECT DISTINCT ON (t.id)
     COALESCE(tsd.argument_defaults, '{}'::jsonb) as argument_defaults,
     t.active
 FROM agent_tools at
-JOIN tool t ON t.id = at.tool_id
+JOIN tool_artifact t ON t.id = at.tool_id
 LEFT JOIN resource_tools rt ON rt.tool_id = t.id
 LEFT JOIN agent_domains adom ON adom.agent_id = at.agent_id
 LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id

@@ -36,20 +36,20 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_simulation AS (
     SELECT 
         s.id as source_id,
-        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
-        COALESCE((SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description
+        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
+        COALESCE((SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description
     FROM params x
-    JOIN simulation s ON s.id = x.simulation_id
+    JOIN simulation_artifact s ON s.id = x.simulation_id
 ),
 get_or_create_name AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT ss.title || ' Copy', NOW(), NOW()
     FROM source_simulation ss
     WHERE ss.title IS NOT NULL
@@ -57,7 +57,7 @@ get_or_create_name AS (
     RETURNING id as name_id, name as name_value
 ),
 get_or_create_description AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT ss.description, NOW(), NOW()
     FROM source_simulation ss
     WHERE ss.description IS NOT NULL AND ss.description != ''
@@ -66,11 +66,11 @@ get_or_create_description AS (
 ),
 get_flag_ids AS (
     SELECT 
-        (SELECT id FROM flags WHERE name = 'active' LIMIT 1) as active_flag_id,
-        (SELECT id FROM flags WHERE name = 'practice' LIMIT 1) as practice_flag_id
+        (SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1) as active_flag_id,
+        (SELECT id FROM flags_resource WHERE name = 'practice' LIMIT 1) as practice_flag_id
 ),
 new_simulation AS (
-    INSERT INTO simulation (
+    INSERT INTO simulation_artifact (
         created_at,
         updated_at
     )
@@ -114,7 +114,7 @@ copy_scenarios AS (
     CROSS JOIN new_simulation ns
 ),
 copy_scenario_positions AS (
-    INSERT INTO scenario_positions (simulation_id, scenario_id, value, created_at, updated_at, generated, mcp, call_id)
+    INSERT INTO scenario_positions_resource (simulation_id, scenario_id, value, created_at, updated_at, generated, mcp, call_id)
     SELECT 
         ns.simulation_id,
         sp.scenario_id,
@@ -125,7 +125,7 @@ copy_scenario_positions AS (
         sp.mcp,
         sp.call_id
     FROM source_simulation ssim
-    JOIN scenario_positions sp ON sp.simulation_id = ssim.source_id
+    JOIN scenario_positions_resource sp ON sp.simulation_id = ssim.source_id
     CROSS JOIN new_simulation ns
 ),
 copy_scenario_flags AS (

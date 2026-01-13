@@ -88,26 +88,26 @@ draft_payload_data AS (
 auth_exists_check AS (
     -- Check if auth exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM auths WHERE id = (SELECT auth_id FROM params)
+        SELECT 1 FROM auths_resource WHERE id = (SELECT auth_id FROM params)
     )::boolean as auth_exists
 ),
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 auth_data AS (
     SELECT 
         -- Merge draft payload with auth data (draft takes precedence)
         COALESCE(
             (SELECT payload->>'name' FROM draft_payload_data),
-            (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)
+            (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)
         ) as name,
         COALESCE(
             (SELECT payload->>'description' FROM draft_payload_data),
-            (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1)
+            (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1)
         ) as description,
         COALESCE(
             (SELECT (payload->>'active')::boolean FROM draft_payload_data),
@@ -118,7 +118,7 @@ auth_data AS (
             ELSE false
         END as can_edit
     FROM params x
-    JOIN auths a ON a.id = x.auth_id
+    JOIN auths_resource a ON a.id = x.auth_id
     CROSS JOIN user_profile up
 ),
 auth_items_data AS (
@@ -137,7 +137,7 @@ auth_items_data AS (
         END as value_masked
     FROM params x
     JOIN auth_items ai_j ON ai_j.auth_id = x.auth_id
-    JOIN items i ON i.id = ai_j.item_id
+    JOIN items_resource i ON i.id = ai_j.item_id
     ORDER BY i.position
 )
 SELECT 

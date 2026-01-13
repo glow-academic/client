@@ -37,21 +37,21 @@ VOLATILE
 AS $$
 WITH user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
-    FROM profile p
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+    FROM profile_artifact p
     WHERE p.id = profile_id
 ),
--- Insert name into names table and get ID
+-- Insert name INTO names_resource table and get ID
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name, NOW(), NOW()
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Insert description into descriptions table and get ID
+-- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT COALESCE(description, ''), NOW(), NOW()
     WHERE description IS NOT NULL AND description != ''
     ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
@@ -59,7 +59,7 @@ description_resource AS (
 ),
 insert_doc AS (
     -- Create document (without name/description/active/template columns)
-    INSERT INTO document (
+    INSERT INTO document_artifact (
         id, 
         created_at, 
         updated_at
@@ -84,7 +84,7 @@ link_document_agent_domain AS (
         SELECT adom.domain_id
         FROM agent_domains adom
         JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = 'document'::artifacts
-        JOIN agents a ON a.id = adom.agent_id
+        JOIN agents_resource a ON a.id = adom.agent_id
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
             AND af.value = true
         )
@@ -127,7 +127,7 @@ link_document_active_flag AS (
         NOW(),
         NOW()
     FROM insert_doc id
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
         value = true,
@@ -144,7 +144,7 @@ link_document_template_flag AS (
         NOW(),
         NOW()
     FROM insert_doc id
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'template'
     ON CONFLICT (document_id, flag_id, type) DO UPDATE SET 
         value = false,
@@ -161,7 +161,7 @@ insert_upload AS (
 ),
 create_template AS (
     -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
-    INSERT INTO templates (name, created_at, updated_at)
+    INSERT INTO templates_resource (name, created_at, updated_at)
     SELECT 
         name as name,
         NOW(),

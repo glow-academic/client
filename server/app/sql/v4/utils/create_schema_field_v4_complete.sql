@@ -29,7 +29,7 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO schema_fields (
+    INSERT INTO schema_fields_resource (
         id, schema_id, name, field_type, required, "position", description,
         created_at, updated_at
     )

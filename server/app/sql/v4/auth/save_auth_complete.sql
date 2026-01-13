@@ -69,43 +69,43 @@ BEGIN
     -- Determine if create or update
     is_create := (input_auth_id IS NULL);
     
-    -- Create or update auth first (outside CTE)
+    -- Create or UPDATE auth_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO auths (id)
+        INSERT INTO auths_resource (id)
         VALUES (uuidv7())
         RETURNING id INTO v_auth_id;
     ELSE
         -- UPDATE path
         v_auth_id := input_auth_id;
-        UPDATE auths
+        UPDATE auths_resource
         SET updated_at = NOW()
         WHERE id = v_auth_id;
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', description_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
     
     -- Validate protocol_ids exist
     IF COALESCE(array_length(protocol_ids, 1), 0) > 0 THEN
-        IF NOT EXISTS (SELECT 1 FROM protocols WHERE id = ANY(protocol_ids)) THEN
+        IF NOT EXISTS (SELECT 1 FROM protocols_resource WHERE id = ANY(protocol_ids)) THEN
             RAISE EXCEPTION 'One or more protocol resources not found';
         END IF;
     END IF;
     
     -- Validate slug_ids exist
     IF COALESCE(array_length(slug_ids, 1), 0) > 0 THEN
-        IF NOT EXISTS (SELECT 1 FROM slugs WHERE id = ANY(slug_ids)) THEN
+        IF NOT EXISTS (SELECT 1 FROM slugs_resource WHERE id = ANY(slug_ids)) THEN
             RAISE EXCEPTION 'One or more slug resources not found';
         END IF;
     END IF;
@@ -142,9 +142,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     actor_profile AS (
         SELECT 
@@ -177,7 +177,7 @@ BEGIN
         WHERE x.description_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT auth_descriptions_pkey DO UPDATE SET updated_at = NOW()
     ),
-    -- Insert or update auth active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
+    -- Insert or UPDATE auth_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_auth_active_flag AS (
         INSERT INTO auth_flags (auth_id, flag_id, type, value, created_at, updated_at)
         SELECT 
@@ -188,7 +188,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'active'
         ON CONFLICT ON CONSTRAINT auth_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, auth_flags.flag_id),
@@ -239,7 +239,7 @@ BEGIN
     ),
     new_items AS (
         -- Create all items (standalone table) - one per auth item
-        INSERT INTO items (
+        INSERT INTO items_resource (
             name,
             description,
             encrypted,

@@ -43,7 +43,7 @@ BEGIN
     IF schema_ids IS NOT NULL AND COALESCE(array_length(schema_ids, 1), 0) > 0 THEN
         IF EXISTS (
             SELECT 1 FROM UNNEST(schema_ids) AS schema_id
-            WHERE NOT EXISTS (SELECT 1 FROM schemas WHERE id = schema_id)
+            WHERE NOT EXISTS (SELECT 1 FROM schemas_resource WHERE id = schema_id)
         ) THEN
             RAISE EXCEPTION 'One or more schema resources not found';
         END IF;
@@ -53,7 +53,7 @@ BEGIN
     IF template_ids IS NOT NULL AND COALESCE(array_length(template_ids, 1), 0) > 0 THEN
         IF EXISTS (
             SELECT 1 FROM UNNEST(template_ids) AS template_id
-            WHERE NOT EXISTS (SELECT 1 FROM templates WHERE id = template_id)
+            WHERE NOT EXISTS (SELECT 1 FROM templates_resource WHERE id = template_id)
         ) THEN
             RAISE EXCEPTION 'One or more template resources not found';
         END IF;

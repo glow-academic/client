@@ -39,33 +39,33 @@ WITH params AS (
 department_exists_check AS (
     -- Check if department exists independently of deletion
     SELECT EXISTS(
-        SELECT 1 FROM department WHERE id = (SELECT department_id FROM params)
+        SELECT 1 FROM department_artifact WHERE id = (SELECT department_id FROM params)
     )::boolean as department_exists
 ),
 actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 department_info AS (
     -- Check if department exists and get usage counts
     SELECT 
         d.id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
         (SELECT COUNT(*) FROM simulation_departments WHERE department_id = d.id AND active = true) as simulation_count,
         (SELECT COUNT(*) FROM scenario_departments WHERE department_id = d.id AND active = true) as scenario_count,
         (SELECT COUNT(*) FROM persona_departments WHERE department_id = d.id AND active = true) as persona_count,
         (SELECT COUNT(*) FROM document_departments WHERE department_id = d.id AND active = true) as document_count,
         (SELECT COUNT(*) FROM cohort_departments WHERE department_id = d.id AND active = true) as cohort_count
-    FROM department d
+    FROM department_artifact d
     WHERE d.id = (SELECT department_id FROM params)
 ),
 usage_summary AS (
     -- Calculate total usage
     SELECT 
         id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = di.id LIMIT 1) as title,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = di.id LIMIT 1) as title,
         simulation_count,
         scenario_count,
         persona_count,
@@ -76,7 +76,7 @@ usage_summary AS (
 ),
 delete_department AS (
     -- Delete department only if it exists and is not in use
-    DELETE FROM department
+    DELETE FROM department_artifact
     WHERE id IN (
         SELECT id FROM usage_summary WHERE total_usage = 0
     )

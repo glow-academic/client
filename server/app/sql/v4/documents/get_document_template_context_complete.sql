@@ -53,16 +53,16 @@ VOLATILE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        ((SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), 
-         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), ''), 
-         (SELECT n2.name FROM parameter_names pn JOIN names n2 ON pn.name_id = n2.id WHERE pn.parameter_id = pa.id LIMIT 1), 
-         COALESCE((SELECT d2.description FROM parameter_descriptions pd JOIN descriptions d2 ON pd.description_id = d2.id WHERE pd.parameter_id = pa.id LIMIT 1), ''))::types.q_get_document_template_context_v4_field
+        ((SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), 
+         COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), ''), 
+         (SELECT n2.name FROM parameter_names pn JOIN names_resource n2 ON pn.name_id = n2.id WHERE pn.parameter_id = pa.id LIMIT 1), 
+         COALESCE((SELECT d2.description FROM parameter_descriptions pd JOIN descriptions_resource d2 ON pd.description_id = d2.id WHERE pd.parameter_id = pa.id LIMIT 1), ''))::types.q_get_document_template_context_v4_field
         ORDER BY array_position($1, f.id)
     ),
     '{}'::types.q_get_document_template_context_v4_field[]
 ) as fields
-FROM field f
+FROM field_artifact f
 JOIN parameter_fields pf ON pf.field_id = f.id
-JOIN parameters pa ON pa.id = pf.parameter_id AND EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = pa.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
+JOIN parameters_resource pa ON pa.id = pf.parameter_id AND EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = pa.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
 WHERE f.id = ANY($1)
 $$;

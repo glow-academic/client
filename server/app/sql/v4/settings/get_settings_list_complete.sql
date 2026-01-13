@@ -68,9 +68,9 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 settings_departments_data AS (
     SELECT 
@@ -88,7 +88,7 @@ user_departments AS (
 user_profile AS (
     SELECT role
     FROM params x
-    JOIN profile ON profile.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 -- Get department_ids via setting_provider_keys -> settings -> department_settings
 key_departments_data AS (
@@ -96,7 +96,7 @@ key_departments_data AS (
         spk.key_id,
         ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
     FROM setting_provider_keys spk
-    JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE spk.active = true
     GROUP BY spk.key_id
@@ -107,12 +107,12 @@ settings_keys_data AS (
         COALESCE(
             ARRAY_AGG(
                 (k.id, 
-                 (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1),
+                 (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1),
                  CASE 
                      WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
                      ELSE '****'
                  END,
-                 COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''),
+                 COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''),
                  EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
                  kdd.department_ids
                 )::types.q_get_settings_list_v4_key
@@ -120,14 +120,14 @@ settings_keys_data AS (
             ),
             '{}'::types.q_get_settings_list_v4_key[]
         ) as keys
-    FROM key k
+    FROM key_artifact k
     LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
     CROSS JOIN user_profile up
     WHERE 
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
         EXISTS (
             SELECT 1 FROM setting_provider_keys spk
-            JOIN setting s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+            JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
             WHERE spk.key_id = k.id AND spk.active = true
@@ -139,7 +139,7 @@ SELECT
     ap.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (s.id, s.created_at, EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE), (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
+            (s.id, s.created_at, EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE), (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
              COALESCE(sdd.department_ids, ARRAY[]::text[])
             )::types.q_get_settings_list_v4_setting
             ORDER BY s.created_at DESC
@@ -147,7 +147,7 @@ SELECT
         '{}'::types.q_get_settings_list_v4_setting[]
     ) as settings,
     COALESCE(skd.keys, '{}'::types.q_get_settings_list_v4_key[]) as keys
-FROM setting s
+FROM setting_artifact s
 CROSS JOIN actor_profile ap
 LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
 LEFT JOIN settings_keys_data skd ON true

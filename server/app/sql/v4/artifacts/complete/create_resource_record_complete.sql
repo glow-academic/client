@@ -1,5 +1,5 @@
 -- Create resource record dynamically
--- Uses EXECUTE to handle dynamic table names based on resource_type
+-- Uses EXECUTE to handle dynamic TABLE names_resource based on resource_type
 -- Returns the created resource id
 
 -- Drop function if exists (handles signature variations)

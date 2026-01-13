@@ -26,7 +26,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO analyses (content, created_at)
+    INSERT INTO analyses_resource (content, created_at)
     VALUES (content, NOW())
     RETURNING id::text;
 $$;

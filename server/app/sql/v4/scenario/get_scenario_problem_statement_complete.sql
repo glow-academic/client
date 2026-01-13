@@ -30,7 +30,7 @@ SELECT
     ps.id as problem_statement_id,
     ps.problem_statement
 FROM scenario_problem_statements sps
-JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
 WHERE sps.scenario_id = scenario_id
   AND sps.active = true
 ORDER BY sps.created_at DESC

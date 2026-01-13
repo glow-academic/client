@@ -29,24 +29,24 @@ LANGUAGE sql
 VOLATILE
 AS $$
 WITH update_question_times AS (
-    -- Update questions.time with first timestamp value from question_timestamps
-    UPDATE questions
+    -- UPDATE questions_resource.time with first timestamp value from question_timestamps
+    UPDATE questions_resource q
     SET time = COALESCE(
         (SELECT (time_val::text)::integer
          FROM jsonb_array_elements_text(
              (SELECT q_entry.value 
               FROM jsonb_each(COALESCE(question_timestamps, '{}'::jsonb)) as q_entry
-              WHERE (q_entry.key)::uuid = questions.id
+              WHERE (q_entry.key)::uuid = q.id
               LIMIT 1)
          ) as time_val
          LIMIT 1),
-        questions.time
+        q.time
     ),
     updated_at = NOW()
     WHERE EXISTS (
         SELECT 1
         FROM jsonb_each(COALESCE(question_timestamps, '{}'::jsonb)) as q_entry
-        WHERE (q_entry.key)::uuid = questions.id
+        WHERE (q_entry.key)::uuid = q.id
         AND jsonb_typeof(q_entry.value) = 'array'
         AND jsonb_array_length(q_entry.value) > 0
     )
@@ -54,7 +54,7 @@ WITH update_question_times AS (
         SELECT 1
         FROM scenario_questions sq
         WHERE sq.scenario_id = api_save_question_timestamps_v4.scenario_id
-        AND sq.question_id = questions.id
+        AND sq.question_id = q.id
         AND sq.active = true
     )
     RETURNING 1

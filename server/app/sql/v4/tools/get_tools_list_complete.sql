@@ -63,12 +63,12 @@ user_profile AS (
     SELECT 
         role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile ON profile.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 tool_schema_counts AS (
     SELECT 
@@ -91,7 +91,7 @@ tool_usage_counts AS (
             (SELECT COUNT(*) FROM calls c WHERE c.tool_id = t.id),
             0
         ) as usage_count
-    FROM tool t
+    FROM tool_artifact t
 ),
 tool_data_base AS (
     SELECT 
@@ -103,7 +103,7 @@ tool_data_base AS (
         COALESCE(tsc.num_schemas, 0) as num_schemas,
         COALESCE(ttc.num_templates, 0) as num_templates,
         COALESCE(tuc.usage_count, 0) as usage_count
-    FROM tool t
+    FROM tool_artifact t
     LEFT JOIN tool_schema_counts tsc ON tsc.tool_id = t.id
     LEFT JOIN tool_template_counts ttc ON ttc.tool_id = t.id
     LEFT JOIN tool_usage_counts tuc ON tuc.tool_id = t.id

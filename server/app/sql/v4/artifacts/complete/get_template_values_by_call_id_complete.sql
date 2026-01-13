@@ -37,8 +37,8 @@ BEGIN
         tv.number_value as number_value,
         tv.boolean_value as boolean_value,
         sf.field_type::text as field_type
-    FROM template_values tv
-    JOIN schema_fields sf ON sf.id = tv.schema_field_id
+    FROM template_values_resource tv
+    JOIN schema_fields_resource sf ON sf.id = tv.schema_field_id
     WHERE tv.call_id = api_get_template_values_by_call_id_v4.call_id
     ORDER BY sf.position;
 END;

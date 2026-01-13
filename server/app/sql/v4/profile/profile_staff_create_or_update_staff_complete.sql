@@ -45,13 +45,13 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.current_profile_id
+    JOIN profile_artifact p ON p.id = x.current_profile_id
 ),
 current_user_role AS (
     -- Get current user's role for validation
-    SELECT p.role FROM params x JOIN profile p ON p.id = x.current_profile_id
+    SELECT p.role FROM params x JOIN profile_artifact p ON p.id = x.current_profile_id
 ),
 role_validation AS (
     -- Validate role hierarchy: check if current user can assign target role
@@ -72,7 +72,7 @@ existing_profile AS (
 ),
 -- Insert/update first_name in names table
 first_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT first_name, NOW(), NOW()
     FROM params
     WHERE first_name IS NOT NULL AND first_name != ''
@@ -81,7 +81,7 @@ first_name_resource AS (
 ),
 -- Insert/update last_name in names table
 last_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT last_name, NOW(), NOW()
     FROM params
     WHERE last_name IS NOT NULL AND last_name != ''
@@ -89,8 +89,8 @@ last_name_resource AS (
     RETURNING id as last_name_id, name
 ),
 profile_upsert AS (
-    -- Insert or update profile without first_name, last_name, active columns
-    INSERT INTO profile (
+    -- Insert or UPDATE profile_artifact without first_name, last_name, active columns
+    INSERT INTO profile_artifact (
         id, role, updated_at
     )
     SELECT
@@ -102,7 +102,7 @@ profile_upsert AS (
         role = CASE 
             WHEN EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true) 
             THEN EXCLUDED.role::profile_role
-            ELSE profile.role::profile_role
+            ELSE profile_artifact.role::profile_role
         END,
         updated_at = NOW()
     RETURNING id, NOT EXISTS(SELECT 1 FROM existing_profile) as created
@@ -142,7 +142,7 @@ link_profile_last_name AS (
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (profile_id, name_id, type) DO UPDATE SET updated_at = NOW()
 ),
--- Update profile active flag
+-- UPDATE profile_artifact active flag
 update_profile_active_flag AS (
     INSERT INTO profile_flags (profile_id, flag_id, type, value, created_at, updated_at)
     SELECT 
@@ -153,7 +153,7 @@ update_profile_active_flag AS (
         NOW(),
         NOW()
     FROM profile_upsert pu
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
       AND EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 

@@ -54,8 +54,8 @@ actor_name_computed AS (
         CASE 
             WHEN (SELECT profile_id FROM params) IS NOT NULL THEN
                 COALESCE(
-                    (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'first' LIMIT 1) || ' ' ||
-                    (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = (SELECT profile_id FROM params) AND pn2.type = 'last' LIMIT 1),
+                    (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'first' LIMIT 1) || ' ' ||
+                    (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = (SELECT profile_id FROM params) AND pn2.type = 'last' LIMIT 1),
                     ''
                 )
             ELSE NULL
@@ -64,10 +64,10 @@ actor_name_computed AS (
 target_profile AS (
     SELECT 
         p.id,
-        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
-        (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
+        (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
-        (SELECT e2.email FROM profile_emails pe2 JOIN emails e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
+        (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         p.role,
         EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         rl.requests_per_day as req_per_day,
@@ -76,14 +76,14 @@ target_profile AS (
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
-    FROM profile p
+    FROM profile_artifact p
     JOIN profile_emails pe_match ON pe_match.profile_id = p.id AND pe_match.active = true
-    JOIN emails e_match ON pe_match.email_id = e_match.id AND e_match.email = (SELECT email FROM params)
+    JOIN emails_resource e_match ON pe_match.email_id = e_match.id AND e_match.email = (SELECT email FROM params)
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
-    LEFT JOIN emails e ON pe.email_id = e.id
+    LEFT JOIN emails_resource e ON pe.email_id = e.id
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE AND pd.active = true
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active 
         FROM profile_activity 

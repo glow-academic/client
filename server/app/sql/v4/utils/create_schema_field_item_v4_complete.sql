@@ -23,7 +23,7 @@ RETURNS void
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO schema_field_items (
+    INSERT INTO schema_field_items_resource (
         schema_field_id, item_schema_id, created_at, updated_at
     )
     VALUES ($1, $2, NOW(), NOW())

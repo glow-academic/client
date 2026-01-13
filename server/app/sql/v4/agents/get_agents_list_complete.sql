@@ -73,9 +73,9 @@ user_departments AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profile ON profile.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 agent_department_links AS (
     SELECT 
@@ -96,12 +96,12 @@ agent_departments_data AS (
 filtered_agents AS (
     SELECT 
         a.id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
-        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
-        (SELECT m.id FROM agent_models am JOIN models m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
+        (SELECT m.id FROM agent_models am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
         COALESCE(da.artifact::text, '') as role,  -- Derive from domain_artifacts via agent_domains
         a.updated_at
-    FROM agent a
+    FROM agent_artifact a
     LEFT JOIN agent_domains adom ON adom.agent_id = a.id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -127,8 +127,8 @@ SELECT
                  WHEN up.role = 'superadmin'::profile_role THEN true
                  ELSE false
              END,
-             (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-             COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''),
+             (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+             COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''),
              up.actor_name
             )::types.q_list_agents_v4_agent
             ORDER BY fa.name
@@ -142,11 +142,11 @@ LEFT JOIN agent_departments_data addd ON addd.agent_id = fa.id
 -- Join temperature from junction table
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = fa.id AND atl.active = true
 LEFT JOIN model_temperature_levels mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = fa.model_id
-LEFT JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id AND tl.active = true
+LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
 -- Join reasoning from junction table
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = fa.id AND arl.active = true
 LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = fa.model_id
-LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
-LEFT JOIN models m ON m.id = fa.model_id
+LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
+LEFT JOIN models_resource m ON m.id = fa.model_id
 GROUP BY up.actor_name, up.role
 $$;

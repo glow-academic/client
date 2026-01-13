@@ -35,20 +35,20 @@ WITH RECURSIVE scenario_ancestors AS (
         sc.scenario_id as ancestor_id,
         0 as depth
     FROM attempt_chats ac
-    JOIN chat sc ON sc.id = ac.chat_id
-    JOIN grade scg ON EXISTS (
-        SELECT 1 FROM run r_check
+    JOIN chat_artifact sc ON sc.id = ac.chat_id
+    JOIN grade_artifact scg ON EXISTS (
+        SELECT 1 FROM run_artifact r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
         JOIN groups g_check ON g_check.id = gr_check.group_id
         JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chat c_check ON c_check.id = cg_check.chat_id
+        JOIN chat_artifact c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    JOIN run r_scen1 ON r_scen1.id = scg.run_id
+    JOIN run_artifact r_scen1 ON r_scen1.id = scg.run_id
     JOIN group_runs gr_scen1 ON gr_scen1.run_id = r_scen1.id
     JOIN groups g_scen1 ON g_scen1.id = gr_scen1.group_id
     JOIN chat_groups cg_scen1 ON cg_scen1.group_id = g_scen1.id
-    JOIN chat c_scen1 ON c_scen1.id = cg_scen1.chat_id AND c_scen1.id = sc.id
+    JOIN chat_artifact c_scen1 ON c_scen1.id = cg_scen1.chat_id AND c_scen1.id = sc.id
     WHERE ac.attempt_id = attempt_id
     
     UNION ALL
@@ -89,20 +89,20 @@ SELECT DISTINCT ss.scenario_id as parent_scenario_id
 FROM simulation_scenarios ss
 JOIN simulation_attempts sa ON sa.simulation_id = ss.simulation_id
 JOIN attempt_chats ac ON ac.attempt_id = sa.id
-JOIN chat sc ON sc.id = ac.chat_id
-JOIN grade scg ON EXISTS (
-    SELECT 1 FROM run r_check
+JOIN chat_artifact sc ON sc.id = ac.chat_id
+JOIN grade_artifact scg ON EXISTS (
+    SELECT 1 FROM run_artifact r_check
     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
     JOIN groups g_check ON g_check.id = gr_check.group_id
     JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-    JOIN chat c_check ON c_check.id = cg_check.chat_id AND c_check.id = sc.id
+    JOIN chat_artifact c_check ON c_check.id = cg_check.chat_id AND c_check.id = sc.id
     WHERE r_check.id = scg.run_id
 )
-JOIN run r_scen2 ON r_scen2.id = scg.run_id
+JOIN run_artifact r_scen2 ON r_scen2.id = scg.run_id
 JOIN group_runs gr_scen2 ON gr_scen2.run_id = r_scen2.id
 JOIN groups g_scen2 ON g_scen2.id = gr_scen2.group_id
 JOIN chat_groups cg_scen2 ON cg_scen2.group_id = g_scen2.id
-JOIN chat c_scen2 ON c_scen2.id = cg_scen2.chat_id AND c_scen2.id = sc.id
+JOIN chat_artifact c_scen2 ON c_scen2.id = cg_scen2.chat_id AND c_scen2.id = sc.id
 LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
 WHERE sa.id = attempt_id
   AND (

@@ -1,4 +1,4 @@
--- Update agent with prompt and department links in a single transaction
+-- UPDATE agent_artifact with prompt and department links in a single transaction
 -- Converted to function
 
 -- Create function
@@ -44,9 +44,9 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     -- Get agent's current active department links
@@ -80,7 +80,7 @@ actor_profile AS (
 ),
 -- Insert/update name in names table
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name, NOW(), NOW()
     FROM params
     WHERE name IS NOT NULL AND name != ''
@@ -89,7 +89,7 @@ name_resource AS (
 ),
 -- Insert/update description in descriptions table
 description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM params
     WHERE description IS NOT NULL AND description != ''
@@ -97,13 +97,13 @@ description_resource AS (
     RETURNING id as description_id
 ),
 update_agent AS (
-    -- Update agent (without name/description/model_id/active columns)
-    UPDATE agent
+    -- UPDATE agent_artifact (without name/description/model_id/active columns)
+    UPDATE agent_artifact
     SET 
         updated_at = NOW()
     FROM params x
-    WHERE agent.id = x.agent_id
-    RETURNING agent.id::text as agent_id
+    WHERE agent_artifact.id = x.agent_id
+    RETURNING agent_artifact.id::text as agent_id
 ),
 -- Remove old name links
 remove_old_name AS (
@@ -159,7 +159,7 @@ link_agent_model AS (
     WHERE (SELECT model_id FROM params) IS NOT NULL
     ON CONFLICT (agent_id, model_id) DO UPDATE SET updated_at = NOW()
 ),
--- Update agent active flag
+-- UPDATE agent_artifact active flag
 update_agent_active_flag AS (
     UPDATE agent_flags SET
         value = (SELECT active FROM params),
@@ -177,7 +177,7 @@ insert_agent_active_flag AS (
         NOW(),
         NOW()
     FROM update_agent ua
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
       AND NOT EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = ua.agent_id::uuid AND af.type = 'active'::type_agent_flags)
     ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
@@ -247,7 +247,7 @@ link_agent_domain AS (
 ),
 new_prompt AS (
     -- Create prompt only if system_prompt provided and prompt_id not provided
-    INSERT INTO prompts (system_prompt, created_at, updated_at)
+    INSERT INTO prompts_resource (system_prompt, created_at, updated_at)
     SELECT x.system_prompt, NOW(), NOW()
     FROM params x
     WHERE x.prompt_id IS NULL AND x.system_prompt IS NOT NULL AND x.system_prompt != ''
@@ -289,7 +289,7 @@ get_default_prompt_content AS (
     SELECT pr.system_prompt
     FROM params x
     JOIN agent_prompts ap ON ap.agent_id = x.agent_id AND ap.active = true
-    JOIN prompts pr ON pr.id = ap.prompt_id
+    JOIN prompts_resource pr ON pr.id = ap.prompt_id
     LIMIT 1
 ),
 prune_duplicate_prompts AS (
@@ -301,7 +301,7 @@ prune_duplicate_prompts AS (
     AND EXISTS (
         SELECT 1 FROM get_default_prompt_content gdc
         JOIN selected_prompt_id sp ON sp.prompt_id IS NOT NULL
-        JOIN prompts pr ON pr.id = sp.prompt_id::uuid
+        JOIN prompts_resource pr ON pr.id = sp.prompt_id::uuid
         WHERE pr.system_prompt = gdc.system_prompt
     )
     RETURNING adp.agent_id
@@ -378,7 +378,7 @@ deactivate_voices AS (
     RETURNING agent_voices.agent_id
 ),
 update_voices AS (
-    -- Insert or update voices if voice_ids is provided
+    -- Insert or UPDATE voices_resource if voice_ids is provided
     INSERT INTO agent_voices (agent_id, voice_id, active, created_at, updated_at)
     SELECT x.agent_id, voice_id::uuid, true, NOW(), NOW()
     FROM params x

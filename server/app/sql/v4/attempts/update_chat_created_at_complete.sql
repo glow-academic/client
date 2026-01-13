@@ -11,12 +11,12 @@ AS $$
 WITH chat_exists AS (
     -- Check if chat exists
     SELECT id
-    FROM chat
-    WHERE chat.id = api_update_chat_created_at_v4.chat_id
+    FROM chat_artifact
+    WHERE chat_artifact.id = api_update_chat_created_at_v4.chat_id
 ),
 update_chat AS (
     -- Update the createdAt timestamp only if chat exists
-    UPDATE chat
+    UPDATE chat_artifact
     SET created_at = api_update_chat_created_at_v4.created_at,
         updated_at = NOW()
     WHERE id IN (SELECT id FROM chat_exists)

@@ -43,7 +43,7 @@ link_upload AS (
     DO UPDATE SET active = EXCLUDED.active, updated_at = NOW()
 ),
 update_image AS (
-    UPDATE images
+    UPDATE images_resource
     SET completed = TRUE,
         updated_at = NOW()
     WHERE id = image_id

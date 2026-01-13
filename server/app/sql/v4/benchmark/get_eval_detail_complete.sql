@@ -184,7 +184,7 @@ draft_payload_data AS (
     LIMIT 1
 ),
 eval_exists_check AS (
-    SELECT EXISTS(SELECT 1 FROM eval WHERE id = (SELECT eval_id FROM params))::boolean as eval_exists
+    SELECT EXISTS(SELECT 1 FROM eval_artifact WHERE id = (SELECT eval_id FROM params))::boolean as eval_exists
 ),
 resolve_profile_id AS (
     SELECT 
@@ -201,15 +201,15 @@ user_departments AS (
 eval_data AS (
     SELECT 
         e.id as eval_id,
-        (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as name,
-        (SELECT d.description FROM eval_descriptions ed JOIN descriptions d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as description,
+        (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as name,
+        (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE) as use_groups,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE) as active,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE) as dynamic,
         e.created_at,
         e.updated_at
     FROM params x
-    JOIN evals e ON e.id = x.eval_id
+    JOIN evals_resource e ON e.id = x.eval_id
 ),
 eval_agents_data AS (
     SELECT 
@@ -225,15 +225,15 @@ runs_rubric_grade_agents_data AS (
         errga.eval_id,
         errga.run_id,
         ARRAY_AGG(
-            (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
-            ORDER BY (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
+            (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
+            ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
         ) as rubric_grade_agents
     FROM params x
-    JOIN evals e ON e.id = x.eval_id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
+    JOIN evals_resource e ON e.id = x.eval_id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
     JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id
     JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
-    JOIN rubrics r ON r.id = rga.rubric_id
-    JOIN agents a ON a.id = rga.grade_agent_id
+    JOIN rubrics_resource r ON r.id = rga.rubric_id
+    JOIN agents_resource a ON a.id = rga.grade_agent_id
     GROUP BY errga.eval_id, errga.run_id
 ),
 -- Get rubric_grade_agents per group (when use_groups = true)
@@ -242,15 +242,15 @@ groups_rubric_grade_agents_data AS (
         egga.eval_id,
         egga.group_id,
         ARRAY_AGG(
-            (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
-            ORDER BY (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
+            (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
+            ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
         ) as rubric_grade_agents
     FROM params x
-    JOIN evals e ON e.id = x.eval_id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
+    JOIN evals_resource e ON e.id = x.eval_id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
     JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id
     JOIN rubric_grade_agents rga ON rga.id = egga.rubric_grade_agent_id
-    JOIN rubrics r ON r.id = rga.rubric_id
-    JOIN agents a ON a.id = rga.grade_agent_id
+    JOIN rubrics_resource r ON r.id = rga.rubric_id
+    JOIN agents_resource a ON a.id = rga.grade_agent_id
     GROUP BY egga.eval_id, egga.group_id
 ),
 eval_departments_data AS (
@@ -279,15 +279,15 @@ runs_list AS (
         er.updated_at as status_updated_at,
         r.created_at as model_run_created_at,
         rm.model_id,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
         r.agent_id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         rper.persona_id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
         rp.profile_id,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
             ''
         ) as profile_name,
         CASE WHEN g.id IS NOT NULL THEN true ELSE false END as has_grade,
@@ -296,27 +296,27 @@ runs_list AS (
         g.created_at as grade_created_at,
         COALESCE(
             (SELECT ARRAY_AGG(
-                (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a2.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
-                ORDER BY (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1)
+                (rga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1), rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a2.id LIMIT 1))::types.q_get_eval_detail_v4_rubric_grade_agent
+                ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1)
             )
             FROM eval_runs_rubric_grade_agents errga
             JOIN rubric_grade_agents rga ON rga.id = errga.rubric_grade_agent_id
-            JOIN rubrics r2 ON r2.id = rga.rubric_id
-            JOIN agents a2 ON a2.id = rga.grade_agent_id
+            JOIN rubrics_resource r2 ON r2.id = rga.rubric_id
+            JOIN agents_resource a2 ON a2.id = rga.grade_agent_id
             WHERE errga.eval_id = er.eval_id AND errga.run_id = er.run_id),
             '{}'::types.q_get_eval_detail_v4_rubric_grade_agent[]
         ) as rubric_grade_agents
     FROM params x
     JOIN eval_runs er ON er.eval_id = x.eval_id
-    JOIN run r ON r.id = er.run_id
+    JOIN run_artifact r ON r.id = er.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
-    LEFT JOIN models m ON m.id = rm.model_id
-    LEFT JOIN agents a ON a.id = r.agent_id
+    LEFT JOIN models_resource m ON m.id = rm.model_id
+    LEFT JOIN agents_resource a ON a.id = r.agent_id
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
-    LEFT JOIN personas per ON per.id = rper.persona_id
+    LEFT JOIN personas_resource per ON per.id = rper.persona_id
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-    LEFT JOIN profile p ON p.id = rp.profile_id
-    LEFT JOIN grade g ON g.run_id = er.run_id 
+    LEFT JOIN profile_artifact p ON p.id = rp.profile_id
+    LEFT JOIN grade_artifact g ON g.run_id = er.run_id 
         AND EXISTS (
             SELECT 1 FROM test_runs tr
             JOIN tests t ON t.id = tr.test_id
@@ -345,17 +345,17 @@ user_profile AS (
     SELECT 
         role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 valid_departments_for_eval AS (
-    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 valid_dept_ids AS (
@@ -376,19 +376,19 @@ user_departments_for_agents AS (
 valid_eval_agents_list AS (
     SELECT 
         a.id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
-        COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
         ARRAY[COALESCE(da.artifact::text, '')] as roles
     FROM params x
-    JOIN agents a ON EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    JOIN agents_resource a ON EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('grade' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE 
         (SELECT agent_search FROM params LIMIT 1) IS NULL
-        OR LOWER((SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
-        OR LOWER(COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '')) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
-    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), da.artifact
+        OR LOWER((SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
+        OR LOWER(COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '')) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
+    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), da.artifact
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -404,19 +404,19 @@ eval_agents_array AS (
 valid_agents_for_eval_list AS (
     SELECT 
         a.id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
-        COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
         ARRAY[COALESCE(da.artifact::text, '')] as roles
     FROM params x
-    JOIN agents a ON EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    JOIN agents_resource a ON EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     LEFT JOIN agent_domains adom ON adom.agent_id = a.id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE 
         (SELECT agent_search FROM params LIMIT 1) IS NULL
-        OR LOWER((SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
-        OR LOWER(COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '')) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
-    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), da.artifact
+        OR LOWER((SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
+        OR LOWER(COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '')) LIKE '%' || LOWER((SELECT agent_search FROM params LIMIT 1)) || '%'
+    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), da.artifact
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -432,17 +432,17 @@ agents_array AS (
 user_department_ids_for_rubrics AS (
     SELECT ARRAY_AGG(id) as ids
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 valid_rubrics_data AS (
     SELECT DISTINCT
         r.id,
-        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
-        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description,
+        (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
+        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description,
         (SELECT ra.artifact::text FROM rubric_artifacts ra WHERE ra.rubric_id = r.id LIMIT 1) as agent_role  -- Derive from rubric_artifacts junction
     FROM params x
-    JOIN rubrics r ON EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
+    JOIN rubrics_resource r ON EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids_for_rubrics udi
     WHERE (
@@ -452,15 +452,15 @@ valid_rubrics_data AS (
     UNION
     SELECT DISTINCT
         r2.id,
-        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r2.id LIMIT 1), '') as description,
+        (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r2.id LIMIT 1), '') as description,
         (SELECT ra.artifact::text FROM rubric_artifacts ra WHERE ra.rubric_id = r2.id LIMIT 1) as agent_role  -- Derive from rubric_artifacts junction
     FROM params x
-    JOIN evals e ON e.id = x.eval_id
+    JOIN evals_resource e ON e.id = x.eval_id
     LEFT JOIN eval_runs_rubric_grade_agents errga ON errga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = false)
     LEFT JOIN eval_groups_rubric_grade_agents egga ON egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
     JOIN rubric_grade_agents rga ON rga.id = COALESCE(errga.rubric_grade_agent_id, egga.rubric_grade_agent_id)
-    JOIN rubrics r2 ON r2.id = rga.rubric_id
+    JOIN rubrics_resource r2 ON r2.id = rga.rubric_id
     WHERE EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r2.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
 ),
 rubrics_array AS (
@@ -497,7 +497,7 @@ runs_base AS (
         rp.profile_id,
         r.agent_id,
         rper.persona_id
-    FROM run r
+    FROM run_artifact r
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
@@ -508,24 +508,24 @@ runs_base AS (
 runs_with_names AS (
     SELECT
         rb.*,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
             ''
         ) as profile_name,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
         CASE 
             WHEN rb.agent_id IS NOT NULL THEN 'agent'
             WHEN rb.persona_id IS NOT NULL THEN 'persona'
             ELSE NULL
         END as actor_type
     FROM runs_base rb
-    LEFT JOIN models m ON m.id = rb.model_id
-    LEFT JOIN profile p ON p.id = rb.profile_id
-    LEFT JOIN agents a ON a.id = rb.agent_id
-    LEFT JOIN personas per ON per.id = rb.persona_id
+    LEFT JOIN models_resource m ON m.id = rb.model_id
+    LEFT JOIN profile_artifact p ON p.id = rb.profile_id
+    LEFT JOIN agents_resource a ON a.id = rb.agent_id
+    LEFT JOIN personas_resource per ON per.id = rb.persona_id
 ),
 runs_filtered AS (
     SELECT *

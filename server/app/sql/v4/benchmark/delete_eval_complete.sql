@@ -36,22 +36,22 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profile ON profile.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 eval_info AS (
     SELECT 
         e.id as eval_id, 
-        (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name
+        (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name
     FROM params x
-    JOIN evals e ON e.id = x.eval_id
+    JOIN evals_resource e ON e.id = x.eval_id
 ),
 delete_eval AS (
-    DELETE FROM eval
+    DELETE FROM eval_artifact
     USING params p
-    WHERE eval.id = p.eval_id
-    RETURNING eval.id as eval_id
+    WHERE eval_artifact.id = p.eval_id
+    RETURNING eval_artifact.id as eval_id
 )
 SELECT ei.eval_id, ei.eval_name, ap.actor_name::text as actor_name
 FROM eval_info ei

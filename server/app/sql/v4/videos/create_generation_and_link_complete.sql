@@ -58,7 +58,7 @@ link_upload AS (
     DO UPDATE SET active = EXCLUDED.active, updated_at = NOW()
 ),
 mark_video AS (
-    UPDATE videos
+    UPDATE videos_resource
     SET completed = TRUE,
         updated_at = NOW()
     WHERE id = (SELECT video_id FROM params)

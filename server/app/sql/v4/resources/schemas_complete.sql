@@ -47,7 +47,7 @@ BEGIN
     SELECT t.id, tt.template_id, st.schema_id
     INTO v_tool_id, v_template_id, v_schema_id_from_tool
     FROM agent_tools at
-    JOIN tool t ON t.id = at.tool_id
+    JOIN tool_artifact t ON t.id = at.tool_id
     JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN tool_templates tt ON tt.tool_id = t.id
     LEFT JOIN schema_templates st ON st.template_id = tt.template_id
@@ -73,7 +73,7 @@ BEGIN
         END IF;
     END IF;
     
-    -- Dynamically build arguments_raw from schema_fields and Jinja templates
+    -- Dynamically build arguments_raw FROM schema_fields_resource and Jinja templates
     -- Build a JSONB object with all function parameters first (for lookup)
     -- For schemas, there are no parameters, so use empty object
     v_params_jsonb := '{}'::jsonb;
@@ -96,7 +96,7 @@ BEGIN
             END as arg_key,
             -- Look up value from function parameters using schema field name
             v_params_jsonb->>sf.name as arg_value
-        FROM schema_fields sf
+        FROM schema_fields_resource sf
         WHERE sf.schema_id = v_schema_id_from_tool
         ORDER BY sf.position
     LOOP
@@ -123,15 +123,15 @@ BEGIN
         NOW()
     );
     
-    -- INSERT into schemas table (always insert, never update)
-    INSERT INTO schemas(active, call_id, mcp)
+    -- INSERT INTO schemas_resource table (always insert, never update)
+    INSERT INTO schemas_resource(active, call_id, mcp)
     VALUES (true, v_call_id, mcp)
     RETURNING id INTO v_schema_id;
 
         
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
-    INSERT INTO message (id, role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (id, role, completed, audio, created_at, updated_at)
     VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
     
     -- Link message to call
@@ -140,7 +140,7 @@ BEGIN
     
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO run (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
+    INSERT INTO run_artifact (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
     VALUES (v_run_id, agent_id, 0, 0, 0, NOW(), NOW());
     
     -- Link run to message

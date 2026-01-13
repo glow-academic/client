@@ -142,9 +142,9 @@ resolve_profile_id AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    LEFT JOIN profile p ON p.id = x.profile_id
+    LEFT JOIN profile_artifact p ON p.id = x.profile_id
     WHERE x.profile_id IS NOT NULL
 ),
 group_runs_list AS (
@@ -166,19 +166,19 @@ runs_metadata AS (
         rp.profile_id,
         rper.persona_id
     FROM group_runs_list grl
-    JOIN run r ON r.id = grl.run_id
+    JOIN run_artifact r ON r.id = grl.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
 ),
--- Get department IDs FROM run (via agent or profile)
+-- Get department IDs FROM run_artifact (via agent or profile)
 runs_departments AS (
     SELECT DISTINCT
         d.id as department_id
     FROM runs_metadata rm
-    LEFT JOIN agents a ON a.id = rm.agent_id
+    LEFT JOIN agents_resource a ON a.id = rm.agent_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    LEFT JOIN departments d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    LEFT JOIN departments_resource d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     WHERE d.id IS NOT NULL
 ),
 -- Check department access
@@ -231,7 +231,7 @@ run_chats_map AS (
         c.id as chat_id
     FROM run_groups_map rg
     JOIN chat_groups cg ON cg.group_id = rg.group_id
-    JOIN chat c ON c.id = cg.chat_id
+    JOIN chat_artifact c ON c.id = cg.chat_id
 ),
 -- Find first run (idx = 0) for each group
 first_runs_map AS (
@@ -271,11 +271,11 @@ messages_with_tree AS (
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
         JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
-        JOIN run r ON r.id = gr.run_id
+        JOIN run_artifact r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
-        JOIN message m ON m.id = mr.message_id
+        JOIN message_artifact m ON m.id = mr.message_id
         JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chat c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        JOIN chat_artifact c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         
         UNION ALL
         
@@ -291,7 +291,7 @@ messages_with_tree AS (
             mp.depth + 1 as depth,
             mp.path_root_id,
             mp.run_idx
-        FROM message m
+        FROM message_artifact m
         JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
         WHERE mp.depth < 50
@@ -323,11 +323,11 @@ messages_with_tree AS (
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
         JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
-        JOIN run r ON r.id = gr.run_id
+        JOIN run_artifact r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
-        JOIN message m ON m.id = mr.message_id
+        JOIN message_artifact m ON m.id = mr.message_id
         JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chat c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        JOIN chat_artifact c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_tree mt 
             WHERE mt.child_id = m.id AND mt.active = true
@@ -356,9 +356,9 @@ messages_with_tree AS (
         JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
         JOIN first_runs_map frm ON frm.group_id = g.id AND frm.first_run_id != rcm.run_id
         JOIN message_runs mr ON mr.run_id = frm.first_run_id
-        JOIN message m ON m.id = mr.message_id AND m.role IN ('system'::message_role, 'developer'::message_role)
+        JOIN message_artifact m ON m.id = mr.message_id AND m.role IN ('system'::message_role, 'developer'::message_role)
         JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chat c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        JOIN chat_artifact c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_path mp 
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id
@@ -453,7 +453,7 @@ runs_with_messages AS (
     LEFT JOIN LATERAL (
         SELECT m.id, m.created_at
         FROM message_runs mr
-        JOIN message m ON m.id = mr.message_id
+        JOIN message_artifact m ON m.id = mr.message_id
         WHERE mr.run_id = current_run.run_id
         AND m.role IN ('user'::message_role, 'assistant'::message_role)
         ORDER BY 
@@ -472,7 +472,7 @@ runs_with_messages AS (
                 m.completed,
                 current_run.run_idx as run_idx,
                 0 as depth_from_latest
-            FROM message m
+            FROM message_artifact m
             LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
             WHERE m.id = latest_msg.id
             
@@ -494,7 +494,7 @@ runs_with_messages AS (
                     ap.run_idx
                 ) as run_idx,
                 ap.depth_from_latest + 1 as depth_from_latest
-            FROM message m
+            FROM message_artifact m
             JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
             JOIN ancestor_path ap ON ap.id = mt.child_id
             LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
@@ -594,26 +594,26 @@ SELECT
     END as runs,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_model
+            DISTINCT (m.id, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_model
         ) FILTER (WHERE m.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_model[]
     ) as models,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_group_detail_v4_agent
+            DISTINCT (a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_get_pricing_group_detail_v4_agent
         ) FILTER (WHERE a.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_agent[]
     ) as agents,
     COALESCE(
         ARRAY_AGG(
-            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_profile
+            DISTINCT (p.id, COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''))::types.q_get_pricing_group_detail_v4_profile
         ) FILTER (WHERE p.id IS NOT NULL),
         '{}'::types.q_get_pricing_group_detail_v4_profile[]
     ) as profiles
 FROM runs_detail rd
-LEFT JOIN models m ON m.id = rd.model_id
-LEFT JOIN agents a ON a.id = rd.agent_id
-LEFT JOIN profile p ON p.id = rd.profile_id
+LEFT JOIN models_resource m ON m.id = rd.model_id
+LEFT JOIN agents_resource a ON a.id = rd.agent_id
+LEFT JOIN profile_artifact p ON p.id = rd.profile_id
 CROSS JOIN group_exists_check gec
 CROSS JOIN group_access_check gac
 WHERE (SELECT group_exists FROM group_exists_check) = true

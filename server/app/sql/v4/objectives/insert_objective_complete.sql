@@ -10,10 +10,10 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 WITH existing_obj AS (
-    SELECT id as objective_id FROM objectives WHERE objectives.objective = api_insert_objective_v4.objective LIMIT 1
+    SELECT id as objective_id FROM objectives_resource WHERE objectives_resource.objective = api_insert_objective_v4.objective LIMIT 1
 ),
 create_obj AS (
-    INSERT INTO objectives (objective, created_at, updated_at)
+    INSERT INTO objectives_resource (objective, created_at, updated_at)
     SELECT api_insert_objective_v4.objective, NOW(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_obj)
     RETURNING id as objective_id

@@ -68,13 +68,13 @@ existing_template AS (
 ),
 create_template AS (
     -- Create template (just values, no schema/HTML refs)
-    INSERT INTO templates (name, created_at, updated_at)
+    INSERT INTO templates_resource (name, created_at, updated_at)
     SELECT 
         $3,
         NOW(),
         NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_template)
-    RETURNING templates.id as template_id
+    RETURNING templates_resource.id as template_id
 ),
 template_id AS (
     SELECT template_id FROM existing_template

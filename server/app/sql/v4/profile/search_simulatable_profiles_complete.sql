@@ -72,8 +72,8 @@ WITH params AS (
 requester_profile AS (
     SELECT 
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
-    FROM profile p
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+    FROM profile_artifact p
     WHERE p.id = (SELECT profile_id FROM params)
 ),
 requester_role AS (
@@ -82,10 +82,10 @@ requester_role AS (
 simulatable_data AS (
     SELECT 
         p.id,
-        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
-        (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
+        (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
-        (SELECT e2.email FROM profile_emails pe2 JOIN emails e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
+        (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         p.role,
         EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
@@ -94,13 +94,13 @@ simulatable_data AS (
         p.created_at,
         p.updated_at,
         pd.department_id as primary_department_id
-    FROM profile p
+    FROM profile_artifact p
     CROSS JOIN requester_role rr
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
-    LEFT JOIN emails e ON pe.email_id = e.id
+    LEFT JOIN emails_resource e ON pe.email_id = e.id
     LEFT JOIN profile_departments pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
-    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     LEFT JOIN LATERAL (
         SELECT last_active 
         FROM profile_activity 
@@ -115,11 +115,11 @@ simulatable_data AS (
         WHEN rr.role = 'instructional'::profile_role THEN p.role IN ('member'::profile_role, 'guest'::profile_role)
         ELSE false
       END
-      AND ((SELECT query FROM params) IS NULL OR (SELECT query FROM params) = '' OR ((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) ILIKE '%' || (SELECT query FROM params) || '%' OR (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) ILIKE '%' || (SELECT query FROM params) || '%' OR EXISTS (SELECT 1 FROM profile_emails pe_search JOIN emails e_search ON pe_search.email_id = e_search.id WHERE pe_search.profile_id = p.id AND pe_search.active = true AND e_search.email ILIKE '%' || (SELECT query FROM params) || '%') OR p.role::text ILIKE '%' || (SELECT query FROM params) || '%' OR (COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) ILIKE '%' || (SELECT query FROM params) || '%'))
+      AND ((SELECT query FROM params) IS NULL OR (SELECT query FROM params) = '' OR ((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) ILIKE '%' || (SELECT query FROM params) || '%' OR (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) ILIKE '%' || (SELECT query FROM params) || '%' OR EXISTS (SELECT 1 FROM profile_emails pe_search JOIN emails_resource e_search ON pe_search.email_id = e_search.id WHERE pe_search.profile_id = p.id AND pe_search.active = true AND e_search.email ILIKE '%' || (SELECT query FROM params) || '%') OR p.role::text ILIKE '%' || (SELECT query FROM params) || '%' OR (COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) ILIKE '%' || (SELECT query FROM params) || '%'))
     GROUP BY p.id, p.role, EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
              rl.requests_per_day, p.last_login, pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
-    ORDER BY (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1)
+    ORDER BY (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1), (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1)
     LIMIT (SELECT limit_count FROM params)
 )
 SELECT 

@@ -128,7 +128,7 @@ CREATE TYPE types.q_get_simulation_v4_scenario_rubric_grade_agent_resource AS (
     group_id uuid
 );
 
--- Update department type to include generated and group_id
+-- UPDATE department_artifact type to include generated and group_id
 DROP TYPE IF EXISTS types.q_get_simulation_v4_department;
 CREATE TYPE types.q_get_simulation_v4_department AS (
     department_id uuid,
@@ -351,7 +351,7 @@ RETURNS TABLE (
     cohort_count bigint,
     primary_department_id uuid,
     valid_department_ids uuid[],
-    simulation_scenarios types.q_get_simulation_v4_scenario[],  -- Renamed from scenarios to avoid conflict with resource field
+    simulation_scenarios types.q_get_simulation_v4_scenario[],  -- Renamed FROM scenarios_resource to avoid conflict with resource field
     videos types.q_get_simulation_v4_video[],
     parameters types.q_get_simulation_v4_parameter_item[],
     parameter_items types.q_get_simulation_v4_parameter_item_detail[],
@@ -382,7 +382,7 @@ simulation_exists_check AS (
     SELECT 
         CASE 
             WHEN (SELECT simulation_id FROM params) IS NULL THEN false::boolean
-            ELSE EXISTS(SELECT 1 FROM simulation WHERE id = (SELECT simulation_id FROM params))::boolean
+            ELSE EXISTS(SELECT 1 FROM simulation_artifact WHERE id = (SELECT simulation_id FROM params))::boolean
         END as simulation_exists
 ),
 -- Draft data is now stored in draft_* junction tables, not in payload
@@ -420,9 +420,9 @@ resolve_profile_id AS (
 user_context AS (
     SELECT 
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM resolve_profile_id rpi
-    JOIN profile p ON p.id = rpi.resolved_profile_id
+    JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
 ),
 -- Conditional: Get simulation base data only if simulation_id provided (detail mode)
 simulation_departments_data AS (
@@ -461,11 +461,11 @@ simulation_base AS (
         x.simulation_id as id,
         CASE 
             WHEN x.simulation_id IS NULL THEN NULL::text
-            ELSE (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = x.simulation_id LIMIT 1)
+            ELSE (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = x.simulation_id LIMIT 1)
         END as title,
         CASE 
             WHEN x.simulation_id IS NULL THEN NULL::text
-            ELSE (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = x.simulation_id LIMIT 1)
+            ELSE (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = x.simulation_id LIMIT 1)
         END as description,
         CASE 
             WHEN x.simulation_id IS NULL THEN NULL::boolean
@@ -487,7 +487,7 @@ simulation_base AS (
             WHEN x.simulation_id IS NULL THEN NULL::uuid
             ELSE (SELECT rga.rubric_id FROM simulation_scenarios ss 
              JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-             JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+             JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
              JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
              WHERE ss.simulation_id = x.simulation_id 
                AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
@@ -495,7 +495,7 @@ simulation_base AS (
                    AND ssf.scenario_id = ss.scenario_id 
                    AND ssf.type = 'active'::type_simulation_scenario_flags 
                    AND ssf.value = true)
-             ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
+             ORDER BY (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
              LIMIT 1)
         END as rubric_id,
         CASE 
@@ -538,7 +538,7 @@ user_departments AS (
 ),
 user_department_ids AS (
     SELECT ARRAY_AGG(id) as ids
-    FROM department d
+    FROM department_artifact d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -554,14 +554,14 @@ simulation_scenarios_base AS (
     SELECT 
         ss.simulation_id,
         s.id as scenario_id,
-        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
           WHERE ssf.simulation_id = ss.simulation_id 
             AND ssf.scenario_id = ss.scenario_id 
             AND ssf.type = 'active'::type_simulation_scenario_flags), false) as active,
-        ((SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) = 1) as default_scenario,
-        (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position,
+        ((SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) = 1) as default_scenario,
+        (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position,
         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
           WHERE ssf.simulation_id = ss.simulation_id 
             AND ssf.scenario_id = ss.scenario_id 
@@ -587,10 +587,10 @@ simulation_scenarios_base AS (
         ) as parameter_item_ids
     FROM params x
     JOIN simulation_scenarios ss ON ss.simulation_id = x.simulation_id
-    JOIN scenarios s ON s.id = ss.scenario_id
+    JOIN scenarios_resource s ON s.id = ss.scenario_id
     LEFT JOIN scenario_time_limits stl ON stl.simulation_id = ss.simulation_id AND stl.scenario_id = ss.scenario_id AND stl.active = true
     WHERE x.simulation_id IS NOT NULL
-    ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
+    ORDER BY (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
 scenario_statistics AS (
     SELECT 
@@ -615,7 +615,7 @@ scenario_statistics AS (
         MAX(sc.created_at) as last_used_date
     FROM params x
     JOIN simulation_scenarios ss ON ss.simulation_id = x.simulation_id
-    LEFT JOIN chat sc ON (
+    LEFT JOIN chat_artifact sc ON (
         sc.scenario_id IN (
             SELECT st2.child_id 
             FROM scenario_tree st2 
@@ -629,22 +629,22 @@ scenario_statistics AS (
         )
         OR sc.scenario_id = ss.scenario_id
     )
-    LEFT JOIN grade scg ON EXISTS (
-        SELECT 1 FROM run r_check
+    LEFT JOIN grade_artifact scg ON EXISTS (
+        SELECT 1 FROM run_artifact r_check
         JOIN group_runs gr_check ON gr_check.run_id = r_check.id
         JOIN groups g_check ON g_check.id = gr_check.group_id
         JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-        JOIN chat c_check ON c_check.id = cg_check.chat_id
+        JOIN chat_artifact c_check ON c_check.id = cg_check.chat_id
         WHERE r_check.id = scg.run_id AND c_check.id = sc.id
     )
-    LEFT JOIN run r_detail ON r_detail.id = scg.run_id
+    LEFT JOIN run_artifact r_detail ON r_detail.id = scg.run_id
     LEFT JOIN LATERAL (
         SELECT DISTINCT c.id AS chat_id
-        FROM run r
+        FROM run_artifact r
         JOIN group_runs gr ON gr.run_id = r.id
         JOIN groups g ON g.id = gr.group_id
         JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chat c ON c.id = cg.chat_id
+        JOIN chat_artifact c ON c.id = cg.chat_id
         WHERE r.id = r_detail.id AND c.id = sc.id
         LIMIT 1
     ) chat_lookup_detail ON true
@@ -655,20 +655,20 @@ scenario_rubric_grade_agents_data AS (
     SELECT 
         sssrga.scenario_id,
         ARRAY_AGG(
-            (srga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), 
-             rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a_text.id LIMIT 1),
-             rgav.audio_agent_id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a_voice.id LIMIT 1))::types.q_get_simulation_v4_rubric_grade_agent
-            ORDER BY (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
+            (srga.id, rga.rubric_id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), 
+             rga.grade_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a_text.id LIMIT 1),
+             rgav.audio_agent_id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a_voice.id LIMIT 1))::types.q_get_simulation_v4_rubric_grade_agent
+            ORDER BY (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1)
         ) as rubric_grade_agents
     FROM params x
     JOIN simulation_scenarios_base ssb ON ssb.simulation_id = x.simulation_id
     JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ssb.simulation_id AND sssrga.scenario_id = ssb.scenario_id
-    JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    JOIN rubrics r ON r.id = rga.rubric_id
-    JOIN agents a_text ON a_text.id = rga.grade_agent_id
+    JOIN rubrics_resource r ON r.id = rga.rubric_id
+    JOIN agents_resource a_text ON a_text.id = rga.grade_agent_id
     LEFT JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
-    LEFT JOIN agents a_voice ON a_voice.id = rgav.audio_agent_id
+    LEFT JOIN agents_resource a_voice ON a_voice.id = rgav.audio_agent_id
     WHERE x.simulation_id IS NOT NULL
     GROUP BY sssrga.scenario_id
 ),
@@ -702,9 +702,9 @@ scenarios_data AS (
 valid_scenarios_list AS (
     SELECT DISTINCT
         s.id,
-        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description
-    FROM scenario s
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description
+    FROM scenario_artifact s
     CROSS JOIN user_department_ids udi
     JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
@@ -723,11 +723,11 @@ valid_scenarios_list AS (
              LIMIT 1),
             ssb.scenario_id
         ) as id,
-        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s2.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s2.id LIMIT 1), '') as description
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s2.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s2.id LIMIT 1), '') as description
     FROM params x
     JOIN simulation_scenarios_base ssb ON ssb.simulation_id = x.simulation_id
-    JOIN scenarios s2 ON s2.id = COALESCE(
+    JOIN scenarios_resource s2 ON s2.id = COALESCE(
         (SELECT st3.parent_id 
          FROM scenario_tree st3 
          WHERE st3.child_id = ssb.scenario_id 
@@ -747,7 +747,7 @@ valid_videos_list AS (
         v.id,
         v.name,
         v.length_seconds
-    FROM videos v
+    FROM videos_resource v
     JOIN scenario_videos sv ON sv.video_id = v.id AND sv.active = true
     JOIN valid_scenarios_list vsl ON vsl.id = sv.scenario_id
     WHERE v.active = true
@@ -767,9 +767,9 @@ videos_data AS (
 valid_rubrics_data AS (
     SELECT DISTINCT
         r.id,
-        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
-        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description
-    FROM rubric r
+        (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
+        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description
+    FROM rubric_artifact r
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
     WHERE EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
@@ -781,28 +781,28 @@ valid_rubrics_data AS (
     UNION
     SELECT DISTINCT
         r2.id,
-        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1),
-        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r2.id LIMIT 1), '') as description
+        (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r2.id LIMIT 1),
+        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r2.id LIMIT 1), '') as description
     FROM params x
     JOIN simulation_base sb ON sb.id = x.simulation_id
     LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_sb ON sssrga_sb.simulation_id = sb.id
-    LEFT JOIN scenario_rubric_grade_agents srga_sb ON srga_sb.id = sssrga_sb.scenario_rubric_grade_agent_id
+    LEFT JOIN scenario_rubric_grade_agents_resource srga_sb ON srga_sb.id = sssrga_sb.scenario_rubric_grade_agent_id
     LEFT JOIN rubric_grade_agents rga_sb ON rga_sb.id = srga_sb.grade_agent_id
-    JOIN rubrics r2 ON r2.id = rga_sb.rubric_id
+    JOIN rubrics_resource r2 ON r2.id = rga_sb.rubric_id
     WHERE x.simulation_id IS NOT NULL
       AND rga_sb.rubric_id IS NOT NULL 
       AND EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r2.id AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE)
     UNION
     SELECT DISTINCT
         r3.id,
-        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r3.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r3.id LIMIT 1), '') as description
+        (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r3.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r3.id LIMIT 1), '') as description
     FROM params x
     JOIN simulation_scenarios_base ssb ON ssb.simulation_id = x.simulation_id
     JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_ssb ON sssrga_ssb.simulation_id = ssb.simulation_id AND sssrga_ssb.scenario_id = ssb.scenario_id
-    JOIN scenario_rubric_grade_agents srga_ssb ON srga_ssb.id = sssrga_ssb.scenario_rubric_grade_agent_id
+    JOIN scenario_rubric_grade_agents_resource srga_ssb ON srga_ssb.id = sssrga_ssb.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga_ssb ON rga_ssb.id = srga_ssb.grade_agent_id
-    JOIN rubrics r3 ON r3.id = rga_ssb.rubric_id
+    JOIN rubrics_resource r3 ON r3.id = rga_ssb.rubric_id
     WHERE x.simulation_id IS NOT NULL
       AND rga_ssb.rubric_id IS NOT NULL 
       AND EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r3.id AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE)
@@ -819,21 +819,21 @@ rubrics_data AS (
 parameters_data AS (
     SELECT DISTINCT
         p.id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
         EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter
-    FROM parameter p
-    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    FROM parameter_artifact p
+    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_department_ids udi
     WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
-    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE)
+    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE)
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(udi.ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
-                      JOIN fields f2 ON f2.id = fd2.field_id 
-                      WHERE (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f2.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = f2.id AND fl2.name = 'active' AND ff2.type = 'active'::type_field_flags AND ff2.value = TRUE) AND fd2.active = true)
+                      JOIN fields_resource f2 ON f2.id = fd2.field_id 
+                      WHERE (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f2.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 JOIN flags_resource fl2 ON ff2.flag_id = fl2.id WHERE ff2.field_id = f2.id AND fl2.name = 'active' AND ff2.type = 'active'::type_field_flags AND ff2.value = TRUE) AND fd2.active = true)
 ),
 parameters_full_data AS (
     SELECT 
@@ -847,11 +847,11 @@ parameter_items_data AS (
     SELECT 
         f.id,
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
-        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as parameter_name
-    FROM field f
-    JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
+        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        COALESCE((SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), '') as description,
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as parameter_name
+    FROM field_artifact f
+    JOIN parameters_resource p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
     WHERE p.id IN (SELECT id FROM parameters_data)
 ),
 parameter_items_list_data AS (
@@ -878,13 +878,13 @@ scenario_persona_data AS (
     SELECT 
         sp.scenario_id,
         sp.persona_id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
-        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as persona_description,
-        (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as persona_color,
-        (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as persona_icon,
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as persona_description,
+        (SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as persona_color,
+        (SELECT i.value FROM persona_icons pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as persona_icon,
         false as image_model
     FROM scenario_personas sp
-    JOIN personas p ON p.id = sp.persona_id
+    JOIN personas_resource p ON p.id = sp.persona_id
     WHERE sp.scenario_id IN (SELECT id FROM valid_scenarios_list)
       AND sp.active = true
 ),
@@ -911,11 +911,11 @@ scenario_document_mapping AS (
     SELECT 
         sdd.scenario_id,
         ARRAY_AGG(
-            (d.id, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), ''::text)::types.q_get_simulation_v4_document
-            ORDER BY (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
+            (d.id, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), ''::text)::types.q_get_simulation_v4_document
+            ORDER BY (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
         ) as documents
     FROM scenario_documents_data sdd
-    JOIN documents d ON d.id = ANY(sdd.document_ids)
+    JOIN documents_resource d ON d.id = ANY(sdd.document_ids)
     GROUP BY sdd.scenario_id
 ),
 scenario_parameter_items_data AS (
@@ -992,8 +992,8 @@ scenarios_full_data AS (
         )
 ),
 user_departments_for_mapping AS (
-    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
-    FROM department d
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
+    FROM department_artifact d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -1003,7 +1003,7 @@ department_scenario_ids AS (
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT s.id ORDER BY s.id) FILTER (WHERE s.id IS NOT NULL), ARRAY[]::uuid[]) as scenario_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN scenarios s ON EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    LEFT JOIN scenarios_resource s ON EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     INNER JOIN scenario_tree st ON st.parent_id = s.id AND st.child_id = s.id
     LEFT JOIN scenario_departments sd ON sd.scenario_id = s.id AND sd.active = true
     WHERE (sd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM scenario_departments sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true))
@@ -1014,7 +1014,7 @@ department_rubric_ids AS (
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT r.id ORDER BY r.id) FILTER (WHERE r.id IS NOT NULL), ARRAY[]::uuid[]) as rubric_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN rubrics r ON EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true) AND EXISTS (SELECT 1 FROM rubric_artifacts ra WHERE ra.rubric_id = r.id AND ra.artifact = CAST('agent' AS artifacts))
+    LEFT JOIN rubrics_resource r ON EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true) AND EXISTS (SELECT 1 FROM rubric_artifacts ra WHERE ra.rubric_id = r.id AND ra.artifact = CAST('agent' AS artifacts))
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     WHERE (rd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true))
     GROUP BY ud.id
@@ -1024,7 +1024,7 @@ department_cohort_ids AS (
         ud.id as department_id,
         COALESCE(ARRAY_AGG(DISTINCT c.id ORDER BY c.id) FILTER (WHERE c.id IS NOT NULL), ARRAY[]::uuid[]) as cohort_ids
     FROM user_departments_for_mapping ud
-    LEFT JOIN cohort c ON EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
+    LEFT JOIN cohort_artifact c ON EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     WHERE (cd.department_id = ud.id OR NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))
     GROUP BY ud.id
@@ -1033,8 +1033,8 @@ department_cohort_ids AS (
 department_mapping_data AS (
     SELECT 
         d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated,
         -- Get group_id from resource.call_id → calls → message_calls → message_runs → group_runs
         (
@@ -1052,7 +1052,7 @@ department_mapping_data AS (
         COALESCE(dci.cohort_ids, ARRAY[]::uuid[]) as cohort_ids
     FROM params x
     CROSS JOIN user_context uc
-    JOIN departments d ON (
+    JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
         EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
@@ -1066,8 +1066,8 @@ departments_data AS (
     SELECT 
         ARRAY_AGG(
             (ud.id, ud.name, ud.description,
-             COALESCE((SELECT d.generated FROM departments d WHERE d.id = ud.id), false),
-             (SELECT gr.group_id FROM departments d JOIN calls c ON c.id = d.call_id JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE d.id = ud.id LIMIT 1),
+             COALESCE((SELECT d.generated FROM departments_resource d WHERE d.id = ud.id), false),
+             (SELECT gr.group_id FROM departments_resource d JOIN calls c ON c.id = d.call_id JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE d.id = ud.id LIMIT 1),
              COALESCE(dsci.scenario_ids, ARRAY[]::uuid[]),
              COALESCE(dri.rubric_ids, ARRAY[]::uuid[]),
              COALESCE(dci.cohort_ids, ARRAY[]::uuid[])
@@ -1087,16 +1087,16 @@ user_departments_for_agents AS (
     WHERE pd.active = true
 ),
 selected_agents_from_simulation AS (
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
+    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
     FROM params x
     JOIN simulation_base sb ON sb.id = x.simulation_id
     JOIN agent_domains adom_text ON adom_text.domain_id = sb.simulation_text_domain_id
-    JOIN agents a_text ON a_text.id = adom_text.agent_id
+    JOIN agents_resource a_text ON a_text.id = adom_text.agent_id
     JOIN domain_artifacts da_text ON da_text.domain_id = adom_text.domain_id AND da_text.artifact = CAST('scenario' AS artifacts)
     JOIN agent_domains adom_voice ON adom_voice.domain_id = sb.simulation_voice_domain_id
-    JOIN agents a_voice ON a_voice.id = adom_voice.agent_id
+    JOIN agents_resource a_voice ON a_voice.id = adom_voice.agent_id
     JOIN domain_artifacts da_voice ON da_voice.domain_id = adom_voice.domain_id AND da_voice.artifact = CAST('message' AS artifacts)
-    JOIN agents a ON (a.id = a_text.id OR a.id = a_voice.id)
+    JOIN agents_resource a ON (a.id = a_text.id OR a.id = a_voice.id)
     LEFT JOIN agent_domains adom ON adom.agent_id = a.id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     WHERE x.simulation_id IS NOT NULL
@@ -1111,43 +1111,43 @@ selected_agents_from_simulation AS (
       )
     UNION
     -- Get grade agents from junction tables
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
+    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
     FROM params x
     JOIN simulation_base sb ON sb.id = x.simulation_id
     JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = sb.id
-    JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    JOIN agents a ON a.id = rga.grade_agent_id
+    JOIN agents_resource a ON a.id = rga.grade_agent_id
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('grade' AS artifacts)
     WHERE x.simulation_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     UNION
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
+    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
     FROM params x
     JOIN simulation_base sb ON sb.id = x.simulation_id
     JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = sb.id
-    JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
     JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
-    JOIN agents a ON a.id = rgav.audio_agent_id
+    JOIN agents_resource a ON a.id = rgav.audio_agent_id
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('grade' AS artifacts)
     WHERE x.simulation_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     UNION
     -- Get rubric agents (member role) from rubric_domains
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
+    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
     FROM params x
     JOIN simulation_base sb ON sb.id = x.simulation_id
     JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = sb.id
-    JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
-    JOIN rubrics r ON r.id = rga.rubric_id
+    JOIN rubrics_resource r ON r.id = rga.rubric_id
     JOIN rubric_domains rd_link ON rd_link.rubric_id = r.id
     JOIN agent_domains adom ON adom.domain_id = rd_link.domain_id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
-    JOIN agents a ON a.id = adom.agent_id
+    JOIN agents_resource a ON a.id = adom.agent_id
     WHERE x.simulation_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
 ),
@@ -1159,14 +1159,14 @@ agents_data AS (
         ) as agents,
         ARRAY_AGG(filtered_agents.id ORDER BY filtered_agents.name) as agent_ids
     FROM (
-        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
-        FROM agent a
+        SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
+        FROM agent_artifact a
         JOIN agent_domains adom ON adom.agent_id = a.id
         JOIN domain_artifacts da ON da.domain_id = adom.domain_id
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) 
         AND da.artifact IN (CAST('message' AS artifacts), CAST('grade' AS artifacts), CAST('scenario' AS artifacts), CAST('agent' AS artifacts))
-        GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), da.artifact
+        GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), da.artifact
         HAVING 
             COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
             OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -1178,7 +1178,7 @@ agents_data AS (
 -- Auto-select default agents when there's only one option for each role
 valid_hint_agents AS (
     SELECT DISTINCT a.id
-    FROM agent a
+    FROM agent_artifact a
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -1190,7 +1190,7 @@ valid_hint_agents AS (
 ),
 valid_simulation_agents AS (
     SELECT DISTINCT a.id
-    FROM agent a
+    FROM agent_artifact a
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('scenario' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -1202,7 +1202,7 @@ valid_simulation_agents AS (
 ),
 valid_voice_agents AS (
     SELECT DISTINCT a.id
-    FROM agent a
+    FROM agent_artifact a
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -1214,7 +1214,7 @@ valid_voice_agents AS (
 ),
 valid_member_agents AS (
     SELECT DISTINCT a.id
-    FROM agent a
+    FROM agent_artifact a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
@@ -1226,11 +1226,11 @@ valid_member_agents AS (
     UNION
     -- Get rubric agents (member role) from rubric_domains
     SELECT DISTINCT a.id
-    FROM rubric r
+    FROM rubric_artifact r
     JOIN rubric_domains rd_link ON rd_link.rubric_id = r.id
     JOIN agent_domains adom ON adom.domain_id = rd_link.domain_id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
-    JOIN agents a ON a.id = adom.agent_id
+    JOIN agents_resource a ON a.id = adom.agent_id
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) 
     AND EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
 ),
@@ -1268,7 +1268,7 @@ name_resource_data AS (
                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = n.call_id LIMIT 1)
             )::types.q_get_simulation_v4_name_resource
             FROM simulation_names sn
-            JOIN names n ON sn.name_id = n.id
+            JOIN names_resource n ON sn.name_id = n.id
             WHERE sn.simulation_id = (SELECT simulation_id FROM params)
             LIMIT 1
         ) as name_resource
@@ -1286,7 +1286,7 @@ description_resource_data AS (
                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = d.call_id LIMIT 1)
             )::types.q_get_simulation_v4_description_resource
             FROM simulation_descriptions sd
-            JOIN descriptions d ON sd.description_id = d.id
+            JOIN descriptions_resource d ON sd.description_id = d.id
             WHERE sd.simulation_id = (SELECT simulation_id FROM params)
             LIMIT 1
         ) as description_resource
@@ -1304,8 +1304,8 @@ flag_resource_data AS (
                 (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
             )::types.q_get_simulation_v4_flag_resource
             FROM simulation_flags sf
-            JOIN flags f ON sf.flag_id = f.id
-            JOIN flags fl ON sf.flag_id = fl.id
+            JOIN flags_resource f ON sf.flag_id = f.id
+            JOIN flags_resource fl ON sf.flag_id = fl.id
             WHERE sf.simulation_id = (SELECT simulation_id FROM params) AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE
             LIMIT 1
         ) as flag_resource
@@ -1319,7 +1319,7 @@ name_suggestions_data AS (
              FROM (
                  SELECT DISTINCT sn.name_id, MAX(sn.created_at) as created_at
                  FROM simulation_names sn
-                 JOIN names n ON n.id = sn.name_id
+                 JOIN names_resource n ON n.id = sn.name_id
                  CROSS JOIN draft_group_data dgd
                  WHERE sn.name_id IS NOT NULL
                    AND n.name IS NOT NULL
@@ -1359,7 +1359,7 @@ description_suggestions_data AS (
              FROM (
                  SELECT DISTINCT sd.description_id, MAX(sd.created_at) as created_at
                  FROM simulation_descriptions sd
-                 JOIN descriptions d ON d.id = sd.description_id
+                 JOIN descriptions_resource d ON d.id = sd.description_id
                  CROSS JOIN draft_group_data dgd
                  WHERE sd.description_id IS NOT NULL
                    AND d.description IS NOT NULL
@@ -1399,7 +1399,7 @@ department_suggestions_data AS (
              FROM (
                  SELECT DISTINCT sd.department_id, MAX(sd.created_at) as created_at
                  FROM simulation_departments sd
-                 JOIN departments d ON d.id = sd.department_id
+                 JOIN departments_resource d ON d.id = sd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE sd.department_id IS NOT NULL
                    AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags
@@ -1445,7 +1445,7 @@ names_suggestions_objects AS (
                 )
                 FROM name_suggestions_data nsd
                 CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
-                JOIN names n ON n.id = suggestion_id
+                JOIN names_resource n ON n.id = suggestion_id
                 WHERE n.name IS NOT NULL AND n.name != ''
             ),
             ARRAY[]::types.q_get_simulation_v4_name_option[]
@@ -1465,7 +1465,7 @@ descriptions_suggestions_objects AS (
                 )
                 FROM description_suggestions_data dsd
                 CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
-                JOIN descriptions d ON d.id = suggestion_id
+                JOIN descriptions_resource d ON d.id = suggestion_id
                 WHERE d.description IS NOT NULL AND d.description != ''
             ),
             ARRAY[]::types.q_get_simulation_v4_description_option[]
@@ -1504,7 +1504,7 @@ user_departments_for_agents_sim AS (
 name_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -1529,7 +1529,7 @@ name_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resources
@@ -1565,7 +1565,7 @@ name_agent_data AS (
 description_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -1590,7 +1590,7 @@ description_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resources
@@ -1626,7 +1626,7 @@ description_agent_data AS (
 departments_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -1651,7 +1651,7 @@ departments_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'departments'::resources
@@ -1687,7 +1687,7 @@ departments_agent_data AS (
 flag_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -1712,7 +1712,7 @@ flag_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'flags'::resources
@@ -1748,7 +1748,7 @@ flag_agent_data AS (
 scenarios_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -1773,7 +1773,7 @@ scenarios_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'scenarios'::resources
@@ -1821,7 +1821,7 @@ scenario_suggestions_data AS (
             (SELECT ARRAY_AGG(s.id ORDER BY s.created_at DESC)
              FROM (
                  SELECT DISTINCT s.id, MAX(s.created_at) as created_at
-                 FROM scenarios s
+                 FROM scenarios_resource s
                  JOIN simulation_scenarios ss ON ss.scenario_id = s.scenario_id
                  CROSS JOIN draft_group_data dgd
                  WHERE s.scenario_id IS NOT NULL
@@ -1856,7 +1856,7 @@ scenario_suggestions_data AS (
 general_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -1890,7 +1890,7 @@ general_agent_data AS (
             ea.updated_at
         FROM eligible_agents ea
         LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
-        LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
+        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
         LEFT JOIN resource_tools rt ON rt.tool_id = t.id
         GROUP BY ea.agent_id, ea.updated_at
     ),
@@ -1943,31 +1943,31 @@ tools_existence_check AS (
     SELECT 
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
               AND t.active = true
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
               AND t.active = true
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'departments'::resources 
               AND t.active = true
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
               AND t.active = true
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'scenarios'::resources 
               AND t.active = true
         ) as scenarios_has_tools
@@ -2153,7 +2153,7 @@ SELECT
              (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = f.call_id LIMIT 1)
             )::types.q_get_simulation_v4_flag_option
             ORDER BY f.name
-        ) FROM flags f 
+        ) FROM flags_resource f 
         WHERE EXISTS (
             SELECT 1 FROM simulation_flags sf 
             WHERE sf.flag_id = f.id
@@ -2162,10 +2162,10 @@ SELECT
         '{}'::types.q_get_simulation_v4_flag_option[]
     ) as flags,
     -- Multi-select resources: scenarios
-    -- Get scenario resource IDs from scenarios resource table that match simulation's scenario artifact IDs
+    -- Get scenario resource IDs FROM scenarios_resource resource table that match simulation's scenario artifact IDs
     COALESCE(
         (SELECT ARRAY_AGG(s.id)
-         FROM scenarios s
+         FROM scenarios_resource s
          JOIN simulation_scenarios ss ON ss.scenario_id = s.scenario_id
          WHERE ss.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
            AND s.active = true),
@@ -2183,20 +2183,20 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (s.id, s.scenario_id, 
-             COALESCE((SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1), ''),
-             COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.scenario_id LIMIT 1), ''),
+             COALESCE((SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1), ''),
+             COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.scenario_id LIMIT 1), ''),
              COALESCE(s.generated, false), 
              (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = s.call_id LIMIT 1))::types.q_get_simulation_v4_scenario_resource
-            ORDER BY (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
+            ORDER BY (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
         )
-        FROM scenarios s
+        FROM scenarios_resource s
         JOIN simulation_scenarios ss ON ss.scenario_id = s.scenario_id
         WHERE ss.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
           AND s.active = true
           AND s.id = ANY(
             COALESCE(
                 (SELECT ARRAY_AGG(s2.id)
-                 FROM scenarios s2
+                 FROM scenarios_resource s2
                  JOIN simulation_scenarios ss2 ON ss2.scenario_id = s2.scenario_id
                  WHERE ss2.simulation_id = COALESCE((SELECT simulation_id FROM params), (SELECT id FROM simulation_base))
                    AND s2.active = true),
@@ -2216,24 +2216,24 @@ SELECT
     ) as scenario_resources,
     CASE 
         WHEN NOT tec.scenarios_has_tools THEN false
-        WHEN EXISTS (SELECT 1 FROM scenarios LIMIT 1) THEN true
+        WHEN EXISTS (SELECT 1 FROM scenarios_resource LIMIT 1) THEN true
         ELSE false
     END as show_scenarios,
     (SELECT agent_id FROM scenarios_agent_data LIMIT 1) as scenarios_agent_id,
     CASE 
-        WHEN EXISTS (SELECT 1 FROM scenarios LIMIT 1) THEN true
+        WHEN EXISTS (SELECT 1 FROM scenarios_resource LIMIT 1) THEN true
         ELSE false
     END as scenarios_required,
     COALESCE((SELECT scenario_suggestions FROM scenario_suggestions_data), ARRAY[]::uuid[]) as scenario_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
             (s.id, s.scenario_id,
-             COALESCE((SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1), ''),
-             COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.scenario_id LIMIT 1), ''),
+             COALESCE((SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1), ''),
+             COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.scenario_id LIMIT 1), ''),
              COALESCE(s.generated, false),
              (SELECT gr.group_id FROM calls c JOIN message_calls mc ON mc.call_id = c.id JOIN message_runs mr ON mr.message_id = mc.message_id JOIN group_runs gr ON gr.run_id = mr.run_id WHERE c.id = s.call_id LIMIT 1))::types.q_get_simulation_v4_scenario_resource
-            ORDER BY (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
-        ) FROM scenarios s
+            ORDER BY (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.scenario_id LIMIT 1)
+        ) FROM scenarios_resource s
         WHERE s.active = true),
         '{}'::types.q_get_simulation_v4_scenario_resource[]
     ) as scenarios,

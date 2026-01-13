@@ -1,4 +1,4 @@
--- Get simulation metadata from chat (optimized single JOIN query)
+-- Get simulation metadata FROM chat_artifact (optimized single JOIN query)
 -- Converted to PostgreSQL function
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -31,9 +31,9 @@ SELECT
     sa.simulation_id::text,
     sa.id::text as attempt_id,
     EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
-FROM chat sc
+FROM chat_artifact sc
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-INNER JOIN simulation s ON s.id = sa.simulation_id
+INNER JOIN simulation_artifact s ON s.id = sa.simulation_id
 WHERE sc.id = chat_id
 $$;

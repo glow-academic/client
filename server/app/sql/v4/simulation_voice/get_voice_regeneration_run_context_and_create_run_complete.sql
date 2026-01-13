@@ -138,7 +138,7 @@ previous_messages_all_runs AS (
     FROM previous_runs_in_group prig
     JOIN group_runs gr ON gr.run_id = prig.run_id
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message m ON m.id = mr.message_id
+    JOIN message_artifact m ON m.id = mr.message_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     ORDER BY gr.idx ASC, m.created_at ASC  -- Order by run idx first, then message created_at
@@ -160,16 +160,16 @@ scenario_dept AS (
         (SELECT sd.department_id FROM scenario_departments sd 
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
     FROM params p
-    JOIN chat sc ON sc.id = p.chat_id
+    JOIN chat_artifact sc ON sc.id = p.chat_id
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
 ),
 profile_dept AS (
-    -- Get first department from profile's accessible departments
+    -- Get first department FROM profile_artifact's accessible departments
     SELECT d.id as department_id
     FROM params p
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments_resource d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id
     JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
@@ -180,7 +180,7 @@ profile_dept AS (
 any_active_dept AS (
     -- Get any active department as last resort
     SELECT d.id as department_id
-    FROM department d
+    FROM department_artifact d
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     LIMIT 1
 ),
@@ -205,7 +205,7 @@ profile_from_attempt AS (
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -225,7 +225,7 @@ profile_primary_department AS (
 dept_specific_settings AS (
     -- Get department-specific settings (if primary_department_id exists)
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
@@ -236,13 +236,13 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys k ON k.id = spk.key_id
+    JOIN keys_resource k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -252,7 +252,7 @@ dept_specific_settings_with_keys AS (
 default_settings_with_keys AS (
     -- Default settings that have keys
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
@@ -270,16 +270,16 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile
     SELECT 
         rl.requests_per_day as req_per_day
-    FROM profile prof
+    FROM profile_artifact prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     WHERE prof.id = (SELECT profile_id FROM params)
 ),
 runs_today AS (
@@ -287,7 +287,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run mr
+    FROM run_artifact mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -299,18 +299,18 @@ documents_data AS (
         s.id as scenario_id,
         COALESCE(
             ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), d.created_at)::types.i_get_voice_regeneration_run_context_and_create_run_v4_document
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), d.created_at)::types.i_get_voice_regeneration_run_context_and_create_run_v4_document
                 ORDER BY d.created_at
             ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true AND EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = true)),
             ARRAY[]::types.i_get_voice_regeneration_run_context_and_create_run_v4_document[]
         ) as documents
     FROM params p
-    JOIN chat sc ON sc.id = p.chat_id
+    JOIN chat_artifact sc ON sc.id = p.chat_id
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
-    LEFT JOIN documents d ON d.id = sd.document_id
+    LEFT JOIN documents_resource d ON d.id = sd.document_id
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     GROUP BY s.id
@@ -332,124 +332,124 @@ context_data AS (
         (SELECT department_id FROM resolved_dept) as department_id,
         -- Persona data (from scenario_personas)
         (SELECT p_persona.id FROM scenario_personas sp 
-         JOIN personas p_persona ON p_persona.id = sp.persona_id 
+         JOIN personas_resource p_persona ON p_persona.id = sp.persona_id 
          WHERE sp.scenario_id = s.id AND sp.active = true 
            AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p_persona.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
          LIMIT 1) as persona_id,
-        (SELECT (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p_persona.id LIMIT 1) FROM scenario_personas sp 
-         JOIN personas p_persona ON p_persona.id = sp.persona_id 
+        (SELECT (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p_persona.id LIMIT 1) FROM scenario_personas sp 
+         JOIN personas_resource p_persona ON p_persona.id = sp.persona_id 
          WHERE sp.scenario_id = s.id AND sp.active = true 
            AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p_persona.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
          LIMIT 1) as persona_name,
         -- Voice agent/model data (preferred for voice mode)
-        -- Get voice agent from simulation
+        -- Get voice agent FROM simulation_artifact
         adom_voice.agent_id as voice_agent_id,
         -- Get voice model/provider from voice agent
-        (SELECT m_voice.id FROM agent a_voice 
+        (SELECT m_voice.id FROM agent_artifact a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)
          LIMIT 1) as voice_model_id,
-        (SELECT m_voice.value FROM agent a_voice 
+        (SELECT m_voice.value FROM agent_artifact a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)
          LIMIT 1) as voice_model_name,
         (SELECT CASE WHEN e_voice.base_url IS NOT NULL AND e_voice.base_url != '' THEN m_voice.value ELSE NULL END
-         FROM agent a_voice 
+         FROM agent_artifact a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN model_endpoints me_voice_j ON me_voice_j.model_id = m_voice.id
-    LEFT JOIN endpoints e_voice ON e_voice.id = me_voice_j.endpoint_id AND e_voice.active = true
+    LEFT JOIN endpoints_resource e_voice ON e_voice.id = me_voice_j.endpoint_id AND e_voice.active = true
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_custom_model,
-        (SELECT p_voice_prov.id::text FROM agent a_voice 
+        (SELECT p_voice_prov.id::text FROM agent_artifact a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN model_providers mp_voice ON mp_voice.model_id = m_voice.id
-         LEFT JOIN providers p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
+         LEFT JOIN providers_resource p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_provider_id,
-        (SELECT n_voice_prov.name FROM agent a_voice 
+        (SELECT n_voice_prov.name FROM agent_artifact a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN model_providers mp_voice ON mp_voice.model_id = m_voice.id
-         LEFT JOIN providers p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
-         LEFT JOIN provider pr_voice_prov ON pr_voice_prov.id = p_voice_prov.provider_id
+         LEFT JOIN providers_resource p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
+         LEFT JOIN provider_artifact pr_voice_prov ON pr_voice_prov.id = p_voice_prov.provider_id
          LEFT JOIN provider_names pn_voice_prov ON pn_voice_prov.provider_id = pr_voice_prov.id
-         LEFT JOIN names n_voice_prov ON n_voice_prov.id = pn_voice_prov.name_id
+         LEFT JOIN names_resource n_voice_prov ON n_voice_prov.id = pn_voice_prov.name_id
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_provider,
-        (SELECT e_voice.base_url FROM agent a_voice 
+        (SELECT e_voice.base_url FROM agent_artifact a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN model_endpoints me_voice_j ON me_voice_j.model_id = m_voice.id
-    LEFT JOIN endpoints e_voice ON e_voice.id = me_voice_j.endpoint_id AND e_voice.active = true
+    LEFT JOIN endpoints_resource e_voice ON e_voice.id = me_voice_j.endpoint_id AND e_voice.active = true
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_base_url,
         -- Voice API keys (via settings system)
-        (SELECT k_voice.key FROM agent a_voice 
+        (SELECT k_voice.key FROM agent_artifact a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN model_providers mp_voice ON mp_voice.model_id = m_voice.id
-         LEFT JOIN providers p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
+         LEFT JOIN providers_resource p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
          CROSS JOIN active_settings act_s_voice
          LEFT JOIN setting_provider_keys spk_voice ON spk_voice.providers_id = p_voice_prov.id 
              AND spk_voice.settings_id = act_s_voice.settings_id 
              AND spk_voice.active = true
-         LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id 
+         LEFT JOIN keys_resource k_voice ON k_voice.id = spk_voice.key_id 
              AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = true)
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_api_key,
-        -- Voice prompt/temperature/reasoning (from agent)
+        -- Voice prompt/temperature/reasoning (FROM agent_artifact)
         (SELECT COALESCE(pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, '')
-         FROM agent a_voice
+         FROM agent_artifact a_voice
          LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id 
              AND adp_prompt_voice.department_id = (SELECT department_id FROM resolved_dept) 
              AND adp_prompt_voice.active = true
-         LEFT JOIN prompts pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
+         LEFT JOIN prompts_resource pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
          LEFT JOIN agent_prompts ap_voice_default ON ap_voice_default.agent_id = a_voice.id AND ap_voice_default.active = true
-         LEFT JOIN prompts pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
+         LEFT JOIN prompts_resource pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_system_prompt,
         (SELECT COALESCE(tl_voice.temperature, 0.0)
-         FROM agent a_voice
+         FROM agent_artifact a_voice
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
          LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.temperature_level_id = atl_voice.temperature_level_id 
              AND mtl_voice.model_id = m_voice.id
-         LEFT JOIN temperature_levels tl_voice ON tl_voice.id = mtl_voice.temperature_level_id AND tl_voice.active = true
+         LEFT JOIN temperature_levels_resource tl_voice ON tl_voice.id = mtl_voice.temperature_level_id AND tl_voice.active = true
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_temperature,
         (SELECT rl_voice.reasoning_level
-         FROM agent a_voice
+         FROM agent_artifact a_voice
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-         JOIN models m_voice ON m_voice.id = am_voice.model_id
+         JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
          LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.reasoning_level_id = arl_voice.reasoning_level_id 
              AND mrl_voice.model_id = m_voice.id
-         LEFT JOIN reasoning_levels rl_voice ON rl_voice.id = mrl_voice.reasoning_level_id AND rl_voice.active = true
+         LEFT JOIN reasoning_levels_resource rl_voice ON rl_voice.id = mrl_voice.reasoning_level_id AND rl_voice.active = true
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
@@ -475,18 +475,18 @@ context_data AS (
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
         rt.earliest_run_created_at
     FROM params p_params
-    JOIN chat sc ON sc.id = p_params.chat_id
+    JOIN chat_artifact sc ON sc.id = p_params.chat_id
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
-    INNER JOIN simulation sim ON sim.id = sa.simulation_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
+    INNER JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
     LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+    LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     CROSS JOIN group_data g
     LEFT JOIN active_settings ast ON true
-    LEFT JOIN setting st ON st.id = ast.settings_id
+    LEFT JOIN setting_artifact st ON st.id = ast.settings_id
     LEFT JOIN profile_from_attempt pf ON true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
@@ -497,7 +497,7 @@ context_data AS (
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO run (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.voice_agent_id
     FROM context_data cd
     WHERE cd.voice_agent_id IS NOT NULL
@@ -539,7 +539,7 @@ link_existing_messages AS (
     FROM previous_runs_in_group prig
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message m ON m.id = mr.message_id
+    JOIN message_artifact m ON m.id = mr.message_id
     WHERE m.role IN ('system'::message_role, 'developer'::message_role)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()

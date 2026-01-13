@@ -25,7 +25,7 @@ eval_data AS (
         e.id as eval_id,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE) as dynamic,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE) as use_groups
-    FROM eval e
+    FROM eval_artifact e
     WHERE e.id = api_start_benchmark_attempt_v4.eval_id
 ),
 eval_agents_data AS (

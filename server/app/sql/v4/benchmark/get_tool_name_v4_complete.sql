@@ -25,6 +25,6 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT t.name
-    FROM tool t
+    FROM tool_artifact t
     WHERE t.id = $1
 $$;

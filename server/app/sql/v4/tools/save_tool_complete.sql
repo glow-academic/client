@@ -40,16 +40,16 @@ BEGIN
     -- Determine if create or update
     is_create := (input_tool_id IS NULL);
     
-    -- Create or update tool first (outside CTE)
+    -- Create or UPDATE tool_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO tool (name, description, active, created_at, updated_at)
+        INSERT INTO tool_artifact (name, description, active, created_at, updated_at)
         VALUES (name, description, active, NOW(), NOW())
         RETURNING id INTO v_tool_id;
     ELSE
         -- UPDATE path
         v_tool_id := input_tool_id;
-        UPDATE tool
+        UPDATE tool_artifact
         SET name = api_save_tool_v4.name,
             description = api_save_tool_v4.description,
             active = api_save_tool_v4.active,
@@ -65,7 +65,7 @@ BEGIN
     IF COALESCE(array_length(schema_ids, 1), 0) > 0 THEN
         IF EXISTS (
             SELECT 1 FROM UNNEST(schema_ids) AS schema_id
-            WHERE NOT EXISTS (SELECT 1 FROM schemas WHERE id = schema_id)
+            WHERE NOT EXISTS (SELECT 1 FROM schemas_resource WHERE id = schema_id)
         ) THEN
             RAISE EXCEPTION 'One or more schema resources not found';
         END IF;
@@ -75,7 +75,7 @@ BEGIN
     IF COALESCE(array_length(template_ids, 1), 0) > 0 THEN
         IF EXISTS (
             SELECT 1 FROM UNNEST(template_ids) AS template_id
-            WHERE NOT EXISTS (SELECT 1 FROM templates WHERE id = template_id)
+            WHERE NOT EXISTS (SELECT 1 FROM templates_resource WHERE id = template_id)
         ) THEN
             RAISE EXCEPTION 'One or more template resources not found';
         END IF;
@@ -99,9 +99,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     actor_profile AS (
         SELECT 

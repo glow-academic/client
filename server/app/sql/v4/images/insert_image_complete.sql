@@ -13,7 +13,7 @@ WITH tool_call AS (
     RETURNING id
 ),
 insert_image AS (
-    INSERT INTO images (name, active, completed, created_at, updated_at)
+    INSERT INTO images_resource (name, active, completed, created_at, updated_at)
     SELECT api_insert_image_v4.name, TRUE, FALSE, NOW(), NOW()
     FROM tool_call
     RETURNING id

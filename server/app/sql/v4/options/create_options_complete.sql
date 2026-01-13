@@ -37,7 +37,7 @@ WITH options_data AS (
 ),
 create_options AS (
     -- Create options (reusable across questions, no type column)
-    INSERT INTO options (option_text, active, created_at, updated_at)
+    INSERT INTO options_resource (option_text, active, created_at, updated_at)
     SELECT DISTINCT
         od.option_text,
         true,
@@ -52,7 +52,7 @@ get_existing_options AS (
     SELECT 
         o.id as option_id,
         o.option_text
-    FROM options o
+    FROM options_resource o
     JOIN options_data od ON o.option_text = od.option_text
     WHERE o.active = true
 ),

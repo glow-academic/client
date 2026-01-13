@@ -25,5 +25,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT name FROM names WHERE id = $1
+    SELECT name FROM names_resource WHERE id = $1
 $$;

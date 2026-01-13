@@ -63,7 +63,7 @@ default_settings AS (
     SELECT 
         s.id as settings_id,
         EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
-    FROM setting s
+    FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -76,7 +76,7 @@ dept_specific_settings AS (
     SELECT 
         s.id as settings_id,
         EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'guest_login_enabled'::type_setting_flags AND sf.value = TRUE) as guest_login_enabled
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     CROSS JOIN params_normalized pn
     WHERE pn.department_id_uuid IS NOT NULL
@@ -90,7 +90,7 @@ selected_settings AS (
         COALESCE(
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = setting.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = setting_artifact.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id,
         COALESCE(
             (SELECT guest_login_enabled FROM dept_specific_settings),
@@ -101,8 +101,8 @@ selected_settings AS (
 active_departments_count AS (
     -- Count all active departments
     SELECT COUNT(*) as count
-    FROM department
-    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = department.id AND df.type = 'active'::type_department_flags AND df.value = TRUE)
+    FROM department_artifact
+    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = department_artifact.id AND df.type = 'active'::type_department_flags AND df.value = TRUE)
 ),
 department_exists_check AS (
     -- Check if the specified department exists and is active (if department_id provided)
@@ -110,7 +110,7 @@ department_exists_check AS (
         CASE 
             WHEN pn.department_id_uuid IS NOT NULL THEN
                 EXISTS(
-                    SELECT 1 FROM department d
+                    SELECT 1 FROM department_artifact d
                     CROSS JOIN params_normalized pn
                     WHERE d.id = pn.department_id_uuid
                     AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -122,11 +122,11 @@ department_exists_check AS (
 department_auth_providers_count AS (
     -- Count auth providers for specific department (if department_id provided)
     SELECT COUNT(DISTINCT a.id) as count
-    FROM department d
+    FROM department_artifact d
     JOIN department_settings ds ON ds.department_id = d.id AND ds.active = true
-    JOIN setting s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
     CROSS JOIN params_normalized pn
     WHERE pn.department_id_uuid IS NOT NULL
       AND d.id = pn.department_id_uuid
@@ -136,21 +136,21 @@ default_settings_auth_providers_count AS (
     -- Count auth providers for default settings (no department links)
     SELECT COUNT(DISTINCT a.id) as count
     FROM default_settings ds
-    JOIN setting s ON s.id = ds.settings_id
+    JOIN setting_artifact s ON s.id = ds.settings_id
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-    JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
 ),
 departments_without_auth_providers_count AS (
     -- Count departments that have no auth providers configured
     SELECT COUNT(DISTINCT d.id) as count
-    FROM department d
+    FROM department_artifact d
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
       AND NOT EXISTS (
           SELECT 1
           FROM department_settings ds
-          JOIN setting s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+          JOIN setting_artifact s ON s.id = ds.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
           JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
-          JOIN auths a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
+          JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
           WHERE ds.department_id = d.id
             AND ds.active = true
       )

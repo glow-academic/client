@@ -1,4 +1,4 @@
--- Bulk update profile with role validation and request limit update in single function
+-- Bulk UPDATE profile_artifact with role validation and request limit update in single function
 -- Converted to PostgreSQL function with composite types
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -35,12 +35,12 @@ WITH params AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 role_param AS (
     -- Use role to help PostgreSQL infer type (even if NULL)
@@ -48,7 +48,7 @@ role_param AS (
 ),
 current_user_role AS (
     -- Get current user's role for validation
-    SELECT p.role FROM params x JOIN profile p ON p.id = x.profile_id
+    SELECT p.role FROM params x JOIN profile_artifact p ON p.id = x.profile_id
 ),
 profile_validation AS (
     -- Validate each profile and check permissions
@@ -83,7 +83,7 @@ profile_validation AS (
     CROSS JOIN unnest(pr.profile_ids) as profile_id_val
     CROSS JOIN current_user_role cur
     CROSS JOIN role_param rp
-    JOIN profile p ON p.id = profile_id_val
+    JOIN profile_artifact p ON p.id = profile_id_val
 ),
 validated_profiles AS (
     -- Filter to only profiles that pass validation
@@ -92,8 +92,8 @@ validated_profiles AS (
     WHERE can_assign_role = true AND role_level_ok = true AND can_edit_default = true
 ),
 profile_update AS (
-    -- UPDATE profile table with dynamic SET clauses
-    UPDATE profile p
+    -- UPDATE profile_artifact table with dynamic SET clauses
+    UPDATE profile_artifact p
     SET 
         role = COALESCE((SELECT CAST(rp.role_value AS profile_role) FROM role_param rp WHERE rp.role_value IS NOT NULL LIMIT 1), p.role),
         updated_at = NOW()

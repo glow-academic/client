@@ -34,19 +34,19 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_persona AS (
     SELECT 
         p.id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
-        (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
-        (SELECT i.value FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT c.hex_code FROM persona_colors pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
+        (SELECT i.value FROM persona_icons pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon
     FROM params x
-    JOIN personas p ON p.id = x.persona_id
+    JOIN personas_resource p ON p.id = x.persona_id
 ),
 original_departments AS (
     -- Get department IDs from original persona
@@ -54,36 +54,36 @@ original_departments AS (
     FROM params x
     JOIN persona_departments pd ON pd.persona_id = x.persona_id AND pd.active = true
 ),
--- Insert name into names table
+-- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name || ' Copy', NOW(), NOW()
     FROM original_persona
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
--- Insert description into descriptions table
+-- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM original_persona
     WHERE description IS NOT NULL AND description != ''
     ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
     RETURNING id as description_id, description
 ),
--- Insert color into colors table (if exists)
+-- Insert color INTO colors_resource table (if exists)
 new_color_resource AS (
-    INSERT INTO colors (name, description, hex_code, created_at, updated_at)
+    INSERT INTO colors_resource (name, description, hex_code, created_at, updated_at)
     SELECT 'persona_color', 'Persona color', color, NOW(), NOW()
     FROM original_persona
     WHERE color IS NOT NULL AND color != ''
     ON CONFLICT (hex_code) DO UPDATE SET updated_at = NOW()
     RETURNING id as color_id, hex_code
 ),
--- Insert icon into icons table (if exists)
+-- Insert icon INTO icons_resource table (if exists)
 new_icon_resource AS (
-    INSERT INTO icons (name, description, value, created_at, updated_at)
+    INSERT INTO icons_resource (name, description, value, created_at, updated_at)
     SELECT 'persona_icon', 'Persona icon', icon, NOW(), NOW()
     FROM original_persona
     WHERE icon IS NOT NULL AND icon != ''
@@ -91,7 +91,7 @@ new_icon_resource AS (
     RETURNING id as icon_id, value
 ),
 new_persona AS (
-    INSERT INTO persona (
+    INSERT INTO persona_artifact (
         created_at,
         updated_at
     )
@@ -103,7 +103,7 @@ new_persona AS (
 ),
 -- Copy instruction if original persona has one
 copy_persona_instruction AS (
-    INSERT INTO instructions (template, active, created_at, updated_at)
+    INSERT INTO instructions_resource (template, active, created_at, updated_at)
     SELECT 
         COALESCE(pi_orig.template, ''),
         true,
@@ -112,7 +112,7 @@ copy_persona_instruction AS (
     FROM new_persona np
     CROSS JOIN original_persona op
     LEFT JOIN persona_instructions pi_orig_link ON pi_orig_link.persona_id = op.id
-    LEFT JOIN instructions pi_orig ON pi_orig.id = pi_orig_link.instruction_id
+    LEFT JOIN instructions_resource pi_orig ON pi_orig.id = pi_orig_link.instruction_id
     WHERE pi_orig.template IS NOT NULL AND pi_orig.template != ''
     RETURNING id as instruction_id
 ),
@@ -186,7 +186,7 @@ link_persona_active_flag AS (
         NOW(),
         NOW()
     FROM new_persona np
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (persona_id, flag_id, type) DO UPDATE SET 
         value = FALSE,

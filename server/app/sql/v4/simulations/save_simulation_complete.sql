@@ -30,7 +30,7 @@ CREATE TYPE types.i_save_simulation_v4_scenario_rubric_grade_agent AS (
 CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     name_id uuid,
     department_ids uuid[],
-    scenario_ids uuid[],  -- Scenario resource IDs (from scenarios resource table)
+    scenario_ids uuid[],  -- Scenario resource IDs (FROM scenarios_resource resource table)
     scenario_active_flags boolean[],
     scenario_hints_enabled boolean[],
     scenario_time_limit_seconds int[],
@@ -70,16 +70,16 @@ BEGIN
     -- Determine if create or update
     is_create := (input_simulation_id IS NULL);
     
-    -- Create or update simulation first (outside CTE)
+    -- Create or UPDATE simulation_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO simulation (created_at, updated_at)
+        INSERT INTO simulation_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_simulation_id;
     ELSE
         -- UPDATE path
         v_simulation_id := input_simulation_id;
-        UPDATE simulation
+        UPDATE simulation_artifact
         SET updated_at = NOW()
         WHERE id = v_simulation_id;
         
@@ -90,15 +90,15 @@ BEGIN
     END IF;
     
     -- Validate required resource IDs exist
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', description_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
     
@@ -145,9 +145,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
@@ -233,7 +233,7 @@ BEGIN
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
-    -- Update simulation practice flag
+    -- UPDATE simulation_artifact practice flag
     update_simulation_practice_flag AS (
         DELETE FROM simulation_flags 
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
@@ -244,7 +244,7 @@ BEGIN
         INSERT INTO simulation_flags (simulation_id, flag_id, type, value, created_at, updated_at)
         SELECT 
             x.simulation_id,
-            (SELECT id FROM flags WHERE name = 'practice' LIMIT 1),
+            (SELECT id FROM flags_resource WHERE name = 'practice' LIMIT 1),
             'practice'::type_simulation_flags,
             x.practice_simulation,
             NOW(),
@@ -255,7 +255,7 @@ BEGIN
             value = EXCLUDED.value,
             updated_at = NOW()
     ),
-    -- Update simulation text domain
+    -- UPDATE simulation_artifact text domain
     update_simulation_text_domain AS (
         DELETE FROM simulation_agent_domains 
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
@@ -274,7 +274,7 @@ BEGIN
         WHERE COALESCE(x.simulation_text_domain_id, (SELECT agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = x.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)) IS NOT NULL
         ON CONFLICT (simulation_id, agent_domain_id, type) DO UPDATE SET updated_at = NOW()
     ),
-    -- Update simulation voice domain
+    -- UPDATE simulation_artifact voice domain
     update_simulation_voice_domain AS (
         DELETE FROM simulation_agent_domains 
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
@@ -328,7 +328,7 @@ BEGIN
         SELECT 
             s.id as scenario_resource_id,
             s.scenario_id as scenario_artifact_id
-        FROM scenarios s
+        FROM scenarios_resource s
         WHERE s.id = ANY((SELECT scenario_ids FROM params LIMIT 1))
           AND s.active = true
     ),
@@ -456,10 +456,10 @@ BEGIN
     ),
     get_flag_resource_ids AS (
         SELECT 
-            (SELECT id FROM simulation_scenario_flags_resource WHERE name = 'active' LIMIT 1) as active_flag_id,
-            (SELECT id FROM simulation_scenario_flags_resource WHERE name = 'hints_enabled' LIMIT 1) as hints_enabled_flag_id,
-            (SELECT id FROM simulation_scenario_flags_resource WHERE name = 'audio_enabled' LIMIT 1) as audio_enabled_flag_id,
-            (SELECT id FROM simulation_scenario_flags_resource WHERE name = 'text_enabled' LIMIT 1) as text_enabled_flag_id
+            (SELECT id FROM simulation_scenario_flags WHERE name = 'active' LIMIT 1) as active_flag_id,
+            (SELECT id FROM simulation_scenario_flags WHERE name = 'hints_enabled' LIMIT 1) as hints_enabled_flag_id,
+            (SELECT id FROM simulation_scenario_flags WHERE name = 'audio_enabled' LIMIT 1) as audio_enabled_flag_id,
+            (SELECT id FROM simulation_scenario_flags WHERE name = 'text_enabled' LIMIT 1) as text_enabled_flag_id
     ),
     link_scenario_flags AS (
         INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
@@ -552,11 +552,11 @@ BEGIN
                 (SELECT a.id FROM rubric_domains rd 
                  JOIN agent_domains adom ON adom.domain_id = rd.domain_id
                  JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
-                 JOIN agent a ON a.id = adom.agent_id
+                 JOIN agent_artifact a ON a.id = adom.agent_id
                  WHERE rd.rubric_id = (srga).rubric_id
                    AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
                  LIMIT 1),
-                (SELECT id FROM agent WHERE active = true ORDER BY created_at LIMIT 1)
+                (SELECT id FROM agent_artifact WHERE active = true ORDER BY created_at LIMIT 1)
             ) as agent_id
         FROM params x
         CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
@@ -597,7 +597,7 @@ BEGIN
     ),
     -- Create/find scenario_rubric_grade_agents entries
     create_scenario_rubric_grade_agents AS (
-        INSERT INTO scenario_rubric_grade_agents (rubric_id, grade_agent_id, agent_id, active, generated, created_at, updated_at)
+        INSERT INTO scenario_rubric_grade_agents_resource (rubric_id, grade_agent_id, agent_id, active, generated, created_at, updated_at)
         SELECT DISTINCT
             crga.rubric_id,
             crga.grade_agent_id,

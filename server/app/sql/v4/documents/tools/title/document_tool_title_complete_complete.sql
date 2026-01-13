@@ -60,23 +60,23 @@ extract_title AS (
 ),
 -- Insert/update name in names table
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT et.title, NOW(), NOW()
     FROM extract_title et
     WHERE et.title IS NOT NULL AND et.title != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Update document (without name column)
+-- UPDATE document_artifact (without name column)
 update_document AS (
-    UPDATE document
+    UPDATE document_artifact
     SET updated_at = NOW()
     FROM extract_title et
     CROSS JOIN params p
-    WHERE document.id = p.document_id
+    WHERE document_artifact.id = p.document_id
       AND et.title IS NOT NULL
       AND et.title != ''
-    RETURNING document.id as document_id
+    RETURNING document_artifact.id as document_id
 ),
 -- Remove old name links
 remove_old_name AS (
@@ -108,7 +108,7 @@ finalize_tool_call AS (
 SELECT 
     (SELECT tool_call_id::text FROM finalize_tool_call LIMIT 1) as tool_call_id,
     (SELECT document_id FROM update_document LIMIT 1) as document_id,
-    (SELECT n.name FROM names n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) as title,
+    (SELECT n.name FROM names_resource n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) as title,
     (SELECT completed FROM finalize_tool_call LIMIT 1) as completed
 $$;
 

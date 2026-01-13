@@ -23,5 +23,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT d.id FROM department d WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
+SELECT d.id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
 $$;

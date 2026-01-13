@@ -34,12 +34,12 @@ AS $$
 WITH practice_simulations AS (
     SELECT DISTINCT
         sim.id as simulation_id,
-        (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) as simulation_title,
+        (SELECT n.name FROM simulation_names simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) as simulation_title,
         ss.scenario_id,
-        (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position_val
-    FROM simulation sim
+        (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position_val
+    FROM simulation_artifact sim
     JOIN simulation_scenarios ss ON ss.simulation_id = sim.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
-    JOIN scenarios s ON s.id = ss.scenario_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN scenarios_resource s ON s.id = ss.scenario_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
     WHERE EXISTS (SELECT 1 FROM simulation_flags simf WHERE simf.simulation_id = sim.id AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
       AND EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
@@ -91,9 +91,9 @@ scenario_with_name AS (
         fbd.simulation_title,
         fbd.scenario_id,
         fbd.position_val,
-        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as scenario_name
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as scenario_name
     FROM filtered_by_department fbd
-    JOIN scenarios s ON s.id = fbd.scenario_id
+    JOIN scenarios_resource s ON s.id = fbd.scenario_id
 )
 SELECT 
     simulation_id::text,

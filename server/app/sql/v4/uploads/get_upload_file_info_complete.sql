@@ -52,8 +52,8 @@ upload_info AS (
     WHERE u.id = (SELECT upload_id FROM params)
 ),
 actor_profile AS (
-    SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
-    FROM profile
+    SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+    FROM profile_artifact
     WHERE id = (SELECT profile_id FROM params)
 ),
 regular_document_upload AS (
@@ -68,7 +68,7 @@ regular_document_upload AS (
          ORDER BY ds.created_at DESC 
          LIMIT 1) as schema_id
     FROM document_uploads du
-    JOIN documents d ON d.id = du.document_id
+    JOIN documents_resource d ON d.id = du.document_id
     WHERE du.upload_id = (SELECT upload_id FROM params)
       AND du.active = true
     LIMIT 1
@@ -80,9 +80,9 @@ template_upload AS (
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
         ds.schema_id
     FROM html_uploads hu
-    JOIN html h ON h.id = hu.html_id
+    JOIN html_resource h ON h.id = hu.html_id
     JOIN document_html dh ON dh.html_id = h.id AND dh.active = true
-    JOIN documents d ON d.id = dh.document_id
+    JOIN documents_resource d ON d.id = dh.document_id
     LEFT JOIN document_schemas ds ON ds.document_id = dh.document_id AND ds.active = true
     WHERE hu.upload_id = (SELECT upload_id FROM params)
       AND hu.active = true

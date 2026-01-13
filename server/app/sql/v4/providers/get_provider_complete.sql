@@ -106,7 +106,7 @@ provider_exists_check AS (
     SELECT 
         CASE 
             WHEN (SELECT provider_id FROM params) IS NULL THEN NULL::boolean
-            ELSE EXISTS(SELECT 1 FROM provider WHERE id = (SELECT provider_id FROM params))::boolean
+            ELSE EXISTS(SELECT 1 FROM provider_artifact WHERE id = (SELECT provider_id FROM params))::boolean
         END as provider_exists
 ),
 -- Draft data is now stored in draft_* junction tables, not in payload
@@ -127,7 +127,7 @@ draft_group_data AS (
         ) as group_id
     FROM params x
     LEFT JOIN drafts d ON d.id = x.draft_id
-    LEFT JOIN provider p ON p.id = x.provider_id
+    LEFT JOIN provider_artifact p ON p.id = x.provider_id
     -- Always return at least one row (use COALESCE to handle NULL draft_id/provider_id case)
     WHERE TRUE
     LIMIT 1
@@ -135,28 +135,28 @@ draft_group_data AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 -- Tool existence checks
 tools_existence_check AS (
     SELECT 
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
               AND t.active = true
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
               AND t.active = true
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
               AND t.active = true
         ) as flags_has_tools
@@ -186,7 +186,7 @@ name_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pn.name_id, MAX(pn.created_at) as created_at
                  FROM provider_names pn
-                 JOIN names n ON n.id = pn.name_id
+                 JOIN names_resource n ON n.id = pn.name_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pn.name_id IS NOT NULL
                    AND n.name IS NOT NULL
@@ -227,7 +227,7 @@ description_suggestions_data AS (
              FROM (
                  SELECT DISTINCT pd.description_id, MAX(pd.created_at) as created_at
                  FROM provider_descriptions pd
-                 JOIN descriptions d ON d.id = pd.description_id
+                 JOIN descriptions_resource d ON d.id = pd.description_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.description_id IS NOT NULL
                    AND d.description IS NOT NULL
@@ -271,7 +271,7 @@ names_suggestions_objects AS (
                 )
                 FROM name_suggestions_data nsd
                 CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
-                JOIN names n ON n.id = suggestion_id
+                JOIN names_resource n ON n.id = suggestion_id
                 WHERE n.name IS NOT NULL AND n.name != ''
             ),
             ARRAY[]::types.q_get_provider_v4_name_resource[]
@@ -290,7 +290,7 @@ descriptions_suggestions_objects AS (
                 )
                 FROM description_suggestions_data dsd
                 CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
-                JOIN descriptions d ON d.id = suggestion_id
+                JOIN descriptions_resource d ON d.id = suggestion_id
                 WHERE d.description IS NOT NULL AND d.description != ''
             ),
             ARRAY[]::types.q_get_provider_v4_description_resource[]
@@ -303,7 +303,7 @@ descriptions_suggestions_objects AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT n.id FROM draft_names dn JOIN names n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT n.id FROM draft_names dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pn.name_id FROM provider_names pn WHERE pn.provider_id = (SELECT provider_id FROM params) LIMIT 1)
         ) as name_id,
         (
@@ -311,12 +311,12 @@ name_resource_data AS (
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
                 FROM draft_names dn 
-                JOIN names n ON dn.names_id = n.id 
+                JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
                 FROM provider_names pn 
-                JOIN names n ON pn.name_id = n.id 
+                JOIN names_resource n ON pn.name_id = n.id 
                 WHERE pn.provider_id = (SELECT provider_id FROM params)
             ) n
             ORDER BY priority
@@ -327,7 +327,7 @@ name_resource_data AS (
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT d.id FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT d.id FROM draft_descriptions dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pd.description_id FROM provider_descriptions pd WHERE pd.provider_id = (SELECT provider_id FROM params) LIMIT 1)
         ) as description_id,
         (
@@ -335,12 +335,12 @@ description_resource_data AS (
             FROM (
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 1 as priority
                 FROM draft_descriptions dd 
-                JOIN descriptions d ON dd.descriptions_id = d.id 
+                JOIN descriptions_resource d ON dd.descriptions_id = d.id 
                 WHERE dd.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 2 as priority
                 FROM provider_descriptions pd 
-                JOIN descriptions d ON pd.description_id = d.id 
+                JOIN descriptions_resource d ON pd.description_id = d.id 
                 WHERE pd.provider_id = (SELECT provider_id FROM params)
             ) d
             ORDER BY priority
@@ -351,7 +351,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT f.id FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT f.id FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT pf.flag_id FROM provider_flags pf WHERE pf.provider_id = (SELECT provider_id FROM params) AND pf.type = 'active'::type_provider_flags AND pf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
@@ -359,13 +359,13 @@ flag_resource_data AS (
             FROM (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM draft_flags df 
-                JOIN flags f ON df.flags_id = f.id 
+                JOIN flags_resource f ON df.flags_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
                 FROM provider_flags pf 
-                JOIN flags f ON pf.flag_id = f.id 
-                JOIN flags fl ON pf.flag_id = fl.id 
+                JOIN flags_resource f ON pf.flag_id = f.id 
+                JOIN flags_resource fl ON pf.flag_id = fl.id 
                 WHERE pf.provider_id = (SELECT provider_id FROM params) 
                   AND fl.name = 'active' 
                   AND pf.type = 'active'::type_provider_flags 
@@ -384,7 +384,7 @@ flags_data AS (
         f.description,
         f.icon_id,
         COALESCE(f.generated, false) as generated
-    FROM flags f
+    FROM flags_resource f
     CROSS JOIN params p
     WHERE 
         -- Always include selected active_flag_id if it exists
@@ -398,7 +398,7 @@ descriptions_data AS (
         d.id,
         d.description,
         COALESCE(d.generated, false) as generated
-    FROM descriptions d
+    FROM descriptions_resource d
     CROSS JOIN params p
     CROSS JOIN draft_group_data dgd
     WHERE 
@@ -438,10 +438,10 @@ name_agent_data AS (
     CROSS JOIN tools_existence_check tec
     LEFT JOIN LATERAL (
         SELECT a.id
-        FROM agent a
+        FROM agent_artifact a
         WHERE EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id
+            JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'names'::resources
@@ -468,10 +468,10 @@ description_agent_data AS (
     CROSS JOIN tools_existence_check tec
     LEFT JOIN LATERAL (
         SELECT a.id
-        FROM agent a
+        FROM agent_artifact a
         WHERE EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id
+            JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'descriptions'::resources
@@ -498,10 +498,10 @@ flag_agent_data AS (
     CROSS JOIN tools_existence_check tec
     LEFT JOIN LATERAL (
         SELECT a.id
-        FROM agent a
+        FROM agent_artifact a
         WHERE EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id
+            JOIN tool_artifact t ON t.id = at.tool_id
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id
               AND rt.resource = 'flags'::resources

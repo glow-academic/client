@@ -103,9 +103,9 @@ draft_payload_data AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 primary_department_id AS (
     SELECT department_id::text
@@ -122,17 +122,17 @@ user_departments_for_models AS (
 valid_models AS (
     SELECT 
         m.id::text as model_id,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description,
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
-    FROM model m
+    FROM model_artifact m
     LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
     WHERE EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = true)
-    GROUP BY m.id, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
+    GROUP BY m.id, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
     HAVING 
         COUNT(md.model_id) FILTER (WHERE md.department_id IN (SELECT department_id FROM user_departments_for_models)) > 0
         OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
-    ORDER BY (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)
+    ORDER BY (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)
 ),
 model_modalities_data AS (
     SELECT 
@@ -149,7 +149,7 @@ model_temperature_levels_data_with_ids AS (
         tl.temperature::text as temperature_value,
         tl.is_upper::boolean as is_upper
     FROM model_temperature_levels mtl
-    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE tl.active = true
 ),
 model_temperature_levels_bounds AS (
@@ -158,7 +158,7 @@ model_temperature_levels_bounds AS (
         MIN(tl.temperature) FILTER (WHERE tl.is_upper = false)::float as temperature_lower,
         MAX(tl.temperature) FILTER (WHERE tl.is_upper = true)::float as temperature_upper
     FROM model_temperature_levels mtl
-    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
     WHERE tl.active = true
     GROUP BY mtl.model_id
 ),
@@ -168,7 +168,7 @@ model_reasoning_levels_data_with_ids AS (
         rl.id::text as reasoning_level_id,
         rl.reasoning_level::text as reasoning_level_value
     FROM model_reasoning_levels mrl
-    JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id
+    JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id
     WHERE rl.active = true
 ),
 model_voices_data AS (
@@ -177,7 +177,7 @@ model_voices_data AS (
         v.id::text as voice_id,
         v.voice::text as voice_value
     FROM model_voices mv
-    JOIN voices v ON v.id = mv.voice_id
+    JOIN voices_resource v ON v.id = mv.voice_id
     WHERE v.active = true
 ),
 all_models_with_modalities AS (
@@ -189,8 +189,8 @@ all_models_with_modalities AS (
     FROM valid_models vm
 ),
 user_departments AS (
-    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
-    FROM department d
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
+    FROM department_artifact d
     JOIN params x ON true
     JOIN profile_departments pd ON pd.department_id = d.id
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)

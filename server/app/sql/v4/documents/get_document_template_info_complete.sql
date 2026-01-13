@@ -33,12 +33,12 @@ SELECT
     u.file_path,
     ds.schema_id,
     (SELECT dad.agent_domain_id::text FROM document_agent_domains dad WHERE dad.document_id = d.id LIMIT 1),
-    (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-    (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
-FROM document d
+    (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+    (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
+FROM document_artifact d
 INNER JOIN document_templates dt ON dt.document_id = d.id AND dt.active = true
 INNER JOIN document_html dh ON dh.document_id = d.id AND dh.active = true
-INNER JOIN html h ON h.id = dh.html_id
+INNER JOIN html_resource h ON h.id = dh.html_id
 INNER JOIN html_uploads hu ON hu.html_id = h.id AND hu.active = true
 INNER JOIN uploads u ON u.id = hu.upload_id
 LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true

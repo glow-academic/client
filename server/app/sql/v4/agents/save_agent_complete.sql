@@ -48,16 +48,16 @@ BEGIN
     -- Determine if create or update
     is_create := (input_agent_id IS NULL);
     
-    -- Create or update agent first (outside CTE)
+    -- Create or UPDATE agent_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO agent (created_at, updated_at)
+        INSERT INTO agent_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_agent_id;
     ELSE
         -- UPDATE path
         v_agent_id := input_agent_id;
-        UPDATE agent
+        UPDATE agent_artifact
         SET updated_at = NOW()
         WHERE id = v_agent_id;
     END IF;
@@ -67,27 +67,27 @@ BEGIN
         RAISE EXCEPTION 'Name is required';
     END IF;
     
-    IF model_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM model WHERE id = model_id) THEN
+    IF model_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM model_artifact WHERE id = model_id) THEN
         RAISE EXCEPTION 'Model not found: %', model_id;
     END IF;
     
-    IF prompt_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM prompts WHERE id = prompt_id) THEN
+    IF prompt_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM prompts_resource WHERE id = prompt_id) THEN
         RAISE EXCEPTION 'Prompt resource not found: %', prompt_id;
     END IF;
     
-    IF instructions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM instructions WHERE id = instructions_id) THEN
+    IF instructions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM instructions_resource WHERE id = instructions_id) THEN
         RAISE EXCEPTION 'Instructions resource not found: %', instructions_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
     
-    IF temperature_level_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM temperature_levels WHERE id = temperature_level_id) THEN
+    IF temperature_level_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM temperature_levels_resource WHERE id = temperature_level_id) THEN
         RAISE EXCEPTION 'Temperature level not found: %', temperature_level_id;
     END IF;
     
-    IF reasoning_level_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM reasoning_levels WHERE id = reasoning_level_id) THEN
+    IF reasoning_level_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM reasoning_levels_resource WHERE id = reasoning_level_id) THEN
         RAISE EXCEPTION 'Reasoning level not found: %', reasoning_level_id;
     END IF;
     
@@ -131,7 +131,7 @@ BEGIN
     ),
     -- Insert/update name in names table
     name_resource AS (
-        INSERT INTO names (name, created_at, updated_at)
+        INSERT INTO names_resource (name, created_at, updated_at)
         SELECT name, NOW(), NOW()
         FROM params
         WHERE name IS NOT NULL AND name != ''
@@ -140,7 +140,7 @@ BEGIN
     ),
     -- Insert/update description in descriptions table
     description_resource AS (
-        INSERT INTO descriptions (description, created_at, updated_at)
+        INSERT INTO descriptions_resource (description, created_at, updated_at)
         SELECT description, NOW(), NOW()
         FROM params
         WHERE description IS NOT NULL AND description != ''
@@ -150,9 +150,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
@@ -237,7 +237,7 @@ BEGIN
     -- Handle prompt (create new if system_prompt provided and prompt_id not provided)
     new_prompt AS (
         -- Create prompt only if system_prompt provided and prompt_id not provided
-        INSERT INTO prompts (system_prompt, created_at, updated_at)
+        INSERT INTO prompts_resource (system_prompt, created_at, updated_at)
         SELECT x.system_prompt, NOW(), NOW()
         FROM params x
         WHERE x.prompt_id IS NULL AND x.system_prompt IS NOT NULL AND x.system_prompt != ''
@@ -285,7 +285,7 @@ BEGIN
         WHERE x.instructions_id IS NOT NULL
         ON CONFLICT (agent_id, instruction_id) DO UPDATE SET updated_at = NOW()
     ),
-    -- Insert or update agent active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
+    -- Insert or UPDATE agent_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_agent_active_flag AS (
         INSERT INTO agent_flags (agent_id, flag_id, type, value, created_at, updated_at)
         SELECT 
@@ -296,7 +296,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'active'
         ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, agent_flags.flag_id),

@@ -38,8 +38,8 @@ BEGIN
         sf."position" as position,
         sf.template::text as template
     FROM resource_schemas rs
-    JOIN schemas s ON s.id = rs.schema_id
-    JOIN schema_fields sf ON sf.schema_id = s.id
+    JOIN schemas_resource s ON s.id = rs.schema_id
+    JOIN schema_fields_resource sf ON sf.schema_id = s.id
     WHERE rs.resource = api_get_resource_schema_fields_v4.resource_type::resources
       AND sf.active = true
     ORDER BY sf."position";

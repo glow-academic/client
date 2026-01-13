@@ -83,17 +83,17 @@ scenario_dept AS (
         s.id as scenario_id,
         (SELECT sd.department_id FROM scenario_departments sd 
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
-    FROM chat sc
+    FROM chat_artifact sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     CROSS JOIN params p
     WHERE sc.id = p.chat_id
 ),
 profile_dept AS (
-    -- Get first department from profile's accessible departments
+    -- Get first department FROM profile_artifact's accessible departments
     SELECT d.id as department_id
-    FROM department d
+    FROM department_artifact d
     JOIN profile_departments pd ON pd.department_id = d.id
     JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
@@ -106,7 +106,7 @@ profile_dept AS (
 any_active_dept AS (
     -- Get any active department as last resort
     SELECT id as department_id
-    FROM department d
+    FROM department_artifact d
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE)
     LIMIT 1
 ),
@@ -122,9 +122,9 @@ profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
     SELECT 
         rl.requests_per_day as req_per_day
-    FROM profile prof
+    FROM profile_artifact prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     CROSS JOIN params p
     WHERE prof.id = (SELECT ap.profile_id FROM attempt_profiles ap 
                   JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
@@ -136,7 +136,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run mr
+    FROM run_artifact mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     CROSS JOIN params p
     WHERE mrp.profile_id = (SELECT ap.profile_id FROM attempt_profiles ap 
@@ -159,7 +159,7 @@ profile_from_attempt AS (
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -179,7 +179,7 @@ profile_primary_department AS (
 dept_specific_settings AS (
     -- Get department-specific settings (if primary_department_id exists)
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) 
@@ -190,13 +190,13 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys k ON k.id = spk.key_id
+    JOIN keys_resource k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -206,7 +206,7 @@ dept_specific_settings_with_keys AS (
 default_settings_with_keys AS (
     -- Default settings that have keys
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
       AND NOT EXISTS (
@@ -224,7 +224,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 create_group_if_needed AS (
@@ -250,7 +250,7 @@ group_data AS (
 -- Get prompt agent (role='prompt')
 prompt_agent AS (
     SELECT a.id as agent_id
-    FROM agent a
+    FROM agent_artifact a
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
@@ -298,43 +298,43 @@ context_data AS (
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
         rt.earliest_run_created_at
 
-    FROM chat sc
+    FROM chat_artifact sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     JOIN chat_groups cg ON cg.chat_id = sc.id
     JOIN groups g ON g.id = cg.group_id
 
     -- Prompt agent joins
     CROSS JOIN prompt_agent pa
-    JOIN agents a ON a.id = pa.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    JOIN agents_resource a ON a.id = pa.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     LEFT JOIN agent_models am ON am.agent_id = a.id
-    LEFT JOIN models m ON m.id = am.model_id
+    LEFT JOIN models_resource m ON m.id = am.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id 
-LEFT JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id AND tl.active = true
+LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
-LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
+LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
         AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
         AND adp_prompt.active = true
-    LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
+    LEFT JOIN prompts_resource pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-    LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
+    LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
-    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
+    LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
     LEFT JOIN model_providers mp ON mp.model_id = m.id
-    LEFT JOIN providers p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider pr_prov ON pr_prov.id = p_prov.provider_id
+    LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
     LEFT JOIN provider_names pn_prov ON pn_prov.provider_id = pr_prov.id
-    LEFT JOIN names n_prov ON n_prov.id = pn_prov.name_id
+    LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
@@ -355,7 +355,7 @@ LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = 
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO run (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id

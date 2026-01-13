@@ -37,20 +37,20 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 simulation_info AS (
     SELECT 
         s.id,
-        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
+        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
         (SELECT COUNT(*) FROM cohort_simulations WHERE cohort_simulations.simulation_id = s.id) as usage_count
     FROM params x
-    JOIN simulation s ON s.id = x.simulation_id
+    JOIN simulation_artifact s ON s.id = x.simulation_id
 ),
 delete_simulation AS (
-    DELETE FROM simulation
+    DELETE FROM simulation_artifact
     WHERE id IN (
         SELECT id FROM simulation_info WHERE usage_count = 0
     )

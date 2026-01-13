@@ -35,9 +35,9 @@ WITH params AS (
 ),
 user_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 usage_check AS (
     SELECT COUNT(*)::bigint as usage_count
@@ -46,12 +46,12 @@ usage_check AS (
 ),
 persona_info AS (
     SELECT 
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name
     FROM params x
-    JOIN personas p ON p.id = x.persona_id
+    JOIN personas_resource p ON p.id = x.persona_id
 ),
 delete_result AS (
-    DELETE FROM persona 
+    DELETE FROM persona_artifact 
     WHERE id = (SELECT persona_id FROM params)
       AND (SELECT usage_count FROM usage_check) = 0
       AND EXISTS(SELECT 1 FROM persona_info)

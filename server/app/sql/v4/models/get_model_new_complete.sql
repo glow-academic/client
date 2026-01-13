@@ -115,8 +115,8 @@ resolve_profile_id AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params)::uuid as profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
-    FROM profile p
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+    FROM profile_artifact p
     WHERE p.id = (SELECT profile_id FROM params)::uuid
 ),
 user_departments AS (
@@ -126,8 +126,8 @@ user_departments AS (
     WHERE pd.active = true
 ),
 user_departments_data AS (
-    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
-    FROM department d
+    SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
+    FROM department_artifact d
     JOIN resolve_profile_id rpi ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
@@ -138,32 +138,32 @@ valid_models AS (
     -- Filter models by department: include if has matching department link OR has no department links at all (cross-dept)
     SELECT 
         m.id as model_id,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description
-    FROM model m
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1), '') as description
+    FROM model_artifact m
     LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
     WHERE EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = true)
-    GROUP BY m.id, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1)
+    GROUP BY m.id, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1), (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1)
     HAVING 
         COUNT(md.model_id) FILTER (WHERE md.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM model_departments md2 WHERE md2.model_id = m.id AND md2.active = true)
-    ORDER BY (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)
+    ORDER BY (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1)
 ),
 valid_keys AS (
     -- Get all active keys (no model-specific filtering for default view)
     SELECT DISTINCT 
         k.id as key_id, 
-        (SELECT n.name FROM key_names kn JOIN names n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name, 
+        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name, 
         k.key, 
-        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active
-    FROM key k
+    FROM key_artifact k
     WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 profile_data AS (
     SELECT role as user_role 
     FROM resolve_profile_id rpi
-    JOIN profile p ON p.id = rpi.resolved_profile_id
+    JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
 ),
 primary_department_id AS (
     SELECT department_id
@@ -183,14 +183,14 @@ all_units_data AS (
     ORDER BY unit_category, value, name
 ),
 providers_aggregated AS (
-    -- Get providers from providers resource table
+    -- Get providers FROM providers_resource resource table
     SELECT 
         ARRAY_AGG(p.id ORDER BY n.name) as valid_provider_ids,
-        ARRAY_AGG((p.id, n.name, COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''))::types.q_get_model_new_v4_provider ORDER BY n.name) as providers
-    FROM providers p
-    JOIN provider pr ON pr.id = p.provider_id
+        ARRAY_AGG((p.id, n.name, COALESCE((SELECT d.description FROM provider_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), ''))::types.q_get_model_new_v4_provider ORDER BY n.name) as providers
+    FROM providers_resource p
+    JOIN provider_artifact pr ON pr.id = p.provider_id
     JOIN provider_names pn ON pn.provider_id = pr.id
-    JOIN names n ON n.id = pn.name_id
+    JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true
 ),
 departments_aggregated AS (

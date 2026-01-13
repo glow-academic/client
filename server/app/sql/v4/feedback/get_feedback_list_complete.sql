@@ -45,8 +45,8 @@ STABLE
 AS $$
 WITH actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
-    FROM profile p
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+    FROM profile_artifact p
     WHERE p.id = profile_id
 ),
 feedback_rows AS (
@@ -56,7 +56,7 @@ feedback_rows AS (
         COALESCE(f.message, '') as message,
         f.created_at,
         f.resolved,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = f.profile_id AND pn2.type = 'last' LIMIT 1), ''), 'Anonymous') as author_name,
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = f.profile_id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = f.profile_id AND pn2.type = 'last' LIMIT 1), ''), 'Anonymous') as author_name,
         COALESCE(
             (SELECT email FROM profile_emails WHERE profile_id = f.profile_id AND is_primary = true AND active = true LIMIT 1),
             ''
@@ -67,7 +67,7 @@ feedback_rows AS (
         ) as author_emails,
         COALESCE(f.profile_id::text, '') as author_profile_id
     FROM problems f
-    LEFT JOIN profile p ON p.id = f.profile_id
+    LEFT JOIN profile_artifact p ON p.id = f.profile_id
     LEFT JOIN profile_emails pe ON pe.profile_id = f.profile_id AND pe.active = true
     GROUP BY f.id, f.type, f.message, f.created_at, f.resolved, f.profile_id
     ORDER BY f.resolved ASC, f.created_at DESC

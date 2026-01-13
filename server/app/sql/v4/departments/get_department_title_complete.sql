@@ -25,5 +25,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = department_id LIMIT 1) as title FROM department WHERE id = department_id
+SELECT (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = department_id LIMIT 1) as title FROM department_artifact WHERE id = department_id
 $$;

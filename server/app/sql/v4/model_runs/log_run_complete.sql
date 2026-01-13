@@ -39,23 +39,23 @@ run_info AS (
         (SELECT rp.persona_id FROM run_personas rp WHERE rp.run_id = r.id AND rp.active = true LIMIT 1) as persona_id,
         COALESCE(
             x.department_id,
-            -- Try to get department from chat
-            (SELECT sd.department_id FROM run r2
+            -- Try to get department FROM chat_artifact
+            (SELECT sd.department_id FROM run_artifact r2
              JOIN group_runs gr ON gr.run_id = r2.id
              JOIN groups g ON g.id = gr.group_id
              JOIN chat_groups cg ON cg.group_id = g.id
-             JOIN chat c ON c.id = cg.chat_id
+             JOIN chat_artifact c ON c.id = cg.chat_id
              JOIN scenario_departments sd ON sd.scenario_id = c.scenario_id AND sd.active = true
              WHERE r2.id = x.run_id LIMIT 1),
-            -- Try to get department from profile
+            -- Try to get department FROM profile_artifact
             (SELECT pd.department_id FROM run_profiles rpf
              JOIN profile_departments pd ON pd.profile_id = rpf.profile_id AND pd.active = true
              WHERE rpf.run_id = x.run_id AND rpf.active = true LIMIT 1),
             -- Fallback to any active department
-            (SELECT id FROM department d WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
+            (SELECT id FROM department_artifact d WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE) LIMIT 1)
         ) as department_id
     FROM params x
-    JOIN run r ON r.id = x.run_id
+    JOIN run_artifact r ON r.id = x.run_id
 ),
 -- Token update: handle both text-only and audio/image/text scenarios
 has_audio_or_image AS (
@@ -64,7 +64,7 @@ has_audio_or_image AS (
     FROM params x
 ),
 update_run AS (
-    UPDATE run 
+    UPDATE run_artifact 
     SET 
         input_tokens = CASE 
             WHEN (SELECT has_audio_image FROM has_audio_or_image) THEN
@@ -85,7 +85,7 @@ update_run AS (
                 COALESCE(x.cached_text_tokens, 0)
         END
     FROM params x
-    WHERE run.id = x.run_id
+    WHERE run_artifact.id = x.run_id
     RETURNING id, input_tokens, output_tokens, cached_input_tokens
 ),
 -- Get unit IDs for pricing
@@ -235,16 +235,16 @@ persona_system_prompt AS (
         END as system_prompt
     FROM run_info ri
     JOIN run_personas rp ON rp.run_id = ri.run_id AND rp.active = true
-    JOIN personas p ON p.id = rp.persona_id
+    JOIN personas_resource p ON p.id = rp.persona_id
     LEFT JOIN persona_instructions pi ON pi.persona_id = p.id
-    LEFT JOIN instructions pi_inst ON pi_inst.id = pi.instruction_id
-    JOIN agents a ON a.id = ri.agent_id
+    LEFT JOIN instructions_resource pi_inst ON pi_inst.id = pi.instruction_id
+    JOIN agents_resource a ON a.id = ri.agent_id
     LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
         AND adp.department_id = ri.department_id
         AND adp.active = true
-    LEFT JOIN prompts pr_dept ON pr_dept.id = adp.prompt_id
+    LEFT JOIN prompts_resource pr_dept ON pr_dept.id = adp.prompt_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-    LEFT JOIN prompts pr_default ON pr_default.id = ap.prompt_id
+    LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.persona_id IS NOT NULL
     AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) IS NOT NULL
     AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) != ''
@@ -254,13 +254,13 @@ agent_system_prompt AS (
     SELECT 
         COALESCE(pr_dept.system_prompt, pr_default.system_prompt) as system_prompt
     FROM run_info ri
-    JOIN agents a ON a.id = ri.agent_id
+    JOIN agents_resource a ON a.id = ri.agent_id
     LEFT JOIN agent_department_prompts adp ON adp.agent_id = a.id 
         AND adp.department_id = ri.department_id
         AND adp.active = true
-    LEFT JOIN prompts pr_dept ON pr_dept.id = adp.prompt_id
+    LEFT JOIN prompts_resource pr_dept ON pr_dept.id = adp.prompt_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = a.id AND ap.active = true
-    LEFT JOIN prompts pr_default ON pr_default.id = ap.prompt_id
+    LEFT JOIN prompts_resource pr_default ON pr_default.id = ap.prompt_id
     WHERE ri.agent_id IS NOT NULL
     AND ri.persona_id IS NULL
     AND COALESCE(pr_dept.system_prompt, pr_default.system_prompt) IS NOT NULL
@@ -278,7 +278,7 @@ system_message_hash AS (
 ),
 existing_system_message AS (
     SELECT m.id as system_message_id
-    FROM message m
+    FROM message_artifact m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         JOIN contents cnt ON cnt.id = mc.content_id
     JOIN system_message_hash smh ON message_content_hash(cnt.content, 'system') = smh.hash
@@ -286,7 +286,7 @@ existing_system_message AS (
     LIMIT 1
 ),
 new_system_message AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'system'::message_role, false, false, NOW(), NOW()
     FROM system_message_content smc
     WHERE NOT EXISTS (SELECT 1 FROM existing_system_message)
@@ -295,9 +295,9 @@ new_system_message AS (
 -- Get prompt tool_id for prompt agent
 get_prompt_tool_id AS (
     SELECT t.id as tool_id
-    FROM tool t
+    FROM tool_artifact t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resources)
-    INNER JOIN run r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
+    INNER JOIN run_artifact r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
     INNER JOIN agent_domains adom ON adom.agent_id = r_run.agent_id
     INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
     WHERE t.name = 'prompt' AND t.active = true
@@ -408,7 +408,7 @@ existing_developer_messages_with_rn AS (
         m.id as message_id,
         ROW_NUMBER() OVER (PARTITION BY dmp.content ORDER BY m.created_at ASC) as rn
     FROM developer_messages_processed dmp
-    JOIN message m ON m.role = 'developer'
+    JOIN message_artifact m ON m.role = 'developer'
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         JOIN contents cnt ON cnt.id = mc.content_id
         AND message_content_hash(cnt.content, 'developer') = dmp.hash
@@ -422,7 +422,7 @@ existing_developer_messages AS (
     WHERE rn = 1
 ),
 new_developer_messages AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM developer_messages_processed dmp
     WHERE NOT EXISTS (
@@ -434,9 +434,9 @@ new_developer_messages AS (
 -- Get instruct tool_id for prompt agent
 get_instruct_tool_id AS (
     SELECT t.id as tool_id
-    FROM tool t
+    FROM tool_artifact t
     INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('prompts' AS resources)
-    INNER JOIN run r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
+    INNER JOIN run_artifact r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
     INNER JOIN agent_domains adom ON adom.agent_id = r_run_instruct.agent_id
     INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
     WHERE t.name = 'instruct' AND t.active = true
@@ -587,7 +587,7 @@ link_system_to_developer AS (
 ),
 -- Create assistant message if output provided
 assistant_message AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'assistant'::message_role, true, false, NOW(), NOW()
     FROM params x
     WHERE x.assistant_output IS NOT NULL AND trim(x.assistant_output) != ''

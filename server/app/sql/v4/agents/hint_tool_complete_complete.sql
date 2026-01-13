@@ -57,14 +57,14 @@ BEGIN
     -- Get message_id from run_id and chat_id (same logic as get_hint_message_id_complete.sql)
     SELECT m.id INTO v_message_id
     FROM message_runs mr
-    JOIN message m ON m.id = mr.message_id
+    JOIN message_artifact m ON m.id = mr.message_id
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN chat_groups cg ON cg.group_id IN (
         SELECT gr.group_id 
         FROM group_runs gr 
         WHERE gr.run_id = run_id
     )
-    JOIN chat c ON c.id = cg.chat_id
+    JOIN chat_artifact c ON c.id = cg.chat_id
     WHERE mr.run_id = run_id
       AND c.id = chat_id
       AND m.role = 'user'::message_role
@@ -96,7 +96,7 @@ BEGIN
         FROM hint_texts_array hta
     ),
     inserted_hint_entities AS (
-        INSERT INTO hints (hint, created_at, updated_at)
+        INSERT INTO hints_resource (hint, created_at, updated_at)
         SELECT DISTINCT
             hwni.hint_text,
             NOW(),
@@ -115,7 +115,7 @@ BEGIN
             NOW()
         FROM hints_with_next_idx hwni
         JOIN inserted_hint_entities ihe ON ihe.hint = hwni.hint_text
-        RETURNING message_id, idx, (SELECT hint FROM hints WHERE id = hint_id) as hint
+        RETURNING message_id, idx, (SELECT hint FROM hints_resource WHERE id = hint_id) as hint
     )
     SELECT 
         COALESCE(

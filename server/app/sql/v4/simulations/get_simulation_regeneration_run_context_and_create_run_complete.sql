@@ -147,7 +147,7 @@ previous_messages_all_runs AS (
     FROM previous_runs_in_group prig
     JOIN group_runs gr ON gr.run_id = prig.run_id
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message m ON m.id = mr.message_id
+    JOIN message_artifact m ON m.id = mr.message_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     ORDER BY gr.idx ASC, m.created_at ASC  -- Order by run idx first, then message created_at
@@ -168,17 +168,17 @@ scenario_dept AS (
         s.id as scenario_id,
         (SELECT sd.department_id FROM scenario_departments sd 
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
-    FROM chat sc
+    FROM chat_artifact sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     CROSS JOIN params p
     WHERE sc.id = p.chat_id
 ),
 profile_dept AS (
-    -- Get first department from profile's accessible departments
+    -- Get first department FROM profile_artifact's accessible departments
     SELECT d.id as department_id
-    FROM department d
+    FROM department_artifact d
     JOIN profile_departments pd ON pd.department_id = d.id
     JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
@@ -191,7 +191,7 @@ profile_dept AS (
 any_active_dept AS (
     -- Get any active department as last resort
     SELECT d.id as department_id
-    FROM department d
+    FROM department_artifact d
     WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     LIMIT 1
 ),
@@ -207,7 +207,7 @@ profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
     SELECT 
         prl.requests_per_day as req_per_day
-    FROM profile prof
+    FROM profile_artifact prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
     CROSS JOIN params p
     WHERE prof.id = (SELECT ap.profile_id FROM attempt_profiles ap 
@@ -220,7 +220,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run mr
+    FROM run_artifact mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     CROSS JOIN params p
     WHERE mrp.profile_id = (SELECT ap.profile_id FROM attempt_profiles ap 
@@ -243,7 +243,7 @@ profile_from_attempt AS (
 default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
@@ -263,7 +263,7 @@ profile_primary_department AS (
 dept_specific_settings AS (
     -- Get department-specific settings (if primary_department_id exists)
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
@@ -274,13 +274,13 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys k ON k.id = spk.key_id
+    JOIN keys_resource k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
@@ -290,7 +290,7 @@ dept_specific_settings_with_keys AS (
 default_settings_with_keys AS (
     -- Default settings that have keys
     SELECT s.id as settings_id
-    FROM setting s
+    FROM setting_artifact s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
@@ -309,7 +309,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),  -- Any with keys
             (SELECT settings_id FROM dept_specific_settings),  -- Original fallback (no keys available)
             (SELECT settings_id FROM default_settings),  -- Original fallback (no keys available)
-            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)  -- Last resort
+            (SELECT id FROM setting_artifact s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)  -- Last resort
         ) as settings_id
 ),
 context_data AS (
@@ -366,7 +366,7 @@ context_data AS (
         COALESCE(n_voice_prov.name, '') as voice_provider_name,
         a_voice.id::text as voice_agent_id,
         
-        -- Scenario settings (flags moved FROM scenario to simulation_scenarios)
+        -- Scenario settings (flags moved FROM scenario_artifact to simulation_scenarios)
         COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), false) as image_input_enabled,
         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
           WHERE ssf.simulation_id = ss.simulation_id 
@@ -381,18 +381,18 @@ context_data AS (
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
         rt.earliest_run_created_at
 
-    FROM chat sc
+    FROM chat_artifact sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     LEFT JOIN simulation_scenarios ss ON ss.simulation_id = sa.simulation_id AND ss.scenario_id = s.id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
-    INNER JOIN simulation sim ON sim.id = sa.simulation_id
+    LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
+    INNER JOIN simulation_artifact sim ON sim.id = sa.simulation_id
     CROSS JOIN group_data g
     -- Get first persona for orchestrator (via scenario_personas junction)
     LEFT JOIN LATERAL (
-        SELECT sp.persona_id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1) as persona_name
+        SELECT sp.persona_id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1) as persona_name
         FROM scenario_personas sp
         WHERE sp.scenario_id = s.id AND sp.active = true
         ORDER BY sp.created_at
@@ -402,73 +402,73 @@ context_data AS (
     -- Note: For regeneration, we use simulation agent to match original run context
     LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
     LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
-    LEFT JOIN agents a ON a.id = adom_text.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    LEFT JOIN agents_resource a ON a.id = adom_text.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     LEFT JOIN agent_domains adom ON adom.domain_id = sd_text.agent_domain_id
     LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('scenario' AS artifacts)
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt.active = true
-    LEFT JOIN prompts pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
+    LEFT JOIN prompts_resource pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
-    LEFT JOIN prompts pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
+    LEFT JOIN prompts_resource pr_prompt_default ON pr_prompt_default.id = ap_default.prompt_id
     INNER JOIN agent_models am ON am.agent_id = a.id
-    INNER JOIN models m ON m.id = am.model_id
+    INNER JOIN models_resource m ON m.id = am.model_id
     -- Join temperature from junction table
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
     LEFT JOIN model_temperature_levels mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id 
-LEFT JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id AND tl.active = true
+LEFT JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id AND tl.active = true
     -- Join reasoning from junction table
     -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
-LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
+LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     LEFT JOIN model_endpoints me_j ON me_j.model_id = m.id
-    LEFT JOIN endpoints e ON e.id = me_j.endpoint_id AND e.active = true
+    LEFT JOIN endpoints_resource e ON e.id = me_j.endpoint_id AND e.active = true
     -- Get keys via settings system: provider -> active settings -> setting_provider_keys
     LEFT JOIN model_providers mp ON mp.model_id = m.id
-    LEFT JOIN providers p_prov ON p_prov.id = mp.providers_id
-    LEFT JOIN provider pr_prov ON pr_prov.id = p_prov.provider_id
+    LEFT JOIN providers_resource p_prov ON p_prov.id = mp.providers_id
+    LEFT JOIN provider_artifact pr_prov ON pr_prov.id = p_prov.provider_id
     LEFT JOIN provider_names pn_prov ON pn_prov.provider_id = pr_prov.id
-    LEFT JOIN names n_prov ON n_prov.id = pn_prov.name_id
+    LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
     CROSS JOIN active_settings act_s
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     -- Voice agent (use simulation voice agent - fallback to persona agent if persona_voice_agents table exists)
     -- Note: For regeneration, we use simulation agent to match original run context
     LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
     LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
     LEFT JOIN domain_artifacts da_voice ON da_voice.domain_id = adom_voice.domain_id AND da_voice.artifact = CAST('message' AS artifacts)
-    LEFT JOIN agents a_voice ON a_voice.id = adom_voice.agent_id 
+    LEFT JOIN agents_resource a_voice ON a_voice.id = adom_voice.agent_id 
         AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     -- Try department-specific voice prompt first, fall back to default voice prompt
     LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id AND adp_prompt_voice.department_id = (SELECT department_id::uuid FROM resolved_dept) AND adp_prompt_voice.active = true
-    LEFT JOIN prompts pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
+    LEFT JOIN prompts_resource pr_prompt_voice_dept ON pr_prompt_voice_dept.id = adp_prompt_voice.prompt_id
     LEFT JOIN agent_prompts ap_voice_default ON ap_voice_default.agent_id = a_voice.id AND ap_voice_default.active = true
-    LEFT JOIN prompts pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
+    LEFT JOIN prompts_resource pr_prompt_voice_default ON pr_prompt_voice_default.id = ap_voice_default.prompt_id
     INNER JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
-    INNER JOIN models m_voice ON m_voice.id = am_voice.model_id
+    INNER JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
     -- Join voice temperature from junction table
     LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
     LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.temperature_level_id = atl_voice.temperature_level_id AND mtl_voice.model_id = m_voice.id
-    LEFT JOIN temperature_levels tl_voice ON tl_voice.id = mtl_voice.temperature_level_id AND tl_voice.active = true
+    LEFT JOIN temperature_levels_resource tl_voice ON tl_voice.id = mtl_voice.temperature_level_id AND tl_voice.active = true
     -- Join voice reasoning from junction table
     LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
     LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.reasoning_level_id = arl_voice.reasoning_level_id AND mrl_voice.model_id = m_voice.id
-    LEFT JOIN reasoning_levels rl_voice ON rl_voice.id = mrl_voice.reasoning_level_id AND rl_voice.active = true
+    LEFT JOIN reasoning_levels_resource rl_voice ON rl_voice.id = mrl_voice.reasoning_level_id AND rl_voice.active = true
     LEFT JOIN model_endpoints me_voice_j ON me_voice_j.model_id = m_voice.id
-    LEFT JOIN endpoints e_voice ON e_voice.id = me_voice_j.endpoint_id AND e_voice.active = true
+    LEFT JOIN endpoints_resource e_voice ON e_voice.id = me_voice_j.endpoint_id AND e_voice.active = true
     -- Get voice keys via settings system: provider -> active settings -> setting_provider_keys
     LEFT JOIN model_providers mp_voice ON mp_voice.model_id = m_voice.id
-    LEFT JOIN providers p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
-    LEFT JOIN provider pr_voice_prov ON pr_voice_prov.id = p_voice_prov.provider_id
+    LEFT JOIN providers_resource p_voice_prov ON p_voice_prov.id = mp_voice.providers_id
+    LEFT JOIN provider_artifact pr_voice_prov ON pr_voice_prov.id = p_voice_prov.provider_id
     LEFT JOIN provider_names pn_voice_prov ON pn_voice_prov.provider_id = pr_voice_prov.id
-    LEFT JOIN names n_voice_prov ON n_voice_prov.id = pn_voice_prov.name_id
+    LEFT JOIN names_resource n_voice_prov ON n_voice_prov.id = pn_voice_prov.name_id
     CROSS JOIN active_settings act_s_voice
     LEFT JOIN setting_provider_keys spk_voice ON spk_voice.providers_id = p_voice_prov.id 
         AND spk_voice.settings_id = act_s_voice.settings_id 
         AND spk_voice.active = true
-    LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id 
+    LEFT JOIN keys_resource k_voice ON k_voice.id = spk_voice.key_id 
         AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = true)
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     CROSS JOIN profile_rate_limit prl
@@ -503,15 +503,15 @@ documents_data AS (
     SELECT 
         sc.id as chat_id,
         ARRAY_AGG(
-            (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), u.file_path, u.mime_type)::types.q_get_sim_regen_run_context_create_run_v4_document
+            (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), u.file_path, u.mime_type)::types.q_get_sim_regen_run_context_create_run_v4_document
             ORDER BY d.id
         ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true) as documents
-    FROM chat sc
+    FROM chat_artifact sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
-    INNER JOIN scenarios s ON s.id = sc.scenario_id
+    INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
     LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
-    LEFT JOIN documents d ON d.id = sd.document_id
+    LEFT JOIN documents_resource d ON d.id = sd.document_id
     LEFT JOIN document_uploads du ON du.document_id = d.id AND du.active = true
     LEFT JOIN uploads u ON u.id = du.upload_id
     CROSS JOIN params p
@@ -520,7 +520,7 @@ documents_data AS (
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO run (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id
@@ -569,7 +569,7 @@ link_existing_messages AS (
     FROM previous_runs_in_group prig
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message m ON m.id = mr.message_id
+    JOIN message_artifact m ON m.id = mr.message_id
     WHERE m.role IN ('system'::message_role, 'developer'::message_role)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()

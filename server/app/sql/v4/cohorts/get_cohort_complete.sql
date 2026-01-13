@@ -147,7 +147,7 @@ cohort_exists_check AS (
     SELECT 
         CASE 
             WHEN (SELECT cohort_id FROM params) IS NULL THEN NULL::boolean
-            ELSE EXISTS(SELECT 1 FROM cohort WHERE id = (SELECT cohort_id FROM params))::boolean
+            ELSE EXISTS(SELECT 1 FROM cohort_artifact WHERE id = (SELECT cohort_id FROM params))::boolean
         END as cohort_exists
 ),
 -- Draft data is now stored in draft_* junction tables, not in payload
@@ -174,9 +174,9 @@ draft_group_data AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 user_departments AS (
     SELECT DISTINCT pd.department_id
@@ -212,7 +212,7 @@ cohort_department_access_check AS (
             ELSE false
         END as has_access
     FROM params x
-    JOIN cohort c ON c.id = x.cohort_id
+    JOIN cohort_artifact c ON c.id = x.cohort_id
     CROSS JOIN user_profile up
     WHERE x.cohort_id IS NOT NULL
 ),
@@ -220,7 +220,7 @@ cohort_department_access_check AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT n.id FROM draft_names dn JOIN names n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT n.id FROM draft_names dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cn.name_id FROM cohort_names cn WHERE cn.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
         ) as name_id,
         (
@@ -228,12 +228,12 @@ name_resource_data AS (
             FROM (
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 1 as priority
                 FROM draft_names dn 
-                JOIN names n ON dn.names_id = n.id 
+                JOIN names_resource n ON dn.names_id = n.id 
                 WHERE dn.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
                 FROM cohort_names cn 
-                JOIN names n ON cn.name_id = n.id 
+                JOIN names_resource n ON cn.name_id = n.id 
                 WHERE cn.cohort_id = (SELECT cohort_id FROM params)
             ) n
             ORDER BY priority
@@ -247,8 +247,8 @@ description_resource_data AS (
             (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cd.description_id FROM cohort_descriptions cd WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
         ) as description_id,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM draft_descriptions dd JOIN descriptions d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1) as cohort_description_resource
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM draft_descriptions dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_cohort_v4_description_resource FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1) as cohort_description_resource
     FROM params
 ),
 flag_resource_data AS (
@@ -257,8 +257,8 @@ flag_resource_data AS (
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT cf.flag_id FROM cohort_flags cf WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE LIMIT 1)
         ) as active_flag_id,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM cohort_flags cf JOIN flags f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE LIMIT 1) as cohort_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM draft_flags df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM cohort_flags cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE LIMIT 1) as cohort_flag_resource
     FROM params
 ),
 -- Name suggestions: linked to cohorts OR same group with generated=true
@@ -269,7 +269,7 @@ name_suggestions_data AS (
              FROM (
                  SELECT DISTINCT cn.name_id, MAX(cn.created_at) as created_at
                  FROM cohort_names cn
-                 JOIN names n ON n.id = cn.name_id
+                 JOIN names_resource n ON n.id = cn.name_id
                  CROSS JOIN draft_group_data dgd
                  WHERE cn.name_id IS NOT NULL
                    AND n.name IS NOT NULL
@@ -307,7 +307,7 @@ description_suggestions_data AS (
              FROM (
                  SELECT DISTINCT cd.description_id, MAX(cd.created_at) as created_at
                  FROM cohort_descriptions cd
-                 JOIN descriptions d ON d.id = cd.description_id
+                 JOIN descriptions_resource d ON d.id = cd.description_id
                  CROSS JOIN draft_group_data dgd
                  WHERE cd.description_id IS NOT NULL
                    AND d.description IS NOT NULL
@@ -348,7 +348,7 @@ names_suggestions_objects AS (
                 )
                 FROM name_suggestions_data nsd
                 CROSS JOIN LATERAL unnest(nsd.name_suggestions) AS suggestion_id
-                JOIN names n ON n.id = suggestion_id
+                JOIN names_resource n ON n.id = suggestion_id
                 WHERE n.name IS NOT NULL AND n.name != ''
             ),
             ARRAY[]::types.q_get_cohort_v4_name_resource[]
@@ -366,7 +366,7 @@ descriptions_suggestions_objects AS (
                 )
                 FROM description_suggestions_data dsd
                 CROSS JOIN LATERAL unnest(dsd.description_suggestions) AS suggestion_id
-                JOIN descriptions d ON d.id = suggestion_id
+                JOIN descriptions_resource d ON d.id = suggestion_id
                 WHERE d.description IS NOT NULL AND d.description != ''
             ),
             ARRAY[]::types.q_get_cohort_v4_description_resource[]
@@ -380,7 +380,7 @@ descriptions_data AS (
         d.id,
         d.description,
         COALESCE(d.generated, false) as generated
-    FROM descriptions d
+    FROM descriptions_resource d
     CROSS JOIN params p
     CROSS JOIN draft_group_data dgd
     WHERE 
@@ -419,7 +419,7 @@ flags_data AS (
         f.description,
         f.icon_id,
         COALESCE(f.generated, false) as generated
-    FROM flags f
+    FROM flags_resource f
     CROSS JOIN params p
     WHERE 
         f.id = (SELECT active_flag_id FROM flag_resource_data)
@@ -430,12 +430,12 @@ flags_data AS (
 department_mapping_data AS (
     SELECT 
         d.department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
-    JOIN departments d ON (
+    JOIN departments_resource d ON (
         EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
@@ -449,7 +449,7 @@ department_suggestions_data AS (
              FROM (
                  SELECT DISTINCT cd.department_id, MAX(cd.created_at) as created_at
                  FROM cohort_departments cd
-                 JOIN departments d ON d.id = cd.department_id
+                 JOIN departments_resource d ON d.id = cd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE cd.department_id IS NOT NULL
                    AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags
@@ -484,8 +484,8 @@ department_suggestions_data AS (
 simulation_mapping_data AS (
     SELECT 
         s.id as simulation_id,
-        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description,
+        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -495,7 +495,7 @@ simulation_mapping_data AS (
         ) as time_limit,
         COALESCE(s.generated, false) as generated
     FROM params x
-    JOIN simulation s ON EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = true)
+    JOIN simulation_artifact s ON EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = true)
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     WHERE (
         sd.department_id IN (SELECT department_id FROM user_departments)
@@ -530,31 +530,31 @@ tools_existence_check AS (
     SELECT 
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'names'::resources 
               AND t.active = true
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'descriptions'::resources 
               AND t.active = true
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'flags'::resources 
               AND t.active = true
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'departments'::resources 
               AND t.active = true
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM resource_tools rt
-            JOIN tool t ON t.id = rt.tool_id
+            JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'simulations'::resources 
               AND t.active = true
         ) as simulations_has_tools
@@ -588,7 +588,7 @@ user_departments_for_agents AS (
 name_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -613,7 +613,7 @@ name_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'names'::resources
@@ -659,7 +659,7 @@ name_agent_data AS (
 description_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -684,7 +684,7 @@ description_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'descriptions'::resources
@@ -730,7 +730,7 @@ description_agent_data AS (
 flag_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -755,7 +755,7 @@ flag_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'flags'::resources
@@ -801,7 +801,7 @@ flag_agent_data AS (
 departments_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -826,7 +826,7 @@ departments_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'departments'::resources
@@ -872,7 +872,7 @@ departments_agent_data AS (
 simulations_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -897,7 +897,7 @@ simulations_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools at
-            JOIN tool t ON t.id = at.tool_id AND t.active = true
+            JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
             JOIN resource_tools rt ON rt.tool_id = t.id
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'simulations'::resources
@@ -943,7 +943,7 @@ simulations_agent_data AS (
 basic_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -977,7 +977,7 @@ basic_agent_data AS (
             ea.updated_at
         FROM eligible_agents ea
         LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
-        LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
+        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
         LEFT JOIN resource_tools rt ON rt.tool_id = t.id
         GROUP BY ea.agent_id, ea.updated_at
     ),
@@ -1039,7 +1039,7 @@ basic_agent_data AS (
 general_agent_data AS (
     WITH eligible_agents AS (
         SELECT DISTINCT a.id as agent_id, a.updated_at
-        FROM agent a
+        FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
@@ -1073,7 +1073,7 @@ general_agent_data AS (
             ea.updated_at
         FROM eligible_agents ea
         LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
-        LEFT JOIN tool t ON t.id = at.tool_id AND t.active = true
+        LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
         LEFT JOIN resource_tools rt ON rt.tool_id = t.id
         GROUP BY ea.agent_id, ea.updated_at
     ),

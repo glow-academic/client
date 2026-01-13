@@ -34,38 +34,38 @@ WITH params AS (
     SELECT model_id AS model_id, profile_id AS profile_id
 ),
 model_exists_check AS (
-    SELECT EXISTS(SELECT 1 FROM model WHERE id = (SELECT model_id FROM params))::boolean as model_exists
+    SELECT EXISTS(SELECT 1 FROM model_artifact WHERE id = (SELECT model_id FROM params))::boolean as model_exists
 ),
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_model AS (
     SELECT 
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-        (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
         EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE),
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
-        (SELECT p_prov.id FROM model_providers mp JOIN providers p_prov ON p_prov.id = mp.providers_id WHERE mp.model_id = m.id LIMIT 1) as providers_id,
+        (SELECT p_prov.id FROM model_providers mp JOIN providers_resource p_prov ON p_prov.id = mp.providers_id WHERE mp.model_id = m.id LIMIT 1) as providers_id,
         m.value
     FROM params x
-    JOIN models m ON m.id = x.model_id
+    JOIN models_resource m ON m.id = x.model_id
 ),
--- Insert name into names table
+-- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name || ' Copy', NOW(), NOW()
     FROM source_model
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
--- Insert description into descriptions table
+-- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description || ' Copy', NOW(), NOW()
     FROM source_model
     WHERE description IS NOT NULL AND description != ''
@@ -73,7 +73,7 @@ new_description_resource AS (
     RETURNING id as description_id, description
 ),
 duplicated_model AS (
-    INSERT INTO model (
+    INSERT INTO model_artifact (
         value
     )
     SELECT 
@@ -85,7 +85,7 @@ duplicated_model AS (
 ),
 -- Create models resource entry for duplicated model artifact
 duplicated_model_resource AS (
-    INSERT INTO models (model_id, active, generated, mcp, created_at, updated_at)
+    INSERT INTO models_resource (model_id, active, generated, mcp, created_at, updated_at)
     SELECT 
         dm.id,
         false,  -- Set to inactive (duplicate)
@@ -144,7 +144,7 @@ link_model_active_flag AS (
         NOW(),
         NOW()
     FROM duplicated_model dm
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (model_id, flag_id, type) DO UPDATE SET 
         value = FALSE,

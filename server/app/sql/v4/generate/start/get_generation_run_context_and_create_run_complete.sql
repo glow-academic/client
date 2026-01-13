@@ -67,7 +67,7 @@ WITH params AS (
 -- Validate agent exists
 selected_agent AS (
     SELECT a.id as agent_id
-    FROM agent a
+    FROM agent_artifact a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
       AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
@@ -77,7 +77,7 @@ selected_agent AS (
 agent_model_modalities AS (
     SELECT 
         array_agg(mm.modality::text ORDER BY mm.modality) as output_modalities
-    FROM agent a
+    FROM agent_artifact a
     JOIN agent_models am ON am.agent_id = a.id
     JOIN model_modalities mm ON mm.model_id = am.model_id
     CROSS JOIN params p
@@ -89,9 +89,9 @@ agent_model_modalities AS (
 profile_rate_limit AS (
     SELECT 
         rl.requests_per_day as req_per_day
-    FROM profile prof
+    FROM profile_artifact prof
     LEFT JOIN profile_request_limits prl ON prl.profile_id = prof.id AND prl.active = true
-    LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     WHERE prof.id = (SELECT profile_id FROM params)
 ),
 -- Count runs today for rate limiting
@@ -99,7 +99,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run mr
+    FROM run_artifact mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -147,7 +147,7 @@ rate_limit_check AS (
 ),
 -- Create run
 create_run AS (
-    INSERT INTO run (input_tokens, output_tokens, agent_id)
+    INSERT INTO run_artifact (input_tokens, output_tokens, agent_id)
     SELECT 0, 0, sa.agent_id
     FROM selected_agent sa
     CROSS JOIN rate_limit_check rlc
@@ -203,7 +203,7 @@ existing_developer_messages AS (
         m.id as message_id,
         dmh.run_id,
         dmh.hash
-    FROM message m
+    FROM message_artifact m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN contents cnt ON cnt.id = mc.content_id
     JOIN developer_message_hash_array dmh ON message_content_hash(cnt.content, 'developer') = dmh.hash
@@ -220,7 +220,7 @@ new_developer_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
 ),
 new_developer_messages AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM new_developer_messages_data
     RETURNING id, created_at, updated_at
@@ -311,7 +311,7 @@ existing_user_messages AS (
         m.id as message_id,
         umh.run_id,
         umh.hash
-    FROM message m
+    FROM message_artifact m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN contents cnt ON cnt.id = mc.content_id
     JOIN user_message_hash_array umh ON message_content_hash(cnt.content, 'user') = umh.hash
@@ -328,7 +328,7 @@ new_user_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
 ),
 new_user_messages AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'user'::message_role, false, false, NOW(), NOW()
     FROM new_user_messages_data
     RETURNING id, created_at, updated_at
@@ -408,7 +408,7 @@ link_existing_messages AS (
     FROM previous_runs_in_group prig
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message m ON m.id = mr.message_id
+    JOIN message_artifact m ON m.id = mr.message_id
     WHERE m.role IN ('system'::message_role, 'developer'::message_role)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()

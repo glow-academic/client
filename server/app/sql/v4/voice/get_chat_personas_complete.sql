@@ -28,11 +28,11 @@ STABLE
 AS $$
 SELECT 
     p.id::text as persona_id,
-    (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name
-FROM chat c
+    (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name
+FROM chat_artifact c
 JOIN scenario_personas sp ON sp.scenario_id = c.scenario_id AND sp.active = true
-JOIN personas p ON p.id = sp.persona_id
+JOIN personas_resource p ON p.id = sp.persona_id
 WHERE c.id = chat_id
   AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
-ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
+ORDER BY (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
 $$;

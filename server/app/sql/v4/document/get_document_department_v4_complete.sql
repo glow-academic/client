@@ -1,4 +1,4 @@
--- Get department_id from document
+-- Get department_id FROM document_artifact
 -- 1) Drop function first
 DO $$
 DECLARE

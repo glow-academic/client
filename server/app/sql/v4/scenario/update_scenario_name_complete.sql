@@ -1,4 +1,4 @@
--- Update scenario name
+-- UPDATE scenario_artifact name
 -- Converted to PostgreSQL function
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -34,11 +34,11 @@ WITH params AS (
 ),
 scenario_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM scenario WHERE id = (SELECT scenario_id FROM params)
+        SELECT 1 FROM scenario_artifact WHERE id = (SELECT scenario_id FROM params)
     ) as scenario_exists
 ),
 get_or_create_name AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT p.name, NOW(), NOW()
     FROM params p
     WHERE p.name IS NOT NULL AND p.name != ''
@@ -46,7 +46,7 @@ get_or_create_name AS (
     RETURNING id as name_id, name as name_value
 ),
 update_scenario_updated_at AS (
-    UPDATE scenario
+    UPDATE scenario_artifact
     SET updated_at = NOW()
     WHERE id = (SELECT scenario_id FROM params)
       AND EXISTS (SELECT 1 FROM scenario_exists_check WHERE scenario_exists = true)

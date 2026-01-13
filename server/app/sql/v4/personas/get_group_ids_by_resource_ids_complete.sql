@@ -44,7 +44,7 @@ WITH names_group_ids AS (
         'names'::text as resource_type,
         n.id as resource_id,
         gr.group_id
-    FROM names n
+    FROM names_resource n
     LEFT JOIN calls c ON c.id = n.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -57,7 +57,7 @@ descriptions_group_ids AS (
         'descriptions'::text as resource_type,
         d.id as resource_id,
         gr.group_id
-    FROM descriptions d
+    FROM descriptions_resource d
     LEFT JOIN calls c ON c.id = d.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -70,7 +70,7 @@ colors_group_ids AS (
         'colors'::text as resource_type,
         c.id as resource_id,
         gr.group_id
-    FROM colors c
+    FROM colors_resource c
     LEFT JOIN calls cl ON cl.id = c.call_id
     LEFT JOIN message_calls mc ON mc.call_id = cl.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -83,7 +83,7 @@ icons_group_ids AS (
         'icons'::text as resource_type,
         i.id as resource_id,
         gr.group_id
-    FROM icons i
+    FROM icons_resource i
     LEFT JOIN calls c ON c.id = i.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -96,7 +96,7 @@ instructions_group_ids AS (
         'instructions'::text as resource_type,
         inst.id as resource_id,
         gr.group_id
-    FROM instructions inst
+    FROM instructions_resource inst
     LEFT JOIN calls c ON c.id = inst.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -109,7 +109,7 @@ flags_group_ids AS (
         'flags'::text as resource_type,
         f.id as resource_id,
         gr.group_id
-    FROM flags f
+    FROM flags_resource f
     LEFT JOIN calls c ON c.id = f.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -122,7 +122,7 @@ departments_group_ids AS (
         'departments'::text as resource_type,
         d.id as resource_id,
         gr.group_id
-    FROM departments d
+    FROM departments_resource d
     LEFT JOIN calls c ON c.id = d.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -135,7 +135,7 @@ fields_group_ids AS (
         'fields'::text as resource_type,
         f.id as resource_id,
         gr.group_id
-    FROM fields f
+    FROM fields_resource f
     LEFT JOIN calls c ON c.id = f.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
@@ -148,7 +148,7 @@ examples_group_ids AS (
         'examples'::text as resource_type,
         e.id as resource_id,
         gr.group_id
-    FROM examples e
+    FROM examples_resource e
     LEFT JOIN calls c ON c.id = e.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id

@@ -25,34 +25,34 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params) as profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_parameter AS (
     SELECT 
-        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
-        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
+        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
+        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
         COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'simulation_parameter'::type_parameter_flags LIMIT 1), false) as simulation_parameter,
         COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags LIMIT 1), false) as document_parameter,
         COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags LIMIT 1), false) as persona_parameter,
         COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'scenario_parameter'::type_parameter_flags LIMIT 1), false) as scenario_parameter,
         COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'video_parameter'::type_parameter_flags LIMIT 1), false) as video_parameter
     FROM params x
-    JOIN parameters p ON p.id = x.parameter_id
+    JOIN parameters_resource p ON p.id = x.parameter_id
 ),
--- Insert name into names table
+-- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name || ' Copy', NOW(), NOW()
     FROM original_parameter
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Insert description into descriptions table
+-- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM original_parameter
     WHERE description IS NOT NULL AND description != ''
@@ -61,7 +61,7 @@ new_description_resource AS (
 ),
 new_parameter AS (
     -- Insert parameter without name/description/active/flag columns
-    INSERT INTO parameter (created_at, updated_at)
+    INSERT INTO parameter_artifact (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM original_parameter
     RETURNING id as parameter_id
@@ -93,7 +93,7 @@ link_parameter_active_flag AS (
         NOW(),
         NOW()
     FROM new_parameter np
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
         value = FALSE,
@@ -111,7 +111,7 @@ link_parameter_type_flags AS (
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'simulation_parameter' AND op.simulation_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
         value = EXCLUDED.value,
@@ -128,7 +128,7 @@ link_parameter_document_flag AS (
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'document_parameter' AND op.document_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
         value = EXCLUDED.value,
@@ -145,7 +145,7 @@ link_parameter_persona_flag AS (
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'persona_parameter' AND op.persona_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
         value = EXCLUDED.value,
@@ -162,7 +162,7 @@ link_parameter_scenario_flag AS (
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'scenario_parameter' AND op.scenario_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
         value = EXCLUDED.value,
@@ -179,7 +179,7 @@ link_parameter_video_flag AS (
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'video_parameter' AND op.video_parameter = TRUE
     ON CONFLICT (parameter_id, flag_id, type) DO UPDATE SET 
         value = EXCLUDED.value,
@@ -188,10 +188,10 @@ link_parameter_video_flag AS (
 original_fields AS (
     SELECT 
         f.id as original_field_id,
-        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
+        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
     FROM params x
-    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    JOIN fields_resource f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
 ),
 original_field_departments AS (
     SELECT 
@@ -201,18 +201,18 @@ original_field_departments AS (
     LEFT JOIN field_departments fd ON fd.field_id = of.original_field_id AND fd.active = true
     GROUP BY of.original_field_id
 ),
--- Insert field names into names table
+-- Insert field names INTO names_resource table
 field_names_resources AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT of.name, NOW(), NOW()
     FROM original_fields of
     WHERE of.name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
--- Insert field descriptions into descriptions table
+-- Insert field descriptions INTO descriptions_resource table
 field_descriptions_resources AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT of.description, NOW(), NOW()
     FROM original_fields of
     WHERE of.description IS NOT NULL AND of.description != ''
@@ -221,7 +221,7 @@ field_descriptions_resources AS (
 ),
 new_fields AS (
     -- Create all fields (without name/description/parameter_id columns)
-    INSERT INTO field (created_at, updated_at)
+    INSERT INTO field_artifact (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM original_fields of
     CROSS JOIN new_parameter np

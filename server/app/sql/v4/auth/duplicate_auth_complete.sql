@@ -40,39 +40,39 @@ WITH params AS (
 auth_exists_check AS (
     -- Check if auth exists before duplication
     SELECT EXISTS(
-        SELECT 1 FROM auth WHERE id = (SELECT auth_id FROM params)
+        SELECT 1 FROM auth_artifact WHERE id = (SELECT auth_id FROM params)
     )::boolean as auth_exists
 ),
 actor_profile AS (
     SELECT 
         x.profile_id as profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_auth AS (
     SELECT 
         id, 
-        (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = auth.id LIMIT 1) as name, 
-        (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = auth.id LIMIT 1) as description, 
-        EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = auth.id AND af.type = 'active'::type_auth_flags AND af.value = TRUE) as active, 
-        (SELECT p.value FROM auth_protocols ap JOIN protocols p ON p.id = ap.protocol_id WHERE ap.auth_id = auth.id LIMIT 1) as auth_type, 
-        (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = auth.id LIMIT 1) as slug
+        (SELECT n.name FROM auth_names an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name, 
+        (SELECT d.description FROM auth_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = auth_artifact.id LIMIT 1) as description, 
+        EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = auth_artifact.id AND af.type = 'active'::type_auth_flags AND af.value = TRUE) as active, 
+        (SELECT p.value FROM auth_protocols ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = auth_artifact.id LIMIT 1) as auth_type, 
+        (SELECT s.value FROM auth_slugs as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = auth_artifact.id LIMIT 1) as slug
     FROM params x
-    JOIN auth ON auth.id = x.auth_id
+    JOIN auth_artifact ON auth_artifact.id = x.auth_id
 ),
--- Insert name into names table and get ID
+-- Insert name INTO names_resource table and get ID
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name || ' (Copy)', NOW(), NOW()
     FROM source_auth
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Insert description into descriptions table and get ID
+-- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM source_auth
     WHERE description IS NOT NULL AND description != ''
@@ -81,7 +81,7 @@ description_resource AS (
 ),
 -- Insert or get protocol for new auth
 protocol_resource AS (
-    INSERT INTO protocols (value, created_at, updated_at)
+    INSERT INTO protocols_resource (value, created_at, updated_at)
     SELECT auth_type, NOW(), NOW()
     FROM source_auth
     WHERE auth_type IS NOT NULL AND auth_type != ''
@@ -90,7 +90,7 @@ protocol_resource AS (
 ),
 -- Insert or get slug for new auth
 slug_resource AS (
-    INSERT INTO slugs (value, created_at, updated_at)
+    INSERT INTO slugs_resource (value, created_at, updated_at)
     SELECT slug || '-copy', NOW(), NOW()
     FROM source_auth
     WHERE slug IS NOT NULL AND slug != ''
@@ -99,7 +99,7 @@ slug_resource AS (
 ),
 new_auth AS (
     -- Create auth (no columns needed - all data in junction tables)
-    INSERT INTO auths (id)
+    INSERT INTO auths_resource (id)
     SELECT uuidv7()
     FROM source_auth
     RETURNING id as auth_id
@@ -163,7 +163,7 @@ link_auth_active_flag AS (
         NOW(),
         NOW()
     FROM new_auth na
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (auth_id, flag_id, type) DO UPDATE SET 
         value = (SELECT active FROM source_auth LIMIT 1),
@@ -179,11 +179,11 @@ source_items AS (
         i.active
     FROM source_auth sa
     JOIN auth_items ai_j ON ai_j.auth_id = sa.id
-    JOIN items i ON i.id = ai_j.item_id
+    JOIN items_resource i ON i.id = ai_j.item_id
 ),
 new_items AS (
     -- Create new items (standalone table)
-    INSERT INTO items (
+    INSERT INTO items_resource (
         name,
         description,
         encrypted,

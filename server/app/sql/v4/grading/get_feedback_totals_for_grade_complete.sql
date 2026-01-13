@@ -28,7 +28,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT f.total
-    FROM feedbacks f
+    FROM feedbacks_resource f
     JOIN grade_feedbacks gf ON gf.feedback_id = f.id
     WHERE gf.grade_id = grade_id_param
 $$;

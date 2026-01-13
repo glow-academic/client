@@ -93,9 +93,9 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 validate_create_permissions AS (
     SELECT validate_department_create_permissions(
@@ -116,7 +116,7 @@ actor_profile AS (
 ),
 get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT x.name, NOW(), NOW()
     FROM params x
     WHERE x.name IS NOT NULL AND x.name != ''
@@ -125,7 +125,7 @@ get_or_create_name AS (
 ),
 get_or_create_description AS (
     -- Get or create description in descriptions table
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT x.description, NOW(), NOW()
     FROM params x
     WHERE x.description IS NOT NULL AND x.description != ''
@@ -135,12 +135,12 @@ get_or_create_description AS (
 get_active_flag AS (
     -- Get the active flag ID
     SELECT id as flag_id
-    FROM flags
+    FROM flags_resource
     WHERE name = 'active'
     LIMIT 1
 ),
 new_rubric AS (
-    INSERT INTO rubric (
+    INSERT INTO rubric_artifact (
         rubric_domain_id,
         created_at,
         updated_at
@@ -179,7 +179,7 @@ link_active_flag AS (
 ),
 get_or_create_points AS (
     -- Get or create points in points table
-    INSERT INTO points (value, created_at, updated_at)
+    INSERT INTO points_resource (value, created_at, updated_at)
     SELECT DISTINCT p.points, NOW(), NOW()
     FROM params p
     WHERE p.points IS NOT NULL
@@ -188,7 +188,7 @@ get_or_create_points AS (
 ),
 get_or_create_pass_points AS (
     -- Get or create pass_points in points table
-    INSERT INTO points (value, created_at, updated_at)
+    INSERT INTO points_resource (value, created_at, updated_at)
     SELECT DISTINCT p.pass_points, NOW(), NOW()
     FROM params p
     WHERE p.pass_points IS NOT NULL
@@ -267,7 +267,7 @@ calls_with_order AS (
     FROM placeholder_calls ptc
 ),
 new_standard_groups AS (
-    INSERT INTO standard_groups (
+    INSERT INTO standard_groups_resource (
         name,
         short_name,
         description,

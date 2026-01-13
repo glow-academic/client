@@ -29,7 +29,7 @@ STABLE
 AS $$
 SELECT sc.id, sc.completed, sc.scenario_id
 FROM attempt_chats ac
-JOIN chat sc ON sc.id = ac.chat_id
+JOIN chat_artifact sc ON sc.id = ac.chat_id
 WHERE ac.attempt_id = attempt_id
 ORDER BY sc.created_at
 $$;

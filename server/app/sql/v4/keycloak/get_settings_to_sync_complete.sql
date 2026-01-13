@@ -26,7 +26,7 @@ AS $$
     -- Default settings → 'master' realm
     SELECT 'master'::text as realm_name
     WHERE EXISTS (
-        SELECT 1 FROM settings s
+        SELECT 1 FROM settings_resource s
         JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
         WHERE s.active = true
           AND NOT EXISTS (
@@ -37,7 +37,7 @@ AS $$
     UNION
     -- Department-specific settings with keys → use settings_id as realm
     SELECT DISTINCT s.id::text as realm_name
-    FROM settings s
+    FROM settings_resource s
     JOIN setting_auths sa ON sa.settings_id = s.id AND sa.active = true
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE s.active = true

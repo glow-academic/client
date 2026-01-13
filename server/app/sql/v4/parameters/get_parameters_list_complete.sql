@@ -90,18 +90,18 @@ user_profile AS (
     SELECT 
         role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 parameter_active_scenario_links AS (
     SELECT 
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
         COUNT(DISTINCT sf.scenario_id) as active_scenario_count
-    FROM field f
+    FROM field_artifact f
     JOIN scenario_fields sf ON sf.field_id = f.id
     WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true) AND sf.active = true AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
     GROUP BY (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
@@ -110,7 +110,7 @@ parameter_all_scenario_links AS (
     SELECT 
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
         COUNT(DISTINCT sf.scenario_id) as total_scenario_links
-    FROM field f
+    FROM field_artifact f
     JOIN scenario_fields sf ON sf.field_id = f.id
     WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
     GROUP BY (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
@@ -121,7 +121,7 @@ scenario_parameters_data AS (
         ARRAY_AGG(DISTINCT st.parent_id::text ORDER BY st.parent_id::text) as scenario_ids,
         COUNT(DISTINCT st.parent_id) as num_scenarios
     FROM scenario_parameters sp
-    JOIN scenarios s ON s.id = sp.scenario_id
+    JOIN scenarios_resource s ON s.id = sp.scenario_id
     JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id = st.child_id
     WHERE sp.active = true AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     GROUP BY sp.parameter_id
@@ -130,7 +130,7 @@ parameter_item_counts AS (
     SELECT 
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
         COUNT(*) as num_items
-    FROM field f
+    FROM field_artifact f
     WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
     GROUP BY (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
 ),
@@ -141,9 +141,9 @@ parameter_sample_items_data AS (
         f_sub.name,
         f_sub.description
     FROM (
-        SELECT f.id as field_id, (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1), (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
-               ROW_NUMBER() OVER (PARTITION BY (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) ORDER BY (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)) as rn
-        FROM field f
+        SELECT f.id as field_id, (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1), (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
+               ROW_NUMBER() OVER (PARTITION BY (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) ORDER BY (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)) as rn
+        FROM field_artifact f
         WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true) AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
     ) f_sub
     WHERE f_sub.rn <= 3
@@ -158,7 +158,7 @@ parameter_item_departments_data AS (
         WHERE pd.active = true
         UNION
         SELECT (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1), fd.department_id
-        FROM field f
+        FROM field_artifact f
         JOIN field_departments fd ON fd.field_id = f.id
         WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true) AND fd.active = true AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
     ) combined
@@ -174,7 +174,7 @@ parameter_item_departments_for_filter AS (
         WHERE pd.active = true
         UNION
         SELECT (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1), fd.department_id
-        FROM field f
+        FROM field_artifact f
         JOIN field_departments fd ON fd.field_id = f.id
         WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true) AND fd.active = true AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
     ) combined
@@ -183,7 +183,7 @@ parameter_documents AS (
     SELECT 
         (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1),
         ARRAY_AGG(DISTINCT df.document_id::text ORDER BY df.document_id::text) as document_ids
-    FROM field f
+    FROM field_artifact f
     JOIN document_fields df ON df.field_id = f.id
     WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true) AND df.active = true AND (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL
     GROUP BY (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
@@ -191,13 +191,13 @@ parameter_documents AS (
 filtered_parameters AS (
     SELECT 
         p.id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
         EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE) as active,
         p.updated_at
-    FROM parameter p
+    FROM parameter_artifact p
     LEFT JOIN parameter_item_departments_for_filter pidf ON pidf.parameter_id = p.id
-    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE), p.updated_at
+    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE), p.updated_at
     HAVING 
         COUNT(pidf.parameter_id) FILTER (WHERE pidf.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (
@@ -205,7 +205,7 @@ filtered_parameters AS (
         )
         AND NOT EXISTS (
             SELECT 1 FROM field_departments fd2 
-            JOIN fields f2 ON f2.id = fd2.field_id 
+            JOIN fields_resource f2 ON f2.id = fd2.field_id 
             JOIN parameter_fields pf2 ON pf2.field_id = f2.id WHERE pf2.parameter_id = p.id AND EXISTS (SELECT 1 FROM field_flags ff2 WHERE ff2.field_id = f2.id AND ff2.type = 'active'::type_field_flags AND ff2.value = TRUE) AND fd2.active = true
         )
 ),
@@ -229,29 +229,29 @@ all_document_ids AS (
 scenarios_data AS (
     SELECT 
         s.id as scenario_id,
-        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         COALESCE(ps.problem_statement, '') as description,
         EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active
     FROM all_scenario_ids asi
-    LEFT JOIN scenarios s ON s.id = asi.scenario_id
+    LEFT JOIN scenarios_resource s ON s.id = asi.scenario_id
     LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
-    LEFT JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+    LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     WHERE s.id IS NOT NULL
 ),
 departments_data AS (
     SELECT 
         d.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT d_desc.description FROM department_descriptions dd JOIN descriptions d_desc ON d_desc.id = dd.description_id WHERE dd.department_id = d.id LIMIT 1), '') as description
-    FROM department d
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT d_desc.description FROM department_descriptions dd JOIN descriptions_resource d_desc ON d_desc.id = dd.description_id WHERE dd.department_id = d.id LIMIT 1), '') as description
+    FROM department_artifact d
     WHERE d.id IN (SELECT department_id FROM all_department_ids)
 ),
 documents_data AS (
     SELECT 
         doc.id as document_id,
-        (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = doc.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = doc.id LIMIT 1), '') as description
-    FROM document doc
+        (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = doc.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = doc.id LIMIT 1), '') as description
+    FROM document_artifact doc
     WHERE doc.id IN (SELECT document_id FROM all_document_ids)
 ),
 -- Collect scenario IDs, document IDs, and department IDs actually assigned to parameters
@@ -282,7 +282,7 @@ scenario_ids_in_user_depts AS (
     AND sd.active = true
     UNION
     SELECT DISTINCT s.id::text
-    FROM scenario s
+    FROM scenario_artifact s
     WHERE s.id IN (SELECT scenario_id FROM assigned_scenario_ids)
     AND NOT EXISTS (
         SELECT 1 FROM scenario_departments sd2 
@@ -298,7 +298,7 @@ document_ids_in_user_depts AS (
     AND dd.active = true
     UNION
     SELECT DISTINCT d.id::text
-    FROM document d
+    FROM document_artifact d
     WHERE d.id IN (SELECT document_id FROM assigned_document_ids)
     AND NOT EXISTS (
         SELECT 1 FROM document_departments dd2 
@@ -347,8 +347,8 @@ document_options_data AS (
 filtered_departments_data AS (
     SELECT 
         d.department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
-        COALESCE((SELECT d_desc.description FROM department_descriptions dd JOIN descriptions d_desc ON d_desc.id = dd.description_id WHERE dd.department_id = d.department_id LIMIT 1), '') as description
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.department_id LIMIT 1) as name,
+        COALESCE((SELECT d_desc.description FROM department_descriptions dd JOIN descriptions_resource d_desc ON d_desc.id = dd.description_id WHERE dd.department_id = d.department_id LIMIT 1), '') as description
     FROM departments_data d
     WHERE d.department_id IN (SELECT department_id FROM assigned_department_ids)
     AND d.department_id IN (SELECT department_id FROM user_departments)

@@ -34,7 +34,7 @@ DECLARE
     feedback_id_val uuid;
 BEGIN
     -- Create feedback record
-    INSERT INTO feedbacks 
+    INSERT INTO feedbacks_resource 
     (standard_id, total, feedback, created_at)
     VALUES (standard_id, total, feedback, NOW())
     RETURNING id INTO feedback_id_val;

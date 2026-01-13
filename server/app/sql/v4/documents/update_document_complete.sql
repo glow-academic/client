@@ -1,4 +1,4 @@
--- Update document with department links and field links in a single transaction
+-- UPDATE document_artifact with department links and field links in a single transaction
 -- Converted to function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -58,12 +58,12 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         p.id as profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 update_document AS (
-    UPDATE document d
+    UPDATE document_artifact d
     SET 
         updated_at = NOW()
     FROM params p
@@ -91,7 +91,7 @@ link_document_agent_domain AS (
 ),
 -- Update name if provided
 update_document_name AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT (SELECT name FROM params), NOW(), NOW()
     WHERE (SELECT name FROM params) IS NOT NULL AND (SELECT name FROM params) != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
@@ -111,7 +111,7 @@ link_document_name AS (
 ),
 -- Update description if provided
 update_document_description AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT (SELECT description FROM params), NOW(), NOW()
     WHERE (SELECT description FROM params) IS NOT NULL AND (SELECT description FROM params) != ''
     ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
@@ -131,7 +131,7 @@ link_document_description AS (
 ),
 -- Get active flag ID
 active_flag_id AS (
-    SELECT id as flag_id FROM flags WHERE name = 'active' LIMIT 1
+    SELECT id as flag_id FROM flags_resource WHERE name = 'active' LIMIT 1
 ),
 -- Update active flag if provided
 update_document_active_flag AS (
@@ -152,7 +152,7 @@ update_document_active_flag AS (
 ),
 -- Get template flag ID
 template_flag_id AS (
-    SELECT id as flag_id FROM flags WHERE name = 'template' LIMIT 1
+    SELECT id as flag_id FROM flags_resource WHERE name = 'template' LIMIT 1
 ),
 -- Update template flag if provided
 update_document_template_flag AS (
@@ -173,9 +173,9 @@ update_document_template_flag AS (
 ),
 create_template AS (
     -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
-    INSERT INTO templates (name, created_at, updated_at)
+    INSERT INTO templates_resource (name, created_at, updated_at)
     SELECT 
-        COALESCE((SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = (SELECT document_id FROM params) LIMIT 1), 'Template'),
+        COALESCE((SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = (SELECT document_id FROM params) LIMIT 1), 'Template'),
         NOW(),
         NOW()
     FROM params p
@@ -333,7 +333,7 @@ SELECT
     true::boolean as success,
     'Document updated successfully'::text as message,
     ud.id as document_id,
-    COALESCE((SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = ud.id LIMIT 1), 'Unknown')::text as document_name,
+    COALESCE((SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = ud.id LIMIT 1), 'Unknown')::text as document_name,
     ap.actor_name::text as actor_name
 FROM update_document ud
 CROSS JOIN actor_profile ap

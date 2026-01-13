@@ -11,7 +11,7 @@ RETURNS TABLE (
 LANGUAGE sql
 AS $$
 WITH create_ps AS (
-    INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
+    INSERT INTO problem_statements_resource (name, problem_statement, created_at, updated_at)
     VALUES (COALESCE(api_insert_problem_statement_v4.problem_statement_name, 'Problem Statement'), api_insert_problem_statement_v4.problem_statement, NOW(), NOW())
     RETURNING id as problem_statement_id
 ),

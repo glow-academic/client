@@ -50,9 +50,9 @@ WITH params AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profile ON profile.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 validate_create_permissions AS (
     SELECT validate_department_create_permissions(
@@ -61,18 +61,18 @@ validate_create_permissions AS (
     ) as validation_passed
     FROM user_profile up
 ),
--- Insert name into names table and get ID
+-- Insert name INTO names_resource table and get ID
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name, NOW(), NOW()
     FROM params
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Insert description into descriptions table and get ID
+-- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM params
     WHERE description IS NOT NULL AND description != ''
@@ -81,7 +81,7 @@ description_resource AS (
 ),
 new_eval AS (
     -- Create eval (without name/description/active/dynamic/use_groups columns)
-    INSERT INTO eval (created_at, updated_at)
+    INSERT INTO eval_artifact (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM params
     RETURNING id as eval_id
@@ -122,7 +122,7 @@ link_eval_active_flag AS (
         NOW()
     FROM new_eval ne
     CROSS JOIN params x
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET 
         value = EXCLUDED.value,
@@ -140,7 +140,7 @@ link_eval_dynamic_flag AS (
         NOW()
     FROM new_eval ne
     CROSS JOIN params x
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'dynamic'
     ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET 
         value = EXCLUDED.value,
@@ -158,7 +158,7 @@ link_eval_groups_flag AS (
         NOW()
     FROM new_eval ne
     CROSS JOIN params x
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'groups'
     ON CONFLICT (eval_id, flag_id, type) DO UPDATE SET 
         value = EXCLUDED.value,

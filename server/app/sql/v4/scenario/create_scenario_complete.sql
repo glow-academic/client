@@ -123,7 +123,7 @@ filtered_objective_ids AS (
     CROSS JOIN UNNEST(COALESCE(rp.objective_ids, ARRAY[]::text[])) as obj_id
     WHERE NOT (obj_id LIKE '%_%' AND array_length(string_to_array(obj_id, '_'), 1) = 2)
 ),
--- Preprocessing: Extract parameter_item_ids and parameter_ids FROM parameter composite type array
+-- Preprocessing: Extract parameter_item_ids and parameter_ids FROM parameter_artifact composite type array
 parameter_preprocessing AS (
     SELECT
         COALESCE(
@@ -236,9 +236,9 @@ params AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 validate_create_permissions AS (
     -- Validate department permissions for create operation
@@ -256,7 +256,7 @@ actor_profile AS (
 ),
 get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT (SELECT name FROM params), NOW(), NOW()
     WHERE (SELECT name FROM params) IS NOT NULL AND (SELECT name FROM params) != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
@@ -264,7 +264,7 @@ get_or_create_name AS (
 ),
 get_or_create_description AS (
     -- Get or create description in descriptions table
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT (SELECT description FROM params), NOW(), NOW()
     WHERE (SELECT description FROM params) IS NOT NULL AND (SELECT description FROM params) != ''
     ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
@@ -273,15 +273,15 @@ get_or_create_description AS (
 get_flag_ids AS (
     -- Get flag IDs for all scenario flags
     SELECT 
-        (SELECT id FROM flags WHERE name = 'active' LIMIT 1) as active_flag_id,
-        (SELECT id FROM flags WHERE name = 'objectives_enabled' LIMIT 1) as objectives_enabled_flag_id,
-        (SELECT id FROM flags WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id,
-        (SELECT id FROM flags WHERE name = 'video_enabled' LIMIT 1) as video_enabled_flag_id,
-        (SELECT id FROM flags WHERE name = 'questions_enabled' LIMIT 1) as questions_enabled_flag_id,
-        (SELECT id FROM flags WHERE name = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled_flag_id
+        (SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1) as active_flag_id,
+        (SELECT id FROM flags_resource WHERE name = 'objectives_enabled' LIMIT 1) as objectives_enabled_flag_id,
+        (SELECT id FROM flags_resource WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id,
+        (SELECT id FROM flags_resource WHERE name = 'video_enabled' LIMIT 1) as video_enabled_flag_id,
+        (SELECT id FROM flags_resource WHERE name = 'questions_enabled' LIMIT 1) as questions_enabled_flag_id,
+        (SELECT id FROM flags_resource WHERE name = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled_flag_id
 ),
 new_scenario AS (
-    INSERT INTO scenario (
+    INSERT INTO scenario_artifact (
         created_at,
         updated_at
     )
@@ -410,7 +410,7 @@ problem_statement_versions_data AS (
 create_problem_statements AS (
     -- Create problem_statement records first (strong entity)
     -- Always create new records (don't reuse) to allow different names for same text
-    INSERT INTO problem_statements (name, problem_statement, created_at, updated_at)
+    INSERT INTO problem_statements_resource (name, problem_statement, created_at, updated_at)
     SELECT 
         (SELECT problem_statement_name FROM params) as name,
         psd.version_text,
@@ -482,12 +482,12 @@ objectives_with_index AS (
 existing_objectives AS (
     -- Find existing objectives by text
     SELECT id as objective_id, objective
-    FROM objectives
+    FROM objectives_resource
     WHERE objective = ANY(SELECT obj_text FROM objectives_with_index)
 ),
 new_objectives AS (
     -- Create new objectives that don't exist yet
-    INSERT INTO objectives (objective, created_at, updated_at)
+    INSERT INTO objectives_resource (objective, created_at, updated_at)
     SELECT DISTINCT
         owi.obj_text,
         NOW(),
@@ -534,7 +534,7 @@ link_parameters AS (
 ),
 create_images AS (
     -- Create images if they don't exist
-    INSERT INTO images (name, created_at, updated_at, active)
+    INSERT INTO images_resource (name, created_at, updated_at, active)
     SELECT DISTINCT
         img.name,
         NOW(),
@@ -544,7 +544,7 @@ create_images AS (
     CROSS JOIN UNNEST(x.upload_images) as img
     WHERE array_length((SELECT upload_images FROM params), 1) > 0
       AND NOT EXISTS (
-          SELECT 1 FROM images i
+          SELECT 1 FROM images_resource i
           JOIN image_uploads iu ON iu.image_id = i.id
           WHERE iu.upload_id = img.upload_id AND i.name = img.name
       )
@@ -574,7 +574,7 @@ get_images AS (
     FROM params x
     CROSS JOIN UNNEST(x.upload_images) as img
     JOIN image_uploads iu ON iu.upload_id = img.upload_id
-    JOIN images i ON i.id = iu.image_id AND i.name = img.name
+    JOIN images_resource i ON i.id = iu.image_id AND i.name = img.name
     WHERE iu.active = true
 ),
 all_images AS (
@@ -658,20 +658,20 @@ link_questions AS (
 ),
 update_question_times AS (
     -- Update question times directly on questions table (use first timestamp if multiple provided)
-    UPDATE questions
+    UPDATE questions_resource q
     SET time = COALESCE(
         (SELECT (timestamps[1])::integer 
          FROM UNNEST((SELECT question_timestamps FROM params)) as qt
-         WHERE qt.question_id = questions.id
+         WHERE qt.question_id = q.id
          AND array_length(qt.timestamps, 1) > 0
          LIMIT 1),
-        questions.time
+        q.time
     ),
     updated_at = NOW()
     WHERE EXISTS (
         SELECT 1 
         FROM UNNEST((SELECT question_timestamps FROM params)) as qt
-        WHERE qt.question_id = questions.id
+        WHERE qt.question_id = q.id
         AND array_length(qt.timestamps, 1) > 0
     )
 ),

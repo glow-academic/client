@@ -42,12 +42,12 @@ WITH params AS (
 user_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 email_check AS (
     -- Check if any emails already exist in profile_emails
@@ -76,18 +76,18 @@ profiles_data AS (
         (SELECT department_ids FROM params)
     ) AS t(profile_id, first_name, last_name, email, role, dept_id)
 ),
--- Insert all unique first_names into names table
+-- Insert all unique first_names INTO names_resource table
 first_names_resources AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT DISTINCT first_name, NOW(), NOW()
     FROM profiles_data
     WHERE first_name IS NOT NULL AND first_name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
--- Insert all unique last_names into names table
+-- Insert all unique last_names INTO names_resource table
 last_names_resources AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT DISTINCT last_name, NOW(), NOW()
     FROM profiles_data
     WHERE last_name IS NOT NULL AND last_name != ''
@@ -96,7 +96,7 @@ last_names_resources AS (
 ),
 profile_insert AS (
     -- Insert all profiles without first_name, last_name, active columns
-    INSERT INTO profile (
+    INSERT INTO profile_artifact (
         id, role
     )
     SELECT 
@@ -147,7 +147,7 @@ link_profile_active_flags AS (
         NOW(),
         NOW()
     FROM profile_insert pi
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
         value = TRUE,

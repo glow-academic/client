@@ -108,9 +108,9 @@ WITH params AS (
 actor_profile AS (
     SELECT
         p.id as profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 attempt_exists_check AS (
     SELECT EXISTS(
@@ -137,25 +137,25 @@ eval_agents_data AS (
     JOIN eval_agents ea ON ea.eval_id = ad.eval_id
     GROUP BY ea.eval_id
 ),
--- Get system prompt from eval's first agent (default active prompt)
+-- Get system prompt FROM eval_artifact's first agent (default active prompt)
 agent_system_prompt AS (
     SELECT 
         COALESCE(pr.system_prompt, '') as system_prompt
     FROM attempt_data ad
     LEFT JOIN eval_agents_data ead ON ead.eval_id = ad.eval_id
     LEFT JOIN agent_prompts ap ON ap.agent_id = ead.first_agent_id AND ap.active = true
-    LEFT JOIN prompts pr ON pr.id = ap.prompt_id
+    LEFT JOIN prompts_resource pr ON pr.id = ap.prompt_id
     LIMIT 1
 ),
 eval_info AS (
     SELECT 
         e.id as eval_id,
-        (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
-        (SELECT d.description FROM eval_descriptions ed JOIN descriptions d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
+        (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
+        (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
         COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = true) AS dynamic,
         -- Get first rubric and eval_agent from junction table
-        -- Get first rubric FROM run (when use_groups = false) or groups (when use_groups = true)
+        -- Get first rubric FROM run_artifact (when use_groups = false) or groups (when use_groups = true)
         (SELECT rga.rubric_id 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
@@ -169,7 +169,7 @@ eval_info AS (
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
-        (SELECT (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
+        (SELECT (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
@@ -180,10 +180,10 @@ eval_info AS (
              WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
-         JOIN rubrics r ON r.id = rga.rubric_id
+         JOIN rubrics_resource r ON r.id = rga.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_name,
-        (SELECT (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) 
+        (SELECT (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
@@ -194,7 +194,7 @@ eval_info AS (
              WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
-         JOIN rubrics r ON r.id = rga.rubric_id
+         JOIN rubrics_resource r ON r.id = rga.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_description,
         (SELECT rga.grade_agent_id 
@@ -211,7 +211,7 @@ eval_info AS (
          ORDER BY combined.created_at 
          LIMIT 1) as eval_agent_id
     FROM attempt_data ad
-    JOIN evals e ON e.id = ad.eval_id
+    JOIN evals_resource e ON e.id = ad.eval_id
     LEFT JOIN eval_agents_data ead ON ead.eval_id = e.id
 ),
 -- Get all runs for this eval (from eval_runs)
@@ -307,20 +307,20 @@ runs_with_details AS (
         r.created_at as run_created_at,
         -- Model info
         rm.model_id,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
         -- Agent/persona info
         r.agent_id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         rper.persona_id,
-        (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = per.id LIMIT 1) as persona_name,
         -- Profile info
         rp.profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as profile_name,
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as profile_name,
         -- Grade info (from eval_agent's run, not original run)
         -- Grade is on the eval_agent run (test.run_id), not original run
         (
             SELECT g.score
-            FROM grade g
+            FROM grade_artifact g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
@@ -328,7 +328,7 @@ runs_with_details AS (
         ) as grade_score,
         (
             SELECT g.passed
-            FROM grade g
+            FROM grade_artifact g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
@@ -336,21 +336,21 @@ runs_with_details AS (
         ) as grade_passed,
         (
             SELECT g.created_at
-            FROM grade g
+            FROM grade_artifact g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_created_at
     FROM runs_with_status rws
-    JOIN run r ON r.id = rws.run_id
+    JOIN run_artifact r ON r.id = rws.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
-    LEFT JOIN models m ON m.id = rm.model_id
-    LEFT JOIN agents a ON a.id = r.agent_id
+    LEFT JOIN models_resource m ON m.id = rm.model_id
+    LEFT JOIN agents_resource a ON a.id = r.agent_id
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
-    LEFT JOIN personas per ON per.id = rper.persona_id
+    LEFT JOIN personas_resource per ON per.id = rper.persona_id
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-    LEFT JOIN profile p ON p.id = rp.profile_id
+    LEFT JOIN profile_artifact p ON p.id = rp.profile_id
     ORDER BY rws.eval_run_assigned_at DESC
 ),
 -- Calculate status summary

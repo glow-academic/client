@@ -27,8 +27,8 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT sf.name, tai.item_template_id, tai."position"
-    FROM template_array_items tai
-    JOIN schema_fields sf ON sf.id = tai.schema_field_id
+    FROM template_array_items_resource tai
+    JOIN schema_fields_resource sf ON sf.id = tai.schema_field_id
     WHERE tai.template_id = $1
     ORDER BY sf."position", tai."position"
 $$;

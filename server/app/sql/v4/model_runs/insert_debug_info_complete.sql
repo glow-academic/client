@@ -34,7 +34,7 @@ DECLARE
     debug_info_created_at timestamptz;
 BEGIN
     -- Create debug_info record
-    INSERT INTO debug_info (content, created_at)
+    INSERT INTO debug_info_resource (content, created_at)
     VALUES (content_param, NOW())
     RETURNING id, created_at INTO debug_info_id_val, debug_info_created_at;
     

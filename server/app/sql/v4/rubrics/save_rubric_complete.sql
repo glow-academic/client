@@ -44,39 +44,39 @@ BEGIN
     -- Determine if create or update
     is_create := (input_rubric_id IS NULL);
     
-    -- Create or update rubric first (outside CTE)
+    -- Create or UPDATE rubric_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO rubric (rubric_domain_id, created_at, updated_at)
+        INSERT INTO rubric_artifact (rubric_domain_id, created_at, updated_at)
         VALUES (rubric_domain_id, NOW(), NOW())
         RETURNING id INTO v_rubric_id;
     ELSE
         -- UPDATE path
         v_rubric_id := input_rubric_id;
-        UPDATE rubric
+        UPDATE rubric_artifact
         SET rubric_domain_id = COALESCE(rubric_domain_id, rubric.rubric_domain_id),
             updated_at = NOW()
         WHERE id = v_rubric_id;
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', description_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
     
-    IF total_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points WHERE id = total_points_id) THEN
+    IF total_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = total_points_id) THEN
         RAISE EXCEPTION 'Total points resource not found: %', total_points_id;
     END IF;
     
-    IF pass_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points WHERE id = pass_points_id) THEN
+    IF pass_points_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM points_resource WHERE id = pass_points_id) THEN
         RAISE EXCEPTION 'Pass points resource not found: %', pass_points_id;
     END IF;
     
@@ -84,7 +84,7 @@ BEGIN
     IF array_length(standard_group_ids, 1) > 0 THEN
         IF EXISTS (
             SELECT 1 FROM UNNEST(standard_group_ids) AS sg_id
-            WHERE NOT EXISTS (SELECT 1 FROM standard_groups WHERE id = sg_id)
+            WHERE NOT EXISTS (SELECT 1 FROM standard_groups_resource WHERE id = sg_id)
         ) THEN
             RAISE EXCEPTION 'One or more standard_group_ids not found';
         END IF;
@@ -126,9 +126,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
@@ -192,7 +192,7 @@ BEGIN
         WHERE x.description_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT rubric_descriptions_pkey DO UPDATE SET updated_at = NOW()
     ),
-    -- Insert or update rubric active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
+    -- Insert or UPDATE rubric_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_rubric_active_flag AS (
         INSERT INTO rubric_flags (rubric_id, flag_id, type, value, created_at, updated_at)
         SELECT 
@@ -203,7 +203,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'active'
         ON CONFLICT ON CONSTRAINT rubric_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags.flag_id),

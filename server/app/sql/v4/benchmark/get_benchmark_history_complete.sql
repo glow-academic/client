@@ -96,9 +96,9 @@ resolve_profile_id AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM resolve_profile_id rpi
-    JOIN profile p ON p.id = rpi.resolved_profile_id
+    JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
     WHERE rpi.resolved_profile_id IS NOT NULL
 ),
 user_departments AS (
@@ -109,9 +109,9 @@ user_departments AS (
 user_profile AS (
     SELECT 
         role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM resolve_profile_id rpi
-    JOIN profile p ON p.id = rpi.resolved_profile_id
+    JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
     WHERE rpi.resolved_profile_id IS NOT NULL
 ),
 -- Get eval attempts with eval info
@@ -121,8 +121,8 @@ attempts_with_eval AS (
         ea.created_at as attempt_created_at,
         ea.eval_id,
         ea.archived,
-        (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
-        (SELECT d.description FROM eval_descriptions ed JOIN descriptions d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
+        (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
+        (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
         -- Get first rubric from junction table (runs or groups based on use_groups)
         (SELECT rga.rubric_id 
          FROM (
@@ -137,7 +137,7 @@ attempts_with_eval AS (
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
-        (SELECT (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
+        (SELECT (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
@@ -148,11 +148,11 @@ attempts_with_eval AS (
              WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
-         JOIN rubrics r ON r.id = rga.rubric_id
+         JOIN rubrics_resource r ON r.id = rga.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_name
     FROM eval_attempts ea
-    JOIN evals e ON e.id = ea.eval_id
+    JOIN evals_resource e ON e.id = ea.eval_id
 ),
 -- Get eval departments for access control
 attempt_eval_departments AS (
@@ -198,7 +198,7 @@ attempt_status_summary AS (
     LEFT JOIN eval_runs er ON er.eval_id = aea.eval_id
     GROUP BY aea.attempt_id, aea.eval_id
 ),
--- Derive status from run counts
+-- Derive status FROM run_artifact counts
 attempts_with_status AS (
     SELECT 
         aea.*,

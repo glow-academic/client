@@ -77,22 +77,22 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id as resolved_profile_id,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
--- Insert name into names table and get ID
+-- Insert name INTO names_resource table and get ID
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name, NOW(), NOW()
     FROM params
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Insert description into descriptions table and get ID
+-- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM params
     WHERE description IS NOT NULL AND description != ''
@@ -101,7 +101,7 @@ description_resource AS (
 ),
 -- Insert or get protocol
 protocol_resource AS (
-    INSERT INTO protocols (value, created_at, updated_at)
+    INSERT INTO protocols_resource (value, created_at, updated_at)
     SELECT auth_type, NOW(), NOW()
     FROM params
     WHERE auth_type IS NOT NULL AND auth_type != ''
@@ -110,7 +110,7 @@ protocol_resource AS (
 ),
 -- Insert or get slug
 slug_resource AS (
-    INSERT INTO slugs (value, created_at, updated_at)
+    INSERT INTO slugs_resource (value, created_at, updated_at)
     SELECT slug, NOW(), NOW()
     FROM params
     WHERE slug IS NOT NULL AND slug != ''
@@ -119,7 +119,7 @@ slug_resource AS (
 ),
 new_auth AS (
     -- Create auth (no columns needed - all data in junction tables)
-    INSERT INTO auths (id)
+    INSERT INTO auths_resource (id)
     SELECT uuidv7()
     FROM params
     RETURNING id as auth_id
@@ -184,7 +184,7 @@ link_auth_active_flag AS (
         NOW()
     FROM new_auth na
     CROSS JOIN params p
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (auth_id, flag_id, type) DO UPDATE SET 
         value = (SELECT active FROM params),
@@ -205,7 +205,7 @@ items_expanded AS (
 ),
 new_items AS (
     -- Create all items (standalone table) - one per auth item
-    INSERT INTO items (
+    INSERT INTO items_resource (
         name,
         description,
         encrypted,
@@ -254,8 +254,8 @@ link_encrypted_keys AS (
 SELECT 
     true::boolean as success,
     na.auth_id,
-    (SELECT n.name FROM names n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) as name,
-    ((SELECT n.name FROM names n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) || ' created successfully')::text as message,
+    (SELECT n.name FROM names_resource n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) as name,
+    ((SELECT n.name FROM names_resource n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) || ' created successfully')::text as message,
     ap.actor_name
 FROM new_auth na
 CROSS JOIN actor_profile ap

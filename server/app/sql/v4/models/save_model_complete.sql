@@ -100,7 +100,7 @@ BEGIN
         -- Convert voice_ids (uuid[]) to voices (text[])
         SELECT ARRAY_AGG(v.voice::text ORDER BY v.voice)
         INTO final_voices
-        FROM voices v
+        FROM voices_resource v
         WHERE v.id = ANY(voice_ids) AND v.active = true;
         
         -- If no voices found, use defaults
@@ -112,31 +112,31 @@ BEGIN
     -- Validate permissions
     IF is_create THEN
         IF NOT validate_department_create_permissions(
-            (SELECT role::text FROM profile WHERE id = profile_id),
+            (SELECT role::text FROM profile_artifact WHERE id = profile_id),
             ARRAY(SELECT unnest(department_ids)::text)
         ) THEN
             RAISE EXCEPTION 'Insufficient permissions to create model';
         END IF;
     ELSE
         IF NOT validate_department_update_permissions(
-            (SELECT role::text FROM profile WHERE id = profile_id),
+            (SELECT role::text FROM profile_artifact WHERE id = profile_id),
             ARRAY(SELECT department_id::text FROM model_departments WHERE model_id = input_model_id AND active = true),
             ARRAY(SELECT department_id::text FROM profile_departments WHERE profile_id = profile_id AND active = true)
         ) THEN
-            RAISE EXCEPTION 'Insufficient permissions to update model';
+            RAISE EXCEPTION 'Insufficient permissions to UPDATE model_artifact';
         END IF;
     END IF;
 
-    -- Create or update model
+    -- Create or UPDATE model_artifact
     IF is_create THEN
         -- CREATE path
-        INSERT INTO model (provider_id, name, description, active, value)
+        INSERT INTO model_artifact (provider_id, name, description, active, value)
         VALUES (provider_id, name, description, active, value)
         RETURNING id INTO v_model_id;
     ELSE
         -- UPDATE path
         v_model_id := input_model_id;
-        UPDATE model SET
+        UPDATE model_artifact SET
             provider_id = api_save_model_v4.provider_id,
             name = api_save_model_v4.name,
             description = api_save_model_v4.description,
@@ -147,17 +147,17 @@ BEGIN
     END IF;
 
     -- Handle provider link (via model_providers table)
-    -- Note: model_providers.model_id references models.id (resource), not model.id (artifact)
+    -- Note: model_providers.model_id REFERENCES models_resource.id (resource), not model.id (artifact)
     -- So we need to get or create the models resource entry first
     -- Get or create models resource entry
     SELECT id INTO v_models_resource_id
-    FROM models
+    FROM models_resource
     WHERE model_id = v_model_id
     LIMIT 1;
     
     IF v_models_resource_id IS NULL THEN
         -- Create models resource entry if it doesn't exist
-        INSERT INTO models (model_id, active, generated, mcp, created_at, updated_at)
+        INSERT INTO models_resource (model_id, active, generated, mcp, created_at, updated_at)
         VALUES (v_model_id, active, false, false, NOW(), NOW())
         RETURNING id INTO v_models_resource_id;
     END IF;
@@ -312,8 +312,8 @@ BEGIN
     RETURN QUERY
     SELECT 
         v_model_id as model_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
-    FROM profile p
+        COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), 'System') as actor_name
+    FROM profile_artifact p
     WHERE p.id = profile_id;
 END;
 $$;

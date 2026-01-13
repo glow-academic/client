@@ -54,7 +54,7 @@ AS $$
         er.run_id::uuid as run_id,
         er.completed as run_completed
     FROM eval_attempts ea
-    JOIN evals e ON e.id = ea.eval_id
+    JOIN evals_resource e ON e.id = ea.eval_id
     LEFT JOIN eval_runs er ON er.eval_id = e.id AND er.run_id = socket_get_benchmark_run_start_context_v4.run_id
     WHERE ea.id = socket_get_benchmark_run_start_context_v4.attempt_id;
 $$;

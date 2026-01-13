@@ -130,12 +130,12 @@ user_profile AS (
     SELECT 
         role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = profile.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id AND pn2.type = 'last' LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile ON profile.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 eval_status_summary AS (
     SELECT 
@@ -149,13 +149,13 @@ eval_status_summary AS (
 eval_data AS (
     SELECT 
         e.id as eval_id,
-        (SELECT n.name FROM eval_names en JOIN names n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1),
-        (SELECT d.description FROM eval_descriptions ed JOIN descriptions d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1),
+        (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1),
+        (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1),
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE) as use_groups,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE),
         e.created_at,
         e.updated_at,
-        -- Get first rubric from junction table for display (FROM run or groups based on use_groups)
+        -- Get first rubric from junction table for display (FROM run_artifact or groups based on use_groups)
         (SELECT rga.rubric_id 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
@@ -169,7 +169,7 @@ eval_data AS (
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_id,
-        (SELECT (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
+        (SELECT (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
@@ -180,10 +180,10 @@ eval_data AS (
              WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
-         JOIN rubrics r ON r.id = rga.rubric_id
+         JOIN rubrics_resource r ON r.id = rga.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_name,
-        (SELECT (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) 
+        (SELECT (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
              FROM eval_runs_rubric_grade_agents errga
@@ -194,7 +194,7 @@ eval_data AS (
              WHERE egga.eval_id = e.id AND EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = true)
          ) combined
          JOIN rubric_grade_agents rga ON rga.id = combined.rubric_grade_agent_id
-         JOIN rubrics r ON r.id = rga.rubric_id
+         JOIN rubrics_resource r ON r.id = rga.rubric_id
          ORDER BY combined.created_at 
          LIMIT 1) as rubric_description,
         COALESCE(ess.total_runs, 0) as total_runs,
@@ -206,7 +206,7 @@ eval_data AS (
             WHEN ess.completed_runs = ess.total_runs THEN 'completed'
             ELSE 'pending'
         END as status
-    FROM eval e
+    FROM eval_artifact e
     LEFT JOIN eval_status_summary ess ON ess.eval_id = e.id
 ),
 rubric_departments_data AS (
@@ -303,24 +303,24 @@ SELECT
     COALESCE(ea.evals_array, '{}'::types.q_list_evals_v4_eval[]) as evals,
     -- Rubrics array
     COALESCE(
-        (SELECT ARRAY_AGG((r.id, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), ''), (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1))::types.q_list_evals_v4_rubric)
+        (SELECT ARRAY_AGG((r.id, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), ''), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1))::types.q_list_evals_v4_rubric)
          FROM all_rubric_ids ari
-         JOIN rubrics r ON r.id = ari.rubric_id),
+         JOIN rubrics_resource r ON r.id = ari.rubric_id),
         '{}'::types.q_list_evals_v4_rubric[]
     ) as rubrics,
     -- Departments array
     COALESCE(
-        (SELECT ARRAY_AGG((d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), ''))::types.q_list_evals_v4_department)
+        (SELECT ARRAY_AGG((d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1), COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), ''))::types.q_list_evals_v4_department)
          FROM all_department_ids adi
-         JOIN departments d ON d.id::text = adi.department_id
+         JOIN departments_resource d ON d.id::text = adi.department_id
          WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)),
         '{}'::types.q_list_evals_v4_department[]
     ) as departments,
     -- Agents array
     COALESCE(
-        (SELECT ARRAY_AGG((a.id, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), ''))::types.q_list_evals_v4_agent)
+        (SELECT ARRAY_AGG((a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), ''))::types.q_list_evals_v4_agent)
          FROM all_agent_ids aai
-         JOIN agents a ON a.id = aai.agent_id
+         JOIN agents_resource a ON a.id = aai.agent_id
          WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)),
         '{}'::types.q_list_evals_v4_agent[]
     ) as agents,
@@ -328,7 +328,7 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG((sg.id, sg.name, sg.description, sg.points, sg.pass_points)::types.q_list_evals_v4_standard_group)
          FROM all_standard_group_ids asgi
-         JOIN standard_groups sg ON sg.id = asgi.standard_group_id),
+         JOIN standard_groups_resource sg ON sg.id = asgi.standard_group_id),
         '{}'::types.q_list_evals_v4_standard_group[]
     ) as standard_groups,
     -- Standards array
@@ -356,24 +356,24 @@ SELECT
     ) as rubric_standard_groups,
     -- Rubric options array
     COALESCE(
-        (SELECT ARRAY_AGG((r.id::text, (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1))::types.q_list_evals_v4_option)
+        (SELECT ARRAY_AGG((r.id::text, (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1))::types.q_list_evals_v4_option)
          FROM all_rubric_ids ari
-         JOIN rubrics r ON r.id = ari.rubric_id),
+         JOIN rubrics_resource r ON r.id = ari.rubric_id),
         '{}'::types.q_list_evals_v4_option[]
     ) as rubric_options,
     -- Department options array (only departments assigned to evals)
     COALESCE(
-        (SELECT ARRAY_AGG((d.id::text, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1))::types.q_list_evals_v4_option)
+        (SELECT ARRAY_AGG((d.id::text, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1))::types.q_list_evals_v4_option)
          FROM all_department_ids adi
-         JOIN departments d ON d.id::text = adi.department_id
+         JOIN departments_resource d ON d.id::text = adi.department_id
          WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)),
         '{}'::types.q_list_evals_v4_option[]
     ) as department_options,
     -- Agent options array (only agents assigned to evals)
     COALESCE(
-        (SELECT ARRAY_AGG((a.id::text, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_list_evals_v4_option)
+        (SELECT ARRAY_AGG((a.id::text, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1))::types.q_list_evals_v4_option)
          FROM all_agent_ids aai
-         JOIN agents a ON a.id = aai.agent_id
+         JOIN agents_resource a ON a.id = aai.agent_id
          WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)),
         '{}'::types.q_list_evals_v4_option[]
     ) as agent_options

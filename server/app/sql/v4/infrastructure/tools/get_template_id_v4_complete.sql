@@ -1,4 +1,4 @@
--- Get template_id from tool
+-- Get template_id FROM tool_artifact
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -25,7 +25,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT tt.template_id
-    FROM tools t
+    FROM tools_resource t
     JOIN tool_templates tt ON tt.tool_id = t.tool_id
     WHERE t.id = $1
     LIMIT 1

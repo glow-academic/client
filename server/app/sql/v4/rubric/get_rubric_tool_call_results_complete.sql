@@ -47,7 +47,7 @@ WITH descriptions_result AS (
     -- Get descriptions array from standard_description tool_call
     SELECT CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb->'descriptions' ELSE NULL END as descriptions
     FROM calls tc
-    JOIN tool t ON t.id = tc.tool_id
+    JOIN tool_artifact t ON t.id = tc.tool_id
     JOIN message_calls mc ON mc.call_id = tc.id
     JOIN message_runs mr ON mr.message_id = mc.message_id
     WHERE mr.run_id = $1

@@ -1,4 +1,4 @@
--- Update profile to inactive and insert activity in a single transaction
+-- UPDATE profile_artifact to inactive and insert activity in a single transaction
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -35,7 +35,7 @@ AS $$
 WITH get_active_flag AS (
     -- Get the active flag ID
     SELECT id as flag_id
-    FROM flags
+    FROM flags_resource
     WHERE name = 'active'
     LIMIT 1
 ),

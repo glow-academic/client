@@ -60,9 +60,9 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.current_profile_id
+    JOIN profile_artifact p ON p.id = x.current_profile_id
 ),
 primary_email AS (
     SELECT 
@@ -75,18 +75,18 @@ email_check AS (
     SELECT EXISTS(SELECT 1 FROM profile_emails WHERE email = (SELECT email FROM primary_email) AND active = true) as email_exists
     FROM primary_email
 ),
--- Insert first_name into names table
+-- Insert first_name INTO names_resource table
 first_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT first_name, NOW(), NOW()
     FROM params
     WHERE first_name IS NOT NULL AND first_name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as first_name_id, name
 ),
--- Insert last_name into names table
+-- Insert last_name INTO names_resource table
 last_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT last_name, NOW(), NOW()
     FROM params
     WHERE last_name IS NOT NULL AND last_name != ''
@@ -95,7 +95,7 @@ last_name_resource AS (
 ),
 profile_insert AS (
     -- Insert profile without first_name, last_name, active columns
-    INSERT INTO profile (
+    INSERT INTO profile_artifact (
         id, role
     )
     SELECT 
@@ -143,7 +143,7 @@ link_profile_active_flag AS (
         NOW(),
         NOW()
     FROM profile_insert pi
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
       AND NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
     ON CONFLICT (profile_id, flag_id, type) DO UPDATE SET 
@@ -173,7 +173,7 @@ placeholder_call_id AS (
 ),
 email_resources AS (
     -- Create email resources first
-    INSERT INTO emails (email, call_id, created_at, updated_at)
+    INSERT INTO emails_resource (email, call_id, created_at, updated_at)
     SELECT DISTINCT
         aed.email,
         (SELECT id FROM placeholder_call_id),

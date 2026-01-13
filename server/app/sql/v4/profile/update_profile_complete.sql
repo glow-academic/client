@@ -1,4 +1,4 @@
--- Update profile with optional fields, emails, cohorts, departments, and activity tracking
+-- UPDATE profile_artifact with optional fields, emails, cohorts, departments, and activity tracking
 -- Handles both simple updates (auth) and comprehensive updates (staff management)
 -- Converted to PostgreSQL function
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
@@ -68,21 +68,21 @@ WITH params AS (
 ),
 profile_exists_check AS (
     -- Check if profile exists
-    SELECT EXISTS(SELECT 1 FROM profile WHERE id = (SELECT target_profile_id FROM params))::boolean as profile_exists
+    SELECT EXISTS(SELECT 1 FROM profile_artifact WHERE id = (SELECT target_profile_id FROM params))::boolean as profile_exists
 ),
 actor_profile AS (
     SELECT 
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
-            (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
+            (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
             ''
         ) as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 -- Insert/update first_name in names table if provided
 first_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT first_name, NOW(), NOW()
     FROM params
     WHERE first_name IS NOT NULL AND first_name != ''
@@ -91,7 +91,7 @@ first_name_resource AS (
 ),
 -- Insert/update last_name in names table if provided
 last_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT last_name, NOW(), NOW()
     FROM params
     WHERE last_name IS NOT NULL AND last_name != ''
@@ -99,8 +99,8 @@ last_name_resource AS (
     RETURNING id as last_name_id, name
 ),
 profile_update AS (
-    -- Update profile fields (only update non-NULL parameters, keep existing values for NULL)
-    UPDATE profile
+    -- UPDATE profile_artifact fields (only update non-NULL parameters, keep existing values for NULL)
+    UPDATE profile_artifact
     SET 
         last_login = COALESCE((SELECT last_login FROM params), last_login),
         role = COALESCE((SELECT role FROM params)::profile_role, role),
@@ -164,7 +164,7 @@ update_profile_active_flag AS (
         NOW(),
         NOW()
     FROM profile_update pu
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
       AND EXISTS (SELECT 1 FROM profile_update)
       AND (SELECT active FROM params) IS NOT NULL
@@ -178,11 +178,11 @@ profile_with_names AS (
         pu.id,
         COALESCE(
             (SELECT fnr.name FROM first_name_resource fnr WHERE EXISTS (SELECT 1 FROM first_name_resource)),
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = pu.id AND pn.type = 'first' LIMIT 1)
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = pu.id AND pn.type = 'first' LIMIT 1)
         ) as first_name,
         COALESCE(
             (SELECT lnr.name FROM last_name_resource lnr WHERE EXISTS (SELECT 1 FROM last_name_resource)),
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = pu.id AND pn.type = 'last' LIMIT 1)
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = pu.id AND pn.type = 'last' LIMIT 1)
         ) as last_name
     FROM profile_update pu
 ),
@@ -201,7 +201,7 @@ placeholder_call_id AS (
 ),
 request_limit_resource AS (
     -- Create request_limit resource first
-    INSERT INTO request_limits (requests_per_day, call_id, created_at, updated_at)
+    INSERT INTO request_limits_resource (requests_per_day, call_id, created_at, updated_at)
     SELECT 
         (SELECT requests_per_day FROM params),
         (SELECT id FROM placeholder_call_id),
@@ -229,7 +229,7 @@ request_limit_upsert AS (
         updated_at = NOW()
 ),
 email_update AS (
-    -- Update emails if emails array is provided (comprehensive update)
+    -- UPDATE emails_resource if emails array is provided (comprehensive update)
     -- First deactivate all existing emails
     UPDATE profile_emails SET
         active = false,
@@ -249,7 +249,7 @@ all_emails_data AS (
 ),
 email_resources AS (
     -- Create email resources first
-    INSERT INTO emails (email, call_id, created_at, updated_at)
+    INSERT INTO emails_resource (email, call_id, created_at, updated_at)
     SELECT DISTINCT
         aed.email,
         (SELECT id FROM calls LIMIT 1),
@@ -322,7 +322,7 @@ department_deactivate_all AS (
       )
 ),
 department_insert AS (
-    -- Insert or update department relationships (set primary based on index)
+    -- Insert or UPDATE department_artifact relationships (set primary based on index)
     INSERT INTO profile_departments (profile_id, department_id, is_primary, active)
     SELECT 
         pu.id,

@@ -26,7 +26,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-UPDATE chat 
+UPDATE chat_artifact 
 SET completed = true 
 WHERE id = chat_id
 RETURNING id, completed

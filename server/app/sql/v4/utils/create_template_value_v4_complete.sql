@@ -27,7 +27,7 @@ LANGUAGE plpgsql
 VOLATILE
 AS $$
 BEGIN
-    INSERT INTO template_values (
+    INSERT INTO template_values_resource (
         template_id, schema_field_id, string_value, number_value, boolean_value, created_at, updated_at
     )
     VALUES ($1, $2, $3, $4, $5, NOW(), NOW())

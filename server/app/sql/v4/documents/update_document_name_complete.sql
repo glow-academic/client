@@ -1,4 +1,4 @@
--- Update document name
+-- UPDATE document_artifact name
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then types (no CASCADE), then recreate
 -- 1) Drop function first (breaks dependency on types)
@@ -50,16 +50,16 @@ WITH params AS (
 ),
 -- Insert/update name in names table
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name, NOW(), NOW()
     FROM params
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id
 ),
--- Update document (without name column)
+-- UPDATE document_artifact (without name column)
 document_update AS (
-    UPDATE document
+    UPDATE document_artifact
     SET updated_at = NOW()
     WHERE id = (SELECT document_id FROM params)
     RETURNING id as document_id
@@ -84,6 +84,6 @@ link_document_name AS (
 )
 SELECT 
     du.document_id,
-    (SELECT n.name FROM names n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) as name
+    (SELECT n.name FROM names_resource n JOIN name_resource nr ON n.id = nr.name_id LIMIT 1) as name
 FROM document_update du
 $$;

@@ -18,5 +18,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT EXISTS(SELECT 1 FROM profile WHERE id = profile_id) as profile_exists;
+    SELECT EXISTS(SELECT 1 FROM profile_artifact WHERE id = profile_id) as profile_exists;
 $$;

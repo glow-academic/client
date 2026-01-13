@@ -32,7 +32,7 @@ WITH tool_call AS (
     RETURNING id
 ),
 insert_video AS (
-    INSERT INTO videos (
+    INSERT INTO videos_resource (
         name,
         description,
         length_seconds,

@@ -1,4 +1,4 @@
--- Update field with conditional parameters and department links
+-- UPDATE field_artifact with conditional parameters and department links
 -- Converted to function
 DROP FUNCTION IF EXISTS api_update_field_v4(uuid, text, text, boolean, text[], text[], uuid);
 
@@ -33,15 +33,15 @@ WITH params AS (
 field_exists_check AS (
     -- Check if field exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM field WHERE id = (SELECT field_id FROM params)
+        SELECT 1 FROM field_artifact WHERE id = (SELECT field_id FROM params)
     )::boolean as field_exists
 ),
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 object_current_departments AS (
     -- Get field's current active department links
@@ -68,7 +68,7 @@ validate_update_permissions AS (
 ),
 -- Insert/update name in names table
 name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name, NOW(), NOW()
     FROM params
     WHERE name IS NOT NULL AND name != ''
@@ -77,7 +77,7 @@ name_resource AS (
 ),
 -- Insert/update description in descriptions table
 description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM params
     WHERE description IS NOT NULL AND description != ''
@@ -85,8 +85,8 @@ description_resource AS (
     RETURNING id as description_id
 ),
 update_field AS (
-    -- Update field (without name/description/active columns)
-    UPDATE field SET
+    -- UPDATE field_artifact (without name/description/active columns)
+    UPDATE field_artifact SET
         updated_at = NOW()
     WHERE id = (SELECT field_id FROM params)
     RETURNING id as field_id, (SELECT name FROM params) as field_name
@@ -127,7 +127,7 @@ link_field_description AS (
     CROSS JOIN description_resource dr
     ON CONFLICT (field_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
--- Update field active flag
+-- UPDATE field_artifact active flag
 update_field_active_flag AS (
     UPDATE field_flags SET
         value = (SELECT active FROM params),
@@ -146,7 +146,7 @@ insert_field_active_flag AS (
         NOW()
     FROM update_field uf
     CROSS JOIN params x
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
       AND NOT EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = uf.field_id AND ff.type = 'active'::type_field_flags)
     ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 

@@ -23,21 +23,21 @@ WITH params AS (
 field_exists_check AS (
     -- Check if field exists independently of access control
     SELECT EXISTS(
-        SELECT 1 FROM field WHERE id = (SELECT field_id FROM params)
+        SELECT 1 FROM field_artifact WHERE id = (SELECT field_id FROM params)
     )::boolean as field_exists
 ),
 user_profile AS (
-    SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+    SELECT COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_field AS (
     SELECT 
         f.id,
-        (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) as name,
-        (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1) as description
+        (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) as name,
+        (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1) as description
     FROM params x
-    JOIN fields f ON f.id = x.field_id
+    JOIN fields_resource f ON f.id = x.field_id
 ),
 original_parameters AS (
     SELECT pf.parameter_id
@@ -51,18 +51,18 @@ original_departments AS (
     FROM params x
     JOIN field_departments fd ON fd.field_id = x.field_id AND fd.active = true
 ),
--- Insert name into names table
+-- Insert name INTO names_resource table
 new_name_resource AS (
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT name || ' (Copy)', NOW(), NOW()
     FROM original_field
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
     RETURNING id as name_id, name
 ),
--- Insert description into descriptions table
+-- Insert description INTO descriptions_resource table
 new_description_resource AS (
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT description, NOW(), NOW()
     FROM original_field
     WHERE description IS NOT NULL AND description != ''
@@ -71,7 +71,7 @@ new_description_resource AS (
 ),
 new_field AS (
     -- Create field (without name/description/parameter_id columns)
-    INSERT INTO field (created_at, updated_at)
+    INSERT INTO field_artifact (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM original_field
     RETURNING id as field_id
@@ -124,7 +124,7 @@ link_field_active_flag AS (
         NOW(),
         NOW()
     FROM new_field nf
-    CROSS JOIN flags f
+    CROSS JOIN flags_resource f
     WHERE f.name = 'active'
     ON CONFLICT (field_id, flag_id, type) DO UPDATE SET 
         value = FALSE,

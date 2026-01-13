@@ -29,8 +29,8 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT sf.name, tv.string_value, tv.number_value, tv.boolean_value, sf.field_type
-    FROM template_values tv
-    JOIN schema_fields sf ON sf.id = tv.schema_field_id
+    FROM template_values_resource tv
+    JOIN schema_fields_resource sf ON sf.id = tv.schema_field_id
     WHERE tv.template_id = $1
     ORDER BY sf.position
 $$;

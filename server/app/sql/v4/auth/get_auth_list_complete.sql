@@ -69,16 +69,16 @@ WITH params AS (
 user_profile AS (
     SELECT 
         p.role,
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 auth_item_counts AS (
     SELECT 
         ai_j.auth_id,
         COUNT(*) as num_items
     FROM auth_items ai_j
-    JOIN items i ON i.id = ai_j.item_id
+    JOIN items_resource i ON i.id = ai_j.item_id
     GROUP BY ai_j.auth_id
 ),
 auth_sample_items AS (
@@ -92,7 +92,7 @@ auth_sample_items AS (
         SELECT i.id, ai_j.auth_id, i.name, i.description,
                ROW_NUMBER() OVER (PARTITION BY ai_j.auth_id ORDER BY i.name) as rn
         FROM auth_items ai_j
-        JOIN items i ON i.id = ai_j.item_id
+        JOIN items_resource i ON i.id = ai_j.item_id
     ) ai
     WHERE ai.rn <= 3
     GROUP BY ai.auth_id
@@ -101,7 +101,7 @@ SELECT
     up.actor_name::text as actor_name,
     COALESCE(
         ARRAY_AGG(
-            (a.id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = TRUE), a.updated_at,
+            (a.id, (SELECT n.name FROM auth_names an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = TRUE), a.updated_at,
              COALESCE(aic.num_items, 0),
              COALESCE(asi.sample_items, '{}'::types.q_get_auth_list_v4_auth_item[]),
              CASE WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END,
@@ -112,7 +112,7 @@ SELECT
         ),
         '{}'::types.q_get_auth_list_v4_auth[]
     ) as auths
-FROM auths a
+FROM auths_resource a
 LEFT JOIN auth_item_counts aic ON aic.auth_id = a.id
 LEFT JOIN auth_sample_items asi ON asi.auth_id = a.id
 CROSS JOIN user_profile up

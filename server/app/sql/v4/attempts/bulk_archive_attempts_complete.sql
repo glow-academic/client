@@ -55,7 +55,7 @@ DECLARE
 BEGIN
     -- Get actor name
     SELECT first_name || ' ' || last_name INTO v_actor_name
-    FROM profile
+    FROM profile_artifact
     WHERE id = profile_id;
 
     -- Determine mode: use attempt_ids if provided and non-empty
@@ -99,7 +99,7 @@ BEGIN
                             WHEN 'member'::profile_role = ANY(roles) THEN 'member'::text
                             ELSE 'guest'::text
                         END
-                    ELSE COALESCE((SELECT role::text FROM profile WHERE id = profile_id), 'guest'::text)
+                    ELSE COALESCE((SELECT role::text FROM profile_artifact WHERE id = profile_id), 'guest'::text)
                 END::profile_role as role
         ),
         expanded_history_cohort_ids AS (
@@ -121,13 +121,13 @@ BEGIN
                 sa.archived AS is_archived,
                 sa.infinite_mode,
                 ap.profile_id,
-                (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
+                (SELECT n.name FROM simulation_names simn JOIN names_resource n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
                 sim.practice_simulation,
                 COALESCE(sdd.department_ids, NULL) as department_ids
             FROM simulation_attempts sa
             JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
-            JOIN simulation sim ON sim.id = sa.simulation_id
-            JOIN profile p_attempt ON p_attempt.id = ap.profile_id
+            JOIN simulation_artifact sim ON sim.id = sa.simulation_id
+            JOIN profile_artifact p_attempt ON p_attempt.id = ap.profile_id
             CROSS JOIN history_viewer_role hvr
             LEFT JOIN (
                 SELECT 
@@ -167,7 +167,7 @@ BEGIN
                 COALESCE(ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::uuid[]) AS cohort_ids
             FROM history_attempts ha
             LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
-            LEFT JOIN cohort c ON c.id = cp.cohort_id AND c.active = TRUE
+            LEFT JOIN cohort_artifact c ON c.id = cp.cohort_id AND c.active = TRUE
             LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
             WHERE (
                 (SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0
@@ -197,7 +197,7 @@ BEGIN
                 ac.attempt_id,
                 ARRAY_AGG(DISTINCT sc.scenario_id) FILTER (WHERE sc.scenario_id IS NOT NULL) AS scenario_ids
             FROM attempt_chats ac
-            JOIN chat sc ON sc.id = ac.chat_id
+            JOIN chat_artifact sc ON sc.id = ac.chat_id
             WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_with_filters)
             GROUP BY ac.attempt_id
         ),
@@ -213,8 +213,8 @@ BEGIN
                 ac.attempt_id,
                 array_agg(DISTINCT sp.persona_id) FILTER (WHERE sp.persona_id IS NOT NULL) AS persona_ids
             FROM attempt_chats ac
-            JOIN chat sc ON sc.id = ac.chat_id
-            JOIN scenarios scn ON scn.id = sc.scenario_id
+            JOIN chat_artifact sc ON sc.id = ac.chat_id
+            JOIN scenarios_resource scn ON scn.id = sc.scenario_id
             LEFT JOIN scenario_personas sp ON sp.scenario_id = scn.id AND sp.active = TRUE
             WHERE ac.attempt_id IN (SELECT attempt_id FROM history_attempts_final)
             GROUP BY ac.attempt_id
@@ -222,16 +222,16 @@ BEGIN
         final_filtered_attempts AS (
             SELECT haf.attempt_id
             FROM history_attempts_final haf
-            LEFT JOIN profile p ON p.id = haf.profile_id
+            LEFT JOIN profile_artifact p ON p.id = haf.profile_id
             LEFT JOIN history_personas hp ON hp.attempt_id = haf.attempt_id
             WHERE 
                 (search IS NULL OR search = '' OR
-                 LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) LIKE '%' || LOWER(search) || '%' OR
+                 LOWER(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '')) LIKE '%' || LOWER(search) || '%' OR
                  LOWER(haf.simulation_name) LIKE '%' || LOWER(search) || '%' OR
                  EXISTS (
                      SELECT 1
                      FROM unnest(hp.persona_ids) AS pid
-                     JOIN personas per ON per.id = pid
+                     JOIN personas_resource per ON per.id = pid
                      WHERE LOWER(per.name) LIKE '%' || LOWER(search) || '%'
                  ))
         ),

@@ -36,22 +36,22 @@ WITH params AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_dept AS (
     SELECT 
         d.id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title,
-        COALESCE((SELECT d.description FROM department_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title,
+        COALESCE((SELECT d.description FROM department_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = TRUE) as active
-    FROM department d
+    FROM department_artifact d
     WHERE d.id = (SELECT department_id FROM params)
 ),
 get_or_create_name AS (
     -- Get or create name in names table
-    INSERT INTO names (name, created_at, updated_at)
+    INSERT INTO names_resource (name, created_at, updated_at)
     SELECT od.title || ' Copy', NOW(), NOW()
     FROM original_dept od
     WHERE od.title IS NOT NULL
@@ -60,7 +60,7 @@ get_or_create_name AS (
 ),
 get_or_create_description AS (
     -- Get or create description in descriptions table
-    INSERT INTO descriptions (description, created_at, updated_at)
+    INSERT INTO descriptions_resource (description, created_at, updated_at)
     SELECT od.description, NOW(), NOW()
     FROM original_dept od
     WHERE od.description IS NOT NULL AND od.description != ''
@@ -70,12 +70,12 @@ get_or_create_description AS (
 get_active_flag AS (
     -- Get the active flag ID
     SELECT id as flag_id
-    FROM flags
+    FROM flags_resource
     WHERE name = 'active'
     LIMIT 1
 ),
 new_dept AS (
-    INSERT INTO department (created_at, updated_at)
+    INSERT INTO department_artifact (created_at, updated_at)
     SELECT NOW(), NOW()
     FROM original_dept
     RETURNING id

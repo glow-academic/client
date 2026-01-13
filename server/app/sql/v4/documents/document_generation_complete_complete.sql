@@ -86,7 +86,7 @@ BEGIN
     RETURNING id INTO upload_id_val;
 
     -- 1a. Create html entry (strong entity)
-    INSERT INTO html (name, created_at, updated_at, active, completed)
+    INSERT INTO html_resource (name, created_at, updated_at, active, completed)
     VALUES (
         COALESCE('Template HTML: ' || document_name, 'Template HTML'),
         NOW(),
@@ -106,7 +106,7 @@ BEGIN
     IF template_schema_json IS NOT NULL AND template_schema_json != '{}' THEN
         -- Create schema record
         schema_id_val := gen_random_uuid();
-        INSERT INTO schemas (id, created_at, updated_at)
+        INSERT INTO schemas_resource (id, created_at, updated_at)
         VALUES (schema_id_val, NOW(), NOW());
 
         -- Create schema_fields from JSON
@@ -129,7 +129,7 @@ BEGIN
         ),
         create_fields AS (
             -- Insert top-level fields
-            INSERT INTO schema_fields (
+            INSERT INTO schema_fields_resource (
                 id, schema_id, name, field_type, required, position, description, placeholder,
                 created_at, updated_at
             )
@@ -175,14 +175,14 @@ BEGIN
         ),
         create_item_schemas AS (
             -- Create item schemas for array fields
-            INSERT INTO schemas (id, created_at, updated_at)
+            INSERT INTO schemas_resource (id, created_at, updated_at)
             SELECT DISTINCT item_schema_id, NOW(), NOW()
             FROM process_array_items
             RETURNING id
         ),
         create_item_fields AS (
             -- Create fields for item schemas
-            INSERT INTO schema_fields (
+            INSERT INTO schema_fields_resource (
                 id, schema_id, name, field_type, required, position, description, placeholder,
                 created_at, updated_at
             )
@@ -208,7 +208,7 @@ BEGIN
         ),
         link_array_items AS (
             -- Link array fields to their item schemas
-            INSERT INTO schema_field_items (
+            INSERT INTO schema_field_items_resource (
                 schema_field_id, item_schema_id, created_at, updated_at
             )
             SELECT DISTINCT
@@ -231,7 +231,7 @@ BEGIN
           AND document_templates.active = true;
 
         -- Create template (just values, no schema/HTML refs)
-        INSERT INTO templates (name, created_at, updated_at)
+        INSERT INTO templates_resource (name, created_at, updated_at)
         VALUES (
             COALESCE('Template for ' || document_name, 'Template for Document'),
             NOW(),

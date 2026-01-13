@@ -1,4 +1,4 @@
--- Get distinct parameter_ids from fields
+-- Get distinct parameter_ids FROM fields_resource
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -25,7 +25,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT DISTINCT pf.parameter_id 
-    FROM fields f
+    FROM fields_resource f
     JOIN parameter_fields pf ON pf.field_id = f.field_id
     WHERE f.id = ANY($1)
 $$;

@@ -33,7 +33,7 @@ WITH content_hash AS (
 ),
 existing_message AS (
     SELECT m.id, m.created_at
-    FROM message m
+    FROM message_artifact m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN contents cnt ON cnt.id = mc.content_id
     JOIN content_hash ch ON message_content_hash(cnt.content, 'developer') = ch.hash
@@ -41,7 +41,7 @@ existing_message AS (
     LIMIT 1
 ),
 new_message AS (
-    INSERT INTO message (role, completed, audio, created_at, updated_at)
+    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
     WHERE NOT EXISTS (SELECT 1 FROM existing_message)
     RETURNING id, created_at, updated_at

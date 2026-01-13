@@ -78,12 +78,12 @@ user_profile AS (
     SELECT 
         role,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = (SELECT profile_id FROM params) AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
             'System'
         ) as actor_name
     FROM params x
-    JOIN profile ON profile.id = x.profile_id
+    JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 -- Pre-aggregate simulation usage counts for all models
 -- Simulations are linked to models via simulation_text_domain_id/simulation_voice_domain_id -> domains -> agents -> model_id
@@ -93,18 +93,18 @@ simulation_usage AS (
         COUNT(*) as usage_count
     FROM (
         SELECT adom_text.agent_id
-        FROM simulation sim
+        FROM simulation_artifact sim
         LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
         LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
         WHERE sd_text.agent_domain_id IS NOT NULL
         UNION ALL
         SELECT adom_voice.agent_id
-        FROM simulation sim
+        FROM simulation_artifact sim
         LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
         LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
         WHERE sd_voice.agent_domain_id IS NOT NULL
     ) combined_agents
-    JOIN agents a ON a.id = combined_agents.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    JOIN agents_resource a ON a.id = combined_agents.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     JOIN agent_models am ON am.agent_id = a.id
     GROUP BY am.model_id
 ),
@@ -113,7 +113,7 @@ agent_usage AS (
     SELECT 
         am.model_id,
         COUNT(*) as usage_count
-    FROM agent a
+    FROM agent_artifact a
     JOIN agent_models am ON am.agent_id = a.id
     GROUP BY am.model_id
 ),
@@ -129,31 +129,31 @@ image_model_check AS (
 models_with_usage AS (
     SELECT 
         m.id as model_id,
-        (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-        (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
         EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
-        (SELECT n.name FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN provider pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names n ON n.id = pn.name_id JOIN models m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
-        (SELECT p.id FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN models m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_id,
-        (SELECT n.name FROM model_providers mp JOIN providers p ON p.id = mp.providers_id JOIN provider pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names n ON n.id = pn.name_id JOIN models m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name,
-        COALESCE((SELECT e.base_url FROM model_endpoints me_j JOIN endpoints e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
+        (SELECT n.name FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider,
+        (SELECT p.id FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_id,
+        (SELECT n.name FROM model_providers mp JOIN providers_resource p ON p.id = mp.providers_id JOIN provider_artifact pr ON pr.id = p.provider_id JOIN provider_names pn ON pn.provider_id = pr.id JOIN names_resource n ON n.id = pn.name_id JOIN models_resource m_res ON m_res.id = mp.model_id WHERE m_res.model_id = m.id LIMIT 1) as provider_name,
+        COALESCE((SELECT e.base_url FROM model_endpoints me_j JOIN endpoints_resource e ON e.id = me_j.endpoint_id WHERE me_j.model_id = m.id AND e.active = true LIMIT 1), '') as base_url,
         COALESCE(su.usage_count, 0) as simulation_usage_count,
         COALESCE(au.usage_count, 0) as agent_usage_count
-    FROM model m
+    FROM model_artifact m
     LEFT JOIN simulation_usage su ON su.model_id = m.id
     LEFT JOIN agent_usage au ON au.model_id = m.id
     LEFT JOIN image_model_check imc ON imc.model_id = m.id
 ),
 provider_options_data AS (
-    -- Get provider options from providers resource table
+    -- Get provider options FROM providers_resource resource table
     SELECT DISTINCT
         p.id::text as value,
         n.name as label
-    FROM providers p
-    JOIN provider pr ON pr.id = p.provider_id
+    FROM providers_resource p
+    JOIN provider_artifact pr ON pr.id = p.provider_id
     JOIN provider_names pn ON pn.provider_id = pr.id
-    JOIN names n ON n.id = pn.name_id
+    JOIN names_resource n ON n.id = pn.name_id
     WHERE p.active = true
     ORDER BY n.name
 ),

@@ -28,7 +28,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-UPDATE images
+UPDATE images_resource
 SET completed = api_update_image_completed_v4.completed,
     updated_at = NOW()
 WHERE id = image_id

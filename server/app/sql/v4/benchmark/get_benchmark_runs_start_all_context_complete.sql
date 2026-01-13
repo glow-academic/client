@@ -60,7 +60,7 @@ AS $$
                 ARRAY_AGG(er.run_id::text) FILTER (WHERE er.completed = false)
         END as pending_ids
     FROM eval_attempts ea
-    JOIN evals e ON e.id = ea.eval_id
+    JOIN evals_resource e ON e.id = ea.eval_id
     LEFT JOIN eval_runs er ON er.eval_id = e.id AND er.completed = false
     LEFT JOIN eval_groups eg ON eg.eval_id = e.id
         AND NOT EXISTS (

@@ -40,16 +40,16 @@ BEGIN
     -- Determine if create or update
     is_create := (input_field_id IS NULL);
     
-    -- Create or update field first (outside CTE)
+    -- Create or UPDATE field_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path - use field table (singular) for INSERT
-        INSERT INTO field (created_at, updated_at)
+        INSERT INTO field_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_field_id;
     ELSE
         -- UPDATE path - use field table (singular) for UPDATE to match create pattern
         v_field_id := input_field_id;
-        UPDATE field
+        UPDATE field_artifact
         SET updated_at = NOW()
         WHERE id = v_field_id;
     END IF;
@@ -70,9 +70,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
@@ -114,7 +114,7 @@ BEGIN
     ),
     -- Insert/update name in names table
     name_resource AS (
-        INSERT INTO names (name, created_at, updated_at)
+        INSERT INTO names_resource (name, created_at, updated_at)
         SELECT name, NOW(), NOW()
         FROM params
         WHERE name IS NOT NULL AND name != ''
@@ -123,7 +123,7 @@ BEGIN
     ),
     -- Insert/update description in descriptions table
     description_resource AS (
-        INSERT INTO descriptions (description, created_at, updated_at)
+        INSERT INTO descriptions_resource (description, created_at, updated_at)
         SELECT description, NOW(), NOW()
         FROM params
         WHERE description IS NOT NULL AND description != ''
@@ -168,7 +168,7 @@ BEGIN
         CROSS JOIN description_resource dr
         ON CONFLICT (field_id, description_id) DO UPDATE SET updated_at = NOW()
     ),
-    -- Update field active flag
+    -- UPDATE field_artifact active flag
     update_field_active_flag AS (
         UPDATE field_flags SET
             value = (SELECT active FROM params),
@@ -188,7 +188,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'active'
           AND (
               (SELECT is_create FROM params)

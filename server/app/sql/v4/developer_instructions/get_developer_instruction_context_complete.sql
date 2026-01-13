@@ -48,8 +48,8 @@ scenario_parameters_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', p.id::text,
-                            'name', (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
-                            'description', (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
+                            'name', (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+                            'description', (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
                             'active', EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE),
                             'document_parameter', EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE),
                             'persona_parameter', EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE),
@@ -59,14 +59,14 @@ scenario_parameters_data AS (
                             'created_at', p.created_at::text,
                             'updated_at', p.updated_at::text
                         )
-                        ORDER BY (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
+                        ORDER BY (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )
             ELSE '[]'::jsonb
         END as parameters
     FROM scenario_parameters sp
-    JOIN parameters p ON p.id = sp.parameter_id
+    JOIN parameters_resource p ON p.id = sp.parameter_id
     WHERE (p_scenario_id IS NOT NULL AND sp.scenario_id = p_scenario_id)
       AND sp.active = true
       AND EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = true)
@@ -82,21 +82,21 @@ scenario_fields_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', f.id::text,
-                            'name', (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-                            'description', (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
+                            'name', (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+                            'description', (SELECT d.description FROM field_descriptions fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
                             'parameter_id', (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)::text,
                             'active', EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = TRUE),
                             'created_at', f.created_at::text,
                             'updated_at', f.updated_at::text
                         )
-                        ORDER BY (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
+                        ORDER BY (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )
             ELSE '[]'::jsonb
         END as fields
     FROM scenario_fields sf
-    JOIN fields f ON f.id = sf.field_id
+    JOIN fields_resource f ON f.id = sf.field_id
     WHERE (p_scenario_id IS NOT NULL AND sf.scenario_id = p_scenario_id)
       AND sf.active = true
       AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
@@ -112,21 +112,21 @@ scenario_documents_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', d.id::text,
-                            'name', (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-                            'description', COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''),
+                            'name', (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+                            'description', COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''),
                             'content', '',  -- document_content table was removed, content now accessed via message_documents → message_contents
                             'active', EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE),
                             'created_at', d.created_at::text,
                             'updated_at', d.updated_at::text
                         )
-                        ORDER BY (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
+                        ORDER BY (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )
             ELSE '[]'::jsonb
         END as documents
     FROM scenario_documents sd
-    JOIN documents d ON d.id = sd.document_id
+    JOIN documents_resource d ON d.id = sd.document_id
     WHERE (p_scenario_id IS NOT NULL AND sd.scenario_id = p_scenario_id)
       AND sd.active = true
       AND EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = true)

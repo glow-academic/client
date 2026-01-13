@@ -44,42 +44,42 @@ BEGIN
     -- Determine if create or update
     is_create := (input_persona_id IS NULL);
     
-    -- Create or update persona first (outside CTE)
+    -- Create or UPDATE persona_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO persona (created_at, updated_at)
+        INSERT INTO persona_artifact (created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id INTO v_persona_id;
     ELSE
         -- UPDATE path
         v_persona_id := input_persona_id;
-        UPDATE persona
+        UPDATE persona_artifact
         SET updated_at = NOW()
         WHERE id = v_persona_id;
     END IF;
     
     -- Validate required resource IDs exist (same for both)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
         RAISE EXCEPTION 'Name resource not found: %', name_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
         RAISE EXCEPTION 'Description resource not found: %', description_id;
     END IF;
     
-    IF color_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM colors WHERE id = color_id) THEN
+    IF color_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM colors_resource WHERE id = color_id) THEN
         RAISE EXCEPTION 'Color resource not found: %', color_id;
     END IF;
     
-    IF icon_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM icons WHERE id = icon_id) THEN
+    IF icon_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM icons_resource WHERE id = icon_id) THEN
         RAISE EXCEPTION 'Icon resource not found: %', icon_id;
     END IF;
     
-    IF instructions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM instructions WHERE id = instructions_id) THEN
+    IF instructions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM instructions_resource WHERE id = instructions_id) THEN
         RAISE EXCEPTION 'Instructions resource not found: %', instructions_id;
     END IF;
     
-    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
         RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
     END IF;
     
@@ -121,9 +121,9 @@ BEGIN
     user_profile AS (
         SELECT 
             p.role,
-            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
-        JOIN profile p ON p.id = x.profile_id
+        JOIN profile_artifact p ON p.id = x.profile_id
     ),
     -- Conditional: Validate permissions based on operation
     object_current_departments AS (
@@ -223,7 +223,7 @@ BEGIN
         WHERE x.instructions_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT persona_instructions_pkey DO UPDATE SET updated_at = NOW()
     ),
-    -- Insert or update persona active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
+    -- Insert or UPDATE persona_artifact active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
     insert_persona_active_flag AS (
         INSERT INTO persona_flags (persona_id, flag_id, type, value, created_at, updated_at)
         SELECT 
@@ -234,7 +234,7 @@ BEGIN
             NOW(),
             NOW()
         FROM params x
-        CROSS JOIN flags f
+        CROSS JOIN flags_resource f
         WHERE f.name = 'active'
         ON CONFLICT ON CONSTRAINT persona_flags_pkey DO UPDATE SET 
             flag_id = COALESCE(EXCLUDED.flag_id, persona_flags.flag_id),

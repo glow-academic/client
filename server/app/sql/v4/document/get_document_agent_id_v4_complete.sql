@@ -1,4 +1,4 @@
--- Get agent_id from document's domain
+-- Get agent_id FROM document_artifact's domain
 -- 1) Drop function first
 DO $$
 DECLARE
@@ -25,7 +25,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT ad.agent_id
-    FROM document doc
+    FROM document_artifact doc
     JOIN document_agent_domains dad ON dad.document_id = doc.id
     JOIN agent_domains ad ON ad.domain_id = dad.agent_domain_id
     WHERE doc.id = $1

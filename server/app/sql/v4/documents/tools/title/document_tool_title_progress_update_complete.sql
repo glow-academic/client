@@ -1,4 +1,4 @@
--- Update document title tool call progress - creates/updates tool_call and accumulates arguments
+-- UPDATE document_artifact title tool call progress - creates/updates tool_call and accumulates arguments
 -- Handles create_title tool (tool_type='title')
 -- Uses safe drop/recreate pattern
 
@@ -42,9 +42,9 @@ WITH params AS (
 get_tool_id AS (
     SELECT t.id as tool_id
     FROM params p
-    JOIN run r ON r.id = p.run_id
+    JOIN run_artifact r ON r.id = p.run_id
     JOIN agent_tools at ON at.agent_id = r.agent_id
-    JOIN tool t ON t.id = at.tool_id
+    JOIN tool_artifact t ON t.id = at.tool_id
     INNER JOIN resource_tools rt ON rt.tool_id = t.id
     WHERE rt.resource IN ('problem_statements'::resources, 'templates'::resources)
       AND at.active = true
@@ -92,7 +92,7 @@ link_call_to_message AS (
     FROM params p
     CROSS JOIN selected_tool_call stc
     JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN message m ON m.id = mr.message_id
+    JOIN message_artifact m ON m.id = mr.message_id
     WHERE m.role = 'assistant'
     ORDER BY m.created_at
     LIMIT 1

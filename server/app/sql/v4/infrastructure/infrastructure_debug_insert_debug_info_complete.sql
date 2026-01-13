@@ -24,7 +24,7 @@ DECLARE
     debug_info_id_val uuid;
 BEGIN
     -- Create debug_info record
-    INSERT INTO debug_info (content, created_at)
+    INSERT INTO debug_info_resource (content, created_at)
     VALUES (content, NOW())
     RETURNING id INTO debug_info_id_val;
     

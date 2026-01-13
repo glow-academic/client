@@ -36,7 +36,7 @@ DECLARE
     v_id uuid;
     v_updated boolean;
 BEGIN
-    INSERT INTO template_values (
+    INSERT INTO template_values_resource (
         template_id,
         schema_field_id,
         call_id,

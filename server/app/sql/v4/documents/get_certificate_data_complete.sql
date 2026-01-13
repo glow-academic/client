@@ -66,27 +66,27 @@ profile_info AS (
     SELECT 
         p.id,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'full'::type_profile_names LIMIT 1),
-            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = p.id AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'full'::type_profile_names LIMIT 1),
+            (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names_resource n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = p.id AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
             'Unknown'
         ) AS profile_name
     FROM params x
-    JOIN profile p ON p.id = x.profile_id
+    JOIN profile_artifact p ON p.id = x.profile_id
 ),
 -- Get all cohorts the profile belongs to
 profile_cohorts AS (
     SELECT DISTINCT
         c.id AS cohort_id,
-        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title
+        (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title
     FROM params x
     JOIN cohort_profiles cp ON cp.profile_id = x.profile_id
-    JOIN cohort c ON c.id = cp.cohort_id
+    JOIN cohort_artifact c ON c.id = cp.cohort_id
     WHERE cp.active = TRUE
       AND EXISTS (
         SELECT 1 FROM cohort_flags cf
-        JOIN flags f ON cf.flag_id = f.id
+        JOIN flags_resource f ON cf.flag_id = f.id
         WHERE cf.cohort_id = c.id
-          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
           AND cf.type = 'active'::type_cohort_flags
           AND cf.value = TRUE
       )
@@ -97,32 +97,32 @@ cohort_sims AS (
         pc.cohort_id,
         pc.cohort_title,
         s.id AS simulation_id,
-        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_title,
+        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) AS simulation_title,
         (SELECT rga.rubric_id FROM simulation_scenarios ss 
          JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
-         JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+         JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
          JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
          WHERE ss.simulation_id = s.id 
            AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
-         ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
+         ORDER BY (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
          LIMIT 1) as rubric_id
     FROM profile_cohorts pc
     JOIN cohort_simulations cs ON cs.cohort_id = pc.cohort_id
-    JOIN simulation s ON s.id = cs.simulation_id
+    JOIN simulation_artifact s ON s.id = cs.simulation_id
     WHERE cs.active = TRUE
       AND EXISTS (
         SELECT 1 FROM simulation_flags sf
-        JOIN flags f ON sf.flag_id = f.id
+        JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.simulation_id = s.id
-          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
+          AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
           AND sf.type = 'active'::type_simulation_flags
           AND sf.value = TRUE
       )
       AND NOT EXISTS (
         SELECT 1 FROM simulation_flags sf
-        JOIN flags f ON sf.flag_id = f.id
+        JOIN flags_resource f ON sf.flag_id = f.id
         WHERE sf.simulation_id = s.id
-          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
+          AND (SELECT n.name FROM field_names fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
           AND sf.type = 'practice'::type_simulation_flags
           AND sf.value = TRUE
       )
@@ -176,15 +176,15 @@ user_sim_status AS (
         aa.simulation_id,
         MAX(aa.avg_pct_over_expected) AS avg_pct_over_expected,
         BOOL_OR(aa.avg_pct_over_expected >= COALESCE(
-            (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
-             FROM simulation s
+            (SELECT ROUND(100.0 * (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'pass'::type_rubric_points LIMIT 1)::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = rga_rubric.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1),0))
+             FROM simulation_artifact s
              LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id 
                AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss_rubric.simulation_id AND ssf.scenario_id = ss_rubric.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
              LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_rubric ON sssrga_rubric.simulation_id = ss_rubric.simulation_id AND sssrga_rubric.scenario_id = ss_rubric.scenario_id
-             LEFT JOIN scenario_rubric_grade_agents srga_rubric ON srga_rubric.id = sssrga_rubric.scenario_rubric_grade_agent_id
+             LEFT JOIN scenario_rubric_grade_agents_resource srga_rubric ON srga_rubric.id = sssrga_rubric.scenario_rubric_grade_agent_id
              LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = srga_rubric.grade_agent_id
              WHERE s.id = aa.simulation_id
-             ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss_rubric.simulation_id AND sp.scenario_id = ss_rubric.scenario_id LIMIT 1)
+             ORDER BY (SELECT sp.value FROM scenario_positions_resource sp WHERE sp.simulation_id = ss_rubric.simulation_id AND sp.scenario_id = ss_rubric.scenario_id LIMIT 1)
              LIMIT 1), 70
         )) AS passed
     FROM attempt_avg aa
