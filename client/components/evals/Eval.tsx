@@ -4,6 +4,7 @@
  * Migrated to GenericForm pattern with nuqs and draft autosave
  */
 "use client";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, {
   useCallback,
   useEffect,
@@ -12,7 +13,6 @@ import React, {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { useRouter, useSearchParams } from "next/navigation";
 
 // UI Components
 import { Card } from "@/components/ui/card";
@@ -21,14 +21,14 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import { GroupCardGrid } from "@/components/common/evals/GroupCardGrid";
+import { ModelRunCardGrid } from "@/components/common/evals/ModelRunCardGrid";
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { ModelRunCardGrid } from "@/components/common/evals/ModelRunCardGrid";
-import { GroupCardGrid } from "@/components/common/evals/GroupCardGrid";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
 import { useProfile } from "@/contexts/profile-context";
 import { useDraftAutosave } from "@/hooks/use-draft-autosave";
@@ -36,7 +36,7 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import { Power, Zap, Users } from "lucide-react";
+import { Power, Users, Zap } from "lucide-react";
 import {
   parseAsBoolean,
   parseAsString,
@@ -65,6 +65,7 @@ export interface EvalProps {
   evalDetail?: EvalDetailOut;
   evalDetailDefault?: EvalNewOut;
   // Server actions (replaces useMutation)
+  // Unified save action (preferred - uses input_eval_id for create/update)
   createEvalAction?: (input: CreateEvalIn) => Promise<CreateEvalOut>;
   updateEvalAction?: (input: UpdateEvalIn) => Promise<UpdateEvalOut>;
   // Draft action: Resource-specific prop name is acceptable since types are resource-specific
@@ -110,9 +111,7 @@ function EvalComponent({
             : data["valid_department_ids"];
         }
         if ("valid_agent_ids" in data) {
-          keyFields["valid_agent_ids"] = Array.isArray(
-            data["valid_agent_ids"]
-          )
+          keyFields["valid_agent_ids"] = Array.isArray(data["valid_agent_ids"])
             ? data["valid_agent_ids"].sort().join(",")
             : data["valid_agent_ids"];
         }
@@ -298,12 +297,12 @@ function EvalComponent({
     const data = isEditMode ? evalDetail : evalDetailDefault;
 
     if (!data) {
-    return {
-      name: "",
-      description: "",
-      active: true,
-      dynamic: false,
-      use_groups: false,
+      return {
+        name: "",
+        description: "",
+        active: true,
+        dynamic: false,
+        use_groups: false,
         departmentIds: defaultDepartmentIds || [],
         agentSelectionsByRole: {},
         modelRunIds: [],
@@ -313,17 +312,24 @@ function EvalComponent({
     }
 
     // Initialize agentSettings from draft payload or server data
-    let agentSettings: Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }> = {};
+    let agentSettings: Record<
+      string,
+      { rubric_ids?: string[]; grade_agent_ids?: string[] }
+    > = {};
 
     // Try to read from draft payload fields (returned by SQL when draft exists)
     // Check for agent_settings first (new format)
     if (data && "agent_settings" in data && data.agent_settings) {
       try {
-        const parsed = typeof data.agent_settings === "string"
-          ? JSON.parse(data.agent_settings)
-          : data.agent_settings;
+        const parsed =
+          typeof data.agent_settings === "string"
+            ? JSON.parse(data.agent_settings)
+            : data.agent_settings;
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-          agentSettings = parsed as Record<string, { rubric_ids?: string[]; grade_agent_ids?: string[] }>;
+          agentSettings = parsed as Record<
+            string,
+            { rubric_ids?: string[]; grade_agent_ids?: string[] }
+          >;
         }
       } catch {
         // Ignore parse errors
@@ -331,20 +337,30 @@ function EvalComponent({
     }
 
     // Fallback: Extract from rubric_grade_agent_pairs (old format) - convert to agentSettings
-    if (Object.keys(agentSettings).length === 0 && data && "rubric_grade_agent_pairs" in data && data.rubric_grade_agent_pairs) {
+    if (
+      Object.keys(agentSettings).length === 0 &&
+      data &&
+      "rubric_grade_agent_pairs" in data &&
+      data.rubric_grade_agent_pairs
+    ) {
       try {
-        const parsed = typeof data.rubric_grade_agent_pairs === "string"
-          ? JSON.parse(data.rubric_grade_agent_pairs)
-          : data.rubric_grade_agent_pairs;
+        const parsed =
+          typeof data.rubric_grade_agent_pairs === "string"
+            ? JSON.parse(data.rubric_grade_agent_pairs)
+            : data.rubric_grade_agent_pairs;
         if (parsed && typeof parsed === "object" && Array.isArray(parsed)) {
-          const pairs = parsed as Array<{rubric_id: string; grade_text_agent_id: string}>;
+          const pairs = parsed as Array<{
+            rubric_id: string;
+            grade_text_agent_id: string;
+          }>;
           // Group pairs by agent_id (assuming pairs are for agents being evaluated)
           // For now, create a default "global" entry - this will be refined when we have agent_id in pairs
           const rubricIdsSet = new Set<string>();
           const gradeAgentIdsSet = new Set<string>();
           pairs.forEach((pair) => {
             if (pair.rubric_id) rubricIdsSet.add(pair.rubric_id);
-            if (pair.grade_text_agent_id) gradeAgentIdsSet.add(pair.grade_text_agent_id);
+            if (pair.grade_text_agent_id)
+              gradeAgentIdsSet.add(pair.grade_text_agent_id);
           });
           // Store in agentSettings with a default key - will be mapped to actual agents during initialization
           agentSettings["_global"] = {
@@ -375,41 +391,72 @@ function EvalComponent({
 
     // Convert agentIds to agentSelectionsByRole (single-select per role)
     let agentSelectionsByRole: Record<string, string> = {};
-    
+
     // Try to read from draft payload first (new format)
-    if (data && "agent_selections_by_role" in data && data.agent_selections_by_role) {
+    if (
+      data &&
+      "agent_selections_by_role" in data &&
+      data.agent_selections_by_role
+    ) {
       try {
-        const parsed = typeof data.agent_selections_by_role === "string"
-          ? JSON.parse(data.agent_selections_by_role)
-          : data.agent_selections_by_role;
+        const parsed =
+          typeof data.agent_selections_by_role === "string"
+            ? JSON.parse(data.agent_selections_by_role)
+            : data.agent_selections_by_role;
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           // Convert arrays to single values (for backward compatibility)
           const converted: Record<string, string> = {};
-          Object.entries(parsed as Record<string, string | string[]>).forEach(([role, value]) => {
-            if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string") {
-              converted[role] = value[0]; // Take first agent if array
-            } else if (typeof value === "string") {
-              converted[role] = value;
+          Object.entries(parsed as Record<string, string | string[]>).forEach(
+            ([role, value]) => {
+              if (
+                Array.isArray(value) &&
+                value.length > 0 &&
+                typeof value[0] === "string"
+              ) {
+                converted[role] = value[0]; // Take first agent if array
+              } else if (typeof value === "string") {
+                converted[role] = value;
+              }
             }
-          });
+          );
           agentSelectionsByRole = converted;
         }
       } catch {
         // Ignore parse errors, fall back to extracting from agent_ids
       }
     }
-    
+
     // Fallback: Extract from agent_ids and group by role (take first agent per role)
-    if (Object.keys(agentSelectionsByRole).length === 0 && data.agent_ids && Array.isArray(data.agent_ids)) {
+    if (
+      Object.keys(agentSelectionsByRole).length === 0 &&
+      data.agent_ids &&
+      Array.isArray(data.agent_ids)
+    ) {
       // Get agents from evalDetail or evalDetailDefault
-      const agents = (isEditMode ? evalDetail : evalDetailDefault)?.agents || [];
+      const agents =
+        (isEditMode ? evalDetail : evalDetailDefault)?.agents || [];
       const agentRolesMap: Record<string, string> = {};
-      
+
       data.agent_ids.forEach((agentId: string) => {
-        const agent = agents.find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } => 
-          typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+        const agent = agents.find(
+          (
+            a
+          ): a is {
+            agent_id: string | null;
+            name: string | null;
+            description: string | null;
+            roles: string[] | null;
+          } =>
+            typeof a === "object" &&
+            a !== null &&
+            "agent_id" in a &&
+            a.agent_id === agentId
         );
-        if (agent?.roles && Array.isArray(agent.roles) && agent.roles.length > 0) {
+        if (
+          agent?.roles &&
+          Array.isArray(agent.roles) &&
+          agent.roles.length > 0
+        ) {
           agent.roles.forEach((role: string) => {
             // Only set if not already set (single-select - take first)
             if (!agentRolesMap[role]) {
@@ -423,7 +470,7 @@ function EvalComponent({
           }
         }
       });
-      
+
       agentSelectionsByRole = agentRolesMap;
     }
 
@@ -434,10 +481,16 @@ function EvalComponent({
       description: data.description || "",
       active: data.active ?? true,
       dynamic: data.dynamic ?? false,
-      use_groups: ("use_groups" in data && data.use_groups !== undefined ? data.use_groups : false) ?? false,
+      use_groups:
+        ("use_groups" in data && data.use_groups !== undefined
+          ? data.use_groups
+          : false) ?? false,
       departmentIds: data.department_ids || defaultDepartmentIds || [],
       agentSelectionsByRole,
-      modelRunIds: ("model_run_ids" in data && data.model_run_ids ? data.model_run_ids : []) || [],
+      modelRunIds:
+        ("model_run_ids" in data && data.model_run_ids
+          ? data.model_run_ids
+          : []) || [],
       groupIds: [], // TODO: Extract when groups are implemented
       agentSettings,
     };
@@ -586,13 +639,7 @@ function EvalComponent({
       });
     }
     return () => clearEntityMetadata();
-  }, [
-    evalDetail,
-    evalId,
-    isEditMode,
-    setEntityMetadata,
-    clearEntityMetadata,
-  ]);
+  }, [evalDetail, evalId, isEditMode, setEntityMetadata, clearEntityMetadata]);
 
   // Draft autosave integration
   const {
@@ -705,15 +752,18 @@ function EvalComponent({
     const agents = evalData?.agents || [];
 
     agents.forEach((agent) => {
-      if (typeof agent !== "object" || agent === null || !("agent_id" in agent)) return;
+      if (typeof agent !== "object" || agent === null || !("agent_id" in agent))
+        return;
       const key = String(agent.agent_id);
-      const agentRoles = "roles" in agent && Array.isArray(agent.roles) ? agent.roles : [];
+      const agentRoles =
+        "roles" in agent && Array.isArray(agent.roles) ? agent.roles : [];
       mapped[key] =
         agentRoles.length > 0
           ? {
               id: key,
               name: ("name" in agent ? String(agent.name) : "") || "",
-              description: ("description" in agent ? String(agent.description) : "") || "",
+              description:
+                ("description" in agent ? String(agent.description) : "") || "",
               roles: agentRoles.map(String),
             }
           : {
@@ -724,7 +774,9 @@ function EvalComponent({
     });
 
     // Add selected agents that aren't in the mapping (for backward compatibility)
-    const allSelectedAgentIds = Object.values(draftState.agentSelectionsByRole || {}).flat();
+    const allSelectedAgentIds = Object.values(
+      draftState.agentSelectionsByRole || {}
+    ).flat();
     allSelectedAgentIds.forEach((agentId) => {
       if (!mapped[agentId]) {
         mapped[agentId] = {
@@ -750,7 +802,7 @@ function EvalComponent({
       // This is a placeholder - groups may need special handling
       const groupIds = draftState.groupIds || [];
       if (groupIds.length === 0) return [];
-      
+
       // TODO: Extract agent roles from groups when group data structure is available
       // For now, return empty array - groups may not have direct agent info
       return [];
@@ -761,10 +813,28 @@ function EvalComponent({
 
       // Get model runs from evalData
       const availableModelRuns = evalData?.available_model_runs || [];
-      
+
       modelRunIds.forEach((runId) => {
-        const run = availableModelRuns.find((mr): mr is { model_run_id: string | null; created_at: string | null; model_id: string | null; model_name: string | null; profile_id: string | null; profile_name: string | null; agent_id: string | null; agent_name: string | null; persona_id: string | null; persona_name: string | null; actor_type: string | null } => 
-          typeof mr === "object" && mr !== null && "model_run_id" in mr && mr.model_run_id === runId
+        const run = availableModelRuns.find(
+          (
+            mr
+          ): mr is {
+            model_run_id: string | null;
+            created_at: string | null;
+            model_id: string | null;
+            model_name: string | null;
+            profile_id: string | null;
+            profile_name: string | null;
+            agent_id: string | null;
+            agent_name: string | null;
+            persona_id: string | null;
+            persona_name: string | null;
+            actor_type: string | null;
+          } =>
+            typeof mr === "object" &&
+            mr !== null &&
+            "model_run_id" in mr &&
+            mr.model_run_id === runId
         );
         if (run?.agent_id) {
           const agent = agentMapping[run.agent_id];
@@ -776,11 +846,19 @@ function EvalComponent({
     }
 
     return Array.from(rolesSet).sort();
-  }, [draftState.modelRunIds, draftState.groupIds, draftState.use_groups, evalData?.available_model_runs, agentMapping]);
+  }, [
+    draftState.modelRunIds,
+    draftState.groupIds,
+    draftState.use_groups,
+    evalData?.available_model_runs,
+    agentMapping,
+  ]);
 
   // Helper to get unique selected agents across all roles (single-select)
   const getUniqueSelectedAgents = useCallback((): string[] => {
-    const allAgentIds = Object.values(draftState.agentSelectionsByRole || {}).filter((id): id is string => !!id);
+    const allAgentIds = Object.values(
+      draftState.agentSelectionsByRole || {}
+    ).filter((id): id is string => !!id);
     return Array.from(new Set(allAgentIds));
   }, [draftState.agentSelectionsByRole]);
 
@@ -799,21 +877,65 @@ function EvalComponent({
       const evalDetailData = serverData as EvalDetailOut;
       const deptIds = evalDetailData.department_ids || [];
       const agentIds = evalDetailData.agent_ids || [];
-      const modelRunIds = evalDetailData.model_runs
-        ?.filter((mr): mr is { model_run_id: string | null; completed: boolean | null; assigned_at: string | null; status_updated_at: string | null; model_run_created_at: string | null; model_id: string | null; model_name: string | null; profile_id: string | null; profile_name: string | null; agent_id: string | null; agent_name: string | null; persona_id: string | null; persona_name: string | null; actor_type: string | null; has_grade: boolean | null; grade_score: number | null; grade_passed: boolean | null; grade_created_at: string | null; rubric_grade_agents: Array<{ rubric_grade_agent_id: string | null; rubric_id: string | null; rubric_name: string | null; agent_id: string | null; agent_name: string | null }> | null } =>
-          typeof mr === "object" && mr !== null && "model_run_id" in mr
-        )
-        .map((mr) => mr.model_run_id)
-        .filter((id): id is string => id !== null) || [];
+      const modelRunIds =
+        evalDetailData.model_runs
+          ?.filter(
+            (
+              mr
+            ): mr is {
+              model_run_id: string | null;
+              completed: boolean | null;
+              assigned_at: string | null;
+              status_updated_at: string | null;
+              model_run_created_at: string | null;
+              model_id: string | null;
+              model_name: string | null;
+              profile_id: string | null;
+              profile_name: string | null;
+              agent_id: string | null;
+              agent_name: string | null;
+              persona_id: string | null;
+              persona_name: string | null;
+              actor_type: string | null;
+              has_grade: boolean | null;
+              grade_score: number | null;
+              grade_passed: boolean | null;
+              grade_created_at: string | null;
+              rubric_grade_agents: Array<{
+                rubric_grade_agent_id: string | null;
+                rubric_id: string | null;
+                rubric_name: string | null;
+                agent_id: string | null;
+                agent_name: string | null;
+              }> | null;
+            } => typeof mr === "object" && mr !== null && "model_run_id" in mr
+          )
+          .map((mr) => mr.model_run_id)
+          .filter((id): id is string => id !== null) || [];
 
       // Convert agentIds to agentSelectionsByRole (single-select per role)
       const agents = evalDetailData.agents || [];
       const agentSelectionsByRole: Record<string, string> = {};
       agentIds.forEach((agentId: string) => {
-        const agent = agents.find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
-          typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+        const agent = agents.find(
+          (
+            a
+          ): a is {
+            agent_id: string | null;
+            name: string | null;
+            description: string | null;
+            roles: string[] | null;
+          } =>
+            typeof a === "object" &&
+            a !== null &&
+            "agent_id" in a &&
+            a.agent_id === agentId
         );
-        if (agent?.roles && Array.isArray(agent.roles) && agent.roles.length > 0) {
+        if (
+          agent?.roles &&
+          Array.isArray(agent.roles) &&
+          agent.roles.length > 0
+        ) {
           agent.roles.forEach((role: string) => {
             // Only set if not already set (single-select - take first)
             if (!agentSelectionsByRole[role]) {
@@ -838,10 +960,15 @@ function EvalComponent({
         draftUpdates.active = evalDetailData.active ?? true;
       if (evalDetailData.dynamic !== undefined)
         draftUpdates.dynamic = evalDetailData.dynamic ?? false;
-      if ("use_groups" in evalDetailData && evalDetailData.use_groups !== undefined)
-        draftUpdates.use_groups = (evalDetailData as { use_groups?: boolean }).use_groups ?? false;
+      if (
+        "use_groups" in evalDetailData &&
+        evalDetailData.use_groups !== undefined
+      )
+        draftUpdates.use_groups =
+          (evalDetailData as { use_groups?: boolean }).use_groups ?? false;
       if (deptIds.length > 0) draftUpdates["departmentIds"] = deptIds;
-      if (Object.keys(agentSelectionsByRole).length > 0) draftUpdates["agentSelectionsByRole"] = agentSelectionsByRole;
+      if (Object.keys(agentSelectionsByRole).length > 0)
+        draftUpdates["agentSelectionsByRole"] = agentSelectionsByRole;
       if (modelRunIds.length > 0) draftUpdates["modelRunIds"] = modelRunIds;
 
       // Apply updates to draftState
@@ -889,8 +1016,19 @@ function EvalComponent({
         const rubricIds = settings.rubric_ids || [];
         const gradeAgentIds = settings.grade_agent_ids || [];
         if (rubricIds.length === 0) {
-          const agent = (evalData?.agents || []).find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
-            typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+          const agent = (evalData?.agents || []).find(
+            (
+              a
+            ): a is {
+              agent_id: string | null;
+              name: string | null;
+              description: string | null;
+              roles: string[] | null;
+            } =>
+              typeof a === "object" &&
+              a !== null &&
+              "agent_id" in a &&
+              a.agent_id === agentId
           );
           toast.error(
             `Please select at least one rubric for agent ${agent?.name || agentId.slice(0, 8)}`
@@ -898,8 +1036,19 @@ function EvalComponent({
           throw new Error(`Missing rubrics for agent ${agentId}`);
         }
         if (gradeAgentIds.length === 0) {
-          const agent = (evalData?.agents || []).find((a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
-            typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+          const agent = (evalData?.agents || []).find(
+            (
+              a
+            ): a is {
+              agent_id: string | null;
+              name: string | null;
+              description: string | null;
+              roles: string[] | null;
+            } =>
+              typeof a === "object" &&
+              a !== null &&
+              "agent_id" in a &&
+              a.agent_id === agentId
           );
           toast.error(
             `Please select at least one grading agent for agent ${agent?.name || agentId.slice(0, 8)}`
@@ -907,7 +1056,6 @@ function EvalComponent({
           throw new Error(`Missing grade agents for agent ${agentId}`);
         }
       }
-
 
       const validDepartmentIds = evalData?.valid_department_ids || [];
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
@@ -917,76 +1065,44 @@ function EvalComponent({
       );
 
       // Extract body types for type safety
-      type CreateEvalBody = CreateEvalIn extends { body: infer B }
-        ? B
-        : never;
-      type UpdateEvalBody = UpdateEvalIn extends { body: infer B }
-        ? B
+      type SaveEvalBody = CreateEvalIn extends { body: infer B }
+        ? B & { input_eval_id?: string | null }
         : never;
 
-      if (isEditMode) {
-        if (!updateEvalAction) {
-          toast.error("Update action not available");
-          throw new Error("Update action not available");
-        }
-        try {
+      // Use unified save action (createEvalAction and updateEvalAction are now the same saveEval function)
+      const saveAction = isEditMode ? updateEvalAction : createEvalAction;
+      if (!saveAction) {
+        toast.error(`${isEditMode ? "Update" : "Create"} action not available`);
+        throw new Error(
+          `${isEditMode ? "Update" : "Create"} action not available`
+        );
+      }
+      try {
         const uniqueAgentIds = getUniqueSelectedAgents();
-        const updateRequest: UpdateEvalBody = {
-            eval_id: evalId!,
-            name: draftState.name || "",
-            description: draftState.description || "",
-            agent_ids: uniqueAgentIds,
-            use_groups: draftState.use_groups ?? false,
+        const saveRequest: SaveEvalBody = {
+          input_eval_id: isEditMode ? evalId! : null, // NULL for create, eval_id for update
+          name: draftState.name || "",
+          description: draftState.description || "",
+          agent_ids: uniqueAgentIds,
+          use_groups: draftState.use_groups ?? false,
           department_ids: finalDepartmentIds || [],
-            active: draftState.active ?? true,
-            dynamic: draftState.dynamic ?? false,
-            model_run_ids: draftState.use_groups
-              ? []
-              : draftState.modelRunIds,
-          };
-          await updateEvalAction({ body: updateRequest });
+          active: draftState.active ?? true,
+          dynamic: draftState.dynamic ?? false,
+          model_run_ids: draftState.use_groups ? [] : draftState.modelRunIds,
+        };
+        await saveAction({ body: saveRequest });
 
         // TODO: Call separate endpoints to add runs/groups with rubric_grade_agents
         // For now, this is a placeholder - full implementation requires API endpoints for add_eval_runs/add_eval_groups
-        toast.success("Eval updated successfully!");
-          router.push("/system/evals");
-        } catch (error) {
-          toast.error(
-            `Failed to update eval: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
-      } else {
-        if (!createEvalAction) {
-          toast.error("Create action not available");
-          throw new Error("Create action not available");
-        }
-        try {
-        const uniqueAgentIds = getUniqueSelectedAgents();
-        const createRequest: CreateEvalBody = {
-            name: draftState.name || "",
-            description: draftState.description || "",
-            agent_ids: uniqueAgentIds,
-            use_groups: draftState.use_groups ?? false,
-          department_ids: finalDepartmentIds || [],
-            active: draftState.active || true,
-            dynamic: draftState.dynamic || false,
-            model_run_ids: draftState.use_groups
-              ? []
-              : draftState.modelRunIds,
-          };
-          await createEvalAction({ body: createRequest });
-
-        // TODO: Call separate endpoints to add runs/groups with rubric_grade_agents
-        // For now, this is a placeholder - full implementation requires API endpoints for add_eval_runs/add_eval_groups
-        toast.success("Eval created successfully!");
-          router.push("/system/evals");
-    } catch (error) {
-      toast.error(
-            `Failed to create eval: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
+        toast.success(
+          `Eval ${isEditMode ? "updated" : "created"} successfully!`
+        );
+        router.push("/system/evals");
+      } catch (error) {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} eval: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        throw error;
       }
     },
     [
@@ -999,22 +1115,24 @@ function EvalComponent({
       createEvalAction,
       router,
       getUniqueSelectedAgents,
+      updateEvalAction || createEvalAction, // Unified save action
     ]
   );
 
   // Step status logic (for GenericForm)
   const getStepStatus = useCallback(
     (stepId: string, formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!(
-        formData["name"] as string | null | undefined
-      )?.trim();
-      const useGroups = (formData["use_groups"] as boolean | null | undefined) ?? false;
-      
+      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
+      const useGroups =
+        (formData["use_groups"] as boolean | null | undefined) ?? false;
+
       // Check if model runs/groups are selected
       const hasRunsOrGroups = useGroups
-        ? ((formData["groupIds"] as string[] | null | undefined) || []).length > 0
-        : ((formData["modelRunIds"] as string[] | null | undefined) || []).length > 0;
-      
+        ? ((formData["groupIds"] as string[] | null | undefined) || []).length >
+          0
+        : ((formData["modelRunIds"] as string[] | null | undefined) || [])
+            .length > 0;
+
       // Note: agentSelectionsByRole, uniqueAgentIds, hasAgents and agentSettings are computed but not currently used - kept for future use
       // const agentSelectionsByRole = (formData["agentSelectionsByRole"] as Record<string, string> | null | undefined) || {};
       // const uniqueAgentIds = Object.values(agentSelectionsByRole).filter((id): id is string => !!id);
@@ -1072,11 +1190,10 @@ function EvalComponent({
         id: "groups",
         title: "Groups",
         description: "Select groups to evaluate.",
-        resetFields: [
-          "groupIds",
-          "groupSearch",
-          "groupShowSelected",
-        ] as (keyof typeof evalSearchParamsClient | string)[],
+        resetFields: ["groupIds", "groupSearch", "groupShowSelected"] as (
+          | keyof typeof evalSearchParamsClient
+          | string
+        )[],
       },
     ],
     []
@@ -1127,14 +1244,15 @@ function EvalComponent({
   // Helper to get agent settings (like getScenarioSettings in Simulation)
   const getAgentSettings = useCallback(
     (agentId: string) => {
-      return draftState.agentSettings[agentId] || {
-        rubric_ids: [],
-        grade_agent_ids: [],
-      };
+      return (
+        draftState.agentSettings[agentId] || {
+          rubric_ids: [],
+          grade_agent_ids: [],
+        }
+      );
     },
     [draftState.agentSettings]
   );
-
 
   // Memoize renderStep to prevent GenericForm re-renders
   const renderStep = useCallback(
@@ -1166,7 +1284,7 @@ function EvalComponent({
     }) => {
       switch (stepId) {
         case "basic":
-  return (
+          return (
             <StepCard
               stepStatus={stepStatus}
               stepNumber={stepNumber}
@@ -1195,33 +1313,33 @@ function EvalComponent({
               resetLabel="Reset"
             >
               <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  data-testid="input-eval-description"
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    data-testid="input-eval-description"
                     value={
                       (stepFormData["description"] as
                         | string
                         | null
                         | undefined) || ""
                     }
-                  onChange={(e) =>
+                    onChange={(e) =>
                       setStepFormData({
                         description: e.target.value || null,
                       })
-                  }
-                  placeholder="Enter a brief description (optional)"
-                  rows={3}
-                  disabled={isReadonly}
-                />
-            </div>
+                    }
+                    placeholder="Enter a brief description (optional)"
+                    rows={3}
+                    disabled={isReadonly}
+                  />
+                </div>
 
-            {/* Department Selection */}
-            {evalData?.valid_department_ids &&
+                {/* Department Selection */}
+                {evalData?.valid_department_ids &&
                 evalData.valid_department_ids.length > 1 ? (
-                <div className="space-y-2">
-                  <Label htmlFor="department">Department</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
                     <GenericPicker
                       items={evalData?.departments || []}
                       itemIds={evalData?.valid_department_ids || []}
@@ -1247,22 +1365,22 @@ function EvalComponent({
                       hideSelectedChips={true}
                       buttonClassName="w-full"
                     />
-                </div>
+                  </div>
                 ) : null}
 
-            {/* Active Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="active"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                    Active
-                  </Label>
-                    <Switch
-                      id="active"
+                {/* Active Switch */}
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="active"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
+                        Active
+                      </Label>
+                      <Switch
+                        id="active"
                         checked={
                           (stepFormData["active"] as
                             | boolean
@@ -1274,29 +1392,29 @@ function EvalComponent({
                         onCheckedChange={(checked) =>
                           setStepFormData({ active: checked })
                         }
-                      disabled={isReadonly}
-                      data-testid="switch-eval-active"
-                    />
+                        disabled={isReadonly}
+                        data-testid="switch-eval-active"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
+                      Inactive evals will not be shown
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground pl-5">
-                  Inactive evals will not be shown
-                </p>
-              </div>
-            </div>
 
-            {/* Dynamic Switch */}
-            <div className="space-y-2 pt-2">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="dynamic"
-                    className="text-sm flex items-center gap-1.5"
-                  >
-                    <Zap className="h-3.5 w-3.5 text-muted-foreground" />
-                    Dynamic
-                  </Label>
-                    <Switch
-                      id="dynamic"
+                {/* Dynamic Switch */}
+                <div className="space-y-2 pt-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor="dynamic"
+                        className="text-sm flex items-center gap-1.5"
+                      >
+                        <Zap className="h-3.5 w-3.5 text-muted-foreground" />
+                        Dynamic
+                      </Label>
+                      <Switch
+                        id="dynamic"
                         checked={
                           (stepFormData["dynamic"] as
                             | boolean
@@ -1308,16 +1426,16 @@ function EvalComponent({
                         onCheckedChange={(checked) =>
                           setStepFormData({ dynamic: checked })
                         }
-                      disabled={isReadonly}
-                      data-testid="switch-eval-dynamic"
-                    />
-                </div>
-                <p className="text-xs text-muted-foreground pl-5">
+                        disabled={isReadonly}
+                        data-testid="switch-eval-dynamic"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground pl-5">
                       When enabled, the agent being evaluated will be re-run
                       with a modified system prompt before grading
-                </p>
-              </div>
-            </div>
+                    </p>
+                  </div>
+                </div>
 
                 {/* Use Groups Switch */}
                 <div className="space-y-2 pt-2">
@@ -1337,7 +1455,12 @@ function EvalComponent({
                             | boolean
                             | null
                             | undefined) ??
-                          ("use_groups" in (evalData || {}) && (evalData as { use_groups?: boolean }).use_groups !== undefined ? (evalData as { use_groups?: boolean }).use_groups : false) ?? false
+                          ("use_groups" in (evalData || {}) &&
+                          (evalData as { use_groups?: boolean }).use_groups !==
+                            undefined
+                            ? (evalData as { use_groups?: boolean }).use_groups
+                            : false) ??
+                          false
                         }
                         onCheckedChange={(checked) =>
                           setStepFormData({ use_groups: checked })
@@ -1345,20 +1468,21 @@ function EvalComponent({
                         disabled={isReadonly}
                         data-testid="switch-eval-use-groups"
                       />
-              </div>
+                    </div>
                     <p className="text-xs text-muted-foreground pl-5">
-                      When enabled, evaluate groups instead of individual model runs
+                      When enabled, evaluate groups instead of individual model
+                      runs
                     </p>
-              </div>
-            </div>
+                  </div>
                 </div>
+              </div>
             </StepCard>
           );
 
-
         case "modelRuns": {
           // Only show if not using groups
-          const useGroups = (stepFormData["use_groups"] as boolean | null | undefined) ?? false;
+          const useGroups =
+            (stepFormData["use_groups"] as boolean | null | undefined) ?? false;
           if (useGroups) {
             return null;
           }
@@ -1392,7 +1516,9 @@ function EvalComponent({
                       modelRunIds: ids,
                     }));
                     // Also update formData for GenericForm
-                    setStepFormData({ modelRunIds: ids.length > 0 ? ids : null });
+                    setStepFormData({
+                      modelRunIds: ids.length > 0 ? ids : null,
+                    });
                   }}
                   readonly={isReadonly}
                   {...(evalId ? { evalId } : {})}
@@ -1404,7 +1530,8 @@ function EvalComponent({
 
         case "groups": {
           // Only show if using groups
-          const useGroups = (stepFormData["use_groups"] as boolean | null | undefined) ?? false;
+          const useGroups =
+            (stepFormData["use_groups"] as boolean | null | undefined) ?? false;
           if (!useGroups) {
             return null;
           }
@@ -1420,17 +1547,13 @@ function EvalComponent({
               stepDescription={stepDescription}
               isReadonly={isReadonly}
               isEditMode={isEditMode}
-              resetFields={[
-                "groupIds",
-                "groupSearch",
-                "groupShowSelected",
-              ]}
+              resetFields={["groupIds", "groupSearch", "groupShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
               {effectiveProfile?.id && (
                 <GroupCardGrid
-                    profileId={effectiveProfile.id}
+                  profileId={effectiveProfile.id}
                   selectedGroupIds={selectedGroupIds}
                   onSelect={(ids) => {
                     setDraftState((prev) => ({
@@ -1440,7 +1563,7 @@ function EvalComponent({
                     // Also update formData for GenericForm
                     setStepFormData({ groupIds: ids.length > 0 ? ids : null });
                   }}
-                    readonly={isReadonly}
+                  readonly={isReadonly}
                   {...(evalId ? { evalId } : {})}
                 />
               )}
@@ -1480,7 +1603,9 @@ function EvalComponent({
     }> = [];
 
     // Add dynamic agent role pickers section after modelRuns/groups step
-    const hasRunsOrGroups = useGroups ? groupIds.length > 0 : modelRunIds.length > 0;
+    const hasRunsOrGroups = useGroups
+      ? groupIds.length > 0
+      : modelRunIds.length > 0;
     if (hasRunsOrGroups && extractedAgentRoles.length > 0) {
       sections.push({
         id: "agent-roles",
@@ -1508,11 +1633,12 @@ function EvalComponent({
                     const agent = agentMapping[id];
                     return agent?.roles?.includes(role);
                   });
-                  
+
                   // Include selected agent even if it's not in filtered list (for backward compatibility)
-                  const allRoleAgentIds = roleAgentId && !roleFilteredIds.includes(roleAgentId)
-                    ? [...roleFilteredIds, roleAgentId]
-                    : roleFilteredIds;
+                  const allRoleAgentIds =
+                    roleAgentId && !roleFilteredIds.includes(roleAgentId)
+                      ? [...roleFilteredIds, roleAgentId]
+                      : roleFilteredIds;
 
                   return (
                     <div key={role} className="space-y-2">
@@ -1602,8 +1728,18 @@ function EvalComponent({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {uniqueAgentIds.map((agentId) => {
                   const agent = (evalData?.agents || []).find(
-                    (a): a is { agent_id: string | null; name: string | null; description: string | null; roles: string[] | null } =>
-                      typeof a === "object" && a !== null && "agent_id" in a && a.agent_id === agentId
+                    (
+                      a
+                    ): a is {
+                      agent_id: string | null;
+                      name: string | null;
+                      description: string | null;
+                      roles: string[] | null;
+                    } =>
+                      typeof a === "object" &&
+                      a !== null &&
+                      "agent_id" in a &&
+                      a.agent_id === agentId
                   );
                   const settings = getAgentSettings(agentId);
                   const selectedRubricIds = settings.rubric_ids || [];
@@ -1616,17 +1752,34 @@ function EvalComponent({
                   // Filter rubrics to only those matching the agent's roles
                   const agentRoles = agent?.roles || [];
                   const allRubrics = evalData?.rubrics || [];
-                  const validRubricsForAgent = allRubrics.filter((rubric): rubric is { rubric_id: string | null; name: string | null; description: string | null; agent_role: string | null } => {
-                    if (typeof rubric !== "object" || rubric === null || !("rubric_id" in rubric)) return false;
-                    // If agent has no roles, show all rubrics (backward compatibility)
-                    if (!agentRoles || agentRoles.length === 0) return true;
-                    // If rubric has no agent_role (NULL/empty/null), show it (general rubric)
-                    const rubricRole = "agent_role" in rubric ? rubric.agent_role : null;
-                    if (rubricRole == null || rubricRole === '') return true;
-                    // Show rubric if its agent_role matches any of the agent's roles
-                    return agentRoles.includes(String(rubricRole));
-                  });
-                  const validRubricIdsForAgent = validRubricsForAgent.map((r) => r.rubric_id).filter((id): id is string => id !== null);
+                  const validRubricsForAgent = allRubrics.filter(
+                    (
+                      rubric
+                    ): rubric is {
+                      rubric_id: string | null;
+                      name: string | null;
+                      description: string | null;
+                      agent_role: string | null;
+                    } => {
+                      if (
+                        typeof rubric !== "object" ||
+                        rubric === null ||
+                        !("rubric_id" in rubric)
+                      )
+                        return false;
+                      // If agent has no roles, show all rubrics (backward compatibility)
+                      if (!agentRoles || agentRoles.length === 0) return true;
+                      // If rubric has no agent_role (NULL/empty/null), show it (general rubric)
+                      const rubricRole =
+                        "agent_role" in rubric ? rubric.agent_role : null;
+                      if (rubricRole == null || rubricRole === "") return true;
+                      // Show rubric if its agent_role matches any of the agent's roles
+                      return agentRoles.includes(String(rubricRole));
+                    }
+                  );
+                  const validRubricIdsForAgent = validRubricsForAgent
+                    .map((r) => r.rubric_id)
+                    .filter((id): id is string => id !== null);
 
                   return (
                     <Card key={agentId} className="p-4">
@@ -1719,7 +1872,6 @@ function EvalComponent({
       });
     }
 
-
     return sections;
   }, [
     extractedAgentRoles,
@@ -1757,7 +1909,7 @@ function EvalComponent({
                     clipRule="evenodd"
                   />
                 </svg>
-        </div>
+              </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-foreground">
                   Eval is read-only
@@ -1793,7 +1945,7 @@ function EvalComponent({
           renderStep={renderStep}
           contentSections={contentSections}
         />
-    </div>
+      </div>
     </TooltipProvider>
   );
 }
@@ -1821,4 +1973,3 @@ export default React.memo(EvalComponent, (prevProps, nextProps) => {
   // All props are equivalent (same content), skip re-render
   return true;
 });
-

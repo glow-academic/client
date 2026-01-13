@@ -2313,6 +2313,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/evals/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Eval
+         * @description Get eval information - handles both new (eval_id = NULL) and detail (eval_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
+         */
+        post: operations["get_eval_api_v4_evals_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/evals/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Eval
+         * @description Save eval - handles both create (eval_id = NULL) and update (eval_id provided).
+         */
+        post: operations["save_eval_api_v4_evals_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/rubrics/list": {
         parameters: {
             query?: never;
@@ -8140,6 +8185,156 @@ export interface components {
             /** Document Type Options */
             document_type_options?: string[] | null;
         };
+        /** GetEvalApiRequest */
+        GetEvalApiRequest: {
+            /** Eval Id */
+            eval_id?: string | null;
+            /** Available Model Runs Search */
+            available_model_runs_search?: string | null;
+            /** Available Model Runs Agent Ids */
+            available_model_runs_agent_ids?: string[] | null;
+            /**
+             * Available Model Runs Page
+             * @default 1
+             */
+            available_model_runs_page: number | null;
+            /**
+             * Available Model Runs Page Size
+             * @default 50
+             */
+            available_model_runs_page_size: number | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Agent Search */
+            agent_search?: string | null;
+            /** Group Search */
+            group_search?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GetEvalApiResponse */
+        GetEvalApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Eval Exists */
+            eval_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetEvalV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetEvalV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetEvalV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetEvalV4DescriptionResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            active_flag_resource?: components["schemas"]["QGetEvalV4FlagResource"] | null;
+            /** Show Active Flag */
+            show_active_flag?: boolean | null;
+            /** Active Flag Agent Id */
+            active_flag_agent_id?: string | null;
+            /** Active Flag Required */
+            active_flag_required?: boolean | null;
+            /** Dynamic Flag Id */
+            dynamic_flag_id?: string | null;
+            dynamic_flag_resource?: components["schemas"]["QGetEvalV4FlagResource"] | null;
+            /** Show Dynamic Flag */
+            show_dynamic_flag?: boolean | null;
+            /** Dynamic Flag Agent Id */
+            dynamic_flag_agent_id?: string | null;
+            /** Dynamic Flag Required */
+            dynamic_flag_required?: boolean | null;
+            /** Groups Flag Id */
+            groups_flag_id?: string | null;
+            groups_flag_resource?: components["schemas"]["QGetEvalV4FlagResource"] | null;
+            /** Show Groups Flag */
+            show_groups_flag?: boolean | null;
+            /** Groups Flag Agent Id */
+            groups_flag_agent_id?: string | null;
+            /** Groups Flag Required */
+            groups_flag_required?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetEvalV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetEvalV4Department"][] | null;
+            /** Agent Ids */
+            agent_ids?: string[] | null;
+            /** Agent Resources */
+            agent_resources?: components["schemas"]["QGetEvalV4Agent"][] | null;
+            /** Show Agents */
+            show_agents?: boolean | null;
+            /** Agents Agent Id */
+            agents_agent_id?: string | null;
+            /** Agents Required */
+            agents_required?: boolean | null;
+            /** Agent Suggestions */
+            agent_suggestions?: string[] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetEvalV4Agent"][] | null;
+            /** Rubric Ids */
+            rubric_ids?: string[] | null;
+            /** Rubric Resources */
+            rubric_resources?: components["schemas"]["QGetEvalV4Rubric"][] | null;
+            /** Show Rubrics */
+            show_rubrics?: boolean | null;
+            /** Rubrics Agent Id */
+            rubrics_agent_id?: string | null;
+            /** Rubrics Required */
+            rubrics_required?: boolean | null;
+            /** Rubric Suggestions */
+            rubric_suggestions?: string[] | null;
+            /** Rubrics */
+            rubrics?: components["schemas"]["QGetEvalV4Rubric"][] | null;
+            /** Available Model Runs */
+            available_model_runs?: components["schemas"]["QGetEvalV4AvailableModelRun"][] | null;
+            /** Available Model Runs Total Count */
+            available_model_runs_total_count?: number | null;
+            /** Available Model Runs Page */
+            available_model_runs_page?: number | null;
+            /** Available Model Runs Page Size */
+            available_model_runs_page_size?: number | null;
+            /** Available Model Runs Total Pages */
+            available_model_runs_total_pages?: number | null;
+            /** Available Groups */
+            available_groups?: components["schemas"]["QGetEvalV4AvailableGroup"][] | null;
+        };
         /** GetEvalAttemptApiRequest */
         GetEvalAttemptApiRequest: {
             /**
@@ -13659,6 +13854,108 @@ export interface components {
             agent_id: string | null;
             /** Agent Name */
             agent_name: string | null;
+        };
+        /** QGetEvalV4Agent */
+        QGetEvalV4Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetEvalV4AvailableGroup */
+        QGetEvalV4AvailableGroup: {
+            /** Group Id */
+            group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Member Count */
+            member_count: number | null;
+        };
+        /** QGetEvalV4AvailableModelRun */
+        QGetEvalV4AvailableModelRun: {
+            /** Model Run Id */
+            model_run_id: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Model Id */
+            model_id: string | null;
+            /** Model Name */
+            model_name: string | null;
+            /** Profile Id */
+            profile_id: string | null;
+            /** Profile Name */
+            profile_name: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Agent Name */
+            agent_name: string | null;
+            /** Persona Id */
+            persona_id: string | null;
+            /** Persona Name */
+            persona_name: string | null;
+            /** Actor Type */
+            actor_type: string | null;
+        };
+        /** QGetEvalV4Department */
+        QGetEvalV4Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetEvalV4DescriptionResource */
+        QGetEvalV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetEvalV4FlagResource */
+        QGetEvalV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetEvalV4NameResource */
+        QGetEvalV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetEvalV4Rubric */
+        QGetEvalV4Rubric: {
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Agent Role */
+            agent_role: string | null;
         };
         /** QGetFeedbackListV4FeedbackRow */
         QGetFeedbackListV4FeedbackRow: {
@@ -19183,6 +19480,43 @@ export interface components {
         SaveDocumentApiResponse: {
             /** Document Id */
             document_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** SaveEvalApiRequest */
+        SaveEvalApiRequest: {
+            /** Name */
+            name: string;
+            /** Agent Ids */
+            agent_ids: string[];
+            /** Description */
+            description?: string | null;
+            /**
+             * Use Groups
+             * @default false
+             */
+            use_groups: boolean | null;
+            /** Model Run Ids */
+            model_run_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean | null;
+            /**
+             * Dynamic
+             * @default false
+             */
+            dynamic: boolean | null;
+            /** Input Eval Id */
+            input_eval_id?: string | null;
+        };
+        /** SaveEvalApiResponse */
+        SaveEvalApiResponse: {
+            /** Eval Id */
+            eval_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -24888,6 +25222,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateEvalApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_eval_api_v4_evals_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetEvalApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetEvalApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_eval_api_v4_evals_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveEvalApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveEvalApiResponse"];
                 };
             };
             /** @description Validation Error */

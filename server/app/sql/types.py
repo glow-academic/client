@@ -11184,6 +11184,314 @@ class UpdateDocumentNameApiResponse(BaseModel):
 
 
 
+# Generated from: get_eval
+
+class GetEvalSqlParams(BaseModel):
+
+    profile_id: UUID
+    eval_id: UUID | None = None
+    available_model_runs_search: str | None = None
+    available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    available_model_runs_page: int | None = 1
+    available_model_runs_page_size: int | None = 50
+    draft_id: UUID | None = None
+    agent_search: str | None = None
+    group_search: str | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.eval_id,
+            self.available_model_runs_search,
+            self.available_model_runs_agent_ids,
+            self.available_model_runs_page,
+            self.available_model_runs_page_size,
+            self.draft_id,
+            self.agent_search,
+            self.group_search,
+            self.mcp,
+        )
+
+class QGetEvalV4Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetEvalV4AvailableGroup(BaseModel):
+
+    group_id: UUID | None
+    name: str | None
+    description: str | None
+    created_at: str | None
+    member_count: int | None
+
+
+
+
+class QGetEvalV4AvailableModelRun(BaseModel):
+
+    model_run_id: UUID | None
+    created_at: str | None
+    model_id: UUID | None
+    model_name: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    agent_id: UUID | None
+    agent_name: str | None
+    persona_id: UUID | None
+    persona_name: str | None
+    actor_type: str | None
+
+
+
+
+class QGetEvalV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetEvalV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetEvalV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetEvalV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetEvalV4Rubric(BaseModel):
+
+    rubric_id: UUID | None
+    name: str | None
+    description: str | None
+    agent_role: str | None
+
+class GetEvalSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    eval_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetEvalV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetEvalV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetEvalV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetEvalV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetEvalV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    dynamic_flag_id: UUID | None = None
+    dynamic_flag_resource: QGetEvalV4FlagResource | None = None
+    show_dynamic_flag: bool | None = None
+    dynamic_flag_agent_id: UUID | None = None
+    dynamic_flag_required: bool | None = None
+    groups_flag_id: UUID | None = None
+    groups_flag_resource: QGetEvalV4FlagResource | None = None
+    show_groups_flag: bool | None = None
+    groups_flag_agent_id: UUID | None = None
+    groups_flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetEvalV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetEvalV4Department] | None = None
+    agent_ids: list[UUID] | None = None
+    agent_resources: list[QGetEvalV4Agent] | None = None
+    show_agents: bool | None = None
+    agents_agent_id: UUID | None = None
+    agents_required: bool | None = None
+    agent_suggestions: list[UUID] | None = None
+    agents: list[QGetEvalV4Agent] | None = None
+    rubric_ids: list[UUID] | None = None
+    rubric_resources: list[QGetEvalV4Rubric] | None = None
+    show_rubrics: bool | None = None
+    rubrics_agent_id: UUID | None = None
+    rubrics_required: bool | None = None
+    rubric_suggestions: list[UUID] | None = None
+    rubrics: list[QGetEvalV4Rubric] | None = None
+    available_model_runs: list[QGetEvalV4AvailableModelRun] | None = None
+    available_model_runs_total_count: int | None = None
+    available_model_runs_page: int | None = None
+    available_model_runs_page_size: int | None = None
+    available_model_runs_total_pages: int | None = None
+    available_groups: list[QGetEvalV4AvailableGroup] | None = None
+
+class GetEvalApiRequest(BaseModel):
+
+    eval_id: UUID | None = None
+    available_model_runs_search: str | None = None
+    available_model_runs_agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    available_model_runs_page: int | None = 1
+    available_model_runs_page_size: int | None = 50
+    draft_id: UUID | None = None
+    agent_search: str | None = None
+    group_search: str | None = None
+    mcp: bool | None = False
+
+class GetEvalApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    eval_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetEvalV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetEvalV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetEvalV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetEvalV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetEvalV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    dynamic_flag_id: UUID | None = None
+    dynamic_flag_resource: QGetEvalV4FlagResource | None = None
+    show_dynamic_flag: bool | None = None
+    dynamic_flag_agent_id: UUID | None = None
+    dynamic_flag_required: bool | None = None
+    groups_flag_id: UUID | None = None
+    groups_flag_resource: QGetEvalV4FlagResource | None = None
+    show_groups_flag: bool | None = None
+    groups_flag_agent_id: UUID | None = None
+    groups_flag_required: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetEvalV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetEvalV4Department] | None = None
+    agent_ids: list[UUID] | None = None
+    agent_resources: list[QGetEvalV4Agent] | None = None
+    show_agents: bool | None = None
+    agents_agent_id: UUID | None = None
+    agents_required: bool | None = None
+    agent_suggestions: list[UUID] | None = None
+    agents: list[QGetEvalV4Agent] | None = None
+    rubric_ids: list[UUID] | None = None
+    rubric_resources: list[QGetEvalV4Rubric] | None = None
+    show_rubrics: bool | None = None
+    rubrics_agent_id: UUID | None = None
+    rubrics_required: bool | None = None
+    rubric_suggestions: list[UUID] | None = None
+    rubrics: list[QGetEvalV4Rubric] | None = None
+    available_model_runs: list[QGetEvalV4AvailableModelRun] | None = None
+    available_model_runs_total_count: int | None = None
+    available_model_runs_page: int | None = None
+    available_model_runs_page_size: int | None = None
+    available_model_runs_total_pages: int | None = None
+    available_groups: list[QGetEvalV4AvailableGroup] | None = None
+
+
+
+# Generated from: save_eval
+
+class SaveEvalSqlParams(BaseModel):
+
+    name: str
+    agent_ids: list[UUID]
+    profile_id: UUID
+    description: str | None = None
+    use_groups: bool | None = False
+    model_run_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    active: bool | None = True
+    dynamic: bool | None = False
+    input_eval_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.agent_ids,
+            self.profile_id,
+            self.description,
+            self.use_groups,
+            self.model_run_ids,
+            self.department_ids,
+            self.active,
+            self.dynamic,
+            self.input_eval_id,
+        )
+
+class SaveEvalSqlRow(BaseModel):
+
+    eval_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveEvalApiRequest(BaseModel):
+
+    name: str
+    agent_ids: list[UUID]
+    description: str | None = None
+    use_groups: bool | None = False
+    model_run_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    active: bool | None = True
+    dynamic: bool | None = False
+    input_eval_id: UUID | None = None
+
+class SaveEvalApiResponse(BaseModel):
+
+    eval_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: create_feedback
 
 class CreateFeedbackSqlParams(BaseModel):
@@ -33637,6 +33945,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateDocumentNameApiRequest",
         "UpdateDocumentNameApiResponse",
     ),
+    "app/sql/v4/evals/get_eval_complete.sql": (
+        "GetEvalSqlParams",
+        "GetEvalSqlRow",
+        "GetEvalApiRequest",
+        "GetEvalApiResponse",
+    ),
+    "app/sql/v4/evals/save_eval_complete.sql": (
+        "SaveEvalSqlParams",
+        "SaveEvalSqlRow",
+        "SaveEvalApiRequest",
+        "SaveEvalApiResponse",
+    ),
     "app/sql/v4/feedback/create_feedback_complete.sql": (
         "CreateFeedbackSqlParams",
         "CreateFeedbackSqlRow",
@@ -36808,6 +37128,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/documents/update_document_name_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/evals/get_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/evals/save_eval_complete.sql"]
     ) -> SqlString: ...
 
     @overload

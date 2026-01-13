@@ -12,17 +12,17 @@ import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalDetailIn = InputOf<"/api/v4/evals/detail", "post">;
-type EvalDetailOut = OutputOf<"/api/v4/evals/detail", "post">;
-type UpdateEvalIn = InputOf<"/api/v4/evals/update", "post">;
-type UpdateEvalOut = OutputOf<"/api/v4/evals/update", "post">;
+type GetEvalIn = InputOf<"/api/v4/evals/get", "post">;
+type GetEvalOut = OutputOf<"/api/v4/evals/get", "post">;
+type SaveEvalIn = InputOf<"/api/v4/evals/save", "post">;
+type SaveEvalOut = OutputOf<"/api/v4/evals/save", "post">;
 type PatchEvalDraftIn = InputOf<"/api/v4/evals/draft", "patch">;
 type PatchEvalDraftOut = OutputOf<"/api/v4/evals/draft", "patch">;
 // Note: Run/stop eval functionality moved to websocket events (evals_start, evals_stop)
 
 /** ---- Direct fetch for eval detail ---- */
-const getEvalDetail = async (input: EvalDetailIn): Promise<EvalDetailOut> => {
-  return api.post("/evals/detail", input, {
+const getEvalDetail = async (input: GetEvalIn): Promise<GetEvalOut> => {
+  return api.post("/evals/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -40,10 +40,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
+async function saveEval(input: SaveEvalIn): Promise<SaveEvalOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/evals/update", input);
+  return api.post("/evals/save", input);
 }
 
 async function patchEvalDraft(
@@ -92,15 +92,15 @@ export default async function EvalDetailPage({
   const q = loadEvalSearchParams(searchParamsObj);
 
   // Fetch eval detail with draft_id and search params
-  const input: EvalDetailIn = {
+  const input: GetEvalIn = {
     body: {
-      eval_id: evalId,
+      eval_id: evalId, // Provided for detail mode
       draft_id: q.draftId ?? null,
       agent_search: q.agentSearch ?? null,
       group_search: q.groupSearch ?? null,
       // Note: available_model_runs_search uses modelRunSearch from URL
       available_model_runs_search: q.modelRunSearch ?? null,
-    } as EvalDetailIn["body"],
+    } as GetEvalIn["body"],
   };
   const evalDetail = await getEvalDetail(input);
 
@@ -113,7 +113,7 @@ export default async function EvalDetailPage({
       <Eval
         evalId={evalId}
         evalDetail={evalDetail}
-        updateEvalAction={updateEval}
+        updateEvalAction={saveEval}
         patchEvalDraftAction={patchEvalDraft}
       />
     </div>
@@ -122,10 +122,10 @@ export default async function EvalDetailPage({
 
 /** ---- Export types for client component ---- */
 export type {
-  EvalDetailIn,
-  EvalDetailOut,
+  GetEvalIn as EvalDetailIn,
+  GetEvalOut as EvalDetailOut,
   PatchEvalDraftIn,
   PatchEvalDraftOut,
-  UpdateEvalIn,
-  UpdateEvalOut,
+  SaveEvalIn as UpdateEvalIn,
+  SaveEvalOut as UpdateEvalOut,
 };

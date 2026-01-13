@@ -46,3 +46,17 @@ try:
     router.include_router(update_router)
 except ImportError:
     pass
+
+try:
+    from app.api.v4.evals.get import router as get_router
+
+    router.include_router(get_router)
+except ImportError:
+    pass
+
+try:
+    from app.api.v4.evals.save import router as save_router
+
+    router.include_router(save_router)
+except ImportError:
+    pass

@@ -15,16 +15,16 @@ import {
 } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalNewIn = InputOf<"/api/v4/evals/new", "post">;
-type EvalNewOut = OutputOf<"/api/v4/evals/new", "post">;
-type CreateEvalIn = InputOf<"/api/v4/evals/create", "post">;
-type CreateEvalOut = OutputOf<"/api/v4/evals/create", "post">;
+type GetEvalIn = InputOf<"/api/v4/evals/get", "post">;
+type GetEvalOut = OutputOf<"/api/v4/evals/get", "post">;
+type SaveEvalIn = InputOf<"/api/v4/evals/save", "post">;
+type SaveEvalOut = OutputOf<"/api/v4/evals/save", "post">;
 type PatchEvalDraftIn = InputOf<"/api/v4/evals/draft", "patch">;
 type PatchEvalDraftOut = OutputOf<"/api/v4/evals/draft", "patch">;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getEvalDefault = async (input: EvalNewIn): Promise<EvalNewOut> => {
-  return api.post("/evals/new", input, {
+const getEvalDefault = async (input: GetEvalIn): Promise<GetEvalOut> => {
+  return api.post("/evals/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -42,10 +42,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
+async function saveEval(input: SaveEvalIn): Promise<SaveEvalOut> {
   "use server";
-  // profileId removed - comes from X-Profile-Id header automatically
-  return api.post("/evals/create", input);
+  // profileId comes from X-Profile-Id header automatically
+  return api.post("/evals/save", input);
 }
 
 async function patchEvalDraft(
@@ -91,14 +91,15 @@ export default async function NewEvalPage({
   const q = loadEvalSearchParams(searchParamsObj);
 
   // Fetch eval default data (for dropdowns and defaults) with draft_id and search params
-  const input: EvalNewIn = {
+  const input: GetEvalIn = {
     body: {
+      eval_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
       agent_search: q.agentSearch ?? null,
       group_search: q.groupSearch ?? null,
       // Note: available_model_runs_search uses modelRunSearch from URL
       available_model_runs_search: q.modelRunSearch ?? null,
-    } as EvalNewIn["body"],
+    } as GetEvalIn["body"],
   };
   const evalDetailDefault = await getEvalDefault(input);
 
@@ -110,7 +111,7 @@ export default async function NewEvalPage({
     >
       <Eval
         evalDetailDefault={evalDetailDefault}
-        createEvalAction={createEval}
+        createEvalAction={saveEval}
         patchEvalDraftAction={patchEvalDraft}
       />
     </div>
@@ -119,10 +120,10 @@ export default async function NewEvalPage({
 
 /** ---- Export types for client component ---- */
 export type {
-  EvalNewIn,
-  EvalNewOut,
-  CreateEvalIn,
-  CreateEvalOut,
+  GetEvalIn as EvalNewIn,
+  GetEvalOut as EvalNewOut,
+  SaveEvalIn as CreateEvalIn,
+  SaveEvalOut as CreateEvalOut,
   PatchEvalDraftIn,
   PatchEvalDraftOut,
 };
