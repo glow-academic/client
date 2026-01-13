@@ -23967,6 +23967,301 @@ class UpdateRubricNameApiResponse(BaseModel):
 
 
 
+# Generated from: get_rubric
+
+class GetRubricSqlParams(BaseModel):
+
+    profile_id: UUID
+    rubric_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.rubric_id,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetRubricV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4PointsOption(BaseModel):
+
+    id: UUID | None
+    value: int | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4PointsResource(BaseModel):
+
+    id: UUID | None
+    value: int | None
+    generated: bool | None
+
+
+
+
+class QGetRubricV4Standard(BaseModel):
+
+    standard_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+
+
+
+
+class QGetRubricV4StandardGroup(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    position: int | None
+    active: bool | None
+    standard_ids: list[UUID] | None
+
+
+
+
+class QGetRubricV4StandardGroupResource(BaseModel):
+
+    standard_group_id: UUID | None
+    name: str | None
+    description: str | None
+    points: int | None
+    pass_points: int | None
+    position: int | None
+    active: bool | None
+    standard_ids: list[UUID] | None
+    generated: bool | None
+
+class GetRubricSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    rubric_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetRubricV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetRubricV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetRubricV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetRubricV4DescriptionResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetRubricV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetRubricV4Department] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetRubricV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetRubricV4FlagResource] | None = None
+    total_points_id: UUID | None = None
+    total_points_resource: QGetRubricV4PointsResource | None = None
+    show_points: bool | None = None
+    points_agent_id: UUID | None = None
+    points_required: bool | None = None
+    points_suggestions: list[UUID] | None = None
+    points: list[QGetRubricV4PointsOption] | None = None
+    pass_points_id: UUID | None = None
+    pass_points_resource: QGetRubricV4PointsResource | None = None
+    show_pass_points: bool | None = None
+    pass_points_agent_id: UUID | None = None
+    pass_points_required: bool | None = None
+    pass_points_suggestions: list[UUID] | None = None
+    pass_points: list[QGetRubricV4PointsOption] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_group_resources: list[QGetRubricV4StandardGroupResource] | None = None
+    show_standard_groups: bool | None = None
+    standard_groups_agent_id: UUID | None = None
+    standard_groups_required: bool | None = None
+    standard_group_suggestions: list[UUID] | None = None
+    standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
+    standard_groups_legacy: list[QGetRubricV4StandardGroup] | None = None
+    standards: list[QGetRubricV4Standard] | None = None
+    draft_version: int | None = None
+    draft_standard_groups: Any | None = None
+    draft_standards: Any | None = None
+    draft_grid_cells: Any | None = None
+
+class GetRubricApiRequest(BaseModel):
+
+    rubric_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetRubricApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    rubric_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetRubricV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetRubricV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetRubricV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetRubricV4DescriptionResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetRubricV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetRubricV4Department] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetRubricV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetRubricV4FlagResource] | None = None
+    total_points_id: UUID | None = None
+    total_points_resource: QGetRubricV4PointsResource | None = None
+    show_points: bool | None = None
+    points_agent_id: UUID | None = None
+    points_required: bool | None = None
+    points_suggestions: list[UUID] | None = None
+    points: list[QGetRubricV4PointsOption] | None = None
+    pass_points_id: UUID | None = None
+    pass_points_resource: QGetRubricV4PointsResource | None = None
+    show_pass_points: bool | None = None
+    pass_points_agent_id: UUID | None = None
+    pass_points_required: bool | None = None
+    pass_points_suggestions: list[UUID] | None = None
+    pass_points: list[QGetRubricV4PointsOption] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_group_resources: list[QGetRubricV4StandardGroupResource] | None = None
+    show_standard_groups: bool | None = None
+    standard_groups_agent_id: UUID | None = None
+    standard_groups_required: bool | None = None
+    standard_group_suggestions: list[UUID] | None = None
+    standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
+    standard_groups_legacy: list[QGetRubricV4StandardGroup] | None = None
+    standards: list[QGetRubricV4Standard] | None = None
+    draft_version: int | None = None
+    draft_standard_groups: Any | None = None
+    draft_standards: Any | None = None
+    draft_grid_cells: Any | None = None
+
+
+
+# Generated from: save_rubric
+
+class SaveRubricSqlParams(BaseModel):
+
+    name_id: UUID
+    department_ids: list[UUID]
+    profile_id: UUID
+    input_rubric_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    total_points_id: UUID | None = None
+    pass_points_id: UUID | None = None
+    standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_domain_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+            self.department_ids,
+            self.profile_id,
+            self.input_rubric_id,
+            self.description_id,
+            self.active_flag_id,
+            self.total_points_id,
+            self.pass_points_id,
+            self.standard_group_ids,
+            self.rubric_domain_id,
+        )
+
+class SaveRubricSqlRow(BaseModel):
+
+    rubric_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveRubricApiRequest(BaseModel):
+
+    name_id: UUID
+    department_ids: list[UUID]
+    input_rubric_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    total_points_id: UUID | None = None
+    pass_points_id: UUID | None = None
+    standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    rubric_domain_id: UUID | None = None
+
+class SaveRubricApiResponse(BaseModel):
+
+    rubric_id: UUID | None = None
+    actor_name: str | None = None
+
+
+
 # Generated from: standard_group_descriptions_complete
 
 class QStandardGroupDescriptionsCompleteV4Description(BaseModel):
@@ -34307,6 +34602,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateRubricNameApiRequest",
         "UpdateRubricNameApiResponse",
     ),
+    "app/sql/v4/rubrics/get_rubric_complete.sql": (
+        "GetRubricSqlParams",
+        "GetRubricSqlRow",
+        "GetRubricApiRequest",
+        "GetRubricApiResponse",
+    ),
+    "app/sql/v4/rubrics/save_rubric_complete.sql": (
+        "SaveRubricSqlParams",
+        "SaveRubricSqlRow",
+        "SaveRubricApiRequest",
+        "SaveRubricApiResponse",
+    ),
     "app/sql/v4/rubrics/standard_group_descriptions_complete_complete.sql": (
         "StandardGroupDescriptionsCompleteSqlParams",
         "StandardGroupDescriptionsCompleteSqlRow",
@@ -37216,6 +37523,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/rubric/update_rubric_name_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/rubrics/get_rubric_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/rubrics/save_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload

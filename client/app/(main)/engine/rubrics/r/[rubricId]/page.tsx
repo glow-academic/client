@@ -13,13 +13,10 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricDetailIn = InputOf<"/api/v4/rubrics/detail", "post">;
-type RubricDetailOut = OutputOf<"/api/v4/rubrics/detail", "post">;
-
-type RubricNewIn = InputOf<"/api/v4/rubrics/new", "post">;
-type RubricNewOut = OutputOf<"/api/v4/rubrics/new", "post">;
-type UpdateRubricIn = InputOf<"/api/v4/rubrics/update", "post">;
-type UpdateRubricOut = OutputOf<"/api/v4/rubrics/update", "post">;
+type GetRubricIn = InputOf<"/api/v4/rubrics/get", "post">;
+type GetRubricOut = OutputOf<"/api/v4/rubrics/get", "post">;
+type SaveRubricIn = InputOf<"/api/v4/rubrics/save", "post">;
+type SaveRubricOut = OutputOf<"/api/v4/rubrics/save", "post">;
 type PatchRubricDraftIn = InputOf<"/api/v4/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v4/rubrics/draft", "patch">;
 
@@ -27,27 +24,12 @@ type PatchRubricDraftOut = OutputOf<"/api/v4/rubrics/draft", "patch">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getRubric = async (
-  rubricId: string,
+  rubricId: string | null,
   draftId: string | null
-): Promise<RubricDetailOut> => {
+): Promise<GetRubricOut> => {
   return api.post(
-    "/rubrics/detail",
+    "/rubrics/get",
     { body: { rubric_id: rubricId, draft_id: draftId || null } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
-};
-
-const getRubricDefault = async (
-  draftId: string | null
-): Promise<RubricNewOut> => {
-  return api.post(
-    "/rubrics/new",
-    { body: { draft_id: draftId || null } },
     {
       cache: "no-store",
       headers: {
@@ -67,8 +49,8 @@ export async function generateMetadata(
   try {
     const rubric = await getRubric(rubricId, null);
     return {
-      title: `${rubric?.name || "Rubric"}`,
-      description: `${rubric?.name ? `${rubric.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description ? ` ${rubric.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
+      title: `${rubric?.name_resource?.name || "Rubric"}`,
+      description: `${rubric?.name_resource?.name ? `${rubric.name_resource.name} - ` : ""}Assessment rubric for teaching assistant evaluation.${rubric?.description_resource?.description ? ` ${rubric.description_resource.description}` : ""} Customize rubric-based evaluation criteria to assess pedagogical performance, teaching effectiveness, and student interaction skills.`,
     };
   } catch {
     // Fall through to default metadata
@@ -112,16 +94,9 @@ export default async function EditRubricPage({
   const loadRubricSearchParams = createLoader(rubricSearchParams);
   const q = loadRubricSearchParams(searchParamsObj);
 
-  // Fetch data based on mode (edit vs create) with draft_id
+  // Fetch data using unified get endpoint
   try {
-    const [rubricDetail, rubricNew] = await Promise.all([
-      rubricId
-        ? getRubric(rubricId, q.draftId ?? null).catch(() => null)
-        : Promise.resolve(null),
-      !rubricId
-        ? getRubricDefault(q.draftId ?? null).catch(() => null)
-        : Promise.resolve(null),
-    ]);
+    const rubricData = await getRubric(rubricId, q.draftId ?? null);
 
     return (
       <div
@@ -131,9 +106,8 @@ export default async function EditRubricPage({
       >
         <Rubric
           rubricId={rubricId}
-          {...(rubricDetail && { rubricDetail })}
-          {...(rubricNew && { rubricDetailDefault: rubricNew })}
-          updateRubricAction={updateRubric}
+          rubricData={rubricData}
+          saveRubricAction={saveRubric}
           patchRubricDraftAction={patchRubricDraft}
         />
       </div>
@@ -160,11 +134,11 @@ export default async function EditRubricPage({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
+async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/rubrics/update", input);
+  return api.post("/rubrics/save", input);
 }
 
 async function patchRubricDraft(
@@ -175,14 +149,4 @@ async function patchRubricDraft(
   return api.patch("/rubrics/draft", input);
 }
 
-/** ---- Export types for client component (type-only imports) ---- */
-export type {
-  RubricDetailIn,
-  RubricDetailOut,
-  RubricNewIn,
-  RubricNewOut,
-  UpdateRubricIn,
-  UpdateRubricOut,
-  PatchRubricDraftIn,
-  PatchRubricDraftOut,
-};
+// Types are now defined inline in components using InputOf/OutputOf

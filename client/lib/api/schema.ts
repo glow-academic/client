@@ -2403,6 +2403,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/rubrics/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Rubric
+         * @description Get rubric information - handles both new (rubric_id = NULL) and detail (rubric_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
+         */
+        post: operations["get_rubric_api_v4_rubrics_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/rubrics/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Rubric
+         * @description Save rubric - handles both create (rubric_id = NULL) and update (rubric_id provided).
+         */
+        post: operations["save_rubric_api_v4_rubrics_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/rubrics/detail": {
         parameters: {
             query?: never;
@@ -9683,6 +9728,134 @@ export interface components {
             /** Fields */
             fields?: components["schemas"]["QReportsOverviewV4Field"][] | null;
         };
+        /** GetRubricApiRequest */
+        GetRubricApiRequest: {
+            /** Rubric Id */
+            rubric_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GetRubricApiResponse */
+        GetRubricApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Rubric Exists */
+            rubric_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetRubricV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetRubricV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetRubricV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetRubricV4DescriptionResource"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetRubricV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetRubricV4Department"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetRubricV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["QGetRubricV4FlagResource"][] | null;
+            /** Total Points Id */
+            total_points_id?: string | null;
+            total_points_resource?: components["schemas"]["QGetRubricV4PointsResource"] | null;
+            /** Show Points */
+            show_points?: boolean | null;
+            /** Points Agent Id */
+            points_agent_id?: string | null;
+            /** Points Required */
+            points_required?: boolean | null;
+            /** Points Suggestions */
+            points_suggestions?: string[] | null;
+            /** Points */
+            points?: components["schemas"]["QGetRubricV4PointsOption"][] | null;
+            /** Pass Points Id */
+            pass_points_id?: string | null;
+            pass_points_resource?: components["schemas"]["QGetRubricV4PointsResource"] | null;
+            /** Show Pass Points */
+            show_pass_points?: boolean | null;
+            /** Pass Points Agent Id */
+            pass_points_agent_id?: string | null;
+            /** Pass Points Required */
+            pass_points_required?: boolean | null;
+            /** Pass Points Suggestions */
+            pass_points_suggestions?: string[] | null;
+            /** Pass Points */
+            pass_points?: components["schemas"]["QGetRubricV4PointsOption"][] | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Standard Group Resources */
+            standard_group_resources?: components["schemas"]["QGetRubricV4StandardGroupResource"][] | null;
+            /** Show Standard Groups */
+            show_standard_groups?: boolean | null;
+            /** Standard Groups Agent Id */
+            standard_groups_agent_id?: string | null;
+            /** Standard Groups Required */
+            standard_groups_required?: boolean | null;
+            /** Standard Group Suggestions */
+            standard_group_suggestions?: string[] | null;
+            /** Standard Groups */
+            standard_groups?: components["schemas"]["QGetRubricV4StandardGroupResource"][] | null;
+            /** Standard Groups Legacy */
+            standard_groups_legacy?: components["schemas"]["QGetRubricV4StandardGroup"][] | null;
+            /** Standards */
+            standards?: components["schemas"]["QGetRubricV4Standard"][] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Draft Standard Groups */
+            draft_standard_groups?: unknown | null;
+            /** Draft Standards */
+            draft_standards?: unknown | null;
+            /** Draft Grid Cells */
+            draft_grid_cells?: unknown | null;
+        };
         /** GetRubricDetailApiRequest */
         GetRubricDetailApiRequest: {
             /**
@@ -14690,6 +14863,117 @@ export interface components {
             /** Standard Ids */
             standard_ids: string[] | null;
         };
+        /** QGetRubricV4Department */
+        QGetRubricV4Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRubricV4DescriptionResource */
+        QGetRubricV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRubricV4FlagResource */
+        QGetRubricV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRubricV4NameResource */
+        QGetRubricV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRubricV4PointsOption */
+        QGetRubricV4PointsOption: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRubricV4PointsResource */
+        QGetRubricV4PointsResource: {
+            /** Id */
+            id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetRubricV4Standard */
+        QGetRubricV4Standard: {
+            /** Standard Id */
+            standard_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** QGetRubricV4StandardGroup */
+        QGetRubricV4StandardGroup: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Standard Ids */
+            standard_ids: string[] | null;
+        };
+        /** QGetRubricV4StandardGroupResource */
+        QGetRubricV4StandardGroupResource: {
+            /** Standard Group Id */
+            standard_group_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Points */
+            points: number | null;
+            /** Pass Points */
+            pass_points: number | null;
+            /** Position */
+            position: number | null;
+            /** Active */
+            active: boolean | null;
+            /** Standard Ids */
+            standard_ids: string[] | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetRubricsListV4Department */
         QGetRubricsListV4Department: {
             /** Department Id */
@@ -18753,6 +19037,37 @@ export interface components {
         SavePersonaApiResponse: {
             /** Persona Id */
             persona_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** SaveRubricApiRequest */
+        SaveRubricApiRequest: {
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Input Rubric Id */
+            input_rubric_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Total Points Id */
+            total_points_id?: string | null;
+            /** Pass Points Id */
+            pass_points_id?: string | null;
+            /** Standard Group Ids */
+            standard_group_ids?: string[] | null;
+            /** Rubric Domain Id */
+            rubric_domain_id?: string | null;
+        };
+        /** SaveRubricApiResponse */
+        SaveRubricApiResponse: {
+            /** Rubric Id */
+            rubric_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -24529,6 +24844,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetRubricsListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rubric_api_v4_rubrics_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetRubricApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetRubricApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_rubric_api_v4_rubrics_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveRubricApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
