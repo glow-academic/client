@@ -27742,6 +27742,260 @@ class GetKeyIdForModelWithProfileApiResponse(BaseModel):
 
 
 
+# Generated from: get_setting
+
+class GetSettingSqlParams(BaseModel):
+
+    profile_id: UUID
+    setting_id: UUID | None = None
+    color_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.setting_id,
+            self.color_search,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetSettingV4AuthItem(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    encrypted: bool | None
+
+class QGetSettingV4Auth(BaseModel):
+
+    auth_id: UUID | None
+    name: str | None
+    description: str | None
+    slug: str | None
+    active: bool | None
+    auth_items: list[QGetSettingV4AuthItem] | None
+
+
+
+
+class QGetSettingV4ColorOption(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    hex_code: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4ColorResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    hex_code: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    masked_key: str | None
+    description: str | None
+    active: bool | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetSettingV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetSettingV4Provider(BaseModel):
+
+    provider_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+    active: bool | None
+
+class GetSettingSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    setting_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetSettingV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetSettingV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetSettingV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetSettingV4DescriptionResource] | None = None
+    color_ids: list[UUID] | None = None
+    color_resources: list[QGetSettingV4ColorResource] | None = None
+    show_colors: bool | None = None
+    colors_agent_id: UUID | None = None
+    colors_required: bool | None = None
+    color_suggestions: list[UUID] | None = None
+    colors: list[QGetSettingV4ColorOption] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetSettingV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetSettingV4FlagResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetSettingV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetSettingV4Department] | None = None
+    auth_ids: list[UUID] | None = None
+    auth_resources: list[QGetSettingV4Auth] | None = None
+    show_auths: bool | None = None
+    auths_agent_id: UUID | None = None
+    auths_required: bool | None = None
+    auth_suggestions: list[UUID] | None = None
+    auths: list[QGetSettingV4Auth] | None = None
+    provider_ids: list[UUID] | None = None
+    provider_resources: list[QGetSettingV4Provider] | None = None
+    show_providers: bool | None = None
+    providers_agent_id: UUID | None = None
+    providers_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetSettingV4Provider] | None = None
+    key_ids: list[UUID] | None = None
+    key_resources: list[QGetSettingV4Key] | None = None
+    show_keys: bool | None = None
+    keys_agent_id: UUID | None = None
+    keys_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetSettingV4Key] | None = None
+
+class GetSettingApiRequest(BaseModel):
+
+    setting_id: UUID | None = None
+    color_search: str | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetSettingApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    setting_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetSettingV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetSettingV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetSettingV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetSettingV4DescriptionResource] | None = None
+    color_ids: list[UUID] | None = None
+    color_resources: list[QGetSettingV4ColorResource] | None = None
+    show_colors: bool | None = None
+    colors_agent_id: UUID | None = None
+    colors_required: bool | None = None
+    color_suggestions: list[UUID] | None = None
+    colors: list[QGetSettingV4ColorOption] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetSettingV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetSettingV4FlagResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetSettingV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetSettingV4Department] | None = None
+    auth_ids: list[UUID] | None = None
+    auth_resources: list[QGetSettingV4Auth] | None = None
+    show_auths: bool | None = None
+    auths_agent_id: UUID | None = None
+    auths_required: bool | None = None
+    auth_suggestions: list[UUID] | None = None
+    auths: list[QGetSettingV4Auth] | None = None
+    provider_ids: list[UUID] | None = None
+    provider_resources: list[QGetSettingV4Provider] | None = None
+    show_providers: bool | None = None
+    providers_agent_id: UUID | None = None
+    providers_required: bool | None = None
+    provider_suggestions: list[UUID] | None = None
+    providers: list[QGetSettingV4Provider] | None = None
+    key_ids: list[UUID] | None = None
+    key_resources: list[QGetSettingV4Key] | None = None
+    show_keys: bool | None = None
+    keys_agent_id: UUID | None = None
+    keys_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetSettingV4Key] | None = None
+
+
+
 # Generated from: get_settings_detail
 
 class GetSettingsDetailSqlParams(BaseModel):
@@ -27952,6 +28206,117 @@ class GetSettingsListApiResponse(BaseModel):
     actor_name: str | None = None
     settings: list[QGetSettingsListV4Setting] | None = None
     keys: list[QGetSettingsListV4Key] | None = None
+
+
+
+# Generated from: patch_setting_draft
+
+class PatchSettingDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    color_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    auth_ids: list[UUID] | None = None
+    provider_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.color_ids,
+            self.department_ids,
+            self.auth_ids,
+            self.provider_ids,
+            self.key_ids,
+            self.expected_version,
+        )
+
+class PatchSettingDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchSettingDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    color_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    auth_ids: list[UUID] | None = None
+    provider_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchSettingDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
+# Generated from: save_setting
+
+class SaveSettingSqlParams(BaseModel):
+
+    name_id: UUID
+    color_ids: list[UUID]
+    department_ids: list[UUID]
+    profile_id: UUID
+    auth_ids: list[UUID]
+    provider_ids: list[UUID]
+    key_ids: list[UUID]
+    input_setting_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+            self.color_ids,
+            self.department_ids,
+            self.profile_id,
+            self.auth_ids,
+            self.provider_ids,
+            self.key_ids,
+            self.input_setting_id,
+            self.description_id,
+            self.active_flag_id,
+        )
+
+class SaveSettingSqlRow(BaseModel):
+
+    setting_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveSettingApiRequest(BaseModel):
+
+    name_id: UUID
+    color_ids: list[UUID]
+    department_ids: list[UUID]
+    auth_ids: list[UUID]
+    provider_ids: list[UUID]
+    key_ids: list[UUID]
+    input_setting_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+class SaveSettingApiResponse(BaseModel):
+
+    setting_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -35655,6 +36020,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetKeyIdForModelWithProfileApiRequest",
         "GetKeyIdForModelWithProfileApiResponse",
     ),
+    "app/sql/v4/settings/get_setting_complete.sql": (
+        "GetSettingSqlParams",
+        "GetSettingSqlRow",
+        "GetSettingApiRequest",
+        "GetSettingApiResponse",
+    ),
     "app/sql/v4/settings/get_settings_detail_complete.sql": (
         "GetSettingsDetailSqlParams",
         "GetSettingsDetailSqlRow",
@@ -35666,6 +36037,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSettingsListSqlRow",
         "GetSettingsListApiRequest",
         "GetSettingsListApiResponse",
+    ),
+    "app/sql/v4/settings/patch_setting_draft_complete.sql": (
+        "PatchSettingDraftSqlParams",
+        "PatchSettingDraftSqlRow",
+        "PatchSettingDraftApiRequest",
+        "PatchSettingDraftApiResponse",
+    ),
+    "app/sql/v4/settings/save_setting_complete.sql": (
+        "SaveSettingSqlParams",
+        "SaveSettingSqlRow",
+        "SaveSettingApiRequest",
+        "SaveSettingApiResponse",
     ),
     "app/sql/v4/settings/update_settings_complete.sql": (
         "UpdateSettingsSqlParams",
@@ -38557,12 +38940,27 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/settings/get_setting_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/settings/get_settings_detail_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/settings/get_settings_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/settings/patch_setting_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/settings/save_setting_complete.sql"]
     ) -> SqlString: ...
 
     @overload

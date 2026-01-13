@@ -2688,6 +2688,71 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/settings/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Setting
+         * @description Get setting information - handles both new (settings_id = NULL) and detail (settings_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
+         */
+        post: operations["get_setting_api_v4_settings_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/settings/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Setting
+         * @description Save setting - handles both create (setting_id = NULL) and update (setting_id provided).
+         */
+        post: operations["save_setting_api_v4_settings_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/settings/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Setting Draft
+         * @description Patch setting draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_setting_draft_api_v4_settings_draft_patch"];
+        trace?: never;
+    };
     "/api/v4/settings/detail": {
         parameters: {
             query?: never;
@@ -10555,6 +10620,140 @@ export interface components {
             /** Department Options */
             department_options?: components["schemas"]["QListScenariosV4Option"][] | null;
         };
+        /** GetSettingApiRequest */
+        GetSettingApiRequest: {
+            /** Setting Id */
+            setting_id?: string | null;
+            /** Color Search */
+            color_search?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GetSettingApiResponse */
+        GetSettingApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Setting Exists */
+            setting_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetSettingV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetSettingV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetSettingV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetSettingV4DescriptionResource"][] | null;
+            /** Color Ids */
+            color_ids?: string[] | null;
+            /** Color Resources */
+            color_resources?: components["schemas"]["QGetSettingV4ColorResource"][] | null;
+            /** Show Colors */
+            show_colors?: boolean | null;
+            /** Colors Agent Id */
+            colors_agent_id?: string | null;
+            /** Colors Required */
+            colors_required?: boolean | null;
+            /** Color Suggestions */
+            color_suggestions?: string[] | null;
+            /** Colors */
+            colors?: components["schemas"]["QGetSettingV4ColorOption"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetSettingV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["QGetSettingV4FlagResource"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetSettingV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetSettingV4Department"][] | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
+            /** Auth Resources */
+            auth_resources?: components["schemas"]["QGetSettingV4Auth"][] | null;
+            /** Show Auths */
+            show_auths?: boolean | null;
+            /** Auths Agent Id */
+            auths_agent_id?: string | null;
+            /** Auths Required */
+            auths_required?: boolean | null;
+            /** Auth Suggestions */
+            auth_suggestions?: string[] | null;
+            /** Auths */
+            auths?: components["schemas"]["QGetSettingV4Auth"][] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Provider Resources */
+            provider_resources?: components["schemas"]["QGetSettingV4Provider"][] | null;
+            /** Show Providers */
+            show_providers?: boolean | null;
+            /** Providers Agent Id */
+            providers_agent_id?: string | null;
+            /** Providers Required */
+            providers_required?: boolean | null;
+            /** Provider Suggestions */
+            provider_suggestions?: string[] | null;
+            /** Providers */
+            providers?: components["schemas"]["QGetSettingV4Provider"][] | null;
+            /** Key Ids */
+            key_ids?: string[] | null;
+            /** Key Resources */
+            key_resources?: components["schemas"]["QGetSettingV4Key"][] | null;
+            /** Show Keys */
+            show_keys?: boolean | null;
+            /** Keys Agent Id */
+            keys_agent_id?: string | null;
+            /** Keys Required */
+            keys_required?: boolean | null;
+            /** Key Suggestions */
+            key_suggestions?: string[] | null;
+            /** Keys */
+            keys?: components["schemas"]["QGetSettingV4Key"][] | null;
+        };
         /** GetSettingsDetailApiRequest */
         GetSettingsDetailApiRequest: {
             /**
@@ -11964,6 +12163,41 @@ export interface components {
         };
         /** PatchProviderDraftApiResponse */
         PatchProviderDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchSettingDraftApiRequest */
+        PatchSettingDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Color Ids */
+            color_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Auth Ids */
+            auth_ids?: string[] | null;
+            /** Provider Ids */
+            provider_ids?: string[] | null;
+            /** Key Ids */
+            key_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchSettingDraftApiResponse */
+        PatchSettingDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -16065,6 +16299,128 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
+        /** QGetSettingV4Auth */
+        QGetSettingV4Auth: {
+            /** Auth Id */
+            auth_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Slug */
+            slug: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Auth Items */
+            auth_items: components["schemas"]["QGetSettingV4AuthItem"][] | null;
+        };
+        /** QGetSettingV4AuthItem */
+        QGetSettingV4AuthItem: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Encrypted */
+            encrypted: boolean | null;
+        };
+        /** QGetSettingV4ColorOption */
+        QGetSettingV4ColorOption: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Hex Code */
+            hex_code: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetSettingV4ColorResource */
+        QGetSettingV4ColorResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Hex Code */
+            hex_code: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetSettingV4Department */
+        QGetSettingV4Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetSettingV4DescriptionResource */
+        QGetSettingV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetSettingV4FlagResource */
+        QGetSettingV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetSettingV4Key */
+        QGetSettingV4Key: {
+            /** Key Id */
+            key_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Masked Key */
+            masked_key: string | null;
+            /** Description */
+            description: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetSettingV4NameResource */
+        QGetSettingV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetSettingV4Provider */
+        QGetSettingV4Provider: {
+            /** Provider Id */
+            provider_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Value */
+            value: string | null;
+            /** Active */
+            active: boolean | null;
+        };
         /** QGetSettingsDetailV4Auth */
         QGetSettingsDetailV4Auth: {
             /** Auth Id */
@@ -19713,6 +20069,37 @@ export interface components {
         SaveRubricApiResponse: {
             /** Rubric Id */
             rubric_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** SaveSettingApiRequest */
+        SaveSettingApiRequest: {
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Color Ids */
+            color_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Auth Ids */
+            auth_ids: string[];
+            /** Provider Ids */
+            provider_ids: string[];
+            /** Key Ids */
+            key_ids: string[];
+            /** Input Setting Id */
+            input_setting_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+        };
+        /** SaveSettingApiResponse */
+        SaveSettingApiResponse: {
+            /** Setting Id */
+            setting_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -25888,6 +26275,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetSettingsListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_setting_api_v4_settings_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetSettingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetSettingApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_setting_api_v4_settings_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveSettingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveSettingApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_setting_draft_api_v4_settings_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchSettingDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchSettingDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
