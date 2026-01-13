@@ -22,6 +22,10 @@ import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
+import { Scenarios } from "@/components/resources/Scenarios";
+import { ScenarioFlags } from "@/components/resources/ScenarioFlags";
+import { ScenarioPositions } from "@/components/resources/ScenarioPositions";
+import { ScenarioRubricGradeAgents } from "@/components/resources/ScenarioRubricGradeAgents";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -60,6 +64,35 @@ type CreateDraftDepartmentsOut = OutputOf<
   "/api/v4/resources/departments",
   "post"
 >;
+type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
+type CreateDraftScenariosOut = OutputOf<
+  "/api/v4/resources/scenarios",
+  "post"
+>;
+type CreateDraftScenarioFlagsIn = InputOf<
+  "/api/v4/resources/simulation_scenario_flags",
+  "post"
+>;
+type CreateDraftScenarioFlagsOut = OutputOf<
+  "/api/v4/resources/simulation_scenario_flags",
+  "post"
+>;
+type CreateDraftScenarioPositionsIn = InputOf<
+  "/api/v4/resources/scenario_positions",
+  "post"
+>;
+type CreateDraftScenarioPositionsOut = OutputOf<
+  "/api/v4/resources/scenario_positions",
+  "post"
+>;
+type CreateDraftScenarioRubricGradeAgentsIn = InputOf<
+  "/api/v4/resources/scenario_rubric_grade_agents",
+  "post"
+>;
+type CreateDraftScenarioRubricGradeAgentsOut = OutputOf<
+  "/api/v4/resources/scenario_rubric_grade_agents",
+  "post"
+>;
 type PatchSimulationDraftIn = InputOf<"/api/v4/simulations/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/api/v4/simulations/draft", "patch">;
 
@@ -87,6 +120,18 @@ export interface NewSimulationProps {
   createDepartmentsAction?: (
     input: CreateDraftDepartmentsIn
   ) => Promise<CreateDraftDepartmentsOut>;
+  createScenariosAction?: (
+    input: CreateDraftScenariosIn
+  ) => Promise<CreateDraftScenariosOut>;
+  createScenarioFlagsAction?: (
+    input: CreateDraftScenarioFlagsIn
+  ) => Promise<CreateDraftScenarioFlagsOut>;
+  createScenarioPositionsAction?: (
+    input: CreateDraftScenarioPositionsIn
+  ) => Promise<CreateDraftScenarioPositionsOut>;
+  createScenarioRubricGradeAgentsAction?: (
+    input: CreateDraftScenarioRubricGradeAgentsIn
+  ) => Promise<CreateDraftScenarioRubricGradeAgentsOut>;
 }
 
 function NewSimulationComponent({
@@ -98,6 +143,10 @@ function NewSimulationComponent({
   createDescriptionsAction,
   createFlagsAction,
   createDepartmentsAction,
+  createScenariosAction,
+  createScenarioFlagsAction,
+  createScenarioPositionsAction,
+  createScenarioRubricGradeAgentsAction,
 }: NewSimulationProps) {
   const router = useRouter();
   const isEditMode = !!simulationId;
@@ -183,6 +232,40 @@ function NewSimulationComponent({
       flag_required: simulationData.flag_required,
       flag_agent_id: simulationData.flag_agent_id,
       flags: simulationData.flags,
+      scenario_ids: simulationData.scenario_ids,
+      scenario_resources: simulationData.scenario_resources,
+      show_scenarios: simulationData.show_scenarios,
+      scenarios_agent_id: simulationData.scenarios_agent_id,
+      scenarios_required: simulationData.scenarios_required,
+      scenario_suggestions: simulationData.scenario_suggestions,
+      scenarios: simulationData.scenarios,
+      scenario_flag_ids: simulationData.scenario_flag_ids,
+      scenario_flag_resources: simulationData.scenario_flag_resources,
+      show_scenario_flags: simulationData.show_scenario_flags,
+      scenario_flags_agent_id: simulationData.scenario_flags_agent_id,
+      scenario_flags_required: simulationData.scenario_flags_required,
+      scenario_flag_suggestions: simulationData.scenario_flag_suggestions,
+      scenario_flags: simulationData.scenario_flags,
+      scenario_position_ids: simulationData.scenario_position_ids,
+      scenario_position_resources: simulationData.scenario_position_resources,
+      show_scenario_positions: simulationData.show_scenario_positions,
+      scenario_positions_agent_id: simulationData.scenario_positions_agent_id,
+      scenario_positions_required: simulationData.scenario_positions_required,
+      scenario_position_suggestions: simulationData.scenario_position_suggestions,
+      scenario_positions: simulationData.scenario_positions,
+      scenario_rubric_grade_agent_ids:
+        simulationData.scenario_rubric_grade_agent_ids,
+      scenario_rubric_grade_agent_resources:
+        simulationData.scenario_rubric_grade_agent_resources,
+      show_scenario_rubric_grade_agents:
+        simulationData.show_scenario_rubric_grade_agents,
+      scenario_rubric_grade_agents_agent_id:
+        simulationData.scenario_rubric_grade_agents_agent_id,
+      scenario_rubric_grade_agents_required:
+        simulationData.scenario_rubric_grade_agents_required,
+      scenario_rubric_grade_agent_suggestions:
+        simulationData.scenario_rubric_grade_agent_suggestions,
+      scenario_rubric_grade_agents: simulationData.scenario_rubric_grade_agents,
       general_agent_id: simulationData.general_agent_id,
     };
     // Intentionally depend on individual fields, not whole simulationData object
@@ -213,6 +296,34 @@ function NewSimulationComponent({
     simulationData?.flag_required,
     simulationData?.flag_agent_id,
     simulationData?.flags,
+    simulationData?.scenario_ids,
+    simulationData?.scenario_resources,
+    simulationData?.show_scenarios,
+    simulationData?.scenarios_agent_id,
+    simulationData?.scenarios_required,
+    simulationData?.scenario_suggestions,
+    simulationData?.scenarios,
+    simulationData?.scenario_flag_ids,
+    simulationData?.scenario_flag_resources,
+    simulationData?.show_scenario_flags,
+    simulationData?.scenario_flags_agent_id,
+    simulationData?.scenario_flags_required,
+    simulationData?.scenario_flag_suggestions,
+    simulationData?.scenario_flags,
+    simulationData?.scenario_position_ids,
+    simulationData?.scenario_position_resources,
+    simulationData?.show_scenario_positions,
+    simulationData?.scenario_positions_agent_id,
+    simulationData?.scenario_positions_required,
+    simulationData?.scenario_position_suggestions,
+    simulationData?.scenario_positions,
+    simulationData?.scenario_rubric_grade_agent_ids,
+    simulationData?.scenario_rubric_grade_agent_resources,
+    simulationData?.show_scenario_rubric_grade_agents,
+    simulationData?.scenario_rubric_grade_agents_agent_id,
+    simulationData?.scenario_rubric_grade_agents_required,
+    simulationData?.scenario_rubric_grade_agent_suggestions,
+    simulationData?.scenario_rubric_grade_agents,
     simulationData?.general_agent_id,
   ]);
 
@@ -236,6 +347,30 @@ function NewSimulationComponent({
               (d) => d.generated
             ) ?? false
           );
+        case "scenarios":
+          return (
+            stableSimulationDataFields.scenario_resources?.some(
+              (s) => s.generated
+            ) ?? false
+          );
+        case "scenario_flags":
+          return (
+            stableSimulationDataFields.scenario_flag_resources?.some(
+              (f) => f.generated
+            ) ?? false
+          );
+        case "scenario_positions":
+          return (
+            stableSimulationDataFields.scenario_position_resources?.some(
+              (p) => p.generated
+            ) ?? false
+          );
+        case "scenario_rubric_grade_agents":
+          return (
+            stableSimulationDataFields.scenario_rubric_grade_agent_resources?.some(
+              (a) => a.generated
+            ) ?? false
+          );
         default:
           return false;
       }
@@ -251,6 +386,10 @@ function NewSimulationComponent({
         description_id: null as string | null,
         active_flag_id: null as string | null,
         department_ids: [] as string[],
+        scenario_ids: [] as string[],
+        scenario_flag_ids: [] as string[],
+        scenario_position_ids: [] as string[],
+        scenario_rubric_grade_agent_ids: [] as string[],
       };
     }
     // Extract resource IDs from server data
@@ -260,6 +399,15 @@ function NewSimulationComponent({
       description_id: data.description_id ?? null,
       active_flag_id: data.active_flag_id ?? null,
       department_ids: data.department_ids ?? [],
+      scenario_ids: data.scenario_ids ?? [],
+      scenario_flag_ids: data.scenario_flag_ids ?? [],
+      // Convert scenario_position_resources to IDs (composite keys represented as strings)
+      scenario_position_ids:
+        data.scenario_position_resources?.map(
+          (p) => `${p.simulation_id}-${p.scenario_id}`
+        ) ?? [],
+      scenario_rubric_grade_agent_ids:
+        data.scenario_rubric_grade_agent_ids ?? [],
     };
     // Remove simulationData from dependencies - use ref instead to prevent callback recreation
   }, []);
@@ -282,6 +430,22 @@ function NewSimulationComponent({
     () => JSON.stringify(formState.department_ids),
     [formState.department_ids]
   );
+  const formStateScenarioIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_ids),
+    [formState.scenario_ids]
+  );
+  const formStateScenarioFlagIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_flag_ids),
+    [formState.scenario_flag_ids]
+  );
+  const formStateScenarioPositionIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_position_ids),
+    [formState.scenario_position_ids]
+  );
+  const formStateScenarioRubricGradeAgentIdsStr = React.useMemo(
+    () => JSON.stringify(formState.scenario_rubric_grade_agent_ids),
+    [formState.scenario_rubric_grade_agent_ids]
+  );
 
   // Update form state when server data changes
   // Use simulationData directly in dependency array, not getInitialFormState
@@ -294,7 +458,15 @@ function NewSimulationComponent({
         prev.description_id !== newState.description_id ||
         prev.active_flag_id !== newState.active_flag_id ||
         JSON.stringify(prev.department_ids) !==
-          JSON.stringify(newState.department_ids)
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.scenario_ids) !==
+          JSON.stringify(newState.scenario_ids) ||
+        JSON.stringify(prev.scenario_flag_ids) !==
+          JSON.stringify(newState.scenario_flag_ids) ||
+        JSON.stringify(prev.scenario_position_ids) !==
+          JSON.stringify(newState.scenario_position_ids) ||
+        JSON.stringify(prev.scenario_rubric_grade_agent_ids) !==
+          JSON.stringify(newState.scenario_rubric_grade_agent_ids)
       ) {
         return newState;
       }
@@ -308,6 +480,14 @@ function NewSimulationComponent({
     simulationData?.description_id,
     simulationData?.active_flag_id,
     departmentIdsStr,
+    JSON.stringify(simulationData?.scenario_ids ?? []),
+    JSON.stringify(simulationData?.scenario_flag_ids ?? []),
+    JSON.stringify(
+      simulationData?.scenario_position_resources?.map(
+        (p) => `${p.simulation_id}-${p.scenario_id}`
+      ) ?? []
+    ),
+    JSON.stringify(simulationData?.scenario_rubric_grade_agent_ids ?? []),
   ]);
 
   // Draft version tracking for optimistic concurrency control
@@ -356,6 +536,10 @@ function NewSimulationComponent({
       description_id: formState.description_id,
       active_flag_id: formState.active_flag_id,
       department_ids: formState.department_ids,
+      scenario_ids: formState.scenario_ids,
+      scenario_flag_ids: formState.scenario_flag_ids,
+      scenario_position_ids: formState.scenario_position_ids,
+      scenario_rubric_grade_agent_ids: formState.scenario_rubric_grade_agent_ids,
     });
     // Use stringified arrays to prevent recreation when array references change but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -365,6 +549,10 @@ function NewSimulationComponent({
     formState.description_id,
     formState.active_flag_id,
     formStateDepartmentIdsStr,
+    formStateScenarioIdsStr,
+    formStateScenarioFlagIdsStr,
+    formStateScenarioPositionIdsStr,
+    formStateScenarioRubricGradeAgentIdsStr,
   ]);
 
   // Track last patched payload so we don't repatch identical state
@@ -377,7 +565,11 @@ function NewSimulationComponent({
       formState.name_id ||
       formState.description_id ||
       formState.active_flag_id ||
-      formState.department_ids.length > 0;
+      formState.department_ids.length > 0 ||
+      formState.scenario_ids.length > 0 ||
+      formState.scenario_flag_ids.length > 0 ||
+      formState.scenario_position_ids.length > 0 ||
+      formState.scenario_rubric_grade_agent_ids.length > 0;
 
     if (!hasResourceIds || !patchSimulationDraftActionRef.current) {
       return;
@@ -398,6 +590,11 @@ function NewSimulationComponent({
             description_id: formState.description_id,
             active_flag_id: formState.active_flag_id,
             department_ids: formState.department_ids,
+            scenario_ids: formState.scenario_ids,
+            scenario_flag_ids: formState.scenario_flag_ids,
+            scenario_position_ids: formState.scenario_position_ids,
+            scenario_rubric_grade_agent_ids:
+              formState.scenario_rubric_grade_agent_ids,
             expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
           },
         });
@@ -775,7 +972,8 @@ function NewSimulationComponent({
             // Note: practice_simulation is handled separately (boolean, not a flag resource)
             practice_simulation: false, // Default value - can be updated later if needed
             // Complex resources (scenarios, videos, etc.) are handled separately
-            scenario_ids: [],
+            // Convert scenario resource IDs to artifact IDs for save endpoint
+            scenario_ids: formState.scenario_ids, // These are resource IDs, SQL will convert to artifact IDs
             scenario_active_flags: [],
             scenario_hints_enabled: [],
             scenario_time_limit_seconds: [],
@@ -847,6 +1045,10 @@ function NewSimulationComponent({
       descriptions: "Descriptions",
       departments: "Departments",
       flags: "Flags",
+      scenarios: "Scenarios",
+      scenario_flags: "Scenario Flags",
+      scenario_positions: "Scenario Positions",
+      scenario_rubric_grade_agents: "Scenario Rubric Grade Agents",
       // Not used for simulations but needed for type safety
       colors: "Colors",
       icons: "Icons",
@@ -1038,6 +1240,123 @@ function NewSimulationComponent({
                   helpText="Whether this simulation is active"
                 />
               )}
+              {stableSimulationDataFields.show_scenarios && (
+                <Scenarios
+                  scenario_ids={formState.scenario_ids}
+                  scenario_resources={stableSimulationDataFields.scenario_resources}
+                  show_scenarios={stableSimulationDataFields.show_scenarios}
+                  scenario_suggestions={
+                    stableSimulationDataFields.scenario_suggestions
+                  }
+                  scenarios={stableSimulationDataFields.scenarios}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, scenario_ids: ids }))
+                  }
+                  createScenariosAction={createScenariosAction}
+                  group_id={stableSimulationDataFields.group_id}
+                  agent_id={stableSimulationDataFields.scenarios_agent_id}
+                  required={stableSimulationDataFields.scenarios_required}
+                />
+              )}
+              {stableSimulationDataFields.show_scenario_flags && (
+                <ScenarioFlags
+                  scenario_flag_ids={formState.scenario_flag_ids}
+                  scenario_flag_resources={
+                    stableSimulationDataFields.scenario_flag_resources
+                  }
+                  show_scenario_flags={
+                    stableSimulationDataFields.show_scenario_flags
+                  }
+                  scenario_flag_suggestions={
+                    stableSimulationDataFields.scenario_flag_suggestions
+                  }
+                  scenario_flags={stableSimulationDataFields.scenario_flags}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      scenario_flag_ids: ids,
+                    }))
+                  }
+                  createScenarioFlagsAction={createScenarioFlagsAction}
+                  group_id={stableSimulationDataFields.group_id}
+                  agent_id={stableSimulationDataFields.scenario_flags_agent_id}
+                  required={stableSimulationDataFields.scenario_flags_required}
+                />
+              )}
+              {stableSimulationDataFields.show_scenario_positions && (
+                <ScenarioPositions
+                  scenario_position_ids={formState.scenario_position_ids}
+                  scenario_position_resources={
+                    stableSimulationDataFields.scenario_position_resources
+                  }
+                  show_scenario_positions={
+                    stableSimulationDataFields.show_scenario_positions
+                  }
+                  scenario_position_suggestions={
+                    stableSimulationDataFields.scenario_position_suggestions
+                  }
+                  scenario_positions={
+                    stableSimulationDataFields.scenario_positions
+                  }
+                  disabled={disabled}
+                  onChange={(positions) => {
+                    // Convert positions array to IDs array for form state
+                    const ids = positions.map(
+                      (p) => `${p.simulation_id}-${p.scenario_id}`
+                    );
+                    setFormState((prev) => ({
+                      ...prev,
+                      scenario_position_ids: ids,
+                    }));
+                  }}
+                  simulation_id={simulationId || null}
+                  scenario_ids={formState.scenario_ids}
+                  createScenarioPositionsAction={createScenarioPositionsAction}
+                  group_id={stableSimulationDataFields.group_id}
+                  agent_id={stableSimulationDataFields.scenario_positions_agent_id}
+                  required={
+                    stableSimulationDataFields.scenario_positions_required
+                  }
+                />
+              )}
+              {stableSimulationDataFields.show_scenario_rubric_grade_agents && (
+                <ScenarioRubricGradeAgents
+                  scenario_rubric_grade_agent_ids={
+                    formState.scenario_rubric_grade_agent_ids
+                  }
+                  scenario_rubric_grade_agent_resources={
+                    stableSimulationDataFields.scenario_rubric_grade_agent_resources
+                  }
+                  show_scenario_rubric_grade_agents={
+                    stableSimulationDataFields.show_scenario_rubric_grade_agents
+                  }
+                  scenario_rubric_grade_agent_suggestions={
+                    stableSimulationDataFields.scenario_rubric_grade_agent_suggestions
+                  }
+                  scenario_rubric_grade_agents={
+                    stableSimulationDataFields.scenario_rubric_grade_agents
+                  }
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      scenario_rubric_grade_agent_ids: ids,
+                    }))
+                  }
+                  createScenarioRubricGradeAgentsAction={
+                    createScenarioRubricGradeAgentsAction
+                  }
+                  group_id={stableSimulationDataFields.group_id}
+                  agent_id={
+                    stableSimulationDataFields.scenario_rubric_grade_agents_agent_id
+                  }
+                  required={
+                    stableSimulationDataFields.scenario_rubric_grade_agents_required
+                  }
+                />
+              )}
             </div>
           );
         default:
@@ -1058,6 +1377,10 @@ function NewSimulationComponent({
       createDescriptionsAction,
       createFlagsAction,
       createDepartmentsAction,
+      createScenariosAction,
+      createScenarioFlagsAction,
+      createScenarioPositionsAction,
+      createScenarioRubricGradeAgentsAction,
     ]
   );
 

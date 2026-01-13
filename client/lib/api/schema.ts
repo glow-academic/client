@@ -1358,6 +1358,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/scenario_positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Scenario Position
+         * @description Create scenario_positions resource (always INSERT).
+         */
+        post: operations["create_scenario_position_api_v4_resources_scenario_positions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/scenario_rubric_grade_agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Scenario Rubric Grade Agent
+         * @description Create scenario_rubric_grade_agents resource (always INSERT).
+         */
+        post: operations["create_scenario_rubric_grade_agent_api_v4_resources_scenario_rubric_grade_agents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/scenarios": {
         parameters: {
             query?: never;
@@ -1392,6 +1432,26 @@ export interface paths {
          * @description Create settings resource (always INSERT).
          */
         post: operations["create_setting_api_v4_resources_settings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/simulation_scenario_flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Simulation Scenario Flag
+         * @description Create simulation_scenario_flags resource (always INSERT).
+         */
+        post: operations["create_simulation_scenario_flag_api_v4_resources_simulation_scenario_flags_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10364,6 +10424,62 @@ export interface components {
             flag_required?: boolean | null;
             /** Flags */
             flags?: components["schemas"]["QGetSimulationV4FlagOption"][] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Scenario Resources */
+            scenario_resources?: components["schemas"]["QGetSimulationV4ScenarioResource"][] | null;
+            /** Show Scenarios */
+            show_scenarios?: boolean | null;
+            /** Scenarios Agent Id */
+            scenarios_agent_id?: string | null;
+            /** Scenarios Required */
+            scenarios_required?: boolean | null;
+            /** Scenario Suggestions */
+            scenario_suggestions?: string[] | null;
+            /** Scenarios */
+            scenarios?: components["schemas"]["QGetSimulationV4ScenarioResource"][] | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids?: string[] | null;
+            /** Scenario Flag Resources */
+            scenario_flag_resources?: components["schemas"]["QGetSimulationV4ScenarioFlagResource"][] | null;
+            /** Show Scenario Flags */
+            show_scenario_flags?: boolean | null;
+            /** Scenario Flags Agent Id */
+            scenario_flags_agent_id?: string | null;
+            /** Scenario Flags Required */
+            scenario_flags_required?: boolean | null;
+            /** Scenario Flag Suggestions */
+            scenario_flag_suggestions?: string[] | null;
+            /** Scenario Flags */
+            scenario_flags?: components["schemas"]["QGetSimulationV4ScenarioFlagResource"][] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids?: string[] | null;
+            /** Scenario Position Resources */
+            scenario_position_resources?: components["schemas"]["QGetSimulationV4ScenarioPositionResource"][] | null;
+            /** Show Scenario Positions */
+            show_scenario_positions?: boolean | null;
+            /** Scenario Positions Agent Id */
+            scenario_positions_agent_id?: string | null;
+            /** Scenario Positions Required */
+            scenario_positions_required?: boolean | null;
+            /** Scenario Position Suggestions */
+            scenario_position_suggestions?: string[] | null;
+            /** Scenario Positions */
+            scenario_positions?: components["schemas"]["QGetSimulationV4ScenarioPositionResource"][] | null;
+            /** Scenario Rubric Grade Agent Ids */
+            scenario_rubric_grade_agent_ids?: string[] | null;
+            /** Scenario Rubric Grade Agent Resources */
+            scenario_rubric_grade_agent_resources?: components["schemas"]["QGetSimulationV4ScenarioRubricGradeAgentResource"][] | null;
+            /** Show Scenario Rubric Grade Agents */
+            show_scenario_rubric_grade_agents?: boolean | null;
+            /** Scenario Rubric Grade Agents Agent Id */
+            scenario_rubric_grade_agents_agent_id?: string | null;
+            /** Scenario Rubric Grade Agents Required */
+            scenario_rubric_grade_agents_required?: boolean | null;
+            /** Scenario Rubric Grade Agent Suggestions */
+            scenario_rubric_grade_agent_suggestions?: string[] | null;
+            /** Scenario Rubric Grade Agents */
+            scenario_rubric_grade_agents?: components["schemas"]["QGetSimulationV4ScenarioRubricGradeAgentResource"][] | null;
             /** General Agent Id */
             general_agent_id?: string | null;
             /** Simulation Id */
@@ -10374,8 +10490,8 @@ export interface components {
             rubric_id?: string | null;
             /** Valid Rubric Ids */
             valid_rubric_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
+            /** Simulation Scenario Artifact Ids */
+            simulation_scenario_artifact_ids?: string[] | null;
             /** Valid Scenario Ids */
             valid_scenario_ids?: string[] | null;
             /** Video Ids */
@@ -10402,8 +10518,8 @@ export interface components {
             primary_department_id?: string | null;
             /** Valid Department Ids */
             valid_department_ids?: string[] | null;
-            /** Scenarios */
-            scenarios?: components["schemas"]["QGetSimulationV4Scenario"][] | null;
+            /** Simulation Scenarios */
+            simulation_scenarios?: components["schemas"]["QGetSimulationV4Scenario"][] | null;
             /** Videos */
             videos?: components["schemas"]["QGetSimulationV4Video"][] | null;
             /** Parameters */
@@ -16094,6 +16210,21 @@ export interface components {
             /** Rubric Grade Agents */
             rubric_grade_agents: components["schemas"]["QGetSimulationV4RubricGradeAgent"][] | null;
         };
+        /** QGetSimulationV4ScenarioFlagResource */
+        QGetSimulationV4ScenarioFlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+        };
         /** QGetSimulationV4ScenarioFull */
         QGetSimulationV4ScenarioFull: {
             /** Scenario Id */
@@ -16114,6 +16245,49 @@ export interface components {
             parameter_item_ids: string[] | null;
             /** Document Ids */
             document_ids: string[] | null;
+        };
+        /** QGetSimulationV4ScenarioPositionResource */
+        QGetSimulationV4ScenarioPositionResource: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Value */
+            value: number | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+        };
+        /** QGetSimulationV4ScenarioResource */
+        QGetSimulationV4ScenarioResource: {
+            /** Id */
+            id: string | null;
+            /** Scenario Id */
+            scenario_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
+        };
+        /** QGetSimulationV4ScenarioRubricGradeAgentResource */
+        QGetSimulationV4ScenarioRubricGradeAgentResource: {
+            /** Id */
+            id: string | null;
+            /** Rubric Id */
+            rubric_id: string | null;
+            /** Grade Agent Id */
+            grade_agent_id: string | null;
+            /** Agent Id */
+            agent_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+            /** Group Id */
+            group_id: string | null;
         };
         /** QGetSimulationV4Video */
         QGetSimulationV4Video: {
@@ -18394,6 +18568,12 @@ export interface components {
              * @default false
              */
             practice_simulation: boolean | null;
+            /** Scenario Flag Ids */
+            scenario_flag_ids?: string[] | null;
+            /** Scenario Position Ids */
+            scenario_position_ids?: string[] | null;
+            /** Scenario Rubric Grade Agent Ids */
+            scenario_rubric_grade_agent_ids?: string[] | null;
             /** Video Ids */
             video_ids?: string[] | null;
             /** Video Active Flags */
@@ -18430,6 +18610,79 @@ export interface components {
             actor_name?: string | null;
             /** Tool Id */
             tool_id?: string | null;
+        };
+        /** ScenarioPositionsApiRequest */
+        ScenarioPositionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /** Value */
+            value: number;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ScenarioPositionsApiResponse */
+        ScenarioPositionsApiResponse: {
+            /** Id */
+            id?: string | null;
+        };
+        /** ScenarioRubricGradeAgentsApiRequest */
+        ScenarioRubricGradeAgentsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+            /**
+             * Grade Agent Id
+             * Format: uuid
+             */
+            grade_agent_id: string;
+            /**
+             * Agent Id Param
+             * Format: uuid
+             */
+            agent_id_param: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ScenarioRubricGradeAgentsApiResponse */
+        ScenarioRubricGradeAgentsApiResponse: {
+            /** Id */
+            id?: string | null;
         };
         /** ScenariosApiRequest */
         ScenariosApiRequest: {
@@ -18780,6 +19033,38 @@ export interface components {
             profile_id?: string | null;
             /** Simulation Id */
             simulation_id?: string | null;
+        };
+        /** SimulationScenarioFlagsApiRequest */
+        SimulationScenarioFlagsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Icon Id
+             * Format: uuid
+             */
+            icon_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** SimulationScenarioFlagsApiResponse */
+        SimulationScenarioFlagsApiResponse: {
+            /** Flag Id */
+            flag_id?: string | null;
         };
         /**
          * SimulationStartedPayload
@@ -22220,6 +22505,80 @@ export interface operations {
             };
         };
     };
+    create_scenario_position_api_v4_resources_scenario_positions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioPositionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioPositionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_scenario_rubric_grade_agent_api_v4_resources_scenario_rubric_grade_agents_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioRubricGradeAgentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioRubricGradeAgentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_scenario_api_v4_resources_scenarios_post: {
         parameters: {
             query?: never;
@@ -22281,6 +22640,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettingsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_simulation_scenario_flag_api_v4_resources_simulation_scenario_flags_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimulationScenarioFlagsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationScenarioFlagsApiResponse"];
                 };
             };
             /** @description Validation Error */

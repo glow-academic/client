@@ -39,8 +39,15 @@ from app.api.v4.resources.rubrics import router as rubrics_router
 from app.api.v4.resources.schema_field_items import router as schema_field_items_router
 from app.api.v4.resources.schema_fields import router as schema_fields_router
 from app.api.v4.resources.schemas import router as schemas_router
+from app.api.v4.resources.scenario_positions import router as scenario_positions_router
+from app.api.v4.resources.scenario_rubric_grade_agents import (
+    router as scenario_rubric_grade_agents_router,
+)
 from app.api.v4.resources.scenarios import router as scenarios_router
 from app.api.v4.resources.settings import router as settings_router
+from app.api.v4.resources.simulation_scenario_flags import (
+    router as simulation_scenario_flags_router,
+)
 from app.api.v4.resources.simulations import router as simulations_router
 from app.api.v4.resources.standard_groups import router as standard_groups_router
 from app.api.v4.resources.strengths import router as strengths_router
@@ -67,8 +74,11 @@ router.include_router(parameters_router)
 router.include_router(personas_router)
 router.include_router(profiles_router)
 router.include_router(rubrics_router)
+router.include_router(scenario_positions_router)
+router.include_router(scenario_rubric_grade_agents_router)
 router.include_router(scenarios_router)
 router.include_router(settings_router)
+router.include_router(simulation_scenario_flags_router)
 router.include_router(simulations_router)
 router.include_router(names_router)
 router.include_router(colors_router)

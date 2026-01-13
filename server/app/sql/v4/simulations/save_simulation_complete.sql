@@ -30,7 +30,7 @@ CREATE TYPE types.i_save_simulation_v4_scenario_rubric_grade_agent AS (
 CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     name_id uuid,
     department_ids uuid[],
-    scenario_ids uuid[],
+    scenario_ids uuid[],  -- Scenario resource IDs (from scenarios resource table)
     scenario_active_flags boolean[],
     scenario_hints_enabled boolean[],
     scenario_time_limit_seconds int[],
@@ -44,6 +44,10 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     description_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
     practice_simulation boolean DEFAULT false,
+    -- New scenario resource parameters (optional, for future use)
+    scenario_flag_ids uuid[] DEFAULT NULL,  -- Simulation scenario flag resource IDs
+    scenario_position_ids uuid[] DEFAULT NULL,  -- Scenario position resource IDs (junction table entries)
+    scenario_rubric_grade_agent_ids uuid[] DEFAULT NULL,  -- Scenario rubric grade agent resource IDs
     -- Update-only params (optional, only used in update mode)
     video_ids uuid[] DEFAULT NULL,
     video_active_flags boolean[] DEFAULT NULL,
@@ -319,9 +323,18 @@ BEGIN
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
         AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
     ),
+    -- Convert scenario resource IDs to artifact IDs
+    scenario_resource_to_artifact AS (
+        SELECT 
+            s.id as scenario_resource_id,
+            s.scenario_id as scenario_artifact_id
+        FROM scenarios s
+        WHERE s.id = ANY((SELECT scenario_ids FROM params LIMIT 1))
+          AND s.active = true
+    ),
     scenarios_data AS (
         SELECT DISTINCT
-            scenario_id,
+            srta.scenario_artifact_id as scenario_id,
             active_flag,
             hints_enabled,
             audio_enabled,
@@ -330,7 +343,7 @@ BEGIN
             row_num
         FROM (
             SELECT 
-                scenario_id,
+                scenario_resource_id,
                 active_flag,
                 COALESCE(hints_enabled, false) as hints_enabled,
                 COALESCE(audio_enabled, false) as audio_enabled,
@@ -345,8 +358,9 @@ BEGIN
                 x.scenario_audio_enabled,
                 x.scenario_text_enabled,
                 x.scenario_time_limit_seconds
-            ) AS t(scenario_id, active_flag, hints_enabled, audio_enabled, text_enabled, time_limit_seconds)
+            ) AS t(scenario_resource_id, active_flag, hints_enabled, audio_enabled, text_enabled, time_limit_seconds)
         ) sub
+        JOIN scenario_resource_to_artifact srta ON srta.scenario_resource_id = sub.scenario_resource_id
     ),
     scenarios_with_order AS (
         SELECT 

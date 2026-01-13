@@ -44,6 +44,35 @@ type CreateDraftDepartmentsOut = OutputOf<
 >;
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
+type CreateDraftScenariosOut = OutputOf<
+  "/api/v4/resources/scenarios",
+  "post"
+>;
+type CreateDraftScenarioFlagsIn = InputOf<
+  "/api/v4/resources/simulation_scenario_flags",
+  "post"
+>;
+type CreateDraftScenarioFlagsOut = OutputOf<
+  "/api/v4/resources/simulation_scenario_flags",
+  "post"
+>;
+type CreateDraftScenarioPositionsIn = InputOf<
+  "/api/v4/resources/scenario_positions",
+  "post"
+>;
+type CreateDraftScenarioPositionsOut = OutputOf<
+  "/api/v4/resources/scenario_positions",
+  "post"
+>;
+type CreateDraftScenarioRubricGradeAgentsIn = InputOf<
+  "/api/v4/resources/scenario_rubric_grade_agents",
+  "post"
+>;
+type CreateDraftScenarioRubricGradeAgentsOut = OutputOf<
+  "/api/v4/resources/scenario_rubric_grade_agents",
+  "post"
+>;
 
 // Export types for client component (type-only imports)
 export type {
@@ -162,6 +191,38 @@ async function createDraftFlags(
   return api.post("/resources/flags", input);
 }
 
+async function createDraftScenarios(
+  input: CreateDraftScenariosIn
+): Promise<CreateDraftScenariosOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/scenarios", input);
+}
+
+async function createDraftScenarioFlags(
+  input: CreateDraftScenarioFlagsIn
+): Promise<CreateDraftScenarioFlagsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/simulation_scenario_flags", input);
+}
+
+async function createDraftScenarioPositions(
+  input: CreateDraftScenarioPositionsIn
+): Promise<CreateDraftScenarioPositionsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/scenario_positions", input);
+}
+
+async function createDraftScenarioRubricGradeAgents(
+  input: CreateDraftScenarioRubricGradeAgentsIn
+): Promise<CreateDraftScenarioRubricGradeAgentsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/scenario_rubric_grade_agents", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditSimulationPage({
   params,
@@ -226,6 +287,12 @@ export default async function EditSimulationPage({
           createDescriptionsAction={createDraftDescriptions}
           createDepartmentsAction={createDraftDepartments}
           createFlagsAction={createDraftFlags}
+          createScenariosAction={createDraftScenarios}
+          createScenarioFlagsAction={createDraftScenarioFlags}
+          createScenarioPositionsAction={createDraftScenarioPositions}
+          createScenarioRubricGradeAgentsAction={
+            createDraftScenarioRubricGradeAgents
+          }
         />
       </div>
     );

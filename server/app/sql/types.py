@@ -20123,6 +20123,86 @@ class RubricsApiResponse(BaseModel):
 
 
 
+# Generated from: scenario_positions
+
+class ScenarioPositionsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    simulation_id: UUID
+    scenario_id: UUID
+    value: int
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.simulation_id,
+            self.scenario_id,
+            self.value,
+            self.mcp,
+        )
+
+class ScenarioPositionsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class ScenarioPositionsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    simulation_id: UUID
+    scenario_id: UUID
+    value: int
+    mcp: bool | None = False
+
+class ScenarioPositionsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
+# Generated from: scenario_rubric_grade_agents
+
+class ScenarioRubricGradeAgentsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    rubric_id: UUID
+    grade_agent_id: UUID
+    agent_id_param: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.rubric_id,
+            self.grade_agent_id,
+            self.agent_id_param,
+            self.mcp,
+        )
+
+class ScenarioRubricGradeAgentsSqlRow(BaseModel):
+
+    id: UUID | None = None
+
+class ScenarioRubricGradeAgentsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    rubric_id: UUID
+    grade_agent_id: UUID
+    agent_id_param: UUID
+    mcp: bool | None = False
+
+class ScenarioRubricGradeAgentsApiResponse(BaseModel):
+
+    id: UUID | None = None
+
+
+
 # Generated from: scenarios
 
 class ScenariosSqlParams(BaseModel):
@@ -20311,6 +20391,46 @@ class SettingsApiRequest(BaseModel):
 class SettingsApiResponse(BaseModel):
 
     id: UUID | None = None
+
+
+
+# Generated from: simulation_scenario_flags
+
+class SimulationScenarioFlagsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    name: str
+    description: str
+    icon_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.name,
+            self.description,
+            self.icon_id,
+            self.mcp,
+        )
+
+class SimulationScenarioFlagsSqlRow(BaseModel):
+
+    flag_id: UUID | None = None
+
+class SimulationScenarioFlagsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    name: str
+    description: str
+    icon_id: UUID
+    mcp: bool | None = False
+
+class SimulationScenarioFlagsApiResponse(BaseModel):
+
+    flag_id: UUID | None = None
 
 
 
@@ -26183,6 +26303,18 @@ class QGetSimulationV4Scenario(BaseModel):
 
 
 
+class QGetSimulationV4ScenarioFlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
 class QGetSimulationV4Document(BaseModel):
 
     document_id: UUID | None
@@ -26212,6 +26344,41 @@ class QGetSimulationV4ScenarioFull(BaseModel):
     parameter_item_mapping: list[QGetSimulationV4Field] | None
     parameter_item_ids: list[UUID] | None
     document_ids: list[UUID] | None
+
+
+
+
+class QGetSimulationV4ScenarioPositionResource(BaseModel):
+
+    simulation_id: UUID | None
+    scenario_id: UUID | None
+    value: int | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
+class QGetSimulationV4ScenarioResource(BaseModel):
+
+    id: UUID | None
+    scenario_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+    group_id: UUID | None
+
+
+
+
+class QGetSimulationV4ScenarioRubricGradeAgentResource(BaseModel):
+
+    id: UUID | None
+    rubric_id: UUID | None
+    grade_agent_id: UUID | None
+    agent_id: UUID | None
+    generated: bool | None
+    group_id: UUID | None
 
 
 
@@ -26257,12 +26424,40 @@ class GetSimulationSqlRow(BaseModel):
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
     flags: list[QGetSimulationV4FlagOption] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_resources: list[QGetSimulationV4ScenarioResource] | None = None
+    show_scenarios: bool | None = None
+    scenarios_agent_id: UUID | None = None
+    scenarios_required: bool | None = None
+    scenario_suggestions: list[UUID] | None = None
+    scenarios: list[QGetSimulationV4ScenarioResource] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_flag_resources: list[QGetSimulationV4ScenarioFlagResource] | None = None
+    show_scenario_flags: bool | None = None
+    scenario_flags_agent_id: UUID | None = None
+    scenario_flags_required: bool | None = None
+    scenario_flag_suggestions: list[UUID] | None = None
+    scenario_flags: list[QGetSimulationV4ScenarioFlagResource] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_position_resources: list[QGetSimulationV4ScenarioPositionResource] | None = None
+    show_scenario_positions: bool | None = None
+    scenario_positions_agent_id: UUID | None = None
+    scenario_positions_required: bool | None = None
+    scenario_position_suggestions: list[UUID] | None = None
+    scenario_positions: list[QGetSimulationV4ScenarioPositionResource] | None = None
+    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+    scenario_rubric_grade_agent_resources: list[QGetSimulationV4ScenarioRubricGradeAgentResource] | None = None
+    show_scenario_rubric_grade_agents: bool | None = None
+    scenario_rubric_grade_agents_agent_id: UUID | None = None
+    scenario_rubric_grade_agents_required: bool | None = None
+    scenario_rubric_grade_agent_suggestions: list[UUID] | None = None
+    scenario_rubric_grade_agents: list[QGetSimulationV4ScenarioRubricGradeAgentResource] | None = None
     general_agent_id: UUID | None = None
     simulation_id: UUID | None = None
     time_limit: int | None = None
     rubric_id: UUID | None = None
     valid_rubric_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
+    simulation_scenario_artifact_ids: list[UUID] | None = None
     valid_scenario_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     valid_video_ids: list[UUID] | None = None
@@ -26276,7 +26471,7 @@ class GetSimulationSqlRow(BaseModel):
     cohort_count: int | None = None
     primary_department_id: UUID | None = None
     valid_department_ids: list[UUID] | None = None
-    scenarios: list[QGetSimulationV4Scenario] | None = None
+    simulation_scenarios: list[QGetSimulationV4Scenario] | None = None
     videos: list[QGetSimulationV4Video] | None = None
     parameters: list[QGetSimulationV4ParameterItem] | None = None
     parameter_items: list[QGetSimulationV4ParameterItemDetail] | None = None
@@ -26332,12 +26527,40 @@ class GetSimulationApiResponse(BaseModel):
     flag_agent_id: UUID | None = None
     flag_required: bool | None = None
     flags: list[QGetSimulationV4FlagOption] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_resources: list[QGetSimulationV4ScenarioResource] | None = None
+    show_scenarios: bool | None = None
+    scenarios_agent_id: UUID | None = None
+    scenarios_required: bool | None = None
+    scenario_suggestions: list[UUID] | None = None
+    scenarios: list[QGetSimulationV4ScenarioResource] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_flag_resources: list[QGetSimulationV4ScenarioFlagResource] | None = None
+    show_scenario_flags: bool | None = None
+    scenario_flags_agent_id: UUID | None = None
+    scenario_flags_required: bool | None = None
+    scenario_flag_suggestions: list[UUID] | None = None
+    scenario_flags: list[QGetSimulationV4ScenarioFlagResource] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_position_resources: list[QGetSimulationV4ScenarioPositionResource] | None = None
+    show_scenario_positions: bool | None = None
+    scenario_positions_agent_id: UUID | None = None
+    scenario_positions_required: bool | None = None
+    scenario_position_suggestions: list[UUID] | None = None
+    scenario_positions: list[QGetSimulationV4ScenarioPositionResource] | None = None
+    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+    scenario_rubric_grade_agent_resources: list[QGetSimulationV4ScenarioRubricGradeAgentResource] | None = None
+    show_scenario_rubric_grade_agents: bool | None = None
+    scenario_rubric_grade_agents_agent_id: UUID | None = None
+    scenario_rubric_grade_agents_required: bool | None = None
+    scenario_rubric_grade_agent_suggestions: list[UUID] | None = None
+    scenario_rubric_grade_agents: list[QGetSimulationV4ScenarioRubricGradeAgentResource] | None = None
     general_agent_id: UUID | None = None
     simulation_id: UUID | None = None
     time_limit: int | None = None
     rubric_id: UUID | None = None
     valid_rubric_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
+    simulation_scenario_artifact_ids: list[UUID] | None = None
     valid_scenario_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     valid_video_ids: list[UUID] | None = None
@@ -26351,7 +26574,7 @@ class GetSimulationApiResponse(BaseModel):
     cohort_count: int | None = None
     primary_department_id: UUID | None = None
     valid_department_ids: list[UUID] | None = None
-    scenarios: list[QGetSimulationV4Scenario] | None = None
+    simulation_scenarios: list[QGetSimulationV4Scenario] | None = None
     videos: list[QGetSimulationV4Video] | None = None
     parameters: list[QGetSimulationV4ParameterItem] | None = None
     parameter_items: list[QGetSimulationV4ParameterItemDetail] | None = None
@@ -27035,6 +27258,9 @@ class SaveSimulationSqlParams(BaseModel):
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
     practice_simulation: bool | None = False
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_grade_agent_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     video_active_flags: list[bool] | None = None
     video_show_problem_statement: list[bool] | None = None
@@ -27064,6 +27290,9 @@ class SaveSimulationSqlParams(BaseModel):
             self.description_id,
             self.active_flag_id,
             self.practice_simulation,
+            self.scenario_flag_ids,
+            self.scenario_position_ids,
+            self.scenario_rubric_grade_agent_ids,
             self.video_ids,
             self.video_active_flags,
             self.video_show_problem_statement,
@@ -27093,6 +27322,9 @@ class SaveSimulationApiRequest(BaseModel):
     description_id: UUID | None = None
     active_flag_id: UUID | None = None
     practice_simulation: bool | None = False
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_grade_agent_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     video_active_flags: list[bool] | None = None
     video_show_problem_statement: list[bool] | None = None
@@ -30691,6 +30923,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RubricsApiRequest",
         "RubricsApiResponse",
     ),
+    "app/sql/v4/resources/scenario_positions_complete.sql": (
+        "ScenarioPositionsSqlParams",
+        "ScenarioPositionsSqlRow",
+        "ScenarioPositionsApiRequest",
+        "ScenarioPositionsApiResponse",
+    ),
+    "app/sql/v4/resources/scenario_rubric_grade_agents_complete.sql": (
+        "ScenarioRubricGradeAgentsSqlParams",
+        "ScenarioRubricGradeAgentsSqlRow",
+        "ScenarioRubricGradeAgentsApiRequest",
+        "ScenarioRubricGradeAgentsApiResponse",
+    ),
     "app/sql/v4/resources/scenarios_complete.sql": (
         "ScenariosSqlParams",
         "ScenariosSqlRow",
@@ -30720,6 +30964,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SettingsSqlRow",
         "SettingsApiRequest",
         "SettingsApiResponse",
+    ),
+    "app/sql/v4/resources/simulation_scenario_flags_complete.sql": (
+        "SimulationScenarioFlagsSqlParams",
+        "SimulationScenarioFlagsSqlRow",
+        "SimulationScenarioFlagsApiRequest",
+        "SimulationScenarioFlagsApiResponse",
     ),
     "app/sql/v4/resources/simulations_complete.sql": (
         "SimulationsSqlParams",
@@ -33297,6 +33547,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/scenario_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/scenario_rubric_grade_agents_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/scenarios_complete.sql"]
     ) -> SqlString: ...
 
@@ -33318,6 +33578,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/settings_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/simulation_scenario_flags_complete.sql"]
     ) -> SqlString: ...
 
     @overload
