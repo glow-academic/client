@@ -1898,9 +1898,9 @@ available_continuation_options AS (
             (SELECT sp.value FROM scenario_positions sp
              CROSS JOIN attempt_base ab
              JOIN unified_content uc ON uc.content_type = 'scenario'
-             WHERE ss.simulation_id = ab.simulation_id
+             JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id
                AND ss.scenario_id = (uc.chat_data).scenario.id
-               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+             WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
             WHERE ssf.simulation_id = ss.simulation_id 
               AND ssf.scenario_id = ss.scenario_id 
               AND ssf.type = 'active'::type_simulation_scenario_flags 
