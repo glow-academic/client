@@ -604,7 +604,7 @@ settings_thresholds AS (
 filtered_simulation_ids AS (
     SELECT DISTINCT s.id AS simulation_id
     FROM simulation s
-    WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)
       AND (
           -- If cohort_ids provided, get simulations linked to those cohorts
                       (cardinality((SELECT cohort_ids FROM params)::uuid[]) > 0 AND EXISTS (
@@ -616,7 +616,7 @@ filtered_simulation_ids AS (
           ))
           OR
           -- Always include practice simulations without cohorts
-          (EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+          (EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
            AND NOT EXISTS (
                SELECT 1 
                FROM cohort_simulations cs2 
@@ -1586,7 +1586,7 @@ filt AS (
                 FROM simulation s
                 LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
-                  AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = true)
+                  AND EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = true)
                   AND (
                       cardinality((SELECT department_ids FROM params)::uuid[]) = 0 
                       OR sd.department_id = ANY((SELECT department_ids FROM params)::uuid[])

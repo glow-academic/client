@@ -125,12 +125,10 @@ resolve_profile_id AS (
 filtered_simulation_ids AS (
     SELECT DISTINCT s.id AS simulation_id
     FROM params p
-    CROSS JOIN simulations s
+    CROSS JOIN simulation s
     WHERE EXISTS (
         SELECT 1 FROM simulation_flags sf
-        JOIN flags f ON sf.flag_id = f.id
         WHERE sf.simulation_id = s.id
-          AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
           AND sf.type = 'active'::type_simulation_flags
           AND sf.value = TRUE
     )
@@ -147,9 +145,7 @@ filtered_simulation_ids AS (
           -- Always include practice simulations without cohorts
           (EXISTS (
             SELECT 1 FROM simulation_flags sf
-            JOIN flags f ON sf.flag_id = f.id
             WHERE sf.simulation_id = s.id
-              AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
               AND sf.type = 'practice'::type_simulation_flags
               AND sf.value = TRUE
           )
@@ -209,7 +205,7 @@ cohort_sim AS (
            (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title, 
            cs.simulation_id
     FROM params p
-    CROSS JOIN cohorts c
+    CROSS JOIN cohort c
     JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.active = true
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     WHERE (cardinality(p.cohort_ids) = 0 OR c.id = ANY(p.cohort_ids))
@@ -295,7 +291,7 @@ cohort_membership AS (
         prof.role
     FROM params p
     CROSS JOIN cohort_profiles cp
-    JOIN cohorts c ON c.id = cp.cohort_id
+    JOIN cohort c ON c.id = cp.cohort_id
     JOIN cohort_simulations cs ON cs.cohort_id = c.id
     JOIN profile prof ON prof.id = cp.profile_id
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
@@ -386,7 +382,7 @@ ta_primary_cohort AS (
         ROW_NUMBER() OVER (ORDER BY c.id, cs.simulation_id) AS order_idx,
         ROW_NUMBER() OVER (PARTITION BY cs.simulation_id ORDER BY c.id) AS rn
     FROM params p
-    CROSS JOIN cohorts c
+    CROSS JOIN cohort c
     JOIN cohort_simulations cs ON cs.cohort_id = c.id
     JOIN cohort_profiles cp ON cp.cohort_id = c.id
         AND cp.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id)

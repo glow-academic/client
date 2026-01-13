@@ -17,19 +17,49 @@ BEGIN
 END $$;
 
 -- 2) Drop types WITHOUT CASCADE
--- Drop all types matching prefix pattern to handle type additions/removals
--- If any other object depends on them, this will ERROR and stop the migration (good)
+-- Drop in reverse dependency order: parent types first (that depend on child types), then child types
+-- q_get_setting_v4_auth depends on q_get_setting_v4_auth_item[], so drop auth first
 DO $$
 DECLARE
     r RECORD;
+    type_order text[] := ARRAY[
+        'q_get_setting_v4_auth',  -- Parent type that depends on auth_item
+        'q_get_setting_v4_auth_item',  -- Child type (no dependencies)
+        'q_get_setting_v4_department',
+        'q_get_setting_v4_provider',
+        'q_get_setting_v4_key',
+        'q_get_setting_v4_name_resource',
+        'q_get_setting_v4_color_resource',
+        'q_get_setting_v4_flag_resource',
+        'q_get_setting_v4_description_resource',
+        'q_get_setting_v4_color_option'
+    ];
+    type_name text;
 BEGIN
+    -- Drop in reverse dependency order (parents before children)
+    FOREACH type_name IN ARRAY type_order
+    LOOP
+        BEGIN
+            EXECUTE format('DROP TYPE IF EXISTS types.%I', type_name);
+        EXCEPTION WHEN OTHERS THEN
+            -- Type might not exist or have other dependencies, skip it
+            NULL;
+        END;
+    END LOOP;
+    
+    -- Drop any remaining types matching the pattern (safety net)
     FOR r IN 
         SELECT typname 
         FROM pg_type 
         WHERE typname LIKE 'q_get_setting_v4_%'
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
-        EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        BEGIN
+            EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
+        EXCEPTION WHEN OTHERS THEN
+            -- Type might have dependencies, skip it
+            NULL;
+        END;
     END LOOP;
 END $$;
 

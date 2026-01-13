@@ -479,8 +479,8 @@ simulation_data AS (
         WHERE sd.active = true
         GROUP BY sd.simulation_id
     ) sdd ON sdd.simulation_id = sim.id
-    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
-      AND EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'practice' AND simf.type = 'practice'::type_simulation_flags AND simf.value = true)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf WHERE simf.simulation_id = sim.id AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
+      AND EXISTS (SELECT 1 FROM simulation_flags simf WHERE simf.simulation_id = sim.id AND simf.type = 'practice'::type_simulation_flags AND simf.value = true)
     GROUP BY sim.id, (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1), (SELECT d.description FROM simulation_descriptions simd JOIN descriptions d ON simd.description_id = d.id WHERE simd.simulation_id = sim.id LIMIT 1), sdd.department_ids
     HAVING 
         (cardinality((SELECT department_ids FROM params)) = 0 OR sdd.department_ids IS NULL OR sdd.department_ids && (SELECT department_ids FROM params)::text[])
@@ -526,8 +526,8 @@ practice_scenario_ids AS (
     SELECT DISTINCT ss.scenario_id
     FROM simulation_scenarios ss
     JOIN simulation sim ON sim.id = ss.simulation_id
-    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
-      AND EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'practice' AND simf.type = 'practice'::type_simulation_flags AND simf.value = true)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf WHERE simf.simulation_id = sim.id AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
+      AND EXISTS (SELECT 1 FROM simulation_flags simf WHERE simf.simulation_id = sim.id AND simf.type = 'practice'::type_simulation_flags AND simf.value = true)
 ),
 -- Scenario persona IDs
 scenario_persona_ids AS (

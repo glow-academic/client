@@ -196,7 +196,7 @@ filt AS (
                       AND cs.active = TRUE
                 )
                 OR
-                (EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+                (EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
                  AND NOT EXISTS (
                      SELECT 1 
                      FROM cohort_simulations cs2 

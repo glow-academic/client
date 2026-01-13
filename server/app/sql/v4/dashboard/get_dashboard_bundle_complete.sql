@@ -2866,7 +2866,7 @@ filt AS (
                 JOIN simulation_scenarios ss_link ON ss_link.simulation_id = s.id
                 JOIN scenarios sc ON sc.id = ss_link.scenario_id
                 JOIN scen_seen ss ON ss.scenario_id = sc.id
-                WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags sf2 JOIN flags fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = sc.id AND fl2.name = 'active' AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
+                WHERE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags sf2 WHERE sf2.scenario_id = sc.id AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
                 GROUP BY s.id
             ),
             sim_param_items_seen AS (
@@ -2883,7 +2883,7 @@ filt AS (
                 JOIN fields f ON f.id = sf.field_id
                 JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
                 JOIN analytics a ON a.scenario_id = sc.id
-                WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags sf2 JOIN flags fl2 ON sf2.flag_id = fl2.id WHERE sf2.scenario_id = sc.id AND fl2.name = 'active' AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
+                WHERE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AND EXISTS (SELECT 1 FROM scenario_flags sf2 WHERE sf2.scenario_id = sc.id AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
                 GROUP BY s.id, p.id, f.id
             ),
             simulation_facts AS (
@@ -2898,7 +2898,7 @@ filt AS (
                 FROM simulation s
                 LEFT JOIN sim_summary ss ON ss.simulation_id = s.id
                 LEFT JOIN sim_scenarios_seen sc_seen ON sc_seen.simulation_id = s.id
-                WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)
+                WHERE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)
                   AND s.id IN (SELECT simulation_id FROM sim_seen)
             ),
             simulation_composition_simulation_facts_agg AS (

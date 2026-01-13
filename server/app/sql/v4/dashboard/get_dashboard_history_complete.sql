@@ -158,7 +158,7 @@ history_attempts AS (
         sa.infinite_mode,
         ap.profile_id,
         (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
+        EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         COALESCE(sdd.department_ids, NULL) as department_ids
     FROM simulation_attempts sa
     JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
@@ -179,11 +179,11 @@ history_attempts AS (
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (
-        (cardinality((SELECT simulation_filters FROM params)::text[]) = 0) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+        (cardinality((SELECT simulation_filters FROM params)::text[]) = 0) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
         OR
         (cardinality((SELECT simulation_filters FROM params)::text[]) > 0 AND (
-          ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
-          ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
+          ('general' = ANY((SELECT simulation_filters FROM params)::text[]) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
+          ('practice' = ANY((SELECT simulation_filters FROM params)::text[]) AND EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
           ('archived' = ANY((SELECT simulation_filters FROM params)::text[]) AND sa.archived = TRUE)
         ))
       )
@@ -201,7 +201,7 @@ history_attempt_cohorts AS (
         COALESCE(ARRAY_AGG(DISTINCT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::text[]) AS cohort_names
     FROM history_attempts ha
     LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
-    LEFT JOIN cohorts c ON c.id = cp.cohort_id AND EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE)
+    LEFT JOIN cohort c ON c.id = cp.cohort_id AND EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE)
     LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
     WHERE (
         -- If no cohort filter, include all attempts

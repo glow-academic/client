@@ -74,9 +74,7 @@ active_sims AS (
   SELECT s.* FROM simulation s
   WHERE EXISTS (
     SELECT 1 FROM simulation_flags sf
-    JOIN flags f ON sf.flag_id = f.id
     WHERE sf.simulation_id = s.id
-      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
       AND sf.type = 'active'::type_simulation_flags
       AND sf.value = TRUE
   )
@@ -86,9 +84,7 @@ active_scenarios AS (
   SELECT s.* FROM scenario s
   WHERE EXISTS (
     SELECT 1 FROM scenario_flags sf
-    JOIN flags f ON sf.flag_id = f.id
     WHERE sf.scenario_id = s.id
-      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
       AND sf.type = 'active'::type_scenario_flags
       AND sf.value = TRUE
   )
@@ -98,9 +94,7 @@ cohorts_expanded AS (
   SELECT c.id, 
     EXISTS (
       SELECT 1 FROM cohort_flags cf
-      JOIN flags f ON cf.flag_id = f.id
       WHERE cf.cohort_id = c.id
-        AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
         AND cf.type = 'active'::type_cohort_flags
         AND cf.value = TRUE
     ) AS active
@@ -113,9 +107,7 @@ cohorts_by_sim AS (
                JOIN cohort_simulations cs ON cs.cohort_id = c.id AND cs.simulation_id = s.id
                WHERE EXISTS (
                  SELECT 1 FROM cohort_flags cf
-                 JOIN flags f ON cf.flag_id = f.id
                  WHERE cf.cohort_id = c.id
-                   AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
                    AND cf.type = 'active'::type_cohort_flags
                    AND cf.value = TRUE
                )) AS cohort_ids
@@ -131,9 +123,7 @@ profile_cohorts_for_sim AS (
            JOIN cohort_profiles cp ON cp.cohort_id = c.id AND cp.profile_id = ap.profile_id
            WHERE EXISTS (
              SELECT 1 FROM cohort_flags cf
-             JOIN flags f ON cf.flag_id = f.id
              WHERE cf.cohort_id = c.id
-               AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'active'
                AND cf.type = 'active'::type_cohort_flags
                AND cf.value = TRUE
            )
@@ -275,18 +265,14 @@ SELECT
 
   EXISTS (
     SELECT 1 FROM simulation_flags sf
-    JOIN flags f ON sf.flag_id = f.id
     WHERE sf.simulation_id = sim.id
-      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
       AND sf.type = 'practice'::type_simulation_flags
       AND sf.value = TRUE
   ) AS is_practice,
   sa.archived                   AS is_archived,
   (NOT EXISTS (
     SELECT 1 FROM simulation_flags sf
-    JOIN flags f ON sf.flag_id = f.id
     WHERE sf.simulation_id = sim.id
-      AND (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) = 'practice'
       AND sf.type = 'practice'::type_simulation_flags
       AND sf.value = TRUE
   ) AND NOT sa.archived) AS is_general,

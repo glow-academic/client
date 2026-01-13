@@ -197,7 +197,7 @@ history_attempt_cohorts AS (
         COALESCE(ARRAY_AGG(DISTINCT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::text[]) AS cohort_names
     FROM history_attempts ha
     LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
-    LEFT JOIN cohorts c ON c.id = cp.cohort_id AND EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE)
+    LEFT JOIN cohort c ON c.id = cp.cohort_id AND EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE)
     LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
     WHERE (
         -- If no cohort filter, include all attempts

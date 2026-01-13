@@ -149,7 +149,7 @@ runs_base AS (
         mrp.profile_id,
         mr.agent_id,
         mrper.persona_id,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
+        EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         sa.archived
     FROM run mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
@@ -218,8 +218,8 @@ runs_base AS (
             OR COALESCE(array_length(p.simulation_filters, 1), 0) = 0
             OR sim.id IS NULL  -- Runs not linked to simulations are always included
             OR (
-                ('general' = ANY(p.simulation_filters) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
-                ('practice' = ANY(p.simulation_filters) AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('general' = ANY(p.simulation_filters) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
+                ('practice' = ANY(p.simulation_filters) AND EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AND COALESCE(sa.archived, FALSE) = FALSE) OR
                 ('archived' = ANY(p.simulation_filters) AND COALESCE(sa.archived, FALSE) = TRUE)
             )
         )

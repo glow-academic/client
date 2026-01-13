@@ -287,7 +287,7 @@ filt AS (
           a.simulation_id IN (
               SELECT DISTINCT s.id
               FROM simulation s
-              WHERE EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)
+              WHERE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE)
                 AND (
                     EXISTS (
                         SELECT 1 
@@ -297,7 +297,7 @@ filt AS (
                           AND cs.active = TRUE
                     )
                     OR
-                    (EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+                    (EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
                      AND NOT EXISTS (
                          SELECT 1 
                          FROM cohort_simulations cs2 
@@ -826,7 +826,7 @@ simulation_options_cte AS (
     FROM all_metrics am
     CROSS JOIN LATERAL UNNEST(am.simulation_ids) AS sim_id
     JOIN simulation sim ON sim.id::text = sim_id
-    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf WHERE simf.simulation_id = sim.id AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
     GROUP BY sim.id, (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1)
     ORDER BY simulation_name
 ),
@@ -1436,7 +1436,7 @@ simulations_final AS (
             ARRAY[]::types.q_reports_bundle_v4_simulation[]
         ) AS simulations_array
     FROM simulation sim
-    WHERE EXISTS (SELECT 1 FROM simulation_flags simf JOIN flags fl ON simf.flag_id = fl.id WHERE simf.simulation_id = sim.id AND fl.name = 'active' AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
+    WHERE EXISTS (SELECT 1 FROM simulation_flags simf WHERE simf.simulation_id = sim.id AND simf.type = 'active'::type_simulation_flags AND simf.value = true)
       AND sim.id IN (SELECT DISTINCT simulation_id FROM filt WHERE simulation_id IS NOT NULL)
 ),
 total_count_cte AS (

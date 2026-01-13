@@ -33,10 +33,14 @@ BEGIN
     -- Refresh the materialized view
     REFRESH MATERIALIZED VIEW CONCURRENTLY analytics;
     
-    -- Get actor_name from profile
-    SELECT COALESCE(first_name || ' ' || last_name, 'System') INTO actor_name_val
+    -- Get actor_name from profile using profile_names junction table
+    SELECT COALESCE(
+        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = api_refresh_analytics_v4.profile_id AND pn.type = 'full'::type_profile_names LIMIT 1),
+        (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 JOIN names n1 ON pn1.name_id = n1.id JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id JOIN names n2 ON pn2.name_id = n2.id WHERE pn1.profile_id = api_refresh_analytics_v4.profile_id AND pn1.type = 'first'::type_profile_names AND pn2.type = 'last'::type_profile_names LIMIT 1),
+        'System'
+    ) INTO actor_name_val
     FROM profile
-    WHERE id = profile_id;
+    WHERE id = api_refresh_analytics_v4.profile_id;
     
     -- Return response
     RETURN QUERY SELECT
