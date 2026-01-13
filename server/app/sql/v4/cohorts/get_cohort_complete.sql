@@ -255,10 +255,10 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT cf.flag_id FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE LIMIT 1)
+            (SELECT cf.flag_id FROM cohort_flags cf WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM cohort_flags cf JOIN flags f ON cf.flag_id = f.id JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE LIMIT 1) as cohort_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_cohort_v4_flag_resource FROM cohort_flags cf JOIN flags f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE LIMIT 1) as cohort_flag_resource
     FROM params
 ),
 -- Name suggestions: linked to cohorts OR same group with generated=true
@@ -436,7 +436,7 @@ department_mapping_data AS (
     FROM params x
     CROSS JOIN user_profile up
     JOIN departments d ON (
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -500,7 +500,7 @@ simulation_mapping_data AS (
         ) as time_limit,
         COALESCE(s.generated, false) as generated
     FROM params x
-    JOIN simulations s ON EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = true)
+    JOIN simulation s ON EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'active'::type_simulation_flags AND sf.value = true)
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     WHERE (
         sd.department_id IN (SELECT department_id FROM user_departments)

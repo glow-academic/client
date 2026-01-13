@@ -116,7 +116,7 @@ target_profile AS (
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         p.role,
-        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE),
+        EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE),
         rl.requests_per_day,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), '') as name
     FROM profile p
@@ -125,7 +125,7 @@ target_profile AS (
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits rl ON prl.request_limit_id = rl.id
     WHERE p.id = (SELECT target_profile_id FROM params)
-    GROUP BY p.id, p.role, EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), rl.requests_per_day
+    GROUP BY p.id, p.role, EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), rl.requests_per_day
 ),
 staff_exists_check AS (
     SELECT EXISTS(
@@ -159,8 +159,8 @@ target_profile_cohorts AS (
     SELECT 
         ARRAY_AGG(cp.cohort_id::text ORDER BY (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
     FROM cohort_profiles cp
-    JOIN cohorts c ON c.id = cp.cohort_id
-    WHERE cp.profile_id = (SELECT target_profile_id FROM params) AND cp.active = true AND EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
+    JOIN cohort c ON c.id = cp.cohort_id
+    WHERE cp.profile_id = (SELECT target_profile_id FROM params) AND cp.active = true AND EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
 ),
 target_profile_departments AS (
     SELECT 
@@ -168,12 +168,12 @@ target_profile_departments AS (
         (SELECT department_id::text FROM profile_departments WHERE profile_id = (SELECT target_profile_id FROM params) AND is_primary = TRUE AND active = true LIMIT 1) as primary_department_id
     FROM profile_departments pd
     JOIN departments d ON d.id = pd.department_id
-    WHERE pd.profile_id = (SELECT target_profile_id FROM params) AND pd.active = true AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    WHERE pd.profile_id = (SELECT target_profile_id FROM params) AND pd.active = true AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
     FROM cohort c
-    WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
+    WHERE EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
 ),
 cohorts_data AS (
     SELECT 
@@ -190,7 +190,7 @@ departments_data AS (
         COALESCE((SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM resolve_current_profile_id rpi
     LEFT JOIN profile_departments pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
-    LEFT JOIN departments d ON d.id = pd.department_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    LEFT JOIN departments d ON d.id = pd.department_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     WHERE rpi.resolved_profile_id IS NOT NULL AND d.id IS NOT NULL
 ),
 can_edit_check AS (
@@ -252,7 +252,7 @@ SELECT
     ) as role,
         COALESCE(
         (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = vp.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE)
+        EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = vp.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE)
     ) as active,
     COALESCE(
         (SELECT 

@@ -236,7 +236,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT af.flag_id FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = (SELECT auth_id FROM params) AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE LIMIT 1)
+            (SELECT af.flag_id FROM auth_flags af WHERE af.auth_id = (SELECT auth_id FROM params) AND af.type = 'active'::type_auth_flags AND af.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_auth_v4_flag_resource 

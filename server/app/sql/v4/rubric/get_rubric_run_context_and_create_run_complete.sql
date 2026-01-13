@@ -120,7 +120,7 @@ best_agent AS (
     FROM agent a
     CROSS JOIN params p
     WHERE a.id = p.rubric_agent_id
-    AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND EXISTS (SELECT 1 FROM agent_domains adom JOIN domain_artifacts da ON da.domain_id = adom.domain_id WHERE adom.agent_id = a.id AND da.artifact = CAST('rubric' AS artifacts))
 ),
 profile_rate_limit AS (

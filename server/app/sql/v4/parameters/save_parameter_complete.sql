@@ -413,7 +413,7 @@ BEGIN
             NOW()
         FROM params x
         CROSS JOIN field_connections_fixed fcf
-        WHERE EXISTS (SELECT 1 FROM field_flags fieldsf JOIN flags fl ON fieldsf.flag_id = fl.id WHERE fieldsf.field_id = fcf.field_id AND fl.name = 'active' AND fieldsf.type = 'active'::type_field_flags AND fieldsf.value = true)
+        WHERE EXISTS (SELECT 1 FROM field_flags fieldsf WHERE fieldsf.field_id = fcf.field_id AND fieldsf.type = 'active'::type_field_flags AND fieldsf.value = true)
           AND fcf.conn_active = true
         ON CONFLICT (parameter_id, field_id) DO UPDATE SET updated_at = NOW()
     ),

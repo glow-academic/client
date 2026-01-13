@@ -613,12 +613,12 @@ settings_data AS (
     SELECT DISTINCT
         s.id as settings_id,
         s.created_at,
-        EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) as active,
         COALESCE(sdd.department_ids, ARRAY[]::uuid[]) as department_ids,
         false as generated  -- Settings are not AI-generated
     FROM setting s
     LEFT JOIN settings_departments_data sdd ON sdd.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
     AND (
         -- Include department-specific settings for this department (if detail mode)
         (SELECT department_id FROM params) IS NULL
@@ -649,7 +649,7 @@ department_current_settings AS (
         -- Fallback to default settings (no department links)
         (SELECT s.id
          FROM setting s
-         WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+         WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
          AND NOT EXISTS (
              SELECT 1 FROM department_settings ds2 
              WHERE ds2.settings_id = s.id 
@@ -681,7 +681,7 @@ settings_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(s.id ORDER BY s.created_at DESC)
              FROM setting s
-             WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+             WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as settings_suggestions
@@ -693,7 +693,7 @@ user_profile_cohorts AS (
     SELECT 
         ARRAY_AGG(cp.cohort_id ORDER BY (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1)) as cohort_ids
     FROM cohort_profiles cp
-    JOIN cohorts c ON c.id = cp.cohort_id
+    JOIN cohort c ON c.id = cp.cohort_id
     WHERE cp.profile_id = (SELECT profile_id FROM params) AND cp.active = true
 ),
 all_cohort_ids AS (
@@ -736,7 +736,7 @@ cohort_suggestions_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(c.id ORDER BY c.created_at DESC)
-             FROM cohorts c
+             FROM cohort c
              WHERE c.id IN (SELECT cohort_id FROM all_cohort_ids)
              LIMIT 20),
             ARRAY[]::uuid[]
@@ -771,7 +771,7 @@ departments_data AS (
         false as generated  -- Departments are not AI-generated
     FROM department d
     WHERE (d.id = (SELECT department_id FROM params) OR EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id))
-    AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 -- Department IDs (selected departments - empty for departments, used for valid options)
 department_ids_data AS (
@@ -785,7 +785,7 @@ department_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(d.id ORDER BY d.created_at DESC)
              FROM departments d
-             WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+             WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
              AND EXISTS (SELECT 1 FROM all_department_ids WHERE department_id = d.id)
              LIMIT 20),
             ARRAY[]::uuid[]
@@ -807,7 +807,7 @@ department_models AS (
         false as generated  -- Models are not AI-generated
     FROM model m
     LEFT JOIN model_departments md ON md.model_id = m.id AND md.active = true
-    WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
+    WHERE EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = true)
     AND (
         (SELECT department_id FROM params) IS NULL
         OR
@@ -827,7 +827,7 @@ model_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(m.id ORDER BY m.created_at DESC)
              FROM model m
-             WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = true)
+             WHERE EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = true)
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as model_suggestions
@@ -847,10 +847,10 @@ keys_data AS (
             WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
             ELSE '****'
         END as description,
-        EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         false as generated  -- Keys are not AI-generated
     FROM key k
-    WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND (
         (SELECT department_id FROM params) IS NULL
         OR
@@ -875,7 +875,7 @@ key_suggestions_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(k.id ORDER BY k.created_at DESC)
              FROM key k
-             WHERE EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
+             WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as key_suggestions

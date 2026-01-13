@@ -838,7 +838,7 @@ scenario_options_cte AS (
     FROM all_metrics am
     CROSS JOIN LATERAL UNNEST(am.scenario_ids) AS scen_id
     JOIN scenarios s ON s.id::text = scen_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     GROUP BY s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
     ORDER BY scenario_title
 ),
@@ -1382,7 +1382,7 @@ scenarios_final AS (
         ) AS scenarios_array
     FROM scenario s
     JOIN scenario_tree st_root ON st_root.parent_id = s.id AND st_root.child_id = s.id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
       AND EXISTS (
           SELECT 1 FROM filt f
           WHERE f.scenario_id IS NOT NULL

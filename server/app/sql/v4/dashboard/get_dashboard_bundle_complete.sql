@@ -1604,7 +1604,7 @@ filt AS (
                 FROM simulation s
                 LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
                 WHERE s.id IN (SELECT simulation_id FROM simulation_ids)
-                  AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+                  AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
                   AND (
                       cardinality((SELECT department_ids FROM params)::uuid[]) = 0 
                       OR sd.department_id = ANY((SELECT department_ids FROM params)::uuid[])
@@ -1635,7 +1635,7 @@ filt AS (
                 ) AS rubrics_array
                 FROM rubric r
                 WHERE r.id IN (SELECT rubric_id FROM rubric_ids)
-                  AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
+                  AND EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
             ),
             parameters_converted AS (
                 SELECT COALESCE(
@@ -2615,7 +2615,7 @@ filt AS (
             param_ids_categorical AS (
                 SELECT id
                 FROM parameter p
-                WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
+                WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
             ),
             cat_map AS (
                 SELECT 
@@ -2626,7 +2626,7 @@ filt AS (
                 JOIN param_ids_categorical p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
                 JOIN scenario_fields sf ON sf.field_id = f.id
                 JOIN scenarios s ON s.id = sf.scenario_id
-                WHERE EXISTS (SELECT 1 FROM scenario_flags sf2 JOIN flags fl ON sf2.flag_id = fl.id WHERE sf2.scenario_id = s.id AND fl.name = 'active' AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
+                WHERE EXISTS (SELECT 1 FROM scenario_flags sf2 WHERE sf2.scenario_id = s.id AND sf2.type = 'active'::type_scenario_flags AND sf2.value = TRUE)
             ),
             scenario_seen AS (
                 SELECT DISTINCT f.scenario_id

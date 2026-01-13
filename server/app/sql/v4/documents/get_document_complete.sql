@@ -233,7 +233,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -292,13 +292,13 @@ parameter_mapping_data AS (
         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
         COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
         false as numerical,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE) as scenario_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'video_parameter' AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE) as video_parameter
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE) as scenario_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE) as video_parameter
     FROM parameter p
-    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = true) 
-      AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = true)
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = true) 
+      AND EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = true)
 ),
 field_mapping_data AS (
     SELECT 
@@ -315,9 +315,9 @@ field_mapping_data AS (
         END as sort_priority
     FROM parameter_mapping_data pmd
     CROSS JOIN field_suggestions_data fsd_for_map
-    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
     JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
-    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = true)
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = true)
 ),
 -- Valid fields data for new documents (based on departments, similar to personas endpoint)
 valid_fields_data AS (
@@ -338,10 +338,10 @@ valid_fields_data AS (
     CROSS JOIN field_suggestions_data fsd_for_sort
     LEFT JOIN parameter_fields pf_pf ON pf_pf.parameter_id IN (
         SELECT p.id FROM parameter p 
-        WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
-          AND EXISTS (SELECT 1 FROM parameter_flags pf2 JOIN flags fl2 ON pf2.flag_id = fl2.id WHERE pf2.parameter_id = p.id AND fl2.name = 'document_parameter' AND pf2.type = 'document_parameter'::type_parameter_flags AND pf2.value = TRUE)
+        WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
+          AND EXISTS (SELECT 1 FROM parameter_flags pf2 WHERE pf2.parameter_id = p.id AND pf2.type = 'document_parameter'::type_parameter_flags AND pf2.value = TRUE)
     )
-    LEFT JOIN fields f ON f.id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    LEFT JOIN fields f ON f.id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     WHERE x.document_id IS NULL
       AND f.id IS NOT NULL  -- Filter out NULL fields
@@ -425,7 +425,7 @@ document_data AS (
         d.id as document_id,
         (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         (SELECT d.description FROM document_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1),
-        EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
         EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'template' AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
         (SELECT dad.agent_domain_id FROM document_agent_domains dad WHERE dad.document_id = d.id LIMIT 1) as document_domain_id,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
@@ -679,10 +679,10 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT df.flag_id FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = (SELECT document_id FROM params) AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE LIMIT 1)
+            (SELECT df.flag_id FROM document_flags df WHERE df.document_id = (SELECT document_id FROM params) AND df.type = 'active'::type_document_flags AND df.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM document_flags df JOIN flags f ON df.flag_id = f.id JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = (SELECT document_id FROM params) AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = TRUE LIMIT 1) as document_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_document_v4_flag_resource FROM document_flags df JOIN flags f ON df.flag_id = f.id WHERE df.document_id = (SELECT document_id FROM params) AND df.type = 'active'::type_document_flags AND df.value = TRUE LIMIT 1) as document_flag_resource
     FROM params
 ),
 -- Agent selection helper CTEs (shared across all agent selections)

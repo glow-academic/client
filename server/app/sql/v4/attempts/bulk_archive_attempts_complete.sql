@@ -167,7 +167,7 @@ BEGIN
                 COALESCE(ARRAY_AGG(DISTINCT c.id) FILTER (WHERE c.id IS NOT NULL AND cs.simulation_id = ha.simulation_id), ARRAY[]::uuid[]) AS cohort_ids
             FROM history_attempts ha
             LEFT JOIN cohort_profiles cp ON cp.profile_id = ha.profile_id
-            LEFT JOIN cohorts c ON c.id = cp.cohort_id AND c.active = TRUE
+            LEFT JOIN cohort c ON c.id = cp.cohort_id AND c.active = TRUE
             LEFT JOIN cohort_simulations cs ON cs.cohort_id = c.id
             WHERE (
                 (SELECT COUNT(*) FROM expanded_history_cohort_ids) = 0

@@ -352,7 +352,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT f.id FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pf.flag_id FROM provider_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.provider_id = (SELECT provider_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_provider_flags AND pf.value = TRUE LIMIT 1)
+            (SELECT pf.flag_id FROM provider_flags pf WHERE pf.provider_id = (SELECT provider_id FROM params) AND pf.type = 'active'::type_provider_flags AND pf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_provider_v4_flag_resource 

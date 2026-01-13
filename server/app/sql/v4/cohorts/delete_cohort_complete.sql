@@ -51,7 +51,7 @@ cohort_title AS (
     -- Get cohort title before deletion
     SELECT (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
     FROM params x
-    JOIN cohorts c ON c.id = x.cohort_id
+    JOIN cohort c ON c.id = x.cohort_id
 ),
 delete_result AS (
     DELETE FROM cohort c

@@ -255,7 +255,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -270,7 +270,7 @@ primary_department_id_data AS (
 active_departments_data AS (
     SELECT ARRAY_AGG(DISTINCT d.department_id) as department_ids
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
     WHERE EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
 ),
 -- Resource data CTEs - query from rubric_* tables or draft_* tables if draft_id provided
@@ -333,7 +333,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rf.flag_id FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = (SELECT rubric_id FROM params) AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE LIMIT 1)
+            (SELECT rf.flag_id FROM rubric_flags rf WHERE rf.rubric_id = (SELECT rubric_id FROM params) AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_rubric_v4_flag_resource 

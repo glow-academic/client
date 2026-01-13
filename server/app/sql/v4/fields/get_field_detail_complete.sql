@@ -135,7 +135,7 @@ valid_parameters_data AS (
         (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
         COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description
     FROM parameter p
-    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+    WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 user_has_field_access AS (
     SELECT EXISTS(
@@ -172,7 +172,7 @@ SELECT
     ) as description,
     COALESCE(
         (SELECT (payload->>'active')::boolean FROM draft_payload_data),
-        EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = TRUE)
+        EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = TRUE)
     ) as active,
     COALESCE(
         (SELECT ARRAY(SELECT jsonb_array_elements_text(payload->'departmentIds')) FROM draft_payload_data),
@@ -218,7 +218,7 @@ SELECT
 FROM field_exists_check fec
 CROSS JOIN user_profile up
 LEFT JOIN params x ON true
-LEFT JOIN fields f ON f.id = x.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+LEFT JOIN fields f ON f.id = x.field_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
 LEFT JOIN field_departments_data fdd ON fdd.field_id = f.id
 LEFT JOIN field_parameters_data fpd ON fpd.field_id = f.id
 LEFT JOIN field_conditional_parameters_data fcpd ON fcpd.field_id = f.id

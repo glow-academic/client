@@ -107,7 +107,7 @@ profile_dept AS (
     -- Get first department from profile's accessible departments
     SELECT d.id as department_id
     FROM params p
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id
     JOIN attempt_profiles ap ON ap.profile_id = pd.profile_id
     JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id
@@ -119,7 +119,7 @@ any_active_dept AS (
     -- Get any active department as last resort
     SELECT d.id as department_id
     FROM department d
-    WHERE EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    WHERE EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     LIMIT 1
 ),
 resolved_dept AS (
@@ -144,7 +144,7 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM setting s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -166,7 +166,7 @@ dept_specific_settings AS (
     FROM setting s
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -175,7 +175,7 @@ settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
     JOIN keys k ON k.id = spk.key_id
-    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
@@ -184,7 +184,7 @@ dept_specific_settings_with_keys AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) AND sd.active = true
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
@@ -192,7 +192,7 @@ default_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM setting s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -208,7 +208,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),
             (SELECT settings_id FROM dept_specific_settings),
             (SELECT settings_id FROM default_settings),
-            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
+            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)
         ) as settings_id
 ),
 documents_data AS (
@@ -219,7 +219,7 @@ documents_data AS (
             ARRAY_AGG(
                 (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, ''), COALESCE(u.mime_type, ''), d.created_at)::types.i_get_voice_run_context_v4_document
                 ORDER BY d.created_at
-            ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_document_flags AND df.value = true)),
+            ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true AND EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = true)),
             ARRAY[]::types.i_get_voice_run_context_v4_document[]
         ) as documents
     FROM params p
@@ -251,12 +251,12 @@ SELECT
     (SELECT p_persona.id FROM scenario_personas sp 
      JOIN personas p_persona ON p_persona.id = sp.persona_id 
      WHERE sp.scenario_id = s.id AND sp.active = true 
-       AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p_persona.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+       AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p_persona.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
      LIMIT 1) as persona_id,
     (SELECT (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p_persona.id LIMIT 1) FROM scenario_personas sp 
      JOIN personas p_persona ON p_persona.id = sp.persona_id 
      WHERE sp.scenario_id = s.id AND sp.active = true 
-       AND EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p_persona.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+       AND EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p_persona.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
      LIMIT 1) as persona_name,
     -- Persona fields not available directly FROM persona table (return NULL for compatibility)
     NULL::text as system_prompt,

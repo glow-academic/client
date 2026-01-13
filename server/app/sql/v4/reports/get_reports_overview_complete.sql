@@ -596,7 +596,7 @@ settings_thresholds AS (
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'warning' LIMIT 1), 80) AS warning_threshold,
         COALESCE((SELECT t.value FROM setting_thresholds st JOIN thresholds t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND st.type = 'danger' LIMIT 1), 70) AS danger_threshold
     FROM setting s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true)
     LIMIT 1
 ),
 -- Filter simulations by cohorts (new filtering order: cohorts → simulations)
@@ -1617,22 +1617,22 @@ filt AS (
                 ) AS rubrics_array
                 FROM rubric r
                 WHERE r.id IN (SELECT rubric_id FROM rubric_ids)
-                  AND EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
+                  AND EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
             ),
             parameters_converted AS (
                 SELECT COALESCE(
                     ARRAY_AGG(
                         (p.id::text, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''), 
                          false, 
-                         COALESCE(EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), false),
-                         COALESCE(EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE), false)
+                         COALESCE(EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), false),
+                         COALESCE(EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE), false)
                         )::types.q_reports_overview_v4_parameter
                         ORDER BY (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1)
                     ),
                     '{}'::types.q_reports_overview_v4_parameter[]
                 ) AS parameters_array
                 FROM parameter p
-                WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+                WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
                   AND (
                       cardinality((SELECT department_ids FROM params)) = 0 
                       OR EXISTS (
@@ -1662,7 +1662,7 @@ filt AS (
                 FROM field f
                 JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1)
                 LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-                WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+                WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
                   AND (
                       cardinality((SELECT department_ids FROM params)::uuid[]) = 0 
                       OR fd.department_id = ANY((SELECT department_ids FROM params)::uuid[])

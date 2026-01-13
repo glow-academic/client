@@ -153,7 +153,7 @@ best_agent AS (
     FROM agent a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-    AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile
@@ -190,7 +190,7 @@ default_settings AS (
     -- Get settings with no department links (cross-department/default)
     SELECT s.id as settings_id
     FROM setting s
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -204,7 +204,7 @@ dept_specific_settings AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true) 
+      AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -213,7 +213,7 @@ settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
     JOIN keys k ON k.id = spk.key_id
-    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
@@ -223,7 +223,7 @@ dept_specific_settings_with_keys AS (
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE ppd.department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true) AND sd.active = true
+      AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
@@ -231,7 +231,7 @@ default_settings_with_keys AS (
     SELECT s.id as settings_id
     FROM setting s
     JOIN settings_with_keys swk ON swk.settings_id = s.id
-    WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
+    WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
       AND NOT EXISTS (
           SELECT 1 FROM department_settings sd 
           WHERE sd.settings_id = s.id AND sd.active = true
@@ -248,7 +248,7 @@ active_settings AS (
             (SELECT settings_id FROM settings_with_keys LIMIT 1),  -- Any with keys
             (SELECT settings_id FROM dept_specific_settings),  -- Original fallback (no keys available)
             (SELECT settings_id FROM default_settings),  -- Original fallback (no keys available)
-            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)  -- Last resort
+            (SELECT id FROM setting s WHERE EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE) LIMIT 1)  -- Last resort
         ) as settings_id
 ),
 context_data AS (
@@ -329,7 +329,7 @@ context_data AS (
             FROM field f
             JOIN parameters pa ON pa.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) 
             WHERE f.id = ANY(p.parameter_item_ids)
-            AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = pa.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
+            AND EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = pa.id AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
             ),
             ARRAY[]::types.i_get_scenario_run_context_and_create_run_v4_parameter_item[]
         ) as parameter_items,
@@ -393,7 +393,7 @@ LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = 
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s_key.settings_id 
         AND spk.active = true
-    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     LEFT JOIN personas pers ON pers.id = p.persona_id
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt

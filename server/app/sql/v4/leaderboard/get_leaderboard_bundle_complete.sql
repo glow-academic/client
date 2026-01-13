@@ -360,7 +360,7 @@ scenario_data AS (
         ) as description
     FROM all_scenario_ids asci
     LEFT JOIN scenarios sc ON sc.id = asci.scenario_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = sc.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = sc.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
 ),
 -- Get top 25% of profiles by highest score
 ranked_stats AS (

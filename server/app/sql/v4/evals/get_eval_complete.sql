@@ -283,7 +283,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -298,7 +298,7 @@ primary_department_id_data AS (
 active_departments_data AS (
     SELECT ARRAY_AGG(DISTINCT d.department_id) as department_ids
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
     WHERE EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
 ),
 -- Resource data CTEs - query from eval_* tables or draft_* tables if draft_id provided
@@ -354,8 +354,8 @@ description_resource_data AS (
 active_flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df JOIN flags fl ON df.flags_id = fl.id WHERE df.draft_id = (SELECT draft_id FROM params) AND fl.name = 'active' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND fl.name = 'active' AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE LIMIT 1)
+            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT ef.flag_id FROM eval_flags ef WHERE ef.eval_id = (SELECT eval_id FROM params) AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_eval_v4_flag_resource 
@@ -363,12 +363,12 @@ active_flag_resource_data AS (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM draft_flags df 
                 JOIN flags f ON df.flags_id = f.id 
-                WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'active'
+                WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
                 FROM eval_flags ef 
                 JOIN flags f ON ef.flag_id = f.id 
-                WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'active' AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE
+                WHERE ef.eval_id = (SELECT eval_id FROM params) AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE
             ) f
             ORDER BY priority
             LIMIT 1
@@ -379,8 +379,8 @@ active_flag_resource_data AS (
 dynamic_flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df JOIN flags fl ON df.flags_id = fl.id WHERE df.draft_id = (SELECT draft_id FROM params) AND fl.name = 'dynamic' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND fl.name = 'dynamic' AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE LIMIT 1)
+            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT ef.flag_id FROM eval_flags ef WHERE ef.eval_id = (SELECT eval_id FROM params) AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE LIMIT 1)
         ) as dynamic_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_eval_v4_flag_resource 
@@ -388,12 +388,12 @@ dynamic_flag_resource_data AS (
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM draft_flags df 
                 JOIN flags f ON df.flags_id = f.id 
-                WHERE df.draft_id = (SELECT draft_id FROM params) AND f.name = 'dynamic'
+                WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false) as generated, 2 as priority
                 FROM eval_flags ef 
                 JOIN flags f ON ef.flag_id = f.id 
-                WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE
+                WHERE ef.eval_id = (SELECT eval_id FROM params) AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE
             ) f
             ORDER BY priority
             LIMIT 1
@@ -404,8 +404,8 @@ dynamic_flag_resource_data AS (
 groups_flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM draft_flags df JOIN flags fl ON df.flags_id = fl.id WHERE df.draft_id = (SELECT draft_id FROM params) AND fl.name = 'groups' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE LIMIT 1)
+            (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT ef.flag_id FROM eval_flags ef WHERE ef.eval_id = (SELECT eval_id FROM params) AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE LIMIT 1)
         ) as groups_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_eval_v4_flag_resource 
@@ -460,7 +460,7 @@ valid_agents_for_eval_list AS (
         COALESCE((SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
         ARRAY[COALESCE(da.artifact::text, '')] as roles
     FROM params x
-    JOIN agents a ON EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+    JOIN agents a ON EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     JOIN agent_domains adom ON adom.agent_id = a.id
     JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('grade' AS artifacts)
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
@@ -485,7 +485,7 @@ agents_array AS (
 user_department_ids_for_rubrics AS (
     SELECT ARRAY_AGG(id) as ids
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON d.id = pd.department_id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 valid_rubrics_data AS (
@@ -495,7 +495,7 @@ valid_rubrics_data AS (
         COALESCE((SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), '') as description,
         (SELECT ra.artifact::text FROM rubric_artifacts ra WHERE ra.rubric_id = r.id LIMIT 1) as agent_role
     FROM params x
-    JOIN rubrics r ON EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = r.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
+    JOIN rubrics r ON EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids_for_rubrics udi
     WHERE (

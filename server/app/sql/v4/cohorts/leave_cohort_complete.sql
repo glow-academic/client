@@ -44,7 +44,7 @@ cohort_info AS (
         c.id, 
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title
     FROM params x 
-    JOIN cohorts c ON c.id = x.cohort_id
+    JOIN cohort c ON c.id = x.cohort_id
 ),
 update_result AS (
     UPDATE cohort_profiles

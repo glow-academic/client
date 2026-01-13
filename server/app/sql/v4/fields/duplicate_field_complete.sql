@@ -43,7 +43,7 @@ original_parameters AS (
     SELECT pf.parameter_id
     FROM params x
     JOIN parameter_fields pf ON pf.field_id = x.field_id
-    WHERE EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = x.field_id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = x.field_id AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LIMIT 1
 ),
 original_departments AS (

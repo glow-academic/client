@@ -80,7 +80,7 @@ profile_cohorts AS (
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title
     FROM params x
     JOIN cohort_profiles cp ON cp.profile_id = x.profile_id
-    JOIN cohorts c ON c.id = cp.cohort_id
+    JOIN cohort c ON c.id = cp.cohort_id
     WHERE cp.active = TRUE
       AND EXISTS (
         SELECT 1 FROM cohort_flags cf

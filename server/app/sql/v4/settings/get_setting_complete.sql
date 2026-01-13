@@ -317,7 +317,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -332,7 +332,7 @@ primary_department_id_data AS (
 active_departments_data AS (
     SELECT ARRAY_AGG(DISTINCT d.department_id) as department_ids
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
     WHERE EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
 ),
 ui_flags AS (
@@ -380,10 +380,10 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT sf.flag_id FROM setting_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = (SELECT setting_id FROM params) AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE LIMIT 1)
+            (SELECT sf.flag_id FROM setting_flags sf WHERE sf.setting_id = (SELECT setting_id FROM params) AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_setting_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_setting_v4_flag_resource FROM setting_flags sf JOIN flags f ON sf.flag_id = f.id JOIN flags fl ON sf.flag_id = fl.id WHERE sf.setting_id = (SELECT setting_id FROM params) AND fl.name = 'active' AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE LIMIT 1) as setting_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_setting_v4_flag_resource FROM setting_flags sf JOIN flags f ON sf.flag_id = f.id WHERE sf.setting_id = (SELECT setting_id FROM params) AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE LIMIT 1) as setting_flag_resource
     FROM params
 ),
 -- Color resource data (multi-select for theme colors)
@@ -761,7 +761,7 @@ auth_mapping_data AS (
         (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), '') as description,
         (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1) as slug,
-        EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = TRUE) AS active,
         COALESCE(
             ARRAY_AGG(
                 (ai.id, ai.name, COALESCE(ai.description, ''), ai.encrypted)::types.q_get_setting_v4_auth_item
@@ -772,10 +772,10 @@ auth_mapping_data AS (
         COALESCE(a.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
-    JOIN auths a ON EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = true)
+    JOIN auths a ON EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = true)
     LEFT JOIN auth_items ai_j ON ai_j.auth_id = a.id
     LEFT JOIN items ai ON ai.id = ai_j.item_id
-    GROUP BY a.id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE)
+    GROUP BY a.id, (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = a.id AND af.type = 'active'::type_auth_flags AND af.value = TRUE)
 ),
 -- Provider IDs (selected provider IDs for setting)
 setting_provider_ids_data AS (
@@ -906,7 +906,7 @@ key_mapping_data AS (
             ELSE '****'
         END as masked_key,
         COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM key_flags kf JOIN flags fl ON kf.flag_id = fl.id WHERE kf.key_id = k.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         COALESCE(
             (SELECT ARRAY_AGG(ds.department_id::text ORDER BY ds.department_id::text)
              FROM (

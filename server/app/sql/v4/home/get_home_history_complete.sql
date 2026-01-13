@@ -152,7 +152,7 @@ history_attempts AS (
         sa.infinite_mode,
         ap.profile_id,
         (SELECT n.name FROM simulation_names simn JOIN names n ON simn.name_id = n.id WHERE simn.simulation_id = sim.id LIMIT 1) AS simulation_name,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AS practice_simulation,
+        EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) AS practice_simulation,
         COALESCE(sdd.department_ids, NULL) as department_ids
     FROM params p
     CROSS JOIN simulation_attempts sa
@@ -175,11 +175,11 @@ history_attempts AS (
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (
-        (cardinality(p.simulation_filters) = 0) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
+        (cardinality(p.simulation_filters) = 0) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
         OR
         (cardinality(p.simulation_filters) > 0 AND (
-          ('general' = ANY(p.simulation_filters) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
-          ('practice' = ANY(p.simulation_filters) AND EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = sim.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
+          ('general' = ANY(p.simulation_filters) AND NOT EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
+          ('practice' = ANY(p.simulation_filters) AND EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)) OR
           ('archived' = ANY(p.simulation_filters) AND sa.archived = TRUE)
         ))
       )

@@ -229,7 +229,7 @@ scenario_mapping_data AS (
         s.id::text as scenario_id,
         (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
         COALESCE(ps.problem_statement, '') as description,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
         COALESCE(spa.persona_ids, ARRAY[]::text[]) as persona_ids,
         pm.mapping as persona_mapping
     FROM all_scenario_ids asi
@@ -261,7 +261,7 @@ cohorts_data AS (
         c.id as cohort_id,
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE) as active,
         c.updated_at,
         COALESCE(cdd.department_ids, NULL) as department_ids,
         COALESCE(cp.profile_ids, ARRAY[]::uuid[]) as profile_ids,
@@ -284,7 +284,7 @@ cohorts_data AS (
             ELSE false
         END as can_leave
     FROM params x
-    JOIN cohorts c ON true
+    JOIN cohort c ON true
     LEFT JOIN cohort_departments cd ON cd.cohort_id = c.id AND cd.active = true
     LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
     LEFT JOIN cohort_profiles_agg cp ON cp.cohort_id = c.id
@@ -298,7 +298,7 @@ cohorts_data AS (
         OR
         up.role != 'instructional'
     )
-    GROUP BY c.id, (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE), c.updated_at,
+    GROUP BY c.id, (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE), c.updated_at,
              cdd.department_ids, cp.profile_ids, cprf.profile_ids, cs.simulation_ids, cu.usage_count, up.role, uic.cohort_id
     HAVING 
         COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0

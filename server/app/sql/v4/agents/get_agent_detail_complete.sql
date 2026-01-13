@@ -286,7 +286,7 @@ all_models AS (
         id::text as model_id,
         (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = model.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = model.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = model.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
+        EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = model.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active
     FROM model
 ),
 model_modalities_data AS (
@@ -311,7 +311,7 @@ user_profile AS (
 user_departments AS (
     SELECT DISTINCT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name, (SELECT d2.description FROM department_descriptions dd JOIN descriptions d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1)
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     JOIN profile_departments pd ON pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true
 ),
 user_has_agent_access AS (

@@ -150,7 +150,7 @@ flags_group_ids AS (
         'flags'::text as resource_type,
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pf.flag_id FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
+            (SELECT pf.flag_id FROM persona_flags pf WHERE pf.persona_id = (SELECT persona_id FROM params) AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
         ) as resource_id,
         gr.group_id
     FROM params x

@@ -48,7 +48,7 @@ original_cohort AS (
         (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as title,
         (SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description
     FROM params x
-    JOIN cohorts c ON c.id = x.cohort_id
+    JOIN cohort c ON c.id = x.cohort_id
 ),
 -- Insert title into names table
 new_title_resource AS (
