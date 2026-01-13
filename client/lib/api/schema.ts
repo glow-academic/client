@@ -753,7 +753,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/departments/detail": {
+    "/api/v4/departments/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -763,17 +763,22 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Department Detail
-         * @description Get department detail with permissions, stats, and settings.
+         * Get Department
+         * @description Get department information - handles both new (department_id = NULL) and detail (department_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
-        post: operations["get_department_detail_api_v4_departments_detail_post"];
+        post: operations["get_department_api_v4_departments_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/departments/new": {
+    "/api/v4/departments/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -783,50 +788,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Department New
-         * @description Get default department detail for creation mode.
+         * Save Department
+         * @description Save department - handles both create (department_id = NULL) and update (department_id provided).
          */
-        post: operations["get_department_new_api_v4_departments_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/departments/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Department
-         * @description Create a new department.
-         */
-        post: operations["create_department_api_v4_departments_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/departments/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Department
-         * @description Update a department.
-         */
-        post: operations["update_department_api_v4_departments_update_post"];
+        post: operations["save_department_api_v4_departments_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6119,27 +6084,6 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** CreateDepartmentApiRequest */
-        CreateDepartmentApiRequest: {
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /**
-             * Settings Id
-             * Format: uuid
-             */
-            settings_id: string;
-        };
-        /** CreateDepartmentApiResponse */
-        CreateDepartmentApiResponse: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** CreateDocumentApiRequest */
         CreateDocumentApiRequest: {
             /** Name */
@@ -7951,30 +7895,137 @@ export interface components {
             /** Scenario Options */
             scenario_options?: components["schemas"]["QGetDashboardHistoryV4ScenarioOption"][] | null;
         };
-        /** GetDepartmentDetailApiRequest */
-        GetDepartmentDetailApiRequest: {
-            /**
-             * Department Id
-             * Format: uuid
-             */
-            department_id: string;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetDepartmentDetailApiResponse */
-        GetDepartmentDetailApiResponse: {
-            /** Department Exists */
-            department_exists?: boolean | null;
+        /** GetDepartmentApiRequest */
+        GetDepartmentApiRequest: {
             /** Department Id */
             department_id?: string | null;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GetDepartmentApiResponse */
+        GetDepartmentApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Department Exists */
+            department_exists?: boolean | null;
             /** Can Edit */
             can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetDepartmentV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetDepartmentV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetDepartmentV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDepartmentV4DescriptionResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetDepartmentV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["QGetDepartmentV4FlagResource"][] | null;
+            /** Settings Ids */
+            settings_ids?: string[] | null;
+            /** Settings Resources */
+            settings_resources?: components["schemas"]["QGetDepartmentV4Setting"][] | null;
+            /** Show Settings */
+            show_settings?: boolean | null;
+            /** Settings Agent Id */
+            settings_agent_id?: string | null;
+            /** Settings Required */
+            settings_required?: boolean | null;
+            /** Settings Suggestions */
+            settings_suggestions?: string[] | null;
+            /** Settings */
+            settings?: components["schemas"]["QGetDepartmentV4Setting"][] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Cohort Resources */
+            cohort_resources?: components["schemas"]["QGetDepartmentV4Cohort"][] | null;
+            /** Show Cohorts */
+            show_cohorts?: boolean | null;
+            /** Cohorts Agent Id */
+            cohorts_agent_id?: string | null;
+            /** Cohorts Required */
+            cohorts_required?: boolean | null;
+            /** Cohort Suggestions */
+            cohort_suggestions?: string[] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QGetDepartmentV4Cohort"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDepartmentV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDepartmentV4Department"][] | null;
+            /** Model Ids */
+            model_ids?: string[] | null;
+            /** Model Resources */
+            model_resources?: components["schemas"]["QGetDepartmentV4Model"][] | null;
+            /** Show Models */
+            show_models?: boolean | null;
+            /** Models Agent Id */
+            models_agent_id?: string | null;
+            /** Models Required */
+            models_required?: boolean | null;
+            /** Model Suggestions */
+            model_suggestions?: string[] | null;
+            /** Models */
+            models?: components["schemas"]["QGetDepartmentV4Model"][] | null;
+            /** Key Ids */
+            key_ids?: string[] | null;
+            /** Key Resources */
+            key_resources?: components["schemas"]["QGetDepartmentV4Key"][] | null;
+            /** Show Keys */
+            show_keys?: boolean | null;
+            /** Keys Agent Id */
+            keys_agent_id?: string | null;
+            /** Keys Required */
+            keys_required?: boolean | null;
+            /** Key Suggestions */
+            key_suggestions?: string[] | null;
+            /** Keys */
+            keys?: components["schemas"]["QGetDepartmentV4Key"][] | null;
             /** Can Duplicate */
             can_duplicate?: boolean | null;
             /** Can Delete */
@@ -7993,42 +8044,8 @@ export interface components {
             valid_model_ids?: string[] | null;
             /** Valid Key Ids */
             valid_key_ids?: string[] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Settings */
-            settings?: components["schemas"]["QGetDepartmentDetailV4Setting"][] | null;
-            /** Cohorts */
-            cohorts?: components["schemas"]["QGetDepartmentDetailV4Cohort"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetDepartmentDetailV4Department"][] | null;
-            /** Models */
-            models?: components["schemas"]["QGetDepartmentDetailV4Model"][] | null;
-            /** Keys */
-            keys?: components["schemas"]["QGetDepartmentDetailV4Key"][] | null;
             /** Model Keys */
-            model_keys?: components["schemas"]["QGetDepartmentDetailV4ModelKey"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-        };
-        /** GetDepartmentNewApiRequest */
-        GetDepartmentNewApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetDepartmentNewApiResponse */
-        GetDepartmentNewApiResponse: {
-            /** Profile Role */
-            profile_role?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Settings */
-            settings?: components["schemas"]["QGetDepartmentNewV4Setting"][] | null;
-            /** Title */
-            title?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
+            model_keys?: components["schemas"]["QGetDepartmentV4ModelKey"][] | null;
             /** Draft Version */
             draft_version?: number | null;
         };
@@ -13301,26 +13318,52 @@ export interface components {
             /** Count */
             count: number | null;
         };
-        /** QGetDepartmentDetailV4Cohort */
-        QGetDepartmentDetailV4Cohort: {
+        /** QGetDepartmentV4Cohort */
+        QGetDepartmentV4Cohort: {
             /** Cohort Id */
             cohort_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetDepartmentDetailV4Department */
-        QGetDepartmentDetailV4Department: {
+        /** QGetDepartmentV4Department */
+        QGetDepartmentV4Department: {
             /** Department Id */
             department_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetDepartmentDetailV4Key */
-        QGetDepartmentDetailV4Key: {
+        /** QGetDepartmentV4DescriptionResource */
+        QGetDepartmentV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetDepartmentV4FlagResource */
+        QGetDepartmentV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetDepartmentV4Key */
+        QGetDepartmentV4Key: {
             /** Key Id */
             key_id: string | null;
             /** Name */
@@ -13331,36 +13374,38 @@ export interface components {
             key_masked: string | null;
             /** Active */
             active: boolean | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetDepartmentDetailV4Model */
-        QGetDepartmentDetailV4Model: {
+        /** QGetDepartmentV4Model */
+        QGetDepartmentV4Model: {
             /** Model Id */
             model_id: string | null;
             /** Name */
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetDepartmentDetailV4ModelKey */
-        QGetDepartmentDetailV4ModelKey: {
+        /** QGetDepartmentV4ModelKey */
+        QGetDepartmentV4ModelKey: {
             /** Model Id */
             model_id: string | null;
             /** Key Id */
             key_id: string | null;
         };
-        /** QGetDepartmentDetailV4Setting */
-        QGetDepartmentDetailV4Setting: {
-            /** Settings Id */
-            settings_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Active */
-            active: boolean | null;
-            /** Department Ids */
-            department_ids: string[] | null;
+        /** QGetDepartmentV4NameResource */
+        QGetDepartmentV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
-        /** QGetDepartmentNewV4Setting */
-        QGetDepartmentNewV4Setting: {
+        /** QGetDepartmentV4Setting */
+        QGetDepartmentV4Setting: {
             /** Settings Id */
             settings_id: string | null;
             /** Created At */
@@ -13369,6 +13414,8 @@ export interface components {
             active: boolean | null;
             /** Department Ids */
             department_ids: string[] | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetDocumentV4Department */
         QGetDocumentV4Department: {
@@ -19052,6 +19099,32 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** SaveDepartmentApiRequest */
+        SaveDepartmentApiRequest: {
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /**
+             * Active Flag Id
+             * Format: uuid
+             */
+            active_flag_id: string;
+            /** Input Department Id */
+            input_department_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Settings Id */
+            settings_id?: string | null;
+        };
+        /** SaveDepartmentApiResponse */
+        SaveDepartmentApiResponse: {
+            /** Department Id */
+            department_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SaveDocumentApiRequest */
         SaveDocumentApiRequest: {
             /**
@@ -20230,34 +20303,6 @@ export interface components {
             name?: string | null;
             /** Message */
             message?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** UpdateDepartmentApiRequest */
-        UpdateDepartmentApiRequest: {
-            /**
-             * Department Id
-             * Format: uuid
-             */
-            department_id: string;
-            /** Title */
-            title: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /**
-             * Settings Id
-             * Format: uuid
-             */
-            settings_id: string;
-        };
-        /** UpdateDepartmentApiResponse */
-        UpdateDepartmentApiResponse: {
-            /** Department Id */
-            department_id?: string | null;
-            /** Title */
-            title?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -22014,7 +22059,7 @@ export interface operations {
             };
         };
     };
-    get_department_detail_api_v4_departments_detail_post: {
+    get_department_api_v4_departments_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22027,7 +22072,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetDepartmentDetailApiRequest"];
+                "application/json": components["schemas"]["GetDepartmentApiRequest"];
             };
         };
         responses: {
@@ -22037,7 +22082,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDepartmentDetailApiResponse"];
+                    "application/json": components["schemas"]["GetDepartmentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -22051,7 +22096,7 @@ export interface operations {
             };
         };
     };
-    get_department_new_api_v4_departments_new_post: {
+    save_department_api_v4_departments_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -22064,7 +22109,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetDepartmentNewApiRequest"];
+                "application/json": components["schemas"]["SaveDepartmentApiRequest"];
             };
         };
         responses: {
@@ -22074,81 +22119,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetDepartmentNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_department_api_v4_departments_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateDepartmentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateDepartmentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_department_api_v4_departments_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateDepartmentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateDepartmentApiResponse"];
+                    "application/json": components["schemas"]["SaveDepartmentApiResponse"];
                 };
             };
             /** @description Validation Error */

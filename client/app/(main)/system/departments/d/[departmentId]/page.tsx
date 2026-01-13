@@ -13,12 +13,29 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type DepartmentDetailIn = InputOf<"/api/v4/departments/detail", "post">;
-type DepartmentDetailOut = OutputOf<"/api/v4/departments/detail", "post">;
-type UpdateDepartmentIn = InputOf<"/api/v4/departments/update", "post">;
-type UpdateDepartmentOut = OutputOf<"/api/v4/departments/update", "post">;
+type GetDepartmentIn = InputOf<"/api/v4/departments/get", "post">;
+type GetDepartmentOut = OutputOf<"/api/v4/departments/get", "post">;
+type SaveDepartmentIn = InputOf<"/api/v4/departments/save", "post">;
+type SaveDepartmentOut = OutputOf<"/api/v4/departments/save", "post">;
 type PatchDepartmentDraftIn = InputOf<"/api/v4/departments/draft", "patch">;
 type PatchDepartmentDraftOut = OutputOf<"/api/v4/departments/draft", "patch">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftSettingsIn = InputOf<"/api/v4/resources/settings", "post">;
+type CreateDraftSettingsOut = OutputOf<
+  "/api/v4/resources/settings",
+  "post"
+>;
 
 type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
@@ -33,9 +50,9 @@ type SettingsDetailOut = OutputOf<"/api/v4/settings/detail", "post">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getDepartment = async (
-  input: DepartmentDetailIn
-): Promise<DepartmentDetailOut> => {
-  return api.post("/departments/detail", input, {
+  input: GetDepartmentIn
+): Promise<GetDepartmentOut> => {
+  return api.post("/departments/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -51,16 +68,16 @@ export async function generateMetadata(
   const { departmentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const input: DepartmentDetailIn = {
+    const input: GetDepartmentIn = {
       body: {
         department_id: departmentId,
         draft_id: null,
-      } as DepartmentDetailIn["body"],
+      } as GetDepartmentIn["body"],
     };
     const department = await getDepartment(input);
     return {
-      title: `${department?.title || "Department"} Department`,
-      description: `${department?.title ? `${department.title} - ` : ""}Academic department for teaching assistant training programs.${department?.description ? ` ${department.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
+      title: `${department?.name_resource?.name || "Department"} Department`,
+      description: `${department?.name_resource?.name ? `${department.name_resource.name} - ` : ""}Academic department for teaching assistant training programs.${department?.description_resource?.description ? ` ${department.description_resource.description}` : ""} Manage department-specific settings and coordinate L&D programs across different academic units.`,
     };
   } catch {
     // Fall through to default metadata
@@ -74,12 +91,12 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function updateDepartment(
-  input: UpdateDepartmentIn
-): Promise<UpdateDepartmentOut> {
+async function saveDepartment(
+  input: SaveDepartmentIn
+): Promise<SaveDepartmentOut> {
   "use server";
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/departments/update", input);
+  return api.post("/departments/save", input);
 }
 
 async function patchDepartmentDraft(
@@ -88,6 +105,34 @@ async function patchDepartmentDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/departments/draft", input);
+}
+
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  return api.post("/resources/names", input);
+}
+
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftFlags(
+  input: CreateDraftFlagsIn
+): Promise<CreateDraftFlagsOut> {
+  "use server";
+  return api.post("/resources/flags", input);
+}
+
+async function createDraftSettings(
+  input: CreateDraftSettingsIn
+): Promise<CreateDraftSettingsOut> {
+  "use server";
+  return api.post("/resources/settings", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -122,13 +167,13 @@ export default async function DepartmentEditPage({
   const loadDepartmentSearchParams = createLoader(departmentSearchParams);
   const q = loadDepartmentSearchParams(searchParamsObj);
 
-  // Fetch department detail (always fresh - source of truth) with draft_id
+  // Fetch department detail (always fresh - source of truth) with draft_id (unified get endpoint)
   try {
-    const input: DepartmentDetailIn = {
+    const input: GetDepartmentIn = {
       body: {
         department_id: departmentId,
         draft_id: q.draftId ?? null,
-      } as DepartmentDetailIn["body"],
+      } as GetDepartmentIn["body"],
     };
     const departmentDetail = await getDepartment(input);
 
@@ -141,9 +186,13 @@ export default async function DepartmentEditPage({
         <Department
           key={q.draftId || departmentId} // Force remount when draftId changes to ensure clean state reset
           departmentId={departmentId}
-          departmentDetail={departmentDetail}
-          updateDepartmentAction={updateDepartment}
+          departmentData={departmentDetail}
+          saveDepartmentAction={saveDepartment}
           patchDepartmentDraftAction={patchDepartmentDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createFlagsAction={createDraftFlags}
+          createSettingsAction={createDraftSettings}
         />
       </div>
     );
@@ -170,18 +219,26 @@ export default async function DepartmentEditPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  CreateDraftDescriptionsIn,
+  CreateDraftDescriptionsOut,
+  CreateDraftFlagsIn,
+  CreateDraftFlagsOut,
+  CreateDraftNamesIn,
+  CreateDraftNamesOut,
+  CreateDraftSettingsIn,
+  CreateDraftSettingsOut,
   CreateKeyIn,
   CreateKeyOut,
   DecryptKeyIn,
   DecryptKeyOut,
-  DepartmentDetailIn,
-  DepartmentDetailOut,
+  GetDepartmentIn,
+  GetDepartmentOut,
   KeysListOut,
   PatchDepartmentDraftIn,
   PatchDepartmentDraftOut,
+  SaveDepartmentIn,
+  SaveDepartmentOut,
   SettingsDetailOut,
-  UpdateDepartmentIn,
-  UpdateDepartmentOut,
   UpdateKeyIn,
   UpdateKeyOut,
 };

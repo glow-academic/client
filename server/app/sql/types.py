@@ -8751,6 +8751,266 @@ class GetAllActiveDepartmentsApiResponse(BaseModel):
 
 
 
+# Generated from: get_department
+
+class GetDepartmentSqlParams(BaseModel):
+
+    profile_id: UUID
+    department_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_id,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetDepartmentV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4Key(BaseModel):
+
+    key_id: UUID | None
+    name: str | None
+    description: str | None
+    key_masked: str | None
+    active: bool | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4Model(BaseModel):
+
+    model_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4ModelKey(BaseModel):
+
+    model_id: UUID | None
+    key_id: UUID | None
+
+
+
+
+class QGetDepartmentV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetDepartmentV4Setting(BaseModel):
+
+    settings_id: UUID | None
+    created_at: str | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    generated: bool | None
+
+class GetDepartmentSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    department_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetDepartmentV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetDepartmentV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetDepartmentV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetDepartmentV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetDepartmentV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetDepartmentV4FlagResource] | None = None
+    settings_ids: list[UUID] | None = None
+    settings_resources: list[QGetDepartmentV4Setting] | None = None
+    show_settings: bool | None = None
+    settings_agent_id: UUID | None = None
+    settings_required: bool | None = None
+    settings_suggestions: list[UUID] | None = None
+    settings: list[QGetDepartmentV4Setting] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohort_resources: list[QGetDepartmentV4Cohort] | None = None
+    show_cohorts: bool | None = None
+    cohorts_agent_id: UUID | None = None
+    cohorts_required: bool | None = None
+    cohort_suggestions: list[UUID] | None = None
+    cohorts: list[QGetDepartmentV4Cohort] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetDepartmentV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetDepartmentV4Department] | None = None
+    model_ids: list[UUID] | None = None
+    model_resources: list[QGetDepartmentV4Model] | None = None
+    show_models: bool | None = None
+    models_agent_id: UUID | None = None
+    models_required: bool | None = None
+    model_suggestions: list[UUID] | None = None
+    models: list[QGetDepartmentV4Model] | None = None
+    key_ids: list[UUID] | None = None
+    key_resources: list[QGetDepartmentV4Key] | None = None
+    show_keys: bool | None = None
+    keys_agent_id: UUID | None = None
+    keys_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetDepartmentV4Key] | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    staff_count: int | None = None
+    total_price_spent: float | None = None
+    settings_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_model_ids: list[UUID] | None = None
+    valid_key_ids: list[UUID] | None = None
+    model_keys: list[QGetDepartmentV4ModelKey] | None = None
+    draft_version: int | None = None
+
+class GetDepartmentApiRequest(BaseModel):
+
+    department_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetDepartmentApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    department_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetDepartmentV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetDepartmentV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetDepartmentV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetDepartmentV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetDepartmentV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetDepartmentV4FlagResource] | None = None
+    settings_ids: list[UUID] | None = None
+    settings_resources: list[QGetDepartmentV4Setting] | None = None
+    show_settings: bool | None = None
+    settings_agent_id: UUID | None = None
+    settings_required: bool | None = None
+    settings_suggestions: list[UUID] | None = None
+    settings: list[QGetDepartmentV4Setting] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohort_resources: list[QGetDepartmentV4Cohort] | None = None
+    show_cohorts: bool | None = None
+    cohorts_agent_id: UUID | None = None
+    cohorts_required: bool | None = None
+    cohort_suggestions: list[UUID] | None = None
+    cohorts: list[QGetDepartmentV4Cohort] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetDepartmentV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetDepartmentV4Department] | None = None
+    model_ids: list[UUID] | None = None
+    model_resources: list[QGetDepartmentV4Model] | None = None
+    show_models: bool | None = None
+    models_agent_id: UUID | None = None
+    models_required: bool | None = None
+    model_suggestions: list[UUID] | None = None
+    models: list[QGetDepartmentV4Model] | None = None
+    key_ids: list[UUID] | None = None
+    key_resources: list[QGetDepartmentV4Key] | None = None
+    show_keys: bool | None = None
+    keys_agent_id: UUID | None = None
+    keys_required: bool | None = None
+    key_suggestions: list[UUID] | None = None
+    keys: list[QGetDepartmentV4Key] | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    in_use: bool | None = None
+    staff_count: int | None = None
+    total_price_spent: float | None = None
+    settings_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_model_ids: list[UUID] | None = None
+    valid_key_ids: list[UUID] | None = None
+    model_keys: list[QGetDepartmentV4ModelKey] | None = None
+    draft_version: int | None = None
+
+
+
 # Generated from: get_department_detail
 
 class GetDepartmentDetailSqlParams(BaseModel):
@@ -9010,6 +9270,47 @@ class GetDepartmentsListApiResponse(BaseModel):
     departments: list[QListDepartmentsV4Department] | None = None
     cohorts: list[QListDepartmentsV4Cohort] | None = None
     profiles: list[QListDepartmentsV4Profile] | None = None
+
+
+
+# Generated from: save_department
+
+class SaveDepartmentSqlParams(BaseModel):
+
+    name_id: UUID
+    active_flag_id: UUID
+    profile_id: UUID
+    input_department_id: UUID | None = None
+    description_id: UUID | None = None
+    settings_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+            self.active_flag_id,
+            self.profile_id,
+            self.input_department_id,
+            self.description_id,
+            self.settings_id,
+        )
+
+class SaveDepartmentSqlRow(BaseModel):
+
+    department_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveDepartmentApiRequest(BaseModel):
+
+    name_id: UUID
+    active_flag_id: UUID
+    input_department_id: UUID | None = None
+    description_id: UUID | None = None
+    settings_id: UUID | None = None
+
+class SaveDepartmentApiResponse(BaseModel):
+
+    department_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -33120,6 +33421,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAllActiveDepartmentsApiRequest",
         "GetAllActiveDepartmentsApiResponse",
     ),
+    "app/sql/v4/departments/get_department_complete.sql": (
+        "GetDepartmentSqlParams",
+        "GetDepartmentSqlRow",
+        "GetDepartmentApiRequest",
+        "GetDepartmentApiResponse",
+    ),
     "app/sql/v4/departments/get_department_detail_complete.sql": (
         "GetDepartmentDetailSqlParams",
         "GetDepartmentDetailSqlRow",
@@ -33143,6 +33450,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentsListSqlRow",
         "GetDepartmentsListApiRequest",
         "GetDepartmentsListApiResponse",
+    ),
+    "app/sql/v4/departments/save_department_complete.sql": (
+        "SaveDepartmentSqlParams",
+        "SaveDepartmentSqlRow",
+        "SaveDepartmentApiRequest",
+        "SaveDepartmentApiResponse",
     ),
     "app/sql/v4/departments/update_department_complete.sql": (
         "UpdateDepartmentSqlParams",
@@ -36340,6 +36653,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/departments/get_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/departments/get_department_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -36356,6 +36674,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/departments/get_departments_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/departments/save_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
