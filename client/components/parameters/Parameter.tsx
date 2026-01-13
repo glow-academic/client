@@ -24,6 +24,7 @@ import {
 import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
+import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -38,13 +39,7 @@ import {
   getDefaultDepartmentIds,
   transformDepartmentIdsForSubmit,
 } from "@/utils/department-picker-helpers";
-import {
-  ArrowDown,
-  ArrowUp,
-  Check,
-  GripVertical,
-  Power,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Check, GripVertical, Power } from "lucide-react";
 import {
   parseAsBoolean,
   parseAsString,
@@ -54,43 +49,43 @@ import {
 
 // Type-only import from server page
 import type {
-  CreateParameterIn,
-  CreateParameterOut,
-  ParameterDetailOut,
-  ParameterNewOut,
+  GetParameterOut,
   PatchParameterDraftIn,
   PatchParameterDraftOut,
-  UpdateParameterIn,
-  UpdateParameterOut,
+  SaveParameterIn,
+  SaveParameterOut,
 } from "@/app/(main)/management/parameters/p/[parameterId]/page";
+import { Documents } from "@/components/resources/Documents";
+import { Personas } from "@/components/resources/Personas";
 
 export interface ParameterProps {
   parameterId?: string;
   mode?: "create" | "edit";
-  // Server-provided data (for server-side rendering)
-  parameterDetail?: ParameterDetailOut;
-  parameterDetailDefault?: ParameterNewOut;
-  // Server actions (replaces useMutation)
-  createParameterAction?: (
-    input: CreateParameterIn
-  ) => Promise<CreateParameterOut>;
-  updateParameterAction?: (
-    input: UpdateParameterIn
-  ) => Promise<UpdateParameterOut>;
+  // Server-provided data (for server-side rendering) - unified data prop
+  parameterData?: GetParameterOut;
+  // Server actions (replaces useMutation) - unified save action
+  saveParameterAction?: (input: SaveParameterIn) => Promise<SaveParameterOut>;
   // Draft action: Resource-specific prop name is acceptable since types are resource-specific
   patchParameterDraftAction?: (
     input: PatchParameterDraftIn
   ) => Promise<PatchParameterDraftOut>;
+  // Resource creation actions
+  createPersonasAction?: (
+    input: Parameters<typeof Personas>[0]["createPersonasAction"]
+  ) => Promise<ReturnType<typeof Personas>[0]["createPersonasAction"]>;
+  createDocumentsAction?: (
+    input: Parameters<typeof Documents>[0]["createDocumentsAction"]
+  ) => Promise<ReturnType<typeof Documents>[0]["createDocumentsAction"]>;
 }
 
 function ParameterComponent({
   parameterId,
   mode = parameterId ? "edit" : "create",
-  parameterDetail: serverParameterDetail,
-  parameterDetailDefault: serverParameterDetailDefault,
-  createParameterAction,
-  updateParameterAction,
+  parameterData: serverParameterData,
+  saveParameterAction,
   patchParameterDraftAction,
+  createPersonasAction,
+  createDocumentsAction,
 }: ParameterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -100,120 +95,58 @@ function ParameterComponent({
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
   const isSuperadmin = effectiveProfile?.role === "superadmin";
 
-  // Stabilize server props to prevent unnecessary re-renders
-  const stabilizeServerProp = React.useCallback(
-    (
-      data: typeof serverParameterDetail | typeof serverParameterDetailDefault
-    ): string | null => {
-      if (!data) return null;
-      if (typeof data === "object" && data !== null) {
-        if ("parameter_id" in data && data.parameter_id) {
-          return `parameter_id:${String(data.parameter_id)}`;
-        }
-        const keyFields: Record<string, unknown> = {};
-        if ("valid_department_ids" in data) {
-          keyFields["valid_department_ids"] = Array.isArray(
-            data["valid_department_ids"]
-          )
-            ? data["valid_department_ids"].sort().join(",")
-            : data["valid_department_ids"];
-        }
-        if ("valid_field_ids" in data) {
-          keyFields["valid_field_ids"] = Array.isArray(
-            data["valid_field_ids"]
-          )
-            ? data["valid_field_ids"].sort().join(",")
-            : data["valid_field_ids"];
-        }
-        const sortedKeys = Object.keys(keyFields).sort();
-        const hash = sortedKeys
-          .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-          .join("|");
-        return `new:${hash.length}:${hash.slice(0, 100)}`;
-      }
-      return String(data);
-    },
-    []
-  );
+  // Use ref to track latest server data
+  const latestServerParameterDataRef = React.useRef(serverParameterData);
+  latestServerParameterDataRef.current = serverParameterData;
 
-  const parameterDetailId = React.useMemo(
-    () => stabilizeServerProp(serverParameterDetail),
-    [serverParameterDetail, stabilizeServerProp]
-  );
-  const parameterDetailDefaultId = React.useMemo(
-    () => stabilizeServerProp(serverParameterDetailDefault),
-    [serverParameterDetailDefault, stabilizeServerProp]
-  );
-
-  // Use refs to track latest server props
-  const latestServerParameterDetailRef = React.useRef(serverParameterDetail);
-  const latestServerParameterDetailDefaultRef = React.useRef(
-    serverParameterDetailDefault
-  );
-
-  latestServerParameterDetailRef.current = serverParameterDetail;
-  latestServerParameterDetailDefaultRef.current = serverParameterDetailDefault;
-
-  // Use refs to track stable server props
-  const stableParameterDetailRef = React.useRef<{
-    data: typeof serverParameterDetail;
-    id: string | null;
-  }>({
-    data: serverParameterDetail,
-    id: parameterDetailId,
-  });
-  const stableParameterDetailDefaultRef = React.useRef<{
-    data: typeof serverParameterDetailDefault;
-    id: string | null;
-  }>({
-    data: serverParameterDetailDefault,
-    id: parameterDetailDefaultId,
-  });
-
-  React.useEffect(() => {
-    if (stableParameterDetailRef.current.id !== parameterDetailId) {
-      stableParameterDetailRef.current = {
-        data: latestServerParameterDetailRef.current,
-        id: parameterDetailId,
-      };
-    }
-  }, [parameterDetailId]);
-
-  React.useEffect(() => {
-    if (
-      stableParameterDetailDefaultRef.current.id !== parameterDetailDefaultId
-    ) {
-      stableParameterDetailDefaultRef.current = {
-        data: latestServerParameterDetailDefaultRef.current,
-        id: parameterDetailDefaultId,
-      };
-    }
-  }, [parameterDetailDefaultId]);
-
-  // Use stable references
-  const parameterDetail = stableParameterDetailRef.current.data;
-  const parameterDetailDefault = stableParameterDetailDefaultRef.current.data;
-
-  // Use edit detail when editing, default detail when creating
+  // Stabilize server prop to prevent unnecessary re-renders
   const parameterDataId = React.useMemo(() => {
-    const data = isEditMode ? parameterDetail : parameterDetailDefault;
-    if (!data) return null;
-    if (typeof data === "object" && data !== null) {
-      if ("parameter_id" in data && data.parameter_id) {
-        return `parameter_id:${String(data.parameter_id)}`;
+    if (!serverParameterData) return null;
+    if (
+      typeof serverParameterData === "object" &&
+      serverParameterData !== null
+    ) {
+      if (
+        "parameter_id" in serverParameterData &&
+        serverParameterData.parameter_id
+      ) {
+        return `parameter_id:${String(serverParameterData.parameter_id)}`;
       }
       const keyFields: Record<string, unknown> = {};
-      if ("valid_department_ids" in data) {
-        keyFields["valid_department_ids"] = Array.isArray(
-          data["valid_department_ids"]
-        )
-          ? data["valid_department_ids"].sort().join(",")
-          : data["valid_department_ids"];
+      // Handle valid IDs - may be arrays or may need to derive from resource arrays
+      const validDeptIds =
+        "valid_department_ids" in serverParameterData &&
+        Array.isArray(serverParameterData["valid_department_ids"]) &&
+        serverParameterData["valid_department_ids"].length > 0
+          ? serverParameterData["valid_department_ids"]
+          : "departments" in serverParameterData &&
+              Array.isArray(serverParameterData["departments"])
+            ? serverParameterData["departments"]
+                .map((d: { department_id: string | null }) =>
+                  String(d.department_id)
+                )
+                .filter(Boolean)
+            : [];
+      const validFieldIds =
+        "valid_field_ids" in serverParameterData &&
+        Array.isArray(serverParameterData["valid_field_ids"]) &&
+        serverParameterData["valid_field_ids"].length > 0
+          ? serverParameterData["valid_field_ids"]
+          : "fields" in serverParameterData &&
+              Array.isArray(serverParameterData["fields"])
+            ? serverParameterData["fields"]
+                .map((f: { field_id: string | null }) => String(f.field_id))
+                .filter(Boolean)
+            : [];
+      if (validDeptIds.length > 0) {
+        keyFields["valid_department_ids"] = Array.isArray(validDeptIds)
+          ? validDeptIds.sort().join(",")
+          : String(validDeptIds);
       }
-      if ("valid_field_ids" in data) {
-        keyFields["valid_field_ids"] = Array.isArray(data["valid_field_ids"])
-          ? data["valid_field_ids"].sort().join(",")
-          : data["valid_field_ids"];
+      if (validFieldIds.length > 0) {
+        keyFields["valid_field_ids"] = Array.isArray(validFieldIds)
+          ? validFieldIds.sort().join(",")
+          : String(validFieldIds);
       }
       const sortedKeys = Object.keys(keyFields).sort();
       const hash = sortedKeys
@@ -221,27 +154,34 @@ function ParameterComponent({
         .join("|");
       return `new:${hash.length}:${hash.slice(0, 100)}`;
     }
-    return String(data);
-  }, [isEditMode, parameterDetail, parameterDetailDefault]);
+    return String(serverParameterData);
+  }, [serverParameterData]);
 
   const stableParameterDataRef = React.useRef<{
-    data: typeof parameterDetail | typeof parameterDetailDefault;
+    data: typeof serverParameterData;
     id: string | null;
   }>({
-    data: isEditMode ? parameterDetail : parameterDetailDefault,
+    data: serverParameterData,
     id: parameterDataId,
   });
 
   React.useEffect(() => {
     if (stableParameterDataRef.current.id !== parameterDataId) {
       stableParameterDataRef.current = {
-        data: isEditMode ? parameterDetail : parameterDetailDefault,
+        data: latestServerParameterDataRef.current,
         id: parameterDataId,
       };
     }
-  }, [isEditMode, parameterDetail, parameterDetailDefault, parameterDataId]);
+  }, [parameterDataId]);
 
   const parameterData = stableParameterDataRef.current.data;
+
+  // Disabled logic based on can_edit flag - standardized for all resource components
+  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
+  const disabled = useMemo(() => {
+    if (!parameterData) return false;
+    return !parameterData.can_edit;
+  }, [parameterData]);
 
   const defaultDepartmentIds = useMemo(
     () =>
@@ -512,11 +452,7 @@ function ParameterComponent({
       fieldSearch: urlParams.fieldSearch || null,
       fieldShowSelected: urlParams.fieldShowSelected ?? false,
     } as Record<string, unknown>;
-  }, [
-    draftState,
-    urlParams.fieldSearch,
-    urlParams.fieldShowSelected,
-  ]);
+  }, [draftState, urlParams.fieldSearch, urlParams.fieldShowSelected]);
 
   // Wrapper for setFormData that updates draftState for form fields, urlParams for navigation
   const setFormData = useCallback(
@@ -581,16 +517,17 @@ function ParameterComponent({
 
   // Set breadcrumb context when parameter data is loaded
   useEffect(() => {
-    if (parameterDetail?.name && parameterId && isEditMode) {
+    const parameterName = parameterData?.actor_name;
+    if (parameterName && parameterId && isEditMode) {
       setEntityMetadata({
         entityId: parameterId,
-        entityName: parameterDetail.name,
+        entityName: parameterName,
         entityType: "parameter",
       });
     }
     return () => clearEntityMetadata();
   }, [
-    parameterDetail,
+    parameterData?.actor_name,
     parameterId,
     isEditMode,
     setEntityMetadata,
@@ -660,11 +597,8 @@ function ParameterComponent({
     ),
   });
 
-  // Readonly logic using server-provided can_edit flag
-  const isReadonly = useMemo(() => {
-    if (!isEditMode || !parameterData) return false;
-    return !parameterData.can_edit;
-  }, [isEditMode, parameterData]);
+  // Readonly logic using server-provided can_edit flag (use disabled instead)
+  const isReadonly = disabled;
 
   // Convert departments array to dictionary for efficient lookups (GenericPicker needs Record format)
   const departmentMapping = useMemo(() => {
@@ -733,8 +667,19 @@ function ParameterComponent({
   }, [fieldsArray]);
 
   const validFieldIds = useMemo(() => {
-    return parameterData?.valid_field_ids || [];
-  }, [parameterData?.valid_field_ids]);
+    // Use valid_field_ids if available, otherwise derive from fields array
+    if (
+      parameterData?.valid_field_ids &&
+      parameterData.valid_field_ids.length > 0
+    ) {
+      return parameterData.valid_field_ids.map(String);
+    }
+    // Fallback: extract IDs from fields array
+    const fields = parameterData?.fields || [];
+    return fields
+      .map((f: { field_id: string | null }) => String(f.field_id))
+      .filter(Boolean);
+  }, [parameterData?.valid_field_ids, parameterData?.fields]);
 
   // Form initialization function for GenericForm
   const initializeForm = useCallback(
@@ -748,19 +693,19 @@ function ParameterComponent({
         return {};
       }
 
-      const parameterDetail = serverData as ParameterDetailOut;
-      const deptIds = parameterDetail.department_ids || [];
+      const parameterData = serverData as GetParameterOut;
+      const deptIds = parameterData.department_ids || [];
       const fieldIds: string[] = [];
       const fieldActiveStates: Record<string, boolean> = {};
       const fieldDefaultStates: Record<string, boolean> = {};
 
-      if (parameterDetail.field_connections) {
-        parameterDetail.field_connections.forEach((conn) => {
+      if (parameterData.field_connections) {
+        parameterData.field_connections.forEach((conn) => {
           const fieldId = conn.field_id;
           if (fieldId) {
-            fieldIds.push(fieldId);
-            fieldActiveStates[fieldId] = conn.active ?? true;
-            fieldDefaultStates[fieldId] = conn.default ?? false;
+            fieldIds.push(String(fieldId));
+            fieldActiveStates[String(fieldId)] = conn.active ?? true;
+            fieldDefaultStates[String(fieldId)] = conn.default ?? false;
           }
         });
       }
@@ -768,26 +713,26 @@ function ParameterComponent({
       // Update draftState directly
       const draftUpdates: Partial<DraftState> = {};
 
-      if (parameterDetail.name) draftUpdates.name = parameterDetail.name;
-      if (parameterDetail.description)
-        draftUpdates.description = parameterDetail.description;
-      if (parameterDetail.active !== undefined)
-        draftUpdates.active = parameterDetail.active ?? false;
-      if (parameterDetail.simulation_parameter !== undefined)
+      if (parameterData.name) draftUpdates.name = parameterData.name;
+      if (parameterData.description)
+        draftUpdates.description = parameterData.description;
+      if (parameterData.active !== undefined)
+        draftUpdates.active = parameterData.active ?? false;
+      if (parameterData.simulation_parameter !== undefined)
         draftUpdates.simulation_parameter =
-          parameterDetail.simulation_parameter ?? false;
-      if (parameterDetail.document_parameter !== undefined)
+          parameterData.simulation_parameter ?? false;
+      if (parameterData.document_parameter !== undefined)
         draftUpdates.document_parameter =
-          parameterDetail.document_parameter ?? false;
-      if (parameterDetail.persona_parameter !== undefined)
+          parameterData.document_parameter ?? false;
+      if (parameterData.persona_parameter !== undefined)
         draftUpdates.persona_parameter =
-          parameterDetail.persona_parameter ?? false;
-      if (parameterDetail.scenario_parameter !== undefined)
+          parameterData.persona_parameter ?? false;
+      if (parameterData.scenario_parameter !== undefined)
         draftUpdates.scenario_parameter =
-          parameterDetail.scenario_parameter ?? false;
-      if (parameterDetail.video_parameter !== undefined)
-        draftUpdates.video_parameter = parameterDetail.video_parameter ?? false;
-      if (deptIds.length > 0) draftUpdates.departmentIds = deptIds;
+          parameterData.scenario_parameter ?? false;
+      if (parameterData.video_parameter !== undefined)
+        draftUpdates.video_parameter = parameterData.video_parameter ?? false;
+      if (deptIds.length > 0) draftUpdates.departmentIds = deptIds.map(String);
       if (fieldIds.length > 0) draftUpdates.fieldIds = fieldIds;
       if (Object.keys(fieldActiveStates).length > 0)
         draftUpdates.fieldActiveStates = fieldActiveStates;
@@ -813,7 +758,16 @@ function ParameterComponent({
         throw new Error("Parameter name is required");
       }
 
-      const validDepartmentIds = parameterData?.valid_department_ids || [];
+      // Use valid_department_ids if available, otherwise derive from departments array
+      const validDepartmentIds =
+        parameterData?.valid_department_ids &&
+        parameterData.valid_department_ids.length > 0
+          ? parameterData.valid_department_ids.map(String)
+          : (parameterData?.departments || [])
+              .map((d: { department_id: string | null }) =>
+                String(d.department_id)
+              )
+              .filter(Boolean);
       const finalDepartmentIds = transformDepartmentIdsForSubmit(
         draftState.departmentIds || [],
         isSuperadmin,
@@ -843,8 +797,9 @@ function ParameterComponent({
         })
         .filter((conn) => conn); // Only include fields with connections
 
-      const defaultCount = connectionEntries.filter((conn) => conn.default)
-        .length;
+      const defaultCount = connectionEntries.filter(
+        (conn) => conn.default
+      ).length;
 
       // Ensure exactly one default
       let fieldConnectionsToSubmit = connectionEntries.map((conn, index) => {
@@ -868,22 +823,15 @@ function ParameterComponent({
         });
       }
 
-      // Extract body types for type safety
-      type CreateParameterBody = CreateParameterIn extends { body: infer B }
-        ? B
-        : never;
-      type UpdateParameterBody = UpdateParameterIn extends { body: infer B }
-        ? B
-        : never;
+      if (!saveParameterAction) {
+        toast.error("Save action not available");
+        throw new Error("Save action not available");
+      }
 
-      if (isEditMode) {
-        if (!updateParameterAction) {
-          toast.error("Update action not available");
-          throw new Error("Update action not available");
-        }
-        try {
-          const updateRequest: UpdateParameterBody = {
-            parameter_id: parameterId!,
+      try {
+        await saveParameterAction({
+          body: {
+            input_parameter_id: isEditMode && parameterId ? parameterId : null,
             name: draftState.name || "",
             description: draftState.description || "",
             active: draftState.active ?? false,
@@ -894,43 +842,19 @@ function ParameterComponent({
             video_parameter: draftState.video_parameter ?? false,
             department_ids: finalDepartmentIds || [],
             field_connections: fieldConnectionsToSubmit,
-          };
-          await updateParameterAction({ body: updateRequest });
-          toast.success("Parameter updated successfully!");
-          router.push("/management/parameters");
-        } catch (error) {
-          toast.error(
-            `Failed to update parameter: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
-      } else {
-        if (!createParameterAction) {
-          toast.error("Create action not available");
-          throw new Error("Create action not available");
-        }
-        try {
-          const createRequest: CreateParameterBody = {
-            name: draftState.name || "",
-            description: draftState.description || "",
-            active: draftState.active ?? false,
-            simulation_parameter: draftState.simulation_parameter ?? false,
-            document_parameter: draftState.document_parameter ?? false,
-            persona_parameter: draftState.persona_parameter ?? false,
-            scenario_parameter: draftState.scenario_parameter ?? false,
-            video_parameter: draftState.video_parameter ?? false,
-            department_ids: finalDepartmentIds || [],
-            field_connections: fieldConnectionsToSubmit,
-          };
-          await createParameterAction({ body: createRequest });
-          toast.success("Parameter created successfully!");
-          router.push("/management/parameters");
-        } catch (error) {
-          toast.error(
-            `Failed to create parameter: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
+            persona_ids: [], // TODO: Add persona_ids from form state when implemented
+            document_ids: [], // TODO: Add document_ids from form state when implemented
+          },
+        });
+        toast.success(
+          `Parameter ${isEditMode ? "updated" : "created"} successfully!`
+        );
+        router.push("/management/parameters");
+      } catch (error) {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} parameter: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        throw error;
       }
     },
     [
@@ -940,8 +864,7 @@ function ParameterComponent({
       isSuperadmin,
       parameterData,
       effectiveProfile?.id,
-      updateParameterAction,
-      createParameterAction,
+      saveParameterAction,
       router,
     ]
   );
@@ -949,9 +872,7 @@ function ParameterComponent({
   // Step status logic (for GenericForm)
   const getStepStatus = useCallback(
     (stepId: string, formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!(
-        formData["name"] as string | null | undefined
-      )?.trim();
+      const hasName = !!(formData["name"] as string | null | undefined)?.trim();
       const hasFields =
         ((formData["fieldIds"] as string[] | null | undefined) || []).length >
         0;
@@ -1132,37 +1053,47 @@ function ParameterComponent({
                 </div>
 
                 {/* Department Selection */}
-                {parameterData?.valid_department_ids &&
-                parameterData.valid_department_ids.length > 1 ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <GenericPicker
-                      items={departmentMapping}
-                      itemIds={parameterData?.valid_department_ids || []}
-                      selectedIds={
-                        (stepFormData["departmentIds"] as
-                          | string[]
-                          | null
-                          | undefined) || []
-                      }
-                      onSelect={(ids) =>
-                        setStepFormData({
-                          departmentIds: ids.length > 0 ? ids : null,
-                        })
-                      }
-                      getId={(dept) => (dept as unknown as { id: string }).id}
-                      getLabel={(dept) => String(dept["name"] || "")}
-                      getSearchText={(dept) =>
-                        `${dept["name"]} ${dept["description"] || ""}`
-                      }
-                      placeholder="All Departments"
-                      disabled={isReadonly}
-                      multiSelect={true}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                    />
-                  </div>
-                ) : null}
+                {(() => {
+                  const validDeptIds =
+                    parameterData?.valid_department_ids &&
+                    parameterData.valid_department_ids.length > 0
+                      ? parameterData.valid_department_ids.map(String)
+                      : (parameterData?.departments || [])
+                          .map((d: { department_id: string | null }) =>
+                            String(d.department_id)
+                          )
+                          .filter(Boolean);
+                  return validDeptIds.length > 1 ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="department">Department</Label>
+                      <GenericPicker
+                        items={departmentMapping}
+                        itemIds={validDeptIds}
+                        selectedIds={
+                          (stepFormData["departmentIds"] as
+                            | string[]
+                            | null
+                            | undefined) || []
+                        }
+                        onSelect={(ids) =>
+                          setStepFormData({
+                            departmentIds: ids.length > 0 ? ids : null,
+                          })
+                        }
+                        getId={(dept) => (dept as unknown as { id: string }).id}
+                        getLabel={(dept) => String(dept["name"] || "")}
+                        getSearchText={(dept) =>
+                          `${dept["name"]} ${dept["description"] || ""}`
+                        }
+                        placeholder="All Departments"
+                        disabled={isReadonly}
+                        multiSelect={true}
+                        hideSelectedChips={true}
+                        buttonClassName="w-full"
+                      />
+                    </div>
+                  ) : null;
+                })()}
 
                 {/* Active Switch */}
                 <div className="space-y-2 pt-2">
@@ -1241,28 +1172,28 @@ function ParameterComponent({
                             // Reset child switches when toggling simulation_parameter
                             document_parameter: checked
                               ? false
-                              : (stepFormData["document_parameter"] as
+                              : ((stepFormData["document_parameter"] as
                                   | boolean
                                   | null
-                                  | undefined) ?? false,
+                                  | undefined) ?? false),
                             persona_parameter: checked
                               ? false
-                              : (stepFormData["persona_parameter"] as
+                              : ((stepFormData["persona_parameter"] as
                                   | boolean
                                   | null
-                                  | undefined) ?? false,
+                                  | undefined) ?? false),
                             scenario_parameter: checked
                               ? false
-                              : (stepFormData["scenario_parameter"] as
+                              : ((stepFormData["scenario_parameter"] as
                                   | boolean
                                   | null
-                                  | undefined) ?? false,
+                                  | undefined) ?? false),
                             video_parameter: checked
                               ? false
-                              : (stepFormData["video_parameter"] as
+                              : ((stepFormData["video_parameter"] as
                                   | boolean
                                   | null
-                                  | undefined) ?? false,
+                                  | undefined) ?? false),
                           });
                         }}
                         disabled={isReadonly}
@@ -1401,10 +1332,8 @@ function ParameterComponent({
 
         case "fields": {
           const fieldShowSelected =
-            (stepFormData["fieldShowSelected"] as
-              | boolean
-              | null
-              | undefined) ?? false;
+            (stepFormData["fieldShowSelected"] as boolean | null | undefined) ??
+            false;
           const selectedFieldIds =
             (stepFormData["fieldIds"] as string[] | null | undefined) || [];
           const fieldSearch =
@@ -1446,10 +1375,7 @@ function ParameterComponent({
               isReadonly={isReadonly}
               isEditMode={isEditMode}
               searchTerm={
-                (stepFormData["fieldSearch"] as
-                  | string
-                  | null
-                  | undefined) || ""
+                (stepFormData["fieldSearch"] as string | null | undefined) || ""
               }
               onSearchChange={(term: string) =>
                 setStepFormData({ fieldSearch: term || null })
@@ -1803,7 +1729,8 @@ function ParameterComponent({
                                 {};
                               // Unset all other defaults
                               fieldIdsFromState.forEach((id) => {
-                                newDefaultStates[id] = id === fieldId && checked;
+                                newDefaultStates[id] =
+                                  id === fieldId && checked;
                               });
                               setContentFormData({
                                 fieldDefaultStates: newDefaultStates,
@@ -1830,37 +1757,11 @@ function ParameterComponent({
         className="w-full p-6 space-y-8"
         data-page={`parameter-${isEditMode ? "edit" : "new"}`}
       >
-        {isReadonly && (
-          <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-muted-foreground"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-foreground">
-                  Parameter is read-only
-                </h3>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <p>
-                    {parameterData?.department_ids?.length === 0
-                      ? "This is a default parameter that cannot be edited. You can view the details but cannot make changes."
-                      : "This parameter cannot be edited. You can view the details but cannot make changes."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={parameterData?.disabled_reason ?? null}
+          entityType="parameter"
+        />
 
         <GenericForm
           nuqsParsers={
@@ -1888,7 +1789,7 @@ function ParameterComponent({
 
 // Helper function to generate stable ID from server prop
 function getStableServerPropId(
-  data: ParameterDetailOut | ParameterNewOut | undefined
+  data: GetParameterOut | undefined
 ): string | null {
   if (!data) return null;
   if (typeof data === "object" && data !== null) {
@@ -1896,17 +1797,38 @@ function getStableServerPropId(
       return `parameter_id:${String(data.parameter_id)}`;
     }
     const keyFields: Record<string, unknown> = {};
-    if ("valid_department_ids" in data) {
-      keyFields["valid_department_ids"] = Array.isArray(
-        data["valid_department_ids"]
-      )
-        ? data["valid_department_ids"].sort().join(",")
-        : data["valid_department_ids"];
+    // Handle valid IDs - may be arrays or may need to derive from resource arrays
+    const validDeptIds =
+      "valid_department_ids" in data &&
+      Array.isArray(data["valid_department_ids"]) &&
+      data["valid_department_ids"].length > 0
+        ? data["valid_department_ids"]
+        : "departments" in data && Array.isArray(data["departments"])
+          ? data["departments"]
+              .map((d: { department_id: string | null }) =>
+                String(d.department_id)
+              )
+              .filter(Boolean)
+          : [];
+    const validFieldIds =
+      "valid_field_ids" in data &&
+      Array.isArray(data["valid_field_ids"]) &&
+      data["valid_field_ids"].length > 0
+        ? data["valid_field_ids"]
+        : "fields" in data && Array.isArray(data["fields"])
+          ? data["fields"]
+              .map((f: { field_id: string | null }) => String(f.field_id))
+              .filter(Boolean)
+          : [];
+    if (validDeptIds.length > 0) {
+      keyFields["valid_department_ids"] = Array.isArray(validDeptIds)
+        ? validDeptIds.sort().join(",")
+        : String(validDeptIds);
     }
-    if ("valid_field_ids" in data) {
-      keyFields["valid_field_ids"] = Array.isArray(data["valid_field_ids"])
-        ? data["valid_field_ids"].sort().join(",")
-        : data["valid_field_ids"];
+    if (validFieldIds.length > 0) {
+      keyFields["valid_field_ids"] = Array.isArray(validFieldIds)
+        ? validFieldIds.sort().join(",")
+        : String(validFieldIds);
     }
     const sortedKeys = Object.keys(keyFields).sort();
     const hash = sortedKeys
@@ -1919,29 +1841,24 @@ function getStableServerPropId(
 
 // Memoize component to prevent re-renders when only prop references change
 export default React.memo(ParameterComponent, (prevProps, nextProps) => {
-  const prevDetailId = getStableServerPropId(prevProps.parameterDetail);
-  const nextDetailId = getStableServerPropId(nextProps.parameterDetail);
-  const prevDefaultId = getStableServerPropId(
-    prevProps.parameterDetailDefault
-  );
-  const nextDefaultId = getStableServerPropId(
-    nextProps.parameterDetailDefault
-  );
+  const prevDataId = getStableServerPropId(prevProps.parameterData);
+  const nextDataId = getStableServerPropId(nextProps.parameterData);
 
   // Compare primitive props
   if (
     prevProps.parameterId !== nextProps.parameterId ||
-    prevProps.mode !== nextProps.mode
+    prevProps.mode !== nextProps.mode ||
+    prevProps.saveParameterAction !== nextProps.saveParameterAction ||
+    prevProps.patchParameterDraftAction !==
+      nextProps.patchParameterDraftAction ||
+    prevProps.createPersonasAction !== nextProps.createPersonasAction ||
+    prevProps.createDocumentsAction !== nextProps.createDocumentsAction
   ) {
     return false; // Props changed, re-render
   }
 
   // Compare server props by content ID, not reference
-  if (prevDetailId !== nextDetailId) {
-    return false; // Content changed, re-render
-  }
-
-  if (prevDefaultId !== nextDefaultId) {
+  if (prevDataId !== nextDataId) {
     return false; // Content changed, re-render
   }
 

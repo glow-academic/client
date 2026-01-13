@@ -1038,6 +1038,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/documents/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Document
+         * @description Get document information - handles both new (document_id = NULL) and detail (document_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
+         */
+        post: operations["get_document_api_v4_documents_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/documents/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Document
+         * @description Save document - handles both create (input_document_id = NULL) and update (input_document_id provided).
+         */
+        post: operations["save_document_api_v4_documents_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/documents/detail": {
         parameters: {
             query?: never;
@@ -6089,12 +6134,12 @@ export interface components {
             system_prompt?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Model Temperature Level Id */
-            model_temperature_level_id?: string | null;
-            /** Model Reasoning Level Id */
-            model_reasoning_level_id?: string | null;
-            /** Model Voice Ids */
-            model_voice_ids?: string[] | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
         };
         /** CreateAgentApiResponse */
         CreateAgentApiResponse: {
@@ -7586,12 +7631,12 @@ export interface components {
             role?: string | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** Model Temperature Level Id */
-            model_temperature_level_id?: string | null;
-            /** Model Reasoning Level Id */
-            model_reasoning_level_id?: string | null;
-            /** Model Voice Ids */
-            model_voice_ids?: string[] | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
             /** Draft Version */
             draft_version?: number | null;
         };
@@ -8101,6 +8146,110 @@ export interface components {
             cohorts?: components["schemas"]["QListDepartmentsV4Cohort"][] | null;
             /** Profiles */
             profiles?: components["schemas"]["QListDepartmentsV4Profile"][] | null;
+        };
+        /** GetDocumentApiRequest */
+        GetDocumentApiRequest: {
+            /** Document Id */
+            document_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GetDocumentApiResponse */
+        GetDocumentApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Document Exists */
+            document_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetDocumentV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetDocumentV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetDocumentV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetDocumentV4DescriptionResource"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetDocumentV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetDocumentV4Department"][] | null;
+            /** Field Ids */
+            field_ids?: string[] | null;
+            /** Field Resources */
+            field_resources?: components["schemas"]["QGetDocumentV4Field"][] | null;
+            /** Show Fields */
+            show_fields?: boolean | null;
+            /** Fields Agent Id */
+            fields_agent_id?: string | null;
+            /** Fields Required */
+            fields_required?: boolean | null;
+            /** Field Suggestions */
+            field_suggestions?: string[] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetDocumentV4Field"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetDocumentV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Template */
+            template?: boolean | null;
+            /** Template Id */
+            template_id?: string | null;
+            /** Schema Id */
+            schema_id?: string | null;
+            /** Html Id */
+            html_id?: string | null;
+            /** Template File Path */
+            template_file_path?: string | null;
+            /** Templates */
+            templates?: components["schemas"]["QGetDocumentV4Template"][] | null;
+            /** Document Domain Id */
+            document_domain_id?: string | null;
+            /** General Agent Id */
+            general_agent_id?: string | null;
         };
         /** GetDocumentDetailApiRequest */
         GetDocumentDetailApiRequest: {
@@ -13199,6 +13348,72 @@ export interface components {
             active: boolean | null;
             /** Department Ids */
             department_ids: string[] | null;
+        };
+        /** QGetDocumentV4Department */
+        QGetDocumentV4Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetDocumentV4DescriptionResource */
+        QGetDocumentV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetDocumentV4Field */
+        QGetDocumentV4Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetDocumentV4FlagResource */
+        QGetDocumentV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetDocumentV4NameResource */
+        QGetDocumentV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetDocumentV4Template */
+        QGetDocumentV4Template: {
+            /** Template Id */
+            template_id: string | null;
+            /** Schema Id */
+            schema_id: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
         };
         /** QGetEvalAttemptV4Attempt */
         QGetEvalAttemptV4Attempt: {
@@ -18724,6 +18939,39 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** SaveDocumentApiRequest */
+        SaveDocumentApiRequest: {
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+            /** Input Document Id */
+            input_document_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Template Flag Id */
+            template_flag_id?: string | null;
+            /** Html Id */
+            html_id?: string | null;
+            /** Schema Id */
+            schema_id?: string | null;
+            /** Document Domain Id */
+            document_domain_id?: string | null;
+        };
+        /** SaveDocumentApiResponse */
+        SaveDocumentApiResponse: {
+            /** Document Id */
+            document_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SavePersonaApiRequest */
         SavePersonaApiRequest: {
             /**
@@ -19728,12 +19976,12 @@ export interface components {
             department_ids?: string[] | null;
             /** Department Ids For Prompt */
             department_ids_for_prompt?: string[] | null;
-            /** Model Temperature Level Id */
-            model_temperature_level_id?: string | null;
-            /** Model Reasoning Level Id */
-            model_reasoning_level_id?: string | null;
-            /** Model Voice Ids */
-            model_voice_ids?: string[] | null;
+            /** Temperature Level Id */
+            temperature_level_id?: string | null;
+            /** Reasoning Level Id */
+            reasoning_level_id?: string | null;
+            /** Voice Ids */
+            voice_ids?: string[] | null;
         };
         /** UpdateAgentApiResponse */
         UpdateAgentApiResponse: {
@@ -22174,6 +22422,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetDocumentsListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_document_api_v4_documents_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetDocumentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetDocumentApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_document_api_v4_documents_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveDocumentApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */

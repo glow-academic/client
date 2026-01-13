@@ -1,22 +1,17 @@
 """Parameters resource router."""
 
-from fastapi import APIRouter
-
-from app.api.v4.parameters.create import router as create_router
 from app.api.v4.parameters.delete import router as delete_router
-from app.api.v4.parameters.detail import router as detail_router
 from app.api.v4.parameters.duplicate import router as duplicate_router
+from app.api.v4.parameters.get import router as get_router
 from app.api.v4.parameters.list import router as list_router
-from app.api.v4.parameters.new import router as new_router
-from app.api.v4.parameters.update import router as update_router
+from app.api.v4.parameters.save import router as save_router
+from fastapi import APIRouter
 
 router = APIRouter(prefix="/parameters", tags=["parameters"])
 
 # Include endpoint routers
 router.include_router(list_router)
-router.include_router(detail_router)
-router.include_router(new_router)
-router.include_router(create_router)
-router.include_router(update_router)
+router.include_router(get_router)
+router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)

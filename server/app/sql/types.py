@@ -14187,6 +14187,205 @@ class DuplicateParameterApiResponse(BaseModel):
 
 
 
+# Generated from: get_parameter
+
+class GetParameterSqlParams(BaseModel):
+
+    profile_id: UUID
+    parameter_id: UUID | None = None
+    field_search: str | None = None
+    field_show_selected: bool | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.parameter_id,
+            self.field_search,
+            self.field_show_selected,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetParameterV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetParameterV4Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetParameterV4Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    usage_count: int | None
+    department_ids: list[str] | None
+    generated: bool | None
+
+
+
+
+class QGetParameterV4FieldConnection(BaseModel):
+
+    field_id: UUID | None
+    default: bool | None
+    active: bool | None
+
+
+
+
+class QGetParameterV4Item(BaseModel):
+
+    parameter_item_id: UUID | None
+    name: str | None
+    description: str | None
+    default: bool | None
+    usage_count: int | None
+    department_ids: list[str] | None
+
+
+
+
+class QGetParameterV4Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+class GetParameterSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    parameter_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetParameterV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetParameterV4Department] | None = None
+    field_ids: list[UUID] | None = None
+    field_resources: list[QGetParameterV4Field] | None = None
+    show_fields: bool | None = None
+    fields_agent_id: UUID | None = None
+    fields_required: bool | None = None
+    field_suggestions: list[UUID] | None = None
+    fields: list[QGetParameterV4Field] | None = None
+    persona_ids: list[UUID] | None = None
+    persona_resources: list[QGetParameterV4Persona] | None = None
+    show_personas: bool | None = None
+    personas_agent_id: UUID | None = None
+    personas_required: bool | None = None
+    persona_suggestions: list[UUID] | None = None
+    personas: list[QGetParameterV4Persona] | None = None
+    document_ids: list[UUID] | None = None
+    document_resources: list[QGetParameterV4Document] | None = None
+    show_documents: bool | None = None
+    documents_agent_id: UUID | None = None
+    documents_required: bool | None = None
+    document_suggestions: list[UUID] | None = None
+    documents: list[QGetParameterV4Document] | None = None
+    parameter_items: list[QGetParameterV4Item] | None = None
+    field_connections: list[QGetParameterV4FieldConnection] | None = None
+    draft_version: int | None = None
+    field_ids_jsonb: Any | None = None
+    field_active_states: Any | None = None
+    field_default_states: Any | None = None
+    valid_department_ids: list[str] | None = None
+    valid_field_ids: list[str] | None = None
+    valid_persona_ids: list[str] | None = None
+    valid_document_ids: list[str] | None = None
+
+class GetParameterApiRequest(BaseModel):
+
+    parameter_id: UUID | None = None
+    field_search: str | None = None
+    field_show_selected: bool | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetParameterApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    parameter_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    simulation_parameter: bool | None = None
+    document_parameter: bool | None = None
+    persona_parameter: bool | None = None
+    scenario_parameter: bool | None = None
+    video_parameter: bool | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetParameterV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetParameterV4Department] | None = None
+    field_ids: list[UUID] | None = None
+    field_resources: list[QGetParameterV4Field] | None = None
+    show_fields: bool | None = None
+    fields_agent_id: UUID | None = None
+    fields_required: bool | None = None
+    field_suggestions: list[UUID] | None = None
+    fields: list[QGetParameterV4Field] | None = None
+    persona_ids: list[UUID] | None = None
+    persona_resources: list[QGetParameterV4Persona] | None = None
+    show_personas: bool | None = None
+    personas_agent_id: UUID | None = None
+    personas_required: bool | None = None
+    persona_suggestions: list[UUID] | None = None
+    personas: list[QGetParameterV4Persona] | None = None
+    document_ids: list[UUID] | None = None
+    document_resources: list[QGetParameterV4Document] | None = None
+    show_documents: bool | None = None
+    documents_agent_id: UUID | None = None
+    documents_required: bool | None = None
+    document_suggestions: list[UUID] | None = None
+    documents: list[QGetParameterV4Document] | None = None
+    parameter_items: list[QGetParameterV4Item] | None = None
+    field_connections: list[QGetParameterV4FieldConnection] | None = None
+    draft_version: int | None = None
+    field_ids_jsonb: Any | None = None
+    field_active_states: Any | None = None
+    field_default_states: Any | None = None
+    valid_department_ids: list[str] | None = None
+    valid_field_ids: list[str] | None = None
+    valid_persona_ids: list[str] | None = None
+    valid_document_ids: list[str] | None = None
+
+
+
 # Generated from: get_parameter_detail
 
 class GetParameterDetailSqlParams(BaseModel):
@@ -14566,6 +14765,84 @@ class GetParametersListApiResponse(BaseModel):
     documents: list[QListParametersV4Document] | None = None
     scenario_options: list[QListParametersV4ScenarioOption] | None = None
     document_options: list[QListParametersV4DocumentOption] | None = None
+
+
+
+# Generated from: save_parameter
+
+class ISaveParameterV4FieldConnection(BaseModel):
+
+    field_id: UUID | None
+    default: bool | None
+    active: bool | None
+
+class SaveParameterSqlParams(BaseModel):
+
+    name: str
+    description: str
+    active: bool
+    simulation_parameter: bool
+    document_parameter: bool
+    persona_parameter: bool
+    scenario_parameter: bool
+    video_parameter: bool
+    department_ids: list[UUID]
+    field_connections: list[ISaveParameterV4FieldConnection]
+    profile_id: UUID
+    input_parameter_id: UUID | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert field_connections composite array to tuples for asyncpg
+        field_connections_tuples = [
+            (conn.field_id, conn.default, conn.active)
+            for conn in (self.field_connections or [])
+        ]
+        return (
+            self.name,
+            self.description,
+            self.active,
+            self.simulation_parameter,
+            self.document_parameter,
+            self.persona_parameter,
+            self.scenario_parameter,
+            self.video_parameter,
+            self.department_ids,
+            field_connections_tuples,
+            self.profile_id,
+            self.input_parameter_id,
+            self.persona_ids,
+            self.document_ids,
+        )
+
+class SaveParameterSqlRow(BaseModel):
+
+    parameter_id: UUID | None = None
+    parameter_exists: bool | None = None
+    actor_name: str | None = None
+
+class SaveParameterApiRequest(BaseModel):
+
+    name: str
+    description: str
+    active: bool
+    simulation_parameter: bool
+    document_parameter: bool
+    persona_parameter: bool
+    scenario_parameter: bool
+    video_parameter: bool
+    department_ids: list[UUID]
+    field_connections: list[ISaveParameterV4FieldConnection]
+    input_parameter_id: UUID | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+
+class SaveParameterApiResponse(BaseModel):
+
+    parameter_id: UUID | None = None
+    parameter_exists: bool | None = None
+    actor_name: str | None = None
 
 
 
@@ -30659,6 +30936,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateParameterApiRequest",
         "DuplicateParameterApiResponse",
     ),
+    "app/sql/v4/parameters/get_parameter_complete.sql": (
+        "GetParameterSqlParams",
+        "GetParameterSqlRow",
+        "GetParameterApiRequest",
+        "GetParameterApiResponse",
+    ),
     "app/sql/v4/parameters/get_parameter_detail_complete.sql": (
         "GetParameterDetailSqlParams",
         "GetParameterDetailSqlRow",
@@ -30676,6 +30959,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetParametersListSqlRow",
         "GetParametersListApiRequest",
         "GetParametersListApiResponse",
+    ),
+    "app/sql/v4/parameters/save_parameter_complete.sql": (
+        "SaveParameterSqlParams",
+        "SaveParameterSqlRow",
+        "SaveParameterApiRequest",
+        "SaveParameterApiResponse",
     ),
     "app/sql/v4/parameters/update_parameter_complete.sql": (
         "UpdateParameterSqlParams",
@@ -33390,6 +33679,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/parameters/get_parameter_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/parameters/get_parameter_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -33401,6 +33695,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/parameters/get_parameters_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/parameters/save_parameter_complete.sql"]
     ) -> SqlString: ...
 
     @overload
