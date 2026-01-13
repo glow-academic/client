@@ -10,10 +10,10 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProviderNewIn = InputOf<"/api/v4/providers/new", "post">;
-type ProviderNewOut = OutputOf<"/api/v4/providers/new", "post">;
-type CreateProviderIn = InputOf<"/api/v4/providers/create", "post">;
-type CreateProviderOut = OutputOf<"/api/v4/providers/create", "post">;
+type GetProviderIn = InputOf<"/api/v4/providers/get", "post">;
+type GetProviderOut = OutputOf<"/api/v4/providers/get", "post">;
+type SaveProviderIn = InputOf<"/api/v4/providers/save", "post">;
+type SaveProviderOut = OutputOf<"/api/v4/providers/save", "post">;
 type PatchProviderDraftIn = InputOf<"/api/v4/providers/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
 
@@ -21,24 +21,27 @@ type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getProviderDefault = async (
-  input: ProviderNewIn
-): Promise<ProviderNewOut> => {
-  return api.post("/providers/new", input, {
+  input: GetProviderIn
+): Promise<GetProviderOut> => {
+  return api.post("/providers/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
     },
+    signal: AbortSignal.timeout(30000), // 30 second timeout
   });
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createProvider(
-  input: CreateProviderIn
-): Promise<CreateProviderOut> {
+async function saveProvider(
+  input: SaveProviderIn
+): Promise<SaveProviderOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/providers/create", input);
+  return api.post("/providers/save", input, {
+    signal: AbortSignal.timeout(30000), // 30 second timeout
+  });
 }
 
 async function patchProviderDraft(
@@ -84,11 +87,12 @@ export default async function NewProviderPage({
   const loadProviderSearchParams = createLoader(providerSearchParams);
   const q = loadProviderSearchParams(searchParamsObj);
 
-  // Fetch default provider detail server-side with draft_id
-  const input: ProviderNewIn = {
+  // Fetch default provider detail server-side with draft_id (provider_id = NULL for new mode)
+  const input: GetProviderIn = {
     body: {
+      provider_id: null,
       draft_id: q.draftId ?? null,
-    } as ProviderNewIn["body"],
+    } as GetProviderIn["body"],
   };
   const providerDetailDefault = await getProviderDefault(input);
 
@@ -101,8 +105,8 @@ export default async function NewProviderPage({
       <Provider
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         mode="create"
-        providerDetailDefault={providerDetailDefault}
-        createProviderAction={createProvider}
+        providerData={providerDetailDefault}
+        saveProviderAction={saveProvider}
         patchProviderDraftAction={patchProviderDraft}
       />
     </div>
@@ -111,10 +115,10 @@ export default async function NewProviderPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateProviderIn,
-  CreateProviderOut,
+  GetProviderIn,
+  GetProviderOut,
   PatchProviderDraftIn,
   PatchProviderDraftOut,
-  ProviderNewIn,
-  ProviderNewOut,
+  SaveProviderIn,
+  SaveProviderOut,
 };

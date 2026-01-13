@@ -11,11 +11,11 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProviderDetailIn = InputOf<"/api/v4/providers/detail", "post">;
-type ProviderDetailOut = OutputOf<"/api/v4/providers/detail", "post">;
+type GetProviderIn = InputOf<"/api/v4/providers/get", "post">;
+type GetProviderOut = OutputOf<"/api/v4/providers/get", "post">;
 
-type UpdateProviderIn = InputOf<"/api/v4/providers/update", "post">;
-type UpdateProviderOut = OutputOf<"/api/v4/providers/update", "post">;
+type SaveProviderIn = InputOf<"/api/v4/providers/save", "post">;
+type SaveProviderOut = OutputOf<"/api/v4/providers/save", "post">;
 type PatchProviderDraftIn = InputOf<"/api/v4/providers/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
 
@@ -23,13 +23,14 @@ type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
  * Always bypass cache to ensure fresh data for detail/edit pages.
  */
 const getProvider = async (
-  input: ProviderDetailIn
-): Promise<ProviderDetailOut> => {
-  return api.post("/providers/detail", input, {
+  input: GetProviderIn
+): Promise<GetProviderOut> => {
+  return api.post("/providers/get", input, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
     },
+    signal: AbortSignal.timeout(30000), // 30 second timeout
   });
 };
 
@@ -41,15 +42,16 @@ export async function generateMetadata(
   const { providerId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const input: ProviderDetailIn = {
+    const input: GetProviderIn = {
       body: {
         provider_id: providerId,
-      } as ProviderDetailIn["body"],
+      } as GetProviderIn["body"],
     };
     const provider = await getProvider(input);
+    const providerName = provider?.name_resource?.name || "Provider";
     return {
-      title: `${provider?.name || "Provider"}`,
-      description: `${provider?.name ? `${provider.name} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
+      title: providerName,
+      description: `${providerName !== "Provider" ? `${providerName} - ` : ""}AI provider configuration for teaching assistant training platform. Manage provider settings, API endpoints, and platform integrations for educational institutions and L&D programs.`,
     };
   } catch {
     // Fall through to default metadata
@@ -63,13 +65,15 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateProvider(
-  input: UpdateProviderIn
-): Promise<UpdateProviderOut> {
+async function saveProvider(
+  input: SaveProviderIn
+): Promise<SaveProviderOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/providers/update", input);
+  return api.post("/providers/save", input, {
+    signal: AbortSignal.timeout(30000), // 30 second timeout
+  });
 }
 
 async function patchProviderDraft(
@@ -113,11 +117,11 @@ export default async function EditProviderPage({
 
   // Fetch data for edit mode (always fresh - source of truth) with draft_id
   try {
-    const input: ProviderDetailIn = {
+    const input: GetProviderIn = {
       body: {
         provider_id: providerId,
         draft_id: q.draftId ?? null,
-      } as ProviderDetailIn["body"],
+      } as GetProviderIn["body"],
     };
     const providerDetail = await getProvider(input).catch(() => null);
 
@@ -134,8 +138,8 @@ export default async function EditProviderPage({
         <Provider
           providerId={providerId}
           mode="edit"
-          providerDetail={providerDetail}
-          updateProviderAction={updateProvider}
+          providerData={providerDetail}
+          saveProviderAction={saveProvider}
           patchProviderDraftAction={patchProviderDraft}
         />
       </div>
@@ -163,10 +167,10 @@ export default async function EditProviderPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  GetProviderIn,
+  GetProviderOut,
   PatchProviderDraftIn,
   PatchProviderDraftOut,
-  ProviderDetailIn,
-  ProviderDetailOut,
-  UpdateProviderIn,
-  UpdateProviderOut,
+  SaveProviderIn,
+  SaveProviderOut,
 };

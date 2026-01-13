@@ -1,0 +1,159 @@
+-- Unified save provider function - handles both create (provider_id = NULL) and update (provider_id provided)
+-- Converted to function
+-- 1) Drop function first (breaks dependency on types)
+-- Drop all versions of the function using DO block to handle signature variations
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'api_save_provider_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS api_save_provider_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+CREATE OR REPLACE FUNCTION api_save_provider_v4(
+    name_id uuid,
+    profile_id uuid,
+    input_provider_id uuid DEFAULT NULL,
+    description_id uuid DEFAULT NULL,
+    active_flag_id uuid DEFAULT NULL
+)
+RETURNS TABLE (
+    provider_id uuid,
+    actor_name text
+)
+LANGUAGE plpgsql
+VOLATILE
+AS $$
+DECLARE
+    v_provider_id uuid;
+    v_actor_name text;
+    v_group_id uuid;
+    is_create boolean;
+BEGIN
+    -- Determine if create or update
+    is_create := (input_provider_id IS NULL);
+    
+    -- Create or update provider first (outside CTE)
+    IF is_create THEN
+        -- CREATE path - need to create group first
+        INSERT INTO groups (created_at, updated_at)
+        VALUES (NOW(), NOW())
+        RETURNING id INTO v_group_id;
+        
+        -- Create provider with group_id
+        INSERT INTO provider (group_id, created_at, updated_at)
+        VALUES (v_group_id, NOW(), NOW())
+        RETURNING id INTO v_provider_id;
+    ELSE
+        -- UPDATE path
+        v_provider_id := input_provider_id;
+        UPDATE provider
+        SET updated_at = NOW()
+        WHERE id = v_provider_id;
+    END IF;
+    
+    -- Validate required resource IDs exist (same for both)
+    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names WHERE id = name_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    END IF;
+    
+    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions WHERE id = description_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    END IF;
+    
+    IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags WHERE id = active_flag_id) THEN
+        RAISE EXCEPTION 'Flag resource not found: %', active_flag_id;
+    END IF;
+    
+    -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
+    IF NOT is_create THEN
+        DELETE FROM provider_names WHERE provider_names.provider_id = v_provider_id;
+        DELETE FROM provider_descriptions WHERE provider_descriptions.provider_id = v_provider_id;
+        -- Update existing active flag if it exists
+        UPDATE provider_flags SET
+            flag_id = COALESCE(api_save_provider_v4.active_flag_id, provider_flags.flag_id),
+            value = CASE WHEN api_save_provider_v4.active_flag_id IS NOT NULL THEN true ELSE false END,
+            updated_at = NOW()
+        WHERE provider_flags.provider_id = v_provider_id
+          AND provider_flags.type = 'active'::type_provider_flags;
+    END IF;
+    
+    -- Continue with provider save using SQL (provider already created/updated above)
+    RETURN QUERY
+    WITH params AS (
+        SELECT
+            v_provider_id AS p_provider_id,
+            name_id,
+            description_id,
+            active_flag_id,
+            profile_id
+    ),
+    user_profile AS (
+        SELECT 
+            p.role,
+            COALESCE((SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
+        FROM params x
+        JOIN profile p ON p.id = x.profile_id
+    ),
+    actor_profile AS (
+        SELECT 
+            x.profile_id,
+            up.actor_name
+        FROM params x
+        CROSS JOIN user_profile up
+    ),
+    -- Link provider to name
+    link_provider_name AS (
+        INSERT INTO provider_names (provider_id, name_id, created_at, updated_at)
+        SELECT 
+            x.p_provider_id,
+            x.name_id,
+            NOW(),
+            NOW()
+        FROM params x
+        WHERE x.name_id IS NOT NULL
+        ON CONFLICT ON CONSTRAINT provider_names_pkey DO UPDATE SET updated_at = NOW()
+    ),
+    -- Link provider to description
+    link_provider_description AS (
+        INSERT INTO provider_descriptions (provider_id, description_id, created_at, updated_at)
+        SELECT 
+            x.p_provider_id,
+            x.description_id,
+            NOW(),
+            NOW()
+        FROM params x
+        WHERE x.description_id IS NOT NULL
+        ON CONFLICT ON CONSTRAINT provider_descriptions_pkey DO UPDATE SET updated_at = NOW()
+    ),
+    -- Insert or update provider active flag (UPDATE handled above for update case, INSERT here handles both via ON CONFLICT)
+    insert_provider_active_flag AS (
+        INSERT INTO provider_flags (provider_id, flag_id, type, value, created_at, updated_at)
+        SELECT 
+            x.p_provider_id,
+            COALESCE(x.active_flag_id, f.id),
+            'active'::type_provider_flags,
+            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
+            NOW(),
+            NOW()
+        FROM params x
+        CROSS JOIN flags f
+        WHERE f.name = 'active'
+        ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE SET 
+            flag_id = COALESCE(EXCLUDED.flag_id, provider_flags.flag_id),
+            value = EXCLUDED.value,
+            updated_at = NOW()
+    )
+    SELECT 
+        x.p_provider_id AS provider_id,
+        ap.actor_name AS actor_name
+    FROM params x
+    CROSS JOIN actor_profile ap;
+END;
+$$;

@@ -1,580 +1,619 @@
 /**
  * Provider.tsx
- * Used to create and manage providers for the admin dashboard
+ * Implementation using modular resource components
+ * Used to create and manage providers - supports both creation and editing
+ * Follows personas pattern with resource components
  */
 "use client";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useRouter, useSearchParams } from "next/navigation";
 
-import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
-import { useProfile } from "@/contexts/profile-context";
-import { useDraftAutosave } from "@/hooks/use-draft-autosave";
-
-import type {
-  CreateProviderIn,
-  CreateProviderOut,
-  PatchProviderDraftIn,
-  PatchProviderDraftOut,
-  ProviderNewOut,
-} from "@/app/(main)/system/providers/new/page";
-import type {
-  ProviderDetailOut,
-  UpdateProviderIn,
-  UpdateProviderOut,
-} from "@/app/(main)/system/providers/p/[providerId]/page";
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Power } from "lucide-react";
+import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Flags } from "@/components/resources/Flags";
+import { Names } from "@/components/resources/Names";
+import { Button } from "@/components/ui/button";
 import {
-  parseAsString,
-  useQueryStates,
-  type Parser,
-} from "nuqs";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useProfile } from "@/contexts/profile-context";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { ResourceType } from "@/lib/resources/types";
+import { Loader2, Sparkles } from "lucide-react";
+import { parseAsString, type Parser } from "nuqs";
+
+// Types defined inline using InputOf/OutputOf
+type SaveProviderIn = InputOf<"/api/v4/providers/save", "post">;
+type SaveProviderOut = OutputOf<"/api/v4/providers/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type PatchProviderDraftIn = InputOf<"/api/v4/providers/draft", "patch">;
+type PatchProviderDraftOut = OutputOf<"/api/v4/providers/draft", "patch">;
+
+type ProviderData = OutputOf<"/api/v4/providers/get", "post">;
 
 export interface ProviderProps {
   providerId?: string;
-  mode?: "create" | "edit";
-  // For edit mode: provider detail
-  providerDetail?: ProviderDetailOut;
-  // For create mode: provider detail default
-  providerDetailDefault?: ProviderNewOut;
+  // Server-provided data (for server-side rendering)
+  providerData?: ProviderData;
   // Server actions (replaces useMutation)
-  createProviderAction?: (
-    input: CreateProviderIn,
-  ) => Promise<CreateProviderOut>;
-  updateProviderAction?: (
-    input: UpdateProviderIn,
-  ) => Promise<UpdateProviderOut>;
-  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
+  saveProviderAction?: (input: SaveProviderIn) => Promise<SaveProviderOut>;
   patchProviderDraftAction?: (
-    input: PatchProviderDraftIn,
+    input: PatchProviderDraftIn
   ) => Promise<PatchProviderDraftOut>;
+  // Resource creation actions
+  createNamesAction?: (
+    input: CreateDraftNamesIn
+  ) => Promise<CreateDraftNamesOut>;
+  createDescriptionsAction?: (
+    input: CreateDraftDescriptionsIn
+  ) => Promise<CreateDraftDescriptionsOut>;
+  createFlagsAction?: (
+    input: CreateDraftFlagsIn
+  ) => Promise<CreateDraftFlagsOut>;
 }
 
 function ProviderComponent({
   providerId,
-  mode: _mode = providerId ? "edit" : "create",
-  providerDetail: serverProviderDetail,
-  providerDetailDefault: serverProviderDetailDefault,
-  createProviderAction,
-  updateProviderAction,
+  providerData,
+  saveProviderAction,
   patchProviderDraftAction,
+  createNamesAction,
+  createDescriptionsAction,
+  createFlagsAction,
 }: ProviderProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const isEditMode = !!providerId;
-  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
-    useProfile();
+  const {
+    effectiveProfile,
+    selectedDraftId,
+    setSelectedDraftId,
+    socket,
+    isConnected,
+  } = useProfile();
   const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
 
-  // Stabilize server props to prevent unnecessary re-renders from object reference changes
-  const stabilizeServerProp = React.useCallback(
-    (
-      data: typeof serverProviderDetail | typeof serverProviderDetailDefault
-    ): string | null => {
-      if (!data) return null;
-      if (typeof data === "object" && data !== null) {
-        if ("provider_id" in data && data.provider_id) {
-          return `provider_id:${String(data.provider_id)}`;
-        }
-        return `new:${JSON.stringify(data).slice(0, 100)}`;
-      }
-      return String(data);
-    },
+  // Generation state for AI workflows - simplified using ResourceType
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ResourceType>
+  >(new Set());
+
+  const isGenerating = useCallback(
+    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    [generatingResources]
+  );
+
+  // nuqs parsers for URL-backed state (will be passed to GenericForm)
+  // Memoize to prevent new object reference on every render
+  const providerSearchParamsClient = useMemo(
+    () => ({
+      // Draft ID (URL-backed, updated when draft is created)
+      draftId: parseAsString,
+    }),
     []
   );
 
-  const providerDetailId = React.useMemo(
-    () => stabilizeServerProp(serverProviderDetail),
-    [serverProviderDetail, stabilizeServerProp]
-  );
-  const providerDetailDefaultId = React.useMemo(
-    () => stabilizeServerProp(serverProviderDetailDefault),
-    [serverProviderDetailDefault, stabilizeServerProp]
-  );
-
-  // Use refs to track latest server props
-  const latestServerProviderDetailRef = React.useRef(serverProviderDetail);
-  const latestServerProviderDetailDefaultRef = React.useRef(
-    serverProviderDetailDefault
-  );
-
-  latestServerProviderDetailRef.current = serverProviderDetail;
-  latestServerProviderDetailDefaultRef.current = serverProviderDetailDefault;
-
-  // Use refs to track stable server props
-  const stableProviderDetailRef = React.useRef<{
-    data: typeof serverProviderDetail;
-    id: string | null;
-  }>({
-    data: serverProviderDetail,
-    id: providerDetailId,
-  });
-  const stableProviderDetailDefaultRef = React.useRef<{
-    data: typeof serverProviderDetailDefault;
-    id: string | null;
-  }>({
-    data: serverProviderDetailDefault,
-    id: providerDetailDefaultId,
-  });
-
+  // Local form state (not in URL) - stores only resource IDs
+  // Display values are managed inside resource components
+  // Use ref to store providerData to prevent callback recreation on every render
+  const providerDataRef = React.useRef(providerData);
   React.useEffect(() => {
-    if (stableProviderDetailRef.current.id !== providerDetailId) {
-      stableProviderDetailRef.current = {
-        data: latestServerProviderDetailRef.current,
-        id: providerDetailId,
-      };
-    }
-  }, [providerDetailId]);
+    providerDataRef.current = providerData;
+  }, [providerData]);
 
-  React.useEffect(() => {
-    if (
-      stableProviderDetailDefaultRef.current.id !== providerDetailDefaultId
-    ) {
-      stableProviderDetailDefaultRef.current = {
-        data: latestServerProviderDetailDefaultRef.current,
-        id: providerDetailDefaultId,
-      };
-    }
-  }, [providerDetailDefaultId]);
+  // Memoize providerData fields used in renderStep to prevent callback recreation
+  // when only object reference changes (but content is same)
+  const stableProviderDataFields = React.useMemo(() => {
+    if (!providerData) return null;
+    return {
+      group_id: providerData.group_id,
+      name_resource: providerData.name_resource,
+      show_name: providerData.show_name,
+      name_suggestions: providerData.name_suggestions,
+      names: providerData.names,
+      name_required: providerData.name_required,
+      name_agent_id: providerData.name_agent_id,
+      description_resource: providerData.description_resource,
+      show_description: providerData.show_description,
+      description_suggestions: providerData.description_suggestions,
+      description_required: providerData.description_required,
+      description_agent_id: providerData.description_agent_id,
+      descriptions: providerData.descriptions,
+      flag_resource: providerData.flag_resource,
+      show_flag: providerData.show_flag,
+      flag_required: providerData.flag_required,
+      flag_agent_id: providerData.flag_agent_id,
+      flags: providerData.flags,
+    };
+    // Intentionally depend on individual fields, not whole providerData object
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    providerData?.group_id,
+    providerData?.name_resource,
+    providerData?.show_name,
+    providerData?.name_suggestions,
+    providerData?.names,
+    providerData?.name_required,
+    providerData?.name_agent_id,
+    providerData?.description_resource,
+    providerData?.show_description,
+    providerData?.description_suggestions,
+    providerData?.description_required,
+    providerData?.description_agent_id,
+    providerData?.descriptions,
+    providerData?.flag_resource,
+    providerData?.show_flag,
+    providerData?.flag_required,
+    providerData?.flag_agent_id,
+    providerData?.flags,
+  ]);
 
-  // Use stable references
-  const providerDetail = stableProviderDetailRef.current.data;
-  const providerDetailDefault =
-    stableProviderDetailDefaultRef.current.data;
-
-  // Use edit detail when editing, default detail when creating
-  const providerDataId = React.useMemo(() => {
-    const data = isEditMode ? providerDetail : providerDetailDefault;
-    if (!data) return null;
-    if (typeof data === "object" && data !== null) {
-      if ("provider_id" in data && data.provider_id) {
-        return `provider_id:${String(data.provider_id)}`;
+  // Helper to check if a resource type can be regenerated
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType): boolean => {
+      if (!stableProviderDataFields) return false;
+      switch (resourceType) {
+        case "names":
+          return stableProviderDataFields.name_resource?.generated ?? false;
+        case "descriptions":
+          return (
+            stableProviderDataFields.description_resource?.generated ?? false
+          );
+        case "flags":
+          return stableProviderDataFields.flag_resource?.generated ?? false;
+        default:
+          return false;
       }
-      return `new:${JSON.stringify(data).slice(0, 100)}`;
-    }
-    return String(data);
-  }, [isEditMode, providerDetail, providerDetailDefault]);
+    },
+    [stableProviderDataFields]
+  );
 
-  const stableProviderDataRef = React.useRef<{
-    data: typeof providerDetail | typeof providerDetailDefault;
-    id: string | null;
-  }>({
-    data: isEditMode ? providerDetail : providerDetailDefault,
-    id: providerDataId,
-  });
-
-  React.useEffect(() => {
-    if (stableProviderDataRef.current.id !== providerDataId) {
-      stableProviderDataRef.current = {
-        data: isEditMode ? providerDetail : providerDetailDefault,
-        id: providerDataId,
+  const getInitialFormState = useCallback(() => {
+    const data = providerDataRef.current;
+    if (!data) {
+      return {
+        name_id: null as string | null,
+        description_id: null as string | null,
+        active_flag_id: null as string | null,
       };
     }
-  }, [isEditMode, providerDetail, providerDetailDefault, providerDataId]);
+    // Extract resource IDs from server data
+    return {
+      name_id: data.name_id ?? null,
+      description_id: data.description_id ?? null,
+      active_flag_id: data.active_flag_id ?? null,
+    };
+  }, []);
 
-  const providerData = stableProviderDataRef.current.data;
+  const [formState, setFormState] = useState(getInitialFormState);
+  // Use ref to access formState in renderStep without depending on it
+  const formStateRef = React.useRef(formState);
+  React.useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
 
-  // Inline parsers for URL-backed state (navigation/search params only)
-  const providerSearchParamsClient = {
-    // Draft ID (URL-backed, updated when draft is created)
-    draftId: parseAsString,
-  } as const;
+  // Update form state when server data changes
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      // Only update if resource IDs actually changed
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.active_flag_id !== newState.active_flag_id
+      ) {
+        return newState;
+      }
+      return prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    providerData?.name_id,
+    providerData?.description_id,
+    providerData?.active_flag_id,
+  ]);
 
-  // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams] = useQueryStates(providerSearchParamsClient, {
-    history: "replace",
-    shallow: true, // Use shallow routing to prevent server component re-renders
-  });
+  // Draft version tracking for optimistic concurrency control
+  const [lastSavedVersion, setLastSavedVersion] = useState(0);
+  const lastSavedVersionRef = React.useRef(0);
+  React.useEffect(() => {
+    lastSavedVersionRef.current = lastSavedVersion;
+  }, [lastSavedVersion]);
 
-  // Get draftId from URL (managed by nuqs via urlParams)
-  const urlDraftId = urlParams.draftId || null;
+  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const setUrlFormDataRef = React.useRef<
+    null | ((updates: Record<string, unknown>) => void)
+  >(null);
+
+  // Store formData from GenericForm to access search params
+  const formDataRef = React.useRef<Record<string, unknown>>({});
+
+  // Memoized callback to sync draftId from GenericForm - only update if value changed
+  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
+    // Store formData for access in handleGenerateResources
+    formDataRef.current = fd;
+    const next = (fd["draftId"] as string | undefined) ?? null;
+    setDraftId((prev) => (prev === next ? prev : next));
+  }, []);
 
   // Sync URL draftId to profile context
   useEffect(() => {
-    if (urlDraftId !== selectedDraftId) {
-      setSelectedDraftId(urlDraftId);
+    if (draftId !== selectedDraftId) {
+      setSelectedDraftId(draftId);
     }
-  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
+  }, [draftId, selectedDraftId, setSelectedDraftId]);
 
-  const draftId = urlDraftId;
+  // Use ref to stabilize patchProviderDraftAction to prevent effect recreation when prop reference changes
+  const patchProviderDraftActionRef = React.useRef(patchProviderDraftAction);
+  React.useEffect(() => {
+    patchProviderDraftActionRef.current = patchProviderDraftAction;
+  }, [patchProviderDraftAction]);
 
-  // Local draft state (not in URL) - initialized from server data or draft payload
-  type DraftState = {
-    name: string;
-    description: string;
-    value: string;
-    active: boolean;
-    baseUrl: string;
-  };
+  // Build a stable key for "what would we patch" - only changes when form data actually changes
+  const draftPatchKey = React.useMemo(() => {
+    return JSON.stringify({
+      draftId: draftId || null,
+      name_id: formState.name_id,
+      description_id: formState.description_id,
+      active_flag_id: formState.active_flag_id,
+    });
+  }, [draftId, formState.name_id, formState.description_id, formState.active_flag_id]);
 
-  // Initialize draft state from server data or draft payload
-  const initialDraftState = useMemo((): DraftState => {
-    const data = isEditMode ? providerDetail : providerDetailDefault;
+  // Track last patched payload so we don't repatch identical state
+  const lastPatchedKeyRef = React.useRef<string | null>(null);
 
-    if (!data) {
-      return {
-        name: "",
-        description: "",
-        value: "",
-        active: true,
-        baseUrl: "",
-      };
-    }
-
-    // If draftId exists, server should have merged draft payload into data
-    // Otherwise, use server defaults
-    return {
-      name: data.name || "",
-      description: data.description || "",
-      value: data.value || "",
-      active: data.active ?? true,
-      baseUrl: data.base_url || "",
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isEditMode,
-    providerDetail,
-    providerDetailDefault,
-    providerDetailId,
-    providerDetailDefaultId,
-    draftId,
-    urlDraftId,
-    // Include actual content fields so it recomputes when server data changes
-    providerDetailDefault?.name,
-    providerDetailDefault?.description,
-    providerDetailDefault?.value,
-    providerDetailDefault?.active,
-    providerDetail?.name,
-    providerDetail?.description,
-    providerDetail?.value,
-    providerDetail?.active,
-  ]);
-
-  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
-
-  // Track previous initialDraftState content to avoid unnecessary updates
-  const prevInitialDraftStateRef = useRef<string>(
-    JSON.stringify(initialDraftState)
-  );
-
-  // Update draft state when server data changes (e.g., draft selected)
+  // Draft change listener - watches resource IDs and patches draft
   useEffect(() => {
-    const currentStateStr = prevInitialDraftStateRef.current;
-    const newStateStr = JSON.stringify(initialDraftState);
+    const hasResourceIds =
+      formState.name_id ||
+      formState.description_id ||
+      formState.active_flag_id;
 
-    if (currentStateStr !== newStateStr) {
-      prevInitialDraftStateRef.current = newStateStr;
-      setDraftState((currentDraftState) => {
-        // Check if new state is "empty" (no name, no value) but current state has content
-        const newStateIsEmpty =
-          (!initialDraftState.name || initialDraftState.name.trim() === "") &&
-          (!initialDraftState.value || initialDraftState.value.trim() === "");
-
-        const currentStateHasContent =
-          (currentDraftState.name?.trim() || "").length > 0 ||
-          (currentDraftState.value?.trim() || "").length > 0;
-
-        // Prevent overwriting with empty values if current state has content
-        // BUT: Always update boolean fields from initialDraftState
-        if (newStateIsEmpty && currentStateHasContent) {
-          // Keep current state but update boolean fields from initialDraftState
-          return {
-            ...currentDraftState,
-            active: initialDraftState.active,
-          };
-        }
-
-        // Otherwise, update with full initialDraftState
-        return initialDraftState;
-      });
+    if (!hasResourceIds || !patchProviderDraftActionRef.current) {
+      return;
     }
-  }, [initialDraftState]);
 
-  // Integrate autosave hook
-  const {
-    saveStatus: _saveStatus,
-    saveNow: _saveNow,
-    lastSavedVersion: _lastSavedVersion,
-  } = useDraftAutosave({
-    draftId,
-    draftState,
-    patchDraftAction: patchProviderDraftAction
-      ? async (input) => {
-          // Transform hook API → backend API
-          const result = await patchProviderDraftAction({
-            body: {
-              input_draft_id: input.body.draft_id || null,
-              patch: input.body.patch as Record<string, unknown>,
-              expected_version: input.body.expected_version,
-            } as PatchProviderDraftIn["body"],
-          });
-          // Transform backend API → hook API
-          return {
-            draftId: result.draft_id || "",
-            newVersion: result.new_version || 0,
-            draftExists: result.draft_exists || false,
-          };
+    // If nothing changed since the last successful patch, do nothing.
+    if (lastPatchedKeyRef.current === draftPatchKey) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        if (!patchProviderDraftActionRef.current) return;
+        const result = await patchProviderDraftActionRef.current({
+          body: {
+            input_draft_id: draftId || null,
+            name_id: formState.name_id,
+            description_id: formState.description_id,
+            active_flag_id: formState.active_flag_id,
+            expected_version: lastSavedVersionRef.current,
+          },
+        });
+
+        // Mark this payload as patched so we don't loop
+        lastPatchedKeyRef.current = draftPatchKey;
+
+        if (!draftId && result.draft_id) {
+          // Update URL when draft is created via GenericForm bridge
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
         }
-      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
-    debounceMs: 1000,
-    onDraftCreated: useCallback(
-      (newDraftId: string) => {
-        // Only update URL if draftId actually changed
-        const currentUrlDraftId = searchParams.get("draftId");
-        if (newDraftId === currentUrlDraftId) {
-          return;
+
+        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
+          setLastSavedVersion(result.new_version ?? 0);
+          lastSavedVersionRef.current = result.new_version ?? 0;
         }
-        // Update URL with new draftId and trigger server-side refetch
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("draftId", newDraftId);
-        const newUrl = `?${params.toString()}`;
-        router.replace(newUrl, { scroll: false });
-        // Force server components to re-render with updated search params
-        router.refresh();
-      },
-      [router, searchParams]
-    ),
-  });
+      } catch {
+        // Failed to save draft - error already logged by API
+        // Don't update lastPatchedKeyRef on failure so we retry on next change
+      }
+    }, 1000);
 
-  // Merge draftState with urlParams for formData (GenericForm expects single formData object)
-  const formData = useMemo(() => {
-    return {
-      ...draftState,
-    } as Record<string, unknown>;
-  }, [draftState]);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftPatchKey]);
 
-  // Wrapper for setFormData that updates draftState for form fields
-  const setFormData = useCallback(
-    (
-      updates:
-        | Partial<Record<string, unknown>>
-        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
+  // WebSocket handlers for AI generation
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    // Use single group_id from providerData
+    const currentGroupId = providerData?.group_id;
+
+    const handleGenerationComplete = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      name_id?: string | null;
+      description_id?: string | null;
+      active_flag_id?: string | null;
+      message?: string;
+      success?: boolean;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "provider" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this provider or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+      ];
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ResourceType)
+      ) {
+        // Update formState with the resource ID that was generated
+        setFormState((prev) => {
+          const updates: Partial<typeof prev> = {};
+
+          if (data.name_id) updates.name_id = data.name_id;
+          if (data.description_id)
+            updates.description_id = data.description_id;
+          if (data.active_flag_id)
+            updates.active_flag_id = data.active_flag_id;
+
+          return { ...prev, ...updates };
+        });
+
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ResourceType);
+          return next;
+        });
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
+      }
+    };
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "provider" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this provider or wrong group_id
+      }
+      // Handle progress updates if needed
+    };
+
+    const handleGenerationError = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      message?: string;
+      resource_type?: string;
+      resource_types?: string[];
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "provider" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this provider or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+      ];
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
+    };
+
+    // Listen to provider-specific events filtered by artifact_type and group_id
+    socket.on("provider_generation_progress", handleGenerationProgress);
+    socket.on("provider_generation_complete", handleGenerationComplete);
+    socket.on("provider_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("provider_generation_progress", handleGenerationProgress);
+      socket.off("provider_generation_complete", handleGenerationComplete);
+      socket.off("provider_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected, providerData?.group_id]);
+
+  // Generation handler - accepts list of resource types
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      userInstructions?: string
     ) => {
-      // Handle function form
-      const resolvedUpdates =
-        typeof updates === "function" ? updates(formData) : updates;
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
 
-      const draftUpdates: Partial<DraftState> = {};
-
-      Object.entries(resolvedUpdates).forEach(([key, value]) => {
-        if (key === "name" || key === "description" || key === "value" || key === "active") {
-          draftUpdates[key as keyof DraftState] = value as never;
-        }
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
       });
 
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
+      // Read search params from formData
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+
+      // Emit provider_generate event
+      socket.emit("provider_generate", {
+        resource_types: resourceTypes,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        draft_id: draftId || null,
+        mcp: false,
+        provider_id: providerId || null,
+      });
     },
-    [formData]
+    [socket, isConnected, providerId]
   );
 
-  // Readonly logic
-  const isReadonly = useMemo(() => {
-    if (!isEditMode || !providerData) return false;
-    // Check if user is admin or superadmin - they can always edit
-    if (
-      effectiveProfile?.role === "admin" ||
-      effectiveProfile?.role === "superadmin"
-    ) {
-      return false;
-    }
+  // Individual generation handlers
+  const handleGenerateName = useCallback(
+    async () => handleGenerateResources(["names"]),
+    [handleGenerateResources]
+  );
+
+  const handleGenerateDescription = useCallback(
+    async () => handleGenerateResources(["descriptions"]),
+    [handleGenerateResources]
+  );
+
+  const handleGenerateFlags = useCallback(
+    async () => handleGenerateResources(["flags"]),
+    [handleGenerateResources]
+  );
+
+  // Disabled logic based on can_edit flag - check in both new and edit modes
+  const disabled = useMemo(() => {
+    if (!providerData) return false;
     return !providerData.can_edit;
-  }, [isEditMode, providerData, effectiveProfile?.role]);
+  }, [providerData]);
 
   // Set breadcrumb context when provider data is loaded
   useEffect(() => {
-    if (providerDetail?.name && providerId && isEditMode) {
+    const providerName = providerData?.name_resource?.name;
+    if (providerName && providerId && isEditMode) {
       setEntityMetadata({
         entityId: providerId,
-        entityName: providerDetail.name,
+        entityName: providerName,
         entityType: "provider",
       });
     }
-    return () => {
-      if (providerId) {
-        clearEntityMetadata(providerId);
-      }
-    };
+    return () => clearEntityMetadata();
   }, [
-    providerDetail,
+    providerData,
     providerId,
     isEditMode,
     setEntityMetadata,
     clearEntityMetadata,
   ]);
 
-  // Form initialization function for GenericForm
-  const initializeForm = useCallback(
-    (serverData: unknown, editMode: boolean) => {
-      if (
-        !editMode ||
-        !serverData ||
-        typeof serverData !== "object" ||
-        !("name" in serverData)
-      ) {
-        return {};
-      }
-
-      const providerDetail = serverData as ProviderDetailOut;
-
-      // Update draftState directly
-      const draftUpdates: Partial<DraftState> = {};
-
-      if (providerDetail.name) draftUpdates.name = providerDetail.name;
-      if (providerDetail.description)
-        draftUpdates.description = providerDetail.description;
-      if (providerDetail.value) draftUpdates.value = providerDetail.value;
-      if (providerDetail.active !== undefined)
-        draftUpdates.active = providerDetail.active ?? true;
-
-      // Apply updates to draftState
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
-
-      // Return empty object for GenericForm compatibility (form fields are handled via draftState)
-      return {};
-    },
-    []
-  );
-
-  // Submit handler for GenericForm (uses draftState, not formData parameter)
+  // Submit handler
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (!draftState.name?.trim()) {
+      if (!formState.name_id) {
         toast.error("Name is required");
         throw new Error("Name is required");
       }
 
-      if (!draftState.value?.trim()) {
-        toast.error("Value is required");
-        throw new Error("Value is required");
+      if (!saveProviderAction) {
+        toast.error("Save action not available");
+        throw new Error("Save action not available");
       }
 
-      // Ensure profileId exists - required for API calls
-      if (!effectiveProfile?.id) {
-        toast.error("Profile not loaded. Please refresh the page.");
-        throw new Error("Profile not loaded");
-      }
-
-      if (isEditMode) {
-        if (!updateProviderAction) {
-          toast.error("Update action not available");
-          throw new Error("Update action not available");
-        }
-        try {
-          await updateProviderAction({
-            body: {
-              provider_id: providerId!,
-              name: draftState.name || "",
-              description: draftState.description || "",
-              value: draftState.value || "",
-              active: draftState.active ?? true,
-              base_url: draftState.baseUrl || "",
-            },
-          });
-          toast.success("Provider updated successfully!");
-          router.push("/system/providers");
-        } catch (error) {
-          toast.error(
-            `Failed to update provider: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
-      } else {
-        if (!createProviderAction) {
-          toast.error("Create action not available");
-          throw new Error("Create action not available");
-        }
-        try {
-          await createProviderAction({
-            body: {
-              name: draftState.name || "",
-              description: draftState.description || "",
-              value: draftState.value || "",
-              active: draftState.active ?? true,
-              base_url: draftState.baseUrl || "",
-            },
-          });
-          toast.success("Provider created successfully!");
-          router.push("/system/providers");
-        } catch (error) {
-          toast.error(
-            `Failed to create provider: ${error instanceof Error ? error.message : "Unknown error"}`
-          );
-          throw error;
-        }
+      try {
+        await saveProviderAction({
+          body: {
+            input_provider_id: providerId || null,
+            name_id: formState.name_id,
+            description_id: formState.description_id || null,
+            active_flag_id: formState.active_flag_id || null,
+          },
+        });
+        toast.success(
+          `Provider ${isEditMode ? "updated" : "created"} successfully!`
+        );
+        router.push("/system/providers");
+      } catch (error) {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} provider: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+        throw error;
       }
     },
-    [
-      draftState,
-      isEditMode,
-      providerId,
-      effectiveProfile?.id,
-      updateProviderAction,
-      createProviderAction,
-      router,
-    ]
+    [formState, providerId, isEditMode, saveProviderAction, router]
   );
 
-  // Step status logic (for GenericForm)
+  // Step status logic
   const getStepStatus = useCallback(
-    (stepId: string, formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!(
-        formData["name"] as string | null | undefined
-      )?.trim();
-      const hasValue = !!(
-        formData["value"] as string | null | undefined
-      )?.trim();
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
+      const hasName = !!formState.name_id;
 
       switch (stepId) {
         case "basic":
-          return hasName && hasValue ? "completed" : "active";
+          return hasName ? "completed" : "active";
         default:
           return "pending";
       }
     },
-    []
+    [formState.name_id]
   );
 
-  // Steps configuration for GenericForm
+  // Steps configuration
   const steps = useMemo(
     () => [
       {
         id: "basic",
         title: "Basic Information",
         description:
-          "Set the provider name, value identifier, description, and active status.",
-        resetFields: ["name", "description", "value", "active"] as string[],
+          "Set the provider name, description, and active status.",
+        resetFields: ["name_id", "description_id", "active_flag_id"] as string[],
       },
     ],
     []
   );
 
-  // Memoize formFieldKeys to prevent re-initialization loops
+  // Memoize formFieldKeys
   const formFieldKeys = useMemo(
-    () => ["name", "description", "value", "active"],
+    () => ["name_id", "description_id", "active_flag_id"],
     []
   );
 
-  // Memoize resetSuccessMessage to prevent GenericForm re-renders
+  // Memoize resetSuccessMessage
   const resetSuccessMessage = useCallback((stepId: string) => {
     switch (stepId) {
       case "basic":
@@ -584,7 +623,7 @@ function ProviderComponent({
     }
   }, []);
 
-  // Memoize submitButton to prevent GenericForm re-renders
+  // Memoize submitButton
   const submitButton = useMemo(
     () => ({
       backUrl: "/system/providers",
@@ -595,7 +634,15 @@ function ProviderComponent({
     []
   );
 
-  // Memoize renderStep to prevent GenericForm re-renders
+  // Step-to-resources mapping
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "flags"],
+    }),
+    []
+  );
+
+  // Memoize renderStep
   const renderStep = useCallback(
     ({
       stepId,
@@ -617,6 +664,8 @@ function ProviderComponent({
       setFormData: (updates: Partial<Record<string, unknown>>) => void;
       onReset?: () => void;
     }) => {
+      // Use memoized fields to avoid dependency on providerData object reference
+      const currentProviderData = stableProviderDataFields;
       switch (stepId) {
         case "basic":
           return (
@@ -625,96 +674,135 @@ function ProviderComponent({
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
-              editableTitle={{
-                value:
-                  (stepFormData["name"] as string | null | undefined) ?? "",
-                onChange: (value) => setStepFormData({ name: value || null }),
-                placeholder: "New Provider",
-                defaultName: "New Provider",
-                required: true,
-              }}
-              resetFields={["name", "description", "value", "active"]}
+              customHeader={
+                <Names
+                  name_id={formState.name_id ?? null}
+                  name_resource={currentProviderData?.name_resource ?? null}
+                  show_name={currentProviderData?.show_name ?? true}
+                  name_suggestions={currentProviderData?.name_suggestions ?? []}
+                  names={currentProviderData?.names ?? []}
+                  disabled={disabled}
+                  onNameIdChange={(nameId) =>
+                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                  }
+                  onGenerate={handleGenerateName}
+                  isGenerating={isGenerating("names")}
+                  placeholder="e.g., OpenAI"
+                  defaultName="New Provider"
+                  required={currentProviderData?.name_required ?? false}
+                  hideDescription={true}
+                  group_id={currentProviderData?.group_id ?? null}
+                  agent_id={currentProviderData?.name_agent_id ?? null}
+                  createNamesAction={createNamesAction}
+                />
+              }
+              resetFields={["name_id", "description_id", "active_flag_id"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["basic"] &&
+                stepResources["basic"].length > 0 ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "basic"
+                            ]!.some((rt) => canRegenerate(rt));
+                            if (hasRegeneratable) {
+                              handleGenerateResources(stepResources["basic"]!);
+                            } else {
+                              handleGenerateResources(stepResources["basic"]!);
+                            }
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["basic"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["basic"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["basic"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
             >
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="value">Value</Label>
-                  <Input
-                    id="value"
-                    data-testid="input-provider-value"
-                    value={
-                      (stepFormData["value"] as string | null | undefined) || ""
-                    }
-                    onChange={(e) =>
-                      setStepFormData({ value: e.target.value || null })
-                    }
-                    placeholder="Enter provider value identifier (e.g., openai, gemini, custom)"
-                    disabled={isReadonly}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Unique identifier for this provider (used in API calls)
-                  </p>
-                </div>
-
+              <div className="space-y-6">
                 {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    data-testid="input-provider-description"
-                    value={
-                      (stepFormData["description"] as
-                        | string
-                        | null
-                        | undefined) || ""
-                    }
-                    onChange={(e) =>
-                      setStepFormData({
-                        description: e.target.value || null,
-                      })
-                    }
-                    placeholder="Enter a brief description (optional)"
-                    rows={3}
-                    disabled={isReadonly}
-                  />
-                </div>
+                <Descriptions
+                  description_id={formState.description_id ?? null}
+                  description_resource={
+                    currentProviderData?.description_resource ?? null
+                  }
+                  show_description={
+                    currentProviderData?.show_description ?? true
+                  }
+                  description_suggestions={
+                    currentProviderData?.description_suggestions ?? []
+                  }
+                  descriptions={currentProviderData?.descriptions ?? []}
+                  disabled={disabled}
+                  onDescriptionIdChange={(descriptionId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      description_id: descriptionId,
+                    }))
+                  }
+                  onGenerate={handleGenerateDescription}
+                  isGenerating={isGenerating("descriptions")}
+                  label="Description"
+                  placeholder="Enter a brief description (optional)"
+                  required={currentProviderData?.description_required ?? false}
+                  rows={3}
+                  group_id={currentProviderData?.group_id ?? null}
+                  agent_id={currentProviderData?.description_agent_id ?? null}
+                  createDescriptionsAction={createDescriptionsAction}
+                />
 
-                {/* Active Switch */}
-                <div className="space-y-2 pt-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="active"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                        Active
-                      </Label>
-                      <Switch
-                        id="active"
-                        data-testid="switch-provider-active"
-                        checked={
-                          (stepFormData["active"] as
-                            | boolean
-                            | null
-                            | undefined) ??
-                          (providerData as { active?: boolean })?.active ??
-                          true
-                        }
-                        onCheckedChange={(checked) =>
-                          setStepFormData({ active: checked })
-                        }
-                        disabled={isReadonly}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Inactive providers will not be available for selection
-                    </p>
-                  </div>
-                </div>
+                {/* Active Switch - using Flags resource component */}
+                <Flags
+                  flag_id={formState.active_flag_id ?? null}
+                  flag_resource={currentProviderData?.flag_resource ?? null}
+                  show_flag={currentProviderData?.show_flag ?? false}
+                  flags={currentProviderData?.flags ?? []}
+                  disabled={disabled}
+                  onFlagIdChange={(flagId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      active_flag_id: flagId,
+                    }))
+                  }
+                  onGenerate={handleGenerateFlags}
+                  isGenerating={isGenerating("flags")}
+                  label="Active"
+                  helpText="Inactive providers will not be available for selection"
+                  required={currentProviderData?.flag_required ?? false}
+                  group_id={currentProviderData?.group_id ?? null}
+                  agent_id={currentProviderData?.flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
+                />
               </div>
             </StepCard>
           );
@@ -723,7 +811,24 @@ function ProviderComponent({
           return null;
       }
     },
-    [providerData, isReadonly, isEditMode]
+    [
+      stableProviderDataFields,
+      disabled,
+      isEditMode,
+      handleGenerateName,
+      handleGenerateDescription,
+      handleGenerateFlags,
+      isGenerating,
+      stepResources,
+      formState.name_id,
+      formState.description_id,
+      formState.active_flag_id,
+      createNamesAction,
+      createDescriptionsAction,
+      createFlagsAction,
+      canRegenerate,
+      handleGenerateResources,
+    ]
   );
 
   return (
@@ -732,36 +837,11 @@ function ProviderComponent({
         className="w-full p-6 space-y-8"
         data-page={`provider-${isEditMode ? "edit" : "new"}`}
       >
-        {isReadonly && (
-          <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-muted-foreground"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-foreground">
-                  Provider is read-only
-                </h3>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <p>
-                    You do not have permission to edit this provider. You can
-                    view the details but cannot make changes.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={providerData?.disabled_reason ?? null}
+          entityType="provider"
+        />
 
         <GenericForm
           nuqsParsers={
@@ -769,50 +849,57 @@ function ProviderComponent({
           }
           steps={steps}
           getStepStatus={getStepStatus}
-          formData={formData}
-          setFormData={setFormData}
           serverData={providerData}
-          initializeForm={initializeForm}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={resetSuccessMessage}
           onSubmit={handleSubmit}
           submitButton={submitButton}
-          isReadonly={isReadonly}
+          isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
         />
       </div>
     </TooltipProvider>
   );
 }
 
-// Helper function to generate stable ID from server prop
-function getStableServerPropId(
-  data: ProviderDetailOut | ProviderNewOut | undefined
-): string | null {
-  if (!data) return null;
-  if (typeof data === "object" && data !== null) {
-    if ("provider_id" in data && data.provider_id) {
-      return `provider_id:${String(data.provider_id)}`;
-    }
-    return `new:${JSON.stringify(data).slice(0, 100)}`;
-  }
-  return String(data);
-}
-
 // Memoize component to prevent re-renders when only prop references change
 export default React.memo(ProviderComponent, (prevProps, nextProps) => {
-  const prevDetailId = getStableServerPropId(prevProps.providerDetail);
-  const nextDetailId = getStableServerPropId(nextProps.providerDetail);
-  const prevDefaultId = getStableServerPropId(prevProps.providerDetailDefault);
-  const nextDefaultId = getStableServerPropId(
-    nextProps.providerDetailDefault
-  );
+  // Compare providerData by resource IDs, not object reference
+  const prevIds = {
+    name_id: prevProps.providerData?.name_id,
+    description_id: prevProps.providerData?.description_id,
+    active_flag_id: prevProps.providerData?.active_flag_id,
+  };
+  const nextIds = {
+    name_id: nextProps.providerData?.name_id,
+    description_id: nextProps.providerData?.description_id,
+    active_flag_id: nextProps.providerData?.active_flag_id,
+  };
 
-  return (
-    prevProps.providerId === nextProps.providerId &&
-    prevProps.mode === nextProps.mode &&
-    prevDetailId === nextDetailId &&
-    prevDefaultId === nextDefaultId
-  );
+  // Compare primitive props
+  if (
+    prevProps.providerId !== nextProps.providerId ||
+    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
+  ) {
+    return false; // Props changed, re-render
+  }
+
+  // Compare function props by reference (should be stable from server actions)
+  if (
+    prevProps.saveProviderAction !== nextProps.saveProviderAction ||
+    prevProps.patchProviderDraftAction !== nextProps.patchProviderDraftAction ||
+    prevProps.createNamesAction !== nextProps.createNamesAction ||
+    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
+    prevProps.createFlagsAction !== nextProps.createFlagsAction
+  ) {
+    return false; // Function props changed, re-render
+  }
+
+  // All props are equivalent, skip re-render
+  return true;
 });

@@ -8627,44 +8627,6 @@ class GetDashboardHistoryApiResponse(BaseModel):
 
 
 
-# Generated from: create_department
-
-class CreateDepartmentSqlParams(BaseModel):
-
-    title: str
-    description: str
-    active: bool
-    settings_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.title,
-            self.description,
-            self.active,
-            self.settings_id,
-            self.profile_id,
-        )
-
-class CreateDepartmentSqlRow(BaseModel):
-
-    department_id: UUID | None = None
-    actor_name: str | None = None
-
-class CreateDepartmentApiRequest(BaseModel):
-
-    title: str
-    description: str
-    active: bool
-    settings_id: UUID
-
-class CreateDepartmentApiResponse(BaseModel):
-
-    department_id: UUID | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: delete_department
 
 class DeleteDepartmentSqlParams(BaseModel):
@@ -9011,179 +8973,6 @@ class GetDepartmentApiResponse(BaseModel):
 
 
 
-# Generated from: get_department_detail
-
-class GetDepartmentDetailSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-            self.draft_id,
-        )
-
-class QGetDepartmentDetailV4Cohort(BaseModel):
-
-    cohort_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetDepartmentDetailV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetDepartmentDetailV4Key(BaseModel):
-
-    key_id: UUID | None
-    name: str | None
-    description: str | None
-    key_masked: str | None
-    active: bool | None
-
-
-
-
-class QGetDepartmentDetailV4Model(BaseModel):
-
-    model_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QGetDepartmentDetailV4ModelKey(BaseModel):
-
-    model_id: UUID | None
-    key_id: UUID | None
-
-
-
-
-class QGetDepartmentDetailV4Setting(BaseModel):
-
-    settings_id: UUID | None
-    created_at: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-
-class GetDepartmentDetailSqlRow(BaseModel):
-
-    department_exists: bool | None = None
-    department_id: UUID | None = None
-    title: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    in_use: bool | None = None
-    staff_count: int | None = None
-    total_price_spent: float | None = None
-    settings_id: UUID | None = None
-    valid_department_ids: list[UUID] | None = None
-    valid_model_ids: list[UUID] | None = None
-    valid_key_ids: list[UUID] | None = None
-    actor_name: str | None = None
-    settings: list[QGetDepartmentDetailV4Setting] | None = None
-    cohorts: list[QGetDepartmentDetailV4Cohort] | None = None
-    departments: list[QGetDepartmentDetailV4Department] | None = None
-    models: list[QGetDepartmentDetailV4Model] | None = None
-    keys: list[QGetDepartmentDetailV4Key] | None = None
-    model_keys: list[QGetDepartmentDetailV4ModelKey] | None = None
-    draft_version: int | None = None
-
-class GetDepartmentDetailApiRequest(BaseModel):
-
-    department_id: UUID
-    draft_id: UUID | None = None
-
-class GetDepartmentDetailApiResponse(BaseModel):
-
-    department_exists: bool | None = None
-    department_id: UUID | None = None
-    title: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    can_edit: bool | None = None
-    can_duplicate: bool | None = None
-    can_delete: bool | None = None
-    in_use: bool | None = None
-    staff_count: int | None = None
-    total_price_spent: float | None = None
-    settings_id: UUID | None = None
-    valid_department_ids: list[UUID] | None = None
-    valid_model_ids: list[UUID] | None = None
-    valid_key_ids: list[UUID] | None = None
-    actor_name: str | None = None
-    settings: list[QGetDepartmentDetailV4Setting] | None = None
-    cohorts: list[QGetDepartmentDetailV4Cohort] | None = None
-    departments: list[QGetDepartmentDetailV4Department] | None = None
-    models: list[QGetDepartmentDetailV4Model] | None = None
-    keys: list[QGetDepartmentDetailV4Key] | None = None
-    model_keys: list[QGetDepartmentDetailV4ModelKey] | None = None
-    draft_version: int | None = None
-
-
-
-# Generated from: get_department_new
-
-class GetDepartmentNewSqlParams(BaseModel):
-
-    profile_id: UUID
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.draft_id,
-        )
-
-class QGetDepartmentNewV4Setting(BaseModel):
-
-    settings_id: UUID | None
-    created_at: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-
-class GetDepartmentNewSqlRow(BaseModel):
-
-    profile_role: str | None = None
-    actor_name: str | None = None
-    settings: list[QGetDepartmentNewV4Setting] | None = None
-    title: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    draft_version: int | None = None
-
-class GetDepartmentNewApiRequest(BaseModel):
-
-    draft_id: UUID | None = None
-
-class GetDepartmentNewApiResponse(BaseModel):
-
-    profile_role: str | None = None
-    actor_name: str | None = None
-    settings: list[QGetDepartmentNewV4Setting] | None = None
-    title: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    draft_version: int | None = None
-
-
-
 # Generated from: get_department_title
 
 class GetDepartmentTitleSqlParams(BaseModel):
@@ -9310,49 +9099,6 @@ class SaveDepartmentApiRequest(BaseModel):
 class SaveDepartmentApiResponse(BaseModel):
 
     department_id: UUID | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: update_department
-
-class UpdateDepartmentSqlParams(BaseModel):
-
-    department_id: UUID
-    title: str
-    description: str
-    active: bool
-    settings_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.title,
-            self.description,
-            self.active,
-            self.settings_id,
-            self.profile_id,
-        )
-
-class UpdateDepartmentSqlRow(BaseModel):
-
-    department_id: UUID | None = None
-    title: str | None = None
-    actor_name: str | None = None
-
-class UpdateDepartmentApiRequest(BaseModel):
-
-    department_id: UUID
-    title: str
-    description: str
-    active: bool
-    settings_id: UUID
-
-class UpdateDepartmentApiResponse(BaseModel):
-
-    department_id: UUID | None = None
-    title: str | None = None
     actor_name: str | None = None
 
 
@@ -20138,47 +19884,6 @@ class DeletePromptApiResponse(BaseModel):
 
 
 
-# Generated from: create_provider
-
-class CreateProviderSqlParams(BaseModel):
-
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name,
-            self.description,
-            self.value,
-            self.active,
-            self.base_url,
-            self.profile_id,
-        )
-
-class CreateProviderSqlRow(BaseModel):
-
-    provider_id: UUID | None = None
-    actor_name: str | None = None
-
-class CreateProviderApiRequest(BaseModel):
-
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str
-
-class CreateProviderApiResponse(BaseModel):
-
-    provider_id: UUID | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: delete_provider
 
 class DeleteProviderSqlParams(BaseModel):
@@ -20214,106 +19919,110 @@ class DeleteProviderApiResponse(BaseModel):
 
 
 
-# Generated from: get_provider_detail
+# Generated from: get_provider
 
-class GetProviderDetailSqlParams(BaseModel):
+class GetProviderSqlParams(BaseModel):
 
-    provider_id: UUID
     profile_id: UUID
+    provider_id: UUID | None = None
     draft_id: UUID | None = None
+    mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
+            self.profile_id,
             self.provider_id,
-            self.profile_id,
             self.draft_id,
+            self.mcp,
         )
 
-class GetProviderDetailSqlRow(BaseModel):
+class QGetProviderV4DescriptionResource(BaseModel):
 
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetProviderV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetProviderV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+class GetProviderSqlRow(BaseModel):
+
+    actor_name: str | None = None
     provider_exists: bool | None = None
-    provider_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    value: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    base_url: str | None = None
     can_edit: bool | None = None
-    can_delete: bool | None = None
-    actor_name: str | None = None
-    draft_version: int | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetProviderV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetProviderV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetProviderV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetProviderV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetProviderV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetProviderV4FlagResource] | None = None
 
-class GetProviderDetailApiRequest(BaseModel):
+class GetProviderApiRequest(BaseModel):
 
-    provider_id: UUID
+    provider_id: UUID | None = None
     draft_id: UUID | None = None
+    mcp: bool | None = False
 
-class GetProviderDetailApiResponse(BaseModel):
+class GetProviderApiResponse(BaseModel):
 
+    actor_name: str | None = None
     provider_exists: bool | None = None
-    provider_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    value: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    base_url: str | None = None
     can_edit: bool | None = None
-    can_delete: bool | None = None
-    actor_name: str | None = None
-    draft_version: int | None = None
-
-
-
-# Generated from: get_provider_new
-
-class GetProviderNewSqlParams(BaseModel):
-
-    profile_id: UUID
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.draft_id,
-        )
-
-class GetProviderNewSqlRow(BaseModel):
-
-    provider_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    value: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    base_url: str | None = None
-    can_edit: bool | None = None
-    can_delete: bool | None = None
-    actor_name: str | None = None
-    draft_version: int | None = None
-
-class GetProviderNewApiRequest(BaseModel):
-
-    draft_id: UUID | None = None
-
-class GetProviderNewApiResponse(BaseModel):
-
-    provider_id: str | None = None
-    name: str | None = None
-    description: str | None = None
-    value: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-    base_url: str | None = None
-    can_edit: bool | None = None
-    can_delete: bool | None = None
-    actor_name: str | None = None
-    draft_version: int | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    name_id: UUID | None = None
+    name_resource: QGetProviderV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetProviderV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetProviderV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetProviderV4DescriptionResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetProviderV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetProviderV4FlagResource] | None = None
 
 
 
@@ -20378,47 +20087,82 @@ class GetProvidersListApiResponse(BaseModel):
 
 
 
-# Generated from: update_provider
+# Generated from: patch_provider_draft
 
-class UpdateProviderSqlParams(BaseModel):
+class PatchProviderDraftSqlParams(BaseModel):
 
-    provider_id: UUID
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str
     profile_id: UUID
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.provider_id,
-            self.name,
-            self.description,
-            self.value,
-            self.active,
-            self.base_url,
             self.profile_id,
+            self.input_draft_id,
+            self.name_id,
+            self.description_id,
+            self.active_flag_id,
+            self.expected_version,
         )
 
-class UpdateProviderSqlRow(BaseModel):
+class PatchProviderDraftSqlRow(BaseModel):
 
-    provider_exists: bool | None = None
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchProviderDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    expected_version: int | None = 0
+
+class PatchProviderDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
+# Generated from: save_provider
+
+class SaveProviderSqlParams(BaseModel):
+
+    name_id: UUID
+    profile_id: UUID
+    input_provider_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+            self.profile_id,
+            self.input_provider_id,
+            self.description_id,
+            self.active_flag_id,
+        )
+
+class SaveProviderSqlRow(BaseModel):
+
     provider_id: UUID | None = None
     actor_name: str | None = None
 
-class UpdateProviderApiRequest(BaseModel):
+class SaveProviderApiRequest(BaseModel):
 
-    provider_id: UUID
-    name: str
-    description: str
-    value: str
-    active: bool
-    base_url: str
+    name_id: UUID
+    input_provider_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
 
-class UpdateProviderApiResponse(BaseModel):
+class SaveProviderApiResponse(BaseModel):
 
-    provider_exists: bool | None = None
     provider_id: UUID | None = None
     actor_name: str | None = None
 
@@ -33397,12 +33141,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDashboardHistoryApiRequest",
         "GetDashboardHistoryApiResponse",
     ),
-    "app/sql/v4/departments/create_department_complete.sql": (
-        "CreateDepartmentSqlParams",
-        "CreateDepartmentSqlRow",
-        "CreateDepartmentApiRequest",
-        "CreateDepartmentApiResponse",
-    ),
     "app/sql/v4/departments/delete_department_complete.sql": (
         "DeleteDepartmentSqlParams",
         "DeleteDepartmentSqlRow",
@@ -33427,18 +33165,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDepartmentApiRequest",
         "GetDepartmentApiResponse",
     ),
-    "app/sql/v4/departments/get_department_detail_complete.sql": (
-        "GetDepartmentDetailSqlParams",
-        "GetDepartmentDetailSqlRow",
-        "GetDepartmentDetailApiRequest",
-        "GetDepartmentDetailApiResponse",
-    ),
-    "app/sql/v4/departments/get_department_new_complete.sql": (
-        "GetDepartmentNewSqlParams",
-        "GetDepartmentNewSqlRow",
-        "GetDepartmentNewApiRequest",
-        "GetDepartmentNewApiResponse",
-    ),
     "app/sql/v4/departments/get_department_title_complete.sql": (
         "GetDepartmentTitleSqlParams",
         "GetDepartmentTitleSqlRow",
@@ -33456,12 +33182,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveDepartmentSqlRow",
         "SaveDepartmentApiRequest",
         "SaveDepartmentApiResponse",
-    ),
-    "app/sql/v4/departments/update_department_complete.sql": (
-        "UpdateDepartmentSqlParams",
-        "UpdateDepartmentSqlRow",
-        "UpdateDepartmentApiRequest",
-        "UpdateDepartmentApiResponse",
     ),
     "app/sql/v4/developer_instructions/get_developer_instruction_complete.sql": (
         "GetDeveloperInstructionSqlParams",
@@ -34627,29 +34347,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DeletePromptApiRequest",
         "DeletePromptApiResponse",
     ),
-    "app/sql/v4/providers/create_provider_complete.sql": (
-        "CreateProviderSqlParams",
-        "CreateProviderSqlRow",
-        "CreateProviderApiRequest",
-        "CreateProviderApiResponse",
-    ),
     "app/sql/v4/providers/delete_provider_complete.sql": (
         "DeleteProviderSqlParams",
         "DeleteProviderSqlRow",
         "DeleteProviderApiRequest",
         "DeleteProviderApiResponse",
     ),
-    "app/sql/v4/providers/get_provider_detail_complete.sql": (
-        "GetProviderDetailSqlParams",
-        "GetProviderDetailSqlRow",
-        "GetProviderDetailApiRequest",
-        "GetProviderDetailApiResponse",
-    ),
-    "app/sql/v4/providers/get_provider_new_complete.sql": (
-        "GetProviderNewSqlParams",
-        "GetProviderNewSqlRow",
-        "GetProviderNewApiRequest",
-        "GetProviderNewApiResponse",
+    "app/sql/v4/providers/get_provider_complete.sql": (
+        "GetProviderSqlParams",
+        "GetProviderSqlRow",
+        "GetProviderApiRequest",
+        "GetProviderApiResponse",
     ),
     "app/sql/v4/providers/get_providers_list_complete.sql": (
         "GetProvidersListSqlParams",
@@ -34657,11 +34365,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProvidersListApiRequest",
         "GetProvidersListApiResponse",
     ),
-    "app/sql/v4/providers/update_provider_complete.sql": (
-        "UpdateProviderSqlParams",
-        "UpdateProviderSqlRow",
-        "UpdateProviderApiRequest",
-        "UpdateProviderApiResponse",
+    "app/sql/v4/providers/patch_provider_draft_complete.sql": (
+        "PatchProviderDraftSqlParams",
+        "PatchProviderDraftSqlRow",
+        "PatchProviderDraftApiRequest",
+        "PatchProviderDraftApiResponse",
+    ),
+    "app/sql/v4/providers/save_provider_complete.sql": (
+        "SaveProviderSqlParams",
+        "SaveProviderSqlRow",
+        "SaveProviderApiRequest",
+        "SaveProviderApiResponse",
     ),
     "app/sql/v4/questions/create_questions_with_options_complete.sql": (
         "CreateQuestionsWithOptionsSqlParams",
@@ -36633,11 +36347,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/create_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/departments/delete_department_complete.sql"]
     ) -> SqlString: ...
 
@@ -36658,16 +36367,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/get_department_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/get_department_new_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/departments/get_department_title_complete.sql"]
     ) -> SqlString: ...
 
@@ -36679,11 +36378,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/departments/save_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/departments/update_department_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -37658,22 +37352,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/create_provider_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/v4/providers/delete_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/get_provider_detail_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/get_provider_new_complete.sql"]
+        file_path: Literal["app/sql/v4/providers/get_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -37683,7 +37367,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/providers/update_provider_complete.sql"]
+        file_path: Literal["app/sql/v4/providers/patch_provider_draft_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/providers/save_provider_complete.sql"]
     ) -> SqlString: ...
 
     @overload

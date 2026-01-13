@@ -3188,7 +3188,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/detail": {
+    "/api/v4/providers/get": {
         parameters: {
             query?: never;
             header?: never;
@@ -3198,17 +3198,22 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Provider Detail
-         * @description Get provider detail information.
+         * Get Provider
+         * @description Get provider information - handles both new (provider_id = NULL) and detail (provider_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
-        post: operations["get_provider_detail_api_v4_providers_detail_post"];
+        post: operations["get_provider_api_v4_providers_get_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/new": {
+    "/api/v4/providers/save": {
         parameters: {
             query?: never;
             header?: never;
@@ -3218,17 +3223,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Get Provider New
-         * @description Get default provider detail information for new provider creation.
+         * Save Provider
+         * @description Save provider - handles both create (provider_id = NULL) and update (provider_id provided).
          */
-        post: operations["get_provider_new_api_v4_providers_new_post"];
+        post: operations["save_provider_api_v4_providers_save_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/providers/create": {
+    "/api/v4/providers/draft": {
         parameters: {
             query?: never;
             header?: never;
@@ -3237,35 +3242,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Create Provider
-         * @description Create a new provider.
-         */
-        post: operations["create_provider_api_v4_providers_create_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/providers/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
         /**
-         * Update Provider
-         * @description Update an existing provider.
+         * Patch Provider Draft
+         * @description Patch provider draft - accepts resource IDs and creates/updates draft.
          */
-        post: operations["update_provider_api_v4_providers_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
+        patch: operations["patch_provider_draft_api_v4_providers_draft_patch"];
         trace?: never;
     };
     "/api/v4/providers/delete": {
@@ -6234,26 +6219,6 @@ export interface components {
             last_name?: string | null;
             /** Email Exists */
             email_exists?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** CreateProviderApiRequest */
-        CreateProviderApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value: string;
-            /** Active */
-            active: boolean;
-            /** Base Url */
-            base_url: string;
-        };
-        /** CreateProviderApiResponse */
-        CreateProviderApiResponse: {
-            /** Provider Id */
-            provider_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -9600,76 +9565,67 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
-        /** GetProviderDetailApiRequest */
-        GetProviderDetailApiRequest: {
-            /**
-             * Provider Id
-             * Format: uuid
-             */
-            provider_id: string;
+        /** GetProviderApiRequest */
+        GetProviderApiRequest: {
+            /** Provider Id */
+            provider_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
         };
-        /** GetProviderDetailApiResponse */
-        GetProviderDetailApiResponse: {
+        /** GetProviderApiResponse */
+        GetProviderApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
             /** Provider Exists */
             provider_exists?: boolean | null;
-            /** Provider Id */
-            provider_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Value */
-            value?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Base Url */
-            base_url?: string | null;
             /** Can Edit */
             can_edit?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
-        };
-        /** GetProviderNewApiRequest */
-        GetProviderNewApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetProviderNewApiResponse */
-        GetProviderNewApiResponse: {
-            /** Provider Id */
-            provider_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Value */
-            value?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Base Url */
-            base_url?: string | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Draft Version */
-            draft_version?: number | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetProviderV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetProviderV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetProviderV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetProviderV4DescriptionResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetProviderV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["QGetProviderV4FlagResource"][] | null;
         };
         /** GetProvidersListApiRequest */
         GetProvidersListApiRequest: Record<string, never>;
@@ -11829,6 +11785,31 @@ export interface components {
         };
         /** PatchPersonaDraftApiResponse */
         PatchPersonaDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchProviderDraftApiRequest */
+        PatchProviderDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchProviderDraftApiResponse */
+        PatchProviderDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -14974,6 +14955,37 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+        };
+        /** QGetProviderV4DescriptionResource */
+        QGetProviderV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetProviderV4FlagResource */
+        QGetProviderV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetProviderV4NameResource */
+        QGetProviderV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
         };
         /** QGetRubricDetailV4Agent */
         QGetRubricDetailV4Agent: {
@@ -19302,6 +19314,27 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** SaveProviderApiRequest */
+        SaveProviderApiRequest: {
+            /**
+             * Name Id
+             * Format: uuid
+             */
+            name_id: string;
+            /** Input Provider Id */
+            input_provider_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+        };
+        /** SaveProviderApiResponse */
+        SaveProviderApiResponse: {
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** SaveRubricApiRequest */
         SaveRubricApiRequest: {
             /**
@@ -20422,33 +20455,6 @@ export interface components {
             last_name?: string | null;
             /** Name */
             name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** UpdateProviderApiRequest */
-        UpdateProviderApiRequest: {
-            /**
-             * Provider Id
-             * Format: uuid
-             */
-            provider_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Value */
-            value: string;
-            /** Active */
-            active: boolean;
-            /** Base Url */
-            base_url: string;
-        };
-        /** UpdateProviderApiResponse */
-        UpdateProviderApiResponse: {
-            /** Provider Exists */
-            provider_exists?: boolean | null;
-            /** Provider Id */
-            provider_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -26503,7 +26509,7 @@ export interface operations {
             };
         };
     };
-    get_provider_detail_api_v4_providers_detail_post: {
+    get_provider_api_v4_providers_get_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26516,7 +26522,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetProviderDetailApiRequest"];
+                "application/json": components["schemas"]["GetProviderApiRequest"];
             };
         };
         responses: {
@@ -26526,7 +26532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetProviderDetailApiResponse"];
+                    "application/json": components["schemas"]["GetProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26540,7 +26546,7 @@ export interface operations {
             };
         };
     };
-    get_provider_new_api_v4_providers_new_post: {
+    save_provider_api_v4_providers_save_post: {
         parameters: {
             query?: never;
             header?: {
@@ -26553,7 +26559,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["GetProviderNewApiRequest"];
+                "application/json": components["schemas"]["SaveProviderApiRequest"];
             };
         };
         responses: {
@@ -26563,7 +26569,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GetProviderNewApiResponse"];
+                    "application/json": components["schemas"]["SaveProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -26577,7 +26583,7 @@ export interface operations {
             };
         };
     };
-    create_provider_api_v4_providers_create_post: {
+    patch_provider_draft_api_v4_providers_draft_patch: {
         parameters: {
             query?: never;
             header?: {
@@ -26590,7 +26596,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateProviderApiRequest"];
+                "application/json": components["schemas"]["PatchProviderDraftApiRequest"];
             };
         };
         responses: {
@@ -26600,44 +26606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CreateProviderApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_provider_api_v4_providers_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateProviderApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateProviderApiResponse"];
+                    "application/json": components["schemas"]["PatchProviderDraftApiResponse"];
                 };
             };
             /** @description Validation Error */
