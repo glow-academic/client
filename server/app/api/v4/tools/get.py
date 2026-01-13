@@ -44,20 +44,30 @@ async def get_tool(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetToolApiResponse:
-    """Get tool information - handles both new (tool_id = NULL) and detail (tool_id provided) (skeleton)."""
+    """Get tool information - handles both new (tool_id = NULL) and detail (tool_id provided).
+    
+    Validation Logic:
+    - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+    - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+    - Frontend components check agent_id before showing generate button
+    """
     tags = ["tools"]  # From router tags
+
+    # Check for cache bypass header (for testing)
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     # Generate cache key from path and parsed body
     # Use mode='json' to serialize UUIDs to strings for JSON compatibility
     body_dict = request.model_dump(mode="json")
     cache_key_val = cache_key(http_request.url.path, body_dict)
 
-    # Try cache
-    cached = await get_cached(cache_key_val)
-    if cached:
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        response.headers["X-Cache-Hit"] = "1"
-        return GetToolApiResponse.model_validate(cached["data"])
+    # Try cache (unless bypassed)
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val)
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return GetToolApiResponse.model_validate(cached["data"])
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -71,14 +81,27 @@ async def get_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        # Extract search and filter params from API request
+        schema_search = request.schema_search
+        template_search = request.template_search
+        schema_show_selected = request.schema_show_selected
+        template_show_selected = request.template_show_selected
         draft_id = request.draft_id
         tool_id = request.tool_id  # Can be NULL for new mode
 
-        # Convert API request to SQL params (add profile_id from header)
+        # Get mcp flag from header (set by router-level dependency)
+        mcp = getattr(http_request.state, "mcp", False) or False
+
+        # Convert API request to SQL params (add profile_id and mcp from header)
         params = GetToolSqlParams(
             tool_id=tool_id,
             profile_id=profile_id,
+            schema_search=schema_search,
+            template_search=template_search,
+            schema_show_selected=schema_show_selected,
+            template_show_selected=template_show_selected,
             draft_id=draft_id,
+            mcp=mcp,
         )
         sql_params = params.to_tuple()
 
@@ -105,7 +128,7 @@ async def get_tool(
 
         # Conditional validation based on mode
         if tool_id is None:
-            # New mode: skeleton validation
+            # New mode: validation
             pass
         else:
             # Detail mode: check if tool exists and has access

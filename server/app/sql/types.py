@@ -31113,43 +31113,169 @@ class CheckGroupStopApiResponse(BaseModel):
 
 
 
-# Generated from: get_tool
+# Generated from: delete_tool
 
-class GetToolSqlParams(BaseModel):
+class DeleteToolSqlParams(BaseModel):
 
     tool_id: UUID
     profile_id: UUID
-    draft_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.tool_id,
             self.profile_id,
-            self.draft_id,
         )
+
+class DeleteToolSqlRow(BaseModel):
+
+    usage_count: int | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+class DeleteToolApiRequest(BaseModel):
+
+    tool_id: UUID
+
+class DeleteToolApiResponse(BaseModel):
+
+    usage_count: int | None = None
+    name: str | None = None
+    deleted: bool | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: duplicate_tool
+
+class DuplicateToolSqlParams(BaseModel):
+
+    tool_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.tool_id,
+            self.profile_id,
+        )
+
+class DuplicateToolSqlRow(BaseModel):
+
+    new_tool_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+class DuplicateToolApiRequest(BaseModel):
+
+    tool_id: UUID
+
+class DuplicateToolApiResponse(BaseModel):
+
+    new_tool_id: UUID | None = None
+    original_name: str | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: get_tool
+
+class GetToolSqlParams(BaseModel):
+
+    profile_id: UUID
+    tool_id: UUID | None = None
+    schema_search: str | None = None
+    template_search: str | None = None
+    schema_show_selected: bool | None = None
+    template_show_selected: bool | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.tool_id,
+            self.schema_search,
+            self.template_search,
+            self.schema_show_selected,
+            self.template_show_selected,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetToolV4Schema(BaseModel):
+
+    schema_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4Template(BaseModel):
+
+    template_id: UUID | None
+    generated: bool | None
 
 class GetToolSqlRow(BaseModel):
 
     actor_name: str | None = None
     tool_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     active: bool | None = None
     updated_at: str | None = None
+    schema_ids: list[UUID] | None = None
+    schema_resources: list[QGetToolV4Schema] | None = None
+    show_schemas: bool | None = None
+    schemas_agent_id: UUID | None = None
+    schemas_required: bool | None = None
+    schema_suggestions: list[UUID] | None = None
+    schemas: list[QGetToolV4Schema] | None = None
+    template_ids: list[UUID] | None = None
+    template_resources: list[QGetToolV4Template] | None = None
+    show_templates: bool | None = None
+    templates_agent_id: UUID | None = None
+    templates_required: bool | None = None
+    template_suggestions: list[UUID] | None = None
+    templates: list[QGetToolV4Template] | None = None
 
 class GetToolApiRequest(BaseModel):
 
-    tool_id: UUID
-    draft_id: UUID
+    tool_id: UUID | None = None
+    schema_search: str | None = None
+    template_search: str | None = None
+    schema_show_selected: bool | None = None
+    template_show_selected: bool | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
 
 class GetToolApiResponse(BaseModel):
 
     actor_name: str | None = None
     tool_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
     name: str | None = None
     description: str | None = None
     active: bool | None = None
     updated_at: str | None = None
+    schema_ids: list[UUID] | None = None
+    schema_resources: list[QGetToolV4Schema] | None = None
+    show_schemas: bool | None = None
+    schemas_agent_id: UUID | None = None
+    schemas_required: bool | None = None
+    schema_suggestions: list[UUID] | None = None
+    schemas: list[QGetToolV4Schema] | None = None
+    template_ids: list[UUID] | None = None
+    template_resources: list[QGetToolV4Template] | None = None
+    show_templates: bool | None = None
+    templates_agent_id: UUID | None = None
+    templates_required: bool | None = None
+    template_suggestions: list[UUID] | None = None
+    templates: list[QGetToolV4Template] | None = None
 
 
 
@@ -31170,6 +31296,11 @@ class QGetToolsListV4Tool(BaseModel):
     name: str | None
     description: str | None
     active: bool | None
+    num_schemas: int | None
+    num_templates: int | None
+    can_edit: bool | None
+    can_delete: bool | None
+    can_duplicate: bool | None
     updated_at: str | None
 
 class GetToolsListSqlRow(BaseModel):
@@ -31188,38 +31319,87 @@ class GetToolsListApiResponse(BaseModel):
 
 
 
+# Generated from: patch_tool_draft
+
+class PatchToolDraftSqlParams(BaseModel):
+
+    profile_id: UUID
+    input_draft_id: UUID | None = None
+    schema_ids: list[UUID] | None = None
+    template_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.input_draft_id,
+            self.schema_ids,
+            self.template_ids,
+            self.expected_version,
+        )
+
+class PatchToolDraftSqlRow(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+class PatchToolDraftApiRequest(BaseModel):
+
+    input_draft_id: UUID | None = None
+    schema_ids: list[UUID] | None = None
+    template_ids: list[UUID] | None = None
+    expected_version: int | None = 0
+
+class PatchToolDraftApiResponse(BaseModel):
+
+    draft_id: UUID | None = None
+    new_version: int | None = None
+    draft_exists: bool | None = None
+
+
+
 # Generated from: save_tool
 
 class SaveToolSqlParams(BaseModel):
 
-    input_tool_id: UUID
     name: str
     description: str
+    schema_ids: list[UUID]
+    template_ids: list[UUID]
     profile_id: UUID
+    input_tool_id: UUID | None = None
+    active: bool | None = True
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
-            self.input_tool_id,
             self.name,
             self.description,
+            self.schema_ids,
+            self.template_ids,
             self.profile_id,
+            self.input_tool_id,
+            self.active,
         )
 
 class SaveToolSqlRow(BaseModel):
 
-    actor_name: str | None = None
     tool_id: UUID | None = None
+    actor_name: str | None = None
 
 class SaveToolApiRequest(BaseModel):
 
-    input_tool_id: UUID
     name: str
     description: str
+    schema_ids: list[UUID]
+    template_ids: list[UUID]
+    input_tool_id: UUID | None = None
+    active: bool | None = True
 
 class SaveToolApiResponse(BaseModel):
 
-    actor_name: str | None = None
     tool_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -35232,6 +35412,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CheckGroupStopApiRequest",
         "CheckGroupStopApiResponse",
     ),
+    "app/sql/v4/tools/delete_tool_complete.sql": (
+        "DeleteToolSqlParams",
+        "DeleteToolSqlRow",
+        "DeleteToolApiRequest",
+        "DeleteToolApiResponse",
+    ),
+    "app/sql/v4/tools/duplicate_tool_complete.sql": (
+        "DuplicateToolSqlParams",
+        "DuplicateToolSqlRow",
+        "DuplicateToolApiRequest",
+        "DuplicateToolApiResponse",
+    ),
     "app/sql/v4/tools/get_tool_complete.sql": (
         "GetToolSqlParams",
         "GetToolSqlRow",
@@ -35243,6 +35435,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetToolsListSqlRow",
         "GetToolsListApiRequest",
         "GetToolsListApiResponse",
+    ),
+    "app/sql/v4/tools/patch_tool_draft_complete.sql": (
+        "PatchToolDraftSqlParams",
+        "PatchToolDraftSqlRow",
+        "PatchToolDraftApiRequest",
+        "PatchToolDraftApiResponse",
     ),
     "app/sql/v4/tools/save_tool_complete.sql": (
         "SaveToolSqlParams",
@@ -38052,12 +38250,27 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/tools/delete_tool_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/tools/duplicate_tool_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/tools/get_tool_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/tools/get_tools_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/tools/patch_tool_draft_complete.sql"]
     ) -> SqlString: ...
 
     @overload

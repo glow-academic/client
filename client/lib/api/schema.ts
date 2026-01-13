@@ -2579,7 +2579,7 @@ export interface paths {
         put?: never;
         /**
          * Get Tools List
-         * @description Get tools list (skeleton).
+         * @description Get tools list with permissions.
          */
         post: operations["get_tools_list_api_v4_tools_list_post"];
         delete?: never;
@@ -2599,7 +2599,12 @@ export interface paths {
         put?: never;
         /**
          * Get Tool
-         * @description Get tool information - handles both new (tool_id = NULL) and detail (tool_id provided) (skeleton).
+         * @description Get tool information - handles both new (tool_id = NULL) and detail (tool_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
          */
         post: operations["get_tool_api_v4_tools_get_post"];
         delete?: never;
@@ -2626,6 +2631,66 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v4/tools/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate Tool
+         * @description Duplicate a tool.
+         */
+        post: operations["duplicate_tool_api_v4_tools_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/tools/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Tool
+         * @description Delete a tool.
+         */
+        post: operations["delete_tool_api_v4_tools_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/tools/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Tool Draft
+         * @description Patch tool draft - accepts resource IDs and creates/updates draft.
+         */
+        patch: operations["patch_tool_draft_api_v4_tools_draft_patch"];
         trace?: never;
     };
     "/api/v4/settings/list": {
@@ -6691,6 +6756,25 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** DeleteToolApiRequest */
+        DeleteToolApiRequest: {
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** DeleteToolApiResponse */
+        DeleteToolApiResponse: {
+            /** Usage Count */
+            usage_count?: number | null;
+            /** Name */
+            name?: string | null;
+            /** Deleted */
+            deleted?: boolean | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
         /** DepartmentsApiRequest */
         DepartmentsApiRequest: {
             /**
@@ -6968,6 +7052,23 @@ export interface components {
             simulation_id?: string | null;
             /** Simulation Name */
             simulation_name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** DuplicateToolApiRequest */
+        DuplicateToolApiRequest: {
+            /**
+             * Tool Id
+             * Format: uuid
+             */
+            tool_id: string;
+        };
+        /** DuplicateToolApiResponse */
+        DuplicateToolApiResponse: {
+            /** New Tool Id */
+            new_tool_id?: string | null;
+            /** Original Name */
+            original_name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -11001,16 +11102,23 @@ export interface components {
         };
         /** GetToolApiRequest */
         GetToolApiRequest: {
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Schema Search */
+            schema_search?: string | null;
+            /** Template Search */
+            template_search?: string | null;
+            /** Schema Show Selected */
+            schema_show_selected?: boolean | null;
+            /** Template Show Selected */
+            template_show_selected?: boolean | null;
+            /** Draft Id */
+            draft_id?: string | null;
             /**
-             * Tool Id
-             * Format: uuid
+             * Mcp
+             * @default false
              */
-            tool_id: string;
-            /**
-             * Draft Id
-             * Format: uuid
-             */
-            draft_id: string;
+            mcp: boolean | null;
         };
         /** GetToolApiResponse */
         GetToolApiResponse: {
@@ -11018,6 +11126,12 @@ export interface components {
             actor_name?: string | null;
             /** Tool Exists */
             tool_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
             /** Name */
             name?: string | null;
             /** Description */
@@ -11026,6 +11140,34 @@ export interface components {
             active?: boolean | null;
             /** Updated At */
             updated_at?: string | null;
+            /** Schema Ids */
+            schema_ids?: string[] | null;
+            /** Schema Resources */
+            schema_resources?: components["schemas"]["QGetToolV4Schema"][] | null;
+            /** Show Schemas */
+            show_schemas?: boolean | null;
+            /** Schemas Agent Id */
+            schemas_agent_id?: string | null;
+            /** Schemas Required */
+            schemas_required?: boolean | null;
+            /** Schema Suggestions */
+            schema_suggestions?: string[] | null;
+            /** Schemas */
+            schemas?: components["schemas"]["QGetToolV4Schema"][] | null;
+            /** Template Ids */
+            template_ids?: string[] | null;
+            /** Template Resources */
+            template_resources?: components["schemas"]["QGetToolV4Template"][] | null;
+            /** Show Templates */
+            show_templates?: boolean | null;
+            /** Templates Agent Id */
+            templates_agent_id?: string | null;
+            /** Templates Required */
+            templates_required?: boolean | null;
+            /** Template Suggestions */
+            template_suggestions?: string[] | null;
+            /** Templates */
+            templates?: components["schemas"]["QGetToolV4Template"][] | null;
         };
         /** GetToolsListApiRequest */
         GetToolsListApiRequest: Record<string, never>;
@@ -11670,6 +11812,29 @@ export interface components {
         };
         /** PatchPersonaDraftApiResponse */
         PatchPersonaDraftApiResponse: {
+            /** Draft Id */
+            draft_id?: string | null;
+            /** New Version */
+            new_version?: number | null;
+            /** Draft Exists */
+            draft_exists?: boolean | null;
+        };
+        /** PatchToolDraftApiRequest */
+        PatchToolDraftApiRequest: {
+            /** Input Draft Id */
+            input_draft_id?: string | null;
+            /** Schema Ids */
+            schema_ids?: string[] | null;
+            /** Template Ids */
+            template_ids?: string[] | null;
+            /**
+             * Expected Version
+             * @default 0
+             */
+            expected_version: number | null;
+        };
+        /** PatchToolDraftApiResponse */
+        PatchToolDraftApiResponse: {
             /** Draft Id */
             draft_id?: string | null;
             /** New Version */
@@ -16678,6 +16843,20 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetToolV4Schema */
+        QGetToolV4Schema: {
+            /** Schema Id */
+            schema_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetToolV4Template */
+        QGetToolV4Template: {
+            /** Template Id */
+            template_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetToolsListV4Tool */
         QGetToolsListV4Tool: {
             /** Tool Id */
@@ -16688,6 +16867,16 @@ export interface components {
             description: string | null;
             /** Active */
             active: boolean | null;
+            /** Num Schemas */
+            num_schemas: number | null;
+            /** Num Templates */
+            num_templates: number | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Can Duplicate */
+            can_duplicate: boolean | null;
             /** Updated At */
             updated_at: string | null;
         };
@@ -19177,22 +19366,28 @@ export interface components {
         };
         /** SaveToolApiRequest */
         SaveToolApiRequest: {
-            /**
-             * Input Tool Id
-             * Format: uuid
-             */
-            input_tool_id: string;
             /** Name */
             name: string;
             /** Description */
             description: string;
+            /** Schema Ids */
+            schema_ids: string[];
+            /** Template Ids */
+            template_ids: string[];
+            /** Input Tool Id */
+            input_tool_id?: string | null;
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean | null;
         };
         /** SaveToolApiResponse */
         SaveToolApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
             /** Tool Id */
             tool_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /** ScenarioPositionsApiRequest */
         ScenarioPositionsApiRequest: {
@@ -25251,6 +25446,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaveToolApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    duplicate_tool_api_v4_tools_duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateToolApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DuplicateToolApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tool_api_v4_tools_delete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteToolApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteToolApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_tool_draft_api_v4_tools_draft_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchToolDraftApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatchToolDraftApiResponse"];
                 };
             };
             /** @description Validation Error */

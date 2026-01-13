@@ -40,7 +40,7 @@ async def get_tools_list(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetToolsListApiResponse:
-    """Get tools list (skeleton)."""
+    """Get tools list with permissions."""
     tags = ["tools"]  # From router tags
 
     # Check for cache bypass header (for testing)

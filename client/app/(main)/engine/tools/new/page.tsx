@@ -3,11 +3,11 @@
  * New tool page (skeleton)
  */
 
-import ToolNew from "@/components/tools/Tool";
+import Tool from "@/components/tools/Tool";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetToolIn = InputOf<"/api/v4/tools/get", "post">;
@@ -16,6 +16,10 @@ type SaveToolIn = InputOf<"/api/v4/tools/save", "post">;
 type SaveToolOut = OutputOf<"/api/v4/tools/save", "post">;
 type PatchToolDraftIn = InputOf<"/api/v4/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
+type CreateDraftSchemasIn = InputOf<"/api/v4/resources/schemas", "post">;
+type CreateDraftSchemasOut = OutputOf<"/api/v4/resources/schemas", "post">;
+type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
+type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for new pages.
@@ -33,8 +37,7 @@ const getToolDefault = async (input: GetToolIn): Promise<GetToolOut> => {
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Create Tool",
-    description:
-      "Create a new tool for teaching assistant training platform.",
+    description: "Create a new tool for teaching assistant training platform.",
   };
 }
 
@@ -51,6 +54,22 @@ async function patchToolDraft(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/tools/draft", input);
+}
+
+async function createDraftSchemas(
+  input: CreateDraftSchemasIn
+): Promise<CreateDraftSchemasOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/schemas", input);
+}
+
+async function createDraftTemplates(
+  input: CreateDraftTemplatesIn
+): Promise<CreateDraftTemplatesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/templates", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -77,15 +96,23 @@ export default async function NewToolPage({
   // Inline server-side parsers for tool search params
   const toolSearchParams = {
     draftId: parseAsString,
+    schemaSearch: parseAsString,
+    templateSearch: parseAsString,
+    schemaShowSelected: parseAsBoolean,
+    templateShowSelected: parseAsBoolean,
   };
   const loadToolSearchParams = createLoader(toolSearchParams);
   const q = loadToolSearchParams(searchParamsObj);
 
-  // Fetch tool default data (for dropdowns and defaults) with draft_id
+  // Fetch tool default data (for dropdowns and defaults) with draft_id and filter params
   const input: GetToolIn = {
     body: {
       tool_id: null,
       draft_id: q.draftId ?? null,
+      schema_search: q.schemaSearch ?? null,
+      template_search: q.templateSearch ?? null,
+      schema_show_selected: q.schemaShowSelected ?? null,
+      template_show_selected: q.templateShowSelected ?? null,
     } as GetToolIn["body"],
   };
   const toolDetailDefault = await getToolDefault(input);
@@ -96,10 +123,12 @@ export default async function NewToolPage({
       data-page="tool-new"
       aria-label="Create new tool page"
     >
-      <ToolNew
+      <Tool
         toolDetailDefault={toolDetailDefault}
         saveToolAction={saveTool}
         patchToolDraftAction={patchToolDraft}
+        createSchemasAction={createDraftSchemas}
+        createTemplatesAction={createDraftTemplates}
       />
     </div>
   );
@@ -109,8 +138,8 @@ export default async function NewToolPage({
 export type {
   GetToolIn,
   GetToolOut,
-  SaveToolIn,
-  SaveToolOut,
   PatchToolDraftIn,
   PatchToolDraftOut,
+  SaveToolIn,
+  SaveToolOut,
 };

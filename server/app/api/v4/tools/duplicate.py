@@ -1,6 +1,4 @@
-"""Tool save endpoint - v4 API following DHH principles (skeleton).
-Unified endpoint that handles both create (tool_id = NULL) and update (tool_id provided).
-"""
+"""Tool duplicate endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
@@ -13,37 +11,37 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    SaveToolApiRequest,
-    SaveToolApiResponse,
-    SaveToolSqlParams,
-    SaveToolSqlRow,
+    DuplicateToolApiRequest,
+    DuplicateToolApiResponse,
+    DuplicateToolSqlParams,
+    DuplicateToolSqlRow,
     load_sql_query,
 )
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/tools/save_tool_complete.sql"
+SQL_PATH = "app/sql/v4/tools/duplicate_tool_complete.sql"
 
 
 router = APIRouter()
 
 
 @router.post(
-    "/save",
-    response_model=SaveToolApiResponse,
+    "/duplicate",
+    response_model=DuplicateToolApiResponse,
     dependencies=[
         audit_activity(
-            "tool.saved",
-            "{{ actor.name }} {% if tool %}updated{% else %}created{% endif %} tool{% if tool %} '{{ tool.name }}'{% endif %}",
+            "tool.duplicated",
+            "{{ actor.name }} duplicated tool '{{ tool.name }}'",
         )
     ],
 )
-async def save_tool(
-    request: SaveToolApiRequest,
+async def duplicate_tool(
+    request: DuplicateToolApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> SaveToolApiResponse:
-    """Save tool - handles both create (tool_id = NULL) and update (tool_id provided) (skeleton)."""
+) -> DuplicateToolApiResponse:
+    """Duplicate a tool."""
     tags = ["tools"]  # From router tags
 
     sql_query = load_sql_query(SQL_PATH)
@@ -60,15 +58,14 @@ async def save_tool(
 
         async with conn.transaction():
             # Convert API request to SQL params (add profile_id from header)
-            params = SaveToolSqlParams(
-                **request.model_dump(),
-                profile_id=profile_id,
+            params = DuplicateToolSqlParams(
+                **request.model_dump(), profile_id=profile_id
             )
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
-                SaveToolSqlRow,
+                DuplicateToolSqlRow,
                 await execute_sql_typed(
                     conn,
                     SQL_PATH,
@@ -76,30 +73,27 @@ async def save_tool(
                 ),
             )
 
-            if not result or not result.tool_id:
-                if request.input_tool_id:
-                    raise ValueError(f"Tool not found: {request.input_tool_id}")
-                else:
-                    raise ValueError("Failed to create tool")
+            if not result or not result.new_tool_id:
+                raise ValueError(f"Tool not found: {request.tool_id}")
+
+            original_name = result.original_name or "Unknown"
 
             # Set audit context with data from SQL query
             if result.actor_name:
-                audit_ctx = {"actor": {"name": result.actor_name, "id": profile_id}}
-                # Only add tool to audit context if input_tool_id was provided (update mode)
-                if request.input_tool_id:
-                    audit_ctx["tool"] = {
-                        "name": request.name or "Tool",
-                        "id": str(result.tool_id),
-                    }
-                audit_set(http_request, **audit_ctx)
+                audit_set(
+                    http_request,
+                    actor={"name": result.actor_name, "id": profile_id},
+                    tool={"name": original_name, "id": str(request.tool_id)},
+                )
 
-        # Convert SQL result to API response
-        api_response = SaveToolApiResponse.model_validate(
-            {
-                "tool_id": str(result.tool_id),
-                "actor_name": result.actor_name,
-            }
-        )
+            # Convert SQL result to API response
+            api_response = DuplicateToolApiResponse.model_validate(
+                {
+                    "new_tool_id": result.new_tool_id,
+                    "original_name": original_name,
+                    "actor_name": result.actor_name,
+                }
+            )
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
@@ -114,7 +108,7 @@ async def save_tool(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="save_tool",
+            operation="duplicate_tool",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
