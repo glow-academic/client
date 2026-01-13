@@ -28,10 +28,7 @@ type CreateDraftDescriptionsOut = OutputOf<
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftProtocolsIn = InputOf<"/api/v4/resources/protocols", "post">;
-type CreateDraftProtocolsOut = OutputOf<
-  "/api/v4/resources/protocols",
-  "post"
->;
+type CreateDraftProtocolsOut = OutputOf<"/api/v4/resources/protocols", "post">;
 type CreateDraftSlugsIn = InputOf<"/api/v4/resources/slugs", "post">;
 type CreateDraftSlugsOut = OutputOf<"/api/v4/resources/slugs", "post">;
 
@@ -167,20 +164,20 @@ export default async function AuthCreatePage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  GetAuthIn,
-  GetAuthOut,
-  SaveAuthIn,
-  SaveAuthOut,
-  PatchAuthDraftIn,
-  PatchAuthDraftOut,
-  CreateDraftNamesIn,
-  CreateDraftNamesOut,
   CreateDraftDescriptionsIn,
   CreateDraftDescriptionsOut,
   CreateDraftFlagsIn,
   CreateDraftFlagsOut,
+  CreateDraftNamesIn,
+  CreateDraftNamesOut,
   CreateDraftProtocolsIn,
   CreateDraftProtocolsOut,
   CreateDraftSlugsIn,
   CreateDraftSlugsOut,
+  GetAuthIn,
+  GetAuthOut,
+  PatchAuthDraftIn,
+  PatchAuthDraftOut,
+  SaveAuthIn,
+  SaveAuthOut,
 };
