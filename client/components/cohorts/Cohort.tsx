@@ -1,72 +1,76 @@
 /**
  * Cohort.tsx
- * Used to create and manage cohorts for the admin dashboard
+ * Implementation using modular resource components
+ * Used to create and manage cohorts - supports both creation and editing
+ * Follows Persona.tsx pattern, adapted for cohorts
  * @AshokSaravanan222 & @siladiea
- * 06/18/2025
+ * 01/12/2026
  */
 "use client";
-import { useRouter, useSearchParams } from "next/navigation";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { toast } from "sonner";
 
-// UI Components
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import {
   GenericForm,
   type StepStatus,
 } from "@/components/common/forms/GenericForm";
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
-import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { StepCard } from "@/components/common/forms/StepCard";
+import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { Departments } from "@/components/resources/Departments";
+import { Descriptions } from "@/components/resources/Descriptions";
+import { Flags } from "@/components/resources/Flags";
+import { Names } from "@/components/resources/Names";
+import { Simulations } from "@/components/resources/Simulations";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useGenerationContext } from "@/contexts/generation-context";
 import { useProfile } from "@/contexts/profile-context";
-import { useDraftAutosave } from "@/hooks/use-draft-autosave";
-import {
-  getDefaultDepartmentIds,
-  transformDepartmentIdsForSubmit,
-} from "@/utils/department-picker-helpers";
-import {
-  ArrowDown,
-  ArrowUp,
-  Check,
-  GripVertical,
-  PlayCircle,
-  Power,
-} from "lucide-react";
-import {
-  parseAsBoolean,
-  parseAsString,
-  useQueryStates,
-  type Parser,
-} from "nuqs";
-
-// Import types from unified endpoints
 import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { ResourceType } from "@/lib/resources/types";
+import { Loader2, Sparkles } from "lucide-react";
+import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-// Unified types for cohorts
-type GetCohortIn = InputOf<"/api/v4/cohorts/get", "post">;
-type GetCohortOut = OutputOf<"/api/v4/cohorts/get", "post">;
+// Types defined inline using InputOf/OutputOf
 type SaveCohortIn = InputOf<"/api/v4/cohorts/save", "post">;
 type SaveCohortOut = OutputOf<"/api/v4/cohorts/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
 type PatchCohortDraftIn = InputOf<"/api/v4/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/api/v4/cohorts/draft", "patch">;
 
+type CohortData = OutputOf<"/api/v4/cohorts/get", "post">;
+
 // Legacy type aliases for backward compatibility
-type CohortDetailOut = GetCohortOut;
-type CohortNewOut = GetCohortOut;
+type CohortDetailOut = CohortData;
+type CohortNewOut = CohortData;
 
 export interface CohortProps {
   cohortId?: string;
@@ -82,6 +86,19 @@ export interface CohortProps {
   patchCohortDraftAction?: (
     input: PatchCohortDraftIn
   ) => Promise<PatchCohortDraftOut>;
+  // Resource creation actions
+  createNamesAction?: (
+    input: CreateDraftNamesIn
+  ) => Promise<CreateDraftNamesOut>;
+  createDescriptionsAction?: (
+    input: CreateDraftDescriptionsIn
+  ) => Promise<CreateDraftDescriptionsOut>;
+  createFlagsAction?: (
+    input: CreateDraftFlagsIn
+  ) => Promise<CreateDraftFlagsOut>;
+  createDepartmentsAction?: (
+    input: CreateDraftDepartmentsIn
+  ) => Promise<CreateDraftDepartmentsOut>;
 }
 
 function CohortComponent({
@@ -92,686 +109,766 @@ function CohortComponent({
   createCohortAction,
   updateCohortAction,
   patchCohortDraftAction,
+  createNamesAction,
+  createDescriptionsAction,
+  createFlagsAction,
+  createDepartmentsAction,
 }: CohortProps) {
+  const router = useRouter();
+  const isEditMode = !!cohortId;
+  const {
+    effectiveProfile,
+    selectedDraftId,
+    setSelectedDraftId,
+    socket,
+    isConnected,
+  } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { setGenerationCapability, clearGenerationCapability } =
+    useGenerationContext();
+
+  // Use unified cohortData prop - prefer cohortDetail in edit mode, cohortDetailDefault in new mode
+  const cohortData = isEditMode ? serverCohortDetail : serverCohortDetailDefault;
+
   // Use unified saveCohortAction if provided, otherwise fall back to legacy actions
   const effectiveSaveAction = saveCohortAction || (isEditMode ? updateCohortAction : createCohortAction);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isEditMode = !!cohortId;
-  const { effectiveProfile, selectedDraftId, setSelectedDraftId } =
-    useProfile();
-  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
-  const isSuperadmin = effectiveProfile?.role === "superadmin";
 
-  // Stabilize server props to prevent unnecessary re-renders
-  const stabilizeServerProp = React.useCallback(
-    (
-      data: typeof serverCohortDetail | typeof serverCohortDetailDefault
-    ): string | null => {
-      if (!data) return null;
-      if (typeof data === "object" && data !== null) {
-        if ("cohort_id" in data && data.cohort_id) {
-          return `cohort_id:${String(data.cohort_id)}`;
-        }
-        const keyFields: Record<string, unknown> = {};
-        if ("valid_department_ids" in data) {
-          keyFields["valid_department_ids"] = Array.isArray(
-            data["valid_department_ids"]
-          )
-            ? data["valid_department_ids"].sort().join(",")
-            : data["valid_department_ids"];
-        }
-        if ("valid_simulation_ids" in data) {
-          keyFields["valid_simulation_ids"] = Array.isArray(
-            data["valid_simulation_ids"]
-          )
-            ? data["valid_simulation_ids"].sort().join(",")
-            : data["valid_simulation_ids"];
-        }
-        const sortedKeys = Object.keys(keyFields).sort();
-        const hash = sortedKeys
-          .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-          .join("|");
-        return `new:${hash.length}:${hash.slice(0, 100)}`;
+  // Generation state for AI workflows - simplified using ResourceType
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ResourceType>
+  >(new Set());
+
+  // Modal state for generate/regenerate
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
+    null
+  );
+  const [modalResources, setModalResources] = useState<
+    GenerateRegenerateModalResource[]
+  >([]);
+  const [modalInstructions, setModalInstructions] = useState("");
+
+  const isGenerating = useCallback(
+    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    [generatingResources]
+  );
+
+  // nuqs parsers for URL-backed state (will be passed to GenericForm)
+  // Memoize to prevent new object reference on every render
+  const cohortSearchParamsClient = useMemo(
+    () => ({
+      // Draft ID (URL-backed, updated when draft is created)
+      draftId: parseAsString,
+      // Search params (URL-backed, updated via debounced callback in StepCard)
+      descriptionSearch: parseAsString,
+      simulationSearch: parseAsString,
+      // Filter params (URL-backed)
+      simulationShowSelected: parseAsBoolean,
+    }),
+    []
+  );
+
+  // Local form state (not in URL) - stores only resource IDs
+  // Display values are managed inside resource components
+  // Use ref to store cohortData to prevent callback recreation on every render
+  const cohortDataRef = React.useRef(cohortData);
+  React.useEffect(() => {
+    cohortDataRef.current = cohortData;
+  }, [cohortData]);
+
+  // Memoize cohortData fields used in renderStep to prevent callback recreation
+  // when only object reference changes (but content is same)
+  const stableCohortDataFields = React.useMemo(() => {
+    if (!cohortData) return null;
+    return {
+      group_id: cohortData.group_id,
+      name_resource: cohortData.name_resource,
+      show_name: cohortData.show_name,
+      name_suggestions: cohortData.name_suggestions,
+      names: cohortData.names,
+      name_required: cohortData.name_required,
+      name_agent_id: cohortData.name_agent_id,
+      description_resource: cohortData.description_resource,
+      show_description: cohortData.show_description,
+      description_suggestions: cohortData.description_suggestions,
+      description_required: cohortData.description_required,
+      description_agent_id: cohortData.description_agent_id,
+      descriptions: cohortData.descriptions,
+      department_resources: cohortData.department_resources,
+      show_departments: cohortData.show_departments,
+      department_suggestions: cohortData.department_suggestions,
+      departments_required: cohortData.departments_required,
+      departments_agent_id: cohortData.departments_agent_id,
+      departments: cohortData.departments,
+      flag_resource: cohortData.flag_resource,
+      show_flag: cohortData.show_flag,
+      flag_required: cohortData.flag_required,
+      flag_agent_id: cohortData.flag_agent_id,
+      simulation_resources: cohortData.simulation_resources,
+      show_simulations: cohortData.show_simulations,
+      simulation_suggestions: cohortData.simulation_suggestions,
+      simulations_required: cohortData.simulations_required,
+      simulations_agent_id: cohortData.simulations_agent_id,
+      simulations: cohortData.simulations,
+      basic_agent_id: cohortData.basic_agent_id,
+      general_agent_id: cohortData.general_agent_id,
+    };
+    // Intentionally depend on individual fields, not whole cohortData object
+    // to prevent recreation when only object reference changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    cohortData?.group_id,
+    cohortData?.name_resource,
+    cohortData?.show_name,
+    cohortData?.name_suggestions,
+    cohortData?.names,
+    cohortData?.name_required,
+    cohortData?.name_agent_id,
+    cohortData?.description_resource,
+    cohortData?.show_description,
+    cohortData?.description_suggestions,
+    cohortData?.description_required,
+    cohortData?.description_agent_id,
+    cohortData?.descriptions,
+    cohortData?.department_resources,
+    cohortData?.show_departments,
+    cohortData?.department_suggestions,
+    cohortData?.departments_required,
+    cohortData?.departments_agent_id,
+    cohortData?.departments,
+    cohortData?.flag_resource,
+    cohortData?.show_flag,
+    cohortData?.flag_required,
+    cohortData?.flag_agent_id,
+    cohortData?.simulation_resources,
+    cohortData?.show_simulations,
+    cohortData?.simulation_suggestions,
+    cohortData?.simulations_required,
+    cohortData?.simulations_agent_id,
+    cohortData?.simulations,
+    cohortData?.basic_agent_id,
+    cohortData?.general_agent_id,
+  ]);
+
+  // Helper to check if a resource type can be regenerated
+  // Use stableCohortDataFields to prevent callback recreation when cohortData object reference changes
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType): boolean => {
+      if (!stableCohortDataFields) return false;
+      switch (resourceType) {
+        case "names":
+          return stableCohortDataFields.name_resource?.generated ?? false;
+        case "descriptions":
+          return (
+            stableCohortDataFields.description_resource?.generated ?? false
+          );
+        case "flags":
+          return stableCohortDataFields.flag_resource?.generated ?? false;
+        case "departments":
+          return (
+            stableCohortDataFields.department_resources?.some(
+              (d) => d.generated
+            ) ?? false
+          );
+        case "simulations":
+          return (
+            stableCohortDataFields.simulation_resources?.some(
+              (s) => s.generated
+            ) ?? false
+          );
+        default:
+          return false;
       }
-      return String(data);
+    },
+    [stableCohortDataFields]
+  );
+
+  const getInitialFormState = useCallback(() => {
+    const data = cohortDataRef.current;
+    if (!data) {
+      return {
+        name_id: null as string | null,
+        description_id: null as string | null,
+        active_flag_id: null as string | null,
+        department_ids: [] as string[],
+        simulation_ids: [] as string[],
+      };
+    }
+    // Extract resource IDs from server data
+    // Note: Server data may have display values, but we only store IDs here
+    return {
+      name_id: data.name_id ?? null,
+      description_id: data.description_id ?? null,
+      active_flag_id: data.active_flag_id ?? null,
+      department_ids: data.department_ids ?? [],
+      simulation_ids: data.simulation_ids ?? [],
+    };
+    // Remove cohortData from dependencies - use ref instead to prevent callback recreation
+  }, []);
+
+  const [formState, setFormState] = useState(getInitialFormState);
+  // Use ref to access formState in renderStep without depending on it
+  const formStateRef = React.useRef(formState);
+  React.useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
+
+  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
+  const departmentIdsStr = React.useMemo(
+    () => JSON.stringify(cohortData?.department_ids ?? []),
+    [cohortData?.department_ids]
+  );
+  const simulationIdsStr = React.useMemo(
+    () => JSON.stringify(cohortData?.simulation_ids ?? []),
+    [cohortData?.simulation_ids]
+  );
+
+  // Memoize stringified formState arrays for draft listener effect dependencies
+  const formStateDepartmentIdsStr = React.useMemo(
+    () => JSON.stringify(formState.department_ids),
+    [formState.department_ids]
+  );
+  const formStateSimulationIdsStr = React.useMemo(
+    () => JSON.stringify(formState.simulation_ids),
+    [formState.simulation_ids]
+  );
+
+  // Update form state when server data changes
+  // Use cohortData directly in dependency array, not getInitialFormState
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      // Only update if resource IDs actually changed
+      if (
+        prev.name_id !== newState.name_id ||
+        prev.description_id !== newState.description_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.simulation_ids) !==
+          JSON.stringify(newState.simulation_ids)
+      ) {
+        return newState;
+      }
+      return prev;
+    });
+    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
+    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    cohortData?.name_id,
+    cohortData?.description_id,
+    cohortData?.active_flag_id,
+    departmentIdsStr,
+    simulationIdsStr,
+  ]);
+
+  // Draft version tracking for optimistic concurrency control
+  // Keep version in a ref so updating it doesn't retrigger the effect
+  const [lastSavedVersion, setLastSavedVersion] = useState(0);
+  const lastSavedVersionRef = React.useRef(0);
+  React.useEffect(() => {
+    lastSavedVersionRef.current = lastSavedVersion;
+  }, [lastSavedVersion]);
+
+  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const setUrlFormDataRef = React.useRef<
+    null | ((updates: Record<string, unknown>) => void)
+  >(null);
+
+  // Store formData from GenericForm to access search params
+  const formDataRef = React.useRef<Record<string, unknown>>({});
+
+  // Memoized callback to sync draftId from GenericForm - only update if value changed
+  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
+    // Store formData for access in handleGenerateResources
+    formDataRef.current = fd;
+    const next = (fd["draftId"] as string | undefined) ?? null;
+    setDraftId((prev) => (prev === next ? prev : next));
+  }, []);
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (draftId !== selectedDraftId) {
+      setSelectedDraftId(draftId);
+    }
+  }, [draftId, selectedDraftId, setSelectedDraftId]);
+
+  // Use ref to stabilize patchCohortDraftAction to prevent effect recreation when prop reference changes
+  const patchCohortDraftActionRef = React.useRef(patchCohortDraftAction);
+  React.useEffect(() => {
+    patchCohortDraftActionRef.current = patchCohortDraftAction;
+  }, [patchCohortDraftAction]);
+
+  // Build a stable key for "what would we patch" - only changes when form data actually changes
+  const draftPatchKey = React.useMemo(() => {
+    return JSON.stringify({
+      draftId: draftId || null,
+      name_id: formState.name_id,
+      description_id: formState.description_id,
+      active_flag_id: formState.active_flag_id,
+      department_ids: formState.department_ids,
+      simulation_ids: formState.simulation_ids,
+    });
+    // Use stringified arrays to prevent recreation when array references change but content is same
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    draftId,
+    formState.name_id,
+    formState.description_id,
+    formState.active_flag_id,
+    formStateDepartmentIdsStr,
+    formStateSimulationIdsStr,
+  ]);
+
+  // Track last patched payload so we don't repatch identical state
+  const lastPatchedKeyRef = React.useRef<string | null>(null);
+
+  // Draft change listener - watches resource IDs and patches draft
+  // Only triggers when the payload actually changes, not when version changes
+  useEffect(() => {
+    const hasResourceIds =
+      formState.name_id ||
+      formState.description_id ||
+      formState.active_flag_id ||
+      formState.department_ids.length > 0 ||
+      formState.simulation_ids.length > 0;
+
+    if (!hasResourceIds || !patchCohortDraftActionRef.current) {
+      return;
+    }
+
+    // ✅ If nothing changed since the last successful patch, do nothing.
+    if (lastPatchedKeyRef.current === draftPatchKey) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        if (!patchCohortDraftActionRef.current) return;
+        const result = await patchCohortDraftActionRef.current({
+          body: {
+            input_draft_id: draftId || null,
+            name_id: formState.name_id,
+            description_id: formState.description_id,
+            active_flag_id: formState.active_flag_id,
+            department_ids: formState.department_ids,
+            simulation_ids: formState.simulation_ids,
+            expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
+          },
+        });
+
+        // Mark this payload as patched so we don't loop
+        lastPatchedKeyRef.current = draftPatchKey;
+
+        if (!draftId && result.draft_id) {
+          // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
+          setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        }
+
+        // This can stay as state (for UI), but it won't re-trigger patching
+        // because the effect is gated by payload changes.
+        if ((result.new_version ?? 0) !== lastSavedVersionRef.current) {
+          setLastSavedVersion(result.new_version ?? 0);
+          lastSavedVersionRef.current = result.new_version ?? 0;
+        }
+      } catch {
+        // Failed to save draft - error already logged by API
+        // Don't update lastPatchedKeyRef on failure so we retry on next change
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+    // ✅ Trigger only when payload changes, not when version changes
+    // patchCohortDraftAction and setDraftId are accessed via refs to prevent effect recreation
+    // when prop/function references change but functionality is the same
+    // We access formState fields and draftId inside the effect, but depend on draftPatchKey
+    // to prevent unnecessary effect recreation when individual fields change but payload is same
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    draftPatchKey, // ✅ trigger only when payload changes
+    // patchCohortDraftAction and setDraftId are accessed via refs
+  ]);
+
+  // WebSocket handlers for AI generation - unified handler for all resource types
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    // Use single group_id from cohortData (no need to track multiple)
+    const currentGroupId = cohortData?.group_id;
+
+    const handleGenerationComplete = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      name_id?: string | null;
+      description_id?: string | null;
+      active_flag_id?: string | null;
+      department_ids?: string[];
+      simulation_ids?: string[];
+      message?: string;
+      success?: boolean;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "cohort" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this cohort or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+        "simulations",
+      ];
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ResourceType)
+      ) {
+        // Update formState with the resource ID that was generated
+        // Only update the field that matches resource_type (others will be null)
+        setFormState((prev) => {
+          const updates: Partial<typeof prev> = {};
+
+          if (data.name_id) updates.name_id = data.name_id;
+          if (data.description_id) updates.description_id = data.description_id;
+          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
+          if (data.department_ids && data.department_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newDeptIds = data.department_ids.filter(
+              (id) => !prev.department_ids.includes(id)
+            );
+            updates.department_ids = [...prev.department_ids, ...newDeptIds];
+          }
+          if (data.simulation_ids && data.simulation_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newSimIds = data.simulation_ids.filter(
+              (id) => !prev.simulation_ids.includes(id)
+            );
+            updates.simulation_ids = [...prev.simulation_ids, ...newSimIds];
+          }
+
+          return { ...prev, ...updates };
+        });
+
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ResourceType);
+          return next;
+        });
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
+      }
+    };
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "cohort" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this cohort or wrong group_id
+      }
+      // Handle progress updates if needed
+    };
+
+    const handleGenerationError = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      message?: string;
+      resource_type?: string;
+      resource_types?: string[];
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "cohort" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this cohort or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+        "simulations",
+      ];
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
+    };
+
+    // Listen to cohort-specific events filtered by artifact_type and group_id
+    socket.on("cohort_generation_progress", handleGenerationProgress);
+    socket.on("cohort_generation_complete", handleGenerationComplete);
+    socket.on("cohort_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("cohort_generation_progress", handleGenerationProgress);
+      socket.off("cohort_generation_complete", handleGenerationComplete);
+      socket.off("cohort_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected, cohortData?.group_id]);
+
+  // Multi-generation handler - accepts list of resource types and optional user instructions
+  // Helper function to determine agent_type from resource types
+  const determineAgentType = useCallback(
+    (resourceTypes: ResourceType[]): string | null => {
+      const basicResources: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+      ];
+      const allResourceTypes: ResourceType[] = [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+        "simulations",
+      ];
+
+      const isBasicCombo =
+        resourceTypes.length === basicResources.length &&
+        resourceTypes.every((rt) => basicResources.includes(rt));
+      const isAllResources =
+        resourceTypes.length === allResourceTypes.length &&
+        resourceTypes.every((rt) => allResourceTypes.includes(rt));
+
+      if (isAllResources) {
+        return "general";
+      } else if (isBasicCombo) {
+        return "basic";
+      } else if (resourceTypes.length === 1) {
+        // Single resource type - map to agent_type
+        const agentTypeMap: Record<ResourceType, string> = {
+          names: "name",
+          descriptions: "description",
+          flags: "flags",
+          departments: "departments",
+          simulations: "simulations",
+        };
+        const firstType = resourceTypes[0];
+        if (firstType && firstType in agentTypeMap) {
+          return agentTypeMap[firstType];
+        }
+      }
+      return null;
     },
     []
   );
 
-  const cohortDetailId = React.useMemo(
-    () => stabilizeServerProp(serverCohortDetail),
-    [serverCohortDetail, stabilizeServerProp]
-  );
-  const cohortDetailDefaultId = React.useMemo(
-    () => stabilizeServerProp(serverCohortDetailDefault),
-    [serverCohortDetailDefault, stabilizeServerProp]
-  );
-
-  // Use refs to track latest server props
-  const latestServerCohortDetailRef = React.useRef(serverCohortDetail);
-  const latestServerCohortDetailDefaultRef = React.useRef(
-    serverCohortDetailDefault
-  );
-
-  latestServerCohortDetailRef.current = serverCohortDetail;
-  latestServerCohortDetailDefaultRef.current = serverCohortDetailDefault;
-
-  // Use refs to track stable server props
-  const stableCohortDetailRef = React.useRef<{
-    data: typeof serverCohortDetail;
-    id: string | null;
-  }>({
-    data: serverCohortDetail,
-    id: cohortDetailId,
-  });
-  const stableCohortDetailDefaultRef = React.useRef<{
-    data: typeof serverCohortDetailDefault;
-    id: string | null;
-  }>({
-    data: serverCohortDetailDefault,
-    id: cohortDetailDefaultId,
-  });
-
-  React.useEffect(() => {
-    if (stableCohortDetailRef.current.id !== cohortDetailId) {
-      stableCohortDetailRef.current = {
-        data: latestServerCohortDetailRef.current,
-        id: cohortDetailId,
-      };
-    }
-  }, [cohortDetailId]);
-
-  React.useEffect(() => {
-    if (stableCohortDetailDefaultRef.current.id !== cohortDetailDefaultId) {
-      stableCohortDetailDefaultRef.current = {
-        data: latestServerCohortDetailDefaultRef.current,
-        id: cohortDetailDefaultId,
-      };
-    }
-  }, [cohortDetailDefaultId]);
-
-  // Use stable references
-  const cohortDetail = stableCohortDetailRef.current.data;
-  const cohortDetailDefault = stableCohortDetailDefaultRef.current.data;
-
-  // Use edit detail when editing, default detail when creating
-  const cohortDataId = React.useMemo(() => {
-    const data = isEditMode ? cohortDetail : cohortDetailDefault;
-    if (!data) return null;
-    if (typeof data === "object" && data !== null) {
-      if ("cohort_id" in data && data.cohort_id) {
-        return `cohort_id:${String(data.cohort_id)}`;
-      }
-      const keyFields: Record<string, unknown> = {};
-      if ("valid_department_ids" in data) {
-        keyFields["valid_department_ids"] = Array.isArray(
-          data["valid_department_ids"]
-        )
-          ? data["valid_department_ids"].sort().join(",")
-          : data["valid_department_ids"];
-      }
-      if ("valid_simulation_ids" in data) {
-        keyFields["valid_simulation_ids"] = Array.isArray(
-          data["valid_simulation_ids"]
-        )
-          ? data["valid_simulation_ids"].sort().join(",")
-          : data["valid_simulation_ids"];
-      }
-      const sortedKeys = Object.keys(keyFields).sort();
-      const hash = sortedKeys
-        .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-        .join("|");
-      return `new:${hash.length}:${hash.slice(0, 100)}`;
-    }
-    return String(data);
-  }, [isEditMode, cohortDetail, cohortDetailDefault]);
-
-  const stableCohortDataRef = React.useRef<{
-    data: typeof cohortDetail | typeof cohortDetailDefault;
-    id: string | null;
-  }>({
-    data: isEditMode ? cohortDetail : cohortDetailDefault,
-    id: cohortDataId,
-  });
-
-  React.useEffect(() => {
-    if (stableCohortDataRef.current.id !== cohortDataId) {
-      stableCohortDataRef.current = {
-        data: isEditMode ? cohortDetail : cohortDetailDefault,
-        id: cohortDataId,
-      };
-    }
-  }, [isEditMode, cohortDetail, cohortDetailDefault, cohortDataId]);
-
-  const cohortData = stableCohortDataRef.current.data;
-
-  const defaultDepartmentIds = useMemo(
-    () =>
-      getDefaultDepartmentIds(
-        isSuperadmin,
-        effectiveProfile?.primary_department_id ?? null
-      ),
-    [isSuperadmin, effectiveProfile?.primary_department_id]
-  );
-
-  // Inline parsers for URL-backed state (navigation/search params only)
-  const cohortSearchParamsClient = {
-    // Draft ID (URL-backed, updated when draft is created)
-    draftId: parseAsString,
-    // Search params (URL-backed, updated via debounced callback in StepCard)
-    simulationSearch: parseAsString,
-    // Filter params (URL-backed)
-    simulationShowSelected: parseAsBoolean,
-  } as const;
-
-  // URL-backed state using nuqs (only navigation/search params)
-  const [urlParams, setUrlParams] = useQueryStates(cohortSearchParamsClient, {
-    history: "replace",
-    shallow: true, // Use shallow routing to prevent server component re-renders
-  });
-
-  // Get draftId from URL (managed by nuqs via urlParams)
-  const urlDraftId = urlParams.draftId || null;
-
-  // Sync URL draftId to profile context
-  useEffect(() => {
-    if (urlDraftId !== selectedDraftId) {
-      setSelectedDraftId(urlDraftId);
-    }
-  }, [urlDraftId, selectedDraftId, setSelectedDraftId]);
-
-  const draftId = urlDraftId;
-
-  // Trigger server component refetch when search/filter params change (for SQL-side filtering)
-  // Similar to Scenario.tsx pattern: URL params change → router.refresh() → Server re-fetch → Filtered data
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const prevSearchParamsRef = useRef<{
-    search: string | null;
-    showSelected: boolean | null;
-  }>({
-    search: null,
-    showSelected: null,
-  });
-
-  useEffect(() => {
-    const currentSearch = urlParams.simulationSearch || null;
-    const currentShowSelected = urlParams.simulationShowSelected ?? null;
-    const prevSearch = prevSearchParamsRef.current.search;
-    const prevShowSelected = prevSearchParamsRef.current.showSelected;
-
-    // Check if search or filter params actually changed
-    const hasChanged =
-      prevSearch !== currentSearch || prevShowSelected !== currentShowSelected;
-
-    if (hasChanged) {
-      // Update ref for next comparison (before timeout so we capture the previous values in logs)
-      prevSearchParamsRef.current = {
-        search: currentSearch,
-        showSelected: currentShowSelected,
-      };
-
-      // Clear existing timeout
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-
-      // Debounce router.refresh() calls (300ms to match search debounce)
-      refreshTimeoutRef.current = setTimeout(() => {
-        router.refresh();
-      }, 300);
-    }
-
-    return () => {
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-    };
-  }, [urlParams.simulationSearch, urlParams.simulationShowSelected, router]);
-
-  // Local draft state (not in URL) - initialized from server data or draft payload
-  type DraftState = {
-    title: string;
-    description: string;
-    active: boolean;
-    departmentIds: string[];
-    simulationIds: string[];
-    simulationActiveStates: Record<string, boolean>; // Active states for simulations
-  };
-
-  // Initialize draft state from server data or draft payload
-  // Use stable refs (cohortDetail/cohortDetailDefault) instead of raw props to prevent recomputation on every server render
-  // IMPORTANT: Include actual data fields in dependencies, not just IDs, so it recomputes when content changes
-  const initialDraftState = useMemo((): DraftState => {
-    const data = isEditMode ? cohortDetail : cohortDetailDefault;
-
-    if (!data) {
-      return {
-        title: "",
-        description: "",
-        active: true,
-        departmentIds: defaultDepartmentIds || [],
-        simulationIds: [],
-        simulationActiveStates: {},
-      };
-    }
-
-    // Initialize simulation active states from server data
-    const activeStates: Record<string, boolean> = {};
-    if (data.simulations) {
-      data.simulations.forEach((sim) => {
-        if (sim.simulation_id) {
-          activeStates[sim.simulation_id] = sim.active ?? true;
-        }
-      });
-    }
-
-    // If draftId exists, server should have merged draft payload into data
-    // Otherwise, use server defaults
-    const result = {
-      title: data.title || "",
-      description: data.description || "",
-      active: data.active ?? true,
-      departmentIds: data.department_ids || defaultDepartmentIds || [],
-      simulationIds: data.simulation_ids || [],
-      simulationActiveStates: activeStates,
-    };
-
-    return result;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isEditMode,
-    cohortDetail,
-    cohortDetailDefault,
-    cohortDetailId,
-    cohortDetailDefaultId,
-    draftId, // Add draftId to dependencies so it recomputes when draft changes
-    urlDraftId, // Add urlDraftId to dependencies so it recomputes when URL draft changes
-    defaultDepartmentIds,
-    // Include actual content fields so it recomputes when server data changes (not just object reference)
-    cohortDetailDefault?.title,
-    cohortDetailDefault?.description,
-    cohortDetailDefault?.active,
-    cohortDetailDefault?.department_ids,
-    cohortDetailDefault?.simulation_ids,
-    cohortDetail?.title,
-    cohortDetail?.description,
-    cohortDetail?.active,
-    cohortDetail?.department_ids,
-    cohortDetail?.simulation_ids,
-  ]);
-
-  const [draftState, setDraftState] = useState<DraftState>(initialDraftState);
-
-  // Track previous initialDraftState content to avoid unnecessary updates
-  const prevInitialDraftStateRef = useRef<string>(
-    JSON.stringify(initialDraftState)
-  );
-
-  // Update draft state when server data changes (e.g., draft selected)
-  useEffect(() => {
-    const currentStateStr = prevInitialDraftStateRef.current;
-    const newStateStr = JSON.stringify(initialDraftState);
-
-    if (currentStateStr !== newStateStr) {
-      prevInitialDraftStateRef.current = newStateStr;
-      setDraftState(initialDraftState);
-    }
-  }, [initialDraftState]);
-
-  // Merge draftState with urlParams for formData (GenericForm expects single formData object)
-  const formData = useMemo(() => {
-    return {
-      ...draftState,
-      simulationSearch: urlParams.simulationSearch || null,
-      simulationShowSelected: urlParams.simulationShowSelected ?? false,
-    } as Record<string, unknown>;
-  }, [
-    draftState,
-    urlParams.simulationSearch,
-    urlParams.simulationShowSelected,
-  ]);
-
-  // Wrapper for setFormData that updates draftState for form fields, urlParams for navigation
-  const setFormData = useCallback(
-    (
-      updates:
-        | Partial<Record<string, unknown>>
-        | ((prev: Record<string, unknown>) => Partial<Record<string, unknown>>)
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      agentType: string | null,
+      userInstructions?: string
     ) => {
-      // Handle function form
-      const resolvedUpdates =
-        typeof updates === "function" ? updates(formData) : updates;
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
 
-      const draftUpdates: Partial<DraftState> = {};
-      const urlUpdates: Partial<Record<string, unknown>> = {};
-
-      Object.entries(resolvedUpdates).forEach(([key, value]) => {
-        if (
-          key === "title" ||
-          key === "description" ||
-          key === "active" ||
-          key === "simulationActiveStates" ||
-          key === "departmentIds" ||
-          key === "simulationIds"
-        ) {
-          draftUpdates[key as keyof DraftState] = value as never;
-        } else if (key === "simulationSearch") {
-          // Update URL params for search/filter operations
-          urlUpdates["simulationSearch"] =
-            (value as string) && (value as string).length > 0
-              ? (value as string)
-              : null;
-        } else if (key === "simulationShowSelected") {
-          // Update URL params for filter operations
-          urlUpdates["simulationShowSelected"] = value === true ? true : null;
-        }
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
       });
 
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
-      if (Object.keys(urlUpdates).length > 0) {
-        // Check if URL params actually changed before updating
-        const hasChanges = Object.keys(urlUpdates).some((key) => {
-          const newValue = urlUpdates[key];
-          const currentValue = urlParams[key as keyof typeof urlParams];
-          return newValue !== currentValue;
-        });
+      // Read search params from formData
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+      const descriptionSearch =
+        (formData["descriptionSearch"] as string | undefined) ?? null;
+      const simulationSearch =
+        (formData["simulationSearch"] as string | undefined) ?? null;
+      const simulationShowSelected =
+        (formData["simulationShowSelected"] as boolean | undefined) ?? false;
 
-        if (hasChanges) {
-          setUrlParams(urlUpdates as Parameters<typeof setUrlParams>[0]);
-        }
-      }
+      // Emit cohort_generate event with GetCohortApiRequest fields
+      socket.emit("cohort_generate", {
+        resource_types: resourceTypes, // Simple array of strings
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        // GetCohortApiRequest fields from formData
+        draft_id: draftId || null,
+        descriptions_search: descriptionSearch || null,
+        simulation_search: simulationSearch || null,
+        simulation_show_selected: simulationShowSelected || false,
+        mcp: false,
+        cohort_id: cohortId || null,
+      });
     },
-    [formData, setUrlParams, urlParams]
+    [socket, isConnected, cohortId]
   );
+
+  // Individual generation handlers - generate directly without modals
+  const handleGenerateName = useCallback(
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDescription = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["descriptions"],
+        determineAgentType(["descriptions"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDepartments = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["departments"],
+        determineAgentType(["departments"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateFlags = useCallback(
+    async () =>
+      handleGenerateResources(["flags"], determineAgentType(["flags"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateSimulations = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["simulations"],
+        determineAgentType(["simulations"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  // Disabled logic based on can_edit flag - standardized for all resource components
+  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
+  const disabled = useMemo(() => {
+    if (!cohortData) return false;
+    return !cohortData.can_edit;
+  }, [cohortData]);
 
   // Set breadcrumb context when cohort data is loaded
   useEffect(() => {
-    if (cohortDetail?.title && cohortId && isEditMode) {
+    const cohortName = cohortData?.name_resource?.name;
+    if (cohortName && cohortId && isEditMode) {
       setEntityMetadata({
         entityId: cohortId,
-        entityName: cohortDetail.title,
+        entityName: cohortName,
         entityType: "cohort",
       });
     }
     return () => clearEntityMetadata();
   }, [
-    cohortDetail,
+    cohortData,
     cohortId,
     isEditMode,
     setEntityMetadata,
     clearEntityMetadata,
   ]);
 
-  // Draft autosave integration
-  const {
-    saveStatus: _saveStatus,
-    saveNow: _saveNow,
-    lastSavedVersion: _lastSavedVersion,
-  } = useDraftAutosave({
-    draftId,
-    draftState,
-    patchDraftAction: patchCohortDraftAction
-      ? async (input) => {
-          // Transform camelCase keys to snake_case for draft payload (SQL expects snake_case)
-          const camelToSnake: Record<string, string> = {
-            departmentIds: "department_ids",
-            simulationIds: "simulation_ids",
-            simulationActiveStates: "simulation_active_states",
-          };
-          const transformedPatch: Record<string, unknown> = {};
-          Object.entries(input.body.patch as Record<string, unknown>).forEach(
-            ([key, value]) => {
-              const snakeKey = camelToSnake[key] || key;
-              transformedPatch[snakeKey] = value;
-            }
-          );
-
-          // Transform input to match API structure (API uses input_draft_id, patch, expected_version)
-          // Note: profile_id is added server-side from header
-          const result = await patchCohortDraftAction({
-            body: {
-              input_draft_id: input.body.draft_id || null,
-              patch: transformedPatch,
-              expected_version: input.body.expected_version,
-            } as PatchCohortDraftIn["body"],
-          });
-          // Transform response to match hook expectations (API returns draft_id, new_version, draft_exists)
-          return {
-            draftId: result.draft_id || "",
-            newVersion: result.new_version || 0,
-            draftExists: result.draft_exists || false,
-          };
-        }
-      : async () => ({ draftId: "", newVersion: 0, draftExists: false }),
-    debounceMs: 1000,
-    onDraftCreated: useCallback(
-      (newDraftId: string) => {
-        // Only update URL if draftId actually changed
-        const currentUrlDraftId = searchParams.get("draftId");
-        if (newDraftId === currentUrlDraftId) {
-          return;
-        }
-        // Update URL with new draftId and trigger server-side refetch
-        // This ensures the server component gets fresh data with the new draft
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("draftId", newDraftId);
-        const newUrl = `?${params.toString()}`;
-        router.replace(newUrl, { scroll: false });
-        // Force server components to re-render with updated search params
-        router.refresh();
-      },
-      [router, searchParams]
-    ),
-  });
-
-  // Readonly logic using server-provided can_edit flag
-  const isReadonly = useMemo(() => {
-    if (!isEditMode || !cohortData) return false;
-    return !cohortData.can_edit;
-  }, [isEditMode, cohortData]);
-
-  // Convert departments array to dictionary for efficient lookups (GenericPicker needs Record format)
-  const departmentMapping = useMemo(() => {
-    const departments = cohortData?.departments || [];
-    // Handle both array (new format) and object (legacy format) for backward compatibility
-    if (Array.isArray(departments)) {
-      return Object.fromEntries(
-        departments.map((item) => [item.department_id, item])
-      ) as Record<
-        string,
-        {
-          department_id: string;
-          name: string;
-          description: string;
-          simulation_ids: string[];
-        }
-      >;
-    }
-    // Legacy format (already a dictionary)
-    return departments as Record<
-      string,
-      {
-        department_id: string;
-        name: string;
-        description: string;
-        simulation_ids: string[];
-      }
-    >;
-  }, [cohortData?.departments]);
-
-  // Convert simulations_for_picker array to array format for SelectableGrid
-  const simulationsArray = useMemo(() => {
-    const simulations = cohortData?.simulations_for_picker || [];
-    // Handle both array (new format) and object (legacy format) for backward compatibility
-    if (Array.isArray(simulations)) {
-      return simulations as Array<{
-        simulation_id: string;
-        name: string;
-        description: string;
-        time_limit: number;
-        department_ids: string[];
-      }>;
-    }
-    // Legacy format (dictionary) - convert to array
-    return Object.values(simulations) as Array<{
-      simulation_id: string;
-      name: string;
-      description: string;
-      time_limit: number;
-      department_ids: string[];
-    }>;
-  }, [cohortData?.simulations_for_picker]);
-
-  // Convert to dictionary for efficient lookups (used in contentSections)
-  const simulationMapping = useMemo(() => {
-    return Object.fromEntries(
-      simulationsArray.map((item) => [item.simulation_id, item])
-    ) as Record<
-      string,
-      {
-        simulation_id: string;
-        name: string;
-        description: string;
-        time_limit: number;
-        department_ids: string[];
-      }
-    >;
-  }, [simulationsArray]);
-
-  const validSimulationIds = useMemo(() => {
-    const baseIds = cohortData?.valid_simulation_ids || [];
-    const selectedDeptIds =
-      (formData["departmentIds"] as string[] | null | undefined) || [];
-
-    // If no departments selected, return all valid IDs
-    if (selectedDeptIds.length === 0) {
-      return baseIds;
-    }
-
-    // Get union of simulation_ids from selected departments
-    const deptSimulationIds = new Set<string>();
-    selectedDeptIds.forEach((deptId) => {
-      const deptData = departmentMapping[deptId];
-      if (
-        deptData?.["simulation_ids"] &&
-        Array.isArray(deptData["simulation_ids"])
-      ) {
-        deptData["simulation_ids"].forEach((id) => deptSimulationIds.add(id));
-      }
-    });
-
-    // Filter base IDs to only include those in department simulation IDs
-    return baseIds.filter((id) => deptSimulationIds.has(id));
-  }, [cohortData?.valid_simulation_ids, formData, departmentMapping]);
-
-  // Get current simulation IDs from draftState (not formData, since simulationIds is not in URL)
-  const currentSimulationIds = useMemo(() => {
-    return draftState.simulationIds || [];
-  }, [draftState.simulationIds]);
-
-  // Get can_remove map for simulations
-  const simulationCanRemoveMap = useMemo(() => {
-    const map: Record<string, boolean> = {};
-    if (cohortData?.simulations) {
-      cohortData.simulations.forEach((sim) => {
-        if (sim.simulation_id) {
-          map[sim.simulation_id] = sim.can_remove ?? false;
-        }
+  // Set generation capability when cohort data is loaded
+  useEffect(() => {
+    if (cohortData?.general_agent_id) {
+      setGenerationCapability({
+        artifactType: "cohort",
+        canGenerate: true,
+        agentId: cohortData.general_agent_id,
+      });
+    } else {
+      setGenerationCapability({
+        artifactType: "cohort",
+        canGenerate: false,
+        agentId: null,
       });
     }
-    return map;
-  }, [cohortData?.simulations]);
+    return () => clearGenerationCapability();
+  }, [
+    cohortData?.general_agent_id,
+    setGenerationCapability,
+    clearGenerationCapability,
+  ]);
 
-  // Form initialization function for GenericForm
-  const initializeForm = useCallback(
-    (serverData: unknown, editMode: boolean) => {
-      if (
-        !editMode ||
-        !serverData ||
-        typeof serverData !== "object" ||
-        !("department_ids" in serverData)
-      ) {
-        return {};
-      }
-
-      const cohortDetail = serverData as CohortDetailOut;
-      const deptIds = cohortDetail.department_ids || [];
-      const simulationIds = cohortDetail.simulation_ids || [];
-
-      // Initialize simulation active states
-      const activeStates: Record<string, boolean> = {};
-      if (cohortDetail.simulations) {
-        cohortDetail.simulations.forEach((sim) => {
-          if (sim.simulation_id) {
-            activeStates[sim.simulation_id] = sim.active ?? true;
-          }
-        });
-      }
-
-      // Update draftState directly
-      const draftUpdates: Partial<DraftState> = {};
-
-      if (cohortDetail.title) draftUpdates.title = cohortDetail.title;
-      if (cohortDetail.description)
-        draftUpdates.description = cohortDetail.description;
-      if (cohortDetail.active !== undefined)
-        draftUpdates.active = cohortDetail.active ?? true;
-      if (deptIds.length > 0) draftUpdates["departmentIds"] = deptIds;
-      if (simulationIds.length > 0)
-        draftUpdates["simulationIds"] = simulationIds;
-      if (Object.keys(activeStates).length > 0)
-        draftUpdates.simulationActiveStates = activeStates;
-
-      // Apply updates to draftState
-      if (Object.keys(draftUpdates).length > 0) {
-        setDraftState((prev) => ({ ...prev, ...draftUpdates }));
-      }
-
-      // Return empty object for GenericForm compatibility (form fields are handled via draftState)
-      return {};
-    },
-    []
-  );
-
-  // Submit handler for GenericForm (uses draftState, not formData parameter)
+  // Submit handler for GenericForm (uses formState, not formData parameter)
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (!draftState.title?.trim()) {
-        toast.error("Cohort title is required");
-        throw new Error("Cohort title is required");
+      // Validate required resource IDs using {resource}_required flags from cohortData
+      if (cohortData?.name_required && !formState.name_id) {
+        toast.error("Cohort name is required");
+        throw new Error("Cohort name is required");
       }
 
-      const validDepartmentIds = cohortData?.valid_department_ids || [];
-      const finalDepartmentIds = transformDepartmentIdsForSubmit(
-        draftState.departmentIds || [],
-        isSuperadmin,
-        validDepartmentIds
-      );
+      if (
+        cohortData?.departments_required &&
+        (!formState.department_ids || formState.department_ids.length === 0)
+      ) {
+        toast.error("Departments are required");
+        throw new Error("Departments are required");
+      }
 
-      // Use unified save endpoint for both create and update
+      // Ensure profileId exists - required for API calls
+      if (!effectiveProfile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        throw new Error("Profile not loaded");
+      }
+
       if (!effectiveSaveAction) {
         toast.error("Save action not available");
         throw new Error("Save action not available");
       }
 
+      // Ensure required fields are present (TypeScript guard)
+      if (!formState.name_id) {
+        toast.error("Required fields are missing");
+        throw new Error("Required fields are missing");
+      }
+
       try {
-        // Extract name_id, description_id, active_flag_id from cohortData if available
-        // For now, using legacy fields (title, description, active) - this component needs full migration to resource components
-        const saveRequest: SaveCohortIn = {
+        await effectiveSaveAction({
           body: {
             input_cohort_id: isEditMode && cohortId ? cohortId : null,
-            name_id: null, // TODO: Extract from cohortData.name_id when component is fully migrated
-            description_id: null, // TODO: Extract from cohortData.description_id when component is fully migrated
-            active_flag_id: null, // TODO: Extract from cohortData.active_flag_id when component is fully migrated
-            department_ids: finalDepartmentIds || [],
-            simulation_ids: draftState.simulationIds || [],
+            name_id: formState.name_id,
+            description_id: formState.description_id || null,
+            active_flag_id: formState.active_flag_id || null,
+            department_ids: formState.department_ids || [],
+            simulation_ids: formState.simulation_ids || [],
           },
-        };
-        await effectiveSaveAction(saveRequest);
-        toast.success(`Cohort ${isEditMode ? "updated" : "created"} successfully!`);
+        });
+        toast.success(
+          `Cohort ${isEditMode ? "updated" : "created"} successfully!`
+        );
         router.push("/create/cohorts");
       } catch (error) {
         toast.error(
@@ -781,38 +878,119 @@ function CohortComponent({
       }
     },
     [
-      draftState,
+      formState,
       isEditMode,
       cohortId,
-      isSuperadmin,
-      cohortData,
+      effectiveProfile?.id,
       effectiveSaveAction,
       router,
+      cohortData?.name_required,
+      cohortData?.departments_required,
     ]
   );
 
-  // Step status logic (for GenericForm)
+  // Step status logic (for GenericForm) - check resource IDs instead of display values
   const getStepStatus = useCallback(
-    (stepId: string, formData: Record<string, unknown>): StepStatus => {
-      const hasTitle = !!(
-        formData["title"] as string | null | undefined
-      )?.trim();
-      const hasSimulations =
-        ((formData["simulationIds"] as string[] | null | undefined) || [])
-          .length > 0;
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
+      // Check resource IDs from formState (components manage their own display state)
+      const hasName = !!formState.name_id;
+      const hasDescription = !!formState.description_id;
+      const hasSimulations = formState.simulation_ids.length > 0;
 
       switch (stepId) {
         case "basic":
-          return hasTitle ? "completed" : "active";
+          return hasName && hasDescription ? "completed" : "active";
         case "simulations":
-          if (!hasTitle) return "pending";
+          if (!hasName || !hasDescription) return "pending";
           return hasSimulations ? "completed" : "active";
         default:
           return "pending";
       }
     },
+    [formState]
+  );
+
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "descriptions", "departments", "flags"],
+      simulations: ["simulations"],
+      all: [
+        "names",
+        "descriptions",
+        "flags",
+        "departments",
+        "simulations",
+      ], // All resources for full-page generation
+    }),
     []
   );
+
+  // Resource labels for display
+  const resourceLabels: Record<ResourceType, string> = useMemo(
+    () => ({
+      names: "Names",
+      descriptions: "Descriptions",
+      flags: "Flags",
+      departments: "Departments",
+      simulations: "Simulations",
+      colors: "Colors", // Not used but required by type
+      icons: "Icons", // Not used but required by type
+      instructions: "Instructions", // Not used but required by type
+      examples: "Examples", // Not used but required by type
+      fields: "Fields", // Not used but required by type
+    }),
+    []
+  );
+
+  // Handler to open modal for step card generation
+  const handleOpenStepCardModal = useCallback(
+    (stepId: string, mode: "generate" | "regenerate") => {
+      const resourceTypes = stepResources[stepId] || [];
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt],
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
+        })
+      );
+
+      setModalResources(resources);
+      setModalMode(mode);
+      setModalInstructions("");
+      setShowGenerateModal(true);
+    },
+    [stepResources, resourceLabels, canRegenerate]
+  );
+
+  // Handler for modal generate/regenerate action
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      const resourceTypes = selectedResources as ResourceType[];
+      const agentType = determineAgentType(resourceTypes);
+      await handleGenerateResources(
+        resourceTypes,
+        agentType,
+        instructions.trim() || undefined
+      );
+      setShowGenerateModal(false);
+      setModalInstructions("");
+    },
+    [handleGenerateResources, determineAgentType]
+  );
+
+  // Listen for full-page-generate event from layout
+  useEffect(() => {
+    const handleFullPageGenerate = () => {
+      if (cohortData?.general_agent_id) {
+        // Open modal instead of directly generating
+        handleOpenStepCardModal("all", "generate");
+      }
+    };
+    window.addEventListener("full-page-generate", handleFullPageGenerate);
+    return () =>
+      window.removeEventListener("full-page-generate", handleFullPageGenerate);
+  }, [cohortData?.general_agent_id, handleOpenStepCardModal]);
 
   // Steps configuration for GenericForm
   const steps = useMemo(
@@ -822,22 +1000,13 @@ function CohortComponent({
         title: "Basic Information",
         description:
           "Set the cohort name, description, departments, and active status.",
-        resetFields: [
-          "title",
-          "description",
-          "departmentIds",
-          "active",
-        ] as string[],
+        resetFields: ["name", "description", "department_ids", "active"],
       },
       {
         id: "simulations",
         title: "Simulations",
-        description: "Select simulations to include in this cohort.",
-        resetFields: [
-          "simulationIds",
-          "simulationSearch",
-          "simulationShowSelected",
-        ] as (keyof typeof cohortSearchParamsClient)[],
+        description: "Select simulations for this cohort.",
+        resetFields: ["simulation_ids"],
       },
     ],
     []
@@ -846,12 +1015,11 @@ function CohortComponent({
   // Memoize formFieldKeys to prevent re-initialization loops
   const formFieldKeys = useMemo(
     () => [
-      "title",
+      "name",
       "description",
       "active",
-      "departmentIds",
-      "simulationIds",
-      "simulationActiveStates",
+      "department_ids",
+      "simulation_ids",
     ],
     []
   );
@@ -907,6 +1075,8 @@ function CohortComponent({
       }>;
       onReset?: () => void;
     }) => {
+      // Use memoized fields to avoid dependency on cohortData object reference
+      const currentCohortData = stableCohortDataFields;
       switch (stepId) {
         case "basic":
           return (
@@ -915,170 +1085,195 @@ function CohortComponent({
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
-              editableTitle={{
-                value:
-                  (stepFormData["title"] as string | null | undefined) ?? "",
-                onChange: (value) => setStepFormData({ title: value || null }),
-                placeholder: "New Cohort",
-                defaultName: "New Cohort",
-                required: true,
-              }}
-              resetFields={
-                ["title", "description", "departmentIds", "active"] as string[]
+              customHeader={
+                <Names
+                  name_id={formState.name_id ?? null}
+                  name_resource={currentCohortData?.name_resource ?? null}
+                  show_name={currentCohortData?.show_name ?? true}
+                  name_suggestions={currentCohortData?.name_suggestions ?? []}
+                  names={currentCohortData?.names ?? []}
+                  disabled={disabled}
+                  onNameIdChange={(nameId) =>
+                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                  }
+                  onGenerate={handleGenerateName}
+                  isGenerating={isGenerating("names")}
+                  placeholder="e.g., Spring 2024 Cohort"
+                  defaultName="New Cohort"
+                  required={currentCohortData?.name_required ?? false}
+                  hideDescription={true}
+                  group_id={currentCohortData?.group_id ?? null}
+                  agent_id={currentCohortData?.name_agent_id ?? null}
+                  createNamesAction={
+                    createNamesAction as
+                      | ((
+                          input: CreateDraftNamesIn
+                        ) => Promise<CreateDraftNamesOut>)
+                      | undefined
+                  }
+                />
+              }
+              resetFields={["name", "description", "department_ids", "active"]}
+              actions={
+                stepResources["basic"] &&
+                stepResources["basic"].length > 0 &&
+                currentCohortData?.basic_agent_id ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "basic"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "basic",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["basic"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["basic"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
               }
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
             >
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    data-testid="input-cohort-description"
-                    value={
-                      (stepFormData["description"] as
-                        | string
-                        | null
-                        | undefined) || ""
-                    }
-                    onChange={(e) =>
-                      setStepFormData({
-                        description: e.target.value || null,
-                      })
-                    }
-                    placeholder="Enter a brief description (optional)"
-                    rows={3}
-                    disabled={isReadonly}
-                  />
-                </div>
+                {/* Description field - using Descriptions resource component */}
+                <Descriptions
+                  description_id={formState.description_id ?? null}
+                  description_resource={
+                    currentCohortData?.description_resource ?? null
+                  }
+                  show_description={
+                    currentCohortData?.show_description ?? true
+                  }
+                  description_suggestions={
+                    currentCohortData?.description_suggestions ?? []
+                  }
+                  descriptions={currentCohortData?.descriptions ?? []}
+                  disabled={disabled}
+                  onDescriptionIdChange={(descriptionId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      description_id: descriptionId,
+                    }))
+                  }
+                  searchTerm={
+                    (stepFormData["descriptionSearch"] as
+                      | string
+                      | null
+                      | undefined) || ""
+                  }
+                  onSearchChange={(term: string) =>
+                    setStepFormData({ descriptionSearch: term || null })
+                  }
+                  onGenerate={handleGenerateDescription}
+                  isGenerating={isGenerating("descriptions")}
+                  label="Description"
+                  placeholder="Detailed description of the cohort"
+                  required={currentCohortData?.description_required ?? false}
+                  rows={4}
+                  data-testid="input-cohort-description"
+                  group_id={currentCohortData?.group_id ?? null}
+                  agent_id={currentCohortData?.description_agent_id ?? null}
+                  createDescriptionsAction={createDescriptionsAction}
+                />
 
                 {/* Department Selection */}
-                {cohortData?.valid_department_ids &&
-                cohortData.valid_department_ids.length > 1 ? (
-                  <div className="space-y-2">
-                    <Label htmlFor="department">Department</Label>
-                    <GenericPicker
-                      items={departmentMapping}
-                      itemIds={cohortData?.valid_department_ids || []}
-                      selectedIds={
-                        (stepFormData["departmentIds"] as
-                          | string[]
-                          | null
-                          | undefined) || []
-                      }
-                      onSelect={(ids) =>
-                        setStepFormData({
-                          departmentIds: ids.length > 0 ? ids : null,
-                        })
-                      }
-                      getId={(dept) => (dept as unknown as { id: string }).id}
-                      getLabel={(dept) => String(dept["name"] || "")}
-                      getSearchText={(dept) =>
-                        `${dept["name"]} ${dept["description"] || ""}`
-                      }
-                      placeholder="All Departments"
-                      disabled={isReadonly}
-                      multiSelect={true}
-                      hideSelectedChips={true}
-                      buttonClassName="w-full"
-                    />
-                  </div>
-                ) : null}
+                <Departments
+                  department_ids={formState.department_ids ?? []}
+                  department_resources={
+                    currentCohortData?.department_resources ?? []
+                  }
+                  show_departments={
+                    currentCohortData?.show_departments ?? false
+                  }
+                  department_suggestions={
+                    currentCohortData?.department_suggestions ?? []
+                  }
+                  departments={currentCohortData?.departments ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, department_ids: ids }))
+                  }
+                  onGenerate={handleGenerateDepartments}
+                  isGenerating={isGenerating("departments")}
+                  required={currentCohortData?.departments_required ?? false}
+                  group_id={currentCohortData?.group_id ?? null}
+                  agent_id={currentCohortData?.departments_agent_id ?? null}
+                  createDepartmentsAction={createDepartmentsAction}
+                />
 
-                {/* Active Switch */}
-                <div className="space-y-2 pt-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Label
-                        htmlFor="active"
-                        className="text-sm flex items-center gap-1.5"
-                      >
-                        <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                        Active
-                      </Label>
-                      <Switch
-                        id="active"
-                        checked={
-                          (stepFormData["active"] as
-                            | boolean
-                            | null
-                            | undefined) ??
-                          (cohortData as { active?: boolean })?.active ??
-                          true
-                        }
-                        onCheckedChange={(checked) =>
-                          setStepFormData({ active: checked })
-                        }
-                        disabled={isReadonly}
-                        data-testid="switch-cohort-active"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground pl-5">
-                      Inactive cohorts will not be shown
-                    </p>
-                  </div>
-                </div>
+                {/* Active Switch - using Flags resource component */}
+                <Flags
+                  flag_id={formState.active_flag_id ?? null}
+                  flag_resource={currentCohortData?.flag_resource ?? null}
+                  show_flag={currentCohortData?.show_flag ?? false}
+                  disabled={disabled}
+                  onFlagIdChange={(flagId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      active_flag_id: flagId,
+                    }))
+                  }
+                  onGenerate={handleGenerateFlags}
+                  isGenerating={isGenerating("flags")}
+                  label="Active"
+                  helpText="Inactive cohorts will not be available for selection"
+                  required={currentCohortData?.flag_required ?? false}
+                  group_id={currentCohortData?.group_id ?? null}
+                  agent_id={currentCohortData?.flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
+                />
               </div>
             </StepCard>
           );
 
         case "simulations": {
+          const simulationSearchTerm =
+            (stepFormData["simulationSearch"] as string | null | undefined) ||
+            "";
           const simulationShowSelected =
             (stepFormData["simulationShowSelected"] as
               | boolean
               | null
               | undefined) ?? false;
-          const selectedSimulationIds =
-            (stepFormData["simulationIds"] as string[] | null | undefined) ||
-            [];
-          const simulationSearch =
-            (stepFormData["simulationSearch"] as string | null | undefined) ||
-            "";
-
-          // Filter simulations: department-based + client-side search/show_selected for immediate UI feedback
-          // Note: SQL also filters server-side, but client-side filtering provides immediate feedback
-          let filteredSimulations = simulationsArray.filter((sim) =>
-            validSimulationIds.includes(sim.simulation_id)
-          );
-
-          // Apply client-side search filter (for immediate UI feedback while server request is in flight)
-          if (simulationSearch.trim()) {
-            const searchLower = simulationSearch.toLowerCase();
-            filteredSimulations = filteredSimulations.filter(
-              (sim) =>
-                sim.name.toLowerCase().includes(searchLower) ||
-                (sim.description || "").toLowerCase().includes(searchLower)
-            );
-          }
-
-          // Apply client-side "show selected" filter (for immediate UI feedback)
-          if (simulationShowSelected && selectedSimulationIds.length > 0) {
-            filteredSimulations = filteredSimulations.filter((sim) =>
-              selectedSimulationIds.includes(sim.simulation_id)
-            );
-          }
-
-          // Create filter onChange handler (inline function, not useCallback)
-          const createSimulationFilterOnChange = (value: boolean) => {
-            setStepFormData({ simulationShowSelected: value });
-          };
-
           return (
             <StepCard
               stepStatus={stepStatus}
               stepNumber={stepNumber}
               stepTitle={stepTitle}
               stepDescription={stepDescription}
-              isReadonly={isReadonly}
+              isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={
-                (stepFormData["simulationSearch"] as
-                  | string
-                  | null
-                  | undefined) || ""
-              }
+              searchTerm={simulationSearchTerm}
               onSearchChange={(term: string) =>
                 setStepFormData({ simulationSearch: term || null })
               }
@@ -1089,76 +1284,94 @@ function CohortComponent({
                   key: "showSelected",
                   label: "Show selected",
                   value: simulationShowSelected,
-                  onChange: createSimulationFilterOnChange,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      simulationShowSelected: value || null,
+                    }),
                 },
               ]}
               resetFields={[
-                "simulationIds",
+                "simulation_ids",
                 "simulationSearch",
                 "simulationShowSelected",
               ]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
+              actions={
+                stepResources["simulations"] &&
+                stepResources["simulations"].length > 0 &&
+                currentCohortData?.simulations_agent_id ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "simulations"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "simulations",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["simulations"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["simulations"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["simulations"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
             >
-              <SelectableGrid
-                items={filteredSimulations}
-                selectedId={null}
-                selectedIds={selectedSimulationIds}
-                onSelect={(simulationId) => {
-                  const isSelected =
-                    selectedSimulationIds.includes(simulationId);
-                  // Prevent unselection if can_remove is false
-                  if (
-                    isSelected &&
-                    simulationCanRemoveMap[simulationId] === false
-                  ) {
-                    return;
-                  }
-                  const newIds = isSelected
-                    ? selectedSimulationIds.filter((id) => id !== simulationId)
-                    : [...selectedSimulationIds, simulationId];
-                  setStepFormData({
-                    simulationIds: newIds.length > 0 ? newIds : null,
-                  });
-                }}
-                getId={(sim) => sim.simulation_id}
-                renderItem={(simulation, isSelected) => (
-                  <div
-                    className={cn(
-                      "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
-                      "hover:shadow-md hover:bg-accent/50",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      isSelected && "ring-2 ring-primary bg-accent",
-                      isSelected &&
-                        simulationCanRemoveMap[simulation.simulation_id] ===
-                          false &&
-                        "opacity-75 cursor-not-allowed"
-                    )}
-                  >
-                    {/* Check icon - top right */}
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
-                        <Check className="h-3.5 w-3.5 text-primary-foreground" />
-                      </div>
-                    )}
-
-                    <div className="flex items-start gap-3">
-                      <PlayCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm leading-tight">
-                          {simulation.name || "Unnamed Simulation"}
-                        </h3>
-                        {simulation.description && (
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {simulation.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                emptyMessage="No simulations found. Try adjusting your search or filters."
-                disabled={isReadonly}
+              <Simulations
+                simulation_ids={formState.simulation_ids ?? []}
+                simulation_resources={
+                  currentCohortData?.simulation_resources ?? []
+                }
+                show_simulations={
+                  currentCohortData?.show_simulations ?? false
+                }
+                simulation_suggestions={
+                  currentCohortData?.simulation_suggestions ?? []
+                }
+                simulations={currentCohortData?.simulations ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    simulation_ids: ids,
+                  }))
+                }
+                onGenerate={handleGenerateSimulations}
+                isGenerating={isGenerating("simulations")}
+                label="Simulations"
+                required={currentCohortData?.simulations_required ?? false}
+                group_id={currentCohortData?.group_id ?? null}
+                agent_id={currentCohortData?.simulations_agent_id ?? null}
+                searchTerm={simulationSearchTerm}
+                showSelectedFilter={simulationShowSelected}
               />
             </StepCard>
           );
@@ -1169,219 +1382,35 @@ function CohortComponent({
       }
     },
     [
-      cohortData,
-      departmentMapping,
-      simulationsArray,
-      validSimulationIds,
-      simulationCanRemoveMap,
-      isReadonly,
+      // Use stableCohortDataFields instead of cohortData to prevent callback recreation
+      // when only object reference changes (but content is same)
+      stableCohortDataFields,
+      disabled,
       isEditMode,
+      handleGenerateName,
+      handleGenerateDescription,
+      handleGenerateDepartments,
+      handleGenerateFlags,
+      handleGenerateSimulations,
+      isGenerating,
+      stepResources,
+      // Depend on individual formState fields instead of whole object to prevent callback recreation
+      // when object reference changes but values are same
+      formState.name_id,
+      formState.description_id,
+      formState.active_flag_id,
+      // Include arrays - they're used in the callback, but the formState sync effect ensures
+      // they only change when content actually changes (not just reference)
+      formState.department_ids,
+      formState.simulation_ids,
+      createNamesAction,
+      createDescriptionsAction,
+      createFlagsAction,
+      createDepartmentsAction,
+      canRegenerate,
+      handleOpenStepCardModal,
     ]
   );
-
-  // Content sections for nested simulation management
-  const contentSections = useMemo(() => {
-    if (currentSimulationIds.length === 0) {
-      return [];
-    }
-
-    return [
-      {
-        id: "active-simulations",
-        insertAfter: "simulations",
-        render: ({
-          formData: contentFormData,
-          setFormData: setContentFormData,
-        }: {
-          formData: Record<string, unknown>;
-          setFormData: (updates: Partial<Record<string, unknown>>) => void;
-        }) => {
-          const activeStates =
-            (contentFormData["simulationActiveStates"] as
-              | Record<string, boolean>
-              | null
-              | undefined) || {};
-          const simIds =
-            (contentFormData["simulationIds"] as string[] | null | undefined) ||
-            [];
-
-          return (
-            <StepCard
-              stepStatus="completed"
-              stepNumber={3}
-              stepTitle="Active Simulations"
-              stepDescription="Enable or disable simulations in this cohort."
-              isReadonly={isReadonly}
-              isEditMode={isEditMode}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {simIds.map((simulationId) => {
-                  const simulation = simulationMapping[simulationId];
-                  const simulationData = cohortData?.simulations?.find(
-                    (s) => s.simulation_id === simulationId
-                  );
-                  const active =
-                    activeStates[simulationId] ??
-                    simulationData?.active ??
-                    true;
-
-                  return (
-                    <Card key={simulationId} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm leading-tight truncate">
-                            {simulation?.["name"] || "Unnamed Simulation"}
-                          </h3>
-                          {simulation?.["description"] && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {simulation.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 ml-4 shrink-0">
-                          <Label
-                            htmlFor={`${simulationId}-active`}
-                            className="text-sm flex items-center gap-1.5"
-                          >
-                            <Power className="h-3.5 w-3.5 text-muted-foreground" />
-                          </Label>
-                          <Switch
-                            id={`${simulationId}-active`}
-                            checked={active}
-                            onCheckedChange={(checked) => {
-                              const newActiveStates = {
-                                ...activeStates,
-                                [simulationId]: checked,
-                              };
-                              setContentFormData({
-                                simulationActiveStates: newActiveStates,
-                              });
-                            }}
-                            disabled={isReadonly}
-                          />
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </StepCard>
-          );
-        },
-      },
-      {
-        id: "simulation-positions",
-        insertAfter: "simulations",
-        render: ({
-          formData: contentFormData,
-          setFormData: setContentFormData,
-        }: {
-          formData: Record<string, unknown>;
-          setFormData: (updates: Partial<Record<string, unknown>>) => void;
-        }) => {
-          const simIds =
-            (contentFormData["simulationIds"] as string[] | null | undefined) ||
-            [];
-
-          return (
-            <StepCard
-              stepStatus="completed"
-              stepNumber={4}
-              stepTitle="Simulation Positions"
-              stepDescription="Reorder simulations to set their display order."
-              isReadonly={isReadonly}
-              isEditMode={isEditMode}
-            >
-              <div className="space-y-2">
-                {simIds.map((simulationId, index) => {
-                  const simulation = simulationMapping[simulationId];
-                  const canMoveUp = index > 0;
-                  const canMoveDown = index < simIds.length - 1;
-
-                  return (
-                    <Card key={simulationId} className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2 shrink-0">
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground w-6">
-                            {index + 1}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm leading-tight truncate">
-                            {simulation?.["name"] || "Unnamed Simulation"}
-                          </h3>
-                          {simulation?.["description"] && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {simulation.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              const reorderedIds = [...simIds];
-                              if (index > 0) {
-                                const prev = reorderedIds[index - 1];
-                                const curr = reorderedIds[index];
-                                if (prev !== undefined && curr !== undefined) {
-                                  reorderedIds[index - 1] = curr;
-                                  reorderedIds[index] = prev;
-                                  setContentFormData({
-                                    simulationIds: reorderedIds,
-                                  });
-                                }
-                              }
-                            }}
-                            disabled={!canMoveUp || isReadonly}
-                          >
-                            <ArrowUp className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              const reorderedIds = [...simIds];
-                              if (index < simIds.length - 1) {
-                                const curr = reorderedIds[index];
-                                const next = reorderedIds[index + 1];
-                                if (curr !== undefined && next !== undefined) {
-                                  reorderedIds[index] = next;
-                                  reorderedIds[index + 1] = curr;
-                                  setContentFormData({
-                                    simulationIds: reorderedIds,
-                                  });
-                                }
-                              }
-                            }}
-                            disabled={!canMoveDown || isReadonly}
-                          >
-                            <ArrowDown className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </StepCard>
-          );
-        },
-      },
-    ];
-  }, [
-    currentSimulationIds,
-    simulationMapping,
-    cohortData?.simulations,
-    isReadonly,
-    isEditMode,
-  ]);
 
   return (
     <TooltipProvider>
@@ -1389,37 +1418,11 @@ function CohortComponent({
         className="w-full p-6 space-y-8"
         data-page={`cohort-${isEditMode ? "edit" : "new"}`}
       >
-        {isReadonly && (
-          <div className="bg-muted border border-border rounded-lg p-4 mb-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-muted-foreground"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-foreground">
-                  Cohort is read-only
-                </h3>
-                <div className="mt-2 text-sm text-muted-foreground">
-                  <p>
-                    {cohortData?.department_ids?.length === 0
-                      ? "This is a default cohort that cannot be edited. You can view the details but cannot make changes."
-                      : "This cohort cannot be edited. You can view the details but cannot make changes."}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={cohortData?.disabled_reason ?? null}
+          entityType="cohort"
+        />
 
         <GenericForm
           nuqsParsers={
@@ -1427,78 +1430,89 @@ function CohortComponent({
           }
           steps={steps}
           getStepStatus={getStepStatus}
-          formData={formData}
-          setFormData={setFormData}
           serverData={cohortData}
-          initializeForm={initializeForm}
           formFieldKeys={formFieldKeys}
           resetSuccessMessage={resetSuccessMessage}
           onSubmit={handleSubmit}
           submitButton={submitButton}
-          isReadonly={isReadonly}
+          isReadonly={disabled}
           isEditMode={isEditMode}
           renderStep={renderStep}
-          contentSections={contentSections}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
         />
+
+        {/* Generate/Regenerate Modal */}
+        {modalMode && (
+          <GenerateRegenerateModal
+            open={showGenerateModal}
+            onOpenChange={setShowGenerateModal}
+            resources={modalResources}
+            onResourcesChange={setModalResources}
+            instructions={modalInstructions}
+            onInstructionsChange={setModalInstructions}
+            onGenerate={handleModalGenerate}
+            isGenerating={modalResources.some((r) =>
+              isGenerating(r.id as ResourceType)
+            )}
+            mode={modalMode}
+          />
+        )}
       </div>
     </TooltipProvider>
   );
 }
 
-// Helper function to generate stable ID from server prop
-function getStableServerPropId(
-  data: CohortDetailOut | CohortNewOut | undefined
-): string | null {
-  if (!data) return null;
-  if (typeof data === "object" && data !== null) {
-    if ("cohort_id" in data && data.cohort_id) {
-      return `cohort_id:${String(data.cohort_id)}`;
-    }
-    const keyFields: Record<string, unknown> = {};
-    if ("valid_department_ids" in data) {
-      keyFields["valid_department_ids"] = Array.isArray(
-        data["valid_department_ids"]
-      )
-        ? data["valid_department_ids"].sort().join(",")
-        : data["valid_department_ids"];
-    }
-    if ("valid_simulation_ids" in data) {
-      keyFields["valid_simulation_ids"] = Array.isArray(
-        data["valid_simulation_ids"]
-      )
-        ? data["valid_simulation_ids"].sort().join(",")
-        : data["valid_simulation_ids"];
-    }
-    const sortedKeys = Object.keys(keyFields).sort();
-    const hash = sortedKeys
-      .map((k) => `${k}:${JSON.stringify(keyFields[k])}`)
-      .join("|");
-    return `new:${hash.length}:${hash.slice(0, 100)}`;
-  }
-  return String(data);
-}
-
-// Memoize component to prevent re-renders when only prop references change
+// Memoize component to prevent re-renders when only prop references change (content is same)
 export default React.memo(CohortComponent, (prevProps, nextProps) => {
-  const prevDetailId = getStableServerPropId(prevProps.cohortDetail);
-  const nextDetailId = getStableServerPropId(nextProps.cohortDetail);
-  const prevDefaultId = getStableServerPropId(prevProps.cohortDetailDefault);
-  const nextDefaultId = getStableServerPropId(nextProps.cohortDetailDefault);
+  // Compare cohortData by resource IDs, not object reference
+  // Use unified cohortData prop (cohortDetail in edit mode, cohortDetailDefault in new mode)
+  const prevCohortData = prevProps.cohortId
+    ? prevProps.cohortDetail
+    : prevProps.cohortDetailDefault;
+  const nextCohortData = nextProps.cohortId
+    ? nextProps.cohortDetail
+    : nextProps.cohortDetailDefault;
+
+  const prevIds = {
+    name_id: prevCohortData?.name_id,
+    description_id: prevCohortData?.description_id,
+    active_flag_id: prevCohortData?.active_flag_id,
+    department_ids: prevCohortData?.department_ids,
+    simulation_ids: prevCohortData?.simulation_ids,
+  };
+  const nextIds = {
+    name_id: nextCohortData?.name_id,
+    description_id: nextCohortData?.description_id,
+    active_flag_id: nextCohortData?.active_flag_id,
+    department_ids: nextCohortData?.department_ids,
+    simulation_ids: nextCohortData?.simulation_ids,
+  };
 
   // Compare primitive props
-  if (prevProps.cohortId !== nextProps.cohortId) {
+  if (
+    prevProps.cohortId !== nextProps.cohortId ||
+    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
+  ) {
     return false; // Props changed, re-render
   }
 
-  // Compare server props by content ID, not reference
-  if (prevDetailId !== nextDetailId) {
-    return false; // Content changed, re-render
+  // Compare function props by reference (should be stable from server actions)
+  if (
+    prevProps.saveCohortAction !== nextProps.saveCohortAction ||
+    prevProps.createCohortAction !== nextProps.createCohortAction ||
+    prevProps.updateCohortAction !== nextProps.updateCohortAction ||
+    prevProps.patchCohortDraftAction !== nextProps.patchCohortDraftAction ||
+    prevProps.createNamesAction !== nextProps.createNamesAction ||
+    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
+    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
+    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction
+  ) {
+    return false; // Function props changed, re-render
   }
 
-  if (prevDefaultId !== nextDefaultId) {
-    return false; // Content changed, re-render
-  }
-
-  // All props are equivalent (same content), skip re-render
+  // All props are equivalent, skip re-render
   return true;
 });

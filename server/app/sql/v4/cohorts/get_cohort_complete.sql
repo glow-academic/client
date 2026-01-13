@@ -485,12 +485,12 @@ department_suggestions_data AS (
     FROM params
     LIMIT 1
 ),
--- Simulation mapping data (simplified - will expand later)
+-- Simulation mapping data (filtered: active flag AND user department access)
 simulation_mapping_data AS (
     SELECT 
         s.id as simulation_id,
         (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
+        COALESCE((SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description,
         COALESCE(
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
@@ -500,7 +500,7 @@ simulation_mapping_data AS (
         ) as time_limit,
         COALESCE(s.generated, false) as generated
     FROM params x
-    JOIN simulations s ON EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
+    JOIN simulations s ON EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = true)
     LEFT JOIN simulation_departments sd ON sd.simulation_id = s.id AND sd.active = true
     WHERE (
         sd.department_id IN (SELECT department_id FROM user_departments)
