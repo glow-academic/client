@@ -55,7 +55,7 @@ source_auth AS (
         id, 
         (SELECT n.name FROM auth_names an JOIN names n ON an.name_id = n.id WHERE an.auth_id = auth.id LIMIT 1) as name, 
         (SELECT d.description FROM auth_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.auth_id = auth.id LIMIT 1) as description, 
-        EXISTS (SELECT 1 FROM auth_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.auth_id = auth.id AND fl.name = 'active' AND af.type = 'active'::type_auth_flags AND af.value = TRUE) as active, 
+        EXISTS (SELECT 1 FROM auth_flags af WHERE af.auth_id = auth.id AND af.type = 'active'::type_auth_flags AND af.value = TRUE) as active, 
         (SELECT p.value FROM auth_protocols ap JOIN protocols p ON p.id = ap.protocol_id WHERE ap.auth_id = auth.id LIMIT 1) as auth_type, 
         (SELECT s.value FROM auth_slugs as_j JOIN slugs s ON s.id = as_j.slug_id WHERE as_j.auth_id = auth.id LIMIT 1) as slug
     FROM params x

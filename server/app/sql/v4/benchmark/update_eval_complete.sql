@@ -126,7 +126,7 @@ update_eval AS (
 update_eval_groups_flag AS (
     -- Update groups flag
     INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-    SELECT ue.eval_id, ggf.flag_id, 'groups'::type_eval_flags, COALESCE(p.use_groups, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = ue.eval_id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    SELECT ue.eval_id, ggf.flag_id, 'groups'::type_eval_flags, COALESCE(p.use_groups, EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = ue.eval_id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
     FROM update_eval ue
     CROSS JOIN get_groups_flag ggf
     CROSS JOIN params p
@@ -163,7 +163,7 @@ link_eval_description AS (
 update_eval_active_flag AS (
     -- Update active flag
     INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-    SELECT ue.eval_id, gaf.flag_id, 'active'::type_eval_flags, COALESCE(p.active, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = ue.eval_id AND fl.name = 'active' AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    SELECT ue.eval_id, gaf.flag_id, 'active'::type_eval_flags, COALESCE(p.active, EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = ue.eval_id AND ef.type = 'active'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
     FROM update_eval ue
     CROSS JOIN get_active_flag gaf
     CROSS JOIN params p
@@ -172,7 +172,7 @@ update_eval_active_flag AS (
 update_eval_dynamic_flag AS (
     -- Update dynamic flag
     INSERT INTO eval_flags (eval_id, flag_id, type, value, created_at, updated_at)
-    SELECT ue.eval_id, gdf.flag_id, 'dynamic'::type_eval_flags, COALESCE(p.dynamic, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = ue.eval_id AND fl.name = 'dynamic' AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
+    SELECT ue.eval_id, gdf.flag_id, 'dynamic'::type_eval_flags, COALESCE(p.dynamic, EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = ue.eval_id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = TRUE)), NOW(), NOW()
     FROM update_eval ue
     CROSS JOIN get_dynamic_flag gdf
     CROSS JOIN params p

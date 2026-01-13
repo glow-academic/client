@@ -316,7 +316,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -331,7 +331,7 @@ primary_department_id_data AS (
 active_departments_data AS (
     SELECT ARRAY_AGG(DISTINCT d.department_id) as department_ids
     FROM params x
-    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
     WHERE EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
 ),
 -- Field suggestions: linked to personas with active=true OR same group with generated=true
@@ -346,12 +346,7 @@ field_suggestions_data AS (
                  JOIN fields f ON f.field_id = pf.field_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pf.field_id IS NOT NULL
-                   AND EXISTS (
-                       SELECT 1 FROM field_flags ff
-                       JOIN flags fl ON ff.flag_id = fl.id
-                       WHERE ff.field_id = f.field_id
-                         AND fl.name = 'active'
-                         AND ff.type = 'active'::type_field_flags
+                   AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.field_id AND ff.type = 'active'::type_field_flags
                          AND ff.value = true
                    )
                    AND (
@@ -389,13 +384,13 @@ parameter_mapping_data AS (
         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
         COALESCE((SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
         false as numerical,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE) as scenario_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'video_parameter' AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE) as video_parameter
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE) as scenario_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE) as video_parameter
     FROM parameter p
-    WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = true) 
-      AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = true)
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = true) 
+      AND EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = true)
 ),
 field_mapping_data AS (
     SELECT 
@@ -412,9 +407,9 @@ field_mapping_data AS (
         END as sort_priority
     FROM parameter_mapping_data pmd
     CROSS JOIN field_suggestions_data fsd_for_map
-    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1) = pmd.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.field_id AND ff.type = 'active'::type_field_flags AND ff.value = true)
     JOIN parameters p ON p.id = (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.field_id LIMIT 1)
-    WHERE EXISTS (SELECT 1 FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+    WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
 ),
 -- Valid fields data for new personas (based on departments, similar to documents endpoint)
 valid_fields_data AS (
@@ -435,10 +430,10 @@ valid_fields_data AS (
     CROSS JOIN field_suggestions_data fsd_for_sort
     LEFT JOIN parameter_fields pf_pf ON pf_pf.parameter_id IN (
         SELECT p.id FROM parameter p 
-        WHERE EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
+        WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE)
           AND EXISTS (SELECT 1 FROM parameter_flags pf2 JOIN flags fl2 ON pf2.flag_id = fl2.id WHERE pf2.parameter_id = p.id AND fl2.name = 'persona_parameter' AND pf2.type = 'persona_parameter'::type_parameter_flags AND pf2.value = TRUE)
     )
-    LEFT JOIN fields f ON f.field_id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.field_id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    LEFT JOIN fields f ON f.field_id = pf_pf.field_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.field_id AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.field_id AND fd.active = true
     WHERE x.persona_id IS NULL
       AND f.field_id IS NOT NULL  -- Filter out NULL fields
@@ -724,10 +719,10 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM draft_flags df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pf.flag_id FROM persona_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
+            (SELECT pf.flag_id FROM persona_flags pf WHERE pf.persona_id = (SELECT persona_id FROM params) AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM draft_flags df JOIN flags f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_flag_resource,
-        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id JOIN flags fl ON pf.flag_id = fl.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
+        (SELECT ROW(f.id, f.name, f.description, f.icon_id, COALESCE(f.generated, false))::types.q_get_persona_v4_flag_resource FROM persona_flags pf JOIN flags f ON pf.flag_id = f.id WHERE pf.persona_id = (SELECT persona_id FROM params) AND pf.type = 'active'::type_persona_flags AND pf.value = TRUE LIMIT 1) as persona_flag_resource
     FROM params
 ),
 icon_resource_data AS (
@@ -1162,12 +1157,7 @@ department_suggestions_data AS (
                  JOIN departments d ON d.id = pd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.department_id IS NOT NULL
-                   AND EXISTS (
-                       SELECT 1 FROM department_flags df
-                       JOIN flags fl ON df.flag_id = fl.id
-                       WHERE df.department_id = d.id
-                         AND fl.name = 'active'
-                         AND df.type = 'active'::type_department_flags
+                   AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags
                          AND df.value = true
                    )
                    AND (
@@ -1232,12 +1222,7 @@ name_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1308,12 +1293,7 @@ description_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1384,12 +1364,7 @@ color_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1460,12 +1435,7 @@ icon_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1536,12 +1506,7 @@ instructions_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1612,12 +1577,7 @@ flag_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1688,12 +1648,7 @@ departments_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1754,12 +1709,7 @@ fields_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1820,12 +1770,7 @@ examples_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1886,12 +1831,7 @@ basic_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1987,12 +1927,7 @@ content_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -2088,12 +2023,7 @@ general_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (

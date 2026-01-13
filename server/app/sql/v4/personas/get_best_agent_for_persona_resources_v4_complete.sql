@@ -57,12 +57,7 @@ eligible_agents AS (
     CROSS JOIN params p
     CROSS JOIN selected_department sd
     -- Must be active
-    WHERE EXISTS (
-        SELECT 1 FROM agent_flags af 
-        JOIN flags fl ON af.flag_id = fl.id 
-        WHERE af.agent_id = a.id 
-          AND fl.name = 'active' 
-          AND af.type = 'active'::type_agent_flags 
+    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
           AND af.value = true
     )
     -- Must have persona artifact (via agent_domains -> domain_artifacts)

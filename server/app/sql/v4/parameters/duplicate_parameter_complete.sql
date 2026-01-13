@@ -33,11 +33,11 @@ original_parameter AS (
     SELECT 
         (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as name,
         (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags LIMIT 1), false) as simulation_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags LIMIT 1), false) as document_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags LIMIT 1), false) as persona_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags LIMIT 1), false) as scenario_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'video_parameter' AND pf.type = 'video_parameter'::type_parameter_flags LIMIT 1), false) as video_parameter
+        COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'simulation_parameter'::type_parameter_flags LIMIT 1), false) as simulation_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags LIMIT 1), false) as document_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags LIMIT 1), false) as persona_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'scenario_parameter'::type_parameter_flags LIMIT 1), false) as scenario_parameter,
+        COALESCE((SELECT pf.value FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'video_parameter'::type_parameter_flags LIMIT 1), false) as video_parameter
     FROM params x
     JOIN parameters p ON p.id = x.parameter_id
 ),
@@ -191,7 +191,7 @@ original_fields AS (
         (SELECT n.name FROM field_names fn JOIN names n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
         (SELECT d.description FROM field_descriptions fd JOIN descriptions d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
     FROM params x
-    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff JOIN flags fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'active' AND ff.type = 'active'::type_field_flags AND ff.value = true)
+    JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = x.parameter_id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
 ),
 original_field_departments AS (
     SELECT 

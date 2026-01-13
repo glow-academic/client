@@ -554,7 +554,7 @@ BEGIN
                  JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
                  JOIN agent a ON a.id = adom.agent_id
                  WHERE rd.rubric_id = (srga).rubric_id
-                   AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+                   AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
                  LIMIT 1),
                 (SELECT id FROM agent WHERE active = true ORDER BY created_at LIMIT 1)
             ) as agent_id

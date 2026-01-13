@@ -1708,12 +1708,7 @@ filt AS (
                 LEFT JOIN parameter_fields pf_link ON pf_link.field_id = f.id
                 LEFT JOIN parameters p ON p.id = pf_link.parameter_id
                 LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
-                WHERE EXISTS (
-                    SELECT 1 FROM parameter_flags pf
-                    JOIN flags fl ON pf.flag_id = fl.id
-                    WHERE pf.parameter_id = p.id
-                      AND fl.name = 'active'
-                      AND pf.type = 'active'::type_parameter_flags
+                WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags
                       AND pf.value = TRUE
                 )
                   AND (

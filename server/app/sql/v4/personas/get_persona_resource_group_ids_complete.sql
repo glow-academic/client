@@ -158,7 +158,7 @@ flags_group_ids AS (
     LEFT JOIN flags f_draft ON f_draft.id = df.flags_id
     LEFT JOIN persona_flags pf ON pf.persona_id = x.persona_id
     LEFT JOIN flags f_persona ON f_persona.id = pf.flag_id
-    LEFT JOIN flags fl ON fl.id = COALESCE(f_draft.id, f_persona.id) AND fl.name = 'active'
+    LEFT JOIN flags fl ON fl.id = COALESCE(f_draft.id, f_persona.id)
     LEFT JOIN calls c ON c.id = COALESCE(f_draft.call_id, f_persona.call_id)
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id

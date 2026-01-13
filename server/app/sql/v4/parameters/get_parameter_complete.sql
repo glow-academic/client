@@ -572,12 +572,7 @@ department_suggestions_data AS (
                  JOIN departments d ON d.id = pd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.department_id IS NOT NULL
-                   AND EXISTS (
-                       SELECT 1 FROM department_flags df
-                       JOIN flags fl ON df.flag_id = fl.id
-                       WHERE df.department_id = d.id
-                         AND fl.name = 'active'
-                         AND df.type = 'active'::type_department_flags
+                   AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags
                          AND df.value = true
                    )
                    AND (
@@ -615,12 +610,7 @@ field_suggestions_data AS (
                  JOIN fields f ON f.id = pf.field_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pf.field_id IS NOT NULL
-                   AND EXISTS (
-                       SELECT 1 FROM field_flags ff
-                       JOIN flags fl ON ff.flag_id = fl.id
-                       WHERE ff.field_id = f.id
-                         AND fl.name = 'active'
-                         AND ff.type = 'active'::type_field_flags
+                   AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags
                          AND ff.value = true
                    )
                    AND (

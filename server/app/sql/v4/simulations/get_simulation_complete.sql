@@ -1402,12 +1402,7 @@ department_suggestions_data AS (
                  JOIN departments d ON d.id = sd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE sd.department_id IS NOT NULL
-                   AND EXISTS (
-                       SELECT 1 FROM department_flags df
-                       JOIN flags fl ON df.flag_id = fl.id
-                       WHERE df.department_id = d.id
-                         AND fl.name = 'active'
-                         AND df.type = 'active'::type_department_flags
+                   AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags
                          AND df.value = true
                    )
                    AND (
@@ -1512,12 +1507,7 @@ name_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1578,12 +1568,7 @@ description_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1644,12 +1629,7 @@ departments_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1710,12 +1690,7 @@ flag_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1776,12 +1751,7 @@ scenarios_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1889,12 +1859,7 @@ general_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (

@@ -272,7 +272,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+        EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -287,7 +287,7 @@ primary_department_id_data AS (
 active_departments_data AS (
     SELECT COALESCE(ARRAY_AGG(DISTINCT d.department_id) FILTER (WHERE d.department_id IS NOT NULL), ARRAY[]::uuid[]) as department_ids
     FROM params x
-    LEFT JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.department_id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+    LEFT JOIN departments d ON EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.department_id AND df.type = 'active'::type_department_flags AND df.value = true)
         AND EXISTS (SELECT 1 FROM profile_departments pd WHERE pd.department_id = d.department_id AND pd.profile_id = x.profile_id AND pd.active = true)
     LIMIT 1
 ),
@@ -295,7 +295,7 @@ active_departments_data AS (
 all_cohort_ids AS (
     SELECT DISTINCT c.id as cohort_id
     FROM cohort c
-    WHERE EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = c.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
+    WHERE EXISTS (SELECT 1 FROM cohort_flags cf WHERE cf.cohort_id = c.id AND cf.type = 'active'::type_cohort_flags AND cf.value = true)
 ),
 cohorts_data AS (
     SELECT 
@@ -361,7 +361,7 @@ last_name_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT pf.flag_id FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = (SELECT staff_id FROM params) AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE LIMIT 1),
+            (SELECT pf.flag_id FROM profile_flags pf WHERE pf.profile_id = (SELECT staff_id FROM params) AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE LIMIT 1),
             NULL::uuid
         ) as active_flag_id,
         (
@@ -587,12 +587,7 @@ department_suggestions_data AS (
                  JOIN departments d ON d.id = pd.department_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.department_id IS NOT NULL
-                   AND EXISTS (
-                       SELECT 1 FROM department_flags df
-                       JOIN flags fl ON df.flag_id = fl.id
-                       WHERE df.department_id = d.id
-                         AND fl.name = 'active'
-                         AND df.type = 'active'::type_department_flags
+                   AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags
                          AND df.value = true
                    )
                    AND (
@@ -697,12 +692,7 @@ first_name_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -773,12 +763,7 @@ last_name_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -849,12 +834,7 @@ flag_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -925,12 +905,7 @@ request_limit_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1001,12 +976,7 @@ departments_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1077,12 +1047,7 @@ emails_agent_data AS (
         FROM agent a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-              AND fl.name = 'active' 
-              AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
         AND EXISTS (
@@ -1257,7 +1222,7 @@ target_profile_data AS (
         (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) as first_name,
         (SELECT n2.name FROM profile_names pn2 JOIN names n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         p.role,
-        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = p.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         (SELECT rl.requests_per_day FROM profile_request_limits prl JOIN request_limits rl ON prl.request_limit_id = rl.id WHERE prl.profile_id = p.id AND prl.active = true LIMIT 1) as requests_per_day
     FROM params x
     JOIN profile p ON p.id = x.staff_id

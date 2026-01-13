@@ -28,5 +28,5 @@ AS $$
 SELECT DISTINCT d.id
 FROM department d
 JOIN profile_departments pd ON pd.department_id = d.id
-WHERE pd.profile_id = profile_id AND EXISTS (SELECT 1 FROM department_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.department_id = d.id AND fl.name = 'active' AND df.type = 'active'::type_department_flags AND df.value = true)
+WHERE pd.profile_id = profile_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
 $$;

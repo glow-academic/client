@@ -63,6 +63,6 @@ SELECT COALESCE(
 ) as fields
 FROM field f
 JOIN parameter_fields pf ON pf.field_id = f.id
-JOIN parameters pa ON pa.id = pf.parameter_id AND EXISTS (SELECT 1 FROM parameter_flags paf JOIN flags fl ON paf.flag_id = fl.id WHERE paf.parameter_id = pa.id AND fl.name = 'active' AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
+JOIN parameters pa ON pa.id = pf.parameter_id AND EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = pa.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE)
 WHERE f.id = ANY($1)
 $$;

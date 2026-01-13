@@ -464,11 +464,11 @@ scenario_core AS (
         EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
         st.parent_id as parent_scenario_id,
         COALESCE(sdd.department_ids, NULL) as department_ids,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'objectives_enabled' AND sf.type = 'objectives_enabled'::type_scenario_flags AND sf.value = TRUE) as objectives_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE) as images_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'video_enabled' AND sf.type = 'video_enabled'::type_scenario_flags AND sf.value = TRUE) as video_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'questions_enabled' AND sf.type = 'questions_enabled'::type_scenario_flags AND sf.value = TRUE) as questions_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'problem_statement_enabled' AND sf.type = 'problem_statement_enabled'::type_scenario_flags AND sf.value = TRUE) as problem_statement_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'objectives_enabled'::type_scenario_flags AND sf.value = TRUE) as objectives_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE) as images_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'video_enabled'::type_scenario_flags AND sf.value = TRUE) as video_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'questions_enabled'::type_scenario_flags AND sf.value = TRUE) as questions_enabled,
+        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'problem_statement_enabled'::type_scenario_flags AND sf.value = TRUE) as problem_statement_enabled,
         (SELECT sd.agent_domain_id FROM scenario_agent_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'default'::type_scenario_domains LIMIT 1)::text as scenario_domain_id,
         (SELECT sd.agent_domain_id FROM scenario_agent_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'image'::type_scenario_domains LIMIT 1)::text as image_domain_id,
         (SELECT sd.agent_domain_id FROM scenario_agent_domains sd WHERE sd.scenario_id = s.id AND sd.type = 'video'::type_scenario_domains LIMIT 1)::text as video_domain_id
@@ -1326,7 +1326,7 @@ document_details_array AS (
             WHERE df.document_id = dd.id AND df.active = true
         ), ARRAY[]::uuid[]) as field_ids,
         CASE 
-            WHEN EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = dd.id AND fl.name = 'template' AND df.type = 'template'::type_document_flags AND df.value = TRUE) THEN true
+            WHEN EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = dd.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) THEN true
             WHEN EXISTS(
                 SELECT 1 FROM document_templates dt2 
                 WHERE dt2.document_id = dd.id AND dt2.active = true
@@ -1364,10 +1364,10 @@ linked_scenario_parameters AS (
         p.id,
         (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
         COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM parameter_flags paramf JOIN flags fl ON paramf.flag_id = fl.id WHERE paramf.parameter_id = p.id AND fl.name = 'document_parameter' AND paramf.type = 'document_parameter'::type_parameter_flags AND paramf.value = TRUE) as document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paramf JOIN flags fl ON paramf.flag_id = fl.id WHERE paramf.parameter_id = p.id AND fl.name = 'persona_parameter' AND paramf.type = 'persona_parameter'::type_parameter_flags AND paramf.value = TRUE) as persona_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paramf JOIN flags fl ON paramf.flag_id = fl.id WHERE paramf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND paramf.type = 'scenario_parameter'::type_parameter_flags AND paramf.value = TRUE) as scenario_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags paramf JOIN flags fl ON paramf.flag_id = fl.id WHERE paramf.parameter_id = p.id AND fl.name = 'video_parameter' AND paramf.type = 'video_parameter'::type_parameter_flags AND paramf.value = TRUE) as video_parameter
+        EXISTS (SELECT 1 FROM parameter_flags paramf WHERE paramf.parameter_id = p.id AND paramf.type = 'document_parameter'::type_parameter_flags AND paramf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags paramf WHERE paramf.parameter_id = p.id AND paramf.type = 'persona_parameter'::type_parameter_flags AND paramf.value = TRUE) as persona_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags paramf WHERE paramf.parameter_id = p.id AND paramf.type = 'scenario_parameter'::type_parameter_flags AND paramf.value = TRUE) as scenario_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags paramf WHERE paramf.parameter_id = p.id AND paramf.type = 'video_parameter'::type_parameter_flags AND paramf.value = TRUE) as video_parameter
     FROM scenario_parameters sp
     JOIN parameters p ON p.id = sp.parameter_id
     WHERE sp.scenario_id = (SELECT scenario_id FROM params)
@@ -1379,17 +1379,17 @@ parameter_data_for_mapping AS (
         p.id,
         (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
         COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE) as scenario_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'video_parameter' AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE) as video_parameter
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) as document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE) as persona_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE) as scenario_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE) as video_parameter
     FROM parameter p
     JOIN fields f ON (SELECT pf.parameter_id FROM parameter_fields pf WHERE pf.field_id = f.id LIMIT 1) = p.id AND EXISTS (SELECT 1 FROM field_flags ff WHERE ff.field_id = f.id AND ff.type = 'active'::type_field_flags AND ff.value = true)
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
-    AND EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE)
-    GROUP BY p.id, name, description, EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'persona_parameter' AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'scenario_parameter' AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = p.id AND fl.name = 'video_parameter' AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE)
+    AND EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE)
+    GROUP BY p.id, name, description, EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'scenario_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'video_parameter'::type_parameter_flags AND pf.value = TRUE)
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id = ANY(ud.dept_ids)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 

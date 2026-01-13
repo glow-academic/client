@@ -85,12 +85,7 @@ link_document_agent_domain AS (
         FROM agent_domains adom
         JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = 'document'::artifacts
         JOIN agents a ON a.id = adom.agent_id
-        WHERE EXISTS (
-            SELECT 1 FROM agent_flags af 
-            JOIN flags fl ON af.flag_id = fl.id 
-            WHERE af.agent_id = a.id 
-            AND fl.name = 'active' 
-            AND af.type = 'active'::type_agent_flags 
+        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
             AND af.value = true
         )
         LIMIT 1

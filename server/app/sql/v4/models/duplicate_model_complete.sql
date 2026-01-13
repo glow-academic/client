@@ -47,7 +47,7 @@ source_model AS (
     SELECT 
         (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
         (SELECT d.description FROM model_descriptions md JOIN descriptions d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
-        EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE),
+        EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE),
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
         (SELECT p_prov.id FROM model_providers mp JOIN providers p_prov ON p_prov.id = mp.providers_id WHERE mp.model_id = m.id LIMIT 1) as providers_id,
         m.value

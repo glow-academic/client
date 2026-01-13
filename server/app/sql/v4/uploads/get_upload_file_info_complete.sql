@@ -61,7 +61,7 @@ regular_document_upload AS (
     -- Also get schema_id if document has template=true
     SELECT 
         du.document_id,
-        EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'template' AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
+        EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
         (SELECT ds.schema_id 
          FROM document_schemas ds 
          WHERE ds.document_id = d.id AND ds.active = true 
@@ -77,7 +77,7 @@ template_upload AS (
     -- Case 2: Upload is a template upload (via document_html → html → html_uploads)
     SELECT 
         dh.document_id,
-        EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'template' AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
+        EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
         ds.schema_id
     FROM html_uploads hu
     JOIN html h ON h.id = hu.html_id

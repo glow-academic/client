@@ -48,9 +48,9 @@ STABLE
 AS $$
     SELECT 
         e.id::text as eval_id,
-        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE),
+        EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE),
         CASE 
-            WHEN EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE) THEN
+            WHEN EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE) THEN
                 ARRAY_AGG(eg.group_id::text) FILTER (
                     WHERE NOT EXISTS (
                         SELECT 1 FROM grade_groups gg WHERE gg.group_id = eg.group_id
@@ -67,5 +67,5 @@ AS $$
             SELECT 1 FROM grade_groups gg WHERE gg.group_id = eg.group_id
         )
     WHERE ea.id = socket_get_benchmark_runs_start_all_context_v4.attempt_id
-    GROUP BY e.id, EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE);
+    GROUP BY e.id, EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE);
 $$;

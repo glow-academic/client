@@ -283,7 +283,7 @@ context_data AS (
         -- Includes template file paths for template documents (COALESCE pattern)
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'template' AND df.type = 'template'::type_document_flags AND df.value = TRUE), ds.schema_id)::types.i_get_scenario_run_context_and_create_run_v4_document
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE(u.file_path, template_u.file_path), COALESCE(u.mime_type, template_u.mime_type), EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE), ds.schema_id)::types.i_get_scenario_run_context_and_create_run_v4_document
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document[]
             FROM document d
@@ -315,7 +315,7 @@ context_data AS (
             INNER JOIN uploads u ON u.id = hu.upload_id
             LEFT JOIN document_schemas ds ON ds.document_id = d.id AND ds.active = true
             WHERE d.id = ANY(p.document_ids)
-              AND EXISTS (SELECT 1 FROM document_flags df JOIN flags fl ON df.flag_id = fl.id WHERE df.document_id = d.id AND fl.name = 'template' AND df.type = 'template'::type_document_flags AND df.value = TRUE)
+              AND EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE)
             ),
             ARRAY[]::types.i_get_scenario_run_context_and_create_run_v4_document_template[]
         ) as document_templates,

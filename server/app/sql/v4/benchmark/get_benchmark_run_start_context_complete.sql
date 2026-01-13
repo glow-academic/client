@@ -50,7 +50,7 @@ STABLE
 AS $$
     SELECT 
         e.id::text as eval_id,
-        EXISTS (SELECT 1 FROM eval_flags ef JOIN flags fl ON ef.flag_id = fl.id WHERE ef.eval_id = e.id AND fl.name = 'groups' AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE),
+        EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'groups'::type_eval_flags AND ef.value = TRUE),
         er.run_id::uuid as run_id,
         er.completed as run_completed
     FROM eval_attempts ea
