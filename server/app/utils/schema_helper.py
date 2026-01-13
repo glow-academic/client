@@ -9,9 +9,25 @@ Provides functions to:
 """
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import asyncpg
+from app.sql.types import (ApiGetSchemaWithFieldsSqlParams,
+                           ApiGetSchemaWithFieldsSqlRow,
+                           ApiGetTemplateSchemaSqlParams,
+                           ApiGetTemplateSchemaSqlRow,
+                           UtilsCreateSchemaFieldItemSqlParams,
+                           UtilsCreateSchemaFieldSqlParams,
+                           UtilsCreateSchemaSqlParams,
+                           UtilsCreateTemplateArrayItemSqlParams,
+                           UtilsCreateTemplateSqlParams,
+                           UtilsCreateTemplateValueSqlParams,
+                           UtilsGetTemplateArrayItemsSqlParams,
+                           UtilsGetTemplateArrayItemsSqlRow,
+                           UtilsGetTemplateValuesSqlParams,
+                           UtilsGetTemplateValuesSqlRow,
+                           UtilsLinkSchemaTemplateSqlParams)
+from utils.sql_helper import execute_sql_typed, load_sql
 
 
 async def get_schema_with_fields(
@@ -31,10 +47,10 @@ async def get_schema_with_fields(
         field_type, required, position, item_schema_id
     """
     # Call function directly since it returns multiple rows
-    rows = await conn.fetch(
-        "SELECT * FROM api_get_schema_with_fields_v4($1)",
-        schema_id,
-    )
+    # For RETURNS TABLE functions that return multiple rows, use conn.fetch with function call
+    params = ApiGetSchemaWithFieldsSqlParams(schema_id=schema_id)
+    sql = load_sql("app/sql/v4/schemas/get_schema_with_fields_complete.sql")
+    rows = await conn.fetch(sql, schema_id)
 
     # Convert rows to list of dicts
     fields: list[dict[str, Any]] = []
@@ -137,10 +153,18 @@ async def get_template_schema(
         Schema tree dictionary or None if template has no schema
     """
     # Call function directly since it returns a single row
-    row = await conn.fetchrow(
-        "SELECT * FROM api_get_template_schema_v4($1)",
-        template_id,
+    params = ApiGetTemplateSchemaSqlParams(template_id=template_id)
+    row_result = cast(
+        ApiGetTemplateSchemaSqlRow,
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/templates/get_template_schema_complete.sql",
+            params=params,
+        ),
     )
+    row = {
+        "schema_id": row_result.schema_id if row_result else None
+    }
 
     if not row or not row["schema_id"]:
         return None
@@ -167,28 +191,32 @@ async def get_template_values(
         Dictionary of template values (compatible with template_args format)
     """
     # Get all scalar values
-    values_rows = await conn.fetch(
-        """
-        SELECT sf.name, tv.string_value, tv.number_value, tv.boolean_value, sf.field_type
-        FROM template_values tv
-        JOIN schema_fields sf ON sf.id = tv.schema_field_id
-        WHERE tv.template_id = $1
-        ORDER BY sf.position
-        """,
-        template_id,
-    )
+    values_params = UtilsGetTemplateValuesSqlParams(template_id=template_id)
+    values_sql = load_sql("app/sql/v4/utils/get_template_values_v4_complete.sql")
+    values_rows_raw = await conn.fetch(values_sql, template_id)
+    values_rows = [
+        {
+            "name": row["name"],
+            "string_value": row["string_value"],
+            "number_value": row["number_value"],
+            "boolean_value": row["boolean_value"],
+            "field_type": row["field_type"],
+        }
+        for row in values_rows_raw
+    ]
 
     # Get all array items
-    array_items_rows = await conn.fetch(
-        """
-        SELECT sf.name, tai.item_template_id, tai.position
-        FROM template_array_items tai
-        JOIN schema_fields sf ON sf.id = tai.schema_field_id
-        WHERE tai.template_id = $1
-        ORDER BY sf.position, tai.position
-        """,
-        template_id,
-    )
+    array_params = UtilsGetTemplateArrayItemsSqlParams(template_id=template_id)
+    array_sql = load_sql("app/sql/v4/utils/get_template_array_items_v4_complete.sql")
+    array_items_rows_raw = await conn.fetch(array_sql, template_id)
+    array_items_rows = [
+        {
+            "name": row["name"],
+            "item_template_id": row["item_template_id"],
+            "position": row["position"],
+        }
+        for row in array_items_rows_raw
+    ]
 
     # Build result dictionary
     result: dict[str, Any] = {}
@@ -244,13 +272,14 @@ async def create_template_with_values(
     """
     # Create template record
     template_id = uuid.uuid4()
-    await conn.execute(
-        """
-        INSERT INTO templates (id, name, created_at, updated_at)
-        VALUES ($1, $2, NOW(), NOW())
-        """,
-        template_id,
-        name,
+    create_template_params = UtilsCreateTemplateSqlParams(
+        template_id=template_id,
+        name=name,
+    )
+    await execute_sql_typed(
+        conn,
+        "app/sql/v4/utils/create_template_v4_complete.sql",
+        params=create_template_params,
     )
 
     # Get schema fields
@@ -283,66 +312,57 @@ async def create_template_with_values(
                             )
 
                             # Link array item
-                            await conn.execute(
-                                """
-                                INSERT INTO template_array_items (
-                                    template_id, schema_field_id, item_template_id, position,
-                                    created_at, updated_at
-                                )
-                                VALUES ($1, $2, $3, $4, NOW(), NOW())
-                                ON CONFLICT (template_id, schema_field_id, item_template_id) DO NOTHING
-                                """,
-                                template_id,
-                                field_id,
-                                item_template_id,
-                                position,
+                            array_item_params = UtilsCreateTemplateArrayItemSqlParams(
+                                template_id=template_id,
+                                schema_field_id=field_id,
+                                item_template_id=item_template_id,
+                                position=position,
+                            )
+                            await execute_sql_typed(
+                                conn,
+                                "app/sql/v4/utils/create_template_array_item_v4_complete.sql",
+                                params=array_item_params,
                             )
         else:
             # Handle scalar values
             if field_type == "string":
-                await conn.execute(
-                    """
-                    INSERT INTO template_values (
-                        template_id, schema_field_id, string_value, created_at, updated_at
-                    )
-                    VALUES ($1, $2, $3, NOW(), NOW())
-                    ON CONFLICT (template_id, schema_field_id) DO UPDATE SET
-                        string_value = EXCLUDED.string_value,
-                        updated_at = NOW()
-                    """,
-                    template_id,
-                    field_id,
-                    str(value),
+                value_params = UtilsCreateTemplateValueSqlParams(
+                    template_id=template_id,
+                    schema_field_id=field_id,
+                    string_value=str(value),
+                    number_value=None,
+                    boolean_value=None,
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/utils/create_template_value_v4_complete.sql",
+                    params=value_params,
                 )
             elif field_type == "number":
-                await conn.execute(
-                    """
-                    INSERT INTO template_values (
-                        template_id, schema_field_id, number_value, created_at, updated_at
-                    )
-                    VALUES ($1, $2, $3, NOW(), NOW())
-                    ON CONFLICT (template_id, schema_field_id) DO UPDATE SET
-                        number_value = EXCLUDED.number_value,
-                        updated_at = NOW()
-                    """,
-                    template_id,
-                    field_id,
-                    float(value),
+                value_params = UtilsCreateTemplateValueSqlParams(
+                    template_id=template_id,
+                    schema_field_id=field_id,
+                    string_value=None,
+                    number_value=float(value),
+                    boolean_value=None,
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/utils/create_template_value_v4_complete.sql",
+                    params=value_params,
                 )
             elif field_type == "boolean":
-                await conn.execute(
-                    """
-                    INSERT INTO template_values (
-                        template_id, schema_field_id, boolean_value, created_at, updated_at
-                    )
-                    VALUES ($1, $2, $3, NOW(), NOW())
-                    ON CONFLICT (template_id, schema_field_id) DO UPDATE SET
-                        boolean_value = EXCLUDED.boolean_value,
-                        updated_at = NOW()
-                    """,
-                    template_id,
-                    field_id,
-                    bool(value),
+                value_params = UtilsCreateTemplateValueSqlParams(
+                    template_id=template_id,
+                    schema_field_id=field_id,
+                    string_value=None,
+                    number_value=None,
+                    boolean_value=bool(value),
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/utils/create_template_value_v4_complete.sql",
+                    params=value_params,
                 )
 
     # Link template to schema
@@ -361,14 +381,14 @@ async def link_template_to_schema(
         template_id: UUID of the template
         schema_id: UUID of the schema
     """
-    await conn.execute(
-        """
-        INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
-        VALUES ($1, $2, NOW(), NOW())
-        ON CONFLICT (schema_id, template_id) DO UPDATE SET updated_at = NOW()
-        """,
-        schema_id,
-        template_id,
+    link_params = UtilsLinkSchemaTemplateSqlParams(
+        schema_id=schema_id,
+        template_id=template_id,
+    )
+    await execute_sql_typed(
+        conn,
+        "app/sql/v4/utils/link_schema_template_v4_complete.sql",
+        params=link_params,
     )
 
 
@@ -403,12 +423,11 @@ async def create_schema_from_dict(
     """
     # Create schema record
     schema_id = uuid.uuid4()
-    await conn.execute(
-        """
-        INSERT INTO schemas (id, created_at, updated_at)
-        VALUES ($1, NOW(), NOW())
-        """,
-        schema_id,
+    create_schema_params = UtilsCreateSchemaSqlParams(schema_id=schema_id)
+    await execute_sql_typed(
+        conn,
+        "app/sql/v4/utils/create_schema_v4_complete.sql",
+        params=create_schema_params,
     )
 
     # Create schema_fields records
@@ -421,36 +440,33 @@ async def create_schema_from_dict(
         placeholder = field.get("placeholder")
 
         # Insert schema_field
-        await conn.execute(
-            """
-            INSERT INTO schema_fields (
-                id, schema_id, name, field_type, required, position, description, placeholder,
-                created_at, updated_at
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-            """,
-            field_id,
-            schema_id,
-            field["name"],
-            field_type,
-            required,
-            position,
-            description,
-            placeholder,
+        field_params = UtilsCreateSchemaFieldSqlParams(
+            field_id=field_id,
+            schema_id=schema_id,
+            name=field["name"],
+            field_type=field_type,
+            required=required,
+            position=position,
+            description=description,
+            placeholder=placeholder,
+        )
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/utils/create_schema_field_v4_complete.sql",
+            params=field_params,
         )
 
         # If array type, recursively create item schema and link via schema_field_items
         if field_type == "array" and "item" in field:
             item_schema_id = await create_schema_from_dict(conn, field["item"])
-            await conn.execute(
-                """
-                INSERT INTO schema_field_items (
-                    schema_field_id, item_schema_id, created_at, updated_at
-                )
-                VALUES ($1, $2, NOW(), NOW())
-                """,
-                field_id,
-                item_schema_id,
+            item_params = UtilsCreateSchemaFieldItemSqlParams(
+                schema_field_id=field_id,
+                item_schema_id=item_schema_id,
+            )
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/utils/create_schema_field_item_v4_complete.sql",
+                params=item_params,
             )
 
     return schema_id

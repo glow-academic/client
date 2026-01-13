@@ -1,16 +1,20 @@
 """Document page handler - handles template context formatting logic, then routes to artifacts/generate.py."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
-from app.infra.v4.documents.format_document_template_context import (
-    format_document_template_context,
-)
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.documents.format_document_template_context import \
+    format_document_template_context
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
+from app.sql.types import (SocketGetDocumentAgentIdSqlParams,
+                           SocketGetDocumentAgentIdSqlRow,
+                           SocketGetDocumentDepartmentSqlParams,
+                           SocketGetDocumentDepartmentSqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
@@ -21,6 +25,8 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/documents/get_document_run_context_and_create_run_complete.sql"
+GET_DOCUMENT_DEPARTMENT_SQL_PATH = "app/sql/v4/document/get_document_department_v4_complete.sql"
+GET_DOCUMENT_AGENT_ID_SQL_PATH = "app/sql/v4/document/get_document_agent_id_v4_complete.sql"
 
 
 class GenerateDocumentPayload(BaseModel):
@@ -42,17 +48,20 @@ async def _generate_document_impl(
             # Get document context from SQL (fields, department, etc.)
             from app.sql.types import (
                 GetDocumentRunContextAndCreateRunSqlParams,
-                GetDocumentRunContextAndCreateRunSqlRow,
-            )
+                GetDocumentRunContextAndCreateRunSqlRow)
 
             # Get department_id from document if not provided
             if not data.department_id:
-                # Query document to get department_id
-                doc_sql = "SELECT department_id FROM document_departments WHERE document_id = $1 AND active = true LIMIT 1"
-                dept_id = await conn.fetchval(doc_sql, uuid.UUID(data.document_id))
-                if not dept_id:
+                dept_params = SocketGetDocumentDepartmentSqlParams(
+                    document_id=uuid.UUID(data.document_id)
+                )
+                dept_result = cast(
+                    SocketGetDocumentDepartmentSqlRow,
+                    await execute_sql_typed(conn, GET_DOCUMENT_DEPARTMENT_SQL_PATH, params=dept_params),
+                )
+                if not dept_result or not dept_result.department_id:
                     raise ValueError("Document must have a department")
-                department_id = dept_id
+                department_id = dept_result.department_id
             else:
                 department_id = uuid.UUID(data.department_id)
 
@@ -139,16 +148,14 @@ async def _generate_document_impl(
                     agent_id = uuid.UUID(result.agent_id)
                 else:
                     # Fallback: get agent_id from document's domain
-                    agent_id = await conn.fetchval(
-                        """
-                        SELECT d.agent_id
-                        FROM documents doc
-                        JOIN domains d ON d.id = doc.document_domain_id
-                        WHERE doc.id = $1
-                        LIMIT 1
-                        """,
-                        uuid.UUID(data.document_id),
+                    agent_params = SocketGetDocumentAgentIdSqlParams(
+                        document_id=uuid.UUID(data.document_id)
                     )
+                    agent_result = cast(
+                        SocketGetDocumentAgentIdSqlRow,
+                        await execute_sql_typed(conn, GET_DOCUMENT_AGENT_ID_SQL_PATH, params=agent_params),
+                    )
+                    agent_id = agent_result.agent_id if agent_result else None
 
             if not agent_id:
                 raise ValueError("Could not determine agent_id for document generation")

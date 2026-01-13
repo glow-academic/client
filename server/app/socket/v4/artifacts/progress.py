@@ -6,13 +6,18 @@ from typing import Any, cast
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.openapi_helpers import register_server_endpoint
 from app.main import get_internal_sio, sio
-from app.sql.types import (GetImageGenerationContextAndCreateUploadSqlParams,
-                           GetImageGenerationContextAndCreateUploadSqlRow,
-                           GetVideoRunContextAndCreateRunSqlParams,
-                           GetVideoRunContextAndCreateRunSqlRow,
-                           InsertUploadSqlParams, InsertUploadSqlRow,
-                           TextToolProgressUpdateSqlParams,
-                           TextToolProgressUpdateSqlRow)
+from app.sql.types import (
+    GetImageGenerationContextAndCreateUploadSqlParams,
+    GetImageGenerationContextAndCreateUploadSqlRow,
+    GetVideoRunContextAndCreateRunSqlParams,
+    GetVideoRunContextAndCreateRunSqlRow,
+    InfrastructureArtifactsGetGroupIdFromRunSqlParams,
+    InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+    InsertUploadSqlParams,
+    InsertUploadSqlRow,
+    TextToolProgressUpdateSqlParams,
+    TextToolProgressUpdateSqlRow,
+)
 from fastapi import APIRouter
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -28,6 +33,7 @@ SQL_PATH_IMAGE = (
     "app/sql/v4/images/get_image_generation_context_and_create_upload_complete.sql"
 )
 SQL_PATH_VIDEO = "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"
+GET_GROUP_ID_SQL_PATH = "app/sql/v4/infrastructure/artifacts/get_group_id_from_run_complete.sql"
 SQL_PATH_UPLOAD = "app/sql/v4/uploads/insert_upload_complete.sql"
 
 
@@ -198,10 +204,14 @@ async def _handle_text_tool_progress(data: dict[str, Any]) -> None:
 
         async with get_db_connection() as conn:
             # Get group_id from run (resource_id no longer needed)
-            group_id = await conn.fetchval(
-                "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
-                run_id,
+            group_params = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+                run_id=uuid.UUID(run_id)
             )
+            group_result = cast(
+                InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+                await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
+            )
+            group_id = str(group_result.group_id) if group_result and group_result.group_id else None
             
             progress_params = TextToolProgressUpdateSqlParams(
                 run_id=run_id,

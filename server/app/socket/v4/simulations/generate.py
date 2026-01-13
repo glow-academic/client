@@ -3,16 +3,17 @@
 import uuid
 from typing import Any, cast
 
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (
-    GetSimulationRunContextSqlParams,
-    GetSimulationRunContextSqlRow,
-)
 from app.socket.v4.simulations.error import SimulationErrorPayload
+from app.sql.types import (GetSimulationRunContextSqlParams,
+                           GetSimulationRunContextSqlRow,
+                           SocketGetGroupIdFromChatGroupSqlParams,
+                           SocketGetGroupIdFromChatGroupSqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed
@@ -23,6 +24,7 @@ client_router = APIRouter()
 server_router = APIRouter()
 
 SQL_PATH = "app/sql/v4/simulations/get_simulation_run_context_complete.sql"
+GET_GROUP_ID_SQL_PATH = "app/sql/v4/simulations/get_group_id_from_chat_group_v4_complete.sql"
 
 
 class SimulationVoiceStartPayload(BaseModel):
@@ -80,16 +82,12 @@ async def _simulation_voice_generate_impl(
                 return
 
             # Get group_id from chat (if exists)
-            group_id = await conn.fetchval(
-                """
-                SELECT g.id
-                FROM groups g
-                JOIN chat_groups cg ON cg.group_id = g.id
-                WHERE cg.chat_id = $1
-                LIMIT 1
-                """,
-                chat_id_uuid,
+            group_params = SocketGetGroupIdFromChatGroupSqlParams(chat_id=chat_id_uuid)
+            group_result = cast(
+                SocketGetGroupIdFromChatGroupSqlRow,
+                await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
             )
+            group_id = str(group_result.group_id) if group_result and group_result.group_id else None
 
             # Emit generate_artifact internal event
             await internal_sio.emit(

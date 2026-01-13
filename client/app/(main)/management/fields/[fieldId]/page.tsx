@@ -1,10 +1,11 @@
 /**
  * app/(main)/management/fields/[fieldId]/page.tsx
- * Field edit page
+ * Field edit page - uses unified get/save endpoints
  * @AshokSaravanan222 & @siladiea
  * 12/05/2025
  */
 
+import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Field from "@/components/fields/Field";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -12,28 +13,36 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldDetailIn = InputOf<"/api/v4/fields/detail", "post">;
-type FieldDetailOut = OutputOf<"/api/v4/fields/detail", "post">;
-
-type UpdateFieldIn = InputOf<"/api/v4/fields/update", "post">;
-type UpdateFieldOut = OutputOf<"/api/v4/fields/update", "post">;
+type GetFieldIn = InputOf<"/api/v4/fields/get", "post">;
+type GetFieldOut = OutputOf<"/api/v4/fields/get", "post">;
+type SaveFieldIn = InputOf<"/api/v4/fields/save", "post">;
+type SaveFieldOut = OutputOf<"/api/v4/fields/save", "post">;
 type PatchFieldDraftIn = InputOf<"/api/v4/fields/draft", "patch">;
 type PatchFieldDraftOut = OutputOf<"/api/v4/fields/draft", "patch">;
 
-/** ---- Direct fetch (no caching - source of truth) ---- */
-const getField = async (
-  input: FieldDetailIn
-): Promise<FieldDetailOut> => {
-  return api.post(
-    "/fields/detail",
-    input,
-    {
+/** ---- Direct fetch (no caching - source of truth) with timeout ---- */
+const getField = async (input: GetFieldIn): Promise<GetFieldOut> => {
+  // Use timeout wrapper for robust API calls
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+  try {
+    const result = await api.post("/fields/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
       },
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Request timeout - please try again");
     }
-  );
+    throw error;
+  }
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -44,11 +53,11 @@ export async function generateMetadata(
   const { fieldId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const input: FieldDetailIn = {
+    const input: GetFieldIn = {
       body: {
         field_id: fieldId,
         draft_id: null,
-      } as FieldDetailIn["body"],
+      } as GetFieldIn["body"],
     };
     const field = await getField(input);
     return {
@@ -69,10 +78,26 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
+async function saveField(input: SaveFieldIn): Promise<SaveFieldOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/fields/update", input);
+  // Use timeout wrapper for robust API calls
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+  try {
+    const result = await api.post("/fields/save", input, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Request timeout - please try again");
+    }
+    throw error;
+  }
 }
 
 async function patchFieldDraft(
@@ -94,7 +119,7 @@ export default async function FieldEditPage({
   const { fieldId } = await params;
   // Access control handled server-side in layout
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  
+
   // Parse search params using nuqs
   const paramsObj = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -116,33 +141,53 @@ export default async function FieldEditPage({
   const q = loadFieldSearchParams(searchParamsObj);
 
   // Fetch field data (always fresh - source of truth) with draft_id
-  const input: FieldDetailIn = {
-    body: {
-      field_id: fieldId,
-      draft_id: q.draftId ?? null,
-    } as FieldDetailIn["body"],
-  };
-  const field = await getField(input);
+  try {
+    const input: GetFieldIn = {
+      body: {
+        field_id: fieldId,
+        draft_id: q.draftId ?? null,
+      } as GetFieldIn["body"],
+    };
+    const fieldData = await getField(input);
 
-  return (
-    <div className="space-y-6" data-page="field-edit" data-field-id={fieldId}>
-      <Field
-        key={q.draftId || "no-draft"} // Force remount when draftId changes
-        fieldId={fieldId}
-        fieldDetail={field}
-        updateFieldAction={updateField}
-        patchFieldDraftAction={patchFieldDraft}
-      />
-    </div>
-  );
+    return (
+      <div className="space-y-6" data-page="field-edit" data-field-id={fieldId}>
+        <Field
+          key={q.draftId || "no-draft"} // Force remount when draftId changes
+          fieldId={fieldId}
+          fieldData={fieldData}
+          saveFieldAction={saveField}
+          patchFieldDraftAction={patchFieldDraft}
+        />
+      </div>
+    );
+  } catch (error: unknown) {
+    // Check if it's a 403 error (department access denied)
+    if (
+      error &&
+      typeof error === "object" &&
+      "status" in error &&
+      error.status === 403
+    ) {
+      return (
+        <UnifiedAccessDenied
+          reason="department"
+          resourceType="field"
+          redirectPath="/management/fields"
+        />
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  FieldDetailIn,
-  FieldDetailOut,
-  UpdateFieldIn,
-  UpdateFieldOut,
+  GetFieldIn,
+  GetFieldOut,
   PatchFieldDraftIn,
   PatchFieldDraftOut,
+  SaveFieldIn,
+  SaveFieldOut,
 };

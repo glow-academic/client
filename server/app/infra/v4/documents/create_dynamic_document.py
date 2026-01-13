@@ -19,11 +19,14 @@ from app.main import UPLOAD_FOLDER
 from app.sql.types import (
     GetActiveSettingsSqlParams,
     GetActiveSettingsSqlRow,
+    InfrastructureDocumentsGetDocumentAgentsSqlParams,
+    InfrastructureDocumentsGetDocumentAgentsSqlRow,
 )
 
 logger = get_logger(__name__)
 
 ACTIVE_SETTINGS_SQL_PATH = "app/sql/v4/settings/get_active_settings_complete.sql"
+GET_DOCUMENT_AGENTS_SQL_PATH = "app/sql/v4/infrastructure/documents/get_document_agents_complete.sql"
 
 
 async def create_dynamic_document(
@@ -72,12 +75,22 @@ async def create_dynamic_document(
         template_html = f.read()
 
     # Get parent document info for inheritance
-    parent_row = await conn.fetchrow(
-        "SELECT classify_agent_id, document_agent_id, name, description FROM documents WHERE id = $1",
-        parent_document_id,
+    params = InfrastructureDocumentsGetDocumentAgentsSqlParams(
+        document_id=parent_document_id
     )
-    if not parent_row:
+    parent_result = cast(
+        InfrastructureDocumentsGetDocumentAgentsSqlRow,
+        await execute_sql_typed(conn, GET_DOCUMENT_AGENTS_SQL_PATH, params=params),
+    )
+    if not parent_result:
         raise ValueError(f"Parent document {parent_document_id} not found")
+    
+    parent_row = {
+        "classify_agent_id": parent_result.classify_agent_id,
+        "document_agent_id": parent_result.document_agent_id,
+        "name": parent_result.name,
+        "description": parent_result.description,
+    }
 
     # Get theme tokens for rendering
     theme_tokens: ThemeTokens

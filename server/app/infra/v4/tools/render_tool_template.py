@@ -1,14 +1,31 @@
 """Render tool templates using Jinja2 to map tool arguments to schema output fields."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import asyncpg
 from jinja2 import Environment, TemplateError, TemplateSyntaxError
 from jinja2.environment import Template as JinjaTemplate
 from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
+
+from app.sql.types import (
+    InfrastructureToolsGetSchemaFieldsSqlParams,
+    InfrastructureToolsGetSchemaFieldsSqlRow,
+    InfrastructureToolsGetSchemaIdFromTemplateSqlParams,
+    InfrastructureToolsGetSchemaIdFromTemplateSqlRow,
+    InfrastructureToolsGetTemplateIdSqlParams,
+    InfrastructureToolsGetTemplateIdSqlRow,
+    InfrastructureToolsGetToolCallResultSqlParams,
+    InfrastructureToolsGetToolCallResultSqlRow,
+)
 
 logger = get_logger(__name__)
+
+GET_TEMPLATE_ID_SQL_PATH = "app/sql/v4/infrastructure/tools/get_template_id_v4_complete.sql"
+GET_SCHEMA_ID_SQL_PATH = "app/sql/v4/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"
+GET_SCHEMA_FIELDS_SQL_PATH = "app/sql/v4/infrastructure/tools/get_schema_fields_v4_complete.sql"
+GET_TOOL_CALL_RESULT_SQL_PATH = "app/sql/v4/infrastructure/tools/get_tool_call_result_v4_complete.sql"
 
 
 def validate_jinja_template(template_expr: str) -> tuple[bool, str | None]:
@@ -64,52 +81,52 @@ async def render_tool_template(
         TemplateError: If template rendering fails (logged but not raised)
     """
     # Get tool's template_id
-    tool_record = await conn.fetchrow(
-        """
-        SELECT template_id
-        FROM tools
-        WHERE id = $1
-        """,
-        tool_id,
+    tool_params = InfrastructureToolsGetTemplateIdSqlParams(tool_id=tool_id)
+    tool_result = cast(
+        InfrastructureToolsGetTemplateIdSqlRow,
+        await execute_sql_typed(conn, GET_TEMPLATE_ID_SQL_PATH, params=tool_params),
     )
 
-    if not tool_record or not tool_record["template_id"]:
+    if not tool_result or not tool_result.template_id:
         logger.warning(
             f"Tool {tool_id} has no template_id, skipping template rendering"
         )
         return {}
 
-    template_id = tool_record["template_id"]
+    template_id = tool_result.template_id
 
     # Get schema linked to template via schema_templates
-    schema_record = await conn.fetchrow(
-        """
-        SELECT schema_id
-        FROM schema_templates
-        WHERE template_id = $1
-        LIMIT 1
-        """,
-        template_id,
+    schema_params = InfrastructureToolsGetSchemaIdFromTemplateSqlParams(
+        template_id=template_id
+    )
+    schema_result = cast(
+        InfrastructureToolsGetSchemaIdFromTemplateSqlRow,
+        await execute_sql_typed(conn, GET_SCHEMA_ID_SQL_PATH, params=schema_params),
     )
 
-    if not schema_record:
+    if not schema_result or not schema_result.schema_id:
         logger.warning(
             f"Template {template_id} for tool {tool_id} has no linked schema, skipping template rendering"
         )
         return {}
 
-    schema_id = schema_record["schema_id"]
+    schema_id = schema_result.schema_id
 
     # Get all schema_fields for that schema with their templates
-    schema_fields = await conn.fetch(
-        """
-        SELECT id, name, field_type, template
-        FROM schema_fields
-        WHERE schema_id = $1
-        ORDER BY position
-        """,
-        schema_id,
-    )
+    # For RETURNS TABLE functions that return multiple rows, use conn.fetch with function call
+    from utils.sql_helper import load_sql
+    
+    schema_fields_sql = load_sql(GET_SCHEMA_FIELDS_SQL_PATH)
+    schema_fields_raw = await conn.fetch(schema_fields_sql, schema_id)
+    schema_fields = [
+        {
+            "id": row["id"],
+            "name": row["name"],
+            "field_type": row["field_type"],
+            "template": row["template"],
+        }
+        for row in schema_fields_raw
+    ]
 
     if not schema_fields:
         logger.warning(
@@ -206,16 +223,16 @@ async def get_rendered_template_values(
     Returns:
         Dictionary of rendered values if found, None otherwise
     """
-    result_record = await conn.fetchrow(
-        """
-        SELECT result_json
-        FROM tool_call_results
-        WHERE tool_call_id = $1
-        ORDER BY created_at DESC
-        LIMIT 1
-        """,
-        tool_call_id,
+    result_params = InfrastructureToolsGetToolCallResultSqlParams(
+        tool_call_id=tool_call_id
     )
+    result_result = cast(
+        InfrastructureToolsGetToolCallResultSqlRow,
+        await execute_sql_typed(conn, GET_TOOL_CALL_RESULT_SQL_PATH, params=result_params),
+    )
+    result_record = {
+        "result_json": result_result.result_json if result_result else None
+    }
 
     if result_record and result_record["result_json"]:
         result_json = result_record["result_json"]

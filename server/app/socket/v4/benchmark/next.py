@@ -1,14 +1,26 @@
 """Handler for benchmark_next WebSocket event - orchestrates section-by-section execution."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.sql.types import (
+    SocketCreateTestSqlParams,
+    SocketGetAgentNameSqlParams,
+    SocketGetAgentNameSqlRow,
+    SocketGetEvalAttemptInfiniteModeSqlParams,
+    SocketGetEvalAttemptInfiniteModeSqlRow,
+    SocketGetTestByTraceIdSqlParams,
+    SocketGetTestByTraceIdSqlRow,
+    SocketGetToolNameSqlParams,
+    SocketGetToolNameSqlRow,
+    SocketLinkAttemptTestSqlParams,
+)
 
 internal_sio = get_internal_sio()
 
@@ -55,10 +67,20 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
             eval_id_uuid = uuid.UUID(eval_id)
 
             # Get attempt data (infinite_mode)
-            attempt_row = await conn.fetchrow(
-                "SELECT infinite_mode FROM eval_attempts WHERE id = $1::uuid",
-                attempt_id_uuid,
+            attempt_params = SocketGetEvalAttemptInfiniteModeSqlParams(
+                attempt_id=attempt_id_uuid
             )
+            attempt_result = cast(
+                SocketGetEvalAttemptInfiniteModeSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql",
+                    params=attempt_params,
+                ),
+            )
+            attempt_row = {
+                "infinite_mode": attempt_result.infinite_mode if attempt_result else False
+            }
             if not attempt_row:
                 return
 
@@ -66,41 +88,46 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
 
             # Create or get test record
             trace_id = f"benchmark_{attempt_id}_{run_id or group_id}"
-            test_row = await conn.fetchrow(
-                """
-                SELECT t.id::text as test_id, t.completed
-                FROM tests t
-                JOIN attempt_tests at ON at.test_id = t.id
-                WHERE at.attempt_id = $1::uuid
-                  AND t.trace_id = $2
-                LIMIT 1
-                """,
-                attempt_id_uuid,
-                trace_id,
+            test_params = SocketGetTestByTraceIdSqlParams(
+                attempt_id=attempt_id_uuid,
+                trace_id=trace_id,
             )
+            test_result = cast(
+                SocketGetTestByTraceIdSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/get_test_by_trace_id_v4_complete.sql",
+                    params=test_params,
+                ),
+            )
+            test_row = {
+                "test_id": test_result.test_id,
+                "completed": test_result.completed,
+            } if test_result else None
 
             if not test_row:
                 # Create new test
                 test_id_uuid = uuid.uuid4()
-                await conn.execute(
-                    """
-                    INSERT INTO tests (id, title, completed, trace_id, run_id, created_at, updated_at)
-                    VALUES ($1::uuid, $2, false, $3, $4::uuid, NOW(), NOW())
-                    """,
-                    test_id_uuid,
-                    f"Benchmark Test {attempt_id[:8]}",
-                    trace_id,
-                    uuid.UUID(run_id) if run_id else None,
+                create_test_params = SocketCreateTestSqlParams(
+                    test_id=test_id_uuid,
+                    title=f"Benchmark Test {attempt_id[:8]}",
+                    trace_id=trace_id,
+                    run_id=uuid.UUID(run_id) if run_id else None,
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/create_test_v4_complete.sql",
+                    params=create_test_params,
                 )
                 # Link to attempt
-                await conn.execute(
-                    """
-                    INSERT INTO attempt_tests (attempt_id, test_id)
-                    VALUES ($1::uuid, $2::uuid)
-                    ON CONFLICT DO NOTHING
-                    """,
-                    attempt_id_uuid,
-                    test_id_uuid,
+                link_params = SocketLinkAttemptTestSqlParams(
+                    attempt_id=attempt_id_uuid,
+                    test_id=test_id_uuid,
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/link_attempt_test_v4_complete.sql",
+                    params=link_params,
                 )
                 test_id = str(test_id_uuid)
             else:
@@ -146,10 +173,20 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 ):
                     tool_id = tool_info["tool_id"]
                     # Get tool name from tool_id to determine which eval handler to call
-                    tool_row = await conn.fetchrow(
-                        "SELECT name FROM tools WHERE id = $1::uuid",
-                        uuid.UUID(tool_id),
+                    tool_name_params = SocketGetToolNameSqlParams(
+                        tool_id=uuid.UUID(tool_id)
                     )
+                    tool_name_result = cast(
+                        SocketGetToolNameSqlRow,
+                        await execute_sql_typed(
+                            conn,
+                            "app/sql/v4/benchmark/get_tool_name_v4_complete.sql",
+                            params=tool_name_params,
+                        ),
+                    )
+                    tool_row = {
+                        "name": tool_name_result.name if tool_name_result else None
+                    }
                     if tool_row:
                         # Convert tool name to event name format (lowercase, underscores)
                         tool_name = (
@@ -178,10 +215,20 @@ async def _benchmark_next_impl(sid: str, data: BenchmarkNextPayload) -> None:
                 ):
                     agent_id = agent_info["agent_id"]
                     # Get agent name from agent_id to determine which eval handler to call
-                    agent_row = await conn.fetchrow(
-                        "SELECT name FROM agents WHERE id = $1::uuid",
-                        uuid.UUID(agent_id),
+                    agent_name_params = SocketGetAgentNameSqlParams(
+                        agent_id=uuid.UUID(agent_id)
                     )
+                    agent_name_result = cast(
+                        SocketGetAgentNameSqlRow,
+                        await execute_sql_typed(
+                            conn,
+                            "app/sql/v4/benchmark/get_agent_name_v4_complete.sql",
+                            params=agent_name_params,
+                        ),
+                    )
+                    agent_row = {
+                        "name": agent_name_result.name if agent_name_result else None
+                    }
                     if agent_row:
                         # Convert agent name to event name format (lowercase, underscores)
                         agent_name = (

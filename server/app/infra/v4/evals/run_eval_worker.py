@@ -2,12 +2,24 @@
 
 import asyncio
 import logging
-from typing import Any
+import uuid
+from typing import Any, cast
 
 import asyncpg  # type: ignore
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
+
+from app.sql.types import (
+    InfrastructureEvalsGetRubricDetailsSqlParams,
+    InfrastructureEvalsGetRubricDetailsSqlRow,
+    InfrastructureEvalsMarkModelRunCompleteSqlParams,
+    InfrastructureEvalsMarkModelRunIncompleteSqlParams,
+)
 
 logger = logging.getLogger(__name__)
+
+MARK_MODEL_RUN_INCOMPLETE_SQL_PATH = "app/sql/v4/infrastructure/evals/mark_model_run_incomplete_v4_complete.sql"
+MARK_MODEL_RUN_COMPLETE_SQL_PATH = "app/sql/v4/infrastructure/evals/mark_model_run_complete_v4_complete.sql"
+GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/infrastructure/evals/get_rubric_details_v4_complete.sql"
 
 # Global semaphore to limit concurrent eval runs (max 4)
 _eval_semaphore = asyncio.Semaphore(4)
@@ -34,15 +46,11 @@ async def run_single_eval(
     """
     try:
         # Mark as in progress
-        await conn.execute(
-            """
-            UPDATE eval_model_runs 
-            SET completed = false, updated_at = NOW()
-            WHERE eval_id = $1::uuid AND model_run_id = $2::uuid
-            """,
-            eval_id,
-            model_run_id,
+        params = InfrastructureEvalsMarkModelRunIncompleteSqlParams(
+            eval_id=uuid.UUID(eval_id),
+            model_run_id=uuid.UUID(model_run_id),
         )
+        await execute_sql_typed(conn, MARK_MODEL_RUN_INCOMPLETE_SQL_PATH, params=params)
 
         # Emit progress event
         if emit_progress_func:
@@ -64,12 +72,22 @@ async def run_single_eval(
         # 4. Create eval_grades and eval_feedbacks records
 
         # Get rubric info
-        rubric = await conn.fetchrow(
-            "SELECT id, name, points, pass_points FROM rubrics WHERE id = $1",
-            rubric_id,
+        rubric_params = InfrastructureEvalsGetRubricDetailsSqlParams(
+            rubric_id=uuid.UUID(rubric_id)
         )
-        if not rubric:
+        rubric_result = cast(
+            InfrastructureEvalsGetRubricDetailsSqlRow,
+            await execute_sql_typed(conn, GET_RUBRIC_DETAILS_SQL_PATH, params=rubric_params),
+        )
+        if not rubric_result:
             raise ValueError(f"Rubric not found: {rubric_id}")
+        
+        rubric = {
+            "id": rubric_result.id,
+            "name": rubric_result.name,
+            "points": rubric_result.points,
+            "pass_points": rubric_result.pass_points,
+        }
 
         # Placeholder: Create a grade with default values
         # In production, this should use actual grading logic
@@ -88,15 +106,11 @@ async def run_single_eval(
             raise ValueError("Failed to create eval grade")
 
         # Mark as completed
-        await conn.execute(
-            """
-            UPDATE eval_model_runs 
-            SET completed = true, updated_at = NOW()
-            WHERE eval_id = $1::uuid AND model_run_id = $2::uuid
-            """,
-            eval_id,
-            model_run_id,
+        complete_params = InfrastructureEvalsMarkModelRunCompleteSqlParams(
+            eval_id=uuid.UUID(eval_id),
+            model_run_id=uuid.UUID(model_run_id),
         )
+        await execute_sql_typed(conn, MARK_MODEL_RUN_COMPLETE_SQL_PATH, params=complete_params)
 
         # Emit completion event
         if emit_progress_func:
@@ -116,15 +130,11 @@ async def run_single_eval(
             f"Error evaluating model_run {model_run_id} for eval {eval_id}: {e}"
         )
         # Mark as completed with error
-        await conn.execute(
-            """
-            UPDATE eval_model_runs 
-            SET completed = true, updated_at = NOW()
-            WHERE eval_id = $1::uuid AND model_run_id = $2::uuid
-            """,
-            eval_id,
-            model_run_id,
+        error_complete_params = InfrastructureEvalsMarkModelRunCompleteSqlParams(
+            eval_id=uuid.UUID(eval_id),
+            model_run_id=uuid.UUID(model_run_id),
         )
+        await execute_sql_typed(conn, MARK_MODEL_RUN_COMPLETE_SQL_PATH, params=error_complete_params)
         # Emit error event
         if emit_progress_func:
             await emit_progress_func(

@@ -1,7 +1,7 @@
 """Render developer instruction templates with resource-schema-based context."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import asyncpg
 from jinja2 import Environment, TemplateError
@@ -9,7 +9,14 @@ from jinja2.environment import Template as JinjaTemplate
 from utils.logging.db_logger import get_logger
 from utils.sql_helper import execute_sql_typed
 
+from app.sql.types import (
+    InfrastructureDeveloperInstructionsGetDomainArtifactSqlParams,
+    InfrastructureDeveloperInstructionsGetDomainArtifactSqlRow,
+)
+
 logger = get_logger(__name__)
+
+SQL_PATH = "app/sql/v4/infrastructure/developer_instructions/get_domain_artifact_complete.sql"
 
 
 async def render_developer_instruction(
@@ -40,15 +47,14 @@ async def render_developer_instruction(
         from app.sql.types import GetDeveloperInstructionSqlParams
 
         # Get agent's artifact from domains
-        agent_artifact = await conn.fetchval(
-            """
-            SELECT d.artifact::text
-            FROM domains d
-            WHERE d.agent_id = $1
-            LIMIT 1
-            """,
-            agent_id,
+        params = InfrastructureDeveloperInstructionsGetDomainArtifactSqlParams(
+            agent_id=agent_id
         )
+        result = cast(
+            InfrastructureDeveloperInstructionsGetDomainArtifactSqlRow,
+            await execute_sql_typed(conn, SQL_PATH, params=params),
+        )
+        agent_artifact = result.artifact if result else None
 
         if not agent_artifact:
             logger.warning(

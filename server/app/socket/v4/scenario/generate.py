@@ -5,21 +5,23 @@ import uuid
 from typing import Any, cast
 
 import asyncpg  # type: ignore
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (
-    GetDepartmentsForProfileSqlParams,
-    GetDepartmentsForProfileSqlRow,
-    GetRandomizationRangesSqlParams,
-    GetRandomizationRangesSqlRow,
-    GetScenarioDepartmentsSqlParams,
-    GetScenarioDepartmentsSqlRow,
-    RandomizeScenarioSqlParams,
-    RandomizeScenarioSqlRow,
-)
+from app.sql.types import (GetDepartmentsForProfileSqlParams,
+                           GetDepartmentsForProfileSqlRow,
+                           GetRandomizationRangesSqlParams,
+                           GetRandomizationRangesSqlRow,
+                           GetScenarioDepartmentsSqlParams,
+                           GetScenarioDepartmentsSqlRow,
+                           RandomizeScenarioSqlParams, RandomizeScenarioSqlRow,
+                           SocketGetDomainAgentIdSqlParams,
+                           SocketGetDomainAgentIdSqlRow,
+                           SocketGetScenarioParameterIdsSqlParams,
+                           SocketGetScenarioParameterIdsSqlRow)
 from fastapi import APIRouter
 from pydantic import BaseModel
 from utils.sql_helper import execute_sql_typed, load_sql
@@ -179,14 +181,12 @@ async def _generate_scenario_impl(
                 parameter_ids: list[uuid.UUID] = []
                 if field_ids:
                     # Get parameter_ids from fields table directly
-                    sql_get_params = """
-                        SELECT DISTINCT parameter_id 
-                        FROM fields 
-                        WHERE id = ANY($1::uuid[]) AND parameter_id IS NOT NULL
-                    """
-                    param_rows = await conn.fetch(
-                        sql_get_params, [fid for fid in field_ids]
+                    param_params = SocketGetScenarioParameterIdsSqlParams(
+                        field_ids=[uuid.UUID(fid) for fid in field_ids]
                     )
+                    from utils.sql_helper import load_sql
+                    param_sql = load_sql("app/sql/v4/scenario/get_scenario_parameter_ids_v4_complete.sql")
+                    param_rows = await conn.fetch(param_sql, [uuid.UUID(fid) for fid in field_ids])
                     parameter_ids = [
                         uuid.UUID(str(row["parameter_id"]))
                         for row in param_rows
@@ -331,21 +331,21 @@ async def _generate_scenario_impl(
                 return
 
             # Step 2: Get developer instruction using new renderer with resource-schema-based context
-            from app.infra.v4.developer_instructions.render_developer_instruction import (
-                render_developer_instruction,
-            )
+            from app.infra.v4.developer_instructions.render_developer_instruction import \
+                render_developer_instruction
 
             # Get agent_id from scenario domain
             scenario_domain_id = uuid.UUID(data.scenarioDomainId)
-            agent_id = await conn.fetchval(
-                """
-                SELECT d.agent_id
-                FROM domains d
-                WHERE d.id = $1
-                LIMIT 1
-                """,
-                scenario_domain_id,
+            domain_params = SocketGetDomainAgentIdSqlParams(domain_id=scenario_domain_id)
+            domain_result = cast(
+                SocketGetDomainAgentIdSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/scenario/get_domain_agent_id_v4_complete.sql",
+                    params=domain_params,
+                ),
             )
+            agent_id = domain_result.agent_id if domain_result else None
 
             # Step 3: Route to generate_artifact (which will create run and handle generation)
             resource_id = (

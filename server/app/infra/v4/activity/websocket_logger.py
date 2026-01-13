@@ -1,15 +1,23 @@
 """WebSocket activity logging utility."""
 
 import asyncio
-from typing import Any
+import uuid
+from typing import Any, cast
 
-from utils.logging.db_logger import get_logger
-
+import asyncpg  # type: ignore
 from app.infra.v4.activity.audit import jinja
-from app.infra.v4.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.v4.websocket.find_profile_by_socket import \
+    find_profile_by_socket
 from app.main import get_pool
+from app.sql.types import (
+    InfrastructureActivityGetProfileNameForLoggingSqlParams,
+    InfrastructureActivityGetProfileNameForLoggingSqlRow)
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
+
+SQL_PATH = "app/sql/v4/infrastructure/activity/get_profile_name_for_logging_complete.sql"
 
 
 async def log_websocket_activity(
@@ -48,22 +56,14 @@ async def log_websocket_activity(
 
         # Get actor_name from database
         async with pool.acquire() as conn:
-            actor_name_row = await conn.fetchrow(
-                """
-                SELECT COALESCE(
-                    (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id 
-                     WHERE pn.profile_id = $1 AND pn.type = 'full' LIMIT 1),
-                    (SELECT n1.name || ' ' || n2.name FROM profile_names pn1 
-                     JOIN names n1 ON pn1.name_id = n1.id 
-                     JOIN profile_names pn2 ON pn2.profile_id = pn1.profile_id 
-                     JOIN names n2 ON pn2.name_id = n2.id 
-                     WHERE pn1.profile_id = $1 AND pn1.type = 'first' AND pn2.type = 'last' LIMIT 1),
-                    ''
-                ) as actor_name
-                """,
-                profile_id,
+            params = InfrastructureActivityGetProfileNameForLoggingSqlParams(
+                profile_id=uuid.UUID(profile_id)
             )
-            actor_name = actor_name_row["actor_name"] if actor_name_row else None
+            result = cast(
+                InfrastructureActivityGetProfileNameForLoggingSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
+            actor_name = result.actor_name if result else None
 
             if not actor_name:
                 logger.debug(
@@ -129,7 +129,8 @@ async def _insert_activity(
 
     try:
         async with pool.acquire() as conn:
-            from app.infra.v4.activity.insert_websocket import insert_activity_websocket
+            from app.infra.v4.activity.insert_websocket import \
+                insert_activity_websocket
 
             await insert_activity_websocket(message, endpoint, profile_id, error, conn)
     except Exception:

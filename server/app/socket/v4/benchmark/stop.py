@@ -1,15 +1,21 @@
 """Handler for benchmark_stop WebSocket event."""
 
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ValidationError
 from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.cancel_active_run import cancel_active_run
 from app.main import sio
+from app.sql.types import (
+    SocketGetTestDetailsSqlParams,
+    SocketGetTestDetailsSqlRow,
+    SocketMarkTestCompleteSqlParams,
+)
 
 logger = get_logger(__name__)
 
@@ -71,18 +77,21 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
             attempt_id_uuid = uuid.UUID(attempt_id)
 
             # Get active test for this attempt
-            active_test_row = await conn.fetchrow(
-                """
-                SELECT t.id::text as test_id, t.run_id::text as run_id
-                FROM tests t
-                JOIN attempt_tests at ON at.test_id = t.id
-                WHERE at.attempt_id = $1::uuid
-                  AND t.completed = false
-                ORDER BY t.created_at DESC
-                LIMIT 1
-                """,
-                attempt_id_uuid,
+            test_details_params = SocketGetTestDetailsSqlParams(
+                attempt_id=attempt_id_uuid
             )
+            test_details_result = cast(
+                SocketGetTestDetailsSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/get_test_details_v4_complete.sql",
+                    params=test_details_params,
+                ),
+            )
+            active_test_row = {
+                "test_id": test_details_result.test_id,
+                "run_id": test_details_result.run_id,
+            } if test_details_result else None
 
             if active_test_row:
                 test_id = active_test_row["test_id"]
@@ -93,9 +102,13 @@ async def _benchmark_stop_impl(sid: str, data: BenchmarkStopPayload) -> None:
                     await cancel_active_run(run_id)
 
                 # Mark test as completed
-                await conn.execute(
-                    "UPDATE tests SET completed = true WHERE id = $1::uuid",
-                    uuid.UUID(test_id),
+                mark_params = SocketMarkTestCompleteSqlParams(
+                    test_id=uuid.UUID(test_id)
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/mark_test_complete_v4_complete.sql",
+                    params=mark_params,
                 )
             # Emit stop signal
             await benchmark_stopped(

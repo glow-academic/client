@@ -27,21 +27,27 @@ from app.socket.v4.artifacts.frames import start_client_ws_sender
 from app.socket.v4.artifacts.session_store import (create_session,
                                                    get_session_by_run_id,
                                                    remove_session)
-from app.sql.types import (GetAudioRunContextAndCreateRunSqlParams,
-                           GetAudioRunContextAndCreateRunSqlRow,
-                           GetGenerationRunContextAndCreateRunSqlParams,
-                           GetGenerationRunContextAndCreateRunSqlRow,
-                           GetImageGenerationContextAndCreateUploadSqlParams,
-                           GetImageGenerationContextAndCreateUploadSqlRow,
-                           GetMessagesByIdsSqlParams, GetMessagesByIdsSqlRow,
-                           GetMessagesByRunIdSqlParams,
-                           GetMessagesByRunIdSqlRow,
-                           GetTextRunContextForExistingRunSqlParams,
-                           GetTextRunContextForExistingRunSqlRow,
-                           GetVideoRunContextAndCreateRunSqlParams,
-                           GetVideoRunContextAndCreateRunSqlRow,
-                           IGetTextRunContextAndCreateRunV4Tool,
-                           InsertUploadSqlParams, InsertUploadSqlRow)
+from app.sql.types import (
+    GetAudioRunContextAndCreateRunSqlParams,
+    GetAudioRunContextAndCreateRunSqlRow,
+    GetGenerationRunContextAndCreateRunSqlParams,
+    GetGenerationRunContextAndCreateRunSqlRow,
+    GetImageGenerationContextAndCreateUploadSqlParams,
+    GetImageGenerationContextAndCreateUploadSqlRow,
+    GetMessagesByIdsSqlParams,
+    GetMessagesByIdsSqlRow,
+    GetMessagesByRunIdSqlParams,
+    GetMessagesByRunIdSqlRow,
+    GetTextRunContextForExistingRunSqlParams,
+    GetTextRunContextForExistingRunSqlRow,
+    GetVideoRunContextAndCreateRunSqlParams,
+    GetVideoRunContextAndCreateRunSqlRow,
+    IGetTextRunContextAndCreateRunV4Tool,
+    InfrastructureArtifactsGetGroupIdFromRunSqlParams,
+    InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+    InsertUploadSqlParams,
+    InsertUploadSqlRow,
+)
 from utils.auth.decrypt_api_key import decrypt_api_key
 from utils.sql_helper import execute_sql_typed, load_sql
 
@@ -60,6 +66,7 @@ SQL_PATH_IMAGE = (
 )
 SQL_PATH_VIDEO = "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"
 SQL_PATH_AUDIO = "app/sql/v4/audio/get_audio_run_context_and_create_run_complete.sql"
+GET_GROUP_ID_SQL_PATH = "app/sql/v4/infrastructure/artifacts/get_group_id_from_run_complete.sql"
 
 # Try to import litellm
 try:
@@ -1091,10 +1098,14 @@ async def _handle_image_generation(
         raise ValueError(f"Failed to decrypt API key: {str(e)}")
 
     # Get group_id from run
-    group_id_from_run = await conn.fetchval(
-        "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
-        run_id,
+    group_params = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+        run_id=uuid.UUID(run_id)
     )
+    group_result = cast(
+        InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+        await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
+    )
+    group_id_from_run = str(group_result.group_id) if group_result and group_result.group_id else None
 
     # Emit start event
     await internal_sio.emit(
@@ -1291,10 +1302,17 @@ async def _handle_image_generation(
 
     except Exception as e:
         # Get group_id from run for error reporting
-        group_id_from_run = await conn.fetchval(
-            "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
-            run_id,
-        )
+        try:
+            group_params = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+                run_id=uuid.UUID(run_id)
+            )
+            group_result = cast(
+                InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+                await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
+            )
+            group_id_from_run = str(group_result.group_id) if group_result and group_result.group_id else None
+        except Exception:
+            group_id_from_run = None
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
@@ -1362,10 +1380,14 @@ async def _handle_video_generation(
         raise ValueError(f"Failed to decrypt API key: {str(e)}")
 
     # Get group_id from run
-    group_id_from_run = await conn.fetchval(
-        "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
-        run_id,
+    group_params = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+        run_id=uuid.UUID(run_id)
     )
+    group_result = cast(
+        InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+        await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params),
+    )
+    group_id_from_run = str(group_result.group_id) if group_result and group_result.group_id else None
 
     # Emit start event
     await internal_sio.emit(
@@ -1646,10 +1668,14 @@ async def _handle_audio_generation(
     from urllib.parse import quote
 
     # Get group_id and chat_id from run
-    group_id_from_run = await conn.fetchval(
-        "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
-        run_id,
+    group_params_audio = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+        run_id=uuid.UUID(run_id)
     )
+    group_result_audio = cast(
+        InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+        await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params_audio),
+    )
+    group_id_from_run = str(group_result_audio.group_id) if group_result_audio and group_result_audio.group_id else None
     
     # Get chat_id from resource_id if available (for voice mode)
     chat_id: str | None = None
@@ -2123,10 +2149,17 @@ async def _handle_audio_generation(
 
     except Exception as e:
         # Get group_id from run for error reporting
-        group_id_from_run = await conn.fetchval(
-            "SELECT group_id FROM group_runs WHERE run_id = $1 LIMIT 1",
-            run_id,
-        )
+        try:
+            group_params_error = InfrastructureArtifactsGetGroupIdFromRunSqlParams(
+                run_id=uuid.UUID(run_id)
+            )
+            group_result_error = cast(
+                InfrastructureArtifactsGetGroupIdFromRunSqlRow,
+                await execute_sql_typed(conn, GET_GROUP_ID_SQL_PATH, params=group_params_error),
+            )
+            group_id_from_run = str(group_result_error.group_id) if group_result_error and group_result_error.group_id else None
+        except Exception:
+            group_id_from_run = None
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(

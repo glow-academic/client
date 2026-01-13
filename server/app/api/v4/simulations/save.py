@@ -5,19 +5,20 @@ Unified endpoint that handles both create (input_simulation_id = NULL) and updat
 from typing import Annotated, Any, cast
 
 import asyncpg  # type: ignore
+from app.infra.v4.activity.audit import audit_activity, audit_set
+from app.infra.v4.error.handle_route_error import handle_route_error
+from app.main import get_db
+from app.sql.types import (ApiGetNameByIdSqlParams, ApiGetNameByIdSqlRow,
+                           SaveSimulationApiRequest, SaveSimulationApiResponse,
+                           SaveSimulationSqlParams, SaveSimulationSqlRow,
+                           load_sql_query)
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
-from app.infra.v4.activity.audit import audit_activity, audit_set
-from app.infra.v4.error.handle_route_error import handle_route_error
-from app.main import get_db
-from app.sql.types import (SaveSimulationApiRequest, SaveSimulationApiResponse,
-                           SaveSimulationSqlParams, SaveSimulationSqlRow,
-                           load_sql_query)
-
 # Load SQL with types at module level - makes it clear what SQL file is used
 SQL_PATH = "app/sql/v4/simulations/save_simulation_complete.sql"
+GET_NAME_SQL_PATH = "app/sql/v4/simulations/get_name_by_id_complete.sql"
 
 
 router = APIRouter()
@@ -88,11 +89,13 @@ async def save_simulation(
                     # Update mode: look up name from name_id if available
                     simulation_name = "Simulation"
                     if hasattr(request, "name_id") and request.name_id:
-                        name_row = await conn.fetchrow(
-                            "SELECT name FROM names WHERE id = $1", request.name_id
+                        name_params = ApiGetNameByIdSqlParams(name_id=request.name_id)
+                        name_result = cast(
+                            ApiGetNameByIdSqlRow,
+                            await execute_sql_typed(conn, GET_NAME_SQL_PATH, params=name_params),
                         )
-                        if name_row:
-                            simulation_name = name_row["name"]
+                        if name_result and name_result.name:
+                            simulation_name = name_result.name
                     audit_ctx["simulation"] = {
                         "name": simulation_name,
                         "id": str(result.simulation_id),

@@ -1,15 +1,16 @@
 """Handler for benchmark_advance WebSocket event - updates client with test/run status."""
 
 import uuid
-from typing import Any
-
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
+from typing import Any, cast
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.main import get_internal_sio, sio
+from app.sql.types import SocketGetTestByIdSqlParams, SocketGetTestByIdSqlRow
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -86,10 +87,20 @@ async def _benchmark_advance_impl(sid: str, data: BenchmarkAdvancePayload) -> No
             attempt_id_uuid = uuid.UUID(attempt_id)
 
             # Verify test exists
-            test_row = await conn.fetchrow(
-                "SELECT id, title, completed FROM tests WHERE id = $1::uuid",
-                test_id_uuid,
+            test_params = SocketGetTestByIdSqlParams(test_id=test_id_uuid)
+            test_result = cast(
+                SocketGetTestByIdSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/get_test_by_id_v4_complete.sql",
+                    params=test_params,
+                ),
             )
+            test_row = {
+                "id": test_result.id,
+                "title": test_result.title,
+                "completed": test_result.completed,
+            } if test_result else None
             if not test_row:
                 await benchmark_advance_error(
                     BenchmarkAdvanceErrorPayload(

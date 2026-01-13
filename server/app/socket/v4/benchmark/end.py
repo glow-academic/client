@@ -1,16 +1,22 @@
 """Handler for benchmark_end WebSocket event - runs grading and completes test."""
 
 import uuid
-from typing import Any
-
-from fastapi import APIRouter
-from pydantic import BaseModel, ValidationError
-from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from typing import Any, cast
 
 from app.infra.v4.activity.websocket_logger import log_websocket_activity
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
+from app.sql.types import (SocketGetRubricGradeAgentSqlParams,
+                           SocketGetRubricGradeAgentSqlRow,
+                           SocketGetTestRunIdSqlParams,
+                           SocketGetTestRunIdSqlRow,
+                           SocketMarkEvalGroupCompleteSqlParams,
+                           SocketMarkEvalRunCompleteSqlParams,
+                           SocketMarkTestCompleteSqlParams)
+from fastapi import APIRouter
+from pydantic import BaseModel, ValidationError
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed, load_sql
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -112,17 +118,31 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
             rubric_grade_agent_id = rubric_row["rubric_grade_agent_id"]
 
             # Get rubric_grade_agent details
-            rga_row = await conn.fetchrow(
-                """
-                SELECT 
-                    rga.grade_agent_id::text as grade_agent_id,
-                    rga.rubric_id::text as rubric_id,
-                    rga.agent_id::text as agent_id
-                FROM rubric_grade_agents rga
-                WHERE rga.id = $1::uuid
-                """,
-                rubric_grade_agent_id,
+            rga_params = SocketGetRubricGradeAgentSqlParams(
+                rubric_grade_agent_id=rubric_grade_agent_id
             )
+            rga_result = cast(
+                SocketGetRubricGradeAgentSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/get_rubric_grade_agent_v4_complete.sql",
+                    params=rga_params,
+                ),
+            )
+            if not rga_result:
+                await benchmark_end_error(
+                    BenchmarkEndErrorPayload(
+                        success=False, message="Rubric grade agent details not found"
+                    ),
+                    room=sid,
+                )
+                return
+            
+            rga_row = {
+                "grade_agent_id": rga_result.grade_agent_id,
+                "rubric_id": rga_result.rubric_id,
+                "agent_id": rga_result.agent_id,
+            }
 
             if not rga_row:
                 await benchmark_end_error(
@@ -137,9 +157,18 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
             rubric_id = rga_row["rubric_id"]
 
             # Get test run_id (needed for grade creation)
-            test_row = await conn.fetchrow(
-                "SELECT run_id FROM tests WHERE id = $1::uuid", test_id_uuid
+            test_run_params = SocketGetTestRunIdSqlParams(test_id=test_id_uuid)
+            test_run_result = cast(
+                SocketGetTestRunIdSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/get_test_run_id_v4_complete.sql",
+                    params=test_run_params,
+                ),
             )
+            test_row = {
+                "run_id": test_run_result.run_id if test_run_result else None
+            }
             if not test_row:
                 await benchmark_end_error(
                     BenchmarkEndErrorPayload(success=False, message="Test not found"),
@@ -183,29 +212,33 @@ async def _benchmark_end_impl(sid: str, data: BenchmarkEndPayload) -> None:
             grade_id = grade_result["grade_id"]
 
             # Mark test as completed
-            await conn.execute(
-                "UPDATE tests SET completed = true, updated_at = NOW() WHERE id = $1::uuid",
-                test_id_uuid,
+            mark_test_params = SocketMarkTestCompleteSqlParams(test_id=test_id_uuid)
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/benchmark/mark_test_complete_v4_complete.sql",
+                params=mark_test_params,
             )
 
             # Mark eval_run or eval_group as completed
             if use_groups and group_id:
-                await conn.execute(
-                    """
-                    UPDATE eval_groups SET completed = true, updated_at = NOW()
-                    WHERE eval_id = $1::uuid AND group_id = $2::uuid
-                    """,
-                    eval_id_uuid,
-                    uuid.UUID(group_id),
+                mark_group_params = SocketMarkEvalGroupCompleteSqlParams(
+                    eval_id=eval_id_uuid,
+                    group_id=uuid.UUID(group_id),
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/mark_eval_group_complete_v4_complete.sql",
+                    params=mark_group_params,
                 )
             elif run_id:
-                await conn.execute(
-                    """
-                    UPDATE eval_runs SET completed = true, updated_at = NOW()
-                    WHERE eval_id = $1::uuid AND run_id = $2::uuid
-                    """,
-                    eval_id_uuid,
-                    uuid.UUID(run_id),
+                mark_run_params = SocketMarkEvalRunCompleteSqlParams(
+                    eval_id=eval_id_uuid,
+                    run_id=uuid.UUID(run_id),
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/benchmark/mark_eval_run_complete_v4_complete.sql",
+                    params=mark_run_params,
                 )
             # Check if more runs/groups exist
             sql = load_sql(

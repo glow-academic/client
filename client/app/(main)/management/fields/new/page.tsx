@@ -1,6 +1,6 @@
 /**
  * app/(main)/management/fields/new/page.tsx
- * New field page
+ * New field page - uses unified get/save endpoints
  * @AshokSaravanan222 & @siladiea
  * 12/05/2025
  */
@@ -12,28 +12,37 @@ import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldNewIn = InputOf<"/api/v4/fields/new", "post">;
-type FieldNewOut = OutputOf<"/api/v4/fields/new", "post">;
-type CreateFieldIn = InputOf<"/api/v4/fields/create", "post">;
-type CreateFieldOut = OutputOf<"/api/v4/fields/create", "post">;
+type GetFieldIn = InputOf<"/api/v4/fields/get", "post">;
+type GetFieldOut = OutputOf<"/api/v4/fields/get", "post">;
+type SaveFieldIn = InputOf<"/api/v4/fields/save", "post">;
+type SaveFieldOut = OutputOf<"/api/v4/fields/save", "post">;
 type PatchFieldDraftIn = InputOf<"/api/v4/fields/draft", "patch">;
 type PatchFieldDraftOut = OutputOf<"/api/v4/fields/draft", "patch">;
 
-/** ---- Direct fetch for default field data ---- */
-const getFieldDetailDefault = async (
-  input: FieldNewIn
-): Promise<FieldNewOut> => {
-  // profileId removed - comes from X-Profile-Id header (auto-injected)
-  return api.post(
-    "/fields/new",
-    input,
-    {
+/** ---- Direct fetch for default field data with timeout ---- */
+const getFieldDefault = async (input: GetFieldIn): Promise<GetFieldOut> => {
+  // profileId comes from X-Profile-Id header (auto-injected)
+  // Use timeout wrapper for robust API calls
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+  try {
+    const result = await api.post("/fields/get", input, {
       cache: "no-store",
       headers: {
         "X-Bypass-Cache": "1",
       },
-    },
-  );
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Request timeout - please try again");
+    }
+    throw error;
+  }
 };
 
 /** ---- Metadata ---- */
@@ -46,10 +55,26 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function createField(input: CreateFieldIn): Promise<CreateFieldOut> {
+async function saveField(input: SaveFieldIn): Promise<SaveFieldOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/fields/create", input);
+  // Use timeout wrapper for robust API calls
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+  try {
+    const result = await api.post("/fields/save", input, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return result;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Request timeout - please try again");
+    }
+    throw error;
+  }
 }
 
 async function patchFieldDraft(
@@ -67,8 +92,8 @@ export default async function NewFieldPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   // Access control is handled server-side in layout
-  // profileId removed - comes from X-Profile-Id header (auto-injected)
-  
+  // profileId comes from X-Profile-Id header (auto-injected)
+
   // Parse search params using nuqs
   const params = await searchParams;
   const searchParamsObj = new URLSearchParams();
@@ -89,20 +114,21 @@ export default async function NewFieldPage({
   const loadFieldSearchParams = createLoader(fieldSearchParams);
   const q = loadFieldSearchParams(searchParamsObj);
 
-  // Fetch default field data with draft_id
-  const input: FieldNewIn = {
+  // Fetch default field data with draft_id (field_id = null for new mode)
+  const input: GetFieldIn = {
     body: {
+      field_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-    } as FieldNewIn["body"],
+    } as GetFieldIn["body"],
   };
-  const fieldDetailDefault = await getFieldDetailDefault(input);
+  const fieldData = await getFieldDefault(input);
 
   return (
     <div className="space-y-6">
       <Field
         key={q.draftId || "no-draft"} // Force remount when draftId changes
-        fieldDetailDefault={fieldDetailDefault}
-        createFieldAction={createField}
+        fieldData={fieldData}
+        saveFieldAction={saveField}
         patchFieldDraftAction={patchFieldDraft}
       />
     </div>
@@ -111,10 +137,10 @@ export default async function NewFieldPage({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  CreateFieldIn,
-  CreateFieldOut,
-  FieldNewIn,
-  FieldNewOut,
+  GetFieldIn,
+  GetFieldOut,
   PatchFieldDraftIn,
   PatchFieldDraftOut,
+  SaveFieldIn,
+  SaveFieldOut,
 };

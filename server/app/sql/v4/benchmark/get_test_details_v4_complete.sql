@@ -1,0 +1,35 @@
+-- Get test details (id and run_id) by attempt_id
+-- 1) Drop function first
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'socket_get_test_details_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_test_details_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION socket_get_test_details_v4(
+    attempt_id uuid
+)
+RETURNS TABLE (
+    test_id text,
+    run_id text
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT t.id::text as test_id, t.run_id::text as run_id
+    FROM tests t
+    JOIN attempt_tests at ON at.test_id = t.id
+    WHERE at.attempt_id = $1
+      AND t.completed = false
+    ORDER BY t.created_at DESC
+    LIMIT 1
+$$;

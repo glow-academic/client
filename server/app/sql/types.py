@@ -5483,6 +5483,40 @@ class CreateEvalGradeApiResponse(BaseModel):
 
 
 
+# Generated from: create_test_v4
+
+class CreateTestV4SqlParams(BaseModel):
+
+    test_id: UUID
+    title: str
+    trace_id: str
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.test_id,
+            self.title,
+            self.trace_id,
+            self.run_id,
+        )
+
+class CreateTestV4SqlRow(BaseModel):
+
+    socket_create_test_v4: Any
+
+class CreateTestV4ApiRequest(BaseModel):
+
+    test_id: UUID
+    title: str
+    trace_id: str
+    run_id: UUID
+
+class CreateTestV4ApiResponse(BaseModel):
+
+    socket_create_test_v4: Any
+
+
+
 # Generated from: delete_eval
 
 class DeleteEvalSqlParams(BaseModel):
@@ -5511,6 +5545,31 @@ class DeleteEvalApiResponse(BaseModel):
     eval_id: UUID | None = None
     eval_name: str | None = None
     actor_name: str | None = None
+
+
+
+# Generated from: get_agent_name_v4
+
+class GetAgentNameV4SqlParams(BaseModel):
+
+    agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+        )
+
+class GetAgentNameV4SqlRow(BaseModel):
+
+    name: str | None = None
+
+class GetAgentNameV4ApiRequest(BaseModel):
+
+    agent_id: UUID
+
+class GetAgentNameV4ApiResponse(BaseModel):
+
+    name: str | None = None
 
 
 
@@ -5996,6 +6055,31 @@ class GetBenchmarkRunsStartAllContextApiResponse(BaseModel):
     eval_id: str | None = None
     use_groups: bool | None = None
     pending_ids: list[str] | None = None
+
+
+
+# Generated from: get_eval_attempt_infinite_mode_v4
+
+class GetEvalAttemptInfiniteModeV4SqlParams(BaseModel):
+
+    attempt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+        )
+
+class GetEvalAttemptInfiniteModeV4SqlRow(BaseModel):
+
+    infinite_mode: bool | None = None
+
+class GetEvalAttemptInfiniteModeV4ApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetEvalAttemptInfiniteModeV4ApiResponse(BaseModel):
+
+    infinite_mode: bool | None = None
 
 
 
@@ -6568,6 +6652,227 @@ class GetRubricGradeAgentForRunOrGroupApiRequest(BaseModel):
 class GetRubricGradeAgentForRunOrGroupApiResponse(BaseModel):
 
     rubric_grade_agent_id: UUID | None = None
+
+
+
+# Generated from: get_rubric_grade_agent_v4
+
+class GetRubricGradeAgentV4SqlParams(BaseModel):
+
+    rubric_grade_agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.rubric_grade_agent_id,
+        )
+
+class GetRubricGradeAgentV4SqlRow(BaseModel):
+
+    grade_agent_id: str | None = None
+    rubric_id: str | None = None
+    agent_id: str | None = None
+
+class GetRubricGradeAgentV4ApiRequest(BaseModel):
+
+    rubric_grade_agent_id: UUID
+
+class GetRubricGradeAgentV4ApiResponse(BaseModel):
+
+    grade_agent_id: str | None = None
+    rubric_id: str | None = None
+    agent_id: str | None = None
+
+
+
+# Generated from: get_test_by_id_v4
+
+class GetTestByIdV4SqlParams(BaseModel):
+
+    test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.test_id,
+        )
+
+class GetTestByIdV4SqlRow(BaseModel):
+
+    id: UUID | None = None
+    title: str | None = None
+    completed: bool | None = None
+
+class GetTestByIdV4ApiRequest(BaseModel):
+
+    test_id: UUID
+
+class GetTestByIdV4ApiResponse(BaseModel):
+
+    id: UUID | None = None
+    title: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: get_test_by_trace_id_v4
+
+class GetTestByTraceIdV4SqlParams(BaseModel):
+
+    attempt_id: UUID
+    trace_id: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.trace_id,
+        )
+
+class GetTestByTraceIdV4SqlRow(BaseModel):
+
+    test_id: str | None = None
+    completed: bool | None = None
+
+class GetTestByTraceIdV4ApiRequest(BaseModel):
+
+    attempt_id: UUID
+    trace_id: str
+
+class GetTestByTraceIdV4ApiResponse(BaseModel):
+
+    test_id: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: get_test_details_v4
+
+class GetTestDetailsV4SqlParams(BaseModel):
+
+    attempt_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+        )
+
+class GetTestDetailsV4SqlRow(BaseModel):
+
+    test_id: str | None = None
+    run_id: str | None = None
+
+class GetTestDetailsV4ApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetTestDetailsV4ApiResponse(BaseModel):
+
+    test_id: str | None = None
+    run_id: str | None = None
+
+
+
+# Generated from: get_test_run_id_v4
+
+class GetTestRunIdV4SqlParams(BaseModel):
+
+    test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.test_id,
+        )
+
+class GetTestRunIdV4SqlRow(BaseModel):
+
+    run_id: UUID | None = None
+
+class GetTestRunIdV4ApiRequest(BaseModel):
+
+    test_id: UUID
+
+class GetTestRunIdV4ApiResponse(BaseModel):
+
+    run_id: UUID | None = None
+
+
+
+# Generated from: link_attempt_test_v4
+
+class LinkAttemptTestV4SqlParams(BaseModel):
+
+    attempt_id: UUID
+    test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.test_id,
+        )
+
+class LinkAttemptTestV4SqlRow(BaseModel):
+
+    socket_link_attempt_test_v4: Any
+
+class LinkAttemptTestV4ApiRequest(BaseModel):
+
+    attempt_id: UUID
+    test_id: UUID
+
+class LinkAttemptTestV4ApiResponse(BaseModel):
+
+    socket_link_attempt_test_v4: Any
+
+
+
+# Generated from: mark_eval_run_complete_v4
+
+class MarkEvalRunCompleteV4SqlParams(BaseModel):
+
+    eval_id: UUID
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.run_id,
+        )
+
+class MarkEvalRunCompleteV4SqlRow(BaseModel):
+
+    socket_mark_eval_run_complete_v4: Any
+
+class MarkEvalRunCompleteV4ApiRequest(BaseModel):
+
+    eval_id: UUID
+    run_id: UUID
+
+class MarkEvalRunCompleteV4ApiResponse(BaseModel):
+
+    socket_mark_eval_run_complete_v4: Any
+
+
+
+# Generated from: mark_test_complete_v4
+
+class MarkTestCompleteV4SqlParams(BaseModel):
+
+    test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.test_id,
+        )
+
+class MarkTestCompleteV4SqlRow(BaseModel):
+
+    socket_mark_test_complete_v4: Any
+
+class MarkTestCompleteV4ApiRequest(BaseModel):
+
+    test_id: UUID
+
+class MarkTestCompleteV4ApiResponse(BaseModel):
+
+    socket_mark_test_complete_v4: Any
 
 
 
@@ -8438,6 +8743,31 @@ class GetDeveloperInstructionContextApiResponse(BaseModel):
     fields: Any | None = None
     documents: Any | None = None
     times: Any | None = None
+
+
+
+# Generated from: get_document_department_v4
+
+class GetDocumentDepartmentV4SqlParams(BaseModel):
+
+    document_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.document_id,
+        )
+
+class GetDocumentDepartmentV4SqlRow(BaseModel):
+
+    department_id: UUID | None = None
+
+class GetDocumentDepartmentV4ApiRequest(BaseModel):
+
+    document_id: UUID
+
+class GetDocumentDepartmentV4ApiResponse(BaseModel):
+
+    department_id: UUID | None = None
 
 
 
@@ -10370,6 +10700,83 @@ class DuplicateFieldApiResponse(BaseModel):
 
 
 
+# Generated from: get_field
+
+class GetFieldSqlParams(BaseModel):
+
+    profile_id: UUID
+    field_id: UUID | None = None
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.field_id,
+            self.draft_id,
+        )
+
+class QGetFieldV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetFieldV4Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetFieldSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    field_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    field_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    parameter_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
+    departments: list[QGetFieldV4Department] | None = None
+    valid_department_ids: list[str] | None = None
+    parameters: list[QGetFieldV4Parameter] | None = None
+    valid_parameter_ids: list[str] | None = None
+    draft_version: int | None = None
+
+class GetFieldApiRequest(BaseModel):
+
+    field_id: UUID | None = None
+    draft_id: UUID | None = None
+
+class GetFieldApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    field_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    field_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    parameter_ids: list[str] | None = None
+    conditional_parameter_ids: list[str] | None = None
+    departments: list[QGetFieldV4Department] | None = None
+    valid_department_ids: list[str] | None = None
+    parameters: list[QGetFieldV4Parameter] | None = None
+    valid_parameter_ids: list[str] | None = None
+    draft_version: int | None = None
+
+
+
 # Generated from: get_field_detail
 
 class GetFieldDetailSqlParams(BaseModel):
@@ -10582,6 +10989,50 @@ class GetFieldsListApiResponse(BaseModel):
     departments: list[QListFieldsV4Department] | None = None
     parameter_options: list[QListFieldsV4Option] | None = None
     department_options: list[QListFieldsV4Option] | None = None
+
+
+
+# Generated from: save_field
+
+class SaveFieldSqlParams(BaseModel):
+
+    name: str
+    description: str
+    active: bool
+    department_ids: list[str]
+    conditional_parameter_ids: list[str]
+    profile_id: UUID
+    input_field_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name,
+            self.description,
+            self.active,
+            self.department_ids,
+            self.conditional_parameter_ids,
+            self.profile_id,
+            self.input_field_id,
+        )
+
+class SaveFieldSqlRow(BaseModel):
+
+    field_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveFieldApiRequest(BaseModel):
+
+    name: str
+    description: str
+    active: bool
+    department_ids: list[str]
+    conditional_parameter_ids: list[str]
+    input_field_id: UUID | None = None
+
+class SaveFieldApiResponse(BaseModel):
+
+    field_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -12097,6 +12548,309 @@ class GetResourceTableColumnsApiResponse(BaseModel):
 
 
 
+# Generated from: infra_activity_get_profile_name_for_logging
+
+class InfraActivityGetProfileNameForLoggingSqlParams(BaseModel):
+
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+        )
+
+class InfraActivityGetProfileNameForLoggingSqlRow(BaseModel):
+
+    actor_name: str | None = None
+
+class InfraActivityGetProfileNameForLoggingApiRequest(BaseModel):
+
+    pass
+
+class InfraActivityGetProfileNameForLoggingApiResponse(BaseModel):
+
+    actor_name: str | None = None
+
+
+
+# Generated from: infra_artifacts_get_group_id_from_run
+
+class InfraArtifactsGetGroupIdFromRunSqlParams(BaseModel):
+
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+        )
+
+class InfraArtifactsGetGroupIdFromRunSqlRow(BaseModel):
+
+    group_id: UUID | None = None
+
+class InfraArtifactsGetGroupIdFromRunApiRequest(BaseModel):
+
+    run_id: UUID
+
+class InfraArtifactsGetGroupIdFromRunApiResponse(BaseModel):
+
+    group_id: UUID | None = None
+
+
+
+# Generated from: infra_evals_create_test_v4
+
+class InfraEvalsCreateTestV4SqlParams(BaseModel):
+
+    title: str
+    run_id: UUID
+    trace_id: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.title,
+            self.run_id,
+            self.trace_id,
+        )
+
+class InfraEvalsCreateTestV4SqlRow(BaseModel):
+
+    test_id: str | None = None
+
+class InfraEvalsCreateTestV4ApiRequest(BaseModel):
+
+    title: str
+    run_id: UUID
+    trace_id: str
+
+class InfraEvalsCreateTestV4ApiResponse(BaseModel):
+
+    test_id: str | None = None
+
+
+
+# Generated from: infra_evals_get_eval_run_status_v4
+
+class InfraEvalsGetEvalRunStatusV4SqlParams(BaseModel):
+
+    eval_id: UUID
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.run_id,
+        )
+
+class InfraEvalsGetEvalRunStatusV4SqlRow(BaseModel):
+
+    completed: bool | None = None
+
+class InfraEvalsGetEvalRunStatusV4ApiRequest(BaseModel):
+
+    eval_id: UUID
+    run_id: UUID
+
+class InfraEvalsGetEvalRunStatusV4ApiResponse(BaseModel):
+
+    completed: bool | None = None
+
+
+
+# Generated from: infra_evals_get_rubric_grade_agent_v4
+
+class InfraEvalsGetRubricGradeAgentV4SqlParams(BaseModel):
+
+    rubric_grade_agent_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.rubric_grade_agent_id,
+        )
+
+class InfraEvalsGetRubricGradeAgentV4SqlRow(BaseModel):
+
+    rubric_id: str | None = None
+    eval_agent_id: str | None = None
+
+class InfraEvalsGetRubricGradeAgentV4ApiRequest(BaseModel):
+
+    rubric_grade_agent_id: UUID
+
+class InfraEvalsGetRubricGradeAgentV4ApiResponse(BaseModel):
+
+    rubric_id: str | None = None
+    eval_agent_id: str | None = None
+
+
+
+# Generated from: infra_evals_get_test_by_trace_id_v4
+
+class InfraEvalsGetTestByTraceIdV4SqlParams(BaseModel):
+
+    attempt_id: UUID
+    trace_id: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.trace_id,
+        )
+
+class InfraEvalsGetTestByTraceIdV4SqlRow(BaseModel):
+
+    test_id: str | None = None
+
+class InfraEvalsGetTestByTraceIdV4ApiRequest(BaseModel):
+
+    attempt_id: UUID
+    trace_id: str
+
+class InfraEvalsGetTestByTraceIdV4ApiResponse(BaseModel):
+
+    test_id: str | None = None
+
+
+
+# Generated from: infra_evals_get_test_status_v4
+
+class InfraEvalsGetTestStatusV4SqlParams(BaseModel):
+
+    attempt_id: UUID
+    trace_id: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.trace_id,
+        )
+
+class InfraEvalsGetTestStatusV4SqlRow(BaseModel):
+
+    test_id: str | None = None
+    completed: bool | None = None
+
+class InfraEvalsGetTestStatusV4ApiRequest(BaseModel):
+
+    attempt_id: UUID
+    trace_id: str
+
+class InfraEvalsGetTestStatusV4ApiResponse(BaseModel):
+
+    test_id: str | None = None
+    completed: bool | None = None
+
+
+
+# Generated from: infra_evals_link_attempt_test_v4
+
+class InfraEvalsLinkAttemptTestV4SqlParams(BaseModel):
+
+    attempt_id: UUID
+    test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.test_id,
+        )
+
+class InfraEvalsLinkAttemptTestV4SqlRow(BaseModel):
+
+    infrastructure_evals_link_attempt_test_v4: Any
+
+class InfraEvalsLinkAttemptTestV4ApiRequest(BaseModel):
+
+    attempt_id: UUID
+    test_id: UUID
+
+class InfraEvalsLinkAttemptTestV4ApiResponse(BaseModel):
+
+    infrastructure_evals_link_attempt_test_v4: Any
+
+
+
+# Generated from: infra_evals_link_test_run_v4
+
+class InfraEvalsLinkTestRunV4SqlParams(BaseModel):
+
+    run_id: UUID
+    test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.run_id,
+            self.test_id,
+        )
+
+class InfraEvalsLinkTestRunV4SqlRow(BaseModel):
+
+    infrastructure_evals_link_test_run_v4: Any
+
+class InfraEvalsLinkTestRunV4ApiRequest(BaseModel):
+
+    run_id: UUID
+    test_id: UUID
+
+class InfraEvalsLinkTestRunV4ApiResponse(BaseModel):
+
+    infrastructure_evals_link_test_run_v4: Any
+
+
+
+# Generated from: infra_evals_mark_eval_run_complete_v4
+
+class InfraEvalsMarkEvalRunCompleteV4SqlParams(BaseModel):
+
+    eval_id: UUID
+    run_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.run_id,
+        )
+
+class InfraEvalsMarkEvalRunCompleteV4SqlRow(BaseModel):
+
+    infrastructure_evals_mark_eval_run_complete_v4: Any
+
+class InfraEvalsMarkEvalRunCompleteV4ApiRequest(BaseModel):
+
+    eval_id: UUID
+    run_id: UUID
+
+class InfraEvalsMarkEvalRunCompleteV4ApiResponse(BaseModel):
+
+    infrastructure_evals_mark_eval_run_complete_v4: Any
+
+
+
+# Generated from: infra_evals_mark_test_complete_v4
+
+class InfraEvalsMarkTestCompleteV4SqlParams(BaseModel):
+
+    test_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.test_id,
+        )
+
+class InfraEvalsMarkTestCompleteV4SqlRow(BaseModel):
+
+    infrastructure_evals_mark_test_complete_v4: Any
+
+class InfraEvalsMarkTestCompleteV4ApiRequest(BaseModel):
+
+    test_id: UUID
+
+class InfraEvalsMarkTestCompleteV4ApiResponse(BaseModel):
+
+    infrastructure_evals_mark_test_complete_v4: Any
+
+
+
 # Generated from: infrastructure_activity_insert
 
 class InfrastructureActivityInsertSqlParams(BaseModel):
@@ -12318,6 +13072,62 @@ class InfrastructureProfileResolveFromDepartmentApiRequest(BaseModel):
 class InfrastructureProfileResolveFromDepartmentApiResponse(BaseModel):
 
     resolved_profile_id: UUID | None = None
+
+
+
+# Generated from: infra_tools_get_schema_fields_v4
+
+class InfraToolsGetSchemaFieldsV4SqlParams(BaseModel):
+
+    schema_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.schema_id,
+        )
+
+class InfraToolsGetSchemaFieldsV4SqlRow(BaseModel):
+
+    id: UUID | None = None
+    name: str | None = None
+    field_type: str | None = None
+    template: str | None = None
+
+class InfraToolsGetSchemaFieldsV4ApiRequest(BaseModel):
+
+    schema_id: UUID
+
+class InfraToolsGetSchemaFieldsV4ApiResponse(BaseModel):
+
+    id: UUID | None = None
+    name: str | None = None
+    field_type: str | None = None
+    template: str | None = None
+
+
+
+# Generated from: infra_tools_get_schema_id_from_template_v4
+
+class InfraToolsGetSchemaIdFromTemplateV4SqlParams(BaseModel):
+
+    template_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.template_id,
+        )
+
+class InfraToolsGetSchemaIdFromTemplateV4SqlRow(BaseModel):
+
+    schema_id: UUID | None = None
+
+class InfraToolsGetSchemaIdFromTemplateV4ApiRequest(BaseModel):
+
+    template_id: UUID
+
+class InfraToolsGetSchemaIdFromTemplateV4ApiResponse(BaseModel):
+
+    schema_id: UUID | None = None
 
 
 
@@ -26002,6 +26812,31 @@ class GetChatIdFromRunIdApiResponse(BaseModel):
 
 
 
+# Generated from: get_group_id_from_chat_group_v4
+
+class GetGroupIdFromChatGroupV4SqlParams(BaseModel):
+
+    chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+        )
+
+class GetGroupIdFromChatGroupV4SqlRow(BaseModel):
+
+    group_id: UUID | None = None
+
+class GetGroupIdFromChatGroupV4ApiRequest(BaseModel):
+
+    chat_id: UUID
+
+class GetGroupIdFromChatGroupV4ApiResponse(BaseModel):
+
+    group_id: UUID | None = None
+
+
+
 # Generated from: get_hint_message_id
 
 class GetHintMessageIdSqlParams(BaseModel):
@@ -26291,6 +27126,31 @@ class GetMessagesWithAudioApiResponse(BaseModel):
     file_path: str | None = None
     mime_type: str | None = None
     size: int | None = None
+
+
+
+# Generated from: get_name_by_id
+
+class GetNameByIdSqlParams(BaseModel):
+
+    name_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.name_id,
+        )
+
+class GetNameByIdSqlRow(BaseModel):
+
+    name: str | None = None
+
+class GetNameByIdApiRequest(BaseModel):
+
+    name_id: UUID
+
+class GetNameByIdApiResponse(BaseModel):
+
+    name: str | None = None
 
 
 
@@ -29207,6 +30067,185 @@ class InsertUploadApiResponse(BaseModel):
 
 
 
+# Generated from: create_schema_field_item_v4
+
+class CreateSchemaFieldItemV4SqlParams(BaseModel):
+
+    schema_field_id: UUID
+    item_schema_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.schema_field_id,
+            self.item_schema_id,
+        )
+
+class CreateSchemaFieldItemV4SqlRow(BaseModel):
+
+    utils_create_schema_field_item_v4: Any
+
+class CreateSchemaFieldItemV4ApiRequest(BaseModel):
+
+    schema_field_id: UUID
+    item_schema_id: UUID
+
+class CreateSchemaFieldItemV4ApiResponse(BaseModel):
+
+    utils_create_schema_field_item_v4: Any
+
+
+
+# Generated from: create_schema_v4
+
+class CreateSchemaV4SqlParams(BaseModel):
+
+    schema_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.schema_id,
+        )
+
+class CreateSchemaV4SqlRow(BaseModel):
+
+    utils_create_schema_v4: Any
+
+class CreateSchemaV4ApiRequest(BaseModel):
+
+    schema_id: UUID
+
+class CreateSchemaV4ApiResponse(BaseModel):
+
+    utils_create_schema_v4: Any
+
+
+
+# Generated from: create_template_v4
+
+class CreateTemplateV4SqlParams(BaseModel):
+
+    template_id: UUID
+    name: str
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.template_id,
+            self.name,
+        )
+
+class CreateTemplateV4SqlRow(BaseModel):
+
+    utils_create_template_v4: Any
+
+class CreateTemplateV4ApiRequest(BaseModel):
+
+    template_id: UUID
+    name: str
+
+class CreateTemplateV4ApiResponse(BaseModel):
+
+    utils_create_template_v4: Any
+
+
+
+# Generated from: create_template_value_v4
+
+class CreateTemplateValueV4SqlParams(BaseModel):
+
+    template_id: UUID
+    schema_field_id: UUID
+    string_value: str | None = None
+    number_value: float | None = None
+    boolean_value: bool | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.template_id,
+            self.schema_field_id,
+            self.string_value,
+            self.number_value,
+            self.boolean_value,
+        )
+
+class CreateTemplateValueV4SqlRow(BaseModel):
+
+    utils_create_template_value_v4: Any
+
+class CreateTemplateValueV4ApiRequest(BaseModel):
+
+    template_id: UUID
+    schema_field_id: UUID
+    string_value: str | None = None
+    number_value: float | None = None
+    boolean_value: bool | None = None
+
+class CreateTemplateValueV4ApiResponse(BaseModel):
+
+    utils_create_template_value_v4: Any
+
+
+
+# Generated from: get_template_values_v4
+
+class GetTemplateValuesV4SqlParams(BaseModel):
+
+    template_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.template_id,
+        )
+
+class GetTemplateValuesV4SqlRow(BaseModel):
+
+    name: str | None = None
+    string_value: str | None = None
+    number_value: float | None = None
+    boolean_value: bool | None = None
+    field_type: str | None = None
+
+class GetTemplateValuesV4ApiRequest(BaseModel):
+
+    template_id: UUID
+
+class GetTemplateValuesV4ApiResponse(BaseModel):
+
+    name: str | None = None
+    string_value: str | None = None
+    number_value: float | None = None
+    boolean_value: bool | None = None
+    field_type: str | None = None
+
+
+
+# Generated from: link_schema_template_v4
+
+class LinkSchemaTemplateV4SqlParams(BaseModel):
+
+    schema_id: UUID
+    template_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.schema_id,
+            self.template_id,
+        )
+
+class LinkSchemaTemplateV4SqlRow(BaseModel):
+
+    utils_link_schema_template_v4: Any
+
+class LinkSchemaTemplateV4ApiRequest(BaseModel):
+
+    schema_id: UUID
+    template_id: UUID
+
+class LinkSchemaTemplateV4ApiResponse(BaseModel):
+
+    utils_link_schema_template_v4: Any
+
+
+
 # Generated from: create_generation_and_link
 
 class CreateGenerationAndLinkSqlParams(BaseModel):
@@ -30036,11 +31075,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateEvalGradeApiRequest",
         "CreateEvalGradeApiResponse",
     ),
+    "app/sql/v4/benchmark/create_test_v4_complete.sql": (
+        "CreateTestV4SqlParams",
+        "CreateTestV4SqlRow",
+        "CreateTestV4ApiRequest",
+        "CreateTestV4ApiResponse",
+    ),
     "app/sql/v4/benchmark/delete_eval_complete.sql": (
         "DeleteEvalSqlParams",
         "DeleteEvalSqlRow",
         "DeleteEvalApiRequest",
         "DeleteEvalApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_agent_name_v4_complete.sql": (
+        "GetAgentNameV4SqlParams",
+        "GetAgentNameV4SqlRow",
+        "GetAgentNameV4ApiRequest",
+        "GetAgentNameV4ApiResponse",
     ),
     "app/sql/v4/benchmark/get_benchmark_bundle_complete.sql": (
         "GetBenchmarkBundleSqlParams",
@@ -30071,6 +31122,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetBenchmarkRunsStartAllContextSqlRow",
         "GetBenchmarkRunsStartAllContextApiRequest",
         "GetBenchmarkRunsStartAllContextApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql": (
+        "GetEvalAttemptInfiniteModeV4SqlParams",
+        "GetEvalAttemptInfiniteModeV4SqlRow",
+        "GetEvalAttemptInfiniteModeV4ApiRequest",
+        "GetEvalAttemptInfiniteModeV4ApiResponse",
     ),
     "app/sql/v4/benchmark/get_eval_detail_complete.sql": (
         "GetEvalDetailSqlParams",
@@ -30113,6 +31170,54 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricGradeAgentForRunOrGroupSqlRow",
         "GetRubricGradeAgentForRunOrGroupApiRequest",
         "GetRubricGradeAgentForRunOrGroupApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_rubric_grade_agent_v4_complete.sql": (
+        "GetRubricGradeAgentV4SqlParams",
+        "GetRubricGradeAgentV4SqlRow",
+        "GetRubricGradeAgentV4ApiRequest",
+        "GetRubricGradeAgentV4ApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_test_by_id_v4_complete.sql": (
+        "GetTestByIdV4SqlParams",
+        "GetTestByIdV4SqlRow",
+        "GetTestByIdV4ApiRequest",
+        "GetTestByIdV4ApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_test_by_trace_id_v4_complete.sql": (
+        "GetTestByTraceIdV4SqlParams",
+        "GetTestByTraceIdV4SqlRow",
+        "GetTestByTraceIdV4ApiRequest",
+        "GetTestByTraceIdV4ApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_test_details_v4_complete.sql": (
+        "GetTestDetailsV4SqlParams",
+        "GetTestDetailsV4SqlRow",
+        "GetTestDetailsV4ApiRequest",
+        "GetTestDetailsV4ApiResponse",
+    ),
+    "app/sql/v4/benchmark/get_test_run_id_v4_complete.sql": (
+        "GetTestRunIdV4SqlParams",
+        "GetTestRunIdV4SqlRow",
+        "GetTestRunIdV4ApiRequest",
+        "GetTestRunIdV4ApiResponse",
+    ),
+    "app/sql/v4/benchmark/link_attempt_test_v4_complete.sql": (
+        "LinkAttemptTestV4SqlParams",
+        "LinkAttemptTestV4SqlRow",
+        "LinkAttemptTestV4ApiRequest",
+        "LinkAttemptTestV4ApiResponse",
+    ),
+    "app/sql/v4/benchmark/mark_eval_run_complete_v4_complete.sql": (
+        "MarkEvalRunCompleteV4SqlParams",
+        "MarkEvalRunCompleteV4SqlRow",
+        "MarkEvalRunCompleteV4ApiRequest",
+        "MarkEvalRunCompleteV4ApiResponse",
+    ),
+    "app/sql/v4/benchmark/mark_test_complete_v4_complete.sql": (
+        "MarkTestCompleteV4SqlParams",
+        "MarkTestCompleteV4SqlRow",
+        "MarkTestCompleteV4ApiRequest",
+        "MarkTestCompleteV4ApiResponse",
     ),
     "app/sql/v4/benchmark/start_benchmark_attempt_complete.sql": (
         "StartBenchmarkAttemptSqlParams",
@@ -30257,6 +31362,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDeveloperInstructionContextSqlRow",
         "GetDeveloperInstructionContextApiRequest",
         "GetDeveloperInstructionContextApiResponse",
+    ),
+    "app/sql/v4/document/get_document_department_v4_complete.sql": (
+        "GetDocumentDepartmentV4SqlParams",
+        "GetDocumentDepartmentV4SqlRow",
+        "GetDocumentDepartmentV4ApiRequest",
+        "GetDocumentDepartmentV4ApiResponse",
     ),
     "app/sql/v4/documents/complete_document_creation_complete.sql": (
         "CompleteDocumentCreationSqlParams",
@@ -30474,6 +31585,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DuplicateFieldApiRequest",
         "DuplicateFieldApiResponse",
     ),
+    "app/sql/v4/fields/get_field_complete.sql": (
+        "GetFieldSqlParams",
+        "GetFieldSqlRow",
+        "GetFieldApiRequest",
+        "GetFieldApiResponse",
+    ),
     "app/sql/v4/fields/get_field_detail_complete.sql": (
         "GetFieldDetailSqlParams",
         "GetFieldDetailSqlRow",
@@ -30491,6 +31608,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFieldsListSqlRow",
         "GetFieldsListApiRequest",
         "GetFieldsListApiResponse",
+    ),
+    "app/sql/v4/fields/save_field_complete.sql": (
+        "SaveFieldSqlParams",
+        "SaveFieldSqlRow",
+        "SaveFieldApiRequest",
+        "SaveFieldApiResponse",
     ),
     "app/sql/v4/fields/update_field_complete.sql": (
         "UpdateFieldSqlParams",
@@ -30672,6 +31795,72 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetResourceTableColumnsApiRequest",
         "GetResourceTableColumnsApiResponse",
     ),
+    "app/sql/v4/infrastructure/activity/get_profile_name_for_logging_complete.sql": (
+        "InfraActivityGetProfileNameForLoggingSqlParams",
+        "InfraActivityGetProfileNameForLoggingSqlRow",
+        "InfraActivityGetProfileNameForLoggingApiRequest",
+        "InfraActivityGetProfileNameForLoggingApiResponse",
+    ),
+    "app/sql/v4/infrastructure/artifacts/get_group_id_from_run_complete.sql": (
+        "InfraArtifactsGetGroupIdFromRunSqlParams",
+        "InfraArtifactsGetGroupIdFromRunSqlRow",
+        "InfraArtifactsGetGroupIdFromRunApiRequest",
+        "InfraArtifactsGetGroupIdFromRunApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/create_test_v4_complete.sql": (
+        "InfraEvalsCreateTestV4SqlParams",
+        "InfraEvalsCreateTestV4SqlRow",
+        "InfraEvalsCreateTestV4ApiRequest",
+        "InfraEvalsCreateTestV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/get_eval_run_status_v4_complete.sql": (
+        "InfraEvalsGetEvalRunStatusV4SqlParams",
+        "InfraEvalsGetEvalRunStatusV4SqlRow",
+        "InfraEvalsGetEvalRunStatusV4ApiRequest",
+        "InfraEvalsGetEvalRunStatusV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql": (
+        "InfraEvalsGetRubricGradeAgentV4SqlParams",
+        "InfraEvalsGetRubricGradeAgentV4SqlRow",
+        "InfraEvalsGetRubricGradeAgentV4ApiRequest",
+        "InfraEvalsGetRubricGradeAgentV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/get_test_by_trace_id_v4_complete.sql": (
+        "InfraEvalsGetTestByTraceIdV4SqlParams",
+        "InfraEvalsGetTestByTraceIdV4SqlRow",
+        "InfraEvalsGetTestByTraceIdV4ApiRequest",
+        "InfraEvalsGetTestByTraceIdV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/get_test_status_v4_complete.sql": (
+        "InfraEvalsGetTestStatusV4SqlParams",
+        "InfraEvalsGetTestStatusV4SqlRow",
+        "InfraEvalsGetTestStatusV4ApiRequest",
+        "InfraEvalsGetTestStatusV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/link_attempt_test_v4_complete.sql": (
+        "InfraEvalsLinkAttemptTestV4SqlParams",
+        "InfraEvalsLinkAttemptTestV4SqlRow",
+        "InfraEvalsLinkAttemptTestV4ApiRequest",
+        "InfraEvalsLinkAttemptTestV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/link_test_run_v4_complete.sql": (
+        "InfraEvalsLinkTestRunV4SqlParams",
+        "InfraEvalsLinkTestRunV4SqlRow",
+        "InfraEvalsLinkTestRunV4ApiRequest",
+        "InfraEvalsLinkTestRunV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/mark_eval_run_complete_v4_complete.sql": (
+        "InfraEvalsMarkEvalRunCompleteV4SqlParams",
+        "InfraEvalsMarkEvalRunCompleteV4SqlRow",
+        "InfraEvalsMarkEvalRunCompleteV4ApiRequest",
+        "InfraEvalsMarkEvalRunCompleteV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/evals/mark_test_complete_v4_complete.sql": (
+        "InfraEvalsMarkTestCompleteV4SqlParams",
+        "InfraEvalsMarkTestCompleteV4SqlRow",
+        "InfraEvalsMarkTestCompleteV4ApiRequest",
+        "InfraEvalsMarkTestCompleteV4ApiResponse",
+    ),
     "app/sql/v4/infrastructure/infrastructure_activity_insert_complete.sql": (
         "InfrastructureActivityInsertSqlParams",
         "InfrastructureActivityInsertSqlRow",
@@ -30713,6 +31902,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfrastructureProfileResolveFromDepartmentSqlRow",
         "InfrastructureProfileResolveFromDepartmentApiRequest",
         "InfrastructureProfileResolveFromDepartmentApiResponse",
+    ),
+    "app/sql/v4/infrastructure/tools/get_schema_fields_v4_complete.sql": (
+        "InfraToolsGetSchemaFieldsV4SqlParams",
+        "InfraToolsGetSchemaFieldsV4SqlRow",
+        "InfraToolsGetSchemaFieldsV4ApiRequest",
+        "InfraToolsGetSchemaFieldsV4ApiResponse",
+    ),
+    "app/sql/v4/infrastructure/tools/get_schema_id_from_template_v4_complete.sql": (
+        "InfraToolsGetSchemaIdFromTemplateV4SqlParams",
+        "InfraToolsGetSchemaIdFromTemplateV4SqlRow",
+        "InfraToolsGetSchemaIdFromTemplateV4ApiRequest",
+        "InfraToolsGetSchemaIdFromTemplateV4ApiResponse",
     ),
     "app/sql/v4/keycloak/get_auth_items_complete.sql": (
         "GetAuthItemsSqlParams",
@@ -32064,6 +33265,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetChatIdFromRunIdApiRequest",
         "GetChatIdFromRunIdApiResponse",
     ),
+    "app/sql/v4/simulations/get_group_id_from_chat_group_v4_complete.sql": (
+        "GetGroupIdFromChatGroupV4SqlParams",
+        "GetGroupIdFromChatGroupV4SqlRow",
+        "GetGroupIdFromChatGroupV4ApiRequest",
+        "GetGroupIdFromChatGroupV4ApiResponse",
+    ),
     "app/sql/v4/simulations/get_hint_message_id_complete.sql": (
         "GetHintMessageIdSqlParams",
         "GetHintMessageIdSqlRow",
@@ -32105,6 +33312,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetMessagesWithAudioSqlRow",
         "GetMessagesWithAudioApiRequest",
         "GetMessagesWithAudioApiResponse",
+    ),
+    "app/sql/v4/simulations/get_name_by_id_complete.sql": (
+        "GetNameByIdSqlParams",
+        "GetNameByIdSqlRow",
+        "GetNameByIdApiRequest",
+        "GetNameByIdApiResponse",
     ),
     "app/sql/v4/simulations/get_or_create_run_for_chat_complete.sql": (
         "GetOrCreateRunForChatSqlParams",
@@ -32363,6 +33576,42 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InsertUploadSqlRow",
         "InsertUploadApiRequest",
         "InsertUploadApiResponse",
+    ),
+    "app/sql/v4/utils/create_schema_field_item_v4_complete.sql": (
+        "CreateSchemaFieldItemV4SqlParams",
+        "CreateSchemaFieldItemV4SqlRow",
+        "CreateSchemaFieldItemV4ApiRequest",
+        "CreateSchemaFieldItemV4ApiResponse",
+    ),
+    "app/sql/v4/utils/create_schema_v4_complete.sql": (
+        "CreateSchemaV4SqlParams",
+        "CreateSchemaV4SqlRow",
+        "CreateSchemaV4ApiRequest",
+        "CreateSchemaV4ApiResponse",
+    ),
+    "app/sql/v4/utils/create_template_v4_complete.sql": (
+        "CreateTemplateV4SqlParams",
+        "CreateTemplateV4SqlRow",
+        "CreateTemplateV4ApiRequest",
+        "CreateTemplateV4ApiResponse",
+    ),
+    "app/sql/v4/utils/create_template_value_v4_complete.sql": (
+        "CreateTemplateValueV4SqlParams",
+        "CreateTemplateValueV4SqlRow",
+        "CreateTemplateValueV4ApiRequest",
+        "CreateTemplateValueV4ApiResponse",
+    ),
+    "app/sql/v4/utils/get_template_values_v4_complete.sql": (
+        "GetTemplateValuesV4SqlParams",
+        "GetTemplateValuesV4SqlRow",
+        "GetTemplateValuesV4ApiRequest",
+        "GetTemplateValuesV4ApiResponse",
+    ),
+    "app/sql/v4/utils/link_schema_template_v4_complete.sql": (
+        "LinkSchemaTemplateV4SqlParams",
+        "LinkSchemaTemplateV4SqlRow",
+        "LinkSchemaTemplateV4ApiRequest",
+        "LinkSchemaTemplateV4ApiResponse",
     ),
     "app/sql/v4/videos/create_generation_and_link_complete.sql": (
         "CreateGenerationAndLinkSqlParams",
@@ -32929,7 +34178,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/create_test_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/delete_eval_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_agent_name_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32955,6 +34214,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/get_benchmark_runs_start_all_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_eval_attempt_infinite_mode_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -32990,6 +34254,46 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/get_rubric_grade_agent_for_run_or_group_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_rubric_grade_agent_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_test_by_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_test_by_trace_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_test_details_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/get_test_run_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/link_attempt_test_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/mark_eval_run_complete_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/mark_test_complete_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33110,6 +34414,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/developer_instructions/get_developer_instruction_context_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/document/get_document_department_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33294,6 +34603,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/fields/get_field_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/fields/get_field_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -33305,6 +34619,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/fields/get_fields_list_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/fields/save_field_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -33459,6 +34778,61 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/activity/get_profile_name_for_logging_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/artifacts/get_group_id_from_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/create_test_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/get_eval_run_status_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/get_test_by_trace_id_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/get_test_status_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/link_attempt_test_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/link_test_run_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/mark_eval_run_complete_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/evals/mark_test_complete_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/infrastructure/infrastructure_activity_insert_complete.sql"]
     ) -> SqlString: ...
 
@@ -33490,6 +34864,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/infrastructure/infrastructure_profile_resolve_from_department_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/tools/get_schema_fields_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/infrastructure/tools/get_schema_id_from_template_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -34619,6 +36003,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_group_id_from_chat_group_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_hint_message_id_complete.sql"]
     ) -> SqlString: ...
 
@@ -34650,6 +36039,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/get_messages_with_audio_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/get_name_by_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -34865,6 +36259,36 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/uploads/insert_upload_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/utils/create_schema_field_item_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/utils/create_schema_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/utils/create_template_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/utils/create_template_value_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/utils/get_template_values_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/utils/link_schema_template_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

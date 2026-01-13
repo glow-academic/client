@@ -2,17 +2,39 @@
 
 import json
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import asyncpg  # type: ignore
 from agents import Runner, trace
 from agents.items import TResponseInputItem
 from utils.logging.db_logger import get_logger
-from utils.sql_helper import load_sql
+from utils.sql_helper import execute_sql_typed, load_sql
 
 from app.infra.v4.agents.generic_agent import GenericAgent
 from app.infra.v4.debug.debug_info import DebugContext
 from app.main import get_internal_sio
+from app.sql.types import (
+    InfrastructureEvalsCreateTestSqlParams,
+    InfrastructureEvalsCreateTestSqlRow,
+    InfrastructureEvalsGetDepartmentFromRunSqlParams,
+    InfrastructureEvalsGetDepartmentFromRunSqlRow,
+    InfrastructureEvalsGetEvalRunStatusSqlParams,
+    InfrastructureEvalsGetEvalRunStatusSqlRow,
+    InfrastructureEvalsGetRubricDetailsSqlParams,
+    InfrastructureEvalsGetRubricDetailsSqlRow,
+    InfrastructureEvalsGetRubricGradeAgentSqlParams,
+    InfrastructureEvalsGetRubricGradeAgentSqlRow,
+    InfrastructureEvalsGetTestByTraceIdSqlParams,
+    InfrastructureEvalsGetTestByTraceIdSqlRow,
+    InfrastructureEvalsGetTestStatusSqlParams,
+    InfrastructureEvalsGetTestStatusSqlRow,
+    InfrastructureEvalsLinkAttemptTestSqlParams,
+    InfrastructureEvalsLinkTestRunSqlParams,
+    InfrastructureEvalsMarkEvalRunCompleteSqlParams,
+    InfrastructureEvalsMarkTestCompleteSqlParams,
+)
+
+GET_RUBRIC_DETAILS_SQL_PATH = "app/sql/v4/infrastructure/evals/get_rubric_details_v4_complete.sql"
 
 logger = get_logger(__name__)
 internal_sio = get_internal_sio()
@@ -52,32 +74,37 @@ async def run_eval_single_run(
     """
     try:
         # Idempotency check: If run is already completed, skip
-        completed_check = await conn.fetchrow(
-            """
-            SELECT completed
-            FROM eval_runs
-            WHERE eval_id = $1::uuid AND run_id = $2::uuid
-            """,
-            eval_id,
-            run_id,
+        status_params = InfrastructureEvalsGetEvalRunStatusSqlParams(
+            eval_id=uuid.UUID(eval_id),
+            run_id=uuid.UUID(run_id),
         )
+        status_result = cast(
+            InfrastructureEvalsGetEvalRunStatusSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/infrastructure/evals/get_eval_run_status_v4_complete.sql",
+                params=status_params,
+            ),
+        )
+        completed_check = {"completed": status_result.completed if status_result else False}
         if completed_check and completed_check["completed"]:
             logger.info(
                 f"Run {run_id} already completed for eval {eval_id}, skipping (idempotent)"
             )
             # Return existing test_id if available
-            existing_test = await conn.fetchrow(
-                """
-                SELECT t.id::text as test_id
-                FROM tests t
-                JOIN attempt_tests at ON at.test_id = t.id
-                WHERE at.attempt_id = $1::uuid
-                  AND t.trace_id = $2
-                LIMIT 1
-                """,
-                attempt_id,
-                f"eval_{attempt_id}_{run_id}",
+            test_params = InfrastructureEvalsGetTestByTraceIdSqlParams(
+                attempt_id=uuid.UUID(attempt_id),
+                trace_id=f"eval_{attempt_id}_{run_id}",
             )
+            test_result = cast(
+                InfrastructureEvalsGetTestByTraceIdSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/infrastructure/evals/get_test_by_trace_id_v4_complete.sql",
+                    params=test_params,
+                ),
+            )
+            existing_test = {"test_id": test_result.test_id} if test_result else None
             return {
                 "success": True,
                 "test_id": existing_test["test_id"] if existing_test else None,
@@ -86,19 +113,22 @@ async def run_eval_single_run(
             }
 
         # Idempotency check: If test exists and is in progress, skip
-        test_check = await conn.fetchrow(
-            """
-            SELECT t.id::text as test_id, t.completed
-            FROM tests t
-            JOIN attempt_tests at ON at.test_id = t.id
-            WHERE at.attempt_id = $1::uuid
-              AND t.trace_id = $2
-              AND t.completed = false
-            LIMIT 1
-            """,
-            attempt_id,
-            f"eval_{attempt_id}_{run_id}",
+        test_status_params = InfrastructureEvalsGetTestStatusSqlParams(
+            attempt_id=uuid.UUID(attempt_id),
+            trace_id=f"eval_{attempt_id}_{run_id}",
         )
+        test_status_result = cast(
+            InfrastructureEvalsGetTestStatusSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/infrastructure/evals/get_test_status_v4_complete.sql",
+                params=test_status_params,
+            ),
+        )
+        test_check = {
+            "test_id": test_status_result.test_id,
+            "completed": test_status_result.completed,
+        } if test_status_result else None
         if test_check:
             logger.info(
                 f"Run {run_id} already in progress (test {test_check['test_id']}), skipping (idempotent)"
@@ -155,20 +185,19 @@ async def run_eval_single_run(
 
             # Get department_id from original run if not provided
             if not department_id:
-                dept_row = await conn.fetchrow(
-                    """
-                    SELECT d.id::text as department_id
-                    FROM runs r
-                    JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-                    JOIN profile_departments pd ON pd.profile_id = rp.profile_id AND pd.active = true
-                    JOIN departments d ON d.id = pd.department_id AND d.active = true
-                    WHERE r.id = $1::uuid
-                    LIMIT 1
-                    """,
-                    run_id,
+                dept_params = InfrastructureEvalsGetDepartmentFromRunSqlParams(
+                    run_id=uuid.UUID(run_id)
                 )
-                if dept_row:
-                    department_id = dept_row["department_id"]
+                dept_result = cast(
+                    InfrastructureEvalsGetDepartmentFromRunSqlRow,
+                    await execute_sql_typed(
+                        conn,
+                        "app/sql/v4/infrastructure/evals/get_department_from_run_v4_complete.sql",
+                        params=dept_params,
+                    ),
+                )
+                if dept_result and dept_result.department_id:
+                    department_id = dept_result.department_id
 
             # Create new run for agent being evaluated
             sql_create_agent_run = load_sql(
@@ -345,16 +374,24 @@ async def run_eval_single_run(
             )
 
         # 3. Get rubric and eval_agent from rubric_grade_agent
-        rga_row = await conn.fetchrow(
-            """
-            SELECT 
-                rga.rubric_id::text as rubric_id,
-                rga.grade_agent_id::text as eval_agent_id
-            FROM rubric_grade_agents rga
-            WHERE rga.id = $1::uuid
-            """,
-            rubric_grade_agent_id,
+        rga_params = InfrastructureEvalsGetRubricGradeAgentSqlParams(
+            rubric_grade_agent_id=uuid.UUID(rubric_grade_agent_id)
         )
+        rga_result = cast(
+            InfrastructureEvalsGetRubricGradeAgentSqlRow,
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql",
+                params=rga_params,
+            ),
+        )
+        if not rga_result:
+            raise ValueError(f"Rubric grade agent not found: {rubric_grade_agent_id}")
+        
+        rga_row = {
+            "rubric_id": rga_result.rubric_id,
+            "eval_agent_id": rga_result.eval_agent_id,
+        }
         if not rga_row:
             raise ValueError(f"Rubric grade agent not found: {rubric_grade_agent_id}")
 
@@ -375,20 +412,19 @@ async def run_eval_single_run(
 
         # 5. Get department_id from original run if not provided (if not already set in dynamic mode)
         if not department_id:
-            dept_row = await conn.fetchrow(
-                """
-                SELECT d.id::text as department_id
-                FROM runs r
-                JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
-                JOIN profile_departments pd ON pd.profile_id = rp.profile_id AND pd.active = true
-                JOIN departments d ON d.id = pd.department_id AND d.active = true
-                WHERE r.id = $1::uuid
-                LIMIT 1
-                """,
-                run_id,
+            dept_params2 = InfrastructureEvalsGetDepartmentFromRunSqlParams(
+                run_id=uuid.UUID(run_id)
             )
-            if dept_row:
-                department_id = dept_row["department_id"]
+            dept_result2 = cast(
+                InfrastructureEvalsGetDepartmentFromRunSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/infrastructure/evals/get_department_from_run_v4_complete.sql",
+                    params=dept_params2,
+                ),
+            )
+            if dept_result2 and dept_result2.department_id:
+                department_id = dept_result2.department_id
 
         # 6. Create test if not exists
         if not test_id:
@@ -418,41 +454,44 @@ async def run_eval_single_run(
         if not test_id:
             trace_id = f"eval_{attempt_id}_{run_id}"
             test_title = f"Eval Test for Run {run_id[:8]}"
-            test_row = await conn.fetchrow(
-                """
-                INSERT INTO tests (title, run_id, completed, trace_id, created_at, updated_at)
-                VALUES ($1, $2::uuid, false, $3, NOW(), NOW())
-                RETURNING id::text as test_id
-                """,
-                test_title,
-                eval_run_id,
-                trace_id,
+            test_params = InfrastructureEvalsCreateTestSqlParams(
+                title=test_title,
+                run_id=uuid.UUID(eval_run_id),
+                trace_id=trace_id,
             )
-            if not test_row:
+            test_result = cast(
+                InfrastructureEvalsCreateTestSqlRow,
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/infrastructure/evals/create_test_v4_complete.sql",
+                    params=test_params,
+                ),
+            )
+            if not test_result or not test_result.test_id:
                 raise ValueError("Failed to create test")
 
-            test_id = test_row["test_id"]
+            test_id = test_result.test_id
 
             # Link test to attempt
-            await conn.execute(
-                """
-                INSERT INTO attempt_tests (attempt_id, test_id, created_at, updated_at)
-                VALUES ($1::uuid, $2::uuid, NOW(), NOW())
-                ON CONFLICT (attempt_id, test_id) DO NOTHING
-                """,
-                attempt_id,
-                test_id,
+            link_attempt_params = InfrastructureEvalsLinkAttemptTestSqlParams(
+                attempt_id=uuid.UUID(attempt_id),
+                test_id=uuid.UUID(test_id),
+            )
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/infrastructure/evals/link_attempt_test_v4_complete.sql",
+                params=link_attempt_params,
             )
 
             # Link run to test
-            await conn.execute(
-                """
-                INSERT INTO test_runs (run_id, test_id, created_at, updated_at)
-                VALUES ($1::uuid, $2::uuid, NOW(), NOW())
-                ON CONFLICT (run_id, test_id) DO NOTHING
-                """,
-                eval_run_id,
-                test_id,
+            link_run_params = InfrastructureEvalsLinkTestRunSqlParams(
+                run_id=uuid.UUID(eval_run_id),
+                test_id=uuid.UUID(test_id),
+            )
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/infrastructure/evals/link_test_run_v4_complete.sql",
+                params=link_run_params,
             )
 
         # 9. Prepare messages: Convert to TResponseInputItem format and filter out system/developer messages
@@ -595,12 +634,22 @@ async def run_eval_single_run(
 
         # 15. Grade the result (create grade via create_eval_grade.sql)
         # For now, use placeholder grading logic (similar to run_eval_worker.py)
-        rubric = await conn.fetchrow(
-            "SELECT id, name, points, pass_points FROM rubrics WHERE id = $1",
-            rubric_id,
+        rubric_params2 = InfrastructureEvalsGetRubricDetailsSqlParams(
+            rubric_id=uuid.UUID(rubric_id)
         )
-        if not rubric:
+        rubric_result2 = cast(
+            InfrastructureEvalsGetRubricDetailsSqlRow,
+            await execute_sql_typed(conn, GET_RUBRIC_DETAILS_SQL_PATH, params=rubric_params2),
+        )
+        if not rubric_result2:
             raise ValueError(f"Rubric not found: {rubric_id}")
+        
+        rubric = {
+            "id": rubric_result2.id,
+            "name": rubric_result2.name,
+            "points": rubric_result2.points,
+            "pass_points": rubric_result2.pass_points,
+        }
 
         # Placeholder: Create a grade with default values
         # TODO: Implement actual grading logic using eval_agent's output
@@ -622,22 +671,24 @@ async def run_eval_single_run(
         grade_id = grade_result["grade_id"]
 
         # 16. Mark test as completed
-        await conn.execute(
-            """
-            UPDATE tests SET completed = true, updated_at = NOW()
-            WHERE id = $1::uuid
-            """,
-            test_id,
+        mark_test_params = InfrastructureEvalsMarkTestCompleteSqlParams(
+            test_id=uuid.UUID(test_id)
+        )
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/infrastructure/evals/mark_test_complete_v4_complete.sql",
+            params=mark_test_params,
         )
 
         # 17. Mark eval_runs.completed = true for this run
-        await conn.execute(
-            """
-            UPDATE eval_runs SET completed = true, updated_at = NOW()
-            WHERE eval_id = $1::uuid AND run_id = $2::uuid
-            """,
-            eval_id,
-            run_id,
+        mark_eval_params = InfrastructureEvalsMarkEvalRunCompleteSqlParams(
+            eval_id=uuid.UUID(eval_id),
+            run_id=uuid.UUID(run_id),
+        )
+        await execute_sql_typed(
+            conn,
+            "app/sql/v4/infrastructure/evals/mark_eval_run_complete_v4_complete.sql",
+            params=mark_eval_params,
         )
 
         # 18. Emit progress event via WebSocket
@@ -670,25 +721,27 @@ async def run_eval_single_run(
         # Mark test as completed with error if it exists
         if test_id:
             try:
-                await conn.execute(
-                    """
-                    UPDATE tests SET completed = true, updated_at = NOW()
-                    WHERE id = $1::uuid
-                    """,
-                    test_id,
+                error_test_params = InfrastructureEvalsMarkTestCompleteSqlParams(
+                    test_id=uuid.UUID(test_id)
+                )
+                await execute_sql_typed(
+                    conn,
+                    "app/sql/v4/infrastructure/evals/mark_test_complete_v4_complete.sql",
+                    params=error_test_params,
                 )
             except Exception:
                 pass
 
         # Mark eval_runs as completed with error
         try:
-            await conn.execute(
-                """
-                UPDATE eval_runs SET completed = true, updated_at = NOW()
-                WHERE eval_id = $1::uuid AND run_id = $2::uuid
-                """,
-                eval_id,
-                run_id,
+            error_eval_params = InfrastructureEvalsMarkEvalRunCompleteSqlParams(
+                eval_id=uuid.UUID(eval_id),
+                run_id=uuid.UUID(run_id),
+            )
+            await execute_sql_typed(
+                conn,
+                "app/sql/v4/infrastructure/evals/mark_eval_run_complete_v4_complete.sql",
+                params=error_eval_params,
             )
         except Exception:
             pass

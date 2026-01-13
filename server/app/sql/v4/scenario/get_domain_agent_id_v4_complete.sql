@@ -1,0 +1,30 @@
+-- Get agent_id from domain
+-- 1) Drop function first
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN 
+        SELECT oidvectortypes(proargtypes) as sig 
+        FROM pg_proc 
+        WHERE proname = 'socket_get_domain_agent_id_v4'
+          AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
+    LOOP
+        EXECUTE format('DROP FUNCTION IF EXISTS socket_get_domain_agent_id_v4(%s)', r.sig);
+    END LOOP;
+END $$;
+
+-- 2) Recreate function
+CREATE OR REPLACE FUNCTION socket_get_domain_agent_id_v4(
+    domain_id uuid
+)
+RETURNS TABLE (
+    agent_id uuid
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT d.agent_id
+    FROM domains d
+    WHERE d.id = $1
+$$;
