@@ -3678,6 +3678,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/staff/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Staff
+         * @description Save staff - handles both create (input_staff_id = NULL) and update (input_staff_id provided).
+         */
+        post: operations["save_staff_api_v4_staff_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/staff/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Staff
+         * @description Get staff information - handles both new (staff_id = NULL) and detail (staff_id provided).
+         *
+         *     Validation Logic:
+         *     - Tools are REQUIRED for resources - error if no tools exist (via missing_tools_check CTE)
+         *     - Agents are OPTIONAL - NULL agent_id means manual entry only (no generate button shown)
+         *     - Frontend components check agent_id before showing generate button
+         */
+        post: operations["get_staff_api_v4_staff_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/staff/list": {
         parameters: {
             query?: never;
@@ -10619,6 +10664,143 @@ export interface components {
             /** Department Options */
             department_options?: components["schemas"]["QListSimulationsV4Option"][] | null;
         };
+        /** GetStaffApiRequest */
+        GetStaffApiRequest: {
+            /** Staff Id */
+            staff_id?: string | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GetStaffApiResponse */
+        GetStaffApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Staff Exists */
+            staff_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** First Name Id */
+            first_name_id?: string | null;
+            first_name_resource?: components["schemas"]["QGetStaffV4NameResource"] | null;
+            /** Show First Name */
+            show_first_name?: boolean | null;
+            /** First Name Agent Id */
+            first_name_agent_id?: string | null;
+            /** First Name Required */
+            first_name_required?: boolean | null;
+            /** First Name Suggestions */
+            first_name_suggestions?: string[] | null;
+            /** First Names */
+            first_names?: components["schemas"]["QGetStaffV4NameResource"][] | null;
+            /** Last Name Id */
+            last_name_id?: string | null;
+            last_name_resource?: components["schemas"]["QGetStaffV4NameResource"] | null;
+            /** Show Last Name */
+            show_last_name?: boolean | null;
+            /** Last Name Agent Id */
+            last_name_agent_id?: string | null;
+            /** Last Name Required */
+            last_name_required?: boolean | null;
+            /** Last Name Suggestions */
+            last_name_suggestions?: string[] | null;
+            /** Last Names */
+            last_names?: components["schemas"]["QGetStaffV4NameResource"][] | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            flag_resource?: components["schemas"]["QGetStaffV4FlagResource"] | null;
+            /** Show Flag */
+            show_flag?: boolean | null;
+            /** Flag Agent Id */
+            flag_agent_id?: string | null;
+            /** Flag Required */
+            flag_required?: boolean | null;
+            /** Flags */
+            flags?: components["schemas"]["QGetStaffV4FlagResource"][] | null;
+            /** Request Limit Id */
+            request_limit_id?: string | null;
+            request_limit_resource?: components["schemas"]["QGetStaffV4RequestLimitResource"] | null;
+            /** Show Request Limit */
+            show_request_limit?: boolean | null;
+            /** Request Limit Agent Id */
+            request_limit_agent_id?: string | null;
+            /** Request Limit Required */
+            request_limit_required?: boolean | null;
+            /** Request Limit Suggestions */
+            request_limit_suggestions?: string[] | null;
+            /** Request Limits */
+            request_limits?: components["schemas"]["QGetStaffV4RequestLimitResource"][] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Department Resources */
+            department_resources?: components["schemas"]["QGetStaffV4Department"][] | null;
+            /** Show Departments */
+            show_departments?: boolean | null;
+            /** Departments Agent Id */
+            departments_agent_id?: string | null;
+            /** Departments Required */
+            departments_required?: boolean | null;
+            /** Department Suggestions */
+            department_suggestions?: string[] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetStaffV4Department"][] | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Cohorts */
+            cohorts?: components["schemas"]["QGetStaffV4Cohort"][] | null;
+            /** Email Ids */
+            email_ids?: string[] | null;
+            /** Email Resources */
+            email_resources?: components["schemas"]["QGetStaffV4EmailResource"][] | null;
+            /** Show Emails */
+            show_emails?: boolean | null;
+            /** Emails Agent Id */
+            emails_agent_id?: string | null;
+            /** Emails Required */
+            emails_required?: boolean | null;
+            /** Email Suggestions */
+            email_suggestions?: string[] | null;
+            /** Emails */
+            emails?: components["schemas"]["QGetStaffV4EmailResource"][] | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Emails Text */
+            emails_text?: string[] | null;
+            /** Primary Email */
+            primary_email?: string | null;
+            /** Primary Email Index */
+            primary_email_index?: number | null;
+            /** Role */
+            role?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Requests Per Day */
+            requests_per_day?: number | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Primary Department Index */
+            primary_department_index?: number | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Valid Cohort Ids */
+            valid_cohort_ids?: string[] | null;
+            /** Role Options */
+            role_options?: string[] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+        };
         /** GetStaffDetailApiRequest */
         GetStaffDetailApiRequest: {
             /**
@@ -16336,6 +16518,66 @@ export interface components {
             /** Description */
             description: string | null;
         };
+        /** QGetStaffV4Cohort */
+        QGetStaffV4Cohort: {
+            /** Cohort Id */
+            cohort_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetStaffV4Department */
+        QGetStaffV4Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetStaffV4EmailResource */
+        QGetStaffV4EmailResource: {
+            /** Id */
+            id: string | null;
+            /** Email */
+            email: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetStaffV4FlagResource */
+        QGetStaffV4FlagResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Icon Id */
+            icon_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetStaffV4NameResource */
+        QGetStaffV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetStaffV4RequestLimitResource */
+        QGetStaffV4RequestLimitResource: {
+            /** Id */
+            id: string | null;
+            /** Requests Per Day */
+            requests_per_day: number | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetToolsListV4Tool */
         QGetToolsListV4Tool: {
             /** Tool Id */
@@ -18589,6 +18831,42 @@ export interface components {
         SaveSimulationApiResponse: {
             /** Simulation Id */
             simulation_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** SaveStaffApiRequest */
+        SaveStaffApiRequest: {
+            /**
+             * First Name Id
+             * Format: uuid
+             */
+            first_name_id: string;
+            /**
+             * Last Name Id
+             * Format: uuid
+             */
+            last_name_id: string;
+            /** Department Ids */
+            department_ids: string[];
+            /** Cohort Ids */
+            cohort_ids: string[];
+            /** Input Staff Id */
+            input_staff_id?: string | null;
+            /** Active Flag Id */
+            active_flag_id?: string | null;
+            /** Request Limit Id */
+            request_limit_id?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Emails */
+            emails?: string[] | null;
+            /** Primary Email Index */
+            primary_email_index?: number | null;
+        };
+        /** SaveStaffApiResponse */
+        SaveStaffApiResponse: {
+            /** Staff Id */
+            staff_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -26784,6 +27062,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeletePromptApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_staff_api_v4_staff_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveStaffApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveStaffApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_staff_api_v4_staff_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetStaffApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetStaffApiResponse"];
                 };
             };
             /** @description Validation Error */

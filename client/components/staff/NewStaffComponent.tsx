@@ -1,0 +1,1600 @@
+/**
+ * NewStaffComponent.tsx
+ * Implementation using modular resource components
+ * Used to create and manage staff - supports both creation and editing
+ * Follows Persona.tsx pattern exactly
+ */
+"use client";
+
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import {
+  GenericForm,
+  type StepStatus,
+} from "@/components/common/forms/GenericForm";
+import { StepCard } from "@/components/common/forms/StepCard";
+import type { GenerateRegenerateModalResource } from "@/components/common/GenerateRegenerateModal";
+import { GenerateRegenerateModal } from "@/components/common/GenerateRegenerateModal";
+import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { Departments } from "@/components/resources/Departments";
+import { Emails } from "@/components/resources/Emails";
+import { Flags } from "@/components/resources/Flags";
+import { Names } from "@/components/resources/Names";
+import { RequestLimits } from "@/components/resources/RequestLimits";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Label } from "@/components/ui/label";
+import { useBreadcrumbContext } from "@/contexts/breadcrumb-context";
+import { useGenerationContext } from "@/contexts/generation-context";
+import { useProfile } from "@/contexts/profile-context";
+import type { InputOf, OutputOf } from "@/lib/api/types";
+import type { ResourceType } from "@/lib/resources/types";
+import { Check, Loader2, Sparkles } from "lucide-react";
+import { parseAsString, type Parser } from "nuqs";
+
+// Types defined inline using InputOf/OutputOf
+type SaveStaffIn = InputOf<"/api/v4/staff/save", "post">;
+type SaveStaffOut = OutputOf<"/api/v4/staff/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
+type CreateDraftEmailsOut = OutputOf<"/api/v4/resources/emails", "post">;
+type CreateDraftRequestLimitsIn = InputOf<
+  "/api/v4/resources/request_limits",
+  "post"
+>;
+type CreateDraftRequestLimitsOut = OutputOf<
+  "/api/v4/resources/request_limits",
+  "post"
+>;
+
+type StaffData = OutputOf<"/api/v4/staff/get", "post">;
+
+export interface NewStaffComponentProps {
+  staffId?: string;
+  // Server-provided data (for server-side rendering)
+  staffData?: StaffData;
+  // Server actions (replaces useMutation)
+  saveStaffAction?: (input: SaveStaffIn) => Promise<SaveStaffOut>;
+  // Resource creation actions
+  createNamesAction?: (
+    input: CreateDraftNamesIn
+  ) => Promise<CreateDraftNamesOut>;
+  createFlagsAction?: (
+    input: CreateDraftFlagsIn
+  ) => Promise<CreateDraftFlagsOut>;
+  createDepartmentsAction?: (
+    input: CreateDraftDepartmentsIn
+  ) => Promise<CreateDraftDepartmentsOut>;
+  createEmailsAction?: (
+    input: CreateDraftEmailsIn
+  ) => Promise<CreateDraftEmailsOut>;
+  createRequestLimitsAction?: (
+    input: CreateDraftRequestLimitsIn
+  ) => Promise<CreateDraftRequestLimitsOut>;
+}
+
+function NewStaffComponent({
+  staffId,
+  staffData,
+  saveStaffAction,
+  createNamesAction,
+  createFlagsAction,
+  createDepartmentsAction,
+  createEmailsAction,
+  createRequestLimitsAction,
+}: NewStaffComponentProps) {
+  const router = useRouter();
+  const isEditMode = !!staffId;
+  const {
+    effectiveProfile,
+    selectedDraftId,
+    setSelectedDraftId,
+    socket,
+    isConnected,
+  } = useProfile();
+  const { setEntityMetadata, clearEntityMetadata } = useBreadcrumbContext();
+  const { setGenerationCapability, clearGenerationCapability } =
+    useGenerationContext();
+
+  // Generation state for AI workflows - simplified using ResourceType
+  const [generatingResources, setGeneratingResources] = useState<
+    Set<ResourceType>
+  >(new Set());
+
+  // Modal state for generate/regenerate
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [modalMode, setModalMode] = useState<"generate" | "regenerate" | null>(
+    null
+  );
+  const [modalResources, setModalResources] = useState<
+    GenerateRegenerateModalResource[]
+  >([]);
+  const [modalInstructions, setModalInstructions] = useState("");
+
+  const isGenerating = useCallback(
+    (resourceType: ResourceType) => generatingResources.has(resourceType),
+    [generatingResources]
+  );
+
+  // nuqs parsers for URL-backed state (will be passed to GenericForm)
+  // Memoize to prevent new object reference on every render
+  const staffSearchParamsClient = useMemo(
+    () => ({
+      // Draft ID (URL-backed, updated when draft is created)
+      draftId: parseAsString,
+    }),
+    []
+  );
+
+  // Local form state (not in URL) - stores only resource IDs
+  // Display values are managed inside resource components
+  // Use ref to store staffData to prevent callback recreation on every render
+  const staffDataRef = React.useRef(staffData);
+  React.useEffect(() => {
+    staffDataRef.current = staffData;
+  }, [staffData]);
+
+  // Memoize staffData fields used in renderStep to prevent callback recreation
+  // when only object reference changes (but content is same)
+  const stableStaffDataFields = React.useMemo(() => {
+    if (!staffData) return null;
+    return {
+      group_id: staffData.group_id,
+      first_name_resource: staffData.first_name_resource,
+      show_first_name: staffData.show_first_name,
+      first_name_suggestions: staffData.first_name_suggestions,
+      first_names: staffData.first_names,
+      first_name_required: staffData.first_name_required,
+      first_name_agent_id: staffData.first_name_agent_id,
+      last_name_resource: staffData.last_name_resource,
+      show_last_name: staffData.show_last_name,
+      last_name_suggestions: staffData.last_name_suggestions,
+      last_names: staffData.last_names,
+      last_name_required: staffData.last_name_required,
+      last_name_agent_id: staffData.last_name_agent_id,
+      flag_resource: staffData.flag_resource,
+      show_flag: staffData.show_flag,
+      flag_required: staffData.flag_required,
+      flag_agent_id: staffData.flag_agent_id,
+      flags: staffData.flags,
+      request_limit_resource: staffData.request_limit_resource,
+      show_request_limit: staffData.show_request_limit,
+      request_limit_required: staffData.request_limit_required,
+      request_limit_agent_id: staffData.request_limit_agent_id,
+      request_limit_suggestions: staffData.request_limit_suggestions,
+      request_limits: staffData.request_limits,
+      department_resources: staffData.department_resources,
+      show_departments: staffData.show_departments,
+      department_suggestions: staffData.department_suggestions,
+      departments_required: staffData.departments_required,
+      departments_agent_id: staffData.departments_agent_id,
+      departments: staffData.departments,
+      email_resources: staffData.email_resources,
+      show_emails: staffData.show_emails,
+      email_suggestions: staffData.email_suggestions,
+      emails_required: staffData.emails_required,
+      emails_agent_id: staffData.emails_agent_id,
+      emails: staffData.emails,
+      role_options: staffData.role_options,
+      valid_department_ids: staffData.valid_department_ids,
+      valid_cohort_ids: staffData.valid_cohort_ids,
+      cohorts: staffData.cohorts,
+    };
+    // Intentionally depend on individual fields, not whole staffData object
+    // to prevent recreation when only object reference changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    staffData?.group_id,
+    staffData?.first_name_resource,
+    staffData?.show_first_name,
+    staffData?.first_name_suggestions,
+    staffData?.first_names,
+    staffData?.first_name_required,
+    staffData?.first_name_agent_id,
+    staffData?.last_name_resource,
+    staffData?.show_last_name,
+    staffData?.last_name_suggestions,
+    staffData?.last_names,
+    staffData?.last_name_required,
+    staffData?.last_name_agent_id,
+    staffData?.flag_resource,
+    staffData?.show_flag,
+    staffData?.flag_required,
+    staffData?.flag_agent_id,
+    staffData?.flags,
+    staffData?.request_limit_resource,
+    staffData?.show_request_limit,
+    staffData?.request_limit_required,
+    staffData?.request_limit_agent_id,
+    staffData?.request_limit_suggestions,
+    staffData?.request_limits,
+    staffData?.department_resources,
+    staffData?.show_departments,
+    staffData?.department_suggestions,
+    staffData?.departments_required,
+    staffData?.departments_agent_id,
+    staffData?.departments,
+    staffData?.email_resources,
+    staffData?.show_emails,
+    staffData?.email_suggestions,
+    staffData?.emails_required,
+    staffData?.emails_agent_id,
+    staffData?.emails,
+    staffData?.role_options,
+    staffData?.valid_department_ids,
+    staffData?.valid_cohort_ids,
+    staffData?.cohorts,
+  ]);
+
+  // Helper to check if a resource type can be regenerated
+  // Use stableStaffDataFields to prevent callback recreation when staffData object reference changes
+  const canRegenerate = useCallback(
+    (resourceType: ResourceType): boolean => {
+      if (!stableStaffDataFields) return false;
+      switch (resourceType) {
+        case "names":
+          return (
+            stableStaffDataFields.first_name_resource?.generated ?? false ||
+            stableStaffDataFields.last_name_resource?.generated ?? false
+          );
+        case "flags":
+          return stableStaffDataFields.flag_resource?.generated ?? false;
+        case "request_limits":
+          return (
+            stableStaffDataFields.request_limit_resource?.generated ?? false
+          );
+        case "departments":
+          return (
+            stableStaffDataFields.department_resources?.some(
+              (d) => d.generated
+            ) ?? false
+          );
+        case "emails":
+          return (
+            stableStaffDataFields.email_resources?.some((e) => e.generated) ??
+            false
+          );
+        default:
+          return false;
+      }
+    },
+    [stableStaffDataFields]
+  );
+
+  const getInitialFormState = useCallback(() => {
+    const data = staffDataRef.current;
+    if (!data) {
+      return {
+        first_name_id: null as string | null,
+        last_name_id: null as string | null,
+        active_flag_id: null as string | null,
+        request_limit_id: null as string | null,
+        department_ids: [] as string[],
+        email_ids: [] as string[],
+        primary_email_index: 0 as number,
+        cohort_ids: [] as string[],
+        role: "instructional" as string,
+      };
+    }
+    // Extract resource IDs from server data
+    // Note: Server data may have display values, but we only store IDs here
+    return {
+      first_name_id: data.first_name_id ?? null,
+      last_name_id: data.last_name_id ?? null,
+      active_flag_id: data.active_flag_id ?? null,
+      request_limit_id: data.request_limit_id ?? null,
+      department_ids: data.department_ids ?? [],
+      email_ids: data.email_ids ?? [],
+      primary_email_index: data.primary_email_index ?? 0,
+      cohort_ids: data.cohort_ids ?? [],
+      role: data.role ?? "instructional",
+    };
+    // Remove staffData from dependencies - use ref instead to prevent callback recreation
+  }, []);
+
+  const [formState, setFormState] = useState(getInitialFormState);
+  // Use ref to access formState in renderStep without depending on it
+  const formStateRef = React.useRef(formState);
+  React.useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
+
+  // Memoize stringified array dependencies to prevent effect from running when array references change but content is same
+  const departmentIdsStr = React.useMemo(
+    () => JSON.stringify(staffData?.department_ids ?? []),
+    [staffData?.department_ids]
+  );
+  const emailIdsStr = React.useMemo(
+    () => JSON.stringify(staffData?.email_ids ?? []),
+    [staffData?.email_ids]
+  );
+  const cohortIdsStr = React.useMemo(
+    () => JSON.stringify(staffData?.cohort_ids ?? []),
+    [staffData?.cohort_ids]
+  );
+
+  // Memoize stringified formState arrays for draft listener effect dependencies
+  const formStateDepartmentIdsStr = React.useMemo(
+    () => JSON.stringify(formState.department_ids),
+    [formState.department_ids]
+  );
+  const formStateEmailIdsStr = React.useMemo(
+    () => JSON.stringify(formState.email_ids),
+    [formState.email_ids]
+  );
+  const formStateCohortIdsStr = React.useMemo(
+    () => JSON.stringify(formState.cohort_ids),
+    [formState.cohort_ids]
+  );
+
+  // Update form state when server data changes
+  // Use staffData directly in dependency array, not getInitialFormState
+  useEffect(() => {
+    const newState = getInitialFormState();
+    setFormState((prev) => {
+      // Only update if resource IDs actually changed
+      if (
+        prev.first_name_id !== newState.first_name_id ||
+        prev.last_name_id !== newState.last_name_id ||
+        prev.active_flag_id !== newState.active_flag_id ||
+        prev.request_limit_id !== newState.request_limit_id ||
+        JSON.stringify(prev.department_ids) !==
+          JSON.stringify(newState.department_ids) ||
+        JSON.stringify(prev.email_ids) !== JSON.stringify(newState.email_ids) ||
+        prev.primary_email_index !== newState.primary_email_index ||
+        JSON.stringify(prev.cohort_ids) !==
+          JSON.stringify(newState.cohort_ids) ||
+        prev.role !== newState.role
+      ) {
+        return newState;
+      }
+      return prev;
+    });
+    // Use stringified arrays in dependencies to prevent effect from running when array references change but content is same
+    // Intentionally exclude formState and getInitialFormState to prevent infinite loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    staffData?.first_name_id,
+    staffData?.last_name_id,
+    staffData?.active_flag_id,
+    staffData?.request_limit_id,
+    departmentIdsStr,
+    emailIdsStr,
+    cohortIdsStr,
+    staffData?.primary_email_index,
+    staffData?.role,
+  ]);
+
+  // Get draftId from GenericForm's URL state via bridge (GenericForm is single source of truth)
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const setUrlFormDataRef = React.useRef<
+    null | ((updates: Record<string, unknown>) => void)
+  >(null);
+
+  // Store formData from GenericForm to access search params
+  const formDataRef = React.useRef<Record<string, unknown>>({});
+
+  // Memoized callback to sync draftId from GenericForm - only update if value changed
+  const onFormDataChange = React.useCallback((fd: Record<string, unknown>) => {
+    // Store formData for access in handleGenerateResources
+    formDataRef.current = fd;
+    const next = (fd["draftId"] as string | undefined) ?? null;
+    setDraftId((prev) => (prev === next ? prev : next));
+  }, []);
+
+  // Sync URL draftId to profile context
+  useEffect(() => {
+    if (draftId !== selectedDraftId) {
+      setSelectedDraftId(draftId);
+    }
+  }, [draftId, selectedDraftId, setSelectedDraftId]);
+
+  // WebSocket handlers for AI generation - unified handler for all resource types
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    // Use single group_id from staffData (no need to track multiple)
+    const currentGroupId = staffData?.group_id;
+
+    const handleGenerationComplete = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      first_name_id?: string | null;
+      last_name_id?: string | null;
+      active_flag_id?: string | null;
+      request_limit_id?: string | null;
+      department_ids?: string[];
+      email_ids?: string[];
+      primary_email_index?: number;
+      message?: string;
+      success?: boolean;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "profile" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this staff or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "flags",
+        "request_limits",
+        "departments",
+        "emails",
+      ];
+      if (
+        data.resource_type &&
+        validResourceTypes.includes(data.resource_type as ResourceType)
+      ) {
+        // Update formState with the resource ID that was generated
+        // Only update the field that matches resource_type (others will be null)
+        setFormState((prev) => {
+          const updates: Partial<typeof prev> = {};
+
+          if (data.first_name_id) updates.first_name_id = data.first_name_id;
+          if (data.last_name_id) updates.last_name_id = data.last_name_id;
+          if (data.active_flag_id) updates.active_flag_id = data.active_flag_id;
+          if (data.request_limit_id)
+            updates.request_limit_id = data.request_limit_id;
+          if (data.department_ids && data.department_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newDeptIds = data.department_ids.filter(
+              (id) => !prev.department_ids.includes(id)
+            );
+            updates.department_ids = [...prev.department_ids, ...newDeptIds];
+          }
+          if (data.email_ids && data.email_ids.length > 0) {
+            // For arrays, append new IDs (avoid duplicates)
+            const newEmailIds = data.email_ids.filter(
+              (id) => !prev.email_ids.includes(id)
+            );
+            updates.email_ids = [...prev.email_ids, ...newEmailIds];
+            if (data.primary_email_index !== undefined) {
+              updates.primary_email_index = data.primary_email_index;
+            }
+          }
+
+          return { ...prev, ...updates };
+        });
+
+        setGeneratingResources((prev) => {
+          const next = new Set(prev);
+          next.delete(data.resource_type as ResourceType);
+          return next;
+        });
+        if (data.success) {
+          toast.success(
+            data.message || `${data.resource_type} generated successfully`
+          );
+        } else {
+          toast.error(
+            data.message || `Failed to generate ${data.resource_type}`
+          );
+        }
+      }
+    };
+
+    const handleGenerationProgress = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      resource_type?: string;
+      [key: string]: unknown;
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "profile" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this staff or wrong group_id
+      }
+      // Handle progress updates if needed
+    };
+
+    const handleGenerationError = (data: {
+      artifact_type?: string;
+      group_id?: string;
+      message?: string;
+      resource_type?: string;
+      resource_types?: string[];
+    }) => {
+      // Filter by artifact_type and group_id
+      if (
+        data.artifact_type !== "profile" ||
+        !data.group_id ||
+        data.group_id !== currentGroupId
+      ) {
+        return; // Not for this staff or wrong group_id
+      }
+
+      const validResourceTypes: ResourceType[] = [
+        "names",
+        "flags",
+        "request_limits",
+        "departments",
+        "emails",
+      ];
+      const resourceTypes =
+        data.resource_types || (data.resource_type ? [data.resource_type] : []);
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => {
+          if (validResourceTypes.includes(rt as ResourceType)) {
+            next.delete(rt as ResourceType);
+          }
+        });
+        return next;
+      });
+      toast.error(data.message || "Generation failed");
+    };
+
+    // Listen to staff-specific events filtered by artifact_type and group_id
+    socket.on("profile_generation_progress", handleGenerationProgress);
+    socket.on("profile_generation_complete", handleGenerationComplete);
+    socket.on("profile_generation_error", handleGenerationError);
+
+    return () => {
+      socket.off("profile_generation_progress", handleGenerationProgress);
+      socket.off("profile_generation_complete", handleGenerationComplete);
+      socket.off("profile_generation_error", handleGenerationError);
+    };
+  }, [socket, isConnected, staffData?.group_id]);
+
+  // Multi-generation handler - accepts list of resource types and optional user instructions
+  // Helper function to determine agent_type from resource types
+  const determineAgentType = useCallback(
+    (resourceTypes: ResourceType[]): string | null => {
+      const basicResources: ResourceType[] = [
+        "names",
+        "flags",
+        "departments",
+        "emails",
+      ];
+      const allResourceTypes: ResourceType[] = [
+        "names",
+        "flags",
+        "request_limits",
+        "departments",
+        "emails",
+      ];
+
+      const isBasicCombo =
+        resourceTypes.length === basicResources.length &&
+        resourceTypes.every((rt) => basicResources.includes(rt));
+      const isAllResources =
+        resourceTypes.length === allResourceTypes.length &&
+        resourceTypes.every((rt) => allResourceTypes.includes(rt));
+
+      if (isAllResources) {
+        return "general";
+      } else if (isBasicCombo) {
+        return "basic";
+      } else if (resourceTypes.length === 1) {
+        // Single resource type - map to agent_type
+        const agentTypeMap: Record<ResourceType, string> = {
+          names: "name",
+          flags: "flags",
+          departments: "departments",
+          emails: "emails",
+          request_limits: "request_limits",
+        };
+        const firstType = resourceTypes[0];
+        if (firstType && firstType in agentTypeMap) {
+          return agentTypeMap[firstType];
+        }
+      }
+      return null;
+    },
+    []
+  );
+
+  const handleGenerateResources = useCallback(
+    async (
+      resourceTypes: ResourceType[],
+      agentType: string | null,
+      userInstructions?: string
+    ) => {
+      if (!socket || !isConnected) {
+        toast.error("WebSocket not connected");
+        return;
+      }
+
+      // Set all resources as generating
+      setGeneratingResources((prev) => {
+        const next = new Set(prev);
+        resourceTypes.forEach((rt) => next.add(rt));
+        return next;
+      });
+
+      // Read search params from formData
+      const formData = formDataRef.current;
+      const draftId = (formData["draftId"] as string | undefined) ?? null;
+
+      // Emit profile_generate event with GetStaffApiRequest fields
+      socket.emit("profile_generate", {
+        resource_types: resourceTypes, // Simple array of strings
+        agent_type: agentType,
+        user_instructions: userInstructions ? [userInstructions] : null,
+        // GetStaffApiRequest fields from formData
+        draft_id: draftId || null,
+        mcp: false,
+        staff_id: staffId || null,
+      });
+    },
+    [socket, isConnected, staffId]
+  );
+
+  // Individual generation handlers - generate directly without modals
+  const handleGenerateFirstName = useCallback(
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateLastName = useCallback(
+    async () =>
+      handleGenerateResources(["names"], determineAgentType(["names"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateDepartments = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["departments"],
+        determineAgentType(["departments"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateFlags = useCallback(
+    async () =>
+      handleGenerateResources(["flags"], determineAgentType(["flags"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateEmails = useCallback(
+    async () =>
+      handleGenerateResources(["emails"], determineAgentType(["emails"])),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  const handleGenerateRequestLimits = useCallback(
+    async () =>
+      handleGenerateResources(
+        ["request_limits"],
+        determineAgentType(["request_limits"])
+      ),
+    [handleGenerateResources, determineAgentType]
+  );
+
+  // Disabled logic based on can_edit flag - standardized for all resource components
+  // Check can_edit in both new and edit modes to show disabled_reason when agents are missing
+  const disabled = useMemo(() => {
+    if (!staffData) return false;
+    return !staffData.can_edit;
+  }, [staffData]);
+
+  // Set breadcrumb context when staff data is loaded
+  useEffect(() => {
+    const staffName =
+      staffData?.first_name && staffData?.last_name
+        ? `${staffData.first_name} ${staffData.last_name}`
+        : staffData?.name;
+    if (staffName && staffId && isEditMode) {
+      setEntityMetadata({
+        entityId: staffId,
+        entityName: staffName,
+        entityType: "staff",
+      });
+    }
+    return () => clearEntityMetadata();
+  }, [
+    staffData,
+    staffId,
+    isEditMode,
+    setEntityMetadata,
+    clearEntityMetadata,
+  ]);
+
+  // Set generation capability when staff data is loaded
+  // Note: Staff doesn't have general_agent_id, so we'll use basic_agent_id or individual agent IDs
+  useEffect(() => {
+    // For staff, we don't have a general agent, so set canGenerate to false
+    // Individual resources can still be generated via their own agent IDs
+    setGenerationCapability({
+      artifactType: "profile",
+      canGenerate: false,
+      agentId: null,
+    });
+    return () => clearGenerationCapability();
+  }, [setGenerationCapability, clearGenerationCapability]);
+
+  // Submit handler for GenericForm (uses formState, not formData parameter)
+  const handleSubmit = useCallback(
+    async (_formData: Record<string, unknown>) => {
+      // Validate required resource IDs using {resource}_required flags from staffData
+      if (staffData?.first_name_required && !formState.first_name_id) {
+        toast.error("First name is required");
+        throw new Error("First name is required");
+      }
+
+      if (staffData?.last_name_required && !formState.last_name_id) {
+        toast.error("Last name is required");
+        throw new Error("Last name is required");
+      }
+
+      if (
+        staffData?.departments_required &&
+        (!formState.department_ids || formState.department_ids.length === 0)
+      ) {
+        toast.error("Departments are required");
+        throw new Error("Departments are required");
+      }
+
+      if (
+        staffData?.emails_required &&
+        (!formState.email_ids || formState.email_ids.length === 0)
+      ) {
+        toast.error("Emails are required");
+        throw new Error("Emails are required");
+      }
+
+      // Ensure profileId exists - required for API calls
+      if (!effectiveProfile?.id) {
+        toast.error("Profile not loaded. Please refresh the page.");
+        throw new Error("Profile not loaded");
+      }
+
+      if (!saveStaffAction) {
+        toast.error("Save action not available");
+        throw new Error("Save action not available");
+      }
+
+      // Ensure required fields are present (TypeScript guard)
+      if (!formState.first_name_id || !formState.last_name_id) {
+        toast.error("Required fields are missing");
+        throw new Error("Required fields are missing");
+      }
+
+      try {
+        // Get email texts from email_resources
+        const emailTexts =
+          formState.email_ids.length > 0 && staffData?.email_resources
+            ? formState.email_ids
+                .map((id) => {
+                  const emailResource = staffData.email_resources?.find(
+                    (e) => e.id === id
+                  );
+                  return emailResource?.email ?? null;
+                })
+                .filter((e): e is string => e !== null)
+            : [];
+
+        await saveStaffAction({
+          body: {
+            input_staff_id: isEditMode && staffId ? staffId : null,
+            first_name_id: formState.first_name_id,
+            last_name_id: formState.last_name_id,
+            active_flag_id: formState.active_flag_id || null,
+            request_limit_id: formState.request_limit_id || null,
+            department_ids: formState.department_ids || [],
+            cohort_ids: formState.cohort_ids || [],
+            role: formState.role || "instructional",
+            emails: emailTexts,
+            primary_email_index: formState.primary_email_index ?? 0,
+          },
+        });
+        toast.success(
+          `Staff ${isEditMode ? "updated" : "created"} successfully!`
+        );
+        router.push("/management/staff");
+      } catch (error) {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} staff: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+        throw error;
+      }
+    },
+    [
+      formState,
+      isEditMode,
+      staffId,
+      effectiveProfile?.id,
+      saveStaffAction,
+      router,
+      staffData?.first_name_required,
+      staffData?.last_name_required,
+      staffData?.departments_required,
+      staffData?.emails_required,
+      staffData?.emails,
+    ]
+  );
+
+  // Step status logic (for GenericForm) - check resource IDs instead of display values
+  const getStepStatus = useCallback(
+    (stepId: string, _formData: Record<string, unknown>): StepStatus => {
+      // Check resource IDs from formState (components manage their own display state)
+      const hasFirstName = !!formState.first_name_id;
+      const hasLastName = !!formState.last_name_id;
+      const hasDepartments = formState.department_ids.length > 0;
+      const hasEmails = formState.email_ids.length > 0;
+
+      switch (stepId) {
+        case "basic":
+          return hasFirstName && hasLastName ? "completed" : "active";
+        case "contact":
+          if (!hasFirstName || !hasLastName) return "pending";
+          return hasEmails ? "completed" : "active";
+        case "organization":
+          if (!hasFirstName || !hasLastName) return "pending";
+          return hasDepartments ? "completed" : "active";
+        default:
+          return "pending";
+      }
+    },
+    [formState]
+  );
+
+  // Step-to-resources mapping for multi-generation
+  const stepResources: Record<string, ResourceType[]> = useMemo(
+    () => ({
+      basic: ["names", "flags"],
+      contact: ["emails", "request_limits"],
+      organization: ["departments"],
+      all: [
+        "names",
+        "flags",
+        "request_limits",
+        "departments",
+        "emails",
+      ], // All resources for full-page generation
+    }),
+    []
+  );
+
+  // Resource labels for display
+  const resourceLabels: Record<ResourceType, string> = useMemo(
+    () => ({
+      names: "Names",
+      flags: "Flags",
+      departments: "Departments",
+      emails: "Emails",
+      request_limits: "Request Limits",
+    }),
+    []
+  );
+
+  // Handler to open modal for step card generation
+  const handleOpenStepCardModal = useCallback(
+    (stepId: string, mode: "generate" | "regenerate") => {
+      const resourceTypes = stepResources[stepId] || [];
+      const resources: GenerateRegenerateModalResource[] = resourceTypes.map(
+        (rt) => ({
+          id: rt,
+          label: resourceLabels[rt],
+          active: mode === "regenerate" ? canRegenerate(rt) : true,
+        })
+      );
+
+      setModalResources(resources);
+      setModalMode(mode);
+      setModalInstructions("");
+      setShowGenerateModal(true);
+    },
+    [stepResources, resourceLabels, canRegenerate]
+  );
+
+  // Handler for modal generate/regenerate action
+  const handleModalGenerate = useCallback(
+    async (selectedResources: string[], instructions: string) => {
+      const resourceTypes = selectedResources as ResourceType[];
+      const agentType = determineAgentType(resourceTypes);
+      await handleGenerateResources(
+        resourceTypes,
+        agentType,
+        instructions.trim() || undefined
+      );
+      setShowGenerateModal(false);
+      setModalInstructions("");
+    },
+    [handleGenerateResources, determineAgentType]
+  );
+
+  // Steps configuration for GenericForm
+  const steps = useMemo(
+    () => [
+      {
+        id: "basic",
+        title: "Basic Information",
+        description: "Set the staff member's name and active status.",
+        resetFields: ["first_name", "last_name", "active"],
+      },
+      {
+        id: "contact",
+        title: "Contact Information",
+        description: "Set email addresses and request limits.",
+        resetFields: ["emails", "request_limit"],
+      },
+      {
+        id: "organization",
+        title: "Organization",
+        description: "Assign departments and cohorts.",
+        resetFields: ["department_ids", "cohort_ids", "role"],
+      },
+    ],
+    []
+  );
+
+  // Memoize formFieldKeys to prevent re-initialization loops
+  const formFieldKeys = useMemo(
+    () => [
+      "first_name",
+      "last_name",
+      "active",
+      "emails",
+      "request_limit",
+      "department_ids",
+      "cohort_ids",
+      "role",
+    ],
+    []
+  );
+
+  // Memoize resetSuccessMessage to prevent GenericForm re-renders
+  const resetSuccessMessage = useCallback((stepId: string) => {
+    switch (stepId) {
+      case "basic":
+        return "Basic information reset";
+      case "contact":
+        return "Contact information reset";
+      case "organization":
+        return "Organization reset";
+      default:
+        return "Reset";
+    }
+  }, []);
+
+  // Memoize submitButton to prevent GenericForm re-renders
+  const submitButton = useMemo(
+    () => ({
+      backUrl: "/management/staff",
+      backLabel: "Back",
+      createLabel: "Create Staff",
+      updateLabel: "Update Staff",
+    }),
+    []
+  );
+
+  // Memoize renderStep to prevent GenericForm re-renders
+  const renderStep = useCallback(
+    ({
+      stepId,
+      stepStatus,
+      stepTitle,
+      stepDescription,
+      stepNumber,
+      formData: stepFormData,
+      setFormData: setStepFormData,
+      onReset,
+    }: {
+      stepId: string;
+      stepTitle: string;
+      stepDescription: string;
+      stepNumber: number;
+      stepStatus: StepStatus;
+      isOptional: boolean;
+      formData: Record<string, unknown>;
+      setFormData: (updates: Partial<Record<string, unknown>>) => void;
+      filters?: Array<{
+        key: string;
+        label: string;
+        value: boolean;
+        onChange: (value: boolean) => void;
+      }>;
+      onReset?: () => void;
+    }) => {
+      // Use memoized fields to avoid dependency on staffData object reference
+      const currentStaffData = stableStaffDataFields;
+      switch (stepId) {
+        case "basic":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              customHeader={
+                <div className="flex items-end gap-2">
+                  <Names
+                    name_id={formState.first_name_id ?? null}
+                    name_resource={currentStaffData?.first_name_resource ?? null}
+                    show_name={currentStaffData?.show_first_name ?? true}
+                    name_suggestions={
+                      currentStaffData?.first_name_suggestions ?? []
+                    }
+                    names={currentStaffData?.first_names ?? []}
+                    disabled={disabled}
+                    onNameIdChange={(nameId) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        first_name_id: nameId,
+                      }))
+                    }
+                    onGenerate={handleGenerateFirstName}
+                    isGenerating={isGenerating("names")}
+                    placeholder="e.g., John"
+                    defaultName="First Name"
+                    required={currentStaffData?.first_name_required ?? false}
+                    hideDescription={true}
+                    group_id={currentStaffData?.group_id ?? null}
+                    agent_id={currentStaffData?.first_name_agent_id ?? null}
+                    createNamesAction={
+                      createNamesAction as
+                        | ((
+                            input: CreateDraftNamesIn
+                          ) => Promise<CreateDraftNamesOut>)
+                        | undefined
+                    }
+                  />
+                  <Names
+                    name_id={formState.last_name_id ?? null}
+                    name_resource={currentStaffData?.last_name_resource ?? null}
+                    show_name={currentStaffData?.show_last_name ?? true}
+                    name_suggestions={
+                      currentStaffData?.last_name_suggestions ?? []
+                    }
+                    names={currentStaffData?.last_names ?? []}
+                    disabled={disabled}
+                    onNameIdChange={(nameId) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        last_name_id: nameId,
+                      }))
+                    }
+                    onGenerate={handleGenerateLastName}
+                    isGenerating={isGenerating("names")}
+                    placeholder="e.g., Doe"
+                    defaultName="Last Name"
+                    required={currentStaffData?.last_name_required ?? false}
+                    hideDescription={true}
+                    group_id={currentStaffData?.group_id ?? null}
+                    agent_id={currentStaffData?.last_name_agent_id ?? null}
+                    createNamesAction={
+                      createNamesAction as
+                        | ((
+                            input: CreateDraftNamesIn
+                          ) => Promise<CreateDraftNamesOut>)
+                        | undefined
+                    }
+                  />
+                </div>
+              }
+              resetFields={["first_name", "last_name", "active"]}
+              actions={
+                stepResources["basic"] &&
+                stepResources["basic"].length > 0 ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "basic"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "basic",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["basic"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["basic"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["basic"]!.some((rt) => canRegenerate(rt))
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <div className="space-y-4">
+                {/* Active Switch - using Flags resource component */}
+                <Flags
+                  flag_id={formState.active_flag_id ?? null}
+                  flag_resource={currentStaffData?.flag_resource ?? null}
+                  show_flag={currentStaffData?.show_flag ?? false}
+                  disabled={disabled}
+                  onFlagIdChange={(flagId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      active_flag_id: flagId,
+                    }))
+                  }
+                  onGenerate={handleGenerateFlags}
+                  isGenerating={isGenerating("flags")}
+                  label="Active"
+                  helpText="Inactive staff members will not be able to access the system"
+                  required={currentStaffData?.flag_required ?? false}
+                  group_id={currentStaffData?.group_id ?? null}
+                  agent_id={currentStaffData?.flag_agent_id ?? null}
+                  createFlagsAction={createFlagsAction}
+                />
+              </div>
+            </StepCard>
+          );
+
+        case "contact":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["emails", "request_limit"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              actions={
+                stepResources["contact"] &&
+                stepResources["contact"].length > 0 ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "contact"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "contact",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["contact"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["contact"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["contact"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
+            >
+              <div className="space-y-4">
+                {/* Emails */}
+                <Emails
+                  email_ids={formState.email_ids ?? []}
+                  email_resources={currentStaffData?.email_resources ?? []}
+                  show_emails={currentStaffData?.show_emails ?? true}
+                  email_suggestions={currentStaffData?.email_suggestions ?? []}
+                  emails={currentStaffData?.emails ?? []}
+                  disabled={disabled}
+                  onChange={(ids, primaryIndex) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      email_ids: ids,
+                      primary_email_index: primaryIndex,
+                    }))
+                  }
+                  primary_email_index={formState.primary_email_index ?? 0}
+                  onGenerate={handleGenerateEmails}
+                  isGenerating={isGenerating("emails")}
+                  required={currentStaffData?.emails_required ?? false}
+                  group_id={currentStaffData?.group_id ?? null}
+                  agent_id={currentStaffData?.emails_agent_id ?? null}
+                  createEmailsAction={createEmailsAction}
+                />
+
+                {/* Request Limits */}
+                <RequestLimits
+                  request_limit_id={formState.request_limit_id ?? null}
+                  request_limit_resource={
+                    currentStaffData?.request_limit_resource ?? null
+                  }
+                  show_request_limit={
+                    currentStaffData?.show_request_limit ?? true
+                  }
+                  request_limit_suggestions={
+                    currentStaffData?.request_limit_suggestions ?? []
+                  }
+                  request_limits={currentStaffData?.request_limits ?? []}
+                  disabled={disabled}
+                  onRequestLimitIdChange={(requestLimitId) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      request_limit_id: requestLimitId,
+                    }))
+                  }
+                  onGenerate={handleGenerateRequestLimits}
+                  isGenerating={isGenerating("request_limits")}
+                  required={currentStaffData?.request_limit_required ?? false}
+                  group_id={currentStaffData?.group_id ?? null}
+                  agent_id={currentStaffData?.request_limit_agent_id ?? null}
+                  createRequestLimitsAction={createRequestLimitsAction}
+                />
+              </div>
+            </StepCard>
+          );
+
+        case "organization":
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["department_ids", "cohort_ids", "role"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+              actions={
+                stepResources["organization"] &&
+                stepResources["organization"].length > 0 ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const hasRegeneratable = stepResources[
+                              "organization"
+                            ]!.some((rt) => canRegenerate(rt));
+                            handleOpenStepCardModal(
+                              "organization",
+                              hasRegeneratable ? "regenerate" : "generate"
+                            );
+                          }}
+                          disabled={
+                            disabled ||
+                            stepResources["organization"]!.some((rt) =>
+                              isGenerating(rt)
+                            )
+                          }
+                        >
+                          {stepResources["organization"]!.some((rt) =>
+                            isGenerating(rt)
+                          ) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {stepResources["organization"]!.some((rt) =>
+                          canRegenerate(rt)
+                        )
+                          ? "Regenerate"
+                          : "Generate"}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : undefined
+              }
+            >
+              <div className="space-y-4">
+                {/* Department Selection */}
+                <Departments
+                  department_ids={formState.department_ids ?? []}
+                  department_resources={
+                    currentStaffData?.department_resources ?? []
+                  }
+                  show_departments={
+                    currentStaffData?.show_departments ?? false
+                  }
+                  department_suggestions={
+                    currentStaffData?.department_suggestions ?? []
+                  }
+                  departments={currentStaffData?.departments ?? []}
+                  disabled={disabled}
+                  onChange={(ids) =>
+                    setFormState((prev) => ({ ...prev, department_ids: ids }))
+                  }
+                  onGenerate={handleGenerateDepartments}
+                  isGenerating={isGenerating("departments")}
+                  required={currentStaffData?.departments_required ?? false}
+                  group_id={currentStaffData?.group_id ?? null}
+                  agent_id={currentStaffData?.departments_agent_id ?? null}
+                  createDepartmentsAction={createDepartmentsAction}
+                />
+
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="role">
+                    Role
+                    <span className="text-destructive ml-1">*</span>
+                  </Label>
+                  <Select
+                    value={formState.role}
+                    onValueChange={(value) =>
+                      setFormState((prev) => ({ ...prev, role: value }))
+                    }
+                    disabled={disabled}
+                  >
+                    <SelectTrigger id="role">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(currentStaffData?.role_options ?? []).map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {role.charAt(0).toUpperCase() + role.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Cohorts Selection - using GenericPicker for cohorts (artifacts, not resources) */}
+                {currentStaffData?.cohorts &&
+                  currentStaffData.cohorts.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="cohorts">Cohorts</Label>
+                      <GenericPicker<{
+                        id: string;
+                        name: string;
+                        description?: string;
+                      }>
+                        items={currentStaffData.cohorts
+                          .filter(
+                            (c) => c.cohort_id && c.name
+                          )
+                          .map((c) => ({
+                            id: c.cohort_id!,
+                            name: c.name!,
+                            description: c.description ?? undefined,
+                          }))}
+                        itemIds={currentStaffData.cohorts
+                          .map((c) => c.cohort_id)
+                          .filter((id): id is string => id !== null)}
+                        selectedIds={formState.cohort_ids ?? []}
+                        onSelect={(ids) =>
+                          setFormState((prev) => ({
+                            ...prev,
+                            cohort_ids: ids,
+                          }))
+                        }
+                        multiSelect={true}
+                        getId={(item) => item.id}
+                        getLabel={(item) => item.name}
+                        renderItem={(item, isSelected) => (
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate">{item.name}</div>
+                                {item.description && (
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {item.description}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <Check
+                              className={cn(
+                                "ml-auto flex-shrink-0 h-4 w-4",
+                                isSelected ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                          </div>
+                        )}
+                        placeholder="Select cohorts..."
+                        disabled={disabled}
+                        showLabel={false}
+                        hideSelectedChips={false}
+                        showClearAll={true}
+                      />
+                    </div>
+                  )}
+              </div>
+            </StepCard>
+          );
+
+        default:
+          return null;
+      }
+    },
+    [
+      // Use stableStaffDataFields instead of staffData to prevent callback recreation
+      // when only object reference changes (but content is same)
+      stableStaffDataFields,
+      disabled,
+      isEditMode,
+      handleGenerateFirstName,
+      handleGenerateLastName,
+      handleGenerateDepartments,
+      handleGenerateFlags,
+      handleGenerateEmails,
+      handleGenerateRequestLimits,
+      isGenerating,
+      stepResources,
+      // Depend on individual formState fields instead of whole object to prevent callback recreation
+      // when object reference changes but values are same
+      formState.first_name_id,
+      formState.last_name_id,
+      formState.active_flag_id,
+      formState.request_limit_id,
+      formState.email_ids,
+      formState.primary_email_index,
+      formState.department_ids,
+      formState.cohort_ids,
+      formState.role,
+      createNamesAction,
+      createFlagsAction,
+      createDepartmentsAction,
+      createEmailsAction,
+      createRequestLimitsAction,
+      canRegenerate,
+      handleOpenStepCardModal,
+    ]
+  );
+
+  return (
+    <TooltipProvider>
+      <div
+        className="w-full p-6 space-y-8"
+        data-page={`staff-${isEditMode ? "edit" : "new"}`}
+      >
+        <ReadOnlyBanner
+          disabled={disabled}
+          disabledReason={staffData?.disabled_reason ?? null}
+          entityType="staff"
+        />
+
+        <GenericForm
+          nuqsParsers={
+            staffSearchParamsClient as Record<string, Parser<unknown>>
+          }
+          steps={steps}
+          getStepStatus={getStepStatus}
+          serverData={staffData}
+          formFieldKeys={formFieldKeys}
+          resetSuccessMessage={resetSuccessMessage}
+          onSubmit={handleSubmit}
+          submitButton={submitButton}
+          isReadonly={disabled}
+          isEditMode={isEditMode}
+          renderStep={renderStep}
+          onFormDataChange={onFormDataChange}
+          registerSetFormData={(setter) => {
+            setUrlFormDataRef.current = setter;
+          }}
+        />
+
+        {/* Generate/Regenerate Modal */}
+        {modalMode && (
+          <GenerateRegenerateModal
+            open={showGenerateModal}
+            onOpenChange={setShowGenerateModal}
+            resources={modalResources}
+            onResourcesChange={setModalResources}
+            instructions={modalInstructions}
+            onInstructionsChange={setModalInstructions}
+            onGenerate={handleModalGenerate}
+            isGenerating={modalResources.some((r) =>
+              isGenerating(r.id as ResourceType)
+            )}
+            mode={modalMode}
+          />
+        )}
+      </div>
+    </TooltipProvider>
+  );
+}
+
+// Memoize component to prevent re-renders when only prop references change (content is same)
+export default React.memo(NewStaffComponent, (prevProps, nextProps) => {
+  // Compare staffData by resource IDs, not object reference
+  const prevIds = {
+    first_name_id: prevProps.staffData?.first_name_id,
+    last_name_id: prevProps.staffData?.last_name_id,
+    active_flag_id: prevProps.staffData?.active_flag_id,
+    request_limit_id: prevProps.staffData?.request_limit_id,
+    department_ids: prevProps.staffData?.department_ids,
+    email_ids: prevProps.staffData?.email_ids,
+    cohort_ids: prevProps.staffData?.cohort_ids,
+    role: prevProps.staffData?.role,
+  };
+  const nextIds = {
+    first_name_id: nextProps.staffData?.first_name_id,
+    last_name_id: nextProps.staffData?.last_name_id,
+    active_flag_id: nextProps.staffData?.active_flag_id,
+    request_limit_id: nextProps.staffData?.request_limit_id,
+    department_ids: nextProps.staffData?.department_ids,
+    email_ids: nextProps.staffData?.email_ids,
+    cohort_ids: nextProps.staffData?.cohort_ids,
+    role: nextProps.staffData?.role,
+  };
+
+  // Compare primitive props
+  if (
+    prevProps.staffId !== nextProps.staffId ||
+    JSON.stringify(prevIds) !== JSON.stringify(nextIds)
+  ) {
+    return false; // Props changed, re-render
+  }
+
+  // Compare function props by reference (should be stable from server actions)
+  if (
+    prevProps.saveStaffAction !== nextProps.saveStaffAction ||
+    prevProps.createNamesAction !== nextProps.createNamesAction ||
+    prevProps.createFlagsAction !== nextProps.createFlagsAction ||
+    prevProps.createDepartmentsAction !== nextProps.createDepartmentsAction ||
+    prevProps.createEmailsAction !== nextProps.createEmailsAction ||
+    prevProps.createRequestLimitsAction !== nextProps.createRequestLimitsAction
+  ) {
+    return false; // Function props changed, re-render
+  }
+
+  // All props are equivalent, skip re-render
+  return true;
+});

@@ -5,7 +5,7 @@
  * 12/04/2025
  */
 
-import StaffNewEdit from "@/components/staff/StaffNewEdit";
+import NewStaffComponent from "@/components/staff/NewStaffComponent";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -13,38 +13,91 @@ import { createLoader, parseAsString } from "nuqs/server";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type StaffNewIn = InputOf<"/api/v4/staff/new", "post">;
-type StaffNewOut = OutputOf<"/api/v4/staff/new", "post">;
-type CreateStaffIn = InputOf<"/api/v4/staff/create", "post">;
-type CreateStaffOut = OutputOf<"/api/v4/staff/create", "post">;
-type PatchStaffDraftIn = InputOf<"/api/v4/staff/draft", "patch">;
-type PatchStaffDraftOut = OutputOf<"/api/v4/staff/draft", "patch">;
+type GetStaffIn = InputOf<"/api/v4/staff/get", "post">;
+type GetStaffOut = OutputOf<"/api/v4/staff/get", "post">;
+type SaveStaffIn = InputOf<"/api/v4/staff/save", "post">;
+type SaveStaffOut = OutputOf<"/api/v4/staff/save", "post">;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftEmailsIn = InputOf<"/api/v4/resources/emails", "post">;
+type CreateDraftEmailsOut = OutputOf<"/api/v4/resources/emails", "post">;
+type CreateDraftRequestLimitsIn = InputOf<
+  "/api/v4/resources/request_limits",
+  "post"
+>;
+type CreateDraftRequestLimitsOut = OutputOf<
+  "/api/v4/resources/request_limits",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ---- */
-const getStaffNew = cache(async (input: StaffNewIn): Promise<StaffNewOut> => {
-  return api.post("/staff/new", input, {
-    cache: "no-store",
-    headers: {
-      "X-Bypass-Cache": "1",
-    },
-  });
-});
+const getStaffDefault = cache(
+  async (input: GetStaffIn): Promise<GetStaffOut> => {
+    return api.post("/staff/get", input, {
+      cache: "no-store",
+      headers: {
+        "X-Bypass-Cache": "1",
+      },
+    });
+  }
+);
 
-/** ---- Strongly-typed server actions ---- */
-async function createStaff(input: CreateStaffIn): Promise<CreateStaffOut> {
-  "use server";
-
-  return api.post("/staff/create", {
-    body: { ...input.body },
-  });
-}
-
-async function patchStaffDraft(
-  input: PatchStaffDraftIn
-): Promise<PatchStaffDraftOut> {
+/** ---- Strongly-typed server actions (single source of truth) ---- */
+async function saveStaff(input: SaveStaffIn): Promise<SaveStaffOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.patch("/staff/draft", input);
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/staff/save", input);
+}
+
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/names", input);
+}
+
+async function createDraftFlags(
+  input: CreateDraftFlagsIn
+): Promise<CreateDraftFlagsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/flags", input);
+}
+
+async function createDraftDepartments(
+  input: CreateDraftDepartmentsIn
+): Promise<CreateDraftDepartmentsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/departments", input);
+}
+
+async function createDraftEmails(
+  input: CreateDraftEmailsIn
+): Promise<CreateDraftEmailsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/emails", input);
+}
+
+async function createDraftRequestLimits(
+  input: CreateDraftRequestLimitsIn
+): Promise<CreateDraftRequestLimitsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/request_limits", input);
 }
 
 /** ---- Metadata ---- */
@@ -85,12 +138,13 @@ export default async function NewStaffPage({
   const q = loadStaffSearchParams(searchParamsObj);
 
   // Fetch default staff detail server-side with draft_id
-  const input: StaffNewIn = {
+  const input: GetStaffIn = {
     body: {
+      staff_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-    } as StaffNewIn["body"],
+    } as GetStaffIn["body"],
   };
-  const staffDetailDefault = await getStaffNew(input);
+  const staffDetailDefault = await getStaffDefault(input);
 
   return (
     <div
@@ -98,22 +152,18 @@ export default async function NewStaffPage({
       data-page="staff-new"
       aria-label="Create new staff page"
     >
-      <StaffNewEdit
-        mode="create"
-        staffDetailDefault={staffDetailDefault}
-        createStaffAction={createStaff}
-        patchStaffDraftAction={patchStaffDraft}
+      <NewStaffComponent
+        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+        staffData={staffDetailDefault}
+        saveStaffAction={saveStaff}
+        createNamesAction={createDraftNames}
+        createFlagsAction={createDraftFlags}
+        createDepartmentsAction={createDraftDepartments}
+        createEmailsAction={createDraftEmails}
+        createRequestLimitsAction={createDraftRequestLimits}
       />
     </div>
   );
 }
 
-/** ---- Export types for client component (type-only imports) ---- */
-export type {
-  CreateStaffIn,
-  CreateStaffOut,
-  PatchStaffDraftIn,
-  PatchStaffDraftOut,
-  StaffNewIn,
-  StaffNewOut,
-};
+// Types are now defined inline in components using InputOf/OutputOf

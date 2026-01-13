@@ -27704,6 +27704,217 @@ class GetCreateStaffDataApiResponse(BaseModel):
 
 
 
+# Generated from: get_staff
+
+class GetStaffSqlParams(BaseModel):
+
+    profile_id: UUID
+    staff_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.staff_id,
+            self.draft_id,
+            self.mcp,
+        )
+
+class QGetStaffV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetStaffV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetStaffV4EmailResource(BaseModel):
+
+    id: UUID | None
+    email: str | None
+    generated: bool | None
+
+
+
+
+class QGetStaffV4FlagResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetStaffV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
+class QGetStaffV4RequestLimitResource(BaseModel):
+
+    id: UUID | None
+    requests_per_day: int | None
+    generated: bool | None
+
+class GetStaffSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    staff_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    first_name_id: UUID | None = None
+    first_name_resource: QGetStaffV4NameResource | None = None
+    show_first_name: bool | None = None
+    first_name_agent_id: UUID | None = None
+    first_name_required: bool | None = None
+    first_name_suggestions: list[UUID] | None = None
+    first_names: list[QGetStaffV4NameResource] | None = None
+    last_name_id: UUID | None = None
+    last_name_resource: QGetStaffV4NameResource | None = None
+    show_last_name: bool | None = None
+    last_name_agent_id: UUID | None = None
+    last_name_required: bool | None = None
+    last_name_suggestions: list[UUID] | None = None
+    last_names: list[QGetStaffV4NameResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetStaffV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetStaffV4FlagResource] | None = None
+    request_limit_id: UUID | None = None
+    request_limit_resource: QGetStaffV4RequestLimitResource | None = None
+    show_request_limit: bool | None = None
+    request_limit_agent_id: UUID | None = None
+    request_limit_required: bool | None = None
+    request_limit_suggestions: list[UUID] | None = None
+    request_limits: list[QGetStaffV4RequestLimitResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetStaffV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetStaffV4Department] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohorts: list[QGetStaffV4Cohort] | None = None
+    email_ids: list[UUID] | None = None
+    email_resources: list[QGetStaffV4EmailResource] | None = None
+    show_emails: bool | None = None
+    emails_agent_id: UUID | None = None
+    emails_required: bool | None = None
+    email_suggestions: list[UUID] | None = None
+    emails: list[QGetStaffV4EmailResource] | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    emails_text: list[str] | None = None
+    primary_email: str | None = None
+    primary_email_index: int | None = None
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    primary_department_id: str | None = None
+    primary_department_index: int | None = None
+    valid_department_ids: list[str] | None = None
+    valid_cohort_ids: list[str] | None = None
+    role_options: list[str] | None = None
+    draft_version: int | None = None
+
+class GetStaffApiRequest(BaseModel):
+
+    staff_id: UUID | None = None
+    draft_id: UUID | None = None
+    mcp: bool | None = False
+
+class GetStaffApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    staff_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    first_name_id: UUID | None = None
+    first_name_resource: QGetStaffV4NameResource | None = None
+    show_first_name: bool | None = None
+    first_name_agent_id: UUID | None = None
+    first_name_required: bool | None = None
+    first_name_suggestions: list[UUID] | None = None
+    first_names: list[QGetStaffV4NameResource] | None = None
+    last_name_id: UUID | None = None
+    last_name_resource: QGetStaffV4NameResource | None = None
+    show_last_name: bool | None = None
+    last_name_agent_id: UUID | None = None
+    last_name_required: bool | None = None
+    last_name_suggestions: list[UUID] | None = None
+    last_names: list[QGetStaffV4NameResource] | None = None
+    active_flag_id: UUID | None = None
+    flag_resource: QGetStaffV4FlagResource | None = None
+    show_flag: bool | None = None
+    flag_agent_id: UUID | None = None
+    flag_required: bool | None = None
+    flags: list[QGetStaffV4FlagResource] | None = None
+    request_limit_id: UUID | None = None
+    request_limit_resource: QGetStaffV4RequestLimitResource | None = None
+    show_request_limit: bool | None = None
+    request_limit_agent_id: UUID | None = None
+    request_limit_required: bool | None = None
+    request_limit_suggestions: list[UUID] | None = None
+    request_limits: list[QGetStaffV4RequestLimitResource] | None = None
+    department_ids: list[UUID] | None = None
+    department_resources: list[QGetStaffV4Department] | None = None
+    show_departments: bool | None = None
+    departments_agent_id: UUID | None = None
+    departments_required: bool | None = None
+    department_suggestions: list[UUID] | None = None
+    departments: list[QGetStaffV4Department] | None = None
+    cohort_ids: list[UUID] | None = None
+    cohorts: list[QGetStaffV4Cohort] | None = None
+    email_ids: list[UUID] | None = None
+    email_resources: list[QGetStaffV4EmailResource] | None = None
+    show_emails: bool | None = None
+    emails_agent_id: UUID | None = None
+    emails_required: bool | None = None
+    email_suggestions: list[UUID] | None = None
+    emails: list[QGetStaffV4EmailResource] | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    emails_text: list[str] | None = None
+    primary_email: str | None = None
+    primary_email_index: int | None = None
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    primary_department_id: str | None = None
+    primary_department_index: int | None = None
+    valid_department_ids: list[str] | None = None
+    valid_cohort_ids: list[str] | None = None
+    role_options: list[str] | None = None
+    draft_version: int | None = None
+
+
+
 # Generated from: get_staff_detail
 
 class GetStaffDetailSqlParams(BaseModel):
@@ -28111,6 +28322,62 @@ class ProcessCsvApiResponse(BaseModel):
     success: bool | None = None
     headers: list[str] | None = None
     rows: list[QProcessCsvV4ProcessedRow] | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: save_staff
+
+class SaveStaffSqlParams(BaseModel):
+
+    first_name_id: UUID
+    last_name_id: UUID
+    department_ids: list[UUID]
+    cohort_ids: list[UUID]
+    profile_id: UUID
+    input_staff_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    request_limit_id: UUID | None = None
+    role: str | None = None
+    emails: list[str] | None = None
+    primary_email_index: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.first_name_id,
+            self.last_name_id,
+            self.department_ids,
+            self.cohort_ids,
+            self.profile_id,
+            self.input_staff_id,
+            self.active_flag_id,
+            self.request_limit_id,
+            self.role,
+            self.emails,
+            self.primary_email_index,
+        )
+
+class SaveStaffSqlRow(BaseModel):
+
+    staff_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveStaffApiRequest(BaseModel):
+
+    first_name_id: UUID
+    last_name_id: UUID
+    department_ids: list[UUID]
+    cohort_ids: list[UUID]
+    input_staff_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    request_limit_id: UUID | None = None
+    role: str | None = None
+    emails: list[str] | None = None
+    primary_email_index: int | None = None
+
+class SaveStaffApiResponse(BaseModel):
+
+    staff_id: UUID | None = None
     actor_name: str | None = None
 
 
@@ -31649,6 +31916,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetCreateStaffDataApiRequest",
         "GetCreateStaffDataApiResponse",
     ),
+    "app/sql/v4/staff/get_staff_complete.sql": (
+        "GetStaffSqlParams",
+        "GetStaffSqlRow",
+        "GetStaffApiRequest",
+        "GetStaffApiResponse",
+    ),
     "app/sql/v4/staff/get_staff_detail_complete.sql": (
         "GetStaffDetailSqlParams",
         "GetStaffDetailSqlRow",
@@ -31678,6 +31951,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProcessCsvSqlRow",
         "ProcessCsvApiRequest",
         "ProcessCsvApiResponse",
+    ),
+    "app/sql/v4/staff/save_staff_complete.sql": (
+        "SaveStaffSqlParams",
+        "SaveStaffSqlRow",
+        "SaveStaffApiRequest",
+        "SaveStaffApiResponse",
     ),
     "app/sql/v4/staff/upsert_staff_complete.sql": (
         "UpsertStaffSqlParams",
@@ -34152,6 +34431,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/staff/get_staff_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/staff/get_staff_detail_complete.sql"]
     ) -> SqlString: ...
 
@@ -34173,6 +34457,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/staff/process_csv_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/staff/save_staff_complete.sql"]
     ) -> SqlString: ...
 
     @overload
