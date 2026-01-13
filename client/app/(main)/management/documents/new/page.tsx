@@ -1,64 +1,66 @@
 /**
  * app/(main)/management/documents/new/page.tsx
- * New document page for document upload
- * @AshokSaravanan222 & @siladiea
- * 01/21/2025
+ * New document page for the documents section.
+ * @AshokSaravanan222
+ * 01/12/2026
  */
 
-import Document from "@/components/documents/Document";
+import NewDocument from "@/components/documents/NewDocument";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
-import { createLoader, parseAsString } from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentsListIn = InputOf<"/api/v4/documents/list", "post">;
-type DocumentsListOut = OutputOf<"/api/v4/documents/list", "post">;
-type FinalizeUploadIn = InputOf<
-  "/api/v4/uploads/upload/{upload_id}/finalize",
-  "post"
->;
-type FinalizeUploadOut = OutputOf<
-  "/api/v4/uploads/upload/{upload_id}/finalize",
-  "post"
->;
-type CreateDocumentIn = InputOf<"/api/v4/documents/create", "post">;
-type CreateDocumentOut = OutputOf<"/api/v4/documents/create", "post">;
+type GetDocumentIn = InputOf<"/api/v4/documents/get", "post">;
+type GetDocumentOut = OutputOf<"/api/v4/documents/get", "post">;
+type SaveDocumentIn = InputOf<"/api/v4/documents/save", "post">;
+type SaveDocumentOut = OutputOf<"/api/v4/documents/save", "post">;
 type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
-// GenerateTemplate types removed - now using WebSocket
-type GenerateTemplateIn = never;
-type GenerateTemplateOut = never;
-// RenderTemplate types removed - not used on new page since we don't have documentId yet
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
 
-/** ---- Direct fetch (no Next.js cache) ---- */
-const getDocumentsList = async (): Promise<DocumentsListOut> => {
-  return api.post(
-    "/documents/list",
-    { body: {} },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getDocumentDefault = async (
+  input: GetDocumentIn
+): Promise<GetDocumentOut> => {
+  return api.post("/documents/get", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
     },
-  );
+  });
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function finalizeUpload(uploadId: string): Promise<FinalizeUploadOut> {
+async function saveDocument(input: SaveDocumentIn): Promise<SaveDocumentOut> {
   "use server";
-  return api.post("/uploads/upload/{upload_id}/finalize", {
-    path: { upload_id: uploadId },
-    body: {},
-  } as FinalizeUploadIn);
-}
-
-async function createDocument(
-  input: CreateDocumentIn,
-): Promise<CreateDocumentOut> {
-  "use server";
-  return api.post("/documents/create", input);
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  // No revalidateTag needed - Redis cache handles invalidation
+  return api.post("/documents/save", input);
 }
 
 async function patchDocumentDraft(
@@ -69,9 +71,45 @@ async function patchDocumentDraft(
   return api.patch("/documents/draft", input);
 }
 
-// generateTemplate removed - component now uses WebSocket directly
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/names", input);
+}
 
-// renderTemplate removed - not used on new page since we don't have documentId yet
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftFlags(
+  input: CreateDraftFlagsIn
+): Promise<CreateDraftFlagsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/flags", input);
+}
+
+async function createDraftFields(
+  input: CreateDraftFieldsIn
+): Promise<CreateDraftFieldsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/fields", input);
+}
+
+async function createDraftDepartments(
+  input: CreateDraftDepartmentsIn
+): Promise<CreateDraftDepartmentsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/departments", input);
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -101,21 +139,25 @@ export default async function NewDocumentPage({
     }
   });
 
-  // Inline server-side parsers for document search params (draftId only)
+  // Inline server-side parsers for document search params (navigation/search params only)
   const documentSearchParams = {
     draftId: parseAsString,
+    // Search/filter params
+    descriptionSearch: parseAsString,
+    fieldSearch: parseAsString,
+    fieldShowSelected: parseAsBoolean,
   };
   const loadDocumentSearchParams = createLoader(documentSearchParams);
   const q = loadDocumentSearchParams(searchParamsObj);
 
-  // Fetch list data server-side for mappings
-  // Note: Documents don't have a separate "new" endpoint - list endpoint provides mappings
-  const listData = await getDocumentsList();
-
-  // Note: Server-side rendering on new page is not implemented since we don't have a documentId yet
-  // The form will handle rendering client-side until document is created
-  // Once document is created, user can navigate to detail page for server-side rendering
-  const renderedHtml: string | null = null;
+  // Fetch default document detail server-side with filter params and draft_id
+  const input: GetDocumentIn = {
+    body: {
+      document_id: null, // NULL for new mode
+      draft_id: q.draftId ?? null,
+    } as GetDocumentIn["body"],
+  };
+  const documentDetailDefault = await getDocumentDefault(input);
 
   return (
     <div
@@ -123,29 +165,19 @@ export default async function NewDocumentPage({
       data-page="document-new"
       aria-label="Create new document page"
     >
-      <Document
+      <NewDocument
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        mode="create"
-        documentDetailDefault={listData}
-        finalizeUploadAction={finalizeUpload}
-        createDocumentAction={createDocument}
+        documentData={documentDetailDefault}
+        saveDocumentAction={saveDocument}
         patchDocumentDraftAction={patchDocumentDraft}
-        renderedHtml={renderedHtml}
+        createNamesAction={createDraftNames}
+        createDescriptionsAction={createDraftDescriptions}
+        createFlagsAction={createDraftFlags}
+        createFieldsAction={createDraftFields}
+        createDepartmentsAction={createDraftDepartments}
       />
     </div>
   );
 }
 
-/** ---- Export types for client component (type-only imports) ---- */
-export type {
-  CreateDocumentIn,
-  CreateDocumentOut,
-  DocumentsListIn,
-  DocumentsListOut,
-  FinalizeUploadIn,
-  FinalizeUploadOut,
-  GenerateTemplateIn,
-  GenerateTemplateOut,
-  PatchDocumentDraftIn,
-  PatchDocumentDraftOut,
-};
+// Types are now defined inline in components using InputOf/OutputOf

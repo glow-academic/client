@@ -343,63 +343,67 @@ valid_department_ids_list AS (
 agent_selected_voices AS (
     SELECT 
         av.agent_id::text as agent_id,
-        mv.id::text as voice_id,
-        mv.voice::text as voice
+        v.id::text as voice_id,
+        v.voice::text as voice
     FROM agent_voices av
-    JOIN model_voices mv ON mv.id = av.model_voice_id
-    WHERE av.active = true AND mv.active = true
+    JOIN voices v ON v.id = av.voice_id
+    WHERE av.active = true AND v.active = true
 ),
 agent_selected_temperature AS (
     SELECT 
         atl.agent_id::text as agent_id,
-        atl.model_temperature_level_id::text as selected_temperature_level_id,
-        mtl.temperature as selected_temperature
+        atl.temperature_level_id::text as selected_temperature_level_id,
+        tl.temperature as selected_temperature
     FROM agent_temperature_levels atl
-    JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id
-    WHERE atl.active = true AND mtl.active = true
+    JOIN temperature_levels tl ON tl.id = atl.temperature_level_id
+    WHERE atl.active = true AND tl.active = true
 ),
 agent_selected_reasoning AS (
     SELECT 
         arl.agent_id::text as agent_id,
-        arl.model_reasoning_level_id::text as selected_reasoning_level_id,
-        mrl.reasoning_level::text as selected_reasoning
+        arl.reasoning_level_id::text as selected_reasoning_level_id,
+        rl.reasoning_level::text as selected_reasoning
     FROM agent_reasoning_levels arl
-    JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id
-    WHERE arl.active = true AND mrl.active = true
+    JOIN reasoning_levels rl ON rl.id = arl.reasoning_level_id
+    WHERE arl.active = true AND rl.active = true
 ),
 model_temperature_levels_data_with_ids AS (
     SELECT 
         mtl.model_id::text as model_id,
-        mtl.id::text as temperature_level_id,
-        mtl.temperature::text as temperature_value,
-        mtl.is_upper::boolean as is_upper
+        tl.id::text as temperature_level_id,
+        tl.temperature::text as temperature_value,
+        tl.is_upper::boolean as is_upper
     FROM model_temperature_levels mtl
-    WHERE mtl.active = true
+    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    WHERE tl.active = true
 ),
 model_temperature_levels_bounds AS (
     SELECT 
         mtl.model_id::text as model_id,
-        MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false)::float as temperature_lower,
-        MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true)::float as temperature_upper
+        MIN(tl.temperature) FILTER (WHERE tl.is_upper = false)::float as temperature_lower,
+        MAX(tl.temperature) FILTER (WHERE tl.is_upper = true)::float as temperature_upper
     FROM model_temperature_levels mtl
-    WHERE mtl.active = true
+    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    WHERE tl.active = true
     GROUP BY mtl.model_id
 ),
 model_reasoning_levels_data_with_ids AS (
     SELECT 
         mrl.model_id::text as model_id,
-        mrl.id::text as reasoning_level_id,
-        mrl.reasoning_level::text as reasoning_level_value
+        rl.id::text as reasoning_level_id,
+        rl.reasoning_level::text as reasoning_level_value
     FROM model_reasoning_levels mrl
-    WHERE mrl.active = true
+    JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id
+    WHERE rl.active = true
 ),
 model_voices_data_flat AS (
     SELECT 
         mv.model_id::text as model_id,
-        mv.id::text as voice_id,
-        mv.voice::text as voice_value
+        v.id::text as voice_id,
+        v.voice::text as voice_value
     FROM model_voices mv
-    WHERE mv.active = true
+    JOIN voices v ON v.id = mv.voice_id
+    WHERE v.active = true
 ),
 models_agg AS (
     SELECT 

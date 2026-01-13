@@ -76,9 +76,9 @@ RETURNS TABLE (
     active boolean,
     role text,
     department_ids text[],
-    model_temperature_level_id text,
-    model_reasoning_level_id text,
-    model_voice_ids text[],
+    temperature_level_id text,
+    reasoning_level_id text,
+    voice_ids text[],
     draft_version int
 )
 LANGUAGE sql
@@ -145,36 +145,40 @@ model_modalities_data AS (
 model_temperature_levels_data_with_ids AS (
     SELECT 
         mtl.model_id::text as model_id,
-        mtl.id::text as temperature_level_id,
-        mtl.temperature::text as temperature_value,
-        mtl.is_upper::boolean as is_upper
+        tl.id::text as temperature_level_id,
+        tl.temperature::text as temperature_value,
+        tl.is_upper::boolean as is_upper
     FROM model_temperature_levels mtl
-    WHERE mtl.active = true
+    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    WHERE tl.active = true
 ),
 model_temperature_levels_bounds AS (
     SELECT 
         mtl.model_id::text as model_id,
-        MIN(mtl.temperature) FILTER (WHERE mtl.is_upper = false)::float as temperature_lower,
-        MAX(mtl.temperature) FILTER (WHERE mtl.is_upper = true)::float as temperature_upper
+        MIN(tl.temperature) FILTER (WHERE tl.is_upper = false)::float as temperature_lower,
+        MAX(tl.temperature) FILTER (WHERE tl.is_upper = true)::float as temperature_upper
     FROM model_temperature_levels mtl
-    WHERE mtl.active = true
+    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    WHERE tl.active = true
     GROUP BY mtl.model_id
 ),
 model_reasoning_levels_data_with_ids AS (
     SELECT 
         mrl.model_id::text as model_id,
-        mrl.id::text as reasoning_level_id,
-        mrl.reasoning_level::text as reasoning_level_value
+        rl.id::text as reasoning_level_id,
+        rl.reasoning_level::text as reasoning_level_value
     FROM model_reasoning_levels mrl
-    WHERE mrl.active = true
+    JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id
+    WHERE rl.active = true
 ),
 model_voices_data AS (
     SELECT 
         mv.model_id::text as model_id,
-        mv.id::text as voice_id,
-        mv.voice::text as voice_value
+        v.id::text as voice_id,
+        v.voice::text as voice_value
     FROM model_voices mv
-    WHERE mv.active = true
+    JOIN voices v ON v.id = mv.voice_id
+    WHERE v.active = true
 ),
 all_models_with_modalities AS (
     SELECT DISTINCT
@@ -321,7 +325,7 @@ SELECT
             ELSE NULL
         END,
         NULL
-    )::text as model_temperature_level_id,
+    )::text as temperature_level_id,
     COALESCE(
         CASE 
             WHEN (SELECT payload->>'model_reasoning_level_id' FROM draft_payload_data) IS NOT NULL THEN
@@ -329,7 +333,7 @@ SELECT
             ELSE NULL
         END,
         NULL
-    )::text as model_reasoning_level_id,
+    )::text as reasoning_level_id,
     COALESCE(
         CASE 
             WHEN (SELECT payload->'model_voice_ids' FROM draft_payload_data) IS NOT NULL AND jsonb_typeof((SELECT payload->'model_voice_ids' FROM draft_payload_data)) = 'array' THEN
@@ -337,7 +341,7 @@ SELECT
             ELSE NULL
         END,
         ARRAY[]::text[]
-    ) as model_voice_ids,
+    ) as voice_ids,
     COALESCE((SELECT draft_version FROM draft_payload_data), 0)::int as draft_version
 FROM user_profile up
 CROSS JOIN models_agg ma

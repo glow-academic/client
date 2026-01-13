@@ -34,8 +34,8 @@ source_agent AS (
         ap.prompt_id,
         COALESCE(pr.system_prompt, '') as system_prompt,
         -- Get temperature and reasoning from junction tables
-        atl.model_temperature_level_id,
-        arl.model_reasoning_level_id,
+        atl.temperature_level_id,
+        arl.reasoning_level_id,
         da.artifact  -- Need artifact for linking
     FROM params x
     JOIN agents a ON a.id = x.agent_id
@@ -179,28 +179,28 @@ copy_domain_link AS (
         updated_at = NOW()
 ),
 copy_temperature AS (
-    INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active, created_at, updated_at)
+    INSERT INTO agent_temperature_levels (agent_id, temperature_level_id, active, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
-        sa.model_temperature_level_id,
+        sa.temperature_level_id,
         true,
         NOW(),
         NOW()
     FROM source_agent sa
     CROSS JOIN new_agent na
-    WHERE sa.model_temperature_level_id IS NOT NULL
+    WHERE sa.temperature_level_id IS NOT NULL
 ),
 copy_reasoning AS (
-    INSERT INTO agent_reasoning_levels (agent_id, model_reasoning_level_id, active, created_at, updated_at)
+    INSERT INTO agent_reasoning_levels (agent_id, reasoning_level_id, active, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
-        sa.model_reasoning_level_id,
+        sa.reasoning_level_id,
         true,
         NOW(),
         NOW()
     FROM source_agent sa
     CROSS JOIN new_agent na
-    WHERE sa.model_reasoning_level_id IS NOT NULL
+    WHERE sa.reasoning_level_id IS NOT NULL
 ),
 link_prompt AS (
     INSERT INTO agent_prompts (agent_id, prompt_id, active, created_at, updated_at)

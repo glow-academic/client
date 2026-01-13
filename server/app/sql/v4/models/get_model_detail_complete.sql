@@ -302,13 +302,14 @@ keys_data AS (
 ),
 model_temperature_data AS (
     SELECT 
-        model_id,
-        MIN(temperature) FILTER (WHERE is_upper = false) as temperature_lower,
-        MAX(temperature) FILTER (WHERE is_upper = true) as temperature_upper,
-        ARRAY_AGG(DISTINCT temperature::text ORDER BY temperature::text) FILTER (WHERE is_upper = false) as temperature_values
-    FROM model_temperature_levels
-    WHERE model_id = (SELECT model_id FROM params) AND active = true
-    GROUP BY model_id
+        mtl.model_id,
+        MIN(tl.temperature) FILTER (WHERE tl.is_upper = false) as temperature_lower,
+        MAX(tl.temperature) FILTER (WHERE tl.is_upper = true) as temperature_upper,
+        ARRAY_AGG(DISTINCT tl.temperature::text ORDER BY tl.temperature::text) FILTER (WHERE tl.is_upper = false) as temperature_values
+    FROM model_temperature_levels mtl
+    JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id
+    WHERE mtl.model_id = (SELECT model_id FROM params)  AND tl.active = true
+    GROUP BY mtl.model_id
 ),
 model_pricing_data AS (
     SELECT 
@@ -340,8 +341,9 @@ model_reasoning_levels_data AS (
                 WHEN 'high' THEN 5
             END
         ) as reasoning_levels
-    FROM model_reasoning_levels
-    WHERE model_id = (SELECT model_id FROM params) AND active = true
+    FROM model_reasoning_levels mrl
+    JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id
+    WHERE mrl.model_id = (SELECT model_id FROM params) AND rl.active = true
 ),
 model_qualities_data AS (
     SELECT 
@@ -357,11 +359,12 @@ model_qualities_data AS (
 ),
 model_voices_data AS (
     SELECT 
-        id as voice_id,
-        voice::text as voice
-    FROM model_voices
-    WHERE model_id = (SELECT model_id FROM params) AND active = true
-    ORDER BY voice::text
+        v.id as voice_id,
+        v.voice::text as voice
+    FROM model_voices mv
+    JOIN voices v ON v.id = mv.voice_id
+    WHERE mv.model_id = (SELECT model_id FROM params) AND v.active = true
+    ORDER BY v.voice::text
 ),
 all_units_data AS (
     SELECT 

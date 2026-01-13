@@ -278,8 +278,8 @@ context_data AS (
             COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
             ''
         ) as system_prompt,
-        COALESCE(mtl.temperature, 0.0) as temperature,
-        mrl.reasoning_level as reasoning,
+        COALESCE(tl.temperature, 0.0) as temperature,
+        rl.reasoning_level as reasoning,
         m.id::text as model_id,
         m.value as model_name,
         COALESCE(n_prov.name, '') as provider,
@@ -311,9 +311,11 @@ context_data AS (
     LEFT JOIN agent_models am ON am.agent_id = a.id
     LEFT JOIN models m ON m.id = am.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
+    LEFT JOIN model_temperature_levels mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id 
+LEFT JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id AND tl.active = true
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
+    LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
+LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
         AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
         AND adp_prompt.active = true
@@ -345,7 +347,7 @@ context_data AS (
              sa.id, sa.simulation_id,
              s.id,
              -- Prompt agent fields
-             pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
+             pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(tl.temperature, 0.0), rl.reasoning_level,
              m.id, m.value, n_prov.name, k.key, e.base_url, pa.agent_id, act_s.settings_id,
              -- Other fields
              ap.profile_id,

@@ -430,24 +430,26 @@ context_data AS (
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_system_prompt,
-        (SELECT COALESCE(mtl_voice.temperature, 0.0)
+        (SELECT COALESCE(tl_voice.temperature, 0.0)
          FROM agent a_voice
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
-         LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.id = atl_voice.model_temperature_level_id 
-             AND mtl_voice.active = true AND mtl_voice.model_id = m_voice.id
+         LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.temperature_level_id = atl_voice.temperature_level_id 
+             AND mtl_voice.model_id = m_voice.id
+         LEFT JOIN temperature_levels tl_voice ON tl_voice.id = mtl_voice.temperature_level_id AND tl_voice.active = true
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 
            AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a_voice.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_temperature,
-        (SELECT mrl_voice.reasoning_level
+        (SELECT rl_voice.reasoning_level
          FROM agent a_voice
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
-         LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.id = arl_voice.model_reasoning_level_id 
-             AND mrl_voice.active = true AND mrl_voice.model_id = m_voice.id
+         LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.reasoning_level_id = arl_voice.reasoning_level_id 
+             AND mrl_voice.model_id = m_voice.id
+         LEFT JOIN reasoning_levels rl_voice ON rl_voice.id = mrl_voice.reasoning_level_id AND rl_voice.active = true
          LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
          LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
          WHERE a_voice.id = adom_voice.agent_id 

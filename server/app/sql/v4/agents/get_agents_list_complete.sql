@@ -116,8 +116,8 @@ SELECT
     COALESCE(
         ARRAY_AGG(
             (fa.id, fa.name, fa.description, 
-             COALESCE(mrl.reasoning_level::text, ''),
-             COALESCE(mtl.temperature, 0.0),
+             COALESCE(rl.reasoning_level::text, ''),
+             COALESCE(tl.temperature, 0.0),
              fa.model_id, fa.role, fa.updated_at,
              COALESCE(addd.department_ids, ARRAY[]::text[]),
              CASE WHEN up.role IN ('admin'::profile_role, 'superadmin'::profile_role) THEN true ELSE false END,
@@ -141,10 +141,12 @@ LEFT JOIN agent_department_links adl ON adl.agent_id = fa.id
 LEFT JOIN agent_departments_data addd ON addd.agent_id = fa.id
 -- Join temperature from junction table
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = fa.id AND atl.active = true
-LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true
+LEFT JOIN model_temperature_levels mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = fa.model_id
+LEFT JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id AND tl.active = true
 -- Join reasoning from junction table
 LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = fa.id AND arl.active = true
-LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true
+LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = fa.model_id
+LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
 LEFT JOIN models m ON m.id = fa.model_id
 GROUP BY up.actor_name, up.role
 $$;

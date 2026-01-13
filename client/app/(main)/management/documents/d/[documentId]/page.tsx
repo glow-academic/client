@@ -6,7 +6,7 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import Document from "@/components/documents/Document";
+import NewDocument from "@/components/documents/NewDocument";
 import type { TemplateSchema } from "@/components/documents/TemplateForm";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -15,10 +15,10 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentDetailIn = InputOf<"/api/v4/documents/detail", "post">;
-type DocumentDetailOut = OutputOf<"/api/v4/documents/detail", "post">;
-type UpdateDocumentIn = InputOf<"/api/v4/documents/update", "post">;
-type UpdateDocumentOut = OutputOf<"/api/v4/documents/update", "post">;
+type GetDocumentIn = InputOf<"/api/v4/documents/get", "post">;
+type GetDocumentOut = OutputOf<"/api/v4/documents/get", "post">;
+type SaveDocumentIn = InputOf<"/api/v4/documents/save", "post">;
+type SaveDocumentOut = OutputOf<"/api/v4/documents/save", "post">;
 // Note: _render endpoint returns dict[str, Any], not a typed response
 type RenderTemplateIn = {
   body: {
@@ -32,25 +32,41 @@ type RenderTemplateOut = {
 };
 type PatchDocumentDraftIn = InputOf<"/api/v4/documents/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/api/v4/documents/draft", "patch">;
-// GenerateTemplate types removed - now using WebSocket
-type GenerateTemplateIn = never;
-type GenerateTemplateOut = never;
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
+type CreateDraftDepartmentsIn = InputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftDepartmentsOut = OutputOf<
+  "/api/v4/resources/departments",
+  "post"
+>;
+type CreateDraftFieldsIn = InputOf<"/api/v4/resources/fields", "post">;
+type CreateDraftFieldsOut = OutputOf<"/api/v4/resources/fields", "post">;
 
-/** ---- Direct fetch (no caching - source of truth) ---- */
-const getDocument = async (
-  documentId: string,
-  draftId: string | null
-): Promise<DocumentDetailOut> => {
-  return api.post(
-    "/documents/detail",
-    { body: { document_id: documentId, draft_id: draftId || null } },
-    {
-      cache: "no-store",
-      headers: {
-        "X-Bypass-Cache": "1",
-      },
-    }
-  );
+/** ---- Direct fetch (no caching - source of truth) ----
+ * Always bypass cache to ensure fresh data for detail/edit pages.
+ */
+const getDocumentDefault = async (
+  input: GetDocumentIn
+): Promise<GetDocumentOut> => {
+  return api.post("/documents/get", input, {
+    cache: "no-store",
+    headers: {
+      "X-Bypass-Cache": "1",
+    },
+  });
 };
 
 /** ---- Metadata uses the same cached fetch ---- */
@@ -61,10 +77,13 @@ export async function generateMetadata(
   const { documentId } = await params;
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   try {
-    const document = await getDocument(documentId, null);
+    const document = await getDocumentDefault({
+      body: { document_id: documentId, draft_id: null },
+    });
+    const documentName = document?.name_resource?.name;
     return {
-      title: `${document?.name || "Document"}`,
-      description: `${document?.name ? `${document.name} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
+      title: `${documentName || "Document"}`,
+      description: `${documentName ? `${documentName} - ` : ""}Learning resource and educational document for teaching assistant training. Access course materials, instructional resources, and reference documents to support pedagogical development.`,
     };
   } catch {
     // Fall through to default metadata
@@ -78,12 +97,11 @@ export async function generateMetadata(
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function updateDocument(
-  input: UpdateDocumentIn
-): Promise<UpdateDocumentOut> {
+async function saveDocument(input: SaveDocumentIn): Promise<SaveDocumentOut> {
   "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/documents/update", input);
+  return api.post("/documents/save", input);
 }
 
 async function renderTemplate(
@@ -159,7 +177,7 @@ export default async function DocumentEditPage({
       // Check if there are template arg params (JSON format)
       // Use template_schema from API response, fallback to template_args for backward compatibility
       // Note: template_schema is added dynamically by the API, so we need type assertion
-      const docDetail = documentDetail as DocumentDetailOut & { template_schema?: TemplateSchema | null; template_args?: TemplateSchema | null };
+      const docDetail = documentDetail as GetDocumentOut & { template_schema?: TemplateSchema | null; template_args?: TemplateSchema | null };
       const templateSchema =
         (docDetail.template_schema as TemplateSchema | null) ||
         (docDetail.template_args as TemplateSchema | null);
@@ -208,15 +226,17 @@ export default async function DocumentEditPage({
         data-page="document-edit"
         data-document-id={documentId}
       >
-        <Document
+        <NewDocument
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           documentId={documentId}
-          mode="edit"
-          documentDetail={documentDetail}
-          updateDocumentAction={updateDocument}
-          renderTemplateAction={renderTemplate}
+          documentData={documentDetail}
+          saveDocumentAction={saveDocument}
           patchDocumentDraftAction={patchDocumentDraft}
-          renderedHtml={renderedHtml}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createFlagsAction={createDraftFlags}
+          createFieldsAction={createDraftFields}
+          createDepartmentsAction={createDraftDepartments}
         />
       </div>
     );
@@ -241,16 +261,4 @@ export default async function DocumentEditPage({
   }
 }
 
-/** ---- Export types for client component (type-only imports) ---- */
-export type {
-  DocumentDetailIn,
-  DocumentDetailOut,
-  GenerateTemplateIn,
-  GenerateTemplateOut,
-  PatchDocumentDraftIn,
-  PatchDocumentDraftOut,
-  RenderTemplateIn,
-  RenderTemplateOut,
-  UpdateDocumentIn,
-  UpdateDocumentOut,
-};
+// Types are now defined inline in components using InputOf/OutputOf

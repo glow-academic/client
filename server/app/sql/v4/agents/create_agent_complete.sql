@@ -28,9 +28,9 @@ CREATE OR REPLACE FUNCTION api_create_agent_v4(
     prompt_id uuid DEFAULT NULL,
     system_prompt text DEFAULT NULL,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    model_temperature_level_id uuid DEFAULT NULL,
-    model_reasoning_level_id uuid DEFAULT NULL,
-    model_voice_ids uuid[] DEFAULT ARRAY[]::uuid[]
+    temperature_level_id uuid DEFAULT NULL,
+    reasoning_level_id uuid DEFAULT NULL,
+    voice_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     agent_id text,
@@ -48,9 +48,9 @@ WITH params AS (
         prompt_id AS prompt_id,
         NULLIF(system_prompt, '') AS system_prompt,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
-        model_temperature_level_id AS model_temperature_level_id,
-        model_reasoning_level_id AS model_reasoning_level_id,
-        COALESCE(model_voice_ids, ARRAY[]::uuid[]) AS model_voice_ids,
+        temperature_level_id AS temperature_level_id,
+        reasoning_level_id AS reasoning_level_id,
+        COALESCE(voice_ids, ARRAY[]::uuid[]) AS voice_ids,
         profile_id AS profile_id
 ),
 user_profile AS (
@@ -246,39 +246,39 @@ link_departments AS (
 ),
 link_temperature_level AS (
     -- Link temperature level if provided
-    INSERT INTO agent_temperature_levels (agent_id, model_temperature_level_id, active, created_at, updated_at)
+    INSERT INTO agent_temperature_levels (agent_id, temperature_level_id, active, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
-        x.model_temperature_level_id,
+        x.temperature_level_id,
         true,
         NOW(),
         NOW()
     FROM new_agent na
     CROSS JOIN params x
-    WHERE x.model_temperature_level_id IS NOT NULL
-    ON CONFLICT (agent_id, model_temperature_level_id) DO UPDATE SET
+    WHERE x.temperature_level_id IS NOT NULL
+    ON CONFLICT (agent_id, temperature_level_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
 link_reasoning_level AS (
     -- Link reasoning level if provided
-    INSERT INTO agent_reasoning_levels (agent_id, model_reasoning_level_id, active, created_at, updated_at)
+    INSERT INTO agent_reasoning_levels (agent_id, reasoning_level_id, active, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
-        x.model_reasoning_level_id,
+        x.reasoning_level_id,
         true,
         NOW(),
         NOW()
     FROM new_agent na
     CROSS JOIN params x
-    WHERE x.model_reasoning_level_id IS NOT NULL
-    ON CONFLICT (agent_id, model_reasoning_level_id) DO UPDATE SET
+    WHERE x.reasoning_level_id IS NOT NULL
+    ON CONFLICT (agent_id, reasoning_level_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),
 link_voices AS (
     -- Link voices if provided (array is never NULL, but may be empty)
-    INSERT INTO agent_voices (agent_id, model_voice_id, active, created_at, updated_at)
+    INSERT INTO agent_voices (agent_id, voice_id, active, created_at, updated_at)
     SELECT 
         na.agent_id::uuid,
         voice_id,
@@ -287,8 +287,8 @@ link_voices AS (
         NOW()
     FROM new_agent na
     CROSS JOIN params x
-    CROSS JOIN UNNEST(x.model_voice_ids) AS voice_id
-    ON CONFLICT (agent_id, model_voice_id) DO UPDATE SET
+    CROSS JOIN UNNEST(x.voice_ids) AS voice_id
+    ON CONFLICT (agent_id, voice_id) DO UPDATE SET
         active = true,
         updated_at = NOW()
 )

@@ -310,8 +310,8 @@ scenario_full_data_raw AS (
             COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
             ''
         ) as system_prompt,
-        COALESCE(mtl.temperature, 0.0) as temperature,
-        mrl.reasoning_level as reasoning,
+        COALESCE(tl.temperature, 0.0) as temperature,
+        rl.reasoning_level as reasoning,
         (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = sp.persona_id LIMIT 1) as persona_color,
         (SELECT i.name FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = sp.persona_id LIMIT 1) as persona_icon,
         -- Model data
@@ -337,10 +337,12 @@ scenario_full_data_raw AS (
     LEFT JOIN models m ON m.id = am.model_id
     -- Join temperature and reasoning from model levels via agent
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
+    LEFT JOIN model_temperature_levels mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id 
+LEFT JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id AND tl.active = true
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
     -- IMPORTANT: Only join reasoning levels that belong to the agent's model (m.id = mrl.model_id)
-    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
+    LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
+LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     -- Try department-specific agent prompt first, fall back to default prompt
     CROSS JOIN resolved_dept rd
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
@@ -365,7 +367,7 @@ scenario_full_data_raw AS (
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE), 
              CASE WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true ELSE false END, sp.persona_id, (SELECT n.name FROM persona_names pn JOIN names n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1), pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 
-             COALESCE(mtl.temperature, 0.0), mrl.reasoning_level, (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = sp.persona_id LIMIT 1), (SELECT i.name FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = sp.persona_id LIMIT 1), m.id, m.value, n_prov.name,
+             COALESCE(tl.temperature, 0.0), rl.reasoning_level, (SELECT c.hex_code FROM persona_colors pc JOIN colors c ON pc.color_id = c.id WHERE pc.persona_id = sp.persona_id LIMIT 1), (SELECT i.name FROM persona_icons pi JOIN icons i ON pi.icon_id = i.id WHERE pi.persona_id = sp.persona_id LIMIT 1), m.id, m.value, n_prov.name,
              k.key, e.base_url, act_s.settings_id
 ),
 -- Select only ONE row per scenario (deterministic: pick first model by ID)

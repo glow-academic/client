@@ -297,8 +297,8 @@ context_data AS (
             COALESCE(pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt),
             ''
         ) as system_prompt,
-        COALESCE(mtl.temperature, 0.0) as temperature,
-        mrl.reasoning_level as reasoning,
+        COALESCE(tl.temperature, 0.0) as temperature,
+        rl.reasoning_level as reasoning,
         m.id::text as model_id,
         m.value as model_name,
         COALESCE(n_prov.name, '') as provider,
@@ -314,8 +314,8 @@ context_data AS (
             COALESCE(pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt),
             ''
         ) as voice_system_prompt,
-        COALESCE(mtl_voice.temperature, 0.0) as voice_temperature,
-        mrl_voice.reasoning_level as voice_reasoning,
+        COALESCE(tl_voice.temperature, 0.0) as voice_temperature,
+        rl_voice.reasoning_level as voice_reasoning,
         m_voice.id::text as voice_model_id,
         m_voice.value as voice_model_name,
         COALESCE(n_voice_prov.name, '') as voice_provider,
@@ -368,9 +368,11 @@ context_data AS (
     LEFT JOIN agent_models am ON am.agent_id = a.id
     LEFT JOIN models m ON m.id = am.model_id
     LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
-    LEFT JOIN model_temperature_levels mtl ON mtl.id = atl.model_temperature_level_id AND mtl.active = true AND mtl.model_id = m.id
+    LEFT JOIN model_temperature_levels mtl ON mtl.temperature_level_id = atl.temperature_level_id AND mtl.model_id = m.id 
+LEFT JOIN temperature_levels tl ON tl.id = mtl.temperature_level_id AND tl.active = true
     LEFT JOIN agent_reasoning_levels arl ON arl.agent_id = a.id AND arl.active = true
-    LEFT JOIN model_reasoning_levels mrl ON mrl.id = arl.model_reasoning_level_id AND mrl.active = true AND mrl.model_id = m.id
+    LEFT JOIN model_reasoning_levels mrl ON mrl.reasoning_level_id = arl.reasoning_level_id AND mrl.model_id = m.id 
+LEFT JOIN reasoning_levels rl ON rl.id = mrl.reasoning_level_id AND rl.active = true
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id 
         AND adp_prompt.department_id = (SELECT department_id FROM resolved_dept)
         AND adp_prompt.active = true
@@ -398,9 +400,11 @@ context_data AS (
     LEFT JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
     LEFT JOIN models m_voice ON m_voice.id = am_voice.model_id
     LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
-    LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.id = atl_voice.model_temperature_level_id AND mtl_voice.active = true AND mtl_voice.model_id = m_voice.id
+    LEFT JOIN model_temperature_levels mtl_voice ON mtl_voice.temperature_level_id = atl_voice.temperature_level_id AND mtl_voice.model_id = m_voice.id
+    LEFT JOIN temperature_levels tl_voice ON tl_voice.id = mtl_voice.temperature_level_id AND tl_voice.active = true
     LEFT JOIN agent_reasoning_levels arl_voice ON arl_voice.agent_id = a_voice.id AND arl_voice.active = true
-    LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.id = arl_voice.model_reasoning_level_id AND mrl_voice.active = true AND mrl_voice.model_id = m_voice.id
+    LEFT JOIN model_reasoning_levels mrl_voice ON mrl_voice.reasoning_level_id = arl_voice.reasoning_level_id AND mrl_voice.model_id = m_voice.id
+    LEFT JOIN reasoning_levels rl_voice ON rl_voice.id = mrl_voice.reasoning_level_id AND rl_voice.active = true
     LEFT JOIN agent_department_prompts adp_prompt_voice ON adp_prompt_voice.agent_id = a_voice.id 
         AND adp_prompt_voice.department_id = (SELECT department_id FROM resolved_dept)
         AND adp_prompt_voice.active = true
@@ -434,10 +438,10 @@ context_data AS (
              first_persona.persona_id, first_persona.persona_name,
              n_prov.name,
              -- Text agent fields
-             pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(mtl.temperature, 0.0), mrl.reasoning_level,
+             pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(tl.temperature, 0.0), rl.reasoning_level,
              m.id, m.value, n_prov.name, k.key, e.base_url, a.id, act_s.settings_id,
              -- Voice agent fields
-             pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(mtl_voice.temperature, 0.0), mrl_voice.reasoning_level,
+             pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(tl_voice.temperature, 0.0), rl_voice.reasoning_level,
              m_voice.id, m_voice.value, n_voice_prov.name, k_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
              -- Other fields
              EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), 
