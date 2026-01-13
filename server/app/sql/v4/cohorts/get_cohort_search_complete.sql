@@ -27,7 +27,7 @@ BEGIN
     FOR r IN 
         SELECT typname 
         FROM pg_type 
-        WHERE typname LIKE 'q_get_cohort_search_v4_%'
+        WHERE (typname LIKE 'q_get_cohort_search_v4_%' OR typname = 'q_get_cohort_new_v4_staff_item')
           AND typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'types')
     LOOP
         EXECUTE format('DROP TYPE IF EXISTS types.%I', r.typname);
@@ -35,6 +35,28 @@ BEGIN
 END $$;
 
 -- 3) Recreate types (reuse staff_item from new endpoint)
+CREATE TYPE types.q_get_cohort_new_v4_staff_item AS (
+    profile_id text,
+    first_name text,
+    last_name text,
+    emails text[],
+    primary_email text,
+    name text,
+    role text,
+    initials text,
+    active boolean,
+    last_active timestamptz,
+    cohort_ids text[],
+    department_ids text[],
+    primary_department_id text,
+    requests_per_day integer,
+    total_requests bigint,
+    requests_in_last_day integer,
+    can_edit boolean,
+    can_delete boolean,
+    can_remove boolean
+);
+
 CREATE TYPE types.q_get_cohort_search_v4_cohort AS (
     cohort_id uuid,
     name text,

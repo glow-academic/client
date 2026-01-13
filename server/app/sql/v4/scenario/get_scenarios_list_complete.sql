@@ -151,7 +151,11 @@ scenario_simulations AS (
         ARRAY_AGG(DISTINCT ss.simulation_id::text) as simulation_ids,
         COUNT(DISTINCT ss.simulation_id) as num_simulations
     FROM simulation_scenarios ss
-    WHERE ss.active = true
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+      WHERE ssf.simulation_id = ss.simulation_id 
+        AND ssf.scenario_id = ss.scenario_id 
+        AND ssf.type = 'active'::type_simulation_scenario_flags 
+        AND ssf.value = true)
     GROUP BY ss.scenario_id
 ),
 scenario_all_simulation_links AS (
@@ -167,7 +171,11 @@ scenario_cohorts AS (
         ARRAY_AGG(DISTINCT cs.cohort_id::text) as cohort_ids
     FROM simulation_scenarios ss
     JOIN cohort_simulations cs ON cs.simulation_id = ss.simulation_id
-    WHERE ss.active = true AND cs.active = true
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+      WHERE ssf.simulation_id = ss.simulation_id 
+        AND ssf.scenario_id = ss.scenario_id 
+        AND ssf.type = 'active'::type_simulation_scenario_flags 
+        AND ssf.value = true) AND cs.active = true
     GROUP BY ss.scenario_id
 ),
 scenario_personas_agg AS (
@@ -200,13 +208,20 @@ scenario_departments_data AS (
 scenario_attributes AS (
     SELECT DISTINCT ON (ss.scenario_id)
         ss.scenario_id,
-        ss.hints_enabled,
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+          WHERE ssf.simulation_id = ss.simulation_id 
+            AND ssf.scenario_id = ss.scenario_id 
+            AND ssf.type = 'hints_enabled'::type_simulation_scenario_flags), false) as hints_enabled,
         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'objectives_enabled' AND sf.type = 'objectives_enabled'::type_scenario_flags AND sf.value = TRUE) as objectives_enabled,
         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE) as image_input_enabled
     FROM simulation_scenarios ss
     JOIN scenarios s ON s.id = ss.scenario_id
-    WHERE ss.active = true
-    ORDER BY ss.scenario_id, ss.position
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+      WHERE ssf.simulation_id = ss.simulation_id 
+        AND ssf.scenario_id = ss.scenario_id 
+        AND ssf.type = 'active'::type_simulation_scenario_flags 
+        AND ssf.value = true)
+    ORDER BY ss.scenario_id, (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
 scenario_data AS (
     SELECT 
@@ -337,7 +352,13 @@ SELECT
                  (SELECT SUM(stl.time_limit_seconds)
                   FROM scenario_time_limits stl
                   JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-                  WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                  WHERE stl.simulation_id = s.id 
+               AND stl.active = true 
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+                 WHERE ssf.simulation_id = ss.simulation_id 
+                   AND ssf.scenario_id = ss.scenario_id 
+                   AND ssf.type = 'active'::type_simulation_scenario_flags 
+                   AND ssf.value = true)),
                  0
              ),
              (SELECT ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at)

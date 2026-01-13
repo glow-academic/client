@@ -38,12 +38,16 @@ WITH RECURSIVE attempt_base AS (
 simulation_scenarios_list AS (
     SELECT 
         ss.scenario_id,
-        ss.position
+        (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position
     FROM simulation_scenarios ss
     CROSS JOIN attempt_base ab
     WHERE ss.simulation_id = ab.simulation_id
-      AND ss.active = true
-    ORDER BY ss.position
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
+    ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
 existing_chats AS (
     SELECT 
@@ -131,7 +135,11 @@ scenarios_with_grades AS (
     JOIN chat c ON c.id = cg.chat_id AND c.id = sc.id
     LEFT JOIN root_scenarios rs ON rs.child_scenario_id = sc.scenario_id
     WHERE ss.simulation_id = ab.simulation_id
-      AND ss.active = true
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
       AND (
         COALESCE(rs.root_scenario_id, sc.scenario_id) = ss.scenario_id
         OR sc.scenario_id = ss.scenario_id

@@ -46,9 +46,10 @@ rubric_info AS (
         r.id,
         (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
         (SELECT COUNT(DISTINCT ss.simulation_id) FROM simulation_scenarios ss 
-         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
-         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-         WHERE rga.rubric_id = r.id AND ss.active = true) as usage_count
+         JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
+         JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+         JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
+         WHERE rga.rubric_id = r.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)) as usage_count
     FROM rubric r
     WHERE r.id = (SELECT rubric_id FROM params)
 ),

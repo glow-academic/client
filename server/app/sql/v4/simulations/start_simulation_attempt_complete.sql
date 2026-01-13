@@ -135,10 +135,16 @@ simulation_data AS (
         (SELECT sd.agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = s.id AND sd.type = 'text'::type_simulation_domains LIMIT 1) as simulation_text_domain_id,
         (SELECT sd.agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = s.id AND sd.type = 'voice'::type_simulation_domains LIMIT 1) as simulation_voice_domain_id,
         (SELECT rga.rubric_id FROM simulation_scenarios ss 
-         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
-         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-         WHERE ss.simulation_id = s.id AND ss.active = true 
-         ORDER BY ss.position 
+         JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
+         JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+         JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
+         WHERE ss.simulation_id = s.id 
+           AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+             WHERE ssf.simulation_id = ss.simulation_id 
+               AND ssf.scenario_id = ss.scenario_id 
+               AND ssf.type = 'active'::type_simulation_scenario_flags 
+               AND ssf.value = true)
+         ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
          LIMIT 1) as rubric_id
     FROM params p
     JOIN simulation s ON s.id = p.simulation_id
@@ -147,10 +153,15 @@ simulation_data AS (
 simulation_scenarios AS (
     SELECT 
         ss.scenario_id,
-        ss.position
+        (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position
     FROM params p
-    JOIN simulation_scenarios ss ON ss.simulation_id = p.simulation_id AND ss.active = true
-    ORDER BY ss.position
+    JOIN simulation_scenarios ss ON ss.simulation_id = p.simulation_id 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
+    ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
 -- Determine content type (always scenario now - videos are accessed through scenarios)
 content_type_check AS (

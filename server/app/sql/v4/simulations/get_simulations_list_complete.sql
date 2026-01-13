@@ -145,7 +145,11 @@ simulation_scenarios_data AS (
         COUNT(ss.scenario_id) as num_scenarios
     FROM simulation_scenarios ss
     JOIN scenarios sc ON sc.id = ss.scenario_id
-    WHERE ss.active = true
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+      WHERE ssf.simulation_id = ss.simulation_id 
+        AND ssf.scenario_id = ss.scenario_id 
+        AND ssf.type = 'active'::type_simulation_scenario_flags 
+        AND ssf.value = true)
     GROUP BY ss.simulation_id
 ),
 simulation_attempts AS (
@@ -197,16 +201,28 @@ simulation_data AS (
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
              JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+             WHERE stl.simulation_id = s.id 
+               AND stl.active = true 
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+                 WHERE ssf.simulation_id = ss.simulation_id 
+                   AND ssf.scenario_id = ss.scenario_id 
+                   AND ssf.type = 'active'::type_simulation_scenario_flags 
+                   AND ssf.value = true)),
             0
         ) as time_limit,
         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
         EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = s.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         (SELECT rga.rubric_id FROM simulation_scenarios ss_rubric 
-         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss_rubric.simulation_id AND ssrga.scenario_id = ss_rubric.scenario_id
-         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-         WHERE ss_rubric.simulation_id = s.id AND ss_rubric.active = true 
-         ORDER BY ss_rubric.position 
+         JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss_rubric.simulation_id AND sssrga.scenario_id = ss_rubric.scenario_id
+         JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+         JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
+         WHERE ss_rubric.simulation_id = s.id 
+           AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+             WHERE ssf.simulation_id = ss_rubric.simulation_id 
+               AND ssf.scenario_id = ss_rubric.scenario_id 
+               AND ssf.type = 'active'::type_simulation_scenario_flags 
+               AND ssf.value = true)
+         ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss_rubric.simulation_id AND sp.scenario_id = ss_rubric.scenario_id LIMIT 1)
          LIMIT 1) as rubric_id,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,

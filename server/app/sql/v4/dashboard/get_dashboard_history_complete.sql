@@ -337,14 +337,15 @@ sim_first_scenario_rubric AS (
         rga.rubric_id,
         p_total.value AS points
     FROM simulation_scenarios ss
-    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
-    LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
+    LEFT JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    LEFT JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
     LEFT JOIN rubrics r ON r.id = rga.rubric_id
     LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::type_rubric_points
     LEFT JOIN points p_total ON p_total.id = rp_total.point_id
-    WHERE ss.active = true
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM history_attempts_final)
-    ORDER BY ss.simulation_id, ss.position
+    ORDER BY ss.simulation_id, (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
 -- Aggregate grades per attempt
 history_grade_rollup AS (
@@ -358,11 +359,12 @@ history_grade_rollup AS (
     JOIN chat sc ON sc.id = ac.chat_id
     JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     LEFT JOIN history_chat_grades hcg ON hcg.chat_id = sc.id
-    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback_scenario ON ssrga_fallback_scenario.simulation_id = sa.simulation_id
-      AND ssrga_fallback_scenario.scenario_id = sc.scenario_id
+    LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback_scenario ON sssrga_fallback_scenario.simulation_id = sa.simulation_id
+      AND sssrga_fallback_scenario.scenario_id = sc.scenario_id
       AND hcg.chat_id IS NOT NULL
       AND hcg.rubric_id IS NULL
-    LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = ssrga_fallback_scenario.rubric_grade_agent_id
+    LEFT JOIN scenario_rubric_grade_agents srga_fallback_scenario ON srga_fallback_scenario.id = sssrga_fallback_scenario.scenario_rubric_grade_agent_id
+    LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = srga_fallback_scenario.grade_agent_id
     LEFT JOIN rubrics r ON r.id = hcg.rubric_id
     LEFT JOIN rubric_points rp_r ON rp_r.rubric_id = r.id AND rp_r.type = 'total'::type_rubric_points
     LEFT JOIN points p_r ON p_r.id = rp_r.point_id
@@ -458,7 +460,7 @@ history_sim_scenario_count AS (
 history_scenario_ids AS (
     SELECT
         s.id AS simulation_id,
-        ARRAY_AGG(ss.scenario_id ORDER BY ss.position)::uuid[] AS scenario_ids_assigned
+        ARRAY_AGG(ss.scenario_id ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1))::uuid[] AS scenario_ids_assigned
     FROM simulation s
     LEFT JOIN simulation_scenarios ss ON ss.simulation_id = s.id
     WHERE s.id IN (SELECT simulation_id FROM history_attempts_final)
@@ -519,16 +521,17 @@ simulation_rubrics AS (
         p_total.value AS rubric_points,
         p_pass.value AS rubric_pass_points
     FROM simulation_scenarios ss
-    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
-    LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
+    LEFT JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    LEFT JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
     LEFT JOIN rubrics r ON r.id = rga.rubric_id
     LEFT JOIN rubric_points rp_total ON rp_total.rubric_id = r.id AND rp_total.type = 'total'::type_rubric_points
     LEFT JOIN points p_total ON p_total.id = rp_total.point_id
     LEFT JOIN rubric_points rp_pass ON rp_pass.rubric_id = r.id AND rp_pass.type = 'pass'::type_rubric_points
     LEFT JOIN points p_pass ON p_pass.id = rp_pass.point_id
-    WHERE ss.active = true
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
       AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM attempt_rollup)
-    ORDER BY ss.simulation_id, ss.position
+    ORDER BY ss.simulation_id, COALESCE((SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1), 999999)
 ),
 attempt_joined AS (
     SELECT
@@ -546,7 +549,7 @@ attempt_joined AS (
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
              JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                         WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)),
             0
         ) as time_limit_seconds
     FROM attempt_rollup ar
@@ -756,7 +759,7 @@ data_agg AS (
                     (SELECT SUM(stl.time_limit_seconds)
                      FROM scenario_time_limits stl
                      JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-                     WHERE stl.simulation_id = pr.simulation_id AND stl.active = true AND ss.active = true),
+                     WHERE stl.simulation_id = pr.simulation_id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)),
                     0
                 ),
                 COALESCE(pl.persona_names, ARRAY[]::text[]),

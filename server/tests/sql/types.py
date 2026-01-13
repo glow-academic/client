@@ -2450,6 +2450,43 @@ class CreateScenarioTreeEdgeApiResponse(BaseModel):
 
 
 
+# Generated from: create_simulation_scenario_link
+
+class CreateSimulationScenarioLinkSqlParams(BaseModel):
+
+    input_simulation_id: UUID
+    input_scenario_id: UUID
+    input_position: int | None = 1
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_simulation_id,
+            self.input_scenario_id,
+            self.input_position,
+        )
+
+class CreateSimulationScenarioLinkSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class CreateSimulationScenarioLinkApiRequest(BaseModel):
+
+    input_simulation_id: UUID
+    input_scenario_id: UUID
+    input_position: int | None = 1
+
+class CreateSimulationScenarioLinkApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
 # Generated from: create_test_scenario
 
 class CreateTestScenarioSqlParams(BaseModel):
@@ -2700,6 +2737,9 @@ class CreateSimulationDepartmentLinkApiResponse(BaseModel):
 
 
 
+# Generated from: create_simulation_scenario_link
+
+
 # Generated from: create_test_simulation
 
 class CreateTestSimulationSqlParams(BaseModel):
@@ -2833,6 +2873,45 @@ class GetSimulationByIdApiResponse(BaseModel):
 
 
 
+# Generated from: get_simulation_by_id_with_time_limit
+
+class GetSimulationByIdWithTimeLimitSqlParams(BaseModel):
+
+    input_simulation_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_simulation_id,
+        )
+
+class GetSimulationByIdWithTimeLimitSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    time_limit: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class GetSimulationByIdWithTimeLimitApiRequest(BaseModel):
+
+    input_simulation_id: UUID
+
+class GetSimulationByIdWithTimeLimitApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    title: str | None = None
+    description: str | None = None
+    active: bool | None = None
+    practice_simulation: bool | None = None
+    time_limit: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+
 # Generated from: get_simulation_department_link
 
 class GetSimulationDepartmentLinkSqlParams(BaseModel):
@@ -2862,6 +2941,40 @@ class GetSimulationDepartmentLinkApiResponse(BaseModel):
 
     simulation_id: UUID | None = None
     department_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+
+
+# Generated from: get_simulation_scenario_link
+
+class GetSimulationScenarioLinkSqlParams(BaseModel):
+
+    input_simulation_id: UUID
+    input_scenario_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.input_simulation_id,
+            self.input_scenario_id,
+        )
+
+class GetSimulationScenarioLinkSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
+    active: bool | None = None
+    created_at: str | None = None
+
+class GetSimulationScenarioLinkApiRequest(BaseModel):
+
+    input_simulation_id: UUID
+    input_scenario_id: UUID
+
+class GetSimulationScenarioLinkApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    scenario_id: UUID | None = None
     active: bool | None = None
     created_at: str | None = None
 
@@ -4103,6 +4216,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateScenarioTreeEdgeApiRequest",
         "CreateScenarioTreeEdgeApiResponse",
     ),
+    "tests/sql/v4/integration/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql": (
+        "CreateSimulationScenarioLinkSqlParams",
+        "CreateSimulationScenarioLinkSqlRow",
+        "CreateSimulationScenarioLinkApiRequest",
+        "CreateSimulationScenarioLinkApiResponse",
+    ),
     "tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql": (
         "CreateTestScenarioSqlParams",
         "CreateTestScenarioSqlRow",
@@ -4151,6 +4270,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateSimulationDepartmentLinkApiRequest",
         "CreateSimulationDepartmentLinkApiResponse",
     ),
+    "tests/sql/v4/integration/api/simulations/test_create_simulation_scenario_link_v4_complete.sql": (
+        "CreateSimulationScenarioLinkSqlParams",
+        "CreateSimulationScenarioLinkSqlRow",
+        "CreateSimulationScenarioLinkApiRequest",
+        "CreateSimulationScenarioLinkApiResponse",
+    ),
     "tests/sql/v4/integration/api/simulations/test_create_test_simulation_v4_complete.sql": (
         "CreateTestSimulationSqlParams",
         "CreateTestSimulationSqlRow",
@@ -4181,11 +4306,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationByIdApiRequest",
         "GetSimulationByIdApiResponse",
     ),
+    "tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql": (
+        "GetSimulationByIdWithTimeLimitSqlParams",
+        "GetSimulationByIdWithTimeLimitSqlRow",
+        "GetSimulationByIdWithTimeLimitApiRequest",
+        "GetSimulationByIdWithTimeLimitApiResponse",
+    ),
     "tests/sql/v4/integration/api/simulations/test_get_simulation_department_link_v4_complete.sql": (
         "GetSimulationDepartmentLinkSqlParams",
         "GetSimulationDepartmentLinkSqlRow",
         "GetSimulationDepartmentLinkApiRequest",
         "GetSimulationDepartmentLinkApiResponse",
+    ),
+    "tests/sql/v4/integration/api/simulations/test_get_simulation_scenario_link_v4_complete.sql": (
+        "GetSimulationScenarioLinkSqlParams",
+        "GetSimulationScenarioLinkSqlRow",
+        "GetSimulationScenarioLinkApiRequest",
+        "GetSimulationScenarioLinkApiResponse",
     ),
     "tests/sql/v4/integration/helpers/test_get_cs_dept_id_v4_complete.sql": (
         "GetCsDeptIdSqlParams",
@@ -4769,6 +4906,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_simulation_scenario_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/scenarios/test_create_test_scenario_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4809,6 +4951,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/simulations/test_create_simulation_scenario_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/simulations/test_create_test_simulation_v4_complete.sql"]
     ) -> SqlString: ...
 
@@ -4834,7 +4981,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_by_id_with_time_limit_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_department_link_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["tests/sql/v4/integration/api/simulations/test_get_simulation_scenario_link_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload

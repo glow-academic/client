@@ -205,13 +205,15 @@ attempt_info AS (
 scenario_rubric_grade_agent AS (
     -- Get rubric_grade_agent_id for this scenario
     SELECT 
-        ssrga.rubric_grade_agent_id,
+        rga.id as rubric_grade_agent_id,
         rga.rubric_id,
         rga.grade_agent_id,
         rgav.audio_agent_id
     FROM chat_info ci
-    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.scenario_id = ci.scenario_id
-    JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+    CROSS JOIN attempt_info ai
+    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ai.simulation_id AND sssrga.scenario_id = ci.scenario_id
+    JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+    JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
     LEFT JOIN rubric_grade_agents_audio rgav ON rgav.rubric_grade_agent_id = rga.id
     LIMIT 1
 ),
@@ -228,7 +230,13 @@ simulation_info AS (
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
              JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+             WHERE stl.simulation_id = s.id 
+               AND stl.active = true 
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+                 WHERE ssf.simulation_id = ss.simulation_id 
+                   AND ssf.scenario_id = ss.scenario_id 
+                   AND ssf.type = 'active'::type_simulation_scenario_flags 
+                   AND ssf.value = true)),
             0
         ) as time_limit
     FROM simulation s

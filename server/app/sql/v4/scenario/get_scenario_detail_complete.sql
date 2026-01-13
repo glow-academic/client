@@ -482,10 +482,18 @@ scenario_core AS (
 scenario_simulation_attributes AS (
     SELECT DISTINCT ON (ss.scenario_id)
         ss.scenario_id,
-        ss.hints_enabled
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+          WHERE ssf.simulation_id = ss.simulation_id 
+            AND ssf.scenario_id = ss.scenario_id 
+            AND ssf.type = 'hints_enabled'::type_simulation_scenario_flags), false) as hints_enabled
     FROM simulation_scenarios ss
-    WHERE ss.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND ss.active = true
-    ORDER BY ss.scenario_id, ss.position
+    WHERE ss.scenario_id = (SELECT scenario_id FROM params LIMIT 1) 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
+    ORDER BY ss.scenario_id, (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
     LIMIT 1
 ),
 scenario_personas_agg AS (
@@ -601,7 +609,12 @@ scenario_simulations_agg AS (
         COUNT(DISTINCT CASE WHEN EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) THEN simulation_id END) as active_usage_count
     FROM simulation_scenarios ss
     JOIN simulation s ON s.id = ss.simulation_id
-    WHERE ss.scenario_id = (SELECT scenario_id FROM params LIMIT 1) AND ss.active = true
+    WHERE ss.scenario_id = (SELECT scenario_id FROM params LIMIT 1) 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
 ),
 all_parameters_data AS (
     SELECT 
@@ -1333,7 +1346,7 @@ simulation_data AS (
             (SELECT SUM(stl.time_limit_seconds)
              FROM scenario_time_limits stl
              JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+             WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)),
             0
         ) as time_limit,
         COALESCE((

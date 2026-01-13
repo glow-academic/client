@@ -265,7 +265,10 @@ SELECT
     
     -- Scenario settings (flags moved FROM scenario to simulation_scenarios)
     COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), false) as image_input_enabled,
-    COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed,
+    COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+      WHERE ssf.simulation_id = ss.simulation_id 
+        AND ssf.scenario_id = ss.scenario_id 
+        AND ssf.type = 'copy_paste_allowed'::type_simulation_scenario_flags), false) as copy_paste_allowed,
     
     -- Profile data (via attempt_profiles junction)
     ap.profile_id::text as profile_id,
@@ -388,7 +391,11 @@ GROUP BY sc.id, sc.title,
          pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(mtl_voice.temperature, 0.0), mrl_voice.reasoning_level,
          m_voice.id, m_voice.value, n_voice_prov.name, k_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
          -- Other fields
-         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), ss.copy_paste_allowed,
+         EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), 
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'copy_paste_allowed'::type_simulation_scenario_flags), false),
          ap.profile_id,
          prl.req_per_day, rt.runs_today_count, rt.earliest_run_created_at
 $$;

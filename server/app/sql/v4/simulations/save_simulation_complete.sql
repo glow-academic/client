@@ -427,46 +427,144 @@ BEGIN
         WHERE EXISTS (SELECT 1 FROM params x WHERE array_length(x.video_ids, 1) > 0)
     ),
     link_scenarios AS (
-        INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, hints_enabled, audio_enabled, text_enabled, created_at, updated_at)
+        INSERT INTO simulation_scenarios (simulation_id, scenario_id, position, created_at, updated_at)
         SELECT 
             x.simulation_id,
             swo.scenario_id,
-            swo.active_flag,
             swo.position,
-            swo.hints_enabled,
-            swo.audio_enabled,
-            swo.text_enabled,
             NOW(),
             NOW()
         FROM params x
         CROSS JOIN scenarios_with_order swo
         ON CONFLICT (simulation_id, scenario_id) DO UPDATE SET
-            active = EXCLUDED.active,
             position = EXCLUDED.position,
-            hints_enabled = EXCLUDED.hints_enabled,
-            audio_enabled = EXCLUDED.audio_enabled,
-            text_enabled = EXCLUDED.text_enabled,
+            updated_at = NOW()
+    ),
+    get_flag_resource_ids AS (
+        SELECT 
+            (SELECT id FROM simulation_scenario_flags_resource WHERE name = 'active' LIMIT 1) as active_flag_id,
+            (SELECT id FROM simulation_scenario_flags_resource WHERE name = 'hints_enabled' LIMIT 1) as hints_enabled_flag_id,
+            (SELECT id FROM simulation_scenario_flags_resource WHERE name = 'audio_enabled' LIMIT 1) as audio_enabled_flag_id,
+            (SELECT id FROM simulation_scenario_flags_resource WHERE name = 'text_enabled' LIMIT 1) as text_enabled_flag_id
+    ),
+    link_scenario_flags AS (
+        INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.simulation_id,
+            swo.scenario_id,
+            gfri.active_flag_id,
+            'active'::type_simulation_scenario_flags,
+            swo.active_flag,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN scenarios_with_order swo
+        CROSS JOIN get_flag_resource_ids gfri
+        WHERE gfri.active_flag_id IS NOT NULL
+        ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO UPDATE SET
+            value = EXCLUDED.value,
+            updated_at = NOW()
+    ),
+    link_scenario_flags_hints AS (
+        INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.simulation_id,
+            swo.scenario_id,
+            gfri.hints_enabled_flag_id,
+            'hints_enabled'::type_simulation_scenario_flags,
+            swo.hints_enabled,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN scenarios_with_order swo
+        CROSS JOIN get_flag_resource_ids gfri
+        WHERE gfri.hints_enabled_flag_id IS NOT NULL
+        ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO UPDATE SET
+            value = EXCLUDED.value,
+            updated_at = NOW()
+    ),
+    link_scenario_flags_audio AS (
+        INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.simulation_id,
+            swo.scenario_id,
+            gfri.audio_enabled_flag_id,
+            'audio_enabled'::type_simulation_scenario_flags,
+            swo.audio_enabled,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN scenarios_with_order swo
+        CROSS JOIN get_flag_resource_ids gfri
+        WHERE gfri.audio_enabled_flag_id IS NOT NULL
+        ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO UPDATE SET
+            value = EXCLUDED.value,
+            updated_at = NOW()
+    ),
+    link_scenario_flags_text AS (
+        INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.simulation_id,
+            swo.scenario_id,
+            gfri.text_enabled_flag_id,
+            'text_enabled'::type_simulation_scenario_flags,
+            swo.text_enabled,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN scenarios_with_order swo
+        CROSS JOIN get_flag_resource_ids gfri
+        WHERE gfri.text_enabled_flag_id IS NOT NULL
+        ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO UPDATE SET
+            value = EXCLUDED.value,
             updated_at = NOW()
     ),
     remove_existing_rubric_grade_agents AS (
-        DELETE FROM simulation_scenarios_rubric_grade_agents
+        DELETE FROM simulation_scenarios_scenario_rubric_grade_agents
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
     ),
-    -- Create/find rubric_grade_agents entries
+    get_member_agent_for_rubrics AS (
+        SELECT DISTINCT
+            (srga).rubric_id,
+            COALESCE(
+                (SELECT a.id FROM rubric_domains rd 
+                 JOIN agent_domains adom ON adom.domain_id = rd.domain_id
+                 JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
+                 JOIN agent a ON a.id = adom.agent_id
+                 WHERE rd.rubric_id = (srga).rubric_id
+                   AND EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = true)
+                 LIMIT 1),
+                (SELECT id FROM agent WHERE active = true ORDER BY created_at LIMIT 1)
+            ) as agent_id
+        FROM params x
+        CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
+        WHERE (srga).rubric_id IS NOT NULL
+    ),
+    -- Create/find rubric_grade_agents entries (needed for scenario_rubric_grade_agents)
     create_rubric_grade_agents AS (
-        INSERT INTO rubric_grade_agents (rubric_id, grade_agent_id, created_at, updated_at)
+        INSERT INTO rubric_grade_agents (rubric_id, grade_agent_id, agent_id, created_at, updated_at)
         SELECT DISTINCT
             (srga).rubric_id,
             (srga).grade_agent_id,
+            gmar.agent_id,
             NOW(),
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
+        JOIN get_member_agent_for_rubrics gmar ON gmar.rubric_id = (srga).rubric_id
         WHERE (srga).rubric_id IS NOT NULL 
           AND (srga).grade_agent_id IS NOT NULL
         ON CONFLICT (rubric_id, grade_agent_id, agent_id) DO UPDATE SET
             updated_at = NOW()
-        RETURNING id as rubric_grade_agent_id, rubric_id, grade_agent_id
+        RETURNING id as rubric_grade_agent_id, rubric_id, grade_agent_id, agent_id
     ),
     -- Link audio agents if provided
     link_audio_agents AS (
@@ -483,12 +581,15 @@ BEGIN
         WHERE (srga).audio_agent_id IS NOT NULL
         ON CONFLICT (rubric_grade_agent_id, audio_agent_id) DO NOTHING
     ),
-    link_scenario_rubric_grade_agents AS (
-        INSERT INTO simulation_scenarios_rubric_grade_agents (simulation_id, scenario_id, rubric_grade_agent_id, created_at, updated_at)
+    -- Create/find scenario_rubric_grade_agents entries
+    create_scenario_rubric_grade_agents AS (
+        INSERT INTO scenario_rubric_grade_agents (rubric_id, grade_agent_id, agent_id, active, generated, created_at, updated_at)
         SELECT DISTINCT
-            x.simulation_id,
-            (srga).scenario_id,
-            crga.rubric_grade_agent_id,
+            crga.rubric_id,
+            crga.grade_agent_id,
+            crga.agent_id,
+            true,
+            false,
             NOW(),
             NOW()
         FROM params x
@@ -501,7 +602,33 @@ BEGIN
         )
           AND (srga).rubric_id IS NOT NULL 
           AND (srga).grade_agent_id IS NOT NULL
-        ON CONFLICT (simulation_id, scenario_id, rubric_grade_agent_id) DO NOTHING
+        ON CONFLICT (rubric_id, grade_agent_id) DO UPDATE SET
+            updated_at = NOW()
+        RETURNING id as scenario_rubric_grade_agent_id, rubric_id, grade_agent_id
+    ),
+    link_scenario_rubric_grade_agents AS (
+        INSERT INTO simulation_scenarios_scenario_rubric_grade_agents (simulation_id, scenario_id, scenario_rubric_grade_agent_id, created_at, updated_at, generated, mcp)
+        SELECT DISTINCT
+            x.simulation_id,
+            (srga).scenario_id,
+            csrga.scenario_rubric_grade_agent_id,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga
+        JOIN create_rubric_grade_agents crga ON crga.rubric_id = (srga).rubric_id 
+            AND crga.grade_agent_id = (srga).grade_agent_id
+        JOIN create_scenario_rubric_grade_agents csrga ON csrga.rubric_id = crga.rubric_id 
+            AND csrga.grade_agent_id = crga.grade_agent_id
+        WHERE EXISTS (
+            SELECT 1 FROM scenarios_with_order swo 
+            WHERE swo.scenario_id = (srga).scenario_id
+        )
+          AND (srga).rubric_id IS NOT NULL 
+          AND (srga).grade_agent_id IS NOT NULL
+        ON CONFLICT (simulation_id, scenario_id, scenario_rubric_grade_agent_id) DO NOTHING
     )
     SELECT 
         x.simulation_id AS simulation_id,

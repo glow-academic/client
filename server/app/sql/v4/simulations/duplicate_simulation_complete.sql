@@ -103,30 +103,62 @@ link_flags AS (
     CROSS JOIN get_flag_ids gfi
 ),
 copy_scenarios AS (
-    INSERT INTO simulation_scenarios (simulation_id, scenario_id, active, position, created_at, updated_at)
+    INSERT INTO simulation_scenarios (simulation_id, scenario_id, created_at, updated_at)
     SELECT 
         ns.simulation_id,
         ss.scenario_id,
-        ss.active,
-        ss.position,
         NOW(),
         NOW()
     FROM source_simulation ssim
     JOIN simulation_scenarios ss ON ss.simulation_id = ssim.source_id
     CROSS JOIN new_simulation ns
 ),
-copy_rubric_grade_agents AS (
-    INSERT INTO simulation_scenarios_rubric_grade_agents (simulation_id, scenario_id, rubric_grade_agent_id, created_at, updated_at)
+copy_scenario_positions AS (
+    INSERT INTO scenario_positions (simulation_id, scenario_id, value, created_at, updated_at, generated, mcp, call_id)
     SELECT 
         ns.simulation_id,
-        ssrga.scenario_id,
-        ssrga.rubric_grade_agent_id,
+        sp.scenario_id,
+        sp.value,
         NOW(),
-        NOW()
+        NOW(),
+        sp.generated,
+        sp.mcp,
+        sp.call_id
     FROM source_simulation ssim
-    JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ssim.source_id
+    JOIN scenario_positions sp ON sp.simulation_id = ssim.source_id
     CROSS JOIN new_simulation ns
-    ON CONFLICT (simulation_id, scenario_id, rubric_grade_agent_id) DO NOTHING
+),
+copy_scenario_flags AS (
+    INSERT INTO simulation_scenario_flags (simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
+    SELECT 
+        ns.simulation_id,
+        ssf.scenario_id,
+        ssf.scenario_flag_id,
+        ssf.type,
+        ssf.value,
+        NOW(),
+        NOW(),
+        ssf.generated,
+        ssf.mcp
+    FROM source_simulation ssim
+    JOIN simulation_scenario_flags ssf ON ssf.simulation_id = ssim.source_id
+    CROSS JOIN new_simulation ns
+    ON CONFLICT (simulation_id, scenario_id, scenario_flag_id, type) DO NOTHING
+),
+copy_rubric_grade_agents AS (
+    INSERT INTO simulation_scenarios_scenario_rubric_grade_agents (simulation_id, scenario_id, scenario_rubric_grade_agent_id, created_at, updated_at, generated, mcp)
+    SELECT 
+        ns.simulation_id,
+        sssrga.scenario_id,
+        sssrga.scenario_rubric_grade_agent_id,
+        NOW(),
+        NOW(),
+        sssrga.generated,
+        sssrga.mcp
+    FROM source_simulation ssim
+    JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ssim.source_id
+    CROSS JOIN new_simulation ns
+    ON CONFLICT (simulation_id, scenario_id, scenario_rubric_grade_agent_id) DO NOTHING
 ),
 copy_departments AS (
     INSERT INTO simulation_departments (simulation_id, department_id, active, created_at, updated_at)

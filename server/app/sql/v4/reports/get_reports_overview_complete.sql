@@ -802,12 +802,13 @@ filt AS (
                     rga.rubric_id,
                     (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points
                 FROM simulation_scenarios ss
-                LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
-                LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
+                LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
+                LEFT JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+                LEFT JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
                 LEFT JOIN rubrics r ON r.id = rga.rubric_id
-                WHERE ss.active = true
+                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
                   AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_stagnation)
-                ORDER BY ss.simulation_id, ss.position
+                ORDER BY ss.simulation_id, (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
             ),
             grade_stream AS (
                 SELECT
@@ -823,10 +824,11 @@ filt AS (
                 JOIN chat c_stag ON c_stag.id = gg_stag.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN chat_scenario_info_stagnation csi ON csi.chat_id = c_stag.id
-                LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = csi.simulation_id
-                  AND ssrga_fallback.scenario_id = csi.scenario_id
+                LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = csi.simulation_id
+                  AND sssrga_fallback.scenario_id = csi.scenario_id
                   AND rga.rubric_id IS NULL
-                LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = ssrga_fallback.rubric_grade_agent_id
+                LEFT JOIN scenario_rubric_grade_agents srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
+                LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = srga_fallback.grade_agent_id
                 LEFT JOIN rubrics r ON r.id = rga.rubric_id
                 LEFT JOIN rubrics r_fallback_scenario ON r_fallback_scenario.id = rga_fallback_scenario.rubric_id
                 LEFT JOIN sim_first_scenario_rubric_stagnation sfsr ON sfsr.simulation_id = csi.simulation_id
@@ -1347,11 +1349,12 @@ filt AS (
                     ss.simulation_id,
                     rga.rubric_id
                 FROM simulation_scenarios ss
-                LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
-                LEFT JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-                WHERE ss.active = true
+                LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
+                LEFT JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+                LEFT JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
+                WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)
                   AND ss.simulation_id IN (SELECT DISTINCT simulation_id FROM chat_scenario_info_overview)
-                ORDER BY ss.simulation_id, ss.position
+                ORDER BY ss.simulation_id, (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
             ),
             latest_grade_per_chat AS (
                 SELECT DISTINCT ON (c.id)
@@ -1370,10 +1373,11 @@ filt AS (
                 JOIN chat c ON c.id = gg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN chat_scenario_info_overview csi ON csi.chat_id = c.id
-                LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = csi.simulation_id
-                  AND ssrga_fallback.scenario_id = csi.scenario_id
+                LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = csi.simulation_id
+                  AND sssrga_fallback.scenario_id = csi.scenario_id
                   AND rga.rubric_id IS NULL
-                LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = ssrga_fallback.rubric_grade_agent_id
+                LEFT JOIN scenario_rubric_grade_agents srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
+                LEFT JOIN rubric_grade_agents rga_fallback_scenario ON rga_fallback_scenario.id = srga_fallback.grade_agent_id
                 LEFT JOIN sim_first_scenario_rubric_overview sfsr ON sfsr.simulation_id = csi.simulation_id
                   AND rga.rubric_id IS NULL
                   AND rga_fallback_scenario.rubric_id IS NULL
@@ -1572,7 +1576,7 @@ filt AS (
                         (SELECT SUM(stl.time_limit_seconds)
                          FROM scenario_time_limits stl
                          JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-                         WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+                         WHERE stl.simulation_id = s.id AND stl.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'active'::type_simulation_scenario_flags AND ssf.value = true)),
                         0
                     ) AS time_limit,
                     COALESCE(

@@ -345,10 +345,11 @@ JOIN root_map rm              ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id
 LEFT JOIN personas p          ON p.id = sfp.persona_id
 LEFT JOIN latest_grade lg     ON lg.simulation_chat_id = sc.id
-LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_fallback ON ssrga_fallback.simulation_id = sa.simulation_id
-  AND ssrga_fallback.scenario_id = s.id
+LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = sa.simulation_id
+  AND sssrga_fallback.scenario_id = s.id
   AND lg.rubric_id IS NULL
-LEFT JOIN rubric_grade_agents rga_fallback ON rga_fallback.id = ssrga_fallback.rubric_grade_agent_id
+LEFT JOIN scenario_rubric_grade_agents srga_fallback ON srga_fallback.id = sssrga_fallback.scenario_rubric_grade_agent_id
+LEFT JOIN rubric_grade_agents rga_fallback ON rga_fallback.id = srga_fallback.grade_agent_id
 LEFT JOIN rubrics r           ON r.id = COALESCE(lg.rubric_id, rga_fallback.rubric_id)
 LEFT JOIN cohorts_by_sim cbs  ON cbs.simulation_id = sa.simulation_id
 LEFT JOIN profile_cohorts_for_sim pcs ON pcs.attempt_id = sa.id

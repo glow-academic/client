@@ -514,14 +514,26 @@ attempt_base AS (
             (SELECT SUM(stl.time_limit_seconds)::int
              FROM scenario_time_limits stl
              JOIN simulation_scenarios ss ON ss.simulation_id = stl.simulation_id AND ss.scenario_id = stl.scenario_id
-             WHERE stl.simulation_id = s.id AND stl.active = true AND ss.active = true),
+             WHERE stl.simulation_id = s.id 
+               AND stl.active = true 
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+                 WHERE ssf.simulation_id = ss.simulation_id 
+                   AND ssf.scenario_id = ss.scenario_id 
+                   AND ssf.type = 'active'::type_simulation_scenario_flags 
+                   AND ssf.value = true)),
             0
         )::int as sim_time_limit,
         (SELECT rga.rubric_id FROM simulation_scenarios ss 
-         JOIN simulation_scenarios_rubric_grade_agents ssrga ON ssrga.simulation_id = ss.simulation_id AND ssrga.scenario_id = ss.scenario_id
-         JOIN rubric_grade_agents rga ON rga.id = ssrga.rubric_grade_agent_id
-         WHERE ss.simulation_id = s.id AND ss.active = true 
-         ORDER BY ss.position 
+         JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
+         JOIN scenario_rubric_grade_agents srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
+         JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
+         WHERE ss.simulation_id = s.id 
+           AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+             WHERE ssf.simulation_id = ss.simulation_id 
+               AND ssf.scenario_id = ss.scenario_id 
+               AND ssf.type = 'active'::type_simulation_scenario_flags 
+               AND ssf.value = true) 
+         ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
          LIMIT 1) as sim_rubric_id,
         s.created_at as sim_created_at,
         s.updated_at as sim_updated_at
@@ -587,11 +599,16 @@ role_check AS (
     ) current_user_role_info
 ),
 simulation_scenarios_list AS (
-    SELECT ss.scenario_id, ss.position
+    SELECT ss.scenario_id, (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position
     FROM params x
     JOIN attempt_base ab ON ab.id = x.attempt_id
-    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id AND ss.active = true
-    ORDER BY ss.position
+    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
+    ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
 chat_ids_list AS (
     SELECT array_agg(id) as chat_ids
@@ -675,11 +692,16 @@ scenario_videos_with_questions AS (
 simulation_root_scenarios_list AS (
     SELECT DISTINCT
         ss.scenario_id as root_scenario_id,
-        ss.position
+        (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1) as position
     FROM params x
     JOIN attempt_base ab ON ab.id = x.attempt_id
-    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id AND ss.active = true
-    ORDER BY ss.position
+    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
+    ORDER BY (SELECT sp.value FROM scenario_positions sp WHERE sp.simulation_id = ss.simulation_id AND sp.scenario_id = ss.scenario_id LIMIT 1)
 ),
 -- Recursively map all child scenarios to their root parent scenarios
 scenario_root_mapping AS (
@@ -888,9 +910,15 @@ previous_attempt_rubric_points AS (
     FROM previous_chats_with_grades pwg
     JOIN simulation_attempts sa ON sa.id = pwg.attempt_id
     JOIN simulation s ON s.id = sa.simulation_id
-    LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id AND ss_rubric.active = true
-    LEFT JOIN simulation_scenarios_rubric_grade_agents ssrga_rubric ON ssrga_rubric.simulation_id = ss_rubric.simulation_id AND ssrga_rubric.scenario_id = ss_rubric.scenario_id
-    LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = ssrga_rubric.rubric_grade_agent_id
+    LEFT JOIN simulation_scenarios ss_rubric ON ss_rubric.simulation_id = s.id 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss_rubric.simulation_id 
+          AND ssf.scenario_id = ss_rubric.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
+    LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_rubric ON sssrga_rubric.simulation_id = ss_rubric.simulation_id AND sssrga_rubric.scenario_id = ss_rubric.scenario_id
+    LEFT JOIN scenario_rubric_grade_agents srga_rubric ON srga_rubric.id = sssrga_rubric.scenario_rubric_grade_agent_id
+    LEFT JOIN rubric_grade_agents rga_rubric ON rga_rubric.id = srga_rubric.grade_agent_id
     ORDER BY sa.simulation_id
 ),
 previous_chats_for_scenarios AS (
@@ -926,7 +954,11 @@ scenario_background_images_for_simulation AS (
         SELECT 1 FROM simulation_scenarios ss 
         WHERE ss.simulation_id = ab.simulation_id 
           AND ss.scenario_id = si.scenario_id 
-          AND ss.active = true
+          AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+            WHERE ssf.simulation_id = ss.simulation_id 
+              AND ssf.scenario_id = ss.scenario_id 
+              AND ssf.type = 'active'::type_simulation_scenario_flags 
+              AND ssf.value = true)
     )
     JOIN images i ON i.id = si.image_id AND i.active = true
     LEFT JOIN image_uploads iu ON iu.image_id = i.id AND iu.active = true
@@ -949,12 +981,30 @@ all_simulation_scenarios_with_previous_chats AS (
          s.updated_at,
          false,
          false,
-         COALESCE(ss.copy_paste_allowed, false),
-         COALESCE(ss.text_enabled, true),
-         COALESCE(ss.audio_enabled, false),
-         COALESCE(ss.show_problem_statement, true),
-         COALESCE(ss.show_objectives, true),
-         COALESCE(ss.show_images, true),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'copy_paste_allowed'::type_simulation_scenario_flags), false),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'text_enabled'::type_simulation_scenario_flags), true),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'audio_enabled'::type_simulation_scenario_flags), false),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'show_problem_statement'::type_simulation_scenario_flags), true),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'show_objectives'::type_simulation_scenario_flags), true),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'show_images'::type_simulation_scenario_flags), true),
          sbi.background_image_upload_id,
          COALESCE(
              (SELECT ARRAY_AGG(o.objective ORDER BY so.idx)
@@ -1003,12 +1053,30 @@ scenarios_data AS (
          s.updated_at,
          false,
          false,
-         COALESCE(ss.copy_paste_allowed, false),
-         COALESCE(ss.text_enabled, true),
-         COALESCE(ss.audio_enabled, false),
-         COALESCE(ss.show_problem_statement, true),
-         COALESCE(ss.show_objectives, true),
-         COALESCE(ss.show_images, true),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'copy_paste_allowed'::type_simulation_scenario_flags), false),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'text_enabled'::type_simulation_scenario_flags), true),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'audio_enabled'::type_simulation_scenario_flags), false),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'show_problem_statement'::type_simulation_scenario_flags), true),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'show_objectives'::type_simulation_scenario_flags), true),
+         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+           WHERE ssf.simulation_id = ss.simulation_id 
+             AND ssf.scenario_id = ss.scenario_id 
+             AND ssf.type = 'show_images'::type_simulation_scenario_flags), true),
          sbi.background_image_upload_id,
          COALESCE(
              (SELECT ARRAY_AGG(o.objective ORDER BY so.idx)
@@ -1018,10 +1086,13 @@ scenarios_data AS (
              ARRAY[]::text[]
          )
         )::types.q_get_simulation_attempt_v4_scenario as scenario_data,
-        COALESCE(ss.hints_enabled, false) as hints_enabled,
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf WHERE ssf.simulation_id = ss.simulation_id AND ssf.scenario_id = ss.scenario_id AND ssf.type = 'hints_enabled'::type_simulation_scenario_flags), false) as hints_enabled,
         COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'objectives_enabled' AND sf.type = 'objectives_enabled'::type_scenario_flags AND sf.value = true), true) as objectives_enabled,
         COALESCE(EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = true), false) as image_input_enabled,
-        COALESCE(ss.copy_paste_allowed, false) as copy_paste_allowed
+        COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
+          WHERE ssf.simulation_id = ss.simulation_id 
+            AND ssf.scenario_id = ss.scenario_id 
+            AND ssf.type = 'copy_paste_allowed'::type_simulation_scenario_flags), false) as copy_paste_allowed
     FROM scenario s
     CROSS JOIN scenario_ids_list sil
     CROSS JOIN attempt_base ab
@@ -1035,10 +1106,17 @@ scenarios_data AS (
 ),
 simulation_flags AS (
     SELECT 
-        COALESCE((SELECT ss.hints_enabled FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as hints_enabled,
+        COALESCE((SELECT ssf.value FROM chats_base cb CROSS JOIN attempt_base ab JOIN simulation_scenario_flags ssf ON ssf.simulation_id = ab.simulation_id AND ssf.scenario_id = cb.scenario_id AND ssf.type = 'hints_enabled'::type_simulation_scenario_flags WHERE cb.attempt_id = ab.id ORDER BY cb.created_at LIMIT 1), false) as hints_enabled,
         COALESCE((SELECT EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'objectives_enabled' AND sf.type = 'objectives_enabled'::type_scenario_flags AND sf.value = true) FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id JOIN scenarios s ON s.id = ss.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), true) as objectives_enabled,
         COALESCE((SELECT EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = s.id AND fl.name = 'images_enabled' AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = true) FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id JOIN scenarios s ON s.id = ss.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as image_input_enabled,
-        COALESCE((SELECT ss.copy_paste_allowed FROM simulation_scenarios ss JOIN chats_base cb ON ss.scenario_id = cb.scenario_id CROSS JOIN attempt_base ab WHERE ss.simulation_id = ab.simulation_id ORDER BY cb.created_at LIMIT 1), false) as copy_paste_allowed
+        COALESCE((SELECT ssf.value FROM simulation_scenarios ss 
+          JOIN chats_base cb ON ss.scenario_id = cb.scenario_id 
+          CROSS JOIN attempt_base ab 
+          LEFT JOIN simulation_scenario_flags ssf ON ssf.simulation_id = ss.simulation_id 
+            AND ssf.scenario_id = ss.scenario_id 
+            AND ssf.type = 'copy_paste_allowed'::type_simulation_scenario_flags
+          WHERE ss.simulation_id = ab.simulation_id 
+          ORDER BY cb.created_at LIMIT 1), false) as copy_paste_allowed
 ),
 -- Tree traversal for messages: get all messages following conversation flow
 messages_with_tree AS (
@@ -1589,12 +1667,10 @@ chats_with_positions AS (
         cwad.created_at,
         cwad.grade,
         COALESCE(
-            (SELECT ss.position
-             FROM simulation_scenarios ss
+            (SELECT sp.value FROM scenario_positions sp
              CROSS JOIN attempt_base ab
-             WHERE ss.simulation_id = ab.simulation_id 
-               AND ss.scenario_id = (cwad.chat_data).scenario.id
-               AND ss.active = true
+             WHERE sp.simulation_id = ab.simulation_id 
+               AND sp.scenario_id = (cwad.chat_data).scenario.id
              LIMIT 1),
             (SELECT ROW_NUMBER() OVER (ORDER BY cwad.created_at) FROM chats_with_all_data LIMIT 1)
         ) as position,
@@ -1701,13 +1777,23 @@ simulation_scenario_count AS (
         COUNT(*)::integer as total_scenarios
     FROM params x
     JOIN attempt_base ab ON ab.id = x.attempt_id
-    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id AND ss.active = true
+    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
 ),
 scenarios_with_completed_chats AS (
     SELECT DISTINCT ss.scenario_id as parent_scenario_id
     FROM params x
     JOIN attempt_base ab ON ab.id = x.attempt_id
-    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id AND ss.active = true
+    JOIN simulation_scenarios ss ON ss.simulation_id = ab.simulation_id 
+      AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+        WHERE ssf.simulation_id = ss.simulation_id 
+          AND ssf.scenario_id = ss.scenario_id 
+          AND ssf.type = 'active'::type_simulation_scenario_flags 
+          AND ssf.value = true)
     JOIN attempt_chats ac ON ac.attempt_id = ab.id
     JOIN chat sc ON sc.id = ac.chat_id
     JOIN grade scg ON EXISTS (
@@ -1809,13 +1895,16 @@ metadata_computed AS (
 available_continuation_options AS (
     WITH current_scenario_position AS (
         SELECT COALESCE(
-            (SELECT ss.position
-             FROM simulation_scenarios ss
+            (SELECT sp.value FROM scenario_positions sp
              CROSS JOIN attempt_base ab
              JOIN unified_content uc ON uc.content_type = 'scenario'
              WHERE ss.simulation_id = ab.simulation_id
                AND ss.scenario_id = (uc.chat_data).scenario.id
-               AND ss.active = true
+               AND EXISTS (SELECT 1 FROM simulation_scenario_flags ssf 
+            WHERE ssf.simulation_id = ss.simulation_id 
+              AND ssf.scenario_id = ss.scenario_id 
+              AND ssf.type = 'active'::type_simulation_scenario_flags 
+              AND ssf.value = true)
                AND uc.completed = false
              ORDER BY uc.position, uc.created_at
              LIMIT 1),
