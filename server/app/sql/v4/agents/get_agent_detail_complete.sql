@@ -279,7 +279,7 @@ debug_data AS (
         mrm.model_id::text,
         di.content
     FROM params x
-    JOIN run_artifact mr ON mr.agent_id = x.agent_id
+    JOIN runs mr ON mr.agent_id = x.agent_id
     JOIN run_debug_info rdi ON rdi.run_id = mr.id
     JOIN debug_info_resource di ON di.id = rdi.debug_info_id
     JOIN run_models mrm ON mrm.run_id = mr.id
