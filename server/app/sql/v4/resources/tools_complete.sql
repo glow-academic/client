@@ -121,10 +121,13 @@ BEGIN
         NOW()
     );
     
-    -- INSERT INTO tools_resource table (always insert, never update)
-    -- Note: Column names and values need to be adjusted based on actual table schema
-    INSERT INTO tools_resource(active, call_id, mcp)
-    VALUES (true, v_call_id, mcp)
+    -- INSERT INTO tools table (always insert, never update)
+    -- Use ON CONFLICT to handle unique constraint on tool_id
+    INSERT INTO tools(tool_id, active, call_id, mcp, group_id, generated)
+    VALUES (v_tool_id, true, v_call_id, mcp, api_create_tools_v4.group_id, false)
+    ON CONFLICT (tool_id) DO UPDATE SET
+        call_id = EXCLUDED.call_id,
+        updated_at = NOW()
     RETURNING id INTO v_tools_id;
     
     -- Create message record (assistant role, not completed)

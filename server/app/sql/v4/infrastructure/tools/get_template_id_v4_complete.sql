@@ -25,8 +25,7 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT tt.template_id
-    FROM tools_resource t
-    JOIN tool_templates tt ON tt.tool_id = t.tool_id
-    WHERE t.id = $1
+    FROM tool_templates tt
+    WHERE tt.tool_id = $1
     LIMIT 1
 $$;
