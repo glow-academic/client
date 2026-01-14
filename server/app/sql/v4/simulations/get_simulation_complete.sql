@@ -527,14 +527,14 @@ user_departments AS (
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
 user_department_ids AS (
-    SELECT ARRAY_AGG(id) as ids
+    SELECT ARRAY_AGG(d.id) as ids
     FROM department_artifact d
     JOIN params x ON true
     JOIN profile_departments pd ON d.id = pd.department_id
     WHERE pd.profile_id = x.profile_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
 ),
 primary_department_id AS (
-    SELECT department_id
+    SELECT pd.department_id
     FROM params x
     JOIN profile_departments pd ON pd.profile_id = x.profile_id AND pd.is_primary = TRUE
     LIMIT 1
@@ -544,8 +544,8 @@ simulation_scenarios_base AS (
     SELECT 
         ss.simulation_id,
         s.id as scenario_id,
-        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description,
         COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
           WHERE ssf.simulation_id = ss.simulation_id 
             AND ssf.scenario_id = ss.scenario_id 
@@ -762,11 +762,27 @@ valid_rubrics_data AS (
     FROM rubric_artifact r
     LEFT JOIN rubric_departments rd ON rd.rubric_id = r.id AND rd.active = true
     CROSS JOIN user_department_ids udi
-    WHERE EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
-      AND EXISTS (SELECT 1 
+    WHERE EXISTS (
+        SELECT 1
+        FROM rubric_flags rf
+        WHERE rf.rubric_id = r.id
+          AND rf.type = 'active'::type_rubric_flags
+          AND rf.value = true
+      )
+      AND EXISTS (
+        SELECT 1
+        FROM rubric_artifacts ra
+        WHERE ra.rubric_id = r.id
+          AND ra.artifact = CAST('agent' AS artifacts)
+      )
       AND (
-          rd.department_id = ANY(udi.ids)
-          OR NOT EXISTS (SELECT 1 FROM rubric_departments rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
+        rd.department_id = ANY(udi.ids)
+        OR NOT EXISTS (
+            SELECT 1
+            FROM rubric_departments rd2
+            WHERE rd2.rubric_id = r.id
+              AND rd2.active = true
+        )
       )
     UNION
     SELECT DISTINCT
@@ -1083,11 +1099,7 @@ selected_agents_from_simulation AS (
     JOIN agents_resource a ON false
     WHERE x.simulation_id IS NOT NULL AND false
       AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
-    AND (
-        (a.id = a_text.id AND da_text.artifact = CAST('scenario' AS artifacts))
-        OR (a.id = a_voice.id AND da_voice.artifact = CAST('message' AS artifacts))
-    )
-      AND false  -- Domain-based agent lookup removed
+      AND false  -- Domain-based agent lookup removed (a_text, da_text, a_voice, da_voice references removed)
     UNION
     -- Get grade agents from junction tables
     SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, '') as role
@@ -1116,6 +1128,7 @@ selected_agents_from_simulation AS (
       AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     UNION
     -- Get rubric agents (member role) from rubric_domains
+    -- NOTE: rubric_domains table was removed in migration 249, so this query returns no rows
     SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, '') as role
     FROM params x
     JOIN simulation_base sb ON sb.id = x.simulation_id
@@ -1123,12 +1136,8 @@ selected_agents_from_simulation AS (
     JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
     JOIN rubric_grade_agents rga ON rga.id = srga.grade_agent_id
     JOIN rubrics_resource r ON r.id = rga.rubric_id
-    JOIN rubric_domains rd_link ON rd_link.rubric_id = r.id
-    
-    
     JOIN agents_resource a ON false
-    WHERE x.simulation_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    WHERE false  -- Disabled: rubric_domains table was removed in migration 249
 ),
 agents_data AS (
     SELECT 
@@ -1144,7 +1153,7 @@ agents_data AS (
         
         LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) 
-        AND NULL::artifacts IN (CAST('message' AS artifacts), CAST('grade' AS artifacts), CAST('scenario' AS artifacts), CAST('agent' AS artifacts))
+        AND false  -- Domain-based agent lookup removed (message, grade artifacts no longer exist)
         GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), NULL::artifacts
         HAVING 
             COUNT(NULL::uuid) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments_for_agents)) > 0
@@ -1204,11 +1213,9 @@ valid_member_agents AS (
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
     UNION
     -- Get rubric agents (member role) from rubric_domains
+    -- NOTE: rubric_domains table was removed in migration 249, so this query is disabled
     SELECT DISTINCT a.id
     FROM rubric_artifact r
-    JOIN rubric_domains rd_link ON rd_link.rubric_id = r.id
-    
-    
     JOIN agents_resource a ON false
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) 
     AND EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = true)
@@ -1757,14 +1764,11 @@ scenarios_agent_data AS (
             WHERE at.agent_id = a.id AND at.active = true
               AND rt.resource = 'scenarios'::resources
         )
-        AND (
-            (SELECT mcp FROM params) = false
-            OR EXISTS (
-                SELECT 1 FROM agent_flags af_mcp
-                WHERE af_mcp.agent_id = a.id
-                  AND af_mcp.type = 'mcp'::type_agent_flags
-                  AND af_mcp.value = true
-            )
+        AND EXISTS (
+            SELECT 1 FROM agent_flags af_mcp
+            WHERE af_mcp.agent_id = a.id
+              AND af_mcp.type = 'mcp'::type_agent_flags
+              AND af_mcp.value = true
         )
     ),
     agent_department_preference AS (

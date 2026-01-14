@@ -34,7 +34,7 @@ AS $$
     description_lookup AS (
         SELECT id FROM descriptions_resource WHERE description = 'Test' LIMIT 1
     ),
-    points_resource AS (
+    points_resource_cte AS (
         INSERT INTO points_resource(value)
         VALUES (100)
         ON CONFLICT (value) DO NOTHING
@@ -43,7 +43,7 @@ AS $$
     points_lookup AS (
         SELECT id FROM points_resource WHERE value = 100 LIMIT 1
     ),
-    pass_points_resource AS (
+    pass_points_resource_cte AS (
         INSERT INTO points_resource(value)
         VALUES (70)
         ON CONFLICT (value) DO NOTHING
@@ -88,13 +88,13 @@ AS $$
     new_rubric_points_link AS (
         INSERT INTO rubric_points(rubric_id, point_id, type)
         SELECT nrf.id, COALESCE(pr.id, pl.id), 'total'::type_rubric_points
-        FROM new_rubric_filtered nrf, points_resource pr FULL OUTER JOIN points_lookup pl ON true
+        FROM new_rubric_filtered nrf, points_resource_cte pr FULL OUTER JOIN points_lookup pl ON true
         RETURNING rubric_id
     ),
     new_rubric_pass_points_link AS (
         INSERT INTO rubric_points(rubric_id, point_id, type)
         SELECT nrf.id, COALESCE(ppr.id, ppl.id), 'pass'::type_rubric_points
-        FROM new_rubric_filtered nrf, pass_points_resource ppr FULL OUTER JOIN pass_points_lookup ppl ON true
+        FROM new_rubric_filtered nrf, pass_points_resource_cte ppr FULL OUTER JOIN pass_points_lookup ppl ON true
         RETURNING rubric_id
     ),
     new_rubric_flag_link AS (

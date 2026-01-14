@@ -30,7 +30,7 @@ AS $$
     -- Standard groups are linked to rubrics via rubric_standard_groups table
     -- This function creates a standard group without rubric link - tests using this may need updating
     WITH new_group AS (
-        INSERT INTO standard_groups(name, short_name, description, points, pass_points)
+        INSERT INTO standard_groups_resource(name, short_name, description, points, pass_points)
         SELECT 
             group_name,
             group_short_name,

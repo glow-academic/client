@@ -87,11 +87,11 @@ agent_department_links AS (
 ),
 agent_departments_data AS (
     SELECT 
-        NULL::uuid,
+        ad.agent_id,
         ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids
     FROM agent_departments ad
     WHERE ad.active = true
-    GROUP BY NULL::uuid
+    GROUP BY ad.agent_id
 ),
 filtered_agents AS (
     SELECT 

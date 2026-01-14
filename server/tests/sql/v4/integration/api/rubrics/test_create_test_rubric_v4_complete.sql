@@ -45,12 +45,12 @@ AS $$
         VALUES (rubric_description)
         RETURNING id
     ),
-    points_resource AS (
+    points_resource_cte AS (
         INSERT INTO points_resource(value)
         VALUES (rubric_points)
         RETURNING id
     ),
-    pass_points_resource AS (
+    pass_points_resource_cte AS (
         INSERT INTO points_resource(value)
         VALUES (rubric_pass_points)
         RETURNING id
@@ -73,13 +73,13 @@ AS $$
     rubric_points_link AS (
         INSERT INTO rubric_points(rubric_id, point_id, type)
         SELECT nr.id, pr.id, 'total'::type_rubric_points
-        FROM new_rubric nr, points_resource pr
+        FROM new_rubric nr, points_resource_cte pr
         RETURNING rubric_id
     ),
     rubric_pass_points_link AS (
         INSERT INTO rubric_points(rubric_id, point_id, type)
         SELECT nr.id, ppr.id, 'pass'::type_rubric_points
-        FROM new_rubric nr, pass_points_resource ppr
+        FROM new_rubric nr, pass_points_resource_cte ppr
         RETURNING rubric_id
     ),
     rubric_flag_link AS (

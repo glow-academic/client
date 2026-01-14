@@ -28,7 +28,7 @@ AS $$
         RETURNING simulation_id, scenario_id, created_at
     ),
     inserted_flag AS (
-        INSERT INTO simulation_scenario_flags_resource(simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
+        INSERT INTO simulation_scenario_flags(simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
         SELECT 
             il.simulation_id,
             il.scenario_id,

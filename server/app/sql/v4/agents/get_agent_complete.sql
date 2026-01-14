@@ -249,12 +249,12 @@ user_departments AS (
 -- Conditional: Get agent department data only if agent_id provided
 agent_departments_data AS (
     SELECT 
-        NULL::uuid,
+        ad.agent_id,
         ARRAY_AGG(ad.department_id ORDER BY ad.created_at) as department_ids
     FROM params x
-    JOIN agent_departments ad ON NULL::uuid = x.agent_id AND ad.active = true
+    JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
     WHERE x.agent_id IS NOT NULL
-    GROUP BY NULL::uuid
+    GROUP BY ad.agent_id
 ),
 agent_department_access_check AS (
     SELECT 

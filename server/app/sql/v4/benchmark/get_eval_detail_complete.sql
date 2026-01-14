@@ -651,7 +651,7 @@ SELECT
                 ELSE NULL
             END
         FROM draft_payload_data),
-        COALESCE(NULL::uuid[], ARRAY[]::uuid[])
+        ARRAY[]::text[]
     ) as agent_ids,
     COALESCE(
         (SELECT (payload->>'active')::boolean FROM draft_payload_data),

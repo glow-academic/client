@@ -33,7 +33,7 @@ AS $$
         sg.pass_points,
         sg.created_at,
         sg.created_at AS updated_at
-    FROM standard_groups sg
+    FROM standard_groups_resource sg
     JOIN rubric_standard_groups rsg ON rsg.standard_group_id = sg.id
     WHERE rsg.rubric_id = input_rubric_id
     ORDER BY sg.name;
