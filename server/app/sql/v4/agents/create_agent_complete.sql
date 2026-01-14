@@ -163,39 +163,6 @@ link_agent_description AS (
     CROSS JOIN description_resource dr
     ON CONFLICT (agent_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
--- Create domain for this agent
-create_domain AS (
-    INSERT INTO domains (created_at, updated_at)
-    SELECT NOW(), NOW()
-    FROM new_agent na
-    RETURNING id as domain_id
-),
-link_domain_artifact AS (
-    -- Link domain to artifact via domain_artifacts
-    INSERT INTO domain_artifacts (domain_id, artifact, created_at, updated_at)
-    SELECT 
-        cd.domain_id,
-        CAST(x.artifact_name AS artifacts),
-        NOW(),
-        NOW()
-    FROM create_domain cd
-    CROSS JOIN params x
-    ON CONFLICT (domain_id, artifact) DO UPDATE SET
-        updated_at = NOW()
-),
-link_agent_domain AS (
-    -- Link agent to domain via agent_domains
-    INSERT INTO agent_domains (agent_id, domain_id, created_at, updated_at)
-    SELECT 
-        na.agent_id::uuid,
-        cd.domain_id,
-        NOW(),
-        NOW()
-    FROM new_agent na
-    CROSS JOIN create_domain cd
-    ON CONFLICT (agent_id, domain_id) DO UPDATE SET
-        updated_at = NOW()
-),
 new_prompt AS (
     -- Create prompt only if system_prompt provided and prompt_id not provided
     INSERT INTO prompts_resource (system_prompt, created_at, updated_at)

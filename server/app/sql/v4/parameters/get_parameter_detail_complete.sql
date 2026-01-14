@@ -201,8 +201,8 @@ user_has_parameter_access AS (
 ),
 parameter_data AS (
     SELECT 
-        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
         EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'active'::type_parameter_flags AND paf.value = TRUE) as active,
         EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'simulation_parameter'::type_parameter_flags AND paf.value = TRUE) as simulation_parameter,
         EXISTS (SELECT 1 FROM parameter_flags paf WHERE paf.parameter_id = p.id AND paf.type = 'document_parameter'::type_parameter_flags AND paf.value = TRUE) as document_parameter,

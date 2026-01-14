@@ -319,56 +319,6 @@ BEGIN
             active = true,
             updated_at = NOW()
     ),
-    -- Handle domain/artifact link (create domain if needed, link to artifact)
-    get_or_create_domain AS (
-        -- Try to get existing domain linked to agent
-        SELECT adom.domain_id
-        FROM params x
-        LEFT JOIN agent_domains adom ON adom.agent_id = x.agent_id
-        LIMIT 1
-    ),
-    create_domain_if_needed AS (
-        -- Create domain if agent doesn't have one
-        INSERT INTO domains (created_at, updated_at)
-        SELECT NOW(), NOW()
-        FROM params x
-        WHERE NOT EXISTS (SELECT 1 FROM get_or_create_domain WHERE domain_id IS NOT NULL)
-        RETURNING id as domain_id
-    ),
-    target_domain AS (
-        SELECT COALESCE(
-            (SELECT domain_id FROM get_or_create_domain WHERE domain_id IS NOT NULL LIMIT 1),
-            (SELECT domain_id FROM create_domain_if_needed LIMIT 1)
-        ) as domain_id
-        FROM params x
-        LIMIT 1
-    ),
-    link_domain_artifact AS (
-        -- Link domain to artifact via domain_artifacts
-        INSERT INTO domain_artifacts (domain_id, artifact, created_at, updated_at)
-        SELECT 
-            td.domain_id,
-            CAST(x.artifact_name AS artifacts),
-            NOW(),
-            NOW()
-        FROM target_domain td
-        CROSS JOIN params x
-        ON CONFLICT (domain_id, artifact) DO UPDATE SET
-            updated_at = NOW()
-    ),
-    link_agent_domain AS (
-        -- Link agent to domain via agent_domains
-        INSERT INTO agent_domains (agent_id, domain_id, created_at, updated_at)
-        SELECT 
-            x.agent_id,
-            td.domain_id,
-            NOW(),
-            NOW()
-        FROM params x
-        CROSS JOIN target_domain td
-        ON CONFLICT (agent_id, domain_id) DO UPDATE SET
-            updated_at = NOW()
-    ),
     -- Link temperature level if provided
     link_temperature_level AS (
         INSERT INTO agent_temperature_levels (agent_id, temperature_level_id, active, created_at, updated_at)

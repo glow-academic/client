@@ -149,7 +149,7 @@ default_parameter AS (
     SELECT p.id
     FROM parameter_artifact p
     LEFT JOIN field_departments_for_filter fdf ON fdf.parameter_id = p.id
-    WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
+    WHERE EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'active'::type_parameter_flags AND pf.value = true)
     GROUP BY p.id
     HAVING 
         -- Include if has matching department link via parameter_departments or field_departments OR has no department links at all (cross-dept)
