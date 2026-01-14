@@ -426,22 +426,22 @@ settings_keys_data AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (k.id, 
-                 (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1),
+                (kr.id, 
+                 (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1),
                  CASE 
-                     WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+                     WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
                      ELSE '****'
                  END,
-                 COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''),
-                 EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
+                 COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = kr.id LIMIT 1), ''),
+                 EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
                  kdd.department_ids
                 )::types.q_get_settings_detail_v4_key
-                ORDER BY k.created_at DESC
+                ORDER BY kr.created_at DESC
             ),
             '{}'::types.q_get_settings_detail_v4_key[]
         ) as keys
-    FROM keys k
-    LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
+    FROM keys_resource kr
+    LEFT JOIN key_departments_data kdd ON kdd.key_id = kr.id
     CROSS JOIN user_profile_role upr
     WHERE 
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
@@ -450,9 +450,9 @@ settings_keys_data AS (
             JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
-            WHERE spk.key_id = k.id AND spk.active = true
+            WHERE spk.key_id = kr.id AND spk.active = true
         )
-        OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = k.id)
+        OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = kr.id)
         OR upr.role = 'superadmin'
 ),
 settings_default_account_data AS (

@@ -889,14 +889,14 @@ key_suggestions_data AS (
 -- Key mapping data (all keys accessible to user)
 key_mapping_data AS (
     SELECT DISTINCT
-        k.id as key_id,
-        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
+        kr.id as key_id,
+        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1) as name,
         CASE 
-            WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+            WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
             ELSE '****'
         END as masked_key,
-        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = kr.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         COALESCE(
             (SELECT ARRAY_AGG(ds.department_id::text ORDER BY ds.department_id::text)
              FROM (
@@ -904,13 +904,13 @@ key_mapping_data AS (
                  FROM setting_provider_keys spk
                  JOIN setting_artifact s ON s.id = spk.settings_id
                  JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-                 WHERE spk.key_id = k.id AND spk.active = true
+                 WHERE spk.key_id = kr.id AND spk.active = true
              ) ds),
             ARRAY[]::text[]
         ) as department_ids
     FROM params x
     CROSS JOIN user_profile up
-    JOIN keys k ON true
+    JOIN keys_resource kr ON true
     WHERE 
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
         EXISTS (
@@ -918,13 +918,13 @@ key_mapping_data AS (
             JOIN setting_artifact s ON s.id = spk.settings_id
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
-            WHERE spk.key_id = k.id AND spk.active = true
+            WHERE spk.key_id = kr.id AND spk.active = true
         )
         OR NOT EXISTS (
             SELECT 1 FROM setting_provider_keys spk2
             JOIN setting_artifact s2 ON s2.id = spk2.settings_id
             JOIN department_settings ds2 ON ds2.settings_id = s2.id AND ds2.active = true
-            WHERE spk2.key_id = k.id AND spk2.active = true
+            WHERE spk2.key_id = kr.id AND spk2.active = true
         )
         OR up.role = 'superadmin'
 ),

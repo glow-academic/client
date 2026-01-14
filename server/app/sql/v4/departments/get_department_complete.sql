@@ -845,20 +845,20 @@ model_suggestions_data AS (
 -- Keys data (from detail endpoint)
 keys_data AS (
     SELECT DISTINCT 
-        k.id as key_id, 
-        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name, 
+        kr.id as key_id, 
+        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1) as name, 
         CASE 
-            WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+            WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
             ELSE '****'
         END as key_masked,
         CASE 
-            WHEN LENGTH(k.key) > 4 THEN LEFT(k.key, 4) || '****'
+            WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
             ELSE '****'
         END as description,
-        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         false as generated  -- Keys are not AI-generated
-    FROM keys k
-    WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    FROM keys_resource kr
+    WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND (
         (SELECT department_id FROM params) IS NULL
         OR
@@ -866,7 +866,7 @@ keys_data AS (
             SELECT 1 FROM setting_provider_keys spk
             JOIN setting_artifact s ON s.id = spk.settings_id
             JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
-            WHERE spk.key_id = k.id AND spk.active = true
+            WHERE spk.key_id = kr.id AND spk.active = true
             AND ds.department_id = (SELECT department_id FROM params)
         )
     )
@@ -881,9 +881,9 @@ key_ids_data AS (
 key_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(k.id ORDER BY k.created_at DESC)
-             FROM keys k
-             WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
+            (SELECT ARRAY_AGG(kr.id ORDER BY kr.created_at DESC)
+             FROM keys_resource kr
+             WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
              LIMIT 20),
             ARRAY[]::uuid[]
         ) as key_suggestions

@@ -236,8 +236,8 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys k ON k.id = spk.key_id
-    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    JOIN keys_resource kr ON kr.id = spk.key_id
+    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
@@ -402,7 +402,7 @@ context_data AS (
          WHERE false 
            AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = true)) as voice_base_url,
         -- Voice API keys (via settings system)
-        (SELECT k_voice.key FROM agent_artifact a_voice 
+        (SELECT kr_voice.key FROM agent_artifact a_voice 
          JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
          JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
          LEFT JOIN model_providers mp_voice ON mp_voice.model_id = m_voice.id
@@ -411,8 +411,8 @@ context_data AS (
          LEFT JOIN setting_provider_keys spk_voice ON spk_voice.providers_id = p_voice_prov.id 
              AND spk_voice.settings_id = act_s_voice.settings_id 
              AND spk_voice.active = true
-         LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id 
-             AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = true)
+         LEFT JOIN keys_resource kr_voice ON kr_voice.id = spk_voice.key_id 
+             AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = true)
          
          
          WHERE false 

@@ -22,9 +22,32 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    WITH new_key AS (
-        INSERT INTO keys(key)
-        VALUES (key_value)
+    WITH call_record AS (
+        INSERT INTO calls(id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
+        VALUES (
+            uuidv7(),
+            'test_create_key_' || uuidv7()::text,
+            NULL,
+            NULL,
+            jsonb_build_object('key_name', key_name, 'key_description', key_description, 'key_active', key_active)::text,
+            true,
+            NOW(),
+            NOW()
+        )
+        RETURNING id as call_id
+    ),
+    new_key AS (
+        INSERT INTO keys_resource(key_id, key, created_at, updated_at, call_id, active, generated, mcp)
+        SELECT 
+            uuidv7(),
+            key_value,
+            NOW(),
+            NOW(),
+            cr.call_id,
+            COALESCE(key_active, true),
+            false,
+            false
+        FROM call_record cr
         RETURNING id, created_at, updated_at
     ),
     name_resource AS (
@@ -61,11 +84,11 @@ AS $$
     SELECT 
         nk.id AS key_id,
         (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = nk.id LIMIT 1) AS name,
-        k.key,
+        kr.key,
         (SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = nk.id LIMIT 1) AS description,
         EXISTS (SELECT 1 FROM key_flags kf JOIN flags_resource fl ON kf.flag_id = fl.id WHERE kf.key_id = nk.id AND fl.name = 'active' AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) AS active,
         nk.created_at,
         nk.updated_at
     FROM new_key nk
-    JOIN keys k ON k.id = nk.id;
+    JOIN keys_resource kr ON kr.id = nk.id;
 $$;

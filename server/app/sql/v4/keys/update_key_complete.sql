@@ -102,14 +102,14 @@ description_resource AS (
     RETURNING id as description_id
 ),
 update_key AS (
-    -- UPDATE keys (without name/description/active columns)
-    UPDATE keys
+    -- UPDATE keys_resource (without name/description/active columns)
+    UPDATE keys_resource
     SET 
         key = x.key,
         updated_at = NOW()
     FROM params x
-    WHERE keys.id = x.key_id
-    RETURNING keys.id as key_id, keys.key, (SELECT name FROM params) as key_name
+    WHERE keys_resource.id = x.key_id
+    RETURNING keys_resource.id as key_id, keys_resource.key, (SELECT name FROM params) as key_name
 ),
 -- Remove old name links
 remove_old_name AS (

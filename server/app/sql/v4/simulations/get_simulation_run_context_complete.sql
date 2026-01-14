@@ -174,8 +174,8 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys k ON k.id = spk.key_id
-    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    JOIN keys_resource kr ON kr.id = spk.key_id
+    WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
     -- Department-specific settings that have keys
@@ -242,7 +242,7 @@ SELECT
     (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
     COALESCE(n_prov.name, '') as provider,
     COALESCE(e.base_url, '') as base_url,
-    k.key as api_key,
+    kr.key as api_key,
     CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) ELSE NULL END as custom_model,
     NULL::text as provider_id,
     COALESCE(n_prov.name, '') as provider_name,
@@ -259,7 +259,7 @@ SELECT
     m_voice.value as voice_model_name,
     COALESCE(n_voice_prov.name, '') as voice_provider,
     COALESCE(e_voice.base_url, '') as voice_base_url,
-    k_voice.key as voice_api_key,
+    kr_voice.key as voice_api_key,
     CASE WHEN e_voice.base_url IS NOT NULL AND e_voice.base_url != '' THEN m_voice.value ELSE NULL END as voice_custom_model,
     COALESCE(n_voice_prov.name, '') as voice_provider_name,
     a_voice.id::text as voice_agent_id,
@@ -341,7 +341,7 @@ CROSS JOIN active_settings act_s
 LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
     AND spk.settings_id = act_s.settings_id 
     AND spk.active = true
-LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+LEFT JOIN keys_resource kr ON kr.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 
 -- Voice agent joins (use simulation agent instead of persona agent)
 
@@ -372,7 +372,7 @@ CROSS JOIN active_settings act_s_voice
 LEFT JOIN setting_provider_keys spk_voice ON spk_voice.providers_id = p_voice_prov.id 
     AND spk_voice.settings_id = act_s_voice.settings_id 
     AND spk_voice.active = true
-LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
+LEFT JOIN keys_resource kr_voice ON kr_voice.id = spk_voice.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents_resource doc ON doc.id = sd.document_id
@@ -389,10 +389,10 @@ GROUP BY sc.id, sc.title,
          n_prov.name,
          -- Text agent fields
          pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(tl.temperature, 0.0), rl.reasoning_level,
-         m.id, (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1), n_prov.name, k.key, e.base_url, a.id, act_s.settings_id,
+         m.id, (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1), n_prov.name, kr.key, e.base_url, a.id, act_s.settings_id,
          -- Voice agent fields
          pr_prompt_voice_dept.system_prompt, pr_prompt_voice_default.system_prompt, COALESCE(tl_voice.temperature, 0.0), rl_voice.reasoning_level,
-         m_voice.id, m_voice.value, n_voice_prov.name, k_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
+         m_voice.id, m_voice.value, n_voice_prov.name, kr_voice.key, e_voice.base_url, a_voice.id, act_s_voice.settings_id,
          -- Other fields
          EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), 
          COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 

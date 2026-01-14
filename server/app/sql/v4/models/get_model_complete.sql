@@ -449,10 +449,10 @@ model_all_keys AS (
     -- For each department that has this model, get keys from their settings
     SELECT DISTINCT
         spk.key_id,
-        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
-        k.key,
-        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
+        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1) as name,
+        kr.key,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = kr.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         ARRAY_AGG(DISTINCT ds.department_id) FILTER (WHERE ds.department_id IS NOT NULL) as department_ids
     FROM model_artifact m
     JOIN models_resource m_res ON m_res.model_id = m.id
@@ -462,28 +462,28 @@ model_all_keys AS (
     LEFT JOIN provider_names pn ON pn.provider_id = pr.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn.name_id
     JOIN setting_provider_keys spk ON spk.providers_id = p.id AND spk.active = true
-    JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    JOIN keys_resource kr ON kr.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE m.id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
     AND ds.active = true
-    GROUP BY spk.key_id, (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1), k.key, COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), ''), EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
+    GROUP BY spk.key_id, (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1), kr.key, COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = kr.id LIMIT 1), ''), EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
     
     UNION ALL
     
     -- General keys (keys without department links that user has access to)
     -- Works for both new and detail modes
     SELECT DISTINCT
-        k.id as key_id,
-        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name,
-        k.key,
-        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
+        kr.id as key_id,
+        (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1) as name,
+        kr.key,
+        COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = kr.id LIMIT 1), '') as description,
+        EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
         NULL::uuid[] as department_ids
-    FROM keys k
+    FROM keys_resource kr
     CROSS JOIN resolve_profile_id rpi
-    WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = kr.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND (
         (SELECT model_id FROM params) IS NULL
         OR NOT EXISTS (
@@ -492,7 +492,7 @@ model_all_keys AS (
             JOIN models_resource m_res2 ON m_res2.model_id = m2.id
             JOIN model_providers mp2 ON mp2.model_id = m_res2.id
             JOIN providers_resource p2 ON p2.id = mp2.providers_id
-            JOIN setting_provider_keys spk2 ON spk2.providers_id = p2.id AND spk2.key_id = k.id AND spk2.active = true
+            JOIN setting_provider_keys spk2 ON spk2.providers_id = p2.id AND spk2.key_id = kr.id AND spk2.active = true
             WHERE m2.id = (SELECT model_id FROM params)
         )
     )
@@ -500,7 +500,7 @@ model_all_keys AS (
         -- Include keys with no settings links (general keys)
         NOT EXISTS (
             SELECT 1 FROM setting_provider_keys spk3
-            WHERE spk3.key_id = k.id AND spk3.active = true
+            WHERE spk3.key_id = kr.id AND spk3.active = true
         )
         OR
         -- Include keys with settings links that match user's departments
@@ -509,7 +509,7 @@ model_all_keys AS (
             JOIN setting_artifact s4 ON s4.id = spk4.settings_id AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s4.id AND sf.type = 'active'::type_setting_flags AND sf.value = TRUE)
             JOIN department_settings ds4 ON ds4.settings_id = s4.id AND ds4.active = true
             JOIN user_departments ud ON ud.department_id = ds4.department_id
-            WHERE spk4.key_id = k.id AND spk4.active = true
+            WHERE spk4.key_id = kr.id AND spk4.active = true
         )
         OR
         -- Superadmin can see all keys

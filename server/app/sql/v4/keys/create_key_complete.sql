@@ -85,11 +85,35 @@ description_resource AS (
     ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
     RETURNING id as description_id
 ),
-new_key AS (
-    -- Create key (without name/description/active columns)
-    INSERT INTO keys (key, created_at, updated_at)
-    SELECT key, NOW(), NOW()
+-- Create call record for the key creation
+call_record AS (
+    INSERT INTO calls (id, external_call_id, tool_id, template_id, arguments_raw, completed, created_at, updated_at)
+    SELECT 
+        uuidv7(),
+        'create_key_' || uuidv7()::text,
+        NULL,
+        NULL,
+        jsonb_build_object('name', name, 'description', description, 'active', active)::text,
+        true,
+        NOW(),
+        NOW()
     FROM params
+    RETURNING id as call_id
+),
+new_key AS (
+    -- Create key in keys_resource table
+    INSERT INTO keys_resource (key_id, key, created_at, updated_at, call_id, active, generated, mcp)
+    SELECT 
+        uuidv7(),  -- Generate new key_id UUID (logical key identifier)
+        key,
+        NOW(),
+        NOW(),
+        cr.call_id,
+        active,
+        false,
+        false
+    FROM params
+    CROSS JOIN call_record cr
     RETURNING id as key_id, key
 ),
 -- Link key to name

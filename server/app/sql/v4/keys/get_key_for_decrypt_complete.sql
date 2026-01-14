@@ -40,10 +40,10 @@ actor_profile AS (
     JOIN profile_artifact p ON p.id = x.profile_id
 )
 SELECT 
-    k.key::text as key,
-    (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1)::text as name,
+    kr.key::text as key,
+    (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = kr.id LIMIT 1)::text as name,
     ap.actor_name::text as actor_name
 FROM params x
-JOIN keys k ON k.id = x.key_id
+JOIN keys_resource kr ON kr.id = x.key_id
 CROSS JOIN actor_profile ap
 $$;

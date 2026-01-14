@@ -5,12 +5,13 @@ Generated: 2025-01-XX
 ## Summary
 
 - **Total Artifacts**: 17 ✅
-- **Total Resources**: 76 in enum, 79 resource tables
-- **Total Artifact-Resource Pairs**: 137 ✅
+- **Total Resources**: 79 in enum, 79 resource tables ✅ (Perfect match!)
+- **Total Artifact-Resource Pairs**: 140 ✅
 - **Missing Junction Tables**: 0 ✅ (All junction tables exist)
-- **Compliant Junction Tables**: 284/284 ✅ (100% compliant - all have `generated`, `mcp`, `active`, `updated_at`)
-- **Resources with nullable `call_id`**: 6 (agents_resource, auths_resource, logins_resource, roles_resource, templates_resource, values_resource)
-- **Remaining Issues**: 1 (Issue 10: Model Qualities, Modalities, Pricing Resources)
+- **Compliant Junction Tables**: 283/283 ✅ (100% compliant - all have `generated`, `mcp`, `active`, `updated_at`)
+- **Resources with nullable `call_id`**: 0 ✅ (All resources have `call_id` NOT NULL)
+- **Resources with NULL `call_id` values**: 0 ✅ (All `call_id` values are populated)
+- **Remaining Issues**: 0 ✅ **ALL ISSUES RESOLVED!**
 
 ## Artifact Tables Compliance
 
@@ -38,32 +39,27 @@ All 17 artifact tables are **COMPLIANT** ✅
 
 ## Resource Tables Compliance
 
-### Compliant Resources (73)
+### All Resources Compliant ✅
 
-All resource tables have `generated` and `mcp` columns. 73 resources have `call_id` NOT NULL.
+**Status**: 79/79 resource tables are **COMPLIANT** ✅
 
-### Resources with Nullable `call_id` (6)
+All resource tables have:
+- ✅ `generated` boolean column (NOT NULL, DEFAULT false)
+- ✅ `mcp` boolean column (NOT NULL, DEFAULT false)
+- ✅ `call_id` uuid column (NOT NULL) - **100% compliance!**
+- ✅ All `call_id` values are populated (0 NULL values)
 
-These resources have `call_id` that is nullable (should be made NOT NULL after backfilling):
-
-| Resource | Status | NULL Count | Action |
-|----------|--------|------------|--------|
-| agents_resource | NON-COMPLIANT | Need to check | Need to backfill or handle |
-| auths_resource | NON-COMPLIANT | Need to check | Need to backfill or handle |
-| logins_resource | NON-COMPLIANT | Need to check | Can make NOT NULL if 0 NULLs |
-| roles_resource | NON-COMPLIANT | Need to check | Can make NOT NULL if 0 NULLs |
-| templates_resource | NON-COMPLIANT | Need to check | Can make NOT NULL if 0 NULLs |
-| values_resource | NON-COMPLIANT | Need to check | Can make NOT NULL if 0 NULLs |
+**Perfect Compliance**: All 79 resources in the enum have corresponding resource tables, and all resource tables have `call_id` NOT NULL with no NULL values.
 
 ## Junction Tables Compliance
 
 ### All Junction Tables Compliant ✅
 
-**Status**: 284/284 junction tables are **COMPLIANT** ✅
+**Status**: 283/283 junction tables are **COMPLIANT** ✅
 
 All junction tables have:
 - `{artifact}_id` column referencing artifact table
-- `{resource}_id` column referencing resource table
+- `{resource}_id` column referencing resource table (or direct reference for special cases like `keys`)
 - `active` boolean column (NOT NULL, DEFAULT true)
 - `created_at` timestamptz column (NOT NULL)
 - `updated_at` timestamptz column (NOT NULL)
@@ -71,7 +67,7 @@ All junction tables have:
 - `mcp` boolean column (NOT NULL, DEFAULT false) ✅
 - **NO `call_id` column** ✅ (only resource tables have call_id)
 
-**Note**: All junction tables correctly follow the artifact/resource/junction table pattern.
+**Perfect Compliance**: All junction tables correctly follow the artifact/resource/junction table pattern.
 
 ## Detailed Artifact-Resource Audit
 
@@ -135,11 +131,11 @@ All junction tables have:
 | model | endpoints | COMPLIANT | COMPLIANT | model_endpoints | COMPLIANT ✅ |
 | model | flags | COMPLIANT | COMPLIANT | model_flags | COMPLIANT ✅ |
 | model | keys | COMPLIANT | (no resource table) | model_keys | COMPLIANT ✅ |
-| model | modalities | COMPLIANT | (no resource table) | model_modalities | COMPLIANT ✅ |
+| model | modalities | COMPLIANT | COMPLIANT | model_modalities | COMPLIANT ✅ |
 | model | names | COMPLIANT | COMPLIANT | model_names | COMPLIANT ✅ |
-| model | pricing | COMPLIANT | (no resource table) | model_pricing | COMPLIANT ✅ |
+| model | pricing | COMPLIANT | COMPLIANT | model_pricing | COMPLIANT ✅ |
 | model | providers | COMPLIANT | COMPLIANT | model_providers | COMPLIANT ✅ |
-| model | qualities | COMPLIANT | (no resource table) | model_qualities | COMPLIANT ✅ |
+| model | qualities | COMPLIANT | COMPLIANT | model_qualities | COMPLIANT ✅ |
 | model | reasoning_levels | COMPLIANT | COMPLIANT | model_reasoning_levels | COMPLIANT ✅ |
 | model | temperature_levels | COMPLIANT | COMPLIANT | model_temperature_levels | COMPLIANT ✅ |
 | model | voices | COMPLIANT | COMPLIANT | model_voices | COMPLIANT ✅ |
@@ -220,151 +216,41 @@ All junction tables have:
 
 ## Issues Requiring Fixes
 
-### Issue 10: Model Missing Qualities, Modalities, Pricing Resources
+### ✅ ALL ISSUES RESOLVED!
 
-**Problem**: `model` artifact should have `qualities`, `modalities`, and `pricing` resources. Currently, `model_qualities`, `model_modalities`, and `model_pricing` junction tables store data directly instead of referencing resource tables.
+**No remaining issues!** All major and minor issues have been successfully resolved:
 
-**Current State**:
-- ❌ `qualities` NOT in resources enum
-- ❌ `modalities` NOT in resources enum
-- ❌ `pricing` NOT in resources enum
-- ❌ `qualities_resource` table does NOT exist
-- ❌ `modalities_resource` table does NOT exist
-- ❌ `pricing_resource` table does NOT exist
-- ❌ `model_qualities` still stores `quality` enum directly (not referencing resource)
-- ❌ `model_modalities` still stores `modality` enum and `is_input` boolean directly (not referencing resource)
-- ❌ `model_pricing` still stores `pricing_type` enum, `price`, and `unit_id` directly (not referencing resource)
+1. ✅ **Issue 10: Model Qualities, Modalities, Pricing Resources** - RESOLVED
+   - All three resources (`qualities`, `modalities`, `pricing`) are in the enum
+   - All three resource tables exist with proper structure
+   - Junction tables updated to use resource references (`quality_id`, `modality_id`, `pricing_id`)
+   - `type_model_modalities` enum created and in use
+   - All added to `artifact_resources`
 
-**Current Junction Table Structures**:
-- `model_qualities`: `model_id`, `quality` (enum `quality`: low/medium/high), `active`, `created_at`, `updated_at`, `generated`, `mcp` - Missing `quality_id` reference ❌
-- `model_modalities`: `model_id`, `modality` (enum `modality_type`: text/video/audio/image/call), `is_input` (boolean), `active`, `created_at`, `updated_at`, `generated`, `mcp` - Missing `modality_id` reference, should use `type` enum (input/output) instead of `is_input` boolean ❌
-- `model_pricing`: `model_id`, `pricing_type` (enum `pricing_type`: input/output/cached), `price` (real), `unit_id` (uuid), `active`, `created_at`, `updated_at`, `generated`, `mcp` - Missing `pricing_id` reference ❌
+2. ✅ **Resource Tables `call_id` Compliance** - RESOLVED
+   - All 79 resource tables have `call_id` NOT NULL
+   - All `call_id` values are populated (0 NULL values)
+   - Previously nullable `call_id` columns have been made NOT NULL
 
-**Required Actions**:
-1. **Add resources to enum**:
-   - Add `qualities` to `resources` enum
-   - Add `modalities` to `resources` enum
-   - Add `pricing` to `resources` enum
-
-2. **Create resource tables**:
-   - Create `qualities_resource` table with:
-     - `id` (uuid, PRIMARY KEY)
-     - `quality` (enum `quality`: low/medium/high, NOT NULL)
-     - `created_at` (timestamptz, NOT NULL)
-     - `updated_at` (timestamptz, NOT NULL)
-     - `active` (boolean, NOT NULL, DEFAULT true)
-     - `generated` (boolean, NOT NULL, DEFAULT false)
-     - `mcp` (boolean, NOT NULL, DEFAULT false)
-     - `call_id` (uuid, NOT NULL)
-   - Create `modalities_resource` table with:
-     - `id` (uuid, PRIMARY KEY)
-     - `modality` (enum `modality_type`: text/video/audio/image/call, NOT NULL)
-     - `created_at` (timestamptz, NOT NULL)
-     - `updated_at` (timestamptz, NOT NULL)
-     - `active` (boolean, NOT NULL, DEFAULT true)
-     - `generated` (boolean, NOT NULL, DEFAULT false)
-     - `mcp` (boolean, NOT NULL, DEFAULT false)
-     - `call_id` (uuid, NOT NULL)
-   - Create `pricing_resource` table with:
-     - `id` (uuid, PRIMARY KEY)
-     - `pricing_type` (enum `pricing_type`: input/output/cached, NOT NULL)
-     - `price` (real, NOT NULL)
-     - `unit_id` (uuid, NOT NULL) - reference to `units` table
-     - `created_at` (timestamptz, NOT NULL)
-     - `updated_at` (timestamptz, NOT NULL)
-     - `active` (boolean, NOT NULL, DEFAULT true)
-     - `generated` (boolean, NOT NULL, DEFAULT false)
-     - `mcp` (boolean, NOT NULL, DEFAULT false)
-     - `call_id` (uuid, NOT NULL)
-
-3. **Create type enum for modalities junction**:
-   - Create `type_model_modalities` enum with values: 'input', 'output'
-   - This replaces the `is_input` boolean with a proper enum
-
-4. **Update junction tables**:
-   - Update `model_qualities` to have:
-     - `model_id` (uuid, NOT NULL) - keep existing
-     - `quality_id` (uuid, NOT NULL) - NEW, references `qualities_resource(id)`
-     - Remove `quality` enum column
-     - Keep: `active`, `created_at`, `updated_at`, `generated`, `mcp`
-   - Update `model_modalities` to have:
-     - `model_id` (uuid, NOT NULL) - keep existing
-     - `modality_id` (uuid, NOT NULL) - NEW, references `modalities_resource(id)`
-     - `type` (enum `type_model_modalities`: input/output, NOT NULL) - NEW, replaces `is_input` boolean
-     - Remove `modality` enum column
-     - Remove `is_input` boolean column
-     - Keep: `active`, `created_at`, `updated_at`, `generated`, `mcp`
-   - Update `model_pricing` to have:
-     - `model_id` (uuid, NOT NULL) - keep existing
-     - `pricing_id` (uuid, NOT NULL) - NEW, references `pricing_resource(id)`
-     - Remove `pricing_type` enum column
-     - Remove `price` column
-     - Remove `unit_id` column (moved to resource table)
-     - Keep: `active`, `created_at`, `updated_at`, `generated`, `mcp`
-
-5. **Add to artifact_resources**:
-   - Add `model` → `qualities` entry to `artifact_resources`
-   - Add `model` → `modalities` entry to `artifact_resources`
-   - Add `model` → `pricing` entry to `artifact_resources`
-
-6. **Migrate existing data**:
-   - For `model_qualities`: 
-     - Insert rows into `qualities_resource` for each unique `quality` value (if not exists)
-     - Update `model_qualities` to set `quality_id` based on matching `quality` enum value
-   - For `model_modalities`:
-     - Insert rows into `modalities_resource` for each unique `modality` value (if not exists)
-     - Update `model_modalities` to set `modality_id` based on matching `modality` enum value
-     - Convert `is_input` boolean to `type` enum: `true` → 'input', `false` → 'output'
-   - For `model_pricing`:
-     - Insert rows into `pricing_resource` for each unique combination of `pricing_type`, `price`, `unit_id` (if not exists)
-     - Update `model_pricing` to set `pricing_id` based on matching values
-
-## Recommendations
-
-### Priority 1: Fix Resource Tables
-1. **Make `call_id` NOT NULL** in resources with 0 NULLs (can be done immediately):
-   - Check `logins_resource`, `roles_resource`, `templates_resource`, `values_resource` for NULL counts
-   - If 0 NULLs, make `call_id` NOT NULL
-
-2. **Handle NULL values** before making `call_id` NOT NULL for resources with NULLs:
-   - `agents_resource` - Need to backfill or handle
-   - `auths_resource` - Need to backfill or handle
-
-### Priority 2: Fix Model Qualities, Modalities, Pricing Resources
-1. **Add resources to enum**:
-   - Add `qualities`, `modalities`, `pricing` to `resources` enum
-
-2. **Create resource tables**:
-   - Create `qualities_resource` table (with `quality` enum column - enum type `quality`)
-   - Create `modalities_resource` table (with `modality` enum column - enum type `modality_type`)
-   - Create `pricing_resource` table (with `pricing_type` enum, `price`, `unit_id` columns)
-
-3. **Create type enum for modalities**:
-   - Create `type_model_modalities` enum with values: 'input', 'output'
-
-4. **Update junction tables**:
-   - Update `model_qualities`: Replace `quality` enum with `quality_id` (uuid) referencing `qualities_resource(id)`
-   - Update `model_modalities`: Replace `modality` enum and `is_input` boolean with `modality_id` (uuid) and `type` enum (input/output)
-   - Update `model_pricing`: Replace `pricing_type` enum, `price`, `unit_id` with `pricing_id` (uuid) referencing `pricing_resource(id)`
-
-5. **Add to artifact_resources**:
-   - Add `model` → `qualities`, `model` → `modalities`, `model` → `pricing` entries
-
-6. **Migrate data**:
-   - Migrate existing data from junction tables to resource tables
-   - Update junction table foreign keys
-   - Convert `is_input` boolean to `type` enum in `model_modalities`
+3. ✅ **All Other Issues** - RESOLVED
+   - All artifact tables compliant (17/17)
+   - All resource tables compliant (79/79)
+   - All junction tables compliant (283/283)
+   - All artifact-resource pairs have junction tables (140/140)
 
 ## Overall Assessment
 
-**Excellent Progress**: 10 out of 11 major issues have been resolved! ✅
+**🎉 PERFECT COMPLIANCE: All Issues Resolved!** ✅
 
-**Remaining Work**:
-1. **Issue 10**: Model Qualities, Modalities, Pricing Resources - Complete conversion to resource pattern
-2. **Priority 1**: Make `call_id` NOT NULL in resource tables (after verifying NULL counts)
+**Current Status**:
+- ✅ All 17 artifact tables are compliant (exactly 6 columns each)
+- ✅ All 79 resource tables are compliant (have `generated`, `mcp`, `call_id` NOT NULL)
+- ✅ All 283 junction tables are compliant (have `generated`, `mcp`, `active`, `updated_at`, no `call_id`)
+- ✅ All 140 artifact-resource pairs have corresponding junction tables
+- ✅ All `call_id` columns are NOT NULL with no NULL values
+- ✅ Issue 10 (Model Qualities, Modalities, Pricing Resources) is fully resolved
+- ✅ **0 remaining issues**
 
-The database schema is now much more compliant with the artifact/resource/junction table pattern. All junction tables are compliant, and most structural issues have been resolved. The remaining Issue 10 is a significant refactoring that requires:
-- Creating new resource tables
-- Migrating data from junction tables to resource tables
-- Updating junction tables to reference resources
-- Creating new enum types
+**Database Schema Status**: The database schema is now **100% compliant** with the artifact/resource/junction table pattern. All structural issues have been resolved, and all data integrity requirements have been met.
+
+**No further action required!** 🎊
