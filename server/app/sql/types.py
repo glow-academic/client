@@ -32872,6 +32872,15 @@ class QGetToolV4DescriptionResource(BaseModel):
 
 
 
+class QGetToolV4Domain(BaseModel):
+
+    domain_id: UUID | None
+    resource: str | None
+    generated: bool | None
+
+
+
+
 class QGetToolV4NameResource(BaseModel):
 
     id: UUID | None
@@ -32895,6 +32904,22 @@ class QGetToolV4SchemaField(BaseModel):
     schema_field_id: UUID | None
     name: str | None
     description: str | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4SchemaFieldDetail(BaseModel):
+
+    schema_field_id: UUID | None
+    schema_id: UUID | None
+    name: str | None
+    field_type: str | None
+    required: bool | None
+    description: str | None
+    template: str | None
+    position: int | None
+    default_value: str | None
     generated: bool | None
 
 
@@ -32929,6 +32954,16 @@ class QGetToolV4TemplateArrayItem(BaseModel):
     schema_field_name: str | None
     item_template_id: UUID | None
     item_template_name: str | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4TemplateDetail(BaseModel):
+
+    template_id: UUID | None
+    name: str | None
+    schema_id: UUID | None
     generated: bool | None
 
 
@@ -33011,6 +33046,11 @@ class GetToolSqlRow(BaseModel):
     template_values_required: bool | None = None
     template_value_suggestions: list[UUID] | None = None
     template_values: list[QGetToolV4TemplateValue] | None = None
+    domain_ids: list[UUID] | None = None
+    domain_resources: list[QGetToolV4Domain] | None = None
+    input_schema_fields: list[QGetToolV4SchemaFieldDetail] | None = None
+    output_templates: list[QGetToolV4TemplateDetail] | None = None
+    output_schema_fields: list[QGetToolV4SchemaFieldDetail] | None = None
 
 class GetToolApiRequest(BaseModel):
 
@@ -33089,6 +33129,11 @@ class GetToolApiResponse(BaseModel):
     template_values_required: bool | None = None
     template_value_suggestions: list[UUID] | None = None
     template_values: list[QGetToolV4TemplateValue] | None = None
+    domain_ids: list[UUID] | None = None
+    domain_resources: list[QGetToolV4Domain] | None = None
+    input_schema_fields: list[QGetToolV4SchemaFieldDetail] | None = None
+    output_templates: list[QGetToolV4TemplateDetail] | None = None
+    output_schema_fields: list[QGetToolV4SchemaFieldDetail] | None = None
 
 
 

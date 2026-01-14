@@ -20,6 +20,8 @@ import { Schemas } from "@/components/resources/Schemas";
 import { TemplateArrayItems } from "@/components/resources/TemplateArrayItems";
 import { Templates } from "@/components/resources/Templates";
 import { TemplateValues } from "@/components/resources/TemplateValues";
+import { SchemaInput } from "@/components/tools/SchemaInput";
+import { SchemaOutput } from "@/components/tools/SchemaOutput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,6 +63,10 @@ type CreateDraftTemplateValuesOut = OutputOf<
   "/api/v4/resources/template_values",
   "post"
 >;
+type CreateSchemaFieldIn = InputOf<"/api/v4/resources/schema_fields", "post">;
+type CreateSchemaFieldOut = OutputOf<"/api/v4/resources/schema_fields", "post">;
+type CreateTemplateIn = InputOf<"/api/v4/resources/templates", "post">;
+type CreateTemplateOut = OutputOf<"/api/v4/resources/templates", "post">;
 type PatchToolDraftIn = InputOf<"/api/v4/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
 
@@ -93,6 +99,12 @@ export interface ToolProps {
   createTemplateValuesAction?: (
     input: CreateDraftTemplateValuesIn
   ) => Promise<CreateDraftTemplateValuesOut>;
+  createSchemaFieldAction?: (
+    input: CreateSchemaFieldIn
+  ) => Promise<CreateSchemaFieldOut>;
+  createTemplateAction?: (
+    input: CreateTemplateIn
+  ) => Promise<CreateTemplateOut>;
 }
 
 function ToolComponent({
@@ -107,6 +119,8 @@ function ToolComponent({
   createSchemaFieldItemsAction,
   createTemplateArrayItemsAction,
   createTemplateValuesAction,
+  createSchemaFieldAction,
+  createTemplateAction,
 }: ToolProps) {
   // Support both new prop name (toolData) and legacy prop names (toolDetail, toolDetailDefault)
   const toolData = toolDataProp || toolDetail || toolDetailDefault;
@@ -198,6 +212,14 @@ function ToolComponent({
       template_values: toolData.template_values,
       template_values_required: toolData.template_values_required,
       template_values_agent_id: toolData.template_values_agent_id,
+      input_schema_fields: toolData.input_schema_fields ?? [],
+      output_templates:
+        (toolData as typeof toolData & { output_templates?: unknown[] })
+          .output_templates ?? [],
+      output_schema_fields:
+        (toolData as typeof toolData & { output_schema_fields?: unknown[] })
+          .output_schema_fields ?? [],
+      domain_resources: toolData.domain_resources ?? [],
     };
   }, [toolData]);
 
@@ -858,6 +880,12 @@ function ToolComponent({
       switch (stepId) {
         case "basic":
           return hasName && hasDescription ? "completed" : "active";
+        case "input_schema":
+          if (!hasName || !hasDescription) return "pending";
+          return "active"; // Always active when basic is complete
+        case "output_template":
+          if (!hasName || !hasDescription) return "pending";
+          return "active"; // Always active when basic is complete
         case "schemas":
           if (!hasName || !hasDescription) return "pending";
           return hasSchemas ? "completed" : "active";
@@ -888,6 +916,18 @@ function ToolComponent({
         title: "Basic Information",
         description: "Set the tool name and description.",
         resetFields: ["name", "description"],
+      },
+      {
+        id: "input_schema",
+        title: "Input Schema",
+        description: "Edit input schema fields.",
+        resetFields: [],
+      },
+      {
+        id: "output_template",
+        title: "Output Template",
+        description: "Edit output template Jinja content.",
+        resetFields: [],
       },
       {
         id: "schemas",
@@ -1047,6 +1087,183 @@ function ToolComponent({
               </div>
             </StepCard>
           );
+
+        case "input_schema": {
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+            >
+              <SchemaInput
+                schema_ids={formState.schema_ids ?? []}
+                input_schema_fields={(
+                  currentToolData?.input_schema_fields ?? []
+                )
+                  .filter(
+                    (f): f is NonNullable<typeof f> =>
+                      f !== null &&
+                      f.schema_field_id !== null &&
+                      f.schema_id !== null &&
+                      f.name !== null &&
+                      f.field_type !== null &&
+                      f.required !== null &&
+                      f.position !== null
+                  )
+                  .map((f) => ({
+                    schema_field_id: f.schema_field_id!,
+                    schema_id: f.schema_id!,
+                    name: f.name!,
+                    field_type: f.field_type!,
+                    required: f.required!,
+                    description: f.description ?? "",
+                    template: f.template ?? "",
+                    position: f.position!,
+                    default_value: f.default_value ?? "",
+                    generated: f.generated ?? false,
+                  }))}
+                domain_resources={(currentToolData?.domain_resources ?? [])
+                  .filter(
+                    (d): d is NonNullable<typeof d> =>
+                      d !== null && d.domain_id !== null && d.resource !== null
+                  )
+                  .map((d) => ({
+                    domain_id: d.domain_id!,
+                    resource: d.resource!,
+                    generated: d.generated ?? false,
+                  }))}
+                disabled={disabled}
+                createSchemaFieldAction={createSchemaFieldAction}
+                group_id={currentToolData?.group_id ?? null}
+                agent_id={currentToolData?.schemas_agent_id ?? null}
+              />
+            </StepCard>
+          );
+        }
+
+        case "output_template": {
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+            >
+              <SchemaOutput
+                template_ids={formState.template_ids ?? []}
+                output_templates={(
+                  (
+                    currentToolData as typeof currentToolData & {
+                      output_templates?: Array<{
+                        template_id?: string | null;
+                        name?: string | null;
+                        schema_id?: string | null;
+                        generated?: boolean | null;
+                      }>;
+                    }
+                  )?.output_templates ?? []
+                )
+                  .filter(
+                    (t): t is NonNullable<typeof t> =>
+                      t !== null &&
+                      t.template_id !== null &&
+                      t.schema_id !== null &&
+                      t.name !== null
+                  )
+                  .map((t) => ({
+                    template_id: t.template_id!,
+                    name: t.name!,
+                    schema_id: t.schema_id!,
+                    generated: t.generated ?? false,
+                  }))}
+                output_schema_fields={(
+                  (
+                    currentToolData as typeof currentToolData & {
+                      output_schema_fields?: Array<{
+                        schema_field_id?: string | null;
+                        schema_id?: string | null;
+                        name?: string | null;
+                        field_type?: string | null;
+                        required?: boolean | null;
+                        description?: string | null;
+                        template?: string | null;
+                        position?: number | null;
+                        default_value?: string | null;
+                        generated?: boolean | null;
+                      } | null>;
+                    }
+                  )?.output_schema_fields ?? []
+                )
+                  .filter((f) => f !== null)
+                  .map((f) => ({
+                    schema_field_id: f!.schema_field_id ?? "",
+                    schema_id: f!.schema_id ?? "",
+                    name: f!.name ?? "",
+                    field_type: f!.field_type ?? "",
+                    required: f!.required ?? false,
+                    description: f!.description ?? "",
+                    template: f!.template ?? "",
+                    position: f!.position ?? 0,
+                    default_value: f!.default_value ?? "",
+                    generated: f!.generated ?? false,
+                  }))
+                  .filter(
+                    (f) =>
+                      f.schema_field_id !== "" &&
+                      f.schema_id !== "" &&
+                      f.name !== ""
+                  )}
+                input_schema_fields={(
+                  currentToolData?.input_schema_fields ?? []
+                )
+                  .filter(
+                    (f): f is NonNullable<typeof f> =>
+                      f !== null &&
+                      f.schema_field_id !== null &&
+                      f.schema_id !== null &&
+                      f.name !== null &&
+                      f.field_type !== null &&
+                      f.required !== null &&
+                      f.position !== null
+                  )
+                  .map((f) => ({
+                    schema_field_id: f.schema_field_id!,
+                    schema_id: f.schema_id!,
+                    name: f.name!,
+                    field_type: f.field_type!,
+                    required: f.required!,
+                    description: f.description ?? "",
+                    template: f.template ?? "",
+                    position: f.position!,
+                    default_value: f.default_value ?? "",
+                    generated: f.generated ?? false,
+                  }))}
+                domain_resources={(currentToolData?.domain_resources ?? [])
+                  .filter(
+                    (d): d is NonNullable<typeof d> =>
+                      d !== null && d.domain_id !== null && d.resource !== null
+                  )
+                  .map((d) => ({
+                    domain_id: d.domain_id!,
+                    resource: d.resource!,
+                    generated: d.generated ?? false,
+                  }))}
+                disabled={disabled}
+                {...(createTemplateAction ? { createTemplateAction } : {})}
+                {...(createSchemaFieldAction
+                  ? { createSchemaFieldAction }
+                  : {})}
+                group_id={currentToolData?.group_id ?? null}
+                agent_id={currentToolData?.templates_agent_id ?? null}
+              />
+            </StepCard>
+          );
+        }
 
         case "schemas": {
           const schemaSearchTerm =
@@ -1423,6 +1640,8 @@ function ToolComponent({
       stableToolDataFields,
       disabled,
       isEditMode,
+      createSchemaFieldAction,
+      createTemplateAction,
       handleGenerateSchemas,
       handleGenerateTemplates,
       isGenerating,

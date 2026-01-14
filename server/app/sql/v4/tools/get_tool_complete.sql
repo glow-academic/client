@@ -94,6 +94,32 @@ CREATE TYPE types.q_get_tool_v4_template_value AS (
     generated boolean
 );
 
+CREATE TYPE types.q_get_tool_v4_domain AS (
+    domain_id uuid,
+    resource text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_tool_v4_schema_field_detail AS (
+    schema_field_id uuid,
+    schema_id uuid,
+    name text,
+    field_type text,
+    required boolean,
+    description text,
+    template text,
+    position integer,
+    default_value text,
+    generated boolean
+);
+
+CREATE TYPE types.q_get_tool_v4_template_detail AS (
+    template_id uuid,
+    name text,
+    schema_id uuid,
+    generated boolean
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_tool_v4(
     profile_id uuid,
@@ -180,7 +206,16 @@ RETURNS TABLE (
     template_values_agent_id uuid,
     template_values_required boolean,
     template_value_suggestions uuid[],
-    template_values types.q_get_tool_v4_template_value[]
+    template_values types.q_get_tool_v4_template_value[],
+    -- Domain connections (for scoping logic)
+    domain_ids uuid[],
+    domain_resources types.q_get_tool_v4_domain[],
+    -- Input schema details (for SchemaInput component)
+    input_schema_fields types.q_get_tool_v4_schema_field_detail[],
+    -- Output template details (for SchemaOutput component)
+    output_templates types.q_get_tool_v4_template_detail[],
+    -- Output schema fields (schema_fields from schemas linked to selected templates)
+    output_schema_fields types.q_get_tool_v4_schema_field_detail[]
 )
 LANGUAGE sql
 STABLE
@@ -787,6 +822,91 @@ template_value_suggestions_data AS (
              ) ttv),
             ARRAY[]::uuid[]
         ) as template_value_suggestions
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Domain IDs (selected domain IDs for tool)
+domain_ids_data AS (
+    SELECT 
+        CASE 
+            WHEN (SELECT tool_id FROM params) IS NULL THEN ARRAY[]::uuid[]
+            ELSE COALESCE(
+                (SELECT ARRAY_AGG(td.domain_id ORDER BY td.created_at)
+                 FROM tool_domains td
+                 WHERE td.tool_id = (SELECT tool_id FROM params) AND td.active = true),
+                ARRAY[]::uuid[]
+            )
+        END as domain_ids
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Domain mapping (for domain_resources array)
+domain_mapping_data AS (
+    SELECT 
+        d.id as domain_id,
+        d.resource::text,
+        COALESCE(td.generated, false) as generated
+    FROM params x
+    CROSS JOIN draft_group_data dgd
+    JOIN domains_resource d ON d.active = true
+    LEFT JOIN tool_domains td ON td.domain_id = d.id AND td.tool_id = x.tool_id
+    WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all domains for new tools
+),
+-- Input schema fields detail (for SchemaInput component - fields from selected schemas)
+input_schema_fields_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (sf.id, sf.schema_id, sf.name, sf.field_type::text, sf.required, COALESCE(sf.description, ''), COALESCE(sf.template, ''), sf.position, COALESCE(sf.default_value, ''), COALESCE(sf.generated, false))::types.q_get_tool_v4_schema_field_detail
+                ORDER BY sf.position, sf.name
+            )
+            FROM params x
+            CROSS JOIN schema_ids_data sid
+            JOIN schema_fields_resource sf ON sf.schema_id = ANY(sid.schema_ids) AND sf.active = true
+            WHERE COALESCE(array_length(sid.schema_ids, 1), 0) > 0),
+            ARRAY[]::types.q_get_tool_v4_schema_field_detail[]
+        ) as input_schema_fields
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Output templates detail (for SchemaOutput component - templates from selected template_ids)
+output_templates_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (t.id, t.name, COALESCE(st.schema_id, '00000000-0000-0000-0000-000000000000'::uuid), COALESCE(tt.generated, false))::types.q_get_tool_v4_template_detail
+                ORDER BY t.name
+            )
+            FROM params x
+            CROSS JOIN template_ids_data tid
+            JOIN templates_resource t ON t.id = ANY(tid.template_ids) AND t.active = true
+            LEFT JOIN schema_templates st ON st.template_id = t.id AND st.active = true
+            LEFT JOIN tool_templates tt ON tt.template_id = t.id AND tt.tool_id = x.tool_id
+            WHERE COALESCE(array_length(tid.template_ids, 1), 0) > 0),
+            ARRAY[]::types.q_get_tool_v4_template_detail[]
+        ) as output_templates
+    FROM params
+    -- Always return at least one row
+    LIMIT 1
+),
+-- Output schema fields detail (for SchemaOutput component - fields from schemas linked to selected templates)
+output_schema_fields_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(
+                (sf.id, sf.schema_id, sf.name, sf.field_type::text, sf.required, COALESCE(sf.description, ''), COALESCE(sf.template, ''), sf.position, COALESCE(sf.default_value, ''), COALESCE(sf.generated, false))::types.q_get_tool_v4_schema_field_detail
+                ORDER BY sf.position, sf.name
+            )
+            FROM params x
+            CROSS JOIN template_ids_data tid
+            JOIN schema_templates st ON st.template_id = ANY(tid.template_ids) AND st.active = true
+            JOIN schema_fields_resource sf ON sf.schema_id = st.schema_id AND sf.active = true
+            WHERE COALESCE(array_length(tid.template_ids, 1), 0) > 0),
+            ARRAY[]::types.q_get_tool_v4_schema_field_detail[]
+        ) as output_schema_fields
     FROM params
     -- Always return at least one row
     LIMIT 1
@@ -1794,7 +1914,24 @@ SELECT
             ORDER BY tvmd.template_value_id
         ) FROM (SELECT DISTINCT template_value_id, template_id, template_name, schema_field_id, schema_field_name, value, generated FROM template_value_mapping_data) tvmd),
         '{}'::types.q_get_tool_v4_template_value[]
-    ) as template_values
+    ) as template_values,
+    -- Domain connections (for scoping logic)
+    domids.domain_ids,
+    COALESCE(
+        (SELECT ARRAY_AGG(
+            (dmd.domain_id, dmd.resource, dmd.generated)::types.q_get_tool_v4_domain
+            ORDER BY dmd.domain_id
+        )
+        FROM domain_mapping_data dmd
+        WHERE dmd.domain_id = ANY(domids.domain_ids)),
+        '{}'::types.q_get_tool_v4_domain[]
+    ) as domain_resources,
+    -- Input schema details (for SchemaInput component)
+    COALESCE((SELECT input_schema_fields FROM input_schema_fields_data), ARRAY[]::types.q_get_tool_v4_schema_field_detail[]) as input_schema_fields,
+    -- Output template details (for SchemaOutput component)
+    COALESCE((SELECT output_templates FROM output_templates_data), ARRAY[]::types.q_get_tool_v4_template_detail[]) as output_templates,
+    -- Output schema fields (for SchemaOutput component - Jinja templates in schema_fields)
+    COALESCE((SELECT output_schema_fields FROM output_schema_fields_data), ARRAY[]::types.q_get_tool_v4_schema_field_detail[]) as output_schema_fields
 FROM user_profile up
 CROSS JOIN permissions_final perm_final
 CROSS JOIN ui_flags uf
@@ -1816,5 +1953,9 @@ CROSS JOIN template_array_item_ids_data taiid
 CROSS JOIN template_array_item_suggestions_data taiisd
 CROSS JOIN template_value_ids_data tvid
 CROSS JOIN template_value_suggestions_data tvisd
+CROSS JOIN domain_ids_data domids
+CROSS JOIN input_schema_fields_data isfd
+CROSS JOIN output_templates_data otd
+CROSS JOIN output_schema_fields_data osfd
 LEFT JOIN tool_data td ON true
 $$;

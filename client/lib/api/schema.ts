@@ -11553,6 +11553,16 @@ export interface components {
             template_value_suggestions?: string[] | null;
             /** Template Values */
             template_values?: components["schemas"]["QGetToolV4TemplateValue"][] | null;
+            /** Domain Ids */
+            domain_ids?: string[] | null;
+            /** Domain Resources */
+            domain_resources?: components["schemas"]["QGetToolV4Domain"][] | null;
+            /** Input Schema Fields */
+            input_schema_fields?: components["schemas"]["QGetToolV4SchemaFieldDetail"][] | null;
+            /** Output Templates */
+            output_templates?: components["schemas"]["QGetToolV4TemplateDetail"][] | null;
+            /** Output Schema Fields */
+            output_schema_fields?: components["schemas"]["QGetToolV4SchemaFieldDetail"][] | null;
         };
         /** GetToolsListApiRequest */
         GetToolsListApiRequest: Record<string, never>;
@@ -17510,6 +17520,15 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetToolV4Domain */
+        QGetToolV4Domain: {
+            /** Domain Id */
+            domain_id: string | null;
+            /** Resource */
+            resource: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetToolV4NameResource */
         QGetToolV4NameResource: {
             /** Id */
@@ -17536,6 +17555,29 @@ export interface components {
             name: string | null;
             /** Description */
             description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetToolV4SchemaFieldDetail */
+        QGetToolV4SchemaFieldDetail: {
+            /** Schema Field Id */
+            schema_field_id: string | null;
+            /** Schema Id */
+            schema_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Field Type */
+            field_type: string | null;
+            /** Required */
+            required: boolean | null;
+            /** Description */
+            description: string | null;
+            /** Template */
+            template: string | null;
+            /** Position */
+            position: number | null;
+            /** Default Value */
+            default_value: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -17577,6 +17619,17 @@ export interface components {
             item_template_id: string | null;
             /** Item Template Name */
             item_template_name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetToolV4TemplateDetail */
+        QGetToolV4TemplateDetail: {
+            /** Template Id */
+            template_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Schema Id */
+            schema_id: string | null;
             /** Generated */
             generated: boolean | null;
         };

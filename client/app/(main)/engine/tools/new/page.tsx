@@ -120,6 +120,22 @@ async function createDraftTemplateValues(
   return api.post("/resources/template_values", input);
 }
 
+async function createSchemaField(
+  input: CreateSchemaFieldIn
+): Promise<CreateSchemaFieldOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/schema_fields", input);
+}
+
+async function createTemplate(
+  input: CreateTemplateIn
+): Promise<CreateTemplateOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/templates", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function NewToolPage({
   searchParams,
@@ -180,6 +196,8 @@ export default async function NewToolPage({
         createSchemaFieldItemsAction={createDraftSchemaFieldItems}
         createTemplateArrayItemsAction={createDraftTemplateArrayItems}
         createTemplateValuesAction={createDraftTemplateValues}
+        createSchemaFieldAction={createSchemaField}
+        createTemplateAction={createTemplate}
       />
     </div>
   );

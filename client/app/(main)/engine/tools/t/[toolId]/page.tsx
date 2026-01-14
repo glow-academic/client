@@ -45,6 +45,10 @@ type CreateDraftTemplateValuesOut = OutputOf<
   "/api/v4/resources/template_values",
   "post"
 >;
+type CreateSchemaFieldIn = InputOf<"/api/v4/resources/schema_fields", "post">;
+type CreateSchemaFieldOut = OutputOf<"/api/v4/resources/schema_fields", "post">;
+type CreateTemplateIn = InputOf<"/api/v4/resources/templates", "post">;
+type CreateTemplateOut = OutputOf<"/api/v4/resources/templates", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -145,6 +149,22 @@ async function createDraftTemplateValues(
   return api.post("/resources/template_values", input);
 }
 
+async function createSchemaField(
+  input: CreateSchemaFieldIn
+): Promise<CreateSchemaFieldOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/schema_fields", input);
+}
+
+async function createTemplate(
+  input: CreateTemplateIn
+): Promise<CreateTemplateOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/templates", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function ToolDetailPage({
   params,
@@ -216,6 +236,8 @@ export default async function ToolDetailPage({
           createSchemaFieldItemsAction={createDraftSchemaFieldItems}
           createTemplateArrayItemsAction={createDraftTemplateArrayItems}
           createTemplateValuesAction={createDraftTemplateValues}
+          createSchemaFieldAction={createSchemaField}
+          createTemplateAction={createTemplate}
         />
       </div>
     );
