@@ -1013,46 +1013,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/documents/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Document Detail
-         * @description Get document detail information.
-         */
-        post: operations["get_document_detail_api_v4_documents_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/documents/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Document
-         * @description Create a new document.
-         */
-        post: operations["create_document_api_v4_documents_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/documents/delete": {
         parameters: {
             query?: never;
@@ -1067,26 +1027,6 @@ export interface paths {
          * @description Delete a document.
          */
         post: operations["delete_document_api_v4_documents_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/documents/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Document
-         * @description Update a document.
-         */
-        post: operations["update_document_api_v4_documents_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2693,66 +2633,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/evals/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Eval
-         * @description Create a new eval.
-         */
-        post: operations["create_eval_api_v4_evals_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/evals/delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Delete Eval
-         * @description Delete an eval.
-         */
-        post: operations["delete_eval_api_v4_evals_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/evals/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Eval Detail
-         * @description Get detailed eval information.
-         */
-        post: operations["get_eval_detail_api_v4_evals_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/evals/list": {
         parameters: {
             query?: never;
@@ -2767,46 +2647,6 @@ export interface paths {
          * @description Get evals list with status derivation and permissions.
          */
         post: operations["get_evals_list_api_v4_evals_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/evals/new": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Eval New
-         * @description Get default eval detail with departments, agents, and rubrics mappings.
-         */
-        post: operations["get_eval_new_api_v4_evals_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/evals/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Eval
-         * @description Update an existing eval.
-         */
-        post: operations["update_eval_api_v4_evals_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2852,6 +2692,26 @@ export interface paths {
          * @description Save eval - handles both create (eval_id = NULL) and update (eval_id provided).
          */
         post: operations["save_eval_api_v4_evals_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/evals/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Eval
+         * @description Delete an eval.
+         */
+        post: operations["delete_eval_api_v4_evals_delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2923,46 +2783,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/rubrics/detail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Rubric Detail
-         * @description Get rubric detail information.
-         */
-        post: operations["get_rubric_detail_api_v4_rubrics_detail_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/rubrics/new": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Rubric New
-         * @description Get default rubric detail information.
-         */
-        post: operations["get_rubric_new_api_v4_rubrics_new_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v4/rubrics/duplicate": {
         parameters: {
             query?: never;
@@ -2977,46 +2797,6 @@ export interface paths {
          * @description Duplicate a rubric with entire hierarchy.
          */
         post: operations["duplicate_rubric_api_v4_rubrics_duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/rubrics/create": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Rubric
-         * @description Create a new rubric with nested structure.
-         */
-        post: operations["create_rubric_api_v4_rubrics_create_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/rubrics/update": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Update Rubric
-         * @description Update an existing rubric (replaces entire hierarchy).
-         */
-        post: operations["update_rubric_api_v4_rubrics_update_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6662,60 +6442,6 @@ export interface components {
             /** Status */
             status?: string | null;
         };
-        /** CreateDocumentApiRequest */
-        CreateDocumentApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Upload Id */
-            upload_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Parameter Item Ids */
-            parameter_item_ids?: string[] | null;
-            /** Html Id */
-            html_id?: string | null;
-            /** Schema Id */
-            schema_id?: string | null;
-        };
-        /** CreateDocumentApiResponse */
-        CreateDocumentApiResponse: {
-            /** Success */
-            success?: boolean | null;
-            /** Message */
-            message?: string | null;
-            /** Document Id */
-            document_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** CreateEvalApiRequest */
-        CreateEvalApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Agent Ids */
-            agent_ids: string[];
-            /** Use Groups */
-            use_groups: boolean;
-            /** Model Run Ids */
-            model_run_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Active */
-            active: boolean;
-            /** Dynamic */
-            dynamic: boolean;
-        };
-        /** CreateEvalApiResponse */
-        CreateEvalApiResponse: {
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** CreateFeedbackRequest */
         CreateFeedbackRequest: {
             /** Type */
@@ -6812,30 +6538,6 @@ export interface components {
             last_name?: string | null;
             /** Email Exists */
             email_exists?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** CreateRubricApiRequest */
-        CreateRubricApiRequest: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Points */
-            points: number;
-            /** Pass Points */
-            pass_points: number;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["ICreateRubricV4StandardGroup"][] | null;
-        };
-        /** CreateRubricApiResponse */
-        CreateRubricApiResponse: {
-            /** Rubric Id */
-            rubric_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -8801,16 +8503,6 @@ export interface components {
             /** General Agent Id */
             general_agent_id?: string | null;
         };
-        /** GetDocumentDetailApiRequest */
-        GetDocumentDetailApiRequest: {
-            /**
-             * Document Id
-             * Format: uuid
-             */
-            document_id: string;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
         /** GetDocumentsListApiRequest */
         GetDocumentsListApiRequest: Record<string, never>;
         /** GetDocumentsListApiResponse */
@@ -9005,203 +8697,6 @@ export interface components {
             /** Runs */
             runs?: components["schemas"]["QGetEvalAttemptV4Run"][] | null;
             status_summary?: components["schemas"]["QGetEvalAttemptV4StatusSummary"] | null;
-        };
-        /** GetEvalDetailApiRequest */
-        GetEvalDetailApiRequest: {
-            /**
-             * Eval Id
-             * Format: uuid
-             */
-            eval_id: string;
-            /** Available Model Runs Search */
-            available_model_runs_search?: string | null;
-            /** Available Model Runs Agent Ids */
-            available_model_runs_agent_ids?: string[] | null;
-            /**
-             * Available Model Runs Page
-             * @default 1
-             */
-            available_model_runs_page: number | null;
-            /**
-             * Available Model Runs Page Size
-             * @default 50
-             */
-            available_model_runs_page_size: number | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Agent Search */
-            agent_search?: string | null;
-            /** Group Search */
-            group_search?: string | null;
-        };
-        /** GetEvalDetailApiResponse */
-        GetEvalDetailApiResponse: {
-            /** Eval Exists */
-            eval_exists?: boolean | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Dynamic */
-            dynamic?: boolean | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Total Runs */
-            total_runs?: number | null;
-            /** Completed Runs */
-            completed_runs?: number | null;
-            /** Pending Runs */
-            pending_runs?: number | null;
-            /** Status */
-            status?: string | null;
-            /** Model Runs */
-            model_runs?: components["schemas"]["QGetEvalDetailV4ModelRun"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetEvalDetailV4Department"][] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Eval Agents */
-            eval_agents?: components["schemas"]["QGetEvalDetailV4Agent"][] | null;
-            /** Valid Eval Agent Ids */
-            valid_eval_agent_ids?: string[] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetEvalDetailV4Agent"][] | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetEvalDetailV4Rubric"][] | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids?: string[] | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** Available Model Runs */
-            available_model_runs?: components["schemas"]["QGetEvalDetailV4AvailableModelRun"][] | null;
-            /** Available Model Runs Total Count */
-            available_model_runs_total_count?: number | null;
-            /** Available Model Runs Page */
-            available_model_runs_page?: number | null;
-            /** Available Model Runs Page Size */
-            available_model_runs_page_size?: number | null;
-            /** Available Model Runs Total Pages */
-            available_model_runs_total_pages?: number | null;
-            /** Available Groups */
-            available_groups?: components["schemas"]["QGetEvalDetailV4AvailableGroup"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Rubric Grade Agent Pairs */
-            rubric_grade_agent_pairs?: unknown | null;
-            /** Rubric Grade Agent Active States */
-            rubric_grade_agent_active_states?: unknown | null;
-            /** Rubric Grade Agent Positions */
-            rubric_grade_agent_positions?: unknown | null;
-            /** Run Rubric Grade Agents */
-            run_rubric_grade_agents?: unknown | null;
-            /** Group Rubric Grade Agents */
-            group_rubric_grade_agents?: unknown | null;
-        };
-        /** GetEvalNewApiRequest */
-        GetEvalNewApiRequest: {
-            /** Available Model Runs Search */
-            available_model_runs_search?: string | null;
-            /** Available Model Runs Agent Ids */
-            available_model_runs_agent_ids?: string[] | null;
-            /**
-             * Available Model Runs Page
-             * @default 1
-             */
-            available_model_runs_page: number | null;
-            /**
-             * Available Model Runs Page Size
-             * @default 50
-             */
-            available_model_runs_page_size: number | null;
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Agent Search */
-            agent_search?: string | null;
-            /** Group Search */
-            group_search?: string | null;
-        };
-        /** GetEvalNewApiResponse */
-        GetEvalNewApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Model Run Ids */
-            model_run_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Dynamic */
-            dynamic?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetEvalDetailV4Department"][] | null;
-            /** Eval Agents */
-            eval_agents?: components["schemas"]["QGetEvalDetailV4Agent"][] | null;
-            /** Valid Eval Agent Ids */
-            valid_eval_agent_ids?: string[] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetEvalDetailV4Agent"][] | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Rubrics */
-            rubrics?: components["schemas"]["QGetEvalDetailV4Rubric"][] | null;
-            /** Valid Rubric Ids */
-            valid_rubric_ids?: string[] | null;
-            /** Use Groups */
-            use_groups?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Can Delete */
-            can_delete?: boolean | null;
-            /** Available Model Runs */
-            available_model_runs?: components["schemas"]["QGetEvalDetailV4AvailableModelRun"][] | null;
-            /** Available Model Runs Total Count */
-            available_model_runs_total_count?: number | null;
-            /** Available Model Runs Page */
-            available_model_runs_page?: number | null;
-            /** Available Model Runs Page Size */
-            available_model_runs_page_size?: number | null;
-            /** Available Model Runs Total Pages */
-            available_model_runs_total_pages?: number | null;
-            /** Available Groups */
-            available_groups?: components["schemas"]["QGetEvalDetailV4AvailableGroup"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Rubric Grade Agent Pairs */
-            rubric_grade_agent_pairs?: unknown | null;
-            /** Rubric Grade Agent Active States */
-            rubric_grade_agent_active_states?: unknown | null;
-            /** Rubric Grade Agent Positions */
-            rubric_grade_agent_positions?: unknown | null;
-            /** Run Rubric Grade Agents */
-            run_rubric_grade_agents?: unknown | null;
-            /** Group Rubric Grade Agents */
-            group_rubric_grade_agents?: unknown | null;
         };
         /** GetEvalsListApiRequest */
         GetEvalsListApiRequest: Record<string, never>;
@@ -10750,113 +10245,6 @@ export interface components {
             /** Draft Grid Cells */
             draft_grid_cells?: unknown | null;
         };
-        /** GetRubricDetailApiRequest */
-        GetRubricDetailApiRequest: {
-            /**
-             * Rubric Id
-             * Format: uuid
-             */
-            rubric_id: string;
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetRubricDetailApiResponse */
-        GetRubricDetailApiResponse: {
-            /** Rubric Exists */
-            rubric_exists?: boolean | null;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Points */
-            points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
-            /** Active */
-            active?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetRubricDetailV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetRubricDetailV4Standard"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetRubricDetailV4Department"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetRubricDetailV4Agent"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Draft Standard Groups */
-            draft_standard_groups?: unknown | null;
-            /** Draft Standards */
-            draft_standards?: unknown | null;
-            /** Draft Grid Cells */
-            draft_grid_cells?: unknown | null;
-        };
-        /** GetRubricNewApiRequest */
-        GetRubricNewApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-        };
-        /** GetRubricNewApiResponse */
-        GetRubricNewApiResponse: {
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Valid Department Ids */
-            valid_department_ids?: string[] | null;
-            /** Points */
-            points?: number | null;
-            /** Pass Points */
-            pass_points?: number | null;
-            /** Active */
-            active?: boolean | null;
-            /** Can Edit */
-            can_edit?: boolean | null;
-            /** Rubric Agent Id */
-            rubric_agent_id?: string | null;
-            /** Valid Agent Ids */
-            valid_agent_ids?: string[] | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** User Role */
-            user_role?: string | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["QGetRubricNewV4StandardGroup"][] | null;
-            /** Standards */
-            standards?: components["schemas"]["QGetRubricNewV4Standard"][] | null;
-            /** Departments */
-            departments?: components["schemas"]["QGetRubricNewV4Department"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetRubricNewV4Agent"][] | null;
-            /** Draft Version */
-            draft_version?: number | null;
-            /** Draft Standard Groups */
-            draft_standard_groups?: unknown | null;
-            /** Draft Standards */
-            draft_standards?: unknown | null;
-            /** Draft Grid Cells */
-            draft_grid_cells?: unknown | null;
-        };
         /** GetRubricsListApiRequest */
         GetRubricsListApiRequest: Record<string, never>;
         /** GetRubricsListApiResponse */
@@ -12236,34 +11624,6 @@ export interface components {
             /** Primary Department Index */
             primary_department_index: number | null;
         };
-        /** ICreateRubricV4Standard */
-        ICreateRubricV4Standard: {
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** ICreateRubricV4StandardGroup */
-        ICreateRubricV4StandardGroup: {
-            /** Name */
-            name: string | null;
-            /** Short Name */
-            short_name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Standards */
-            standards: components["schemas"]["ICreateRubricV4Standard"][] | null;
-        };
         /** IProcessCsvV4ColumnMapping */
         IProcessCsvV4ColumnMapping: {
             /** Csv Column */
@@ -12325,34 +11685,6 @@ export interface components {
             grade_agent_id: string | null;
             /** Audio Agent Id */
             audio_agent_id: string | null;
-        };
-        /** IUpdateRubricV4Standard */
-        IUpdateRubricV4Standard: {
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** IUpdateRubricV4StandardGroup */
-        IUpdateRubricV4StandardGroup: {
-            /** Name */
-            name: string | null;
-            /** Short Name */
-            short_name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Standards */
-            standards: components["schemas"]["IUpdateRubricV4Standard"][] | null;
         };
         /** IUpdateSettingsV4AuthEnabled */
         IUpdateSettingsV4AuthEnabled: {
@@ -14726,127 +14058,6 @@ export interface components {
             /** Total */
             total: number | null;
         };
-        /** QGetEvalDetailV4Agent */
-        QGetEvalDetailV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Roles */
-            roles: string[] | null;
-        };
-        /** QGetEvalDetailV4AvailableGroup */
-        QGetEvalDetailV4AvailableGroup: {
-            /** Group Id */
-            group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Member Count */
-            member_count: number | null;
-        };
-        /** QGetEvalDetailV4AvailableModelRun */
-        QGetEvalDetailV4AvailableModelRun: {
-            /** Model Run Id */
-            model_run_id: string | null;
-            /** Created At */
-            created_at: string | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Actor Type */
-            actor_type: string | null;
-        };
-        /** QGetEvalDetailV4Department */
-        QGetEvalDetailV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetEvalDetailV4ModelRun */
-        QGetEvalDetailV4ModelRun: {
-            /** Model Run Id */
-            model_run_id: string | null;
-            /** Completed */
-            completed: boolean | null;
-            /** Assigned At */
-            assigned_at: string | null;
-            /** Status Updated At */
-            status_updated_at: string | null;
-            /** Model Run Created At */
-            model_run_created_at: string | null;
-            /** Model Id */
-            model_id: string | null;
-            /** Model Name */
-            model_name: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-            /** Persona Id */
-            persona_id: string | null;
-            /** Persona Name */
-            persona_name: string | null;
-            /** Profile Id */
-            profile_id: string | null;
-            /** Profile Name */
-            profile_name: string | null;
-            /** Has Grade */
-            has_grade: boolean | null;
-            /** Grade Score */
-            grade_score: number | null;
-            /** Grade Passed */
-            grade_passed: boolean | null;
-            /** Grade Created At */
-            grade_created_at: string | null;
-            /** Rubric Grade Agents */
-            rubric_grade_agents: components["schemas"]["QGetEvalDetailV4RubricGradeAgent"][] | null;
-        };
-        /** QGetEvalDetailV4Rubric */
-        QGetEvalDetailV4Rubric: {
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Agent Role */
-            agent_role: string | null;
-        };
-        /** QGetEvalDetailV4RubricGradeAgent */
-        QGetEvalDetailV4RubricGradeAgent: {
-            /** Rubric Grade Agent Id */
-            rubric_grade_agent_id: string | null;
-            /** Rubric Id */
-            rubric_id: string | null;
-            /** Rubric Name */
-            rubric_name: string | null;
-            /** Agent Id */
-            agent_id: string | null;
-            /** Agent Name */
-            agent_name: string | null;
-        };
         /** QGetEvalV4Agent */
         QGetEvalV4Agent: {
             /** Agent Id */
@@ -16264,106 +15475,6 @@ export interface components {
             name: string | null;
             /** Generated */
             generated: boolean | null;
-        };
-        /** QGetRubricDetailV4Agent */
-        QGetRubricDetailV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Roles */
-            roles: string[] | null;
-        };
-        /** QGetRubricDetailV4Department */
-        QGetRubricDetailV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetRubricDetailV4Standard */
-        QGetRubricDetailV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetRubricDetailV4StandardGroup */
-        QGetRubricDetailV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
-        };
-        /** QGetRubricNewV4Agent */
-        QGetRubricNewV4Agent: {
-            /** Agent Id */
-            agent_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Roles */
-            roles: string[] | null;
-        };
-        /** QGetRubricNewV4Department */
-        QGetRubricNewV4Department: {
-            /** Department Id */
-            department_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-        };
-        /** QGetRubricNewV4Standard */
-        QGetRubricNewV4Standard: {
-            /** Standard Id */
-            standard_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-        };
-        /** QGetRubricNewV4StandardGroup */
-        QGetRubricNewV4StandardGroup: {
-            /** Standard Group Id */
-            standard_group_id: string | null;
-            /** Name */
-            name: string | null;
-            /** Description */
-            description: string | null;
-            /** Points */
-            points: number | null;
-            /** Pass Points */
-            pass_points: number | null;
-            /** Position */
-            position: number | null;
-            /** Active */
-            active: boolean | null;
-            /** Standard Ids */
-            standard_ids: string[] | null;
         };
         /** QGetRubricV4Department */
         QGetRubricV4Department: {
@@ -22040,76 +21151,6 @@ export interface components {
             /** Tools Id */
             tools_id?: string | null;
         };
-        /** UpdateDocumentApiRequest */
-        UpdateDocumentApiRequest: {
-            /**
-             * Document Id
-             * Format: uuid
-             */
-            document_id: string;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Template */
-            template?: boolean | null;
-            /** Department Id */
-            department_id?: string | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Html Id */
-            html_id?: string | null;
-            /** Schema Id */
-            schema_id?: string | null;
-        };
-        /** UpdateDocumentApiResponse */
-        UpdateDocumentApiResponse: {
-            /** Success */
-            success?: boolean | null;
-            /** Message */
-            message?: string | null;
-            /** Document Id */
-            document_id?: string | null;
-            /** Document Name */
-            document_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** UpdateEvalApiRequest */
-        UpdateEvalApiRequest: {
-            /**
-             * Eval Id
-             * Format: uuid
-             */
-            eval_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Agent Ids */
-            agent_ids: string[];
-            /** Use Groups */
-            use_groups: boolean;
-            /** Model Run Ids */
-            model_run_ids: string[];
-            /** Department Ids */
-            department_ids: string[];
-            /** Active */
-            active: boolean;
-            /** Dynamic */
-            dynamic: boolean;
-        };
-        /** UpdateEvalApiResponse */
-        UpdateEvalApiResponse: {
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Eval Name */
-            eval_name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
         /** UpdateProfileApiRequest */
         UpdateProfileApiRequest: {
             /**
@@ -22154,37 +21195,6 @@ export interface components {
             last_name?: string | null;
             /** Name */
             name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /** UpdateRubricApiRequest */
-        UpdateRubricApiRequest: {
-            /**
-             * Rubric Id
-             * Format: uuid
-             */
-            rubric_id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Active */
-            active: boolean;
-            /** Points */
-            points: number;
-            /** Pass Points */
-            pass_points: number;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Standard Groups */
-            standard_groups?: components["schemas"]["IUpdateRubricV4StandardGroup"][] | null;
-        };
-        /** UpdateRubricApiResponse */
-        UpdateRubricApiResponse: {
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Rubric Name */
-            rubric_name?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -24246,82 +23256,6 @@ export interface operations {
             };
         };
     };
-    get_document_detail_api_v4_documents_detail_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetDocumentDetailApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_document_api_v4_documents_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateDocumentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     delete_document_api_v4_documents_delete_post: {
         parameters: {
             query?: never;
@@ -24346,43 +23280,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DeleteDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_document_api_v4_documents_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateDocumentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -27358,117 +26255,6 @@ export interface operations {
             };
         };
     };
-    create_eval_api_v4_evals_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateEvalApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateEvalApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_eval_api_v4_evals_delete_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DeleteEvalApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DeleteEvalApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_eval_detail_api_v4_evals_detail_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetEvalDetailApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetEvalDetailApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_evals_list_api_v4_evals_list_post: {
         parameters: {
             query?: never;
@@ -27493,80 +26279,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetEvalsListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_eval_new_api_v4_evals_new_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetEvalNewApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetEvalNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_eval_api_v4_evals_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateEvalApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -27641,6 +26353,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaveEvalApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_eval_api_v4_evals_delete_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteEvalApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeleteEvalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -27765,80 +26514,6 @@ export interface operations {
             };
         };
     };
-    get_rubric_detail_api_v4_rubrics_detail_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetRubricDetailApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetRubricDetailApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_rubric_new_api_v4_rubrics_new_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetRubricNewApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetRubricNewApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_rubric_api_v4_rubrics_duplicate_post: {
         parameters: {
             query?: never;
@@ -27863,80 +26538,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DuplicateRubricApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_rubric_api_v4_rubrics_create_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateRubricApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateRubricApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_rubric_api_v4_rubrics_update_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateRubricApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UpdateRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
