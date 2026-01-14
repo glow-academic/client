@@ -15,7 +15,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO prompts(system_prompt)
+    INSERT INTO prompts_resource(system_prompt)
     VALUES (test_create_test_prompt_v4.system_prompt)
     RETURNING id, system_prompt, created_at;
 $$;

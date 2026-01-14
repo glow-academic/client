@@ -73,7 +73,7 @@ audio_department AS (
 best_agent AS (
     SELECT a.id as agent_id
     FROM agent_artifact a
-    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN audio_department ad_dept
     CROSS JOIN params p
     WHERE a.id = p.agent_id

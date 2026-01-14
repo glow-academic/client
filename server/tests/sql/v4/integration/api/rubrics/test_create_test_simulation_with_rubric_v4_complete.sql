@@ -22,21 +22,21 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_simulation AS (
-        INSERT INTO simulations DEFAULT VALUES
+        INSERT INTO simulations_resource DEFAULT VALUES
         RETURNING id, created_at
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (COALESCE(simulation_name, 'Test Simulation'))
         RETURNING id
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (COALESCE(simulation_description, 'Test Description'))
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     simulation_name_link AS (
         INSERT INTO simulation_names(simulation_id, name_id)
@@ -58,9 +58,9 @@ AS $$
     )
     SELECT 
         ns.id AS simulation_id,
-        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = ns.id LIMIT 1) AS name,
-        (SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = ns.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AS active,
+        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = ns.id LIMIT 1) AS name,
+        (SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = ns.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) AS active,
         NULL::uuid AS rubric_id,
         ns.created_at
     FROM new_simulation ns;

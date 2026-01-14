@@ -19,20 +19,20 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH first_name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_create_test_profile_v4.first_name)
         RETURNING id
     ),
     last_name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_create_test_profile_v4.last_name)
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     new_profile AS (
-        INSERT INTO profiles(role)
+        INSERT INTO profiles_resource(role)
         VALUES (test_create_test_profile_v4.role::profile_role)
         RETURNING id, role::text
     ),

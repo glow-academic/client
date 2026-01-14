@@ -23,20 +23,20 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH first_name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (profile_first_name)
         RETURNING id
     ),
     last_name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (profile_last_name)
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     new_profile AS (
-        INSERT INTO profiles(role)
+        INSERT INTO profiles_resource(role)
         VALUES (profile_role::profile_role)
         RETURNING id, created_at, updated_at
     ),
@@ -60,10 +60,10 @@ AS $$
     )
     SELECT 
         np.id AS profile_id,
-        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = np.id AND pn.type = 'first' LIMIT 1) AS first_name,
-        (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = np.id AND pn.type = 'last' LIMIT 1) AS last_name,
-        (SELECT role::text FROM profiles p WHERE p.id = np.id) AS role,
-        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.profile_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) AS active,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = np.id AND pn.type = 'first' LIMIT 1) AS first_name,
+        (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = np.id AND pn.type = 'last' LIMIT 1) AS last_name,
+        (SELECT role::text FROM profiles_resource p WHERE p.id = np.id) AS role,
+        EXISTS (SELECT 1 FROM profile_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.profile_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) AS active,
         np.created_at,
         np.updated_at
     FROM new_profile np;

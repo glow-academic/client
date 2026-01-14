@@ -123,8 +123,8 @@ BEGIN
         NOW()
     );
     
-    -- INSERT INTO simulation_scenario_flags table (always insert, never update)
-    INSERT INTO simulation_scenario_flags(name, description, icon_id, active, call_id, generated)
+    -- INSERT INTO simulation_scenario_flags_resource table (always insert, never update)
+    INSERT INTO simulation_scenario_flags_resource(name, description, icon_id, active, call_id, generated)
     VALUES (name, description, icon_id, true, v_call_id, true)
     ON CONFLICT (name) DO NOTHING
     RETURNING id INTO v_flag_id;
@@ -132,7 +132,7 @@ BEGIN
     -- If conflict occurred, get the existing id
     IF v_flag_id IS NULL THEN
         SELECT id INTO v_flag_id
-        FROM simulation_scenario_flags
+        FROM simulation_scenario_flags_resource
         WHERE name = api_create_simulation_scenario_flags_v4.name;
     END IF;
     

@@ -152,7 +152,7 @@ eval_info AS (
         e.id as eval_id,
         (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
         (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
-        COALESCE(eNULL::uuids, ARRAY[]::text[]) as agent_ids,
+        COALESCE(NULL::uuid[], ARRAY[]::uuid[]) as agent_ids,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = true) AS dynamic,
         -- Get first rubric and eval_agent from junction table
         -- Get first rubric FROM runs (when use_groups = false) or groups (when use_groups = true)

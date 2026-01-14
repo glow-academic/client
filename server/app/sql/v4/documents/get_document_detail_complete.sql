@@ -299,7 +299,7 @@ agent_data AS (
     JOIN agents_resource a ON EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     
     
-    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN document_data dd
     WHERE (
         -- Department access: has matching department link OR has no department links at all (cross-dept)

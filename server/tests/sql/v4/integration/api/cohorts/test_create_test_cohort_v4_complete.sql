@@ -20,21 +20,21 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_cohort AS (
-        INSERT INTO cohorts DEFAULT VALUES
+        INSERT INTO cohorts_resource DEFAULT VALUES
         RETURNING id, created_at
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (COALESCE(test_create_test_cohort_v4.title, 'Test Cohort'))
         RETURNING id
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (COALESCE(test_create_test_cohort_v4.description, 'Test Description'))
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     cohort_name_link AS (
         INSERT INTO cohort_names(cohort_id, name_id)
@@ -56,9 +56,9 @@ AS $$
     )
     SELECT 
         nc.id as cohort_id,
-        (SELECT n.name FROM cohort_names cn JOIN names n ON cn.name_id = n.id WHERE cn.cohort_id = nc.id LIMIT 1) as title,
-        (SELECT d.description FROM cohort_descriptions cd JOIN descriptions d ON cd.description_id = d.id WHERE cd.cohort_id = nc.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags fl ON cf.flag_id = fl.id WHERE cf.cohort_id = nc.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE) as active,
+        (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = nc.id LIMIT 1) as title,
+        (SELECT d.description FROM cohort_descriptions cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = nc.id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM cohort_flags cf JOIN flags_resource fl ON cf.flag_id = fl.id WHERE cf.cohort_id = nc.id AND fl.name = 'active' AND cf.type = 'active'::type_cohort_flags AND cf.value = TRUE) as active,
         nc.created_at
     FROM new_cohort nc;
 $$;

@@ -25,27 +25,27 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_parameter AS (
-        INSERT INTO parameters DEFAULT VALUES
+        INSERT INTO parameters_resource DEFAULT VALUES
         RETURNING id, created_at, updated_at
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (parameter_name)
         RETURNING id
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (COALESCE(parameter_description, 'Test parameter description'))
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     document_parameter_flag AS (
-        SELECT id FROM flags WHERE name = 'document_parameter' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'document_parameter' LIMIT 1
     ),
     simulation_parameter_flag AS (
-        SELECT id FROM flags WHERE name = 'simulation_parameter' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'simulation_parameter' LIMIT 1
     ),
     parameter_name_link AS (
         INSERT INTO parameter_names(parameter_id, name_id)
@@ -81,11 +81,11 @@ AS $$
     )
     SELECT 
         np.id AS parameter_id,
-        (SELECT n.name FROM parameter_names pn JOIN names n ON pn.name_id = n.id WHERE pn.parameter_id = np.id LIMIT 1) AS name,
-        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions d ON pd.description_id = d.id WHERE pd.parameter_id = np.id LIMIT 1) AS description,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE) AS active,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) AS document_parameter,
-        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags AND pf.value = TRUE) AS simulation_parameter,
+        (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = np.id LIMIT 1) AS name,
+        (SELECT d.description FROM parameter_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = np.id LIMIT 1) AS description,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'active' AND pf.type = 'active'::type_parameter_flags AND pf.value = TRUE) AS active,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'document_parameter' AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE) AS document_parameter,
+        EXISTS (SELECT 1 FROM parameter_flags pf JOIN flags_resource fl ON pf.flag_id = fl.id WHERE pf.parameter_id = np.id AND fl.name = 'simulation_parameter' AND pf.type = 'simulation_parameter'::type_parameter_flags AND pf.value = TRUE) AS simulation_parameter,
         np.created_at,
         np.updated_at
     FROM new_parameter np;

@@ -26,24 +26,24 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_simulation AS (
-        INSERT INTO simulations DEFAULT VALUES
+        INSERT INTO simulations_resource DEFAULT VALUES
         RETURNING id, created_at
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (COALESCE(test_create_test_simulation_with_rubric_v4.title, 'Test Simulation'))
         RETURNING id
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (COALESCE(test_create_test_simulation_with_rubric_v4.description, 'Test Description'))
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     practice_flag AS (
-        SELECT id FROM flags WHERE name = 'practice' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'practice' LIMIT 1
     ),
     simulation_name_link AS (
         INSERT INTO simulation_names(simulation_id, name_id)
@@ -71,10 +71,10 @@ AS $$
     )
     SELECT 
         ns.id as simulation_id,
-        (SELECT n.name FROM simulation_names sn JOIN names n ON sn.name_id = n.id WHERE sn.simulation_id = ns.id LIMIT 1) as title,
-        (SELECT d.description FROM simulation_descriptions sd JOIN descriptions d ON sd.description_id = d.id WHERE sd.simulation_id = ns.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) as active,
-        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
+        (SELECT n.name FROM simulation_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = ns.id LIMIT 1) as title,
+        (SELECT d.description FROM simulation_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = ns.id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'active' AND sf.type = 'active'::type_simulation_flags AND sf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM simulation_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.simulation_id = ns.id AND fl.name = 'practice' AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         test_create_test_simulation_with_rubric_v4.time_limit,
         test_create_test_simulation_with_rubric_v4.rubric_id as rubric_id,
         ns.created_at

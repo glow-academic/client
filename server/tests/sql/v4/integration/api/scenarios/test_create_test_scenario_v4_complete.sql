@@ -22,7 +22,7 @@ DECLARE
     v_scenario_id uuid;
 BEGIN
     -- Insert scenario
-    INSERT INTO scenarios(name, active)
+    INSERT INTO scenarios_resource(name, active)
     VALUES (
         COALESCE(test_create_test_scenario_v4.scenario_name, 'Test Scenario'),
         true
@@ -49,7 +49,7 @@ BEGIN
         sps.problem_statement,
         s.active,
         s.created_at
-    FROM scenarios s
+    FROM scenarios_resource s
     JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
     WHERE s.id = v_scenario_id;
 END;

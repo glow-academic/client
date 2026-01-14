@@ -565,7 +565,7 @@ context_data AS (
     
     CROSS JOIN run_profile rp
     -- Try department-specific prompt first, fall back to default prompt
-    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = ad.department_id AND adp_prompt.active = true
     LEFT JOIN prompts_resource pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true

@@ -24,34 +24,34 @@ AS $$
             pe.email,
             p.role::text
         FROM profile_emails pe
-        JOIN profiles p ON p.id = pe.profile_id
+        JOIN profiles_resource p ON p.id = pe.profile_id
         WHERE pe.email = test_get_or_create_test_profile_v4.email
           AND pe.active = true
         LIMIT 1
     ),
     first_name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_get_or_create_test_profile_v4.first_name)
         ON CONFLICT (name) DO NOTHING
         RETURNING id
     ),
     first_name_lookup AS (
-        SELECT id FROM names WHERE name = test_get_or_create_test_profile_v4.first_name LIMIT 1
+        SELECT id FROM names_resource WHERE name = test_get_or_create_test_profile_v4.first_name LIMIT 1
     ),
     last_name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_get_or_create_test_profile_v4.last_name)
         ON CONFLICT (name) DO NOTHING
         RETURNING id
     ),
     last_name_lookup AS (
-        SELECT id FROM names WHERE name = test_get_or_create_test_profile_v4.last_name LIMIT 1
+        SELECT id FROM names_resource WHERE name = test_get_or_create_test_profile_v4.last_name LIMIT 1
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     new_profile AS (
-        INSERT INTO profiles(role)
+        INSERT INTO profiles_resource(role)
         SELECT test_get_or_create_test_profile_v4.role::profile_role
         WHERE NOT EXISTS (SELECT 1 FROM existing_profile)
         RETURNING id, test_get_or_create_test_profile_v4.role::text as role

@@ -15,28 +15,28 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH first_name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES ('Guest')
         ON CONFLICT (name) DO NOTHING
         RETURNING id
     ),
     first_name_lookup AS (
-        SELECT id FROM names WHERE name = 'Guest' LIMIT 1
+        SELECT id FROM names_resource WHERE name = 'Guest' LIMIT 1
     ),
     last_name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES ('User')
         ON CONFLICT (name) DO NOTHING
         RETURNING id
     ),
     last_name_lookup AS (
-        SELECT id FROM names WHERE name = 'User' LIMIT 1
+        SELECT id FROM names_resource WHERE name = 'User' LIMIT 1
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     new_profile AS (
-        INSERT INTO profiles(role) 
+        INSERT INTO profiles_resource(role) 
         VALUES ('guest') 
         RETURNING id
     ),

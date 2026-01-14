@@ -17,35 +17,35 @@ VOLATILE
 AS $$
     WITH existing_model AS (
         SELECT m.id, 
-               (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
+               (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
                NULL::uuid as provider_id  -- Providers are now enums, not UUIDs
-        FROM models m
-        WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
+        FROM models_resource m
+        WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
         LIMIT 1
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_get_or_create_test_model_v4.name)
         ON CONFLICT (name) DO NOTHING
         RETURNING id
     ),
     name_lookup AS (
-        SELECT id FROM names WHERE name = test_get_or_create_test_model_v4.name LIMIT 1
+        SELECT id FROM names_resource WHERE name = test_get_or_create_test_model_v4.name LIMIT 1
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES ('Test Model Description')
         ON CONFLICT (description) DO NOTHING
         RETURNING id
     ),
     description_lookup AS (
-        SELECT id FROM descriptions WHERE description = 'Test Model Description' LIMIT 1
+        SELECT id FROM descriptions_resource WHERE description = 'Test Model Description' LIMIT 1
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     new_model AS (
-        INSERT INTO models(value)
+        INSERT INTO models_resource(value)
         SELECT 'gpt-4'
         WHERE NOT EXISTS (SELECT 1 FROM existing_model)
         RETURNING id
@@ -73,7 +73,7 @@ AS $$
     )
     SELECT 
         COALESCE(em.id, nm.id) as model_id,
-        COALESCE(em.name, (SELECT n.name FROM model_names mn JOIN names n ON mn.name_id = n.id WHERE mn.model_id = nm.id LIMIT 1)) as name,
+        COALESCE(em.name, (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = nm.id LIMIT 1)) as name,
         NULL::uuid as provider_id  -- Providers are now enums, not UUIDs
     FROM existing_model em
     FULL OUTER JOIN new_model nm ON true

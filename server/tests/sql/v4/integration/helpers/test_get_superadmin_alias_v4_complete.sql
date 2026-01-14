@@ -19,12 +19,12 @@ AS $$
         pe.profile_id,
         pe.email,
         COALESCE(
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first'::type_profile_names LIMIT 1) || ' ' ||
-            (SELECT n.name FROM profile_names pn JOIN names n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last'::type_profile_names LIMIT 1),
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first'::type_profile_names LIMIT 1) || ' ' ||
+            (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last'::type_profile_names LIMIT 1),
             'System'
         ) as actor_name
     FROM profile_emails pe
-    JOIN profiles p ON p.id = pe.profile_id
+    JOIN profiles_resource p ON p.id = pe.profile_id
     WHERE pe.email = test_get_superadmin_alias_v4.email
       AND pe.active = true
       AND p.role = 'superadmin'::profile_role

@@ -21,7 +21,7 @@ RETURNS TABLE (
 LANGUAGE sql
 VOLATILE
 AS $$
-    INSERT INTO run (input_tokens, output_tokens, agent_id)
+    INSERT INTO runs (input_tokens, output_tokens, agent_id)
     VALUES (0, 0, test_create_test_run_v4.agent_id)
     RETURNING id, test_create_test_run_v4.department_id, test_create_test_run_v4.model_id, test_create_test_run_v4.agent_id;
 $$;

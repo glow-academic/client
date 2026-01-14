@@ -14,16 +14,16 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_scenario AS (
-        INSERT INTO scenarios DEFAULT VALUES
+        INSERT INTO scenarios_resource DEFAULT VALUES
         RETURNING id
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_create_test_scenario_v4.name)
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     scenario_name_link AS (
         INSERT INTO scenario_names(scenario_id, name_id)

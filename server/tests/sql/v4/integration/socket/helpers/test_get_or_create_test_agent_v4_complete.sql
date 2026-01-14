@@ -20,11 +20,11 @@ VOLATILE
 AS $$
     WITH existing_agent AS (
         SELECT a.id, 
-               (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
-               (SELECT d.description FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
+               (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
+               (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
                (SELECT am.model_id FROM agent_models am WHERE am.agent_id = a.id LIMIT 1) as model_id
-        FROM agents a
-        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
+        FROM agents_resource a
+        WHERE EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = a.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
         LIMIT 1
     ),
     model_to_use AS (
@@ -34,33 +34,33 @@ AS $$
         LIMIT 1
     ),
     fallback_model AS (
-        SELECT id FROM models m
-        WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
+        SELECT id FROM models_resource m
+        WHERE EXISTS (SELECT 1 FROM model_flags mf JOIN flags_resource fl ON mf.flag_id = fl.id WHERE mf.model_id = m.id AND fl.name = 'active' AND mf.type = 'active'::type_model_flags AND mf.value = TRUE)
         LIMIT 1
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_get_or_create_test_agent_v4.name)
         ON CONFLICT (name) DO NOTHING
         RETURNING id
     ),
     name_lookup AS (
-        SELECT id FROM names WHERE name = test_get_or_create_test_agent_v4.name LIMIT 1
+        SELECT id FROM names_resource WHERE name = test_get_or_create_test_agent_v4.name LIMIT 1
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (test_get_or_create_test_agent_v4.description)
         ON CONFLICT (description) DO NOTHING
         RETURNING id
     ),
     description_lookup AS (
-        SELECT id FROM descriptions WHERE description = test_get_or_create_test_agent_v4.description LIMIT 1
+        SELECT id FROM descriptions_resource WHERE description = test_get_or_create_test_agent_v4.description LIMIT 1
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     new_agent AS (
-        INSERT INTO agents DEFAULT VALUES
+        INSERT INTO agents_resource DEFAULT VALUES
         RETURNING id
     ),
     new_agent_filtered AS (
@@ -93,8 +93,8 @@ AS $$
     )
     SELECT 
         COALESCE(ea.id, naf.id) as agent_id,
-        COALESCE(ea.name, (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = naf.id LIMIT 1)) as name,
-        COALESCE(ea.description, (SELECT d.description FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = naf.id LIMIT 1)) as description,
+        COALESCE(ea.name, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = naf.id LIMIT 1)) as name,
+        COALESCE(ea.description, (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = naf.id LIMIT 1)) as description,
         COALESCE(ea.model_id, (SELECT am.model_id FROM agent_models am WHERE am.agent_id = naf.id LIMIT 1)) as model_id
     FROM existing_agent ea
     FULL OUTER JOIN new_agent_filtered naf ON true

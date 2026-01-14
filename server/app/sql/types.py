@@ -3935,6 +3935,101 @@ class GetAttemptWithProfileApiResponse(BaseModel):
 
 
 
+# Generated from: get_eval_attempt
+
+class GetEvalAttemptSqlParams(BaseModel):
+
+    attempt_id: UUID
+    profile_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.attempt_id,
+            self.profile_id,
+        )
+
+class QGetEvalAttemptV4Attempt(BaseModel):
+
+    id: UUID | None
+    created_at: str | None
+    eval_id: UUID | None
+    archived: bool | None
+    infinite_mode: bool | None
+
+
+
+
+class QGetEvalAttemptV4Eval(BaseModel):
+
+    eval_id: UUID | None
+    name: str | None
+    description: str | None
+    agent_ids: list[str] | None
+    dynamic: bool | None
+    rubric_id: UUID | None
+    rubric_name: str | None
+    rubric_description: str | None
+    eval_agent_id: UUID | None
+    system_prompt: str | None
+
+
+
+
+class QGetEvalAttemptV4Run(BaseModel):
+
+    run_id: UUID | None
+    status: str | None
+    test_id: UUID | None
+    eval_run_completed: bool | None
+    eval_run_assigned_at: str | None
+    eval_run_updated_at: str | None
+    run_created_at: str | None
+    model_id: UUID | None
+    model_name: str | None
+    agent_id: UUID | None
+    agent_name: str | None
+    persona_id: UUID | None
+    persona_name: str | None
+    profile_id: UUID | None
+    profile_name: str | None
+    grade_score: int | None
+    grade_passed: bool | None
+    grade_created_at: str | None
+
+
+
+
+class QGetEvalAttemptV4StatusSummary(BaseModel):
+
+    not_started: int | None
+    in_progress: int | None
+    completed: int | None
+    total: int | None
+
+class GetEvalAttemptSqlRow(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    attempt: QGetEvalAttemptV4Attempt | None = None
+    eval: QGetEvalAttemptV4Eval | None = None
+    runs: list[QGetEvalAttemptV4Run] | None = None
+    status_summary: QGetEvalAttemptV4StatusSummary | None = None
+
+class GetEvalAttemptApiRequest(BaseModel):
+
+    attempt_id: UUID
+
+class GetEvalAttemptApiResponse(BaseModel):
+
+    attempt_exists: bool | None = None
+    actor_name: str | None = None
+    attempt: QGetEvalAttemptV4Attempt | None = None
+    eval: QGetEvalAttemptV4Eval | None = None
+    runs: list[QGetEvalAttemptV4Run] | None = None
+    status_summary: QGetEvalAttemptV4StatusSummary | None = None
+
+
+
 # Generated from: get_existing_chats_for_attempt
 
 class GetExistingChatsForAttemptSqlParams(BaseModel):
@@ -6935,6 +7030,48 @@ class MarkTestCompleteV4ApiRequest(BaseModel):
 class MarkTestCompleteV4ApiResponse(BaseModel):
 
     socket_mark_test_complete_v4: Any
+
+
+
+# Generated from: start_benchmark_attempt
+
+class StartBenchmarkAttemptSqlParams(BaseModel):
+
+    eval_id: UUID
+    infinite_mode: bool
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.eval_id,
+            self.infinite_mode,
+        )
+
+class StartBenchmarkAttemptSqlRow(BaseModel):
+
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    agent_ids: list[str] | None = None
+    dynamic: bool | None = None
+    infinite_mode: bool | None = None
+    use_groups: bool | None = None
+    pending_run_ids: list[UUID] | None = None
+    pending_group_ids: list[UUID] | None = None
+
+class StartBenchmarkAttemptApiRequest(BaseModel):
+
+    eval_id: UUID
+    infinite_mode: bool
+
+class StartBenchmarkAttemptApiResponse(BaseModel):
+
+    attempt_id: str | None = None
+    eval_id: str | None = None
+    agent_ids: list[str] | None = None
+    dynamic: bool | None = None
+    infinite_mode: bool | None = None
+    use_groups: bool | None = None
+    pending_run_ids: list[UUID] | None = None
+    pending_group_ids: list[UUID] | None = None
 
 
 
@@ -30863,6 +31000,134 @@ class GetClassificationContextApiResponse(BaseModel):
 
 
 
+# Generated from: get_upload_classification_regeneration_run_context_and_create_run
+
+class GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    upload_id: UUID
+    profile_id: UUID
+    group_id: UUID
+    department_id: UUID | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.upload_id,
+            self.profile_id,
+            self.group_id,
+            self.department_id,
+            self.user_instructions,
+        )
+
+class IGetUploadClassRegenRunContextCreateRunV4Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    upload_id: UUID | None = None
+    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV4Msg] | None = None
+
+class GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    upload_id: UUID
+    group_id: UUID
+    department_id: UUID | None = None
+    user_instructions: str | None = None
+
+class GetUploadClassificationRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+    upload_id: UUID | None = None
+    previous_messages: list[IGetUploadClassRegenRunContextCreateRunV4Msg] | None = None
+
+
+
+# Generated from: get_upload_classification_run_context_and_create_run
+
+class GetUploadClassificationRunContextAndCreateRunSqlParams(BaseModel):
+
+    profile_id: UUID
+    department_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.department_id,
+        )
+
+class GetUploadClassificationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+
+class GetUploadClassificationRunContextAndCreateRunApiRequest(BaseModel):
+
+    department_id: UUID | None = None
+
+class GetUploadClassificationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    run_id: str | None = None
+
+
+
 # Generated from: get_upload_file_info
 
 class GetUploadFileInfoSqlParams(BaseModel):
@@ -31311,6 +31576,147 @@ class CreateVideoBasicApiRequest(BaseModel):
 class CreateVideoBasicApiResponse(BaseModel):
 
     id: UUID | None = None
+
+
+
+# Generated from: get_video_regeneration_run_context_and_create_run
+
+class GetVideoRegenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    video_id: UUID
+    group_id: UUID
+    profile_id: UUID | None = None
+    user_instructions: str | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.video_id,
+            self.group_id,
+            self.profile_id,
+            self.user_instructions,
+        )
+
+class IVideoRegenRunContextCreateRunV4Msg(BaseModel):
+
+    role: str | None
+    content: str | None
+
+class GetVideoRegenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IVideoRegenRunContextCreateRunV4Msg] | None = None
+
+class GetVideoRegenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    video_id: UUID
+    group_id: UUID
+    user_instructions: str | None = None
+
+class GetVideoRegenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+    group_id: UUID | None = None
+    previous_messages: list[IVideoRegenRunContextCreateRunV4Msg] | None = None
+
+
+
+# Generated from: get_video_run_context_and_create_run
+
+class GetVideoRunContextAndCreateRunSqlParams(BaseModel):
+
+    video_id: UUID
+    profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.video_id,
+            self.profile_id,
+        )
+
+class GetVideoRunContextAndCreateRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
+
+class GetVideoRunContextAndCreateRunApiRequest(BaseModel):
+
+    video_id: UUID
+
+class GetVideoRunContextAndCreateRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    custom_model: str | None = None
+    provider_id: str | None = None
+    provider_name: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    department_id: UUID | None = None
+    run_id: str | None = None
 
 
 
@@ -31808,6 +32214,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAttemptWithProfileApiRequest",
         "GetAttemptWithProfileApiResponse",
     ),
+    "app/sql/v4/attempts/get_eval_attempt_complete.sql": (
+        "GetEvalAttemptSqlParams",
+        "GetEvalAttemptSqlRow",
+        "GetEvalAttemptApiRequest",
+        "GetEvalAttemptApiResponse",
+    ),
     "app/sql/v4/attempts/get_existing_chats_for_attempt_complete.sql": (
         "GetExistingChatsForAttemptSqlParams",
         "GetExistingChatsForAttemptSqlRow",
@@ -32089,6 +32501,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkTestCompleteV4SqlRow",
         "MarkTestCompleteV4ApiRequest",
         "MarkTestCompleteV4ApiResponse",
+    ),
+    "app/sql/v4/benchmark/start_benchmark_attempt_complete.sql": (
+        "StartBenchmarkAttemptSqlParams",
+        "StartBenchmarkAttemptSqlRow",
+        "StartBenchmarkAttemptApiRequest",
+        "StartBenchmarkAttemptApiResponse",
     ),
     "app/sql/v4/benchmark/update_eval_complete.sql": (
         "UpdateEvalSqlParams",
@@ -34526,6 +34944,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetClassificationContextApiRequest",
         "GetClassificationContextApiResponse",
     ),
+    "app/sql/v4/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql": (
+        "GetUploadClassificationRegenerationRunContextAndCreateRunSqlParams",
+        "GetUploadClassificationRegenerationRunContextAndCreateRunSqlRow",
+        "GetUploadClassificationRegenerationRunContextAndCreateRunApiRequest",
+        "GetUploadClassificationRegenerationRunContextAndCreateRunApiResponse",
+    ),
+    "app/sql/v4/uploads/get_upload_classification_run_context_and_create_run_complete.sql": (
+        "GetUploadClassificationRunContextAndCreateRunSqlParams",
+        "GetUploadClassificationRunContextAndCreateRunSqlRow",
+        "GetUploadClassificationRunContextAndCreateRunApiRequest",
+        "GetUploadClassificationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v4/uploads/get_upload_file_info_complete.sql": (
         "GetUploadFileInfoSqlParams",
         "GetUploadFileInfoSqlRow",
@@ -34609,6 +35039,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateVideoBasicSqlRow",
         "CreateVideoBasicApiRequest",
         "CreateVideoBasicApiResponse",
+    ),
+    "app/sql/v4/videos/get_video_regeneration_run_context_and_create_run_complete.sql": (
+        "GetVideoRegenerationRunContextAndCreateRunSqlParams",
+        "GetVideoRegenerationRunContextAndCreateRunSqlRow",
+        "GetVideoRegenerationRunContextAndCreateRunApiRequest",
+        "GetVideoRegenerationRunContextAndCreateRunApiResponse",
+    ),
+    "app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql": (
+        "GetVideoRunContextAndCreateRunSqlParams",
+        "GetVideoRunContextAndCreateRunSqlRow",
+        "GetVideoRunContextAndCreateRunApiRequest",
+        "GetVideoRunContextAndCreateRunApiResponse",
     ),
     "app/sql/v4/voice/get_chat_personas_complete.sql": (
         "GetChatPersonasSqlParams",
@@ -35046,6 +35488,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/attempts/get_eval_attempt_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/attempts/get_existing_chats_for_attempt_complete.sql"]
     ) -> SqlString: ...
 
@@ -35277,6 +35724,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/benchmark/mark_test_complete_v4_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/benchmark/start_benchmark_attempt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -37311,6 +37763,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/uploads/get_upload_classification_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/uploads/get_upload_classification_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/uploads/get_upload_file_info_complete.sql"]
     ) -> SqlString: ...
 
@@ -37377,6 +37839,16 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/videos/create_video_basic_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/videos/get_video_regeneration_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/videos/get_video_run_context_and_create_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

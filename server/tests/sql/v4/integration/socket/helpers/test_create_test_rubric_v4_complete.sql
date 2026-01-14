@@ -17,39 +17,39 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_rubric AS (
-        INSERT INTO rubrics DEFAULT VALUES
+        INSERT INTO rubrics_resource DEFAULT VALUES
         RETURNING id
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_create_test_rubric_v4.name)
         RETURNING id
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (test_create_test_rubric_v4.description)
         RETURNING id
     ),
     points_resource AS (
-        INSERT INTO points(value)
+        INSERT INTO points_resource(value)
         VALUES (test_create_test_rubric_v4.points)
         ON CONFLICT (value) DO NOTHING
         RETURNING id
     ),
     points_lookup AS (
-        SELECT id FROM points WHERE value = test_create_test_rubric_v4.points LIMIT 1
+        SELECT id FROM points_resource WHERE value = test_create_test_rubric_v4.points LIMIT 1
     ),
     pass_points_resource AS (
-        INSERT INTO points(value)
+        INSERT INTO points_resource(value)
         VALUES (test_create_test_rubric_v4.pass_points)
         ON CONFLICT (value) DO NOTHING
         RETURNING id
     ),
     pass_points_lookup AS (
-        SELECT id FROM points WHERE value = test_create_test_rubric_v4.pass_points LIMIT 1
+        SELECT id FROM points_resource WHERE value = test_create_test_rubric_v4.pass_points LIMIT 1
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     rubric_name_link AS (
         INSERT INTO rubric_names(rubric_id, name_id)

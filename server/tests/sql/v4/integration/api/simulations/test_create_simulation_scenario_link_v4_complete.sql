@@ -28,7 +28,7 @@ AS $$
         RETURNING simulation_id, scenario_id, created_at
     ),
     inserted_flag AS (
-        INSERT INTO simulation_scenario_flags(simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
+        INSERT INTO simulation_scenario_flags_resource(simulation_id, scenario_id, scenario_flag_id, type, value, created_at, updated_at, generated, mcp)
         SELECT 
             il.simulation_id,
             il.scenario_id,
@@ -40,12 +40,12 @@ AS $$
             false,
             false
         FROM inserted_link il
-        CROSS JOIN flags sf
+        CROSS JOIN flags_resource sf
         WHERE sf.name = 'active'
         LIMIT 1
     ),
     inserted_position AS (
-        INSERT INTO scenario_positions(simulation_id, scenario_id, value, created_at, updated_at, generated, mcp)
+        INSERT INTO scenario_positions_resource(simulation_id, scenario_id, value, created_at, updated_at, generated, mcp)
         SELECT 
             il.simulation_id,
             il.scenario_id,

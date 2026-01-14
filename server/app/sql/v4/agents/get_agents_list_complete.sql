@@ -110,7 +110,7 @@ filtered_agents AS (
         WHERE at.agent_id = a.id AND at.active = TRUE
         LIMIT 1
     ) da ON TRUE
-    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     GROUP BY a.id, NULL::artifacts, a.updated_at
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)

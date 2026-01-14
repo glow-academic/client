@@ -19,15 +19,15 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES ('Test Scenario')
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     new_scenario AS (
-        INSERT INTO scenarios DEFAULT VALUES
+        INSERT INTO scenarios_resource DEFAULT VALUES
         RETURNING id AS scenario_id, created_at
     ),
     scenario_name_link AS (
@@ -50,8 +50,8 @@ AS $$
     )
     SELECT 
         ns.scenario_id,
-        (SELECT n.name FROM scenario_names sn JOIN names n ON sn.name_id = n.id WHERE sn.scenario_id = ns.scenario_id LIMIT 1) as name,
-        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags fl ON sf.flag_id = fl.id WHERE sf.scenario_id = ns.scenario_id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
+        (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = ns.scenario_id LIMIT 1) as name,
+        EXISTS (SELECT 1 FROM scenario_flags sf JOIN flags_resource fl ON sf.flag_id = fl.id WHERE sf.scenario_id = ns.scenario_id AND fl.name = 'active' AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
         nl.parameter_id AS parameter_item_id,
         nl.link_active,
         ns.created_at

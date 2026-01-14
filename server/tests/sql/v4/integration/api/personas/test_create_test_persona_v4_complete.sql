@@ -26,12 +26,12 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_persona AS (
-        INSERT INTO personas(created_at, updated_at)
+        INSERT INTO personas_resource(created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id, created_at
     ),
     new_instruction AS (
-        INSERT INTO instructions(template, active, created_at, updated_at)
+        INSERT INTO instructions_resource(template, active, created_at, updated_at)
         SELECT 
             COALESCE(test_create_test_persona_v4.instructions, ''),
             true,

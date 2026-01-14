@@ -16,34 +16,34 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (test_get_or_create_test_department_v4.title)
         ON CONFLICT (name) DO NOTHING
         RETURNING id
     ),
     name_lookup AS (
-        SELECT id FROM names WHERE name = test_get_or_create_test_department_v4.title LIMIT 1
+        SELECT id FROM names_resource WHERE name = test_get_or_create_test_department_v4.title LIMIT 1
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (test_get_or_create_test_department_v4.description)
         ON CONFLICT (description) DO NOTHING
         RETURNING id
     ),
     description_lookup AS (
-        SELECT id FROM descriptions WHERE description = test_get_or_create_test_department_v4.description LIMIT 1
+        SELECT id FROM descriptions_resource WHERE description = test_get_or_create_test_department_v4.description LIMIT 1
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     existing_dept AS (
-        SELECT d.id, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title
-        FROM departments d
-        WHERE (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) = test_get_or_create_test_department_v4.title
+        SELECT d.id, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title
+        FROM departments_resource d
+        WHERE (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) = test_get_or_create_test_department_v4.title
         LIMIT 1
     ),
     new_dept AS (
-        INSERT INTO departments DEFAULT VALUES
+        INSERT INTO departments_resource DEFAULT VALUES
         RETURNING id
     ),
     new_dept_filtered AS (
@@ -70,7 +70,7 @@ AS $$
     )
     SELECT 
         COALESCE(ed.id, ndf.id) as department_id,
-        COALESCE(ed.title, (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = ndf.id LIMIT 1)) as title
+        COALESCE(ed.title, (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ndf.id LIMIT 1)) as title
     FROM existing_dept ed
     FULL OUTER JOIN new_dept_filtered ndf ON true
     WHERE ed.id IS NOT NULL OR ndf.id IS NOT NULL

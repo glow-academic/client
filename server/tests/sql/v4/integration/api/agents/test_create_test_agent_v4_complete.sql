@@ -24,21 +24,21 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_agent AS (
-        INSERT INTO agents DEFAULT VALUES
+        INSERT INTO agents_resource DEFAULT VALUES
         RETURNING id, created_at
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (COALESCE(test_create_test_agent_v4.name, 'Test Agent'))
         RETURNING id
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (COALESCE(test_create_test_agent_v4.description, 'Test Description'))
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     agent_name_link AS (
         INSERT INTO agent_names(agent_id, name_id)
@@ -67,10 +67,10 @@ AS $$
     )
     SELECT 
         na.id as agent_id,
-        (SELECT n.name FROM agent_names an JOIN names n ON an.name_id = n.id WHERE an.agent_id = na.id LIMIT 1) as name,
-        (SELECT d.description FROM agent_descriptions ad JOIN descriptions d ON ad.description_id = d.id WHERE ad.agent_id = na.id LIMIT 1) as description,
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = na.id LIMIT 1) as name,
+        (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = na.id LIMIT 1) as description,
         (SELECT am.model_id FROM agent_models am WHERE am.agent_id = na.id LIMIT 1) as model_id,
-        EXISTS (SELECT 1 FROM agent_flags af JOIN flags fl ON af.flag_id = fl.id WHERE af.agent_id = na.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM agent_flags af JOIN flags_resource fl ON af.flag_id = fl.id WHERE af.agent_id = na.id AND fl.name = 'active' AND af.type = 'active'::type_agent_flags AND af.value = TRUE) as active,
         COALESCE(test_create_test_agent_v4.role, 'assistant') as role,
         na.created_at
     FROM new_agent na;

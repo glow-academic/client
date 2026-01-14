@@ -18,16 +18,16 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_department AS (
-        INSERT INTO departments DEFAULT VALUES
+        INSERT INTO departments_resource DEFAULT VALUES
         RETURNING id, created_at
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (COALESCE(test_create_test_department_v4.title, 'Test Department'))
         RETURNING id
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (COALESCE(test_create_test_department_v4.description, 'Test Description'))
         RETURNING id
     ),
@@ -45,8 +45,8 @@ AS $$
     )
     SELECT 
         nd.id as department_id,
-        (SELECT n.name FROM department_names dn JOIN names n ON dn.name_id = n.id WHERE dn.department_id = nd.id LIMIT 1) as title,
-        (SELECT d.description FROM department_descriptions dd JOIN descriptions d ON dd.description_id = d.id WHERE dd.department_id = nd.id LIMIT 1) as description,
+        (SELECT n.name FROM department_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = nd.id LIMIT 1) as title,
+        (SELECT d.description FROM department_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.department_id = nd.id LIMIT 1) as description,
         nd.created_at
     FROM new_department nd;
 $$;

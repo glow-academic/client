@@ -1142,7 +1142,7 @@ agents_data AS (
         FROM agent_artifact a
         
         
-        LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+        LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) 
         AND NULL::artifacts IN (CAST('message' AS artifacts), CAST('grade' AS artifacts), CAST('scenario' AS artifacts), CAST('agent' AS artifacts))
         GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), NULL::artifacts
@@ -1160,7 +1160,7 @@ valid_hint_agents AS (
     FROM agent_artifact a
     
     
-    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
@@ -1172,7 +1172,7 @@ valid_simulation_agents AS (
     FROM agent_artifact a
     
     
-    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
@@ -1184,7 +1184,7 @@ valid_voice_agents AS (
     FROM agent_artifact a
     
     
-    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     GROUP BY a.id
     HAVING 
@@ -1194,7 +1194,7 @@ valid_voice_agents AS (
 valid_member_agents AS (
     SELECT DISTINCT a.id
     FROM agent_artifact a
-    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     
     
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
@@ -2308,7 +2308,7 @@ SELECT
     COALESCE(pfd.parameters, ARRAY[]::types.q_get_simulation_v4_parameter[]) as parameters_full,
     COALESCE(fd.fields, ARRAY[]::types.q_get_simulation_v4_field[]) as fields,
     COALESCE(ad.agents, ARRAY[]::types.q_get_simulation_v4_agent[]) as agents,
-    COALESCE(NULL::uuids, ARRAY[]::uuid[]) as valid_agent_ids,
+    COALESCE(NULL::uuid[], ARRAY[]::uuid[]) as valid_agent_ids,
     COALESCE((SELECT draft_version FROM draft_payload_data), 0) as draft_version,
     -- Extract scenarioActiveStates and scenarioSettings from draft payload if available
     COALESCE(

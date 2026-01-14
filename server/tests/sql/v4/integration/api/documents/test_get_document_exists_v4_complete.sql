@@ -15,7 +15,7 @@ STABLE
 AS $$
     SELECT EXISTS(
         SELECT 1
-        FROM documents
+        FROM documents_resource
         WHERE id = input_document_id
     ) AS document_exists;
 $$;

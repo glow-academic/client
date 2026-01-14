@@ -17,12 +17,12 @@ DECLARE
 BEGIN
     -- Try to get existing scenario
     SELECT id INTO v_scenario_id
-    FROM scenarios
+    FROM scenarios_resource
     LIMIT 1;
 
     -- If no scenario exists, create one
     IF v_scenario_id IS NULL THEN
-        INSERT INTO scenarios(name, active)
+        INSERT INTO scenarios_resource(name, active)
         VALUES ('Test Scenario', true)
         RETURNING id INTO v_scenario_id;
 
@@ -36,7 +36,7 @@ BEGIN
     SELECT 
         s.id as scenario_id,
         s.name
-    FROM scenarios s
+    FROM scenarios_resource s
     WHERE s.id = v_scenario_id;
 END;
 $$;

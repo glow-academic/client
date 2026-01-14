@@ -25,7 +25,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_rubric AS (
-        INSERT INTO rubrics(created_at, updated_at)
+        INSERT INTO rubrics_resource(created_at, updated_at)
         VALUES (NOW(), NOW())
         RETURNING id, created_at, updated_at
     ),
@@ -36,27 +36,27 @@ AS $$
         RETURNING rubric_id
     ),
     name_resource AS (
-        INSERT INTO names(name)
+        INSERT INTO names_resource(name)
         VALUES (rubric_name)
         RETURNING id
     ),
     description_resource AS (
-        INSERT INTO descriptions(description)
+        INSERT INTO descriptions_resource(description)
         VALUES (rubric_description)
         RETURNING id
     ),
     points_resource AS (
-        INSERT INTO points(value)
+        INSERT INTO points_resource(value)
         VALUES (rubric_points)
         RETURNING id
     ),
     pass_points_resource AS (
-        INSERT INTO points(value)
+        INSERT INTO points_resource(value)
         VALUES (rubric_pass_points)
         RETURNING id
     ),
     active_flag AS (
-        SELECT id FROM flags WHERE name = 'active' LIMIT 1
+        SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1
     ),
     rubric_name_link AS (
         INSERT INTO rubric_names(rubric_id, name_id)
@@ -90,11 +90,11 @@ AS $$
     )
     SELECT 
         nr.id AS rubric_id,
-        (SELECT n.name FROM rubric_names rn JOIN names n ON rn.name_id = n.id WHERE rn.rubric_id = nr.id LIMIT 1) AS name,
-        (SELECT d.description FROM rubric_descriptions rd JOIN descriptions d ON rd.description_id = d.id WHERE rd.rubric_id = nr.id LIMIT 1) AS description,
-        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS points,
-        (SELECT p.value FROM rubric_points rp JOIN points p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS pass_points,
-        EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags fl ON rf.flag_id = fl.id WHERE rf.rubric_id = nr.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE) AS active,
+        (SELECT n.name FROM rubric_names rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = nr.id LIMIT 1) AS name,
+        (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = nr.id LIMIT 1) AS description,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'total'::type_rubric_points LIMIT 1) AS points,
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = nr.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) AS pass_points,
+        EXISTS (SELECT 1 FROM rubric_flags rf JOIN flags_resource fl ON rf.flag_id = fl.id WHERE rf.rubric_id = nr.id AND fl.name = 'active' AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE) AS active,
         nr.created_at,
         nr.updated_at
     FROM new_rubric nr;

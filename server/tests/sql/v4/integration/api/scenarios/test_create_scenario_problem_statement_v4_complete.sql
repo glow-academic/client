@@ -18,7 +18,7 @@ LANGUAGE sql
 VOLATILE
 AS $$
     WITH new_problem_statement AS (
-        INSERT INTO problem_statements(name, problem_statement)
+        INSERT INTO problem_statements_resource(name, problem_statement)
         SELECT 'Test Problem Statement', test_create_scenario_problem_statement_v4.input_problem_statement
         RETURNING id, problem_statement, created_at
     ),

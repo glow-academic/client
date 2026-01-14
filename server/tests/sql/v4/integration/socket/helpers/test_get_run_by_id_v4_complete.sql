@@ -16,6 +16,6 @@ LANGUAGE sql
 STABLE
 AS $$
     SELECT id, input_tokens, output_tokens 
-    FROM run 
+    FROM runs 
     WHERE id = test_get_run_by_id_v4.run_id;
 $$;

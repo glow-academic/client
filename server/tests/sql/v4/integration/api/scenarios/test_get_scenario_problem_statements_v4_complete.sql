@@ -22,7 +22,7 @@ AS $$
         sps.active,
         sps.created_at
     FROM scenario_problem_statements sps
-    JOIN problem_statements ps ON ps.id = sps.problem_statement_id
+    JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
     WHERE sps.scenario_id = test_get_scenario_problem_statements_v4.input_scenario_id
     ORDER BY sps.created_at DESC;
 $$;
