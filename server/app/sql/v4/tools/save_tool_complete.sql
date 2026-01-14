@@ -88,7 +88,7 @@ BEGIN
 
     -- Handle active flag (insert/update via tool_flags junction)
     IF active IS NOT NULL THEN
-        INSERT INTO tool_flags (tool_id, flag_id, type, value, created_at, updated_at, generated, mcp, call_id)
+        INSERT INTO tool_flags (tool_id, flag_id, type, value, created_at, updated_at, generated, mcp)
         SELECT 
             v_tool_id,
             f.id,
@@ -97,8 +97,7 @@ BEGIN
             NOW(),
             NOW(),
             false,
-            false,
-            NULL
+            false
         FROM flags_resource f
         WHERE f.name = 'active'
         ON CONFLICT (tool_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();

@@ -112,8 +112,8 @@ role_resource AS (
     RETURNING id as role_id
 ),
 profile_role_insert AS (
-    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
-    SELECT pi.id, rr.role_id, NOW(), NOW(), false, false, NULL
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
+    SELECT pi.id, rr.role_id, NOW(), NOW(), false, false
     FROM profile_insert pi
     CROSS JOIN role_resource rr
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)

@@ -180,7 +180,7 @@ departments_group_ids AS (
         (x.draft_id IS NOT NULL AND dd.departments_id = d.id)
         OR (x.persona_id IS NOT NULL AND pd.department_id = d.id)
     )
-    LEFT JOIN calls c ON c.id = pd.call_id
+    LEFT JOIN calls c ON c.id = d.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
@@ -196,7 +196,7 @@ fields_group_ids AS (
     FROM params x
     LEFT JOIN persona_fields pf ON pf.persona_id = x.persona_id AND pf.active = true
     JOIN fields_resource f ON (x.persona_id IS NOT NULL AND pf.field_id = f.id)
-    LEFT JOIN calls c ON c.id = pf.call_id
+    LEFT JOIN calls c ON c.id = f.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id
@@ -212,7 +212,7 @@ examples_group_ids AS (
     FROM params x
     LEFT JOIN persona_examples pe ON pe.persona_id = x.persona_id AND pe.active = true
     JOIN examples_resource e ON e.id = pe.example_id
-    LEFT JOIN calls c ON c.id = pe.call_id
+    LEFT JOIN calls c ON c.id = e.call_id
     LEFT JOIN message_calls mc ON mc.call_id = c.id
     LEFT JOIN message_runs mr ON mr.message_id = mc.message_id
     LEFT JOIN group_runs gr ON gr.run_id = mr.run_id

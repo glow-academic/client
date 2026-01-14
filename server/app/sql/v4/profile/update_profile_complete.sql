@@ -144,8 +144,8 @@ profile_role_upsert AS (
     RETURNING profile_id
 ),
 profile_role_insert_update AS (
-    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
-    SELECT pu.id, rru.role_id, NOW(), NOW(), false, false, NULL
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
+    SELECT pu.id, rru.role_id, NOW(), NOW(), false, false
     FROM profile_update pu
     CROSS JOIN role_resource_update rru
     WHERE EXISTS (SELECT 1 FROM profile_update)

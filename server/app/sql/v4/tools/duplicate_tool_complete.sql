@@ -129,7 +129,7 @@ link_new_tool_description AS (
 ),
 -- Insert active flag for new tool
 new_tool_active_flag AS (
-    INSERT INTO tool_flags (tool_id, flag_id, type, value, created_at, updated_at, generated, mcp, call_id)
+    INSERT INTO tool_flags (tool_id, flag_id, type, value, created_at, updated_at, generated, mcp)
     SELECT 
         nt.id,
         f.id,
@@ -138,8 +138,7 @@ new_tool_active_flag AS (
         NOW(),
         NOW(),
         false,
-        false,
-        NULL
+        false
     FROM new_tool nt
     CROSS JOIN original_tool ot
     CROSS JOIN flags_resource f

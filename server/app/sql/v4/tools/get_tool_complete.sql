@@ -239,13 +239,13 @@ template_suggestions_data AS (
                        (
                            tt.generated = true
                            AND t.generated = true
-                           AND tt.call_id IS NOT NULL
+                           AND t.call_id IS NOT NULL
                            AND EXISTS (
                                SELECT 1 FROM calls c
                                JOIN message_calls mc ON mc.call_id = c.id
                                JOIN message_runs mr ON mr.message_id = mc.message_id
                                JOIN group_runs gr ON gr.run_id = mr.run_id
-                               WHERE c.id = tt.call_id
+                               WHERE c.id = t.call_id
                                  AND gr.group_id = dgd.group_id
                            )
                        )

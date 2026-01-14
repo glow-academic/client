@@ -174,8 +174,8 @@ roles_resources_bulk AS (
     RETURNING id as role_id, role
 ),
 profile_roles_insert_bulk AS (
-    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
-    SELECT pd.profile_id, rr.role_id, NOW(), NOW(), false, false, NULL::uuid
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
+    SELECT pd.profile_id, rr.role_id, NOW(), NOW(), false, false
     FROM profiles_data pd
     JOIN roles_resources_bulk rr ON rr.role = pd.role::profile_role
     WHERE EXISTS (SELECT 1 FROM profile_insert pi WHERE pi.id = pd.profile_id)

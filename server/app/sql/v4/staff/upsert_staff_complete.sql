@@ -195,8 +195,8 @@ profile_role_delete_upsert AS (
     RETURNING profile_id
 ),
 profile_role_insert_upsert AS (
-    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
-    SELECT pu.id, rru.role_id, NOW(), NOW(), false, false, NULL::uuid
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
+    SELECT pu.id, rru.role_id, NOW(), NOW(), false, false
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     JOIN role_resource_upsert rru ON rru.role = pwi.role::profile_role

@@ -138,15 +138,14 @@ delete_existing_roles AS (
 ),
 -- Insert new roles
 insert_new_roles AS (
-    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
     SELECT 
         vp.id,
         arr.role_id,
         NOW(),
         NOW(),
         false,
-        false,
-        NULL
+        false
     FROM validated_profiles vp
     CROSS JOIN all_role_resources arr
     WHERE EXISTS (SELECT 1 FROM role_param rp WHERE rp.role_value IS NOT NULL)

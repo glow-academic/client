@@ -118,8 +118,8 @@ profile_role_upsert AS (
     RETURNING profile_id
 ),
 profile_role_insert AS (
-    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
-    SELECT pu.id, rr.role_id, NOW(), NOW(), false, false, NULL
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp)
+    SELECT pu.id, rr.role_id, NOW(), NOW(), false, false
     FROM profile_upsert pu
     CROSS JOIN role_resource rr
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
