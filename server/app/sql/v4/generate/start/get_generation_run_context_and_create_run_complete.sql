@@ -76,14 +76,16 @@ selected_agent AS (
 -- Get agent model output modalities
 agent_model_modalities AS (
     SELECT 
-        array_agg(mm.modality::text ORDER BY mm.modality) as output_modalities
+        array_agg(mr.modality::text ORDER BY mr.modality) as output_modalities
     FROM agent_artifact a
     JOIN agent_models am ON am.agent_id = a.id
     JOIN model_modalities mm ON mm.model_id = am.model_id
+    JOIN modalities_resource mr ON mr.id = mm.modality_id
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND mm.is_input = false
+      AND mm.type = 'output'::type_model_modalities
       AND mm.active = true
+      AND mr.active = true
 ),
 -- Get rate limit for profile
 profile_rate_limit AS (

@@ -269,11 +269,12 @@ all_persona_ids AS (
 ),
 image_model_check AS (
     SELECT 
-        model_id,
+        mm.model_id,
         CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
-    FROM model_modalities
-    WHERE modality = 'image' AND is_input = false AND active = true
-    GROUP BY model_id
+    FROM model_modalities mm
+    JOIN modalities_resource mr ON mr.id = mm.modality_id
+    WHERE mr.modality = 'image' AND mm.type = 'output'::type_model_modalities AND mm.active = true
+    GROUP BY mm.model_id
 ),
 persona_data AS (
     SELECT 

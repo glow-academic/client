@@ -298,10 +298,11 @@ all_models AS (
 model_modalities_data AS (
     SELECT 
         mm.model_id::text as model_id,
-        mm.modality::text as modality,
-        mm.is_input::boolean as is_input
+        mr.modality::text as modality,
+        CASE WHEN mm.type = 'input'::type_model_modalities THEN true ELSE false END as is_input
     FROM model_modalities mm
-    WHERE mm.active = true
+    JOIN modalities_resource mr ON mr.id = mm.modality_id
+    WHERE mm.active = true AND mr.active = true
 ),
 user_profile AS (
     SELECT 

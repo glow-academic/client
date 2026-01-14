@@ -267,10 +267,11 @@ model_data AS (
 image_model_check AS (
     SELECT 
         CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
-    FROM model_modalities
-    WHERE model_id = (SELECT model_id FROM params)
+    FROM model_modalities mm
+    JOIN modalities_resource mr ON mr.id = mm.modality_id
+    WHERE mm.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
-    AND modality = 'image' AND is_input = false AND active = true
+    AND mr.modality = 'image' AND mm.type = 'output'::type_model_modalities AND mm.active = true
 ),
 model_endpoint_data AS (
     SELECT 
@@ -311,26 +312,28 @@ model_temperature_data AS (
 ),
 model_pricing_data AS (
     SELECT 
-        mp.pricing_type::text as pricing_type,
+        pr.pricing_type::text as pricing_type,
         u.id as unit_id,
         u.name as unit_name,
         u.unit_category::text as unit_category,
-        mp.price
+        pr.price
     FROM model_pricing mp
-    JOIN units u ON u.id = mp.unit_id
+    JOIN pricing_resource pr ON pr.id = mp.pricing_id
+    JOIN units u ON u.id = pr.unit_id
     WHERE mp.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
-    AND mp.active = true AND u.active = true
-    ORDER BY mp.pricing_type, u.name
+    AND mp.active = true AND pr.active = true AND u.active = true
+    ORDER BY pr.pricing_type, u.name
 ),
 model_modalities_data AS (
     SELECT 
-        ARRAY_AGG(modality::text ORDER BY modality::text) FILTER (WHERE is_input = true) as input_modalities,
-        ARRAY_AGG(modality::text ORDER BY modality::text) FILTER (WHERE is_input = false) as output_modalities
-    FROM model_modalities
-    WHERE model_id = (SELECT model_id FROM params)
+        ARRAY_AGG(mr.modality::text ORDER BY mr.modality::text) FILTER (WHERE mm.type = 'input'::type_model_modalities) as input_modalities,
+        ARRAY_AGG(mr.modality::text ORDER BY mr.modality::text) FILTER (WHERE mm.type = 'output'::type_model_modalities) as output_modalities
+    FROM model_modalities mm
+    JOIN modalities_resource mr ON mr.id = mm.modality_id
+    WHERE mm.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
-    AND active = true
+    AND mm.active = true AND mr.active = true
 ),
 model_reasoning_levels_data AS (
     SELECT 
@@ -351,17 +354,18 @@ model_reasoning_levels_data AS (
 ),
 model_qualities_data AS (
     SELECT 
-        ARRAY_AGG(quality::text ORDER BY 
-            CASE quality
+        ARRAY_AGG(qr.quality::text ORDER BY 
+            CASE qr.quality
                 WHEN 'low' THEN 1
                 WHEN 'medium' THEN 2
                 WHEN 'high' THEN 3
             END
         ) as qualities
-    FROM model_qualities
-    WHERE model_id = (SELECT model_id FROM params)
+    FROM model_qualities mq
+    JOIN qualities_resource qr ON qr.id = mq.quality_id
+    WHERE mq.model_id = (SELECT model_id FROM params)
     AND (SELECT model_id FROM params) IS NOT NULL
-    AND active = true
+    AND mq.active = true AND qr.active = true
 ),
 model_voices_data AS (
     SELECT 

@@ -202,14 +202,15 @@ run_costs AS (
     SELECT 
         rpu.run_id,
         COALESCE(SUM(
-            (rpu.count::numeric / u.value::numeric) * mp.price
+            (rpu.count::numeric / u.value::numeric) * pr.price
         ), 0) as run_cost
     FROM run_pricing_usage rpu
     JOIN run_models rm ON rm.run_id = rpu.run_id AND rm.active = true
-    JOIN model_pricing mp ON mp.model_id = rm.model_id 
-        AND mp.pricing_type = rpu.pricing_type 
-        AND mp.unit_id = rpu.unit_id
-        AND mp.active = true
+    JOIN model_pricing mp ON mp.model_id = rm.model_id AND mp.active = true
+    JOIN pricing_resource pr ON pr.id = mp.pricing_id
+        AND pr.pricing_type = rpu.pricing_type 
+        AND pr.unit_id = rpu.unit_id
+        AND pr.active = true
     JOIN units u ON u.id = rpu.unit_id
     JOIN group_runs_list grl ON grl.run_id = rpu.run_id
     GROUP BY rpu.run_id
