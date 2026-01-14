@@ -121,9 +121,10 @@ export function SchemaInput({
   // Sync field values when props change (like Names.tsx syncs with resourceName)
   useEffect(() => {
     const newValues: Record<string, Partial<SchemaFieldDetail>> = {};
+    let hasChanges = false;
     input_schema_fields.forEach((field) => {
-      const currentValue = fieldValues[field.schema_field_id];
-      // Only update if prop value differs from current internal value
+      const currentValue = lastSavedValuesRef.current[field.schema_field_id];
+      // Only update if prop value differs from last saved value
       if (
         !currentValue ||
         currentValue.name !== field.name ||
@@ -143,15 +144,16 @@ export function SchemaInput({
           position: field.position,
           default_value: field.default_value,
         };
+        hasChanges = true;
       } else {
         newValues[field.schema_field_id] = currentValue;
       }
     });
-    if (Object.keys(newValues).length > 0) {
+    if (hasChanges) {
       setFieldValues(newValues);
       lastSavedValuesRef.current = newValues;
     }
-  }, [input_schema_fields, fieldValues]);
+  }, [input_schema_fields]);
 
   // Debounced save function (like Names.tsx debounced resource creation)
   // For updates, we create a new schema_field resource (write-only pattern)

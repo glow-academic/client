@@ -121,19 +121,22 @@ export function SchemaOutput({
   // Sync field templates when props change
   useEffect(() => {
     const newTemplates: Record<string, string> = {};
+    let hasChanges = false;
     output_schema_fields.forEach((field) => {
-      const currentTemplate = fieldTemplates[field.schema_field_id];
+      const currentTemplate =
+        lastSavedTemplatesRef.current[field.schema_field_id];
       if (!currentTemplate || currentTemplate !== field.template) {
         newTemplates[field.schema_field_id] = field.template;
+        hasChanges = true;
       } else {
         newTemplates[field.schema_field_id] = currentTemplate;
       }
     });
-    if (Object.keys(newTemplates).length > 0) {
+    if (hasChanges) {
       setFieldTemplates(newTemplates);
       lastSavedTemplatesRef.current = newTemplates;
     }
-  }, [output_schema_fields, fieldTemplates]);
+  }, [output_schema_fields]);
 
   // Debounced save function for field templates (creates new schema_field resource)
   const saveFieldTemplate = useCallback(
@@ -232,19 +235,21 @@ export function SchemaOutput({
   // Sync template names when props change (like Names.tsx syncs with resourceName)
   useEffect(() => {
     const newNames: Record<string, string> = {};
+    let hasChanges = false;
     output_templates.forEach((template) => {
-      const currentName = templateNames[template.template_id];
+      const currentName = lastSavedNamesRef.current[template.template_id];
       if (!currentName || currentName !== template.name) {
         newNames[template.template_id] = template.name;
+        hasChanges = true;
       } else {
         newNames[template.template_id] = currentName;
       }
     });
-    if (Object.keys(newNames).length > 0) {
+    if (hasChanges) {
       setTemplateNames(newNames);
       lastSavedNamesRef.current = newNames;
     }
-  }, [output_templates, templateNames]);
+  }, [output_templates]);
 
   // Debounced save function for template name (creates new template resource)
   const saveTemplateName = useCallback(
