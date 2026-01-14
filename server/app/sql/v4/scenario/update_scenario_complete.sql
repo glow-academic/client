@@ -67,7 +67,6 @@ CREATE OR REPLACE FUNCTION api_update_scenario_v4(
     parameters types.q_update_scenario_v4_parameter[],
     profile_id uuid,
     description text DEFAULT NULL,
-    video_domain_id uuid DEFAULT NULL,
     problem_statement_name text DEFAULT NULL,
     department_ids text[] DEFAULT NULL,
     persona_ids text[] DEFAULT NULL,
@@ -77,9 +76,7 @@ CREATE OR REPLACE FUNCTION api_update_scenario_v4(
     video_ids text[] DEFAULT NULL,
     active_video_id text DEFAULT NULL,
     question_ids text[] DEFAULT NULL,
-    question_timestamps types.q_update_scenario_v4_question_timestamp[] DEFAULT ARRAY[]::types.q_update_scenario_v4_question_timestamp[],
-    scenario_domain_id uuid DEFAULT NULL,
-    image_domain_id uuid DEFAULT NULL
+    question_timestamps types.q_update_scenario_v4_question_timestamp[] DEFAULT ARRAY[]::types.q_update_scenario_v4_question_timestamp[]
 )
 RETURNS TABLE (
     scenario_exists boolean,
@@ -101,7 +98,6 @@ WITH raw_params AS (
         video_enabled AS video_enabled,
         questions_enabled AS questions_enabled,
         problem_statement_enabled AS problem_statement_enabled,
-        video_domain_id AS video_domain_id,
         problem_statement AS problem_statement,
         problem_statement_name AS problem_statement_name,
         department_ids AS department_ids,
@@ -112,8 +108,6 @@ WITH raw_params AS (
         parameters AS parameters,
         upload_ids AS upload_ids,
         image_names AS image_names,
-        scenario_domain_id AS scenario_domain_id,
-        image_domain_id AS image_domain_id,
         video_ids AS video_ids,
         active_video_id AS active_video_id,
         question_ids AS question_ids,
@@ -179,7 +173,6 @@ params AS (
         rp.video_enabled AS video_enabled,
         rp.questions_enabled AS questions_enabled,
         rp.problem_statement_enabled AS problem_statement_enabled,
-        rp.video_domain_id AS video_domain_id,
         rp.problem_statement AS problem_statement,
         COALESCE(rp.problem_statement_name, rp.name) AS problem_statement_name,
         COALESCE(rp.department_ids, ARRAY[]::text[]) AS department_ids,
@@ -189,8 +182,6 @@ params AS (
         COALESCE(foi.objective_ids, ARRAY[]::text[]) AS objective_ids,
         COALESCE(pp.parameter_item_ids, ARRAY[]::text[]) AS parameter_item_ids,
         COALESCE(uip.upload_images, ARRAY[]::types.q_update_scenario_v4_upload_image[]) AS upload_images,
-        rp.scenario_domain_id AS scenario_domain_id,
-        rp.image_domain_id AS image_domain_id,
         COALESCE(pp.parameter_ids, ARRAY[]::text[]) AS parameter_ids,
         COALESCE(rp.video_ids, ARRAY[]::text[]) AS video_ids,
         rp.active_video_id AS active_video_id,

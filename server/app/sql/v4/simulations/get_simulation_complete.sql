@@ -342,8 +342,6 @@ RETURNS TABLE (
     video_ids uuid[],
     valid_video_ids uuid[],
     practice_simulation boolean,
-    simulation_text_domain_id uuid,
-    simulation_voice_domain_id uuid,
     member_agent_id uuid,
     can_duplicate boolean,
     can_delete boolean,
@@ -475,14 +473,6 @@ simulation_base AS (
             WHEN x.simulation_id IS NULL THEN NULL::boolean
             ELSE EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = x.simulation_id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE)
         END as practice_simulation,
-        CASE 
-            WHEN x.simulation_id IS NULL THEN NULL::uuid
-            ELSE NULL::uuid
-        END as simulation_text_domain_id,
-        CASE 
-            WHEN x.simulation_id IS NULL THEN NULL::uuid
-            ELSE NULL::uuid
-        END as simulation_voice_domain_id,
         CASE 
             WHEN x.simulation_id IS NULL THEN NULL::uuid
             ELSE (SELECT rga.rubric_id FROM simulation_scenarios ss 
@@ -1087,28 +1077,17 @@ user_departments_for_agents AS (
     WHERE pd.active = true
 ),
 selected_agents_from_simulation AS (
-    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, '') as role
+    SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), NULL::text as role
     FROM params x
     JOIN simulation_base sb ON sb.id = x.simulation_id
-    
-    JOIN agents_resource a_text ON a_text.id = NULL::uuid
-    
-    
-    JOIN agents_resource a_voice ON a_voice.id = NULL::uuid
-    
-    JOIN agents_resource a ON (a.id = a_text.id OR a.id = a_voice.id)
-    
-    
-    WHERE x.simulation_id IS NOT NULL
+    JOIN agents_resource a ON false
+    WHERE x.simulation_id IS NOT NULL AND false
       AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         (a.id = a_text.id AND da_text.artifact = CAST('scenario' AS artifacts))
         OR (a.id = a_voice.id AND da_voice.artifact = CAST('message' AS artifacts))
     )
-      AND (
-          sb.simulation_text_domain_id IS NOT NULL
-          OR sb.simulation_voice_domain_id IS NOT NULL
-      )
+      AND false  -- Domain-based agent lookup removed
     UNION
     -- Get grade agents from junction tables
     SELECT DISTINCT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), COALESCE(NULL::artifacts::text, '') as role
@@ -2294,21 +2273,6 @@ SELECT
             false
         )
     ) as practice_simulation,
-    -- Auto-select domains: draft payload -> simulation value -> default from SQL (if only one option) -> NULL
-    COALESCE(
-        (SELECT (payload->>'simulation_text_domain_id')::uuid FROM draft_payload_data),
-        sb.simulation_text_domain_id,
-        (SELECT (payload->>'simulation_text_agent_id')::uuid FROM draft_payload_data),
-        (SELECT id FROM default_simulation_agent),
-        NULL::uuid
-    ) as simulation_text_domain_id,
-    COALESCE(
-        (SELECT (payload->>'simulation_voice_domain_id')::uuid FROM draft_payload_data),
-        sb.simulation_voice_domain_id,
-        (SELECT (payload->>'simulation_voice_agent_id')::uuid FROM draft_payload_data),
-        (SELECT id FROM default_voice_agent),
-        NULL::uuid
-    ) as simulation_voice_domain_id,
     -- Auto-select member agent: draft payload -> default from SQL (if only one option) -> NULL
     COALESCE(
         (SELECT (payload->>'member_agent_id')::uuid FROM draft_payload_data),

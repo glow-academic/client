@@ -8873,7 +8873,6 @@ class CompleteDocumentCreationSqlParams(BaseModel):
     file_size: int
     child_name: str
     child_description: str
-    document_domain_id: UUID
     scenario_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -8884,7 +8883,6 @@ class CompleteDocumentCreationSqlParams(BaseModel):
             self.file_size,
             self.child_name,
             self.child_description,
-            self.document_domain_id,
             self.scenario_id,
         )
 
@@ -8901,7 +8899,6 @@ class CompleteDocumentCreationApiRequest(BaseModel):
     file_size: int
     child_name: str
     child_description: str
-    document_domain_id: UUID
     scenario_id: UUID
 
 class CompleteDocumentCreationApiResponse(BaseModel):
@@ -9353,7 +9350,6 @@ class GetDocumentSqlRow(BaseModel):
     html_id: UUID | None = None
     template_file_path: str | None = None
     templates: list[QGetDocumentV4Template] | None = None
-    document_domain_id: UUID | None = None
     general_agent_id: UUID | None = None
 
 class GetDocumentApiRequest(BaseModel):
@@ -9408,7 +9404,6 @@ class GetDocumentApiResponse(BaseModel):
     html_id: UUID | None = None
     template_file_path: str | None = None
     templates: list[QGetDocumentV4Template] | None = None
-    document_domain_id: UUID | None = None
     general_agent_id: UUID | None = None
 
 
@@ -9503,7 +9498,6 @@ class GetDocumentDetailSqlRow(BaseModel):
     fields: list[QGetDocumentDetailV4Field] | None = None
     linked_parameter_ids: list[str] | None = None
     parameters: list[QGetDocumentDetailV4Parameter] | None = None
-    document_domain_id: UUID | None = None
     agents: list[QGetDocumentDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
     template: bool | None = None
@@ -9544,7 +9538,6 @@ class GetDocumentDetailApiResponse(BaseModel):
     fields: list[QGetDocumentDetailV4Field] | None = None
     linked_parameter_ids: list[str] | None = None
     parameters: list[QGetDocumentDetailV4Parameter] | None = None
-    document_domain_id: UUID | None = None
     agents: list[QGetDocumentDetailV4Agent] | None = None
     valid_agent_ids: list[str] | None = None
     template: bool | None = None
@@ -9565,7 +9558,6 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
 
     department_id: UUID
     profile_id: UUID
-    document_domain_id: UUID
     group_id: UUID
     document_id: UUID | None = None
     document_name: str | None = None
@@ -9577,7 +9569,6 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlParams(BaseModel):
         return (
             self.department_id,
             self.profile_id,
-            self.document_domain_id,
             self.group_id,
             self.document_id,
             self.document_name,
@@ -9615,7 +9606,6 @@ class GetDocumentRegenerationRunContextAndCreateRunSqlRow(BaseModel):
 class GetDocumentRegenerationRunContextAndCreateRunApiRequest(BaseModel):
 
     department_id: UUID
-    document_domain_id: UUID
     group_id: UUID
     document_id: UUID | None = None
     document_name: str | None = None
@@ -9800,7 +9790,6 @@ class GetDocumentTemplateInfoSqlRow(BaseModel):
 
     file_path: str | None = None
     schema_id: UUID | None = None
-    document_domain_id: str | None = None
     name: str | None = None
     description: str | None = None
 
@@ -9812,7 +9801,6 @@ class GetDocumentTemplateInfoApiResponse(BaseModel):
 
     file_path: str | None = None
     schema_id: UUID | None = None
-    document_domain_id: str | None = None
     name: str | None = None
     description: str | None = None
 
@@ -10204,7 +10192,6 @@ class SaveDocumentSqlParams(BaseModel):
     template_flag_id: UUID | None = None
     html_id: UUID | None = None
     schema_id: UUID | None = None
-    document_domain_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -10218,7 +10205,6 @@ class SaveDocumentSqlParams(BaseModel):
             self.template_flag_id,
             self.html_id,
             self.schema_id,
-            self.document_domain_id,
         )
 
 class SaveDocumentSqlRow(BaseModel):
@@ -10237,7 +10223,6 @@ class SaveDocumentApiRequest(BaseModel):
     template_flag_id: UUID | None = None
     html_id: UUID | None = None
     schema_id: UUID | None = None
-    document_domain_id: UUID | None = None
 
 class SaveDocumentApiResponse(BaseModel):
 
@@ -10506,7 +10491,6 @@ class UpdateDocumentSqlParams(BaseModel):
     template: bool | None = None
     department_id: UUID | None = None
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    document_domain_id: UUID | None = None
     html_id: UUID | None = None
     schema_id: UUID | None = None
 
@@ -10520,7 +10504,6 @@ class UpdateDocumentSqlParams(BaseModel):
             self.template,
             self.department_id,
             self.field_ids,
-            self.document_domain_id,
             self.html_id,
             self.schema_id,
         )
@@ -10542,7 +10525,6 @@ class UpdateDocumentApiRequest(BaseModel):
     template: bool | None = None
     department_id: UUID | None = None
     field_ids: list[str] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    document_domain_id: UUID | None = None
     html_id: UUID | None = None
     schema_id: UUID | None = None
 
@@ -23076,7 +23058,6 @@ class CreateRubricSqlParams(BaseModel):
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     standard_groups: list[ICreateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_domain_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert standard_groups composite array to tuples for asyncpg
@@ -23093,7 +23074,6 @@ class CreateRubricSqlParams(BaseModel):
             self.profile_id,
             self.department_ids,
             standard_groups_tuples,
-            self.rubric_domain_id,
         )
 
 class CreateRubricSqlRow(BaseModel):
@@ -23110,7 +23090,6 @@ class CreateRubricApiRequest(BaseModel):
     pass_points: int
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     standard_groups: list[ICreateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_domain_id: UUID | None = None
 
 class CreateRubricApiResponse(BaseModel):
 
@@ -23252,7 +23231,6 @@ class GetRubricDetailSqlRow(BaseModel):
     pass_points: int | None = None
     active: bool | None = None
     can_edit: bool | None = None
-    rubric_domain_id: UUID | None = None
     valid_agent_ids: list[str] | None = None
     actor_name: str | None = None
     standard_group_ids: list[UUID] | None = None
@@ -23282,7 +23260,6 @@ class GetRubricDetailApiResponse(BaseModel):
     pass_points: int | None = None
     active: bool | None = None
     can_edit: bool | None = None
-    rubric_domain_id: UUID | None = None
     valid_agent_ids: list[str] | None = None
     actor_name: str | None = None
     standard_group_ids: list[UUID] | None = None
@@ -23881,7 +23858,6 @@ class UpdateRubricSqlParams(BaseModel):
     profile_id: UUID
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     standard_groups: list[IUpdateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_domain_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert standard_groups composite array to tuples for asyncpg
@@ -23899,7 +23875,6 @@ class UpdateRubricSqlParams(BaseModel):
             self.profile_id,
             self.department_ids,
             standard_groups_tuples,
-            self.rubric_domain_id,
         )
 
 class UpdateRubricSqlRow(BaseModel):
@@ -23918,7 +23893,6 @@ class UpdateRubricApiRequest(BaseModel):
     pass_points: int
     department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     standard_groups: list[IUpdateRubricV4StandardGroup] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_domain_id: UUID | None = None
 
 class UpdateRubricApiResponse(BaseModel):
 
@@ -24215,7 +24189,6 @@ class SaveRubricSqlParams(BaseModel):
     total_points_id: UUID | None = None
     pass_points_id: UUID | None = None
     standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_domain_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -24228,7 +24201,6 @@ class SaveRubricSqlParams(BaseModel):
             self.total_points_id,
             self.pass_points_id,
             self.standard_group_ids,
-            self.rubric_domain_id,
         )
 
 class SaveRubricSqlRow(BaseModel):
@@ -24246,7 +24218,6 @@ class SaveRubricApiRequest(BaseModel):
     total_points_id: UUID | None = None
     pass_points_id: UUID | None = None
     standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_domain_id: UUID | None = None
 
 class SaveRubricApiResponse(BaseModel):
 
@@ -24484,7 +24455,6 @@ class CreateScenarioSqlParams(BaseModel):
     parameters: list[QCreateScenarioV4Parameter]
     profile_id: UUID
     description: str | None = None
-    video_domain_id: UUID | None = None
     problem_statement_name: str | None = None
     problem_statement_versions: list[str] | None = None
     department_ids: list[str] | None = None
@@ -24523,7 +24493,6 @@ class CreateScenarioSqlParams(BaseModel):
             parameters_tuples,
             self.profile_id,
             self.description,
-            self.video_domain_id,
             self.problem_statement_name,
             self.problem_statement_versions,
             self.department_ids,
@@ -24557,7 +24526,6 @@ class CreateScenarioApiRequest(BaseModel):
     objective_ids: list[str]
     parameters: list[QCreateScenarioV4Parameter]
     description: str | None = None
-    video_domain_id: UUID | None = None
     problem_statement_name: str | None = None
     problem_statement_versions: list[str] | None = None
     department_ids: list[str] | None = None
@@ -24888,6 +24856,413 @@ class GetScenarioDepartmentsApiResponse(BaseModel):
 
 
 
+# Generated from: get_scenario_detail
+
+class QGetScenarioDetailV4FieldParamFilter(BaseModel):
+
+    parameter_id: UUID | None
+    show_selected: bool | None
+
+class GetScenarioDetailSqlParams(BaseModel):
+
+    scenario_id: UUID
+    profile_id: UUID
+    use_image: bool | None = None
+    use_objectives: bool | None = None
+    document_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    use_video: bool | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_persona_ids: list[UUID] | None = None
+    filter_document_ids: list[UUID] | None = None
+    filter_parameter_ids: list[UUID] | None = None
+    filter_field_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
+    field_show_selected_by_param: list[QGetScenarioDetailV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    draft_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert field_show_selected_by_param composite array to tuples for asyncpg
+        field_show_selected_by_param_tuples = [
+            (conn.parameter_id, conn.show_selected)
+            for conn in (self.field_show_selected_by_param or [])
+        ]
+        return (
+            self.scenario_id,
+            self.profile_id,
+            self.use_image,
+            self.use_objectives,
+            self.document_ids,
+            self.problem_statement_ids,
+            self.template_document_ids,
+            self.use_video,
+            self.filter_department_ids,
+            self.filter_persona_ids,
+            self.filter_document_ids,
+            self.filter_parameter_ids,
+            self.filter_field_ids,
+            self.persona_search,
+            self.document_search,
+            self.parameter_search,
+            self.persona_show_selected,
+            self.document_show_selected,
+            self.parameter_show_selected,
+            field_show_selected_by_param_tuples,
+            self.draft_id,
+        )
+
+class QGetScenarioDetailV4Agent(BaseModel):
+
+    agent_id: UUID | None
+    name: str | None
+    description: str | None
+    roles: list[str] | None
+
+
+
+
+class QGetScenarioDetailV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+    persona_ids: list[UUID] | None
+    document_ids: list[UUID] | None
+    parameter_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+
+
+
+
+class QGetScenarioDetailV4Document(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    description: str | None
+    file_path: str | None
+    mime_type: str | None
+    parameter_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    parent_document_id: UUID | None
+
+
+
+
+class QGetScenarioDetailV4DocumentDetail(BaseModel):
+
+    document_id: UUID | None
+    name: str | None
+    updated_at: str | None
+    extension: str | None
+    scenario_ids: list[UUID] | None
+    can_edit: bool | None
+    can_delete: bool | None
+    active: bool | None
+    department_ids: list[UUID] | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+    field_ids: list[UUID] | None
+    is_template: bool | None
+    parent_document_id: UUID | None
+
+
+
+
+class QGetScenarioDetailV4Field(BaseModel):
+
+    field_id: UUID | None
+    name: str | None
+    description: str | None
+    parameter_id: UUID | None
+    parameter_name: str | None
+    conditional_parameter_ids: list[UUID] | None
+
+
+
+
+class QGetScenarioDetailV4FieldRange(BaseModel):
+
+    parameter_id: UUID | None
+    min_count: int | None
+    max_count: int | None
+
+
+
+
+class QGetScenarioDetailV4Objective(BaseModel):
+
+    objective_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetScenarioDetailV4ObjectiveWithDepartments(BaseModel):
+
+    objective: str | None
+    department_ids: list[UUID] | None
+
+
+
+
+class QGetScenarioDetailV4Parameter(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    document_parameter: bool | None
+    persona_parameter: bool | None
+    scenario_parameter: bool | None
+    video_parameter: bool | None
+
+
+
+
+class QGetScenarioDetailV4ParameterDetail(BaseModel):
+
+    parameter_id: UUID | None
+    field_ids: list[UUID] | None
+    valid_field_ids: list[UUID] | None
+
+
+
+
+class QGetScenarioDetailV4Persona(BaseModel):
+
+    persona_id: UUID | None
+    name: str | None
+    description: str | None
+    color: str | None
+    icon: str | None
+    image_model: bool | None
+    parameter_ids: list[UUID] | None
+    field_ids: list[UUID] | None
+    example: str | None
+
+
+
+
+class QGetScenarioDetailV4ProblemStatement(BaseModel):
+
+    problem_statement_id: UUID | None
+    name: str | None
+    problem_statement: str | None
+    created_at: str | None
+    updated_at: str | None
+
+
+
+
+class QGetScenarioDetailV4QuestionOption(BaseModel):
+
+    id: UUID | None
+    option_text: str | None
+    is_correct: bool | None
+
+class QGetScenarioDetailV4Question(BaseModel):
+
+    id: UUID | None
+    question_text: str | None
+    allow_multiple: bool | None
+    active: bool | None
+    options: list[QGetScenarioDetailV4QuestionOption] | None
+    times: list[int] | None
+
+
+
+
+class QGetScenarioDetailV4ScenarioImage(BaseModel):
+
+    upload_id: UUID | None
+    name: str | None
+    file_path: str | None
+    mime_type: str | None
+    active: bool | None
+    created_at: str | None
+    updated_at: str | None
+
+
+
+
+class QGetScenarioDetailV4ScenarioVideo(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    length_seconds: int | None
+    completed: bool | None
+    active: bool | None
+    file_path: str | None
+    mime_type: str | None
+    upload_id: UUID | None
+
+
+
+
+class QGetScenarioDetailV4Simulation(BaseModel):
+
+    simulation_id: UUID | None
+    name: str | None
+    description: str | None
+    time_limit: int | None
+    department_ids: list[UUID] | None
+
+class GetScenarioDetailSqlRow(BaseModel):
+
+    scenario_exists: bool | None = None
+    scenario_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    problem_statement: str | None = None
+    problem_statement_id: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    parent_scenario_id: UUID | None = None
+    hints_enabled: bool | None = None
+    objectives_enabled: bool | None = None
+    image_input_enabled: bool | None = None
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    objective_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    valid_persona_ids: list[str] | None = None
+    valid_document_ids: list[str] | None = None
+    valid_department_ids: list[UUID] | None = None
+    active_usage_count: int | None = None
+    user_role: str | None = None
+    actor_name: str | None = None
+    parameter_ids: list[str] | None = None
+    valid_parameter_ids: list[str] | None = None
+    valid_field_ids: list[str] | None = None
+    question_ids: list[str] | None = None
+    persona_range_min: int | None = None
+    persona_range_max: int | None = None
+    document_range_min: int | None = None
+    document_range_max: int | None = None
+    parameter_range_min: int | None = None
+    parameter_range_max: int | None = None
+    video_enabled: bool | None = None
+    questions_enabled: bool | None = None
+    problem_statement_enabled: bool | None = None
+    valid_agent_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    field_ranges: list[QGetScenarioDetailV4FieldRange] | None = None
+    personas: list[QGetScenarioDetailV4Persona] | None = None
+    documents: list[QGetScenarioDetailV4Document] | None = None
+    parameters: list[QGetScenarioDetailV4Parameter] | None = None
+    fields: list[QGetScenarioDetailV4Field] | None = None
+    departments: list[QGetScenarioDetailV4Department] | None = None
+    agents: list[QGetScenarioDetailV4Agent] | None = None
+    simulations: list[QGetScenarioDetailV4Simulation] | None = None
+    objectives: list[QGetScenarioDetailV4Objective] | None = None
+    problem_statements: list[QGetScenarioDetailV4ProblemStatement] | None = None
+    scenario_images: list[QGetScenarioDetailV4ScenarioImage] | None = None
+    scenario_videos: list[QGetScenarioDetailV4ScenarioVideo] | None = None
+    questions: list[QGetScenarioDetailV4Question] | None = None
+    objectives_history: list[QGetScenarioDetailV4ObjectiveWithDepartments] | None = None
+    document_details: list[QGetScenarioDetailV4DocumentDetail] | None = None
+    parameters_detail: list[QGetScenarioDetailV4ParameterDetail] | None = None
+    draft_version: int | None = None
+    draft_field_show_selected: Any | None = None
+    draft_field_ranges: Any | None = None
+    draft_randomize_parameter_items: Any | None = None
+
+class GetScenarioDetailApiRequest(BaseModel):
+
+    scenario_id: UUID
+    use_image: bool | None = None
+    use_objectives: bool | None = None
+    document_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
+    template_document_ids: list[UUID] | None = None
+    use_video: bool | None = None
+    filter_department_ids: list[UUID] | None = None
+    filter_persona_ids: list[UUID] | None = None
+    filter_document_ids: list[UUID] | None = None
+    filter_parameter_ids: list[UUID] | None = None
+    filter_field_ids: list[UUID] | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    parameter_search: str | None = None
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
+    parameter_show_selected: bool | None = None
+    field_show_selected_by_param: list[QGetScenarioDetailV4FieldParamFilter] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    draft_id: UUID | None = None
+
+class GetScenarioDetailApiResponse(BaseModel):
+
+    scenario_exists: bool | None = None
+    scenario_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    problem_statement: str | None = None
+    problem_statement_id: str | None = None
+    active: bool | None = None
+    department_ids: list[str] | None = None
+    parent_scenario_id: UUID | None = None
+    hints_enabled: bool | None = None
+    objectives_enabled: bool | None = None
+    image_input_enabled: bool | None = None
+    persona_ids: list[str] | None = None
+    document_ids: list[str] | None = None
+    objective_ids: list[str] | None = None
+    simulation_ids: list[str] | None = None
+    valid_persona_ids: list[str] | None = None
+    valid_document_ids: list[str] | None = None
+    valid_department_ids: list[UUID] | None = None
+    active_usage_count: int | None = None
+    user_role: str | None = None
+    actor_name: str | None = None
+    parameter_ids: list[str] | None = None
+    valid_parameter_ids: list[str] | None = None
+    valid_field_ids: list[str] | None = None
+    question_ids: list[str] | None = None
+    persona_range_min: int | None = None
+    persona_range_max: int | None = None
+    document_range_min: int | None = None
+    document_range_max: int | None = None
+    parameter_range_min: int | None = None
+    parameter_range_max: int | None = None
+    video_enabled: bool | None = None
+    questions_enabled: bool | None = None
+    problem_statement_enabled: bool | None = None
+    valid_agent_ids: list[str] | None = None
+    can_edit: bool | None = None
+    can_duplicate: bool | None = None
+    can_delete: bool | None = None
+    field_ranges: list[QGetScenarioDetailV4FieldRange] | None = None
+    personas: list[QGetScenarioDetailV4Persona] | None = None
+    documents: list[QGetScenarioDetailV4Document] | None = None
+    parameters: list[QGetScenarioDetailV4Parameter] | None = None
+    fields: list[QGetScenarioDetailV4Field] | None = None
+    departments: list[QGetScenarioDetailV4Department] | None = None
+    agents: list[QGetScenarioDetailV4Agent] | None = None
+    simulations: list[QGetScenarioDetailV4Simulation] | None = None
+    objectives: list[QGetScenarioDetailV4Objective] | None = None
+    problem_statements: list[QGetScenarioDetailV4ProblemStatement] | None = None
+    scenario_images: list[QGetScenarioDetailV4ScenarioImage] | None = None
+    scenario_videos: list[QGetScenarioDetailV4ScenarioVideo] | None = None
+    questions: list[QGetScenarioDetailV4Question] | None = None
+    objectives_history: list[QGetScenarioDetailV4ObjectiveWithDepartments] | None = None
+    document_details: list[QGetScenarioDetailV4DocumentDetail] | None = None
+    parameters_detail: list[QGetScenarioDetailV4ParameterDetail] | None = None
+    draft_version: int | None = None
+    draft_field_show_selected: Any | None = None
+    draft_field_ranges: Any | None = None
+    draft_randomize_parameter_items: Any | None = None
+
+
+
 # Generated from: get_scenario_ids_for_regeneration
 
 class GetScenarioIdsForRegenerationSqlParams(BaseModel):
@@ -24902,7 +25277,6 @@ class GetScenarioIdsForRegenerationSqlParams(BaseModel):
 class GetScenarioIdsForRegenerationSqlRow(BaseModel):
 
     persona_id: UUID | None = None
-    scenario_domain_id: str | None = None
     document_ids: Any | None = None
     parameter_item_ids: Any | None = None
 
@@ -24913,7 +25287,6 @@ class GetScenarioIdsForRegenerationApiRequest(BaseModel):
 class GetScenarioIdsForRegenerationApiResponse(BaseModel):
 
     persona_id: UUID | None = None
-    scenario_domain_id: str | None = None
     document_ids: Any | None = None
     parameter_item_ids: Any | None = None
 
@@ -25228,7 +25601,6 @@ class IGetScenarioRunContextAndCreateRunV4DocumentTemplate(BaseModel):
     document_id: str | None
     document_name: str | None
     document_description: str | None
-    document_domain_id: str | None
     schema_id: UUID | None
     html_id: str | None
     template_file_path: str | None
@@ -25746,8 +26118,6 @@ class InsertScenarioVariantSqlParams(BaseModel):
     active: bool
     objectives_enabled: bool
     images_enabled: bool
-    scenario_domain_id: UUID
-    image_domain_id: UUID
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
@@ -25756,8 +26126,6 @@ class InsertScenarioVariantSqlParams(BaseModel):
             self.active,
             self.objectives_enabled,
             self.images_enabled,
-            self.scenario_domain_id,
-            self.image_domain_id,
         )
 
 class InsertScenarioVariantSqlRow(BaseModel):
@@ -25768,8 +26136,6 @@ class InsertScenarioVariantSqlRow(BaseModel):
     active: bool | None = None
     objectives_enabled: bool | None = None
     images_enabled: bool | None = None
-    scenario_domain_id: UUID | None = None
-    image_domain_id: UUID | None = None
     description: str | None = None
     root_scenario_id: UUID | None = None
     parent_scenario_id: UUID | None = None
@@ -25785,8 +26151,6 @@ class InsertScenarioVariantApiRequest(BaseModel):
     active: bool
     objectives_enabled: bool
     images_enabled: bool
-    scenario_domain_id: UUID
-    image_domain_id: UUID
 
 class InsertScenarioVariantApiResponse(BaseModel):
 
@@ -25796,8 +26160,6 @@ class InsertScenarioVariantApiResponse(BaseModel):
     active: bool | None = None
     objectives_enabled: bool | None = None
     images_enabled: bool | None = None
-    scenario_domain_id: UUID | None = None
-    image_domain_id: UUID | None = None
     description: str | None = None
     root_scenario_id: UUID | None = None
     parent_scenario_id: UUID | None = None
@@ -26005,7 +26367,6 @@ class UpdateScenarioSqlParams(BaseModel):
     parameters: list[QUpdateScenarioV4Parameter]
     profile_id: UUID
     description: str | None = None
-    video_domain_id: UUID | None = None
     problem_statement_name: str | None = None
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
@@ -26016,8 +26377,6 @@ class UpdateScenarioSqlParams(BaseModel):
     active_video_id: str | None = None
     question_ids: list[str] | None = None
     question_timestamps: list[QUpdateScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_domain_id: UUID | None = None
-    image_domain_id: UUID | None = None
 
     def to_tuple(self) -> tuple[Any, ...]:
         # Convert parameters composite array to tuples for asyncpg
@@ -26045,7 +26404,6 @@ class UpdateScenarioSqlParams(BaseModel):
             parameters_tuples,
             self.profile_id,
             self.description,
-            self.video_domain_id,
             self.problem_statement_name,
             self.department_ids,
             self.persona_ids,
@@ -26056,8 +26414,6 @@ class UpdateScenarioSqlParams(BaseModel):
             self.active_video_id,
             self.question_ids,
             question_timestamps_tuples,
-            self.scenario_domain_id,
-            self.image_domain_id,
         )
 
 class UpdateScenarioSqlRow(BaseModel):
@@ -26082,7 +26438,6 @@ class UpdateScenarioApiRequest(BaseModel):
     objective_ids: list[str]
     parameters: list[QUpdateScenarioV4Parameter]
     description: str | None = None
-    video_domain_id: UUID | None = None
     problem_statement_name: str | None = None
     department_ids: list[str] | None = None
     persona_ids: list[str] | None = None
@@ -26093,8 +26448,6 @@ class UpdateScenarioApiRequest(BaseModel):
     active_video_id: str | None = None
     question_ids: list[str] | None = None
     question_timestamps: list[QUpdateScenarioV4QuestionTimestamp] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_domain_id: UUID | None = None
-    image_domain_id: UUID | None = None
 
 class UpdateScenarioApiResponse(BaseModel):
 
@@ -29003,6 +29356,107 @@ class MarkChatCompletedApiRequest(BaseModel):
 class MarkChatCompletedApiResponse(BaseModel):
 
     success: bool | None = None
+
+
+
+# Generated from: save_simulation
+
+class ISaveSimulationV4ScenarioRubricGradeAgent(BaseModel):
+
+    scenario_id: UUID | None
+    rubric_id: UUID | None
+    grade_agent_id: UUID | None
+    audio_agent_id: UUID | None
+
+class SaveSimulationSqlParams(BaseModel):
+
+    name_id: UUID
+    department_ids: list[UUID]
+    scenario_ids: list[UUID]
+    scenario_active_flags: list[bool]
+    scenario_hints_enabled: list[bool]
+    scenario_time_limit_seconds: list[int]
+    scenario_audio_enabled: list[bool]
+    scenario_text_enabled: list[bool]
+    scenario_rubric_grade_agents: list[ISaveSimulationV4ScenarioRubricGradeAgent]
+    profile_id: UUID
+    input_simulation_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    practice_simulation: bool | None = False
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    video_active_flags: list[bool] | None = None
+    video_show_problem_statement: list[bool] | None = None
+    video_show_objectives: list[bool] | None = None
+    video_show_image: list[bool] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert scenario_rubric_grade_agents composite array to tuples for asyncpg
+        scenario_rubric_grade_agents_tuples = [
+            (conn.scenario_id, conn.rubric_id, conn.grade_agent_id, conn.audio_agent_id)
+            for conn in (self.scenario_rubric_grade_agents or [])
+        ]
+        return (
+            self.name_id,
+            self.department_ids,
+            self.scenario_ids,
+            self.scenario_active_flags,
+            self.scenario_hints_enabled,
+            self.scenario_time_limit_seconds,
+            self.scenario_audio_enabled,
+            self.scenario_text_enabled,
+            scenario_rubric_grade_agents_tuples,
+            self.profile_id,
+            self.input_simulation_id,
+            self.description_id,
+            self.active_flag_id,
+            self.practice_simulation,
+            self.scenario_flag_ids,
+            self.scenario_position_ids,
+            self.scenario_rubric_grade_agent_ids,
+            self.video_ids,
+            self.video_active_flags,
+            self.video_show_problem_statement,
+            self.video_show_objectives,
+            self.video_show_image,
+        )
+
+class SaveSimulationSqlRow(BaseModel):
+
+    simulation_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveSimulationApiRequest(BaseModel):
+
+    name_id: UUID
+    department_ids: list[UUID]
+    scenario_ids: list[UUID]
+    scenario_active_flags: list[bool]
+    scenario_hints_enabled: list[bool]
+    scenario_time_limit_seconds: list[int]
+    scenario_audio_enabled: list[bool]
+    scenario_text_enabled: list[bool]
+    scenario_rubric_grade_agents: list[ISaveSimulationV4ScenarioRubricGradeAgent]
+    input_simulation_id: UUID | None = None
+    description_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    practice_simulation: bool | None = False
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_grade_agent_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    video_active_flags: list[bool] | None = None
+    video_show_problem_statement: list[bool] | None = None
+    video_show_objectives: list[bool] | None = None
+    video_show_image: list[bool] | None = None
+
+class SaveSimulationApiResponse(BaseModel):
+
+    simulation_id: UUID | None = None
+    actor_name: str | None = None
 
 
 
@@ -33478,6 +33932,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioDepartmentsApiRequest",
         "GetScenarioDepartmentsApiResponse",
     ),
+    "app/sql/v4/scenario/get_scenario_detail_complete.sql": (
+        "GetScenarioDetailSqlParams",
+        "GetScenarioDetailSqlRow",
+        "GetScenarioDetailApiRequest",
+        "GetScenarioDetailApiResponse",
+    ),
     "app/sql/v4/scenario/get_scenario_ids_for_regeneration_complete.sql": (
         "GetScenarioIdsForRegenerationSqlParams",
         "GetScenarioIdsForRegenerationSqlRow",
@@ -33909,6 +34369,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "MarkChatCompletedSqlRow",
         "MarkChatCompletedApiRequest",
         "MarkChatCompletedApiResponse",
+    ),
+    "app/sql/v4/simulations/save_simulation_complete.sql": (
+        "SaveSimulationSqlParams",
+        "SaveSimulationSqlRow",
+        "SaveSimulationApiRequest",
+        "SaveSimulationApiResponse",
     ),
     "app/sql/v4/simulations/simulation_text_stop_run_complete.sql": (
         "SimulationTextStopRunSqlParams",
@@ -36350,6 +36816,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/scenario/get_scenario_detail_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/scenario/get_scenario_ids_for_regeneration_complete.sql"]
     ) -> SqlString: ...
 
@@ -36706,6 +37177,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/simulations/mark_chat_completed_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/simulations/save_simulation_complete.sql"]
     ) -> SqlString: ...
 
     @overload

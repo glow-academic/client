@@ -103,7 +103,6 @@ RETURNS TABLE (
     fields types.q_get_document_detail_v4_field[],
     linked_parameter_ids text[],
     parameters types.q_get_document_detail_v4_parameter[],
-    document_domain_id uuid,
     agents types.q_get_document_detail_v4_agent[],
     valid_agent_ids text[],
     template boolean,
@@ -148,7 +147,6 @@ document_data AS (
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
         d.updated_at,
-        NULL::uuid as document_domain_id,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
@@ -440,16 +438,6 @@ SELECT
         ) FROM parameter_data pd),
         '{}'::types.q_get_document_detail_v4_parameter[]
     ) as parameters,
-    COALESCE(
-        (SELECT 
-            CASE 
-                WHEN payload->>'document_domain_id' IS NOT NULL AND payload->>'document_domain_id' != 'null' THEN
-                    (payload->>'document_domain_id')::uuid
-                ELSE NULL
-            END
-        FROM draft_payload_data),
-        dd.document_domain_id
-    )::uuid as document_domain_id,
     -- Aggregate agents separately
     COALESCE(
         (SELECT ARRAY_AGG(

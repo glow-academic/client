@@ -136,7 +136,6 @@ RETURNS TABLE (
     html_id uuid,
     template_file_path text,
     templates types.q_get_document_v4_template[],
-    document_domain_id uuid,
     general_agent_id uuid
 )
 LANGUAGE sql
@@ -422,7 +421,6 @@ document_data AS (
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
-        NULL::uuid as document_domain_id,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
         (SELECT dh.html_id FROM document_html dh WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as html_id,
         (SELECT ds.schema_id FROM document_schemas ds WHERE ds.document_id = d.id AND ds.active = true ORDER BY ds.created_at DESC LIMIT 1) as schema_id,
@@ -1356,7 +1354,6 @@ SELECT
         ) FROM document_all_templates dat2),
         '{}'::types.q_get_document_v4_template[]
     ) as templates,
-    dd.document_domain_id,
     -- Multi-resource combination agent IDs
     (SELECT agent_id FROM general_agent_data) as general_agent_id
 FROM user_profile up

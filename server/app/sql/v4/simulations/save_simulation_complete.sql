@@ -37,8 +37,6 @@ CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     scenario_audio_enabled boolean[],
     scenario_text_enabled boolean[],
     scenario_rubric_grade_agents types.i_save_simulation_v4_scenario_rubric_grade_agent[],
-    simulation_text_domain_id uuid,
-    simulation_voice_domain_id uuid,
     profile_id uuid,
     input_simulation_id uuid DEFAULT NULL,  -- NULL = create, UUID = update
     description_id uuid DEFAULT NULL,
@@ -133,8 +131,6 @@ BEGIN
             COALESCE(scenario_audio_enabled, ARRAY[]::boolean[]) AS scenario_audio_enabled,
             COALESCE(scenario_text_enabled, ARRAY[]::boolean[]) AS scenario_text_enabled,
             COALESCE(scenario_rubric_grade_agents, ARRAY[]::types.i_save_simulation_v4_scenario_rubric_grade_agent[]) AS scenario_rubric_grade_agents,
-            simulation_text_domain_id,
-            simulation_voice_domain_id,
             profile_id,
             COALESCE(video_ids, ARRAY[]::uuid[]) AS video_ids,
             COALESCE(video_active_flags, ARRAY[]::boolean[]) AS video_active_flags,
@@ -254,24 +250,6 @@ BEGIN
         ON CONFLICT (simulation_id, flag_id, type) DO UPDATE SET 
             value = EXCLUDED.value,
             updated_at = NOW()
-    ),
-    -- UPDATE simulation_artifact text domain
-    update_simulation_text_domain AS (
-        DELETE 
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-          AND type = 'text'::type_simulation_domains
-        AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
-    ),
-    link_simulation_text_domain AS (
-        
-        SELECT 
-            x.simulation_id,
-            COALESCE(x.simulation_text_domain_id, (SELECT agent_domain_id 
-            'text'::type_simulation_domains,
-            NOW(),
-            NOW()
-        FROM params x
-        WHERE COALESCE(x.simulation_text_domain_id, (SELECT agent_domain_id 
     ),
     replace_time_limits AS (
         DELETE FROM scenario_time_limits 
@@ -529,14 +507,8 @@ BEGIN
         SELECT DISTINCT
             (srga).rubric_id,
             COALESCE(
-                (SELECT a.id FROM rubric_domains rd 
-                 
-                 
-                 JOIN agent_artifact a ON a.id = NULL::uuid
-                 WHERE rd.rubric_id = (srga).rubric_id
-                   AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
-                 LIMIT 1),
-                (SELECT id FROM agent_artifact WHERE active = true ORDER BY created_at LIMIT 1)
+                (SELECT id FROM agent_artifact a WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) ORDER BY a.created_at LIMIT 1),
+                (SELECT id FROM agent_artifact WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = agent_artifact.id AND af.type = 'active'::type_agent_flags AND af.value = true) ORDER BY created_at LIMIT 1)
             ) as agent_id
         FROM params x
         CROSS JOIN UNNEST(x.scenario_rubric_grade_agents) AS srga

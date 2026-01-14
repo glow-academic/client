@@ -6,7 +6,6 @@ CREATE OR REPLACE FUNCTION api_complete_document_creation_v4(
     file_size bigint,
     child_name text,
     child_description text,
-    document_domain_id uuid,
     scenario_id uuid
 )
 RETURNS TABLE (

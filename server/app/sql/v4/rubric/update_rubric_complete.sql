@@ -71,8 +71,7 @@ CREATE OR REPLACE FUNCTION api_update_rubric_v4(
     pass_points int,
     profile_id uuid,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    standard_groups types.i_update_rubric_v4_standard_group[] DEFAULT ARRAY[]::types.i_update_rubric_v4_standard_group[],
-    rubric_domain_id uuid DEFAULT NULL
+    standard_groups types.i_update_rubric_v4_standard_group[] DEFAULT ARRAY[]::types.i_update_rubric_v4_standard_group[]
 )
 RETURNS TABLE (
     rubric_id uuid,
@@ -92,7 +91,6 @@ WITH params AS (
         pass_points AS pass_points,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(standard_groups, ARRAY[]::types.i_update_rubric_v4_standard_group[]) AS standard_groups,
-        rubric_domain_id AS rubric_domain_id,
         profile_id AS profile_id
 ),
 user_profile AS (
@@ -174,7 +172,6 @@ get_or_create_pass_points AS (
 ),
 update_rubric AS (
     UPDATE rubric_artifact r SET
-        rubric_domain_id = x.rubric_domain_id,
         updated_at = NOW()
     FROM params x
     WHERE r.id = x.rubric_id

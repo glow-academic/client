@@ -80,7 +80,6 @@ RETURNS TABLE (
     pass_points int,
     active boolean,
     can_edit boolean,
-    rubric_domain_id uuid,
     valid_agent_ids text[],
     actor_name text,
     standard_group_ids uuid[],
@@ -122,8 +121,7 @@ rubric_data AS (
         (SELECT d.description FROM rubric_descriptions rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1),
         EXISTS (SELECT 1 FROM rubric_flags rf WHERE rf.rubric_id = r.id AND rf.type = 'active'::type_rubric_flags AND rf.value = TRUE) as active,
         (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total'::type_rubric_points LIMIT 1) as points,
-        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points,
-        r.rubric_domain_id
+        (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::type_rubric_points LIMIT 1) as pass_points
     FROM rubric_artifact r
     WHERE r.id = (SELECT rubric_id FROM params)
 ),
@@ -310,11 +308,6 @@ SELECT
         WHEN pr.user_role IN ('admin', 'instructional') AND uhra.has_access THEN true
         ELSE false
     END as can_edit,
-    COALESCE(
-        (SELECT (payload->>'rubricAgentId')::uuid FROM draft_payload_data),
-        (SELECT (payload->>'rubric_domain_id')::uuid FROM draft_payload_data),
-        rd.rubric_domain_id
-    ) as rubric_domain_id,
     COALESCE(aa.valid_agent_ids, ARRAY[]::text[]) as valid_agent_ids,
     up.actor_name,
     COALESCE(sga.standard_group_ids, ARRAY[]::uuid[]) as standard_group_ids,

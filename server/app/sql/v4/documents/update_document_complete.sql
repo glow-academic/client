@@ -27,7 +27,6 @@ CREATE OR REPLACE FUNCTION api_update_document_v4(
     template boolean DEFAULT NULL,
     department_id uuid DEFAULT NULL,
     field_ids text[] DEFAULT ARRAY[]::text[],
-    document_domain_id uuid DEFAULT NULL,
     html_id uuid DEFAULT NULL,
     schema_id uuid DEFAULT NULL
 )
@@ -51,7 +50,6 @@ WITH params AS (
         template AS template,
         department_id AS department_id,
         COALESCE(field_ids, ARRAY[]::text[]) AS field_ids,
-        document_domain_id AS document_domain_id,
         html_id AS html_id,
         schema_id AS schema_id
 ),

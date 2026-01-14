@@ -48,7 +48,6 @@ CREATE TYPE types.i_get_scenario_run_context_and_create_run_v4_document_template
     document_id text,
     document_name text,
     document_description text,
-    document_domain_id text,
     schema_id uuid,
     html_id text,
     template_file_path text
@@ -304,7 +303,7 @@ context_data AS (
         -- Includes all parent document info needed for child creation
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), NULL::text, ds.schema_id, h.id::text, COALESCE(u.file_path, ''))::types.i_get_scenario_run_context_and_create_run_v4_document_template
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), ds.schema_id, h.id::text, COALESCE(u.file_path, ''))::types.i_get_scenario_run_context_and_create_run_v4_document_template
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document_template[]
             FROM document_artifact d

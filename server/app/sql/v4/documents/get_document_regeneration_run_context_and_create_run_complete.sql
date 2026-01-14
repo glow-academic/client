@@ -48,7 +48,6 @@ CREATE TYPE types.i_document_regen_run_context_create_run_v4_msg AS (
 CREATE OR REPLACE FUNCTION socket_get_document_regeneration_run_context_and_create_run_v4(
     department_id uuid,
     profile_id uuid,
-    document_domain_id uuid,
     group_id uuid,  -- REQUIRED for regeneration (not NULL)
     document_id uuid DEFAULT NULL,
     document_name text DEFAULT NULL,
@@ -83,7 +82,6 @@ WITH params AS (
     SELECT 
         department_id AS department_id, 
         profile_id AS profile_id, 
-        document_domain_id AS document_domain_id, 
         group_id AS group_id,
         document_id AS document_id,
         document_name AS document_name,
@@ -136,14 +134,13 @@ previous_messages_array AS (
     FROM previous_messages_all_runs
 ),
 best_agent AS (
-    -- Use the provided document_domain_id directly (UI handles filtering and selection)
+    -- Domain-based agent lookup removed - select first active agent
     SELECT a.id as agent_id
     FROM agent_artifact a
-    
-    
     CROSS JOIN params p
-    WHERE NULL::uuid = p.document_domain_id
-    AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    ORDER BY a.created_at
+    LIMIT 1
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile

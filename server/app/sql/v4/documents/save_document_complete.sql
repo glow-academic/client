@@ -27,8 +27,7 @@ CREATE OR REPLACE FUNCTION api_save_document_v4(
     active_flag_id uuid DEFAULT NULL,
     template_flag_id uuid DEFAULT NULL,
     html_id uuid DEFAULT NULL,
-    schema_id uuid DEFAULT NULL,
-    document_domain_id uuid DEFAULT NULL
+    schema_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
     document_id uuid,
@@ -111,8 +110,7 @@ BEGIN
             profile_id,
             COALESCE(field_ids, ARRAY[]::uuid[]) AS field_ids,
             html_id,
-            schema_id,
-            document_domain_id
+            schema_id
     ),
     user_profile AS (
         SELECT 

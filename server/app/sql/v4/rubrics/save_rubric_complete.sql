@@ -26,8 +26,7 @@ CREATE OR REPLACE FUNCTION api_save_rubric_v4(
     active_flag_id uuid DEFAULT NULL,
     total_points_id uuid DEFAULT NULL,
     pass_points_id uuid DEFAULT NULL,
-    standard_group_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    rubric_domain_id uuid DEFAULT NULL
+    standard_group_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
     rubric_id uuid,
@@ -47,15 +46,14 @@ BEGIN
     -- Create or UPDATE rubric_artifact first (outside CTE)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO rubric_artifact (rubric_domain_id, created_at, updated_at)
-        VALUES (rubric_domain_id, NOW(), NOW())
+        INSERT INTO rubric_artifact (created_at, updated_at)
+        VALUES (NOW(), NOW())
         RETURNING id INTO v_rubric_id;
     ELSE
         -- UPDATE path
         v_rubric_id := input_rubric_id;
         UPDATE rubric_artifact
-        SET rubric_domain_id = COALESCE(rubric_domain_id, rubric.rubric_domain_id),
-            updated_at = NOW()
+        SET updated_at = NOW()
         WHERE id = v_rubric_id;
     END IF;
     
@@ -120,8 +118,7 @@ BEGIN
             pass_points_id,
             COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
             COALESCE(standard_group_ids, ARRAY[]::uuid[]) AS standard_group_ids,
-            profile_id,
-            rubric_domain_id
+            profile_id
     ),
     user_profile AS (
         SELECT 

@@ -68,8 +68,7 @@ CREATE OR REPLACE FUNCTION api_create_rubric_v4(
     pass_points int,
     profile_id uuid,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    standard_groups types.i_create_rubric_v4_standard_group[] DEFAULT ARRAY[]::types.i_create_rubric_v4_standard_group[],
-    rubric_domain_id uuid DEFAULT NULL
+    standard_groups types.i_create_rubric_v4_standard_group[] DEFAULT ARRAY[]::types.i_create_rubric_v4_standard_group[]
 )
 RETURNS TABLE (
     rubric_id uuid,
@@ -87,7 +86,6 @@ WITH params AS (
         pass_points AS pass_points,
         COALESCE(department_ids, ARRAY[]::uuid[]) AS department_ids,
         COALESCE(standard_groups, ARRAY[]::types.i_create_rubric_v4_standard_group[]) AS standard_groups,
-        rubric_domain_id AS rubric_domain_id,
         profile_id AS profile_id
 ),
 user_profile AS (
@@ -141,12 +139,10 @@ get_active_flag AS (
 ),
 new_rubric AS (
     INSERT INTO rubric_artifact (
-        rubric_domain_id,
         created_at,
         updated_at
     )
     SELECT 
-        x.rubric_domain_id,
         NOW(),
         NOW()
     FROM params x

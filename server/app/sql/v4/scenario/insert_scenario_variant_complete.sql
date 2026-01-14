@@ -21,9 +21,7 @@ CREATE OR REPLACE FUNCTION api_insert_scenario_variant_v4(
     generated boolean,
     active boolean,
     objectives_enabled boolean,
-    images_enabled boolean,
-    scenario_domain_id uuid,
-    image_domain_id uuid
+    images_enabled boolean
 )
 RETURNS TABLE (
     id uuid,
@@ -32,8 +30,6 @@ RETURNS TABLE (
     active boolean,
     objectives_enabled boolean,
     images_enabled boolean,
-    scenario_domain_id uuid,
-    image_domain_id uuid,
     description text,
     root_scenario_id uuid,
     parent_scenario_id uuid,
@@ -51,9 +47,7 @@ WITH params AS (
         api_insert_scenario_variant_v4.generated AS generated,
         api_insert_scenario_variant_v4.active AS active,
         api_insert_scenario_variant_v4.objectives_enabled AS objectives_enabled,
-        api_insert_scenario_variant_v4.images_enabled AS images_enabled,
-        api_insert_scenario_variant_v4.scenario_domain_id AS scenario_domain_id,
-        api_insert_scenario_variant_v4.image_domain_id AS image_domain_id
+        api_insert_scenario_variant_v4.images_enabled AS images_enabled
 ),
 get_or_create_name AS (
     INSERT INTO names_resource (name, created_at, updated_at)
@@ -112,8 +106,6 @@ SELECT
     p.active,
     p.objectives_enabled,
     p.images_enabled,
-    p.scenario_domain_id,
-    p.image_domain_id,
     ''::text as description,
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as root_scenario_id,
     (SELECT st.parent_id FROM scenario_tree st WHERE st.child_id = ns.id AND st.parent_id != ns.id LIMIT 1) as parent_scenario_id,

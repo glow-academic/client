@@ -993,13 +993,13 @@ parameter_data AS (
 all_parameters_array AS (
     SELECT 
         p.id as parameter_id,
-        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), '') as description,
         p.document_parameter,
         p.persona_parameter,
         p.scenario_parameter,
         p.video_parameter,
-        false as numerical
+        p.numerical
     FROM available_scenario_parameters p
 ),
 parameter_item_data AS (

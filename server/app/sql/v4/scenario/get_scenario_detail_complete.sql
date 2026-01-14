@@ -258,9 +258,6 @@ RETURNS TABLE (
     video_enabled boolean,
     questions_enabled boolean,
     problem_statement_enabled boolean,
-    scenario_domain_id text,
-    image_domain_id text,
-    video_domain_id text,
     valid_agent_ids text[],
     can_edit boolean,
     can_duplicate boolean,
@@ -468,8 +465,7 @@ scenario_core AS (
         EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE) as images_enabled,
         EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'video_enabled'::type_scenario_flags AND sf.value = TRUE) as video_enabled,
         EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'questions_enabled'::type_scenario_flags AND sf.value = TRUE) as questions_enabled,
-        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'problem_statement_enabled'::type_scenario_flags AND sf.value = TRUE) as problem_statement_enabled,
-        NULL::uuid as scenario_domain_id,
+        EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'problem_statement_enabled'::type_scenario_flags AND sf.value = TRUE) as problem_statement_enabled
     FROM scenario_artifact s
     LEFT JOIN scenario_tree st ON st.child_id = s.id AND st.parent_id != st.parent_id
     LEFT JOIN scenario_active_problem_statement saps ON saps.scenario_id = s.id
@@ -1957,9 +1953,6 @@ SELECT
     sc.video_enabled,
     sc.questions_enabled,
     sc.problem_statement_enabled,
-    sc.scenario_domain_id,
-    sc.image_domain_id,
-    sc.video_domain_id,
     COALESCE((
         SELECT ARRAY_AGG(agent_id::text ORDER BY name)
         FROM valid_agents_array

@@ -22,7 +22,6 @@ CREATE OR REPLACE FUNCTION api_get_scenario_ids_for_regeneration_v4(
 )
 RETURNS TABLE (
     persona_id uuid,
-    scenario_domain_id text,
     document_ids json,
     parameter_item_ids json
 )
@@ -31,7 +30,6 @@ STABLE
 AS $$
 SELECT 
     (SELECT rp.persona_id FROM scenario_personas rp WHERE rp.scenario_id = s.id AND rp.active = true LIMIT 1) as persona_id,
-    NULL::text as scenario_domain_id,
     COALESCE(
         json_agg(DISTINCT sd.document_id::text) FILTER (WHERE sd.document_id IS NOT NULL),
         '[]'::json
