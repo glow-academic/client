@@ -11443,6 +11443,32 @@ export interface components {
             active?: boolean | null;
             /** Updated At */
             updated_at?: string | null;
+            /** Name Id */
+            name_id?: string | null;
+            name_resource?: components["schemas"]["QGetToolV4NameResource"] | null;
+            /** Show Name */
+            show_name?: boolean | null;
+            /** Name Agent Id */
+            name_agent_id?: string | null;
+            /** Name Required */
+            name_required?: boolean | null;
+            /** Name Suggestions */
+            name_suggestions?: string[] | null;
+            /** Names */
+            names?: components["schemas"]["QGetToolV4NameResource"][] | null;
+            /** Description Id */
+            description_id?: string | null;
+            description_resource?: components["schemas"]["QGetToolV4DescriptionResource"] | null;
+            /** Show Description */
+            show_description?: boolean | null;
+            /** Description Agent Id */
+            description_agent_id?: string | null;
+            /** Description Required */
+            description_required?: boolean | null;
+            /** Description Suggestions */
+            description_suggestions?: string[] | null;
+            /** Descriptions */
+            descriptions?: components["schemas"]["QGetToolV4DescriptionResource"][] | null;
             /** Schema Ids */
             schema_ids?: string[] | null;
             /** Schema Resources */
@@ -11457,6 +11483,34 @@ export interface components {
             schema_suggestions?: string[] | null;
             /** Schemas */
             schemas?: components["schemas"]["QGetToolV4Schema"][] | null;
+            /** Schema Field Ids */
+            schema_field_ids?: string[] | null;
+            /** Schema Field Resources */
+            schema_field_resources?: components["schemas"]["QGetToolV4SchemaField"][] | null;
+            /** Show Schema Fields */
+            show_schema_fields?: boolean | null;
+            /** Schema Fields Agent Id */
+            schema_fields_agent_id?: string | null;
+            /** Schema Fields Required */
+            schema_fields_required?: boolean | null;
+            /** Schema Field Suggestions */
+            schema_field_suggestions?: string[] | null;
+            /** Schema Fields */
+            schema_fields?: components["schemas"]["QGetToolV4SchemaField"][] | null;
+            /** Schema Field Item Ids */
+            schema_field_item_ids?: string[] | null;
+            /** Schema Field Item Resources */
+            schema_field_item_resources?: components["schemas"]["QGetToolV4SchemaFieldItem"][] | null;
+            /** Show Schema Field Items */
+            show_schema_field_items?: boolean | null;
+            /** Schema Field Items Agent Id */
+            schema_field_items_agent_id?: string | null;
+            /** Schema Field Items Required */
+            schema_field_items_required?: boolean | null;
+            /** Schema Field Item Suggestions */
+            schema_field_item_suggestions?: string[] | null;
+            /** Schema Field Items */
+            schema_field_items?: components["schemas"]["QGetToolV4SchemaFieldItem"][] | null;
             /** Template Ids */
             template_ids?: string[] | null;
             /** Template Resources */
@@ -11471,6 +11525,34 @@ export interface components {
             template_suggestions?: string[] | null;
             /** Templates */
             templates?: components["schemas"]["QGetToolV4Template"][] | null;
+            /** Template Array Item Ids */
+            template_array_item_ids?: string[] | null;
+            /** Template Array Item Resources */
+            template_array_item_resources?: components["schemas"]["QGetToolV4TemplateArrayItem"][] | null;
+            /** Show Template Array Items */
+            show_template_array_items?: boolean | null;
+            /** Template Array Items Agent Id */
+            template_array_items_agent_id?: string | null;
+            /** Template Array Items Required */
+            template_array_items_required?: boolean | null;
+            /** Template Array Item Suggestions */
+            template_array_item_suggestions?: string[] | null;
+            /** Template Array Items */
+            template_array_items?: components["schemas"]["QGetToolV4TemplateArrayItem"][] | null;
+            /** Template Value Ids */
+            template_value_ids?: string[] | null;
+            /** Template Value Resources */
+            template_value_resources?: components["schemas"]["QGetToolV4TemplateValue"][] | null;
+            /** Show Template Values */
+            show_template_values?: boolean | null;
+            /** Template Values Agent Id */
+            template_values_agent_id?: string | null;
+            /** Template Values Required */
+            template_values_required?: boolean | null;
+            /** Template Value Suggestions */
+            template_value_suggestions?: string[] | null;
+            /** Template Values */
+            template_values?: components["schemas"]["QGetToolV4TemplateValue"][] | null;
         };
         /** GetToolsListApiRequest */
         GetToolsListApiRequest: Record<string, never>;
@@ -17413,6 +17495,24 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetToolV4DescriptionResource */
+        QGetToolV4DescriptionResource: {
+            /** Id */
+            id: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetToolV4NameResource */
+        QGetToolV4NameResource: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetToolV4Schema */
         QGetToolV4Schema: {
             /** Schema Id */
@@ -17420,10 +17520,56 @@ export interface components {
             /** Generated */
             generated: boolean | null;
         };
+        /** QGetToolV4SchemaField */
+        QGetToolV4SchemaField: {
+            /** Schema Field Id */
+            schema_field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetToolV4SchemaFieldItem */
+        QGetToolV4SchemaFieldItem: {
+            /** Schema Field Item Id */
+            schema_field_item_id: string | null;
+            /** Schema Field Id */
+            schema_field_id: string | null;
+            /** Item Schema Id */
+            item_schema_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
         /** QGetToolV4Template */
         QGetToolV4Template: {
             /** Template Id */
             template_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetToolV4TemplateArrayItem */
+        QGetToolV4TemplateArrayItem: {
+            /** Template Array Item Id */
+            template_array_item_id: string | null;
+            /** Template Id */
+            template_id: string | null;
+            /** Schema Field Id */
+            schema_field_id: string | null;
+            /** Item Template Id */
+            item_template_id: string | null;
+            /** Generated */
+            generated: boolean | null;
+        };
+        /** QGetToolV4TemplateValue */
+        QGetToolV4TemplateValue: {
+            /** Template Value Id */
+            template_value_id: string | null;
+            /** Template Id */
+            template_id: string | null;
+            /** Schema Field Id */
+            schema_field_id: string | null;
             /** Generated */
             generated: boolean | null;
         };

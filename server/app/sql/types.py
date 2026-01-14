@@ -32863,6 +32863,24 @@ class GetToolSqlParams(BaseModel):
             self.mcp,
         )
 
+class QGetToolV4DescriptionResource(BaseModel):
+
+    id: UUID | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4NameResource(BaseModel):
+
+    id: UUID | None
+    name: str | None
+    generated: bool | None
+
+
+
+
 class QGetToolV4Schema(BaseModel):
 
     schema_id: UUID | None
@@ -32871,9 +32889,50 @@ class QGetToolV4Schema(BaseModel):
 
 
 
+class QGetToolV4SchemaField(BaseModel):
+
+    schema_field_id: UUID | None
+    name: str | None
+    description: str | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4SchemaFieldItem(BaseModel):
+
+    schema_field_item_id: UUID | None
+    schema_field_id: UUID | None
+    item_schema_id: UUID | None
+    generated: bool | None
+
+
+
+
 class QGetToolV4Template(BaseModel):
 
     template_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4TemplateArrayItem(BaseModel):
+
+    template_array_item_id: UUID | None
+    template_id: UUID | None
+    schema_field_id: UUID | None
+    item_template_id: UUID | None
+    generated: bool | None
+
+
+
+
+class QGetToolV4TemplateValue(BaseModel):
+
+    template_value_id: UUID | None
+    template_id: UUID | None
+    schema_field_id: UUID | None
     generated: bool | None
 
 class GetToolSqlRow(BaseModel):
@@ -32887,6 +32946,20 @@ class GetToolSqlRow(BaseModel):
     description: str | None = None
     active: bool | None = None
     updated_at: str | None = None
+    name_id: UUID | None = None
+    name_resource: QGetToolV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetToolV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetToolV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetToolV4DescriptionResource] | None = None
     schema_ids: list[UUID] | None = None
     schema_resources: list[QGetToolV4Schema] | None = None
     show_schemas: bool | None = None
@@ -32894,6 +32967,20 @@ class GetToolSqlRow(BaseModel):
     schemas_required: bool | None = None
     schema_suggestions: list[UUID] | None = None
     schemas: list[QGetToolV4Schema] | None = None
+    schema_field_ids: list[UUID] | None = None
+    schema_field_resources: list[QGetToolV4SchemaField] | None = None
+    show_schema_fields: bool | None = None
+    schema_fields_agent_id: UUID | None = None
+    schema_fields_required: bool | None = None
+    schema_field_suggestions: list[UUID] | None = None
+    schema_fields: list[QGetToolV4SchemaField] | None = None
+    schema_field_item_ids: list[UUID] | None = None
+    schema_field_item_resources: list[QGetToolV4SchemaFieldItem] | None = None
+    show_schema_field_items: bool | None = None
+    schema_field_items_agent_id: UUID | None = None
+    schema_field_items_required: bool | None = None
+    schema_field_item_suggestions: list[UUID] | None = None
+    schema_field_items: list[QGetToolV4SchemaFieldItem] | None = None
     template_ids: list[UUID] | None = None
     template_resources: list[QGetToolV4Template] | None = None
     show_templates: bool | None = None
@@ -32901,6 +32988,20 @@ class GetToolSqlRow(BaseModel):
     templates_required: bool | None = None
     template_suggestions: list[UUID] | None = None
     templates: list[QGetToolV4Template] | None = None
+    template_array_item_ids: list[UUID] | None = None
+    template_array_item_resources: list[QGetToolV4TemplateArrayItem] | None = None
+    show_template_array_items: bool | None = None
+    template_array_items_agent_id: UUID | None = None
+    template_array_items_required: bool | None = None
+    template_array_item_suggestions: list[UUID] | None = None
+    template_array_items: list[QGetToolV4TemplateArrayItem] | None = None
+    template_value_ids: list[UUID] | None = None
+    template_value_resources: list[QGetToolV4TemplateValue] | None = None
+    show_template_values: bool | None = None
+    template_values_agent_id: UUID | None = None
+    template_values_required: bool | None = None
+    template_value_suggestions: list[UUID] | None = None
+    template_values: list[QGetToolV4TemplateValue] | None = None
 
 class GetToolApiRequest(BaseModel):
 
@@ -32923,6 +33024,20 @@ class GetToolApiResponse(BaseModel):
     description: str | None = None
     active: bool | None = None
     updated_at: str | None = None
+    name_id: UUID | None = None
+    name_resource: QGetToolV4NameResource | None = None
+    show_name: bool | None = None
+    name_agent_id: UUID | None = None
+    name_required: bool | None = None
+    name_suggestions: list[UUID] | None = None
+    names: list[QGetToolV4NameResource] | None = None
+    description_id: UUID | None = None
+    description_resource: QGetToolV4DescriptionResource | None = None
+    show_description: bool | None = None
+    description_agent_id: UUID | None = None
+    description_required: bool | None = None
+    description_suggestions: list[UUID] | None = None
+    descriptions: list[QGetToolV4DescriptionResource] | None = None
     schema_ids: list[UUID] | None = None
     schema_resources: list[QGetToolV4Schema] | None = None
     show_schemas: bool | None = None
@@ -32930,6 +33045,20 @@ class GetToolApiResponse(BaseModel):
     schemas_required: bool | None = None
     schema_suggestions: list[UUID] | None = None
     schemas: list[QGetToolV4Schema] | None = None
+    schema_field_ids: list[UUID] | None = None
+    schema_field_resources: list[QGetToolV4SchemaField] | None = None
+    show_schema_fields: bool | None = None
+    schema_fields_agent_id: UUID | None = None
+    schema_fields_required: bool | None = None
+    schema_field_suggestions: list[UUID] | None = None
+    schema_fields: list[QGetToolV4SchemaField] | None = None
+    schema_field_item_ids: list[UUID] | None = None
+    schema_field_item_resources: list[QGetToolV4SchemaFieldItem] | None = None
+    show_schema_field_items: bool | None = None
+    schema_field_items_agent_id: UUID | None = None
+    schema_field_items_required: bool | None = None
+    schema_field_item_suggestions: list[UUID] | None = None
+    schema_field_items: list[QGetToolV4SchemaFieldItem] | None = None
     template_ids: list[UUID] | None = None
     template_resources: list[QGetToolV4Template] | None = None
     show_templates: bool | None = None
@@ -32937,6 +33066,20 @@ class GetToolApiResponse(BaseModel):
     templates_required: bool | None = None
     template_suggestions: list[UUID] | None = None
     templates: list[QGetToolV4Template] | None = None
+    template_array_item_ids: list[UUID] | None = None
+    template_array_item_resources: list[QGetToolV4TemplateArrayItem] | None = None
+    show_template_array_items: bool | None = None
+    template_array_items_agent_id: UUID | None = None
+    template_array_items_required: bool | None = None
+    template_array_item_suggestions: list[UUID] | None = None
+    template_array_items: list[QGetToolV4TemplateArrayItem] | None = None
+    template_value_ids: list[UUID] | None = None
+    template_value_resources: list[QGetToolV4TemplateValue] | None = None
+    show_template_values: bool | None = None
+    template_values_agent_id: UUID | None = None
+    template_values_required: bool | None = None
+    template_value_suggestions: list[UUID] | None = None
+    template_values: list[QGetToolV4TemplateValue] | None = None
 
 
 
