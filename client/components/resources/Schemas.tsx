@@ -7,7 +7,7 @@
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,6 +26,7 @@ type CreateDraftSchemasOut = OutputOf<"/api/v4/resources/schemas", "post">;
 
 export interface SchemaItem {
   id: string;
+  field_count?: number;
 }
 
 export interface SchemasProps {
@@ -38,6 +39,7 @@ export interface SchemasProps {
   schema_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   schemas?: Array<{
     schema_id: string | null;
+    field_count?: number | null;
     generated?: boolean | null;
   }>; // All available schemas from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
@@ -54,6 +56,8 @@ export interface SchemasProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  searchTerm?: string; // Search term for filtering schemas
+  showSelectedFilter?: boolean; // Whether to show only selected schemas
 }
 
 export function Schemas({
@@ -74,6 +78,8 @@ export function Schemas({
   createSchemasAction,
   onGenerate,
   isGenerating = false,
+  searchTerm = "",
+  showSelectedFilter = false,
 }: SchemasProps) {
   const ids = useMemo(() => schema_ids ?? [], [schema_ids]);
   const show = show_schemas ?? false;
@@ -91,14 +97,36 @@ export function Schemas({
     ids.forEach((id) => createdSchemaIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert schemas array to SchemaItem format for GenericPicker
+  // Convert schemas array to SchemaItem format for SelectableGrid
   const schemaItems = useMemo(() => {
     return allSchemas
       .filter((s) => s.schema_id) // Filter out nulls
       .map((s) => ({
         id: s.schema_id!,
+        ...(s.field_count !== null && s.field_count !== undefined && { field_count: s.field_count }),
       }));
   }, [allSchemas]);
+
+  // Filter schemas based on search term
+  const filteredSchemas = useMemo(() => {
+    let filtered = schemaItems;
+
+    // Apply search filter
+    if (searchTerm && searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((schema) => {
+        const searchText = `${schema.id} ${schema.field_count ?? 0} fields`.toLowerCase();
+        return searchText.includes(searchLower);
+      });
+    }
+
+    // Apply show selected filter
+    if (showSelectedFilter) {
+      filtered = filtered.filter((schema) => ids.includes(schema.id));
+    }
+
+    return filtered;
+  }, [schemaItems, searchTerm, showSelectedFilter, ids]);
 
   // Check if a schema is suggested
   const isSuggested = useCallback(
@@ -198,41 +226,55 @@ export function Schemas({
           )}
         </div>
       )}
-      <GenericPicker<SchemaItem>
-        items={schemaItems}
-        itemIds={allSchemas
-          .map((s) => s.schema_id)
-          .filter((id): id is string => id !== null)} // All schema IDs from array, filter nulls
+      <SelectableGrid<SchemaItem>
+        items={filteredSchemas}
+        selectedId={null}
         selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
+        onSelect={(schemaId) => {
+          const isSelected = ids.includes(schemaId);
+          const newIds = isSelected
+            ? ids.filter((id) => id !== schemaId)
+            : [...ids, schemaId];
+          handleSelect(newIds);
+        }}
         getId={(item) => item.id}
-        getLabel={(item) => item.id} // Use ID as label since schemas don't have names
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.id}</div>
+          <div
+            className={cn(
+              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {/* Check icon - top right */}
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
-            </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
+            )}
+
+            {/* Suggested badge - top right */}
+            {isSuggested(item.id) && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                Suggested
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-sm leading-tight">
+                {item.id.slice(0, 8)}...
+              </h3>
+              {item.field_count !== undefined && item.field_count !== null && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {item.field_count} {item.field_count === 1 ? "field" : "fields"}
+                </p>
               )}
-            />
+            </div>
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No schemas found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

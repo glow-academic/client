@@ -36,11 +36,13 @@ END $$;
 -- 3) Recreate types
 CREATE TYPE types.q_get_tool_v4_schema AS (
     schema_id uuid,
+    field_count integer,
     generated boolean
 );
 
 CREATE TYPE types.q_get_tool_v4_template AS (
     template_id uuid,
+    name text,
     generated boolean
 );
 
@@ -66,6 +68,7 @@ CREATE TYPE types.q_get_tool_v4_schema_field AS (
 CREATE TYPE types.q_get_tool_v4_schema_field_item AS (
     schema_field_item_id uuid,
     schema_field_id uuid,
+    schema_field_name text,
     item_schema_id uuid,
     generated boolean
 );
@@ -73,15 +76,21 @@ CREATE TYPE types.q_get_tool_v4_schema_field_item AS (
 CREATE TYPE types.q_get_tool_v4_template_array_item AS (
     template_array_item_id uuid,
     template_id uuid,
+    template_name text,
     schema_field_id uuid,
+    schema_field_name text,
     item_template_id uuid,
+    item_template_name text,
     generated boolean
 );
 
 CREATE TYPE types.q_get_tool_v4_template_value AS (
     template_value_id uuid,
     template_id uuid,
+    template_name text,
     schema_field_id uuid,
+    schema_field_name text,
+    value text,
     generated boolean
 );
 
@@ -353,6 +362,12 @@ template_suggestions_data AS (
 schema_mapping_data AS (
     SELECT 
         s.id as schema_id,
+        COALESCE(
+            (SELECT COUNT(*)::integer 
+             FROM schema_fields_resource sf 
+             WHERE sf.schema_id = s.id AND sf.active = true),
+            0
+        ) as field_count,
         COALESCE(ts.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
@@ -364,6 +379,7 @@ schema_mapping_data AS (
 template_mapping_data AS (
     SELECT 
         t.id as template_id,
+        t.name,
         COALESCE(tt.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
@@ -633,11 +649,13 @@ schema_field_item_mapping_data AS (
     SELECT 
         sfi.id as schema_field_item_id,
         sfi.schema_field_id,
+        COALESCE(sf.name, '') as schema_field_name,
         sfi.item_schema_id,
         COALESCE(tsfi.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
     JOIN schema_field_items_resource sfi ON sfi.active = true
+    LEFT JOIN schema_fields_resource sf ON sf.id = sfi.schema_field_id AND sf.active = true
     LEFT JOIN tool_schema_field_items tsfi ON tsfi.schema_field_item_id = sfi.id AND tsfi.tool_id = x.tool_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all schema_field_items for new tools
 ),
@@ -702,12 +720,18 @@ template_array_item_mapping_data AS (
     SELECT 
         tai.id as template_array_item_id,
         tai.template_id,
+        COALESCE(t.name, '') as template_name,
         tai.schema_field_id,
+        COALESCE(sf.name, '') as schema_field_name,
         tai.item_template_id,
+        COALESCE(it.name, '') as item_template_name,
         COALESCE(ttai.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
     JOIN template_array_items_resource tai ON tai.active = true
+    LEFT JOIN templates_resource t ON t.id = tai.template_id
+    LEFT JOIN schema_fields_resource sf ON sf.id = tai.schema_field_id AND sf.active = true
+    LEFT JOIN templates_resource it ON it.id = tai.item_template_id
     LEFT JOIN tool_template_array_items ttai ON ttai.template_array_item_id = tai.id AND ttai.tool_id = x.tool_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all template_array_items for new tools
 ),
@@ -772,11 +796,21 @@ template_value_mapping_data AS (
     SELECT 
         tv.id as template_value_id,
         tv.template_id,
+        COALESCE(t.name, '') as template_name,
         tv.schema_field_id,
+        COALESCE(sf.name, '') as schema_field_name,
+        COALESCE(
+            tv.string_value::text,
+            tv.number_value::text,
+            tv.boolean_value::text,
+            ''
+        ) as value,
         COALESCE(ttv.generated, false) as generated
     FROM params x
     CROSS JOIN draft_group_data dgd
     JOIN template_values_resource tv ON tv.active = true
+    LEFT JOIN templates_resource t ON t.id = tv.template_id
+    LEFT JOIN schema_fields_resource sf ON sf.id = tv.schema_field_id AND sf.active = true
     LEFT JOIN tool_template_values ttv ON ttv.template_value_id = tv.id AND ttv.tool_id = x.tool_id
     WHERE x.tool_id IS NOT NULL OR TRUE  -- Include all template_values for new tools
 ),
@@ -1597,7 +1631,7 @@ SELECT
     sid.schema_ids,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (smd.schema_id, smd.generated)::types.q_get_tool_v4_schema
+            (smd.schema_id, smd.field_count, smd.generated)::types.q_get_tool_v4_schema
             ORDER BY smd.schema_id
         )
         FROM schema_mapping_data smd
@@ -1616,9 +1650,9 @@ SELECT
     COALESCE((SELECT schema_suggestions FROM schema_suggestions_data), ARRAY[]::uuid[]) as schema_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (smd.schema_id, smd.generated)::types.q_get_tool_v4_schema
+            (smd.schema_id, smd.field_count, smd.generated)::types.q_get_tool_v4_schema
             ORDER BY smd.schema_id
-        ) FROM (SELECT DISTINCT schema_id, generated FROM schema_mapping_data) smd),
+        ) FROM (SELECT DISTINCT schema_id, field_count, generated FROM schema_mapping_data) smd),
         '{}'::types.q_get_tool_v4_schema[]
     ) as schemas,
     -- Multi-select resources: schema_fields
@@ -1653,7 +1687,7 @@ SELECT
     sfiid.schema_field_item_ids,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sfimd.schema_field_item_id, sfimd.schema_field_id, sfimd.item_schema_id, sfimd.generated)::types.q_get_tool_v4_schema_field_item
+            (sfimd.schema_field_item_id, sfimd.schema_field_id, sfimd.schema_field_name, sfimd.item_schema_id, sfimd.generated)::types.q_get_tool_v4_schema_field_item
             ORDER BY sfimd.schema_field_item_id
         )
         FROM schema_field_item_mapping_data sfimd
@@ -1672,16 +1706,16 @@ SELECT
     COALESCE((SELECT schema_field_item_suggestions FROM schema_field_item_suggestions_data), ARRAY[]::uuid[]) as schema_field_item_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sfimd.schema_field_item_id, sfimd.schema_field_id, sfimd.item_schema_id, sfimd.generated)::types.q_get_tool_v4_schema_field_item
+            (sfimd.schema_field_item_id, sfimd.schema_field_id, sfimd.schema_field_name, sfimd.item_schema_id, sfimd.generated)::types.q_get_tool_v4_schema_field_item
             ORDER BY sfimd.schema_field_item_id
-        ) FROM (SELECT DISTINCT schema_field_item_id, schema_field_id, item_schema_id, generated FROM schema_field_item_mapping_data) sfimd),
+        ) FROM (SELECT DISTINCT schema_field_item_id, schema_field_id, schema_field_name, item_schema_id, generated FROM schema_field_item_mapping_data) sfimd),
         '{}'::types.q_get_tool_v4_schema_field_item[]
     ) as schema_field_items,
     -- Multi-select resources: templates
     tid.template_ids,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (tmd.template_id, tmd.generated)::types.q_get_tool_v4_template
+            (tmd.template_id, tmd.name, tmd.generated)::types.q_get_tool_v4_template
             ORDER BY tmd.template_id
         )
         FROM template_mapping_data tmd
@@ -1700,16 +1734,16 @@ SELECT
     COALESCE((SELECT template_suggestions FROM template_suggestions_data), ARRAY[]::uuid[]) as template_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (tmd.template_id, tmd.generated)::types.q_get_tool_v4_template
+            (tmd.template_id, tmd.name, tmd.generated)::types.q_get_tool_v4_template
             ORDER BY tmd.template_id
-        ) FROM (SELECT DISTINCT template_id, generated FROM template_mapping_data) tmd),
+        ) FROM (SELECT DISTINCT template_id, name, generated FROM template_mapping_data) tmd),
         '{}'::types.q_get_tool_v4_template[]
     ) as templates,
     -- Multi-select resources: template_array_items
     taiid.template_array_item_ids,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (taimd.template_array_item_id, taimd.template_id, taimd.schema_field_id, taimd.item_template_id, taimd.generated)::types.q_get_tool_v4_template_array_item
+            (taimd.template_array_item_id, taimd.template_id, taimd.template_name, taimd.schema_field_id, taimd.schema_field_name, taimd.item_template_id, taimd.item_template_name, taimd.generated)::types.q_get_tool_v4_template_array_item
             ORDER BY taimd.template_array_item_id
         )
         FROM template_array_item_mapping_data taimd
@@ -1728,16 +1762,16 @@ SELECT
     COALESCE((SELECT template_array_item_suggestions FROM template_array_item_suggestions_data), ARRAY[]::uuid[]) as template_array_item_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (taimd.template_array_item_id, taimd.template_id, taimd.schema_field_id, taimd.item_template_id, taimd.generated)::types.q_get_tool_v4_template_array_item
+            (taimd.template_array_item_id, taimd.template_id, taimd.template_name, taimd.schema_field_id, taimd.schema_field_name, taimd.item_template_id, taimd.item_template_name, taimd.generated)::types.q_get_tool_v4_template_array_item
             ORDER BY taimd.template_array_item_id
-        ) FROM (SELECT DISTINCT template_array_item_id, template_id, schema_field_id, item_template_id, generated FROM template_array_item_mapping_data) taimd),
+        ) FROM (SELECT DISTINCT template_array_item_id, template_id, template_name, schema_field_id, schema_field_name, item_template_id, item_template_name, generated FROM template_array_item_mapping_data) taimd),
         '{}'::types.q_get_tool_v4_template_array_item[]
     ) as template_array_items,
     -- Multi-select resources: template_values
     tvid.template_value_ids,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (tvmd.template_value_id, tvmd.template_id, tvmd.schema_field_id, tvmd.generated)::types.q_get_tool_v4_template_value
+            (tvmd.template_value_id, tvmd.template_id, tvmd.template_name, tvmd.schema_field_id, tvmd.schema_field_name, tvmd.value, tvmd.generated)::types.q_get_tool_v4_template_value
             ORDER BY tvmd.template_value_id
         )
         FROM template_value_mapping_data tvmd
@@ -1756,9 +1790,9 @@ SELECT
     COALESCE((SELECT template_value_suggestions FROM template_value_suggestions_data), ARRAY[]::uuid[]) as template_value_suggestions,
     COALESCE(
         (SELECT ARRAY_AGG(
-            (tvmd.template_value_id, tvmd.template_id, tvmd.schema_field_id, tvmd.generated)::types.q_get_tool_v4_template_value
+            (tvmd.template_value_id, tvmd.template_id, tvmd.template_name, tvmd.schema_field_id, tvmd.schema_field_name, tvmd.value, tvmd.generated)::types.q_get_tool_v4_template_value
             ORDER BY tvmd.template_value_id
-        ) FROM (SELECT DISTINCT template_value_id, template_id, schema_field_id, generated FROM template_value_mapping_data) tvmd),
+        ) FROM (SELECT DISTINCT template_value_id, template_id, template_name, schema_field_id, schema_field_name, value, generated FROM template_value_mapping_data) tvmd),
         '{}'::types.q_get_tool_v4_template_value[]
     ) as template_values
 FROM user_profile up

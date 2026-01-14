@@ -15,8 +15,11 @@ import {
 } from "@/components/common/forms/GenericForm";
 import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/ReadOnlyBanner";
+import { SchemaFieldItems } from "@/components/resources/SchemaFieldItems";
 import { Schemas } from "@/components/resources/Schemas";
+import { TemplateArrayItems } from "@/components/resources/TemplateArrayItems";
 import { Templates } from "@/components/resources/Templates";
+import { TemplateValues } from "@/components/resources/TemplateValues";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +37,30 @@ type CreateDraftSchemasIn = InputOf<"/api/v4/resources/schemas", "post">;
 type CreateDraftSchemasOut = OutputOf<"/api/v4/resources/schemas", "post">;
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
+type CreateDraftSchemaFieldItemsIn = InputOf<
+  "/api/v4/resources/schema_field_items",
+  "post"
+>;
+type CreateDraftSchemaFieldItemsOut = OutputOf<
+  "/api/v4/resources/schema_field_items",
+  "post"
+>;
+type CreateDraftTemplateArrayItemsIn = InputOf<
+  "/api/v4/resources/template_array_items",
+  "post"
+>;
+type CreateDraftTemplateArrayItemsOut = OutputOf<
+  "/api/v4/resources/template_array_items",
+  "post"
+>;
+type CreateDraftTemplateValuesIn = InputOf<
+  "/api/v4/resources/template_values",
+  "post"
+>;
+type CreateDraftTemplateValuesOut = OutputOf<
+  "/api/v4/resources/template_values",
+  "post"
+>;
 type PatchToolDraftIn = InputOf<"/api/v4/tools/draft", "patch">;
 type PatchToolDraftOut = OutputOf<"/api/v4/tools/draft", "patch">;
 
@@ -57,6 +84,15 @@ export interface ToolProps {
   createTemplatesAction?: (
     input: CreateDraftTemplatesIn
   ) => Promise<CreateDraftTemplatesOut>;
+  createSchemaFieldItemsAction?: (
+    input: CreateDraftSchemaFieldItemsIn
+  ) => Promise<CreateDraftSchemaFieldItemsOut>;
+  createTemplateArrayItemsAction?: (
+    input: CreateDraftTemplateArrayItemsIn
+  ) => Promise<CreateDraftTemplateArrayItemsOut>;
+  createTemplateValuesAction?: (
+    input: CreateDraftTemplateValuesIn
+  ) => Promise<CreateDraftTemplateValuesOut>;
 }
 
 function ToolComponent({
@@ -68,6 +104,9 @@ function ToolComponent({
   patchToolDraftAction,
   createSchemasAction,
   createTemplatesAction,
+  createSchemaFieldItemsAction,
+  createTemplateArrayItemsAction,
+  createTemplateValuesAction,
 }: ToolProps) {
   // Support both new prop name (toolData) and legacy prop names (toolDetail, toolDetailDefault)
   const toolData = toolDataProp || toolDetail || toolDetailDefault;
@@ -102,9 +141,15 @@ function ToolComponent({
       // Search params (URL-backed, updated via debounced callback in StepCard)
       schemaSearch: parseAsString,
       templateSearch: parseAsString,
+      schemaFieldItemSearch: parseAsString,
+      templateArrayItemSearch: parseAsString,
+      templateValueSearch: parseAsString,
       // Filter params (URL-backed)
       schemaShowSelected: parseAsBoolean,
       templateShowSelected: parseAsBoolean,
+      schemaFieldItemShowSelected: parseAsBoolean,
+      templateArrayItemShowSelected: parseAsBoolean,
+      templateValueShowSelected: parseAsBoolean,
     }),
     []
   );
@@ -132,22 +177,29 @@ function ToolComponent({
       templates: toolData.templates,
       templates_required: toolData.templates_required,
       templates_agent_id: toolData.templates_agent_id,
+      schema_field_item_ids: toolData.schema_field_item_ids,
+      schema_field_item_resources: toolData.schema_field_item_resources,
+      show_schema_field_items: toolData.show_schema_field_items,
+      schema_field_item_suggestions: toolData.schema_field_item_suggestions,
+      schema_field_items: toolData.schema_field_items,
+      schema_field_items_required: toolData.schema_field_items_required,
+      schema_field_items_agent_id: toolData.schema_field_items_agent_id,
+      template_array_item_ids: toolData.template_array_item_ids,
+      template_array_item_resources: toolData.template_array_item_resources,
+      show_template_array_items: toolData.show_template_array_items,
+      template_array_item_suggestions: toolData.template_array_item_suggestions,
+      template_array_items: toolData.template_array_items,
+      template_array_items_required: toolData.template_array_items_required,
+      template_array_items_agent_id: toolData.template_array_items_agent_id,
+      template_value_ids: toolData.template_value_ids,
+      template_value_resources: toolData.template_value_resources,
+      show_template_values: toolData.show_template_values,
+      template_value_suggestions: toolData.template_value_suggestions,
+      template_values: toolData.template_values,
+      template_values_required: toolData.template_values_required,
+      template_values_agent_id: toolData.template_values_agent_id,
     };
-  }, [
-    toolData?.group_id,
-    toolData?.schema_resources,
-    toolData?.show_schemas,
-    toolData?.schema_suggestions,
-    toolData?.schemas,
-    toolData?.schemas_required,
-    toolData?.schemas_agent_id,
-    toolData?.template_resources,
-    toolData?.show_templates,
-    toolData?.template_suggestions,
-    toolData?.templates,
-    toolData?.templates_required,
-    toolData?.templates_agent_id,
-  ]);
+  }, [toolData]);
 
   const getInitialFormState = useCallback(() => {
     const data = toolDataRef.current;
@@ -157,6 +209,9 @@ function ToolComponent({
         description: "",
         schema_ids: [] as string[],
         template_ids: [] as string[],
+        schema_field_item_ids: [] as string[],
+        template_array_item_ids: [] as string[],
+        template_value_ids: [] as string[],
       };
     }
     return {
@@ -164,6 +219,9 @@ function ToolComponent({
       description: data.description || "",
       schema_ids: data.schema_ids ?? [],
       template_ids: data.template_ids ?? [],
+      schema_field_item_ids: data.schema_field_item_ids ?? [],
+      template_array_item_ids: data.template_array_item_ids ?? [],
+      template_value_ids: data.template_value_ids ?? [],
     };
   }, []);
 
@@ -182,14 +240,17 @@ function ToolComponent({
     () => JSON.stringify(toolData?.template_ids ?? []),
     [toolData?.template_ids]
   );
-
-  const formStateSchemaIdsStr = React.useMemo(
-    () => JSON.stringify(formState.schema_ids),
-    [formState.schema_ids]
+  const schemaFieldItemIdsStr = React.useMemo(
+    () => JSON.stringify(toolData?.schema_field_item_ids ?? []),
+    [toolData?.schema_field_item_ids]
   );
-  const formStateTemplateIdsStr = React.useMemo(
-    () => JSON.stringify(formState.template_ids),
-    [formState.template_ids]
+  const templateArrayItemIdsStr = React.useMemo(
+    () => JSON.stringify(toolData?.template_array_item_ids ?? []),
+    [toolData?.template_array_item_ids]
+  );
+  const templateValueIdsStr = React.useMemo(
+    () => JSON.stringify(toolData?.template_value_ids ?? []),
+    [toolData?.template_value_ids]
   );
 
   // Update form state when server data changes
@@ -202,13 +263,28 @@ function ToolComponent({
         JSON.stringify(prev.schema_ids) !==
           JSON.stringify(newState.schema_ids) ||
         JSON.stringify(prev.template_ids) !==
-          JSON.stringify(newState.template_ids)
+          JSON.stringify(newState.template_ids) ||
+        JSON.stringify(prev.schema_field_item_ids) !==
+          JSON.stringify(newState.schema_field_item_ids) ||
+        JSON.stringify(prev.template_array_item_ids) !==
+          JSON.stringify(newState.template_array_item_ids) ||
+        JSON.stringify(prev.template_value_ids) !==
+          JSON.stringify(newState.template_value_ids)
       ) {
         return newState;
       }
       return prev;
     });
-  }, [toolData?.name, toolData?.description, schemaIdsStr, templateIdsStr]);
+  }, [
+    toolData?.name,
+    toolData?.description,
+    schemaIdsStr,
+    templateIdsStr,
+    schemaFieldItemIdsStr,
+    templateArrayItemIdsStr,
+    templateValueIdsStr,
+    getInitialFormState,
+  ]);
 
   // Draft version tracking
   const [lastSavedVersion, setLastSavedVersion] = useState(0);
@@ -249,15 +325,29 @@ function ToolComponent({
       draftId: draftId || null,
       schema_ids: formState.schema_ids,
       template_ids: formState.template_ids,
+      schema_field_item_ids: formState.schema_field_item_ids,
+      template_array_item_ids: formState.template_array_item_ids,
+      template_value_ids: formState.template_value_ids,
     });
-  }, [draftId, formStateSchemaIdsStr, formStateTemplateIdsStr]);
+  }, [
+    draftId,
+    formState.schema_ids,
+    formState.template_ids,
+    formState.schema_field_item_ids,
+    formState.template_array_item_ids,
+    formState.template_value_ids,
+  ]);
 
   const lastPatchedKeyRef = React.useRef<string | null>(null);
 
   // Draft change listener - watches resource IDs and patches draft
   useEffect(() => {
     const hasResourceIds =
-      formState.schema_ids.length > 0 || formState.template_ids.length > 0;
+      formState.schema_ids.length > 0 ||
+      formState.template_ids.length > 0 ||
+      formState.schema_field_item_ids.length > 0 ||
+      formState.template_array_item_ids.length > 0 ||
+      formState.template_value_ids.length > 0;
 
     if (!hasResourceIds || !patchToolDraftActionRef.current) {
       return;
@@ -275,6 +365,9 @@ function ToolComponent({
             input_draft_id: draftId || null,
             schema_ids: formState.schema_ids,
             template_ids: formState.template_ids,
+            schema_field_item_ids: formState.schema_field_item_ids,
+            template_array_item_ids: formState.template_array_item_ids,
+            template_value_ids: formState.template_value_ids,
             expected_version: lastSavedVersionRef.current,
           },
         });
@@ -295,7 +388,19 @@ function ToolComponent({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [draftPatchKey]);
+  }, [
+    draftPatchKey,
+    formState.schema_ids,
+    formState.template_ids,
+    formState.schema_field_item_ids,
+    formState.template_array_item_ids,
+    formState.template_value_ids,
+    draftId,
+    patchToolDraftActionRef,
+    setUrlFormDataRef,
+    lastSavedVersionRef,
+    setLastSavedVersion,
+  ]);
 
   // WebSocket handlers for AI generation
   useEffect(() => {
@@ -309,6 +414,9 @@ function ToolComponent({
       resource_type?: string;
       schema_ids?: string[];
       template_ids?: string[];
+      schema_field_item_ids?: string[];
+      template_array_item_ids?: string[];
+      template_value_ids?: string[];
       message?: string;
       success?: boolean;
       [key: string]: unknown;
@@ -321,7 +429,13 @@ function ToolComponent({
         return;
       }
 
-      const validResourceTypes: ResourceType[] = ["schemas", "templates"];
+      const validResourceTypes: ResourceType[] = [
+        "schemas",
+        "templates",
+        "schema_field_items",
+        "template_array_items",
+        "template_values",
+      ];
       if (
         data.resource_type &&
         validResourceTypes.includes(data.resource_type as ResourceType)
@@ -340,6 +454,39 @@ function ToolComponent({
               (id) => !prev.template_ids.includes(id)
             );
             updates.template_ids = [...prev.template_ids, ...newTemplateIds];
+          }
+          if (
+            data.schema_field_item_ids &&
+            data.schema_field_item_ids.length > 0
+          ) {
+            const newSchemaFieldItemIds = data.schema_field_item_ids.filter(
+              (id) => !prev.schema_field_item_ids.includes(id)
+            );
+            updates.schema_field_item_ids = [
+              ...prev.schema_field_item_ids,
+              ...newSchemaFieldItemIds,
+            ];
+          }
+          if (
+            data.template_array_item_ids &&
+            data.template_array_item_ids.length > 0
+          ) {
+            const newTemplateArrayItemIds = data.template_array_item_ids.filter(
+              (id) => !prev.template_array_item_ids.includes(id)
+            );
+            updates.template_array_item_ids = [
+              ...prev.template_array_item_ids,
+              ...newTemplateArrayItemIds,
+            ];
+          }
+          if (data.template_value_ids && data.template_value_ids.length > 0) {
+            const newTemplateValueIds = data.template_value_ids.filter(
+              (id) => !prev.template_value_ids.includes(id)
+            );
+            updates.template_value_ids = [
+              ...prev.template_value_ids,
+              ...newTemplateValueIds,
+            ];
           }
 
           return { ...prev, ...updates };
@@ -392,7 +539,13 @@ function ToolComponent({
         return;
       }
 
-      const validResourceTypes: ResourceType[] = ["schemas", "templates"];
+      const validResourceTypes: ResourceType[] = [
+        "schemas",
+        "templates",
+        "schema_field_items",
+        "template_array_items",
+        "template_values",
+      ];
       const resourceTypes =
         data.resource_types || (data.resource_type ? [data.resource_type] : []);
       setGeneratingResources((prev) => {
@@ -479,6 +632,78 @@ function ToolComponent({
     });
   }, [socket, isConnected, toolId]);
 
+  const handleGenerateSchemaFieldItems = useCallback(async () => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected");
+      return;
+    }
+
+    setGeneratingResources((prev) => {
+      const next = new Set(prev);
+      next.add("schema_field_items");
+      return next;
+    });
+
+    const formData = formDataRef.current;
+    const draftId = (formData["draftId"] as string | undefined) ?? null;
+
+    socket.emit("tool_generate", {
+      resource_types: ["schema_field_items"],
+      agent_type: "schema_field_items",
+      draft_id: draftId || null,
+      mcp: false,
+      tool_id: toolId || null,
+    });
+  }, [socket, isConnected, toolId]);
+
+  const handleGenerateTemplateArrayItems = useCallback(async () => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected");
+      return;
+    }
+
+    setGeneratingResources((prev) => {
+      const next = new Set(prev);
+      next.add("template_array_items");
+      return next;
+    });
+
+    const formData = formDataRef.current;
+    const draftId = (formData["draftId"] as string | undefined) ?? null;
+
+    socket.emit("tool_generate", {
+      resource_types: ["template_array_items"],
+      agent_type: "template_array_items",
+      draft_id: draftId || null,
+      mcp: false,
+      tool_id: toolId || null,
+    });
+  }, [socket, isConnected, toolId]);
+
+  const handleGenerateTemplateValues = useCallback(async () => {
+    if (!socket || !isConnected) {
+      toast.error("WebSocket not connected");
+      return;
+    }
+
+    setGeneratingResources((prev) => {
+      const next = new Set(prev);
+      next.add("template_values");
+      return next;
+    });
+
+    const formData = formDataRef.current;
+    const draftId = (formData["draftId"] as string | undefined) ?? null;
+
+    socket.emit("tool_generate", {
+      resource_types: ["template_values"],
+      agent_type: "template_values",
+      draft_id: draftId || null,
+      mcp: false,
+      tool_id: toolId || null,
+    });
+  }, [socket, isConnected, toolId]);
+
   // Disabled logic based on can_edit flag
   const disabled = useMemo(() => {
     if (!toolData) return false;
@@ -536,6 +761,30 @@ function ToolComponent({
         throw new Error("Templates are required");
       }
 
+      if (
+        toolData?.schema_field_items_required &&
+        formState.schema_field_item_ids.length === 0
+      ) {
+        toast.error("Schema field items are required");
+        throw new Error("Schema field items are required");
+      }
+
+      if (
+        toolData?.template_array_items_required &&
+        formState.template_array_item_ids.length === 0
+      ) {
+        toast.error("Template array items are required");
+        throw new Error("Template array items are required");
+      }
+
+      if (
+        toolData?.template_values_required &&
+        formState.template_value_ids.length === 0
+      ) {
+        toast.error("Template values are required");
+        throw new Error("Template values are required");
+      }
+
       if (!effectiveProfile?.id) {
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
@@ -559,6 +808,9 @@ function ToolComponent({
             description: formState.description || "",
             schema_ids: formState.schema_ids,
             template_ids: formState.template_ids,
+            schema_field_item_ids: formState.schema_field_item_ids,
+            template_array_item_ids: formState.template_array_item_ids,
+            template_value_ids: formState.template_value_ids,
             active: true,
           },
         });
@@ -584,6 +836,9 @@ function ToolComponent({
       router,
       toolData?.schemas_required,
       toolData?.templates_required,
+      toolData?.schema_field_items_required,
+      toolData?.template_array_items_required,
+      toolData?.template_values_required,
     ]
   );
 
@@ -595,6 +850,10 @@ function ToolComponent({
         !!formState.description && formState.description.trim() !== "";
       const hasSchemas = formState.schema_ids.length > 0;
       const hasTemplates = formState.template_ids.length > 0;
+      const hasSchemaFieldItems = formState.schema_field_item_ids.length > 0;
+      const hasTemplateArrayItems =
+        formState.template_array_item_ids.length > 0;
+      const hasTemplateValues = formState.template_value_ids.length > 0;
 
       switch (stepId) {
         case "basic":
@@ -605,6 +864,15 @@ function ToolComponent({
         case "templates":
           if (!hasName || !hasDescription) return "pending";
           return hasTemplates ? "completed" : "active";
+        case "schema_field_items":
+          if (!hasName || !hasDescription) return "pending";
+          return hasSchemaFieldItems ? "completed" : "active";
+        case "template_array_items":
+          if (!hasName || !hasDescription) return "pending";
+          return hasTemplateArrayItems ? "completed" : "active";
+        case "template_values":
+          if (!hasName || !hasDescription) return "pending";
+          return hasTemplateValues ? "completed" : "active";
         default:
           return "pending";
       }
@@ -633,12 +901,38 @@ function ToolComponent({
         description: "Select output templates for this tool.",
         resetFields: ["template_ids"],
       },
+      {
+        id: "schema_field_items",
+        title: "Schema Field Items",
+        description: "Select schema field items for this tool.",
+        resetFields: ["schema_field_item_ids"],
+      },
+      {
+        id: "template_array_items",
+        title: "Template Array Items",
+        description: "Select template array items for this tool.",
+        resetFields: ["template_array_item_ids"],
+      },
+      {
+        id: "template_values",
+        title: "Template Values",
+        description: "Select template values for this tool.",
+        resetFields: ["template_value_ids"],
+      },
     ],
     []
   );
 
   const formFieldKeys = useMemo(
-    () => ["name", "description", "schema_ids", "template_ids"],
+    () => [
+      "name",
+      "description",
+      "schema_ids",
+      "template_ids",
+      "schema_field_item_ids",
+      "template_array_item_ids",
+      "template_value_ids",
+    ],
     []
   );
 
@@ -650,6 +944,12 @@ function ToolComponent({
         return "Schemas reset";
       case "templates":
         return "Templates reset";
+      case "schema_field_items":
+        return "Schema field items reset";
+      case "template_array_items":
+        return "Template array items reset";
+      case "template_values":
+        return "Template values reset";
       default:
         return "Reset";
     }
@@ -800,6 +1100,8 @@ function ToolComponent({
                 createSchemasAction={createSchemasAction}
                 onGenerate={handleGenerateSchemas}
                 isGenerating={isGenerating("schemas")}
+                searchTerm={schemaSearchTerm}
+                showSelectedFilter={schemaShowSelected}
               />
             </StepCard>
           );
@@ -863,6 +1165,251 @@ function ToolComponent({
                 createTemplatesAction={createTemplatesAction}
                 onGenerate={handleGenerateTemplates}
                 isGenerating={isGenerating("templates")}
+                searchTerm={templateSearchTerm}
+                showSelectedFilter={templateShowSelected}
+              />
+            </StepCard>
+          );
+        }
+
+        case "schema_field_items": {
+          const schemaFieldItemSearchTerm =
+            (stepFormData["schemaFieldItemSearch"] as
+              | string
+              | null
+              | undefined) || "";
+          const schemaFieldItemShowSelected =
+            (stepFormData["schemaFieldItemShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={schemaFieldItemSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ schemaFieldItemSearch: term || null })
+              }
+              searchPlaceholder="Search schema field items..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: schemaFieldItemShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      schemaFieldItemShowSelected: value || null,
+                    }),
+                },
+              ]}
+              resetFields={[
+                "schema_field_item_ids",
+                "schemaFieldItemSearch",
+                "schemaFieldItemShowSelected",
+              ]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <SchemaFieldItems
+                schema_field_item_ids={formState.schema_field_item_ids ?? []}
+                schema_field_item_resources={
+                  currentToolData?.schema_field_item_resources ?? []
+                }
+                show_schema_field_items={
+                  currentToolData?.show_schema_field_items ?? false
+                }
+                schema_field_item_suggestions={
+                  currentToolData?.schema_field_item_suggestions ?? []
+                }
+                schema_field_items={currentToolData?.schema_field_items ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    schema_field_item_ids: ids,
+                  }))
+                }
+                label="Schema Field Items"
+                required={currentToolData?.schema_field_items_required ?? false}
+                group_id={currentToolData?.group_id ?? null}
+                schema_field_items_agent_id={
+                  currentToolData?.schema_field_items_agent_id ?? null
+                }
+                createSchemaFieldItemsAction={createSchemaFieldItemsAction}
+                onGenerate={handleGenerateSchemaFieldItems}
+                isGenerating={isGenerating("schema_field_items")}
+                searchTerm={schemaFieldItemSearchTerm}
+                showSelectedFilter={schemaFieldItemShowSelected}
+              />
+            </StepCard>
+          );
+        }
+
+        case "template_array_items": {
+          const templateArrayItemSearchTerm =
+            (stepFormData["templateArrayItemSearch"] as
+              | string
+              | null
+              | undefined) || "";
+          const templateArrayItemShowSelected =
+            (stepFormData["templateArrayItemShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={templateArrayItemSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ templateArrayItemSearch: term || null })
+              }
+              searchPlaceholder="Search template array items..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: templateArrayItemShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      templateArrayItemShowSelected: value || null,
+                    }),
+                },
+              ]}
+              resetFields={[
+                "template_array_item_ids",
+                "templateArrayItemSearch",
+                "templateArrayItemShowSelected",
+              ]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <TemplateArrayItems
+                template_array_item_ids={
+                  formState.template_array_item_ids ?? []
+                }
+                template_array_item_resources={
+                  currentToolData?.template_array_item_resources ?? []
+                }
+                show_template_array_items={
+                  currentToolData?.show_template_array_items ?? false
+                }
+                template_array_item_suggestions={
+                  currentToolData?.template_array_item_suggestions ?? []
+                }
+                template_array_items={
+                  currentToolData?.template_array_items ?? []
+                }
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    template_array_item_ids: ids,
+                  }))
+                }
+                label="Template Array Items"
+                required={
+                  currentToolData?.template_array_items_required ?? false
+                }
+                group_id={currentToolData?.group_id ?? null}
+                template_array_items_agent_id={
+                  currentToolData?.template_array_items_agent_id ?? null
+                }
+                createTemplateArrayItemsAction={createTemplateArrayItemsAction}
+                onGenerate={handleGenerateTemplateArrayItems}
+                isGenerating={isGenerating("template_array_items")}
+                searchTerm={templateArrayItemSearchTerm}
+                showSelectedFilter={templateArrayItemShowSelected}
+              />
+            </StepCard>
+          );
+        }
+
+        case "template_values": {
+          const templateValueSearchTerm =
+            (stepFormData["templateValueSearch"] as
+              | string
+              | null
+              | undefined) || "";
+          const templateValueShowSelected =
+            (stepFormData["templateValueShowSelected"] as
+              | boolean
+              | null
+              | undefined) ?? false;
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              searchTerm={templateValueSearchTerm}
+              onSearchChange={(term: string) =>
+                setStepFormData({ templateValueSearch: term || null })
+              }
+              searchPlaceholder="Search template values..."
+              debounceMs={300}
+              filters={[
+                {
+                  key: "showSelected",
+                  label: "Show selected",
+                  value: templateValueShowSelected,
+                  onChange: (value: boolean) =>
+                    setStepFormData({
+                      templateValueShowSelected: value || null,
+                    }),
+                },
+              ]}
+              resetFields={[
+                "template_value_ids",
+                "templateValueSearch",
+                "templateValueShowSelected",
+              ]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <TemplateValues
+                template_value_ids={formState.template_value_ids ?? []}
+                template_value_resources={
+                  currentToolData?.template_value_resources ?? []
+                }
+                show_template_values={
+                  currentToolData?.show_template_values ?? false
+                }
+                template_value_suggestions={
+                  currentToolData?.template_value_suggestions ?? []
+                }
+                template_values={currentToolData?.template_values ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    template_value_ids: ids,
+                  }))
+                }
+                label="Template Values"
+                required={currentToolData?.template_values_required ?? false}
+                group_id={currentToolData?.group_id ?? null}
+                template_values_agent_id={
+                  currentToolData?.template_values_agent_id ?? null
+                }
+                createTemplateValuesAction={createTemplateValuesAction}
+                onGenerate={handleGenerateTemplateValues}
+                isGenerating={isGenerating("template_values")}
+                searchTerm={templateValueSearchTerm}
+                showSelectedFilter={templateValueShowSelected}
               />
             </StepCard>
           );
@@ -883,8 +1430,17 @@ function ToolComponent({
       formState.description,
       formState.schema_ids,
       formState.template_ids,
+      formState.schema_field_item_ids,
+      formState.template_array_item_ids,
+      formState.template_value_ids,
       createSchemasAction,
       createTemplatesAction,
+      createSchemaFieldItemsAction,
+      createTemplateArrayItemsAction,
+      createTemplateValuesAction,
+      handleGenerateSchemaFieldItems,
+      handleGenerateTemplateArrayItems,
+      handleGenerateTemplateValues,
     ]
   );
 

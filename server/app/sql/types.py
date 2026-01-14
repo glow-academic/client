@@ -32884,6 +32884,7 @@ class QGetToolV4NameResource(BaseModel):
 class QGetToolV4Schema(BaseModel):
 
     schema_id: UUID | None
+    field_count: int | None
     generated: bool | None
 
 
@@ -32903,6 +32904,7 @@ class QGetToolV4SchemaFieldItem(BaseModel):
 
     schema_field_item_id: UUID | None
     schema_field_id: UUID | None
+    schema_field_name: str | None
     item_schema_id: UUID | None
     generated: bool | None
 
@@ -32912,6 +32914,7 @@ class QGetToolV4SchemaFieldItem(BaseModel):
 class QGetToolV4Template(BaseModel):
 
     template_id: UUID | None
+    name: str | None
     generated: bool | None
 
 
@@ -32921,8 +32924,11 @@ class QGetToolV4TemplateArrayItem(BaseModel):
 
     template_array_item_id: UUID | None
     template_id: UUID | None
+    template_name: str | None
     schema_field_id: UUID | None
+    schema_field_name: str | None
     item_template_id: UUID | None
+    item_template_name: str | None
     generated: bool | None
 
 
@@ -32932,7 +32938,10 @@ class QGetToolV4TemplateValue(BaseModel):
 
     template_value_id: UUID | None
     template_id: UUID | None
+    template_name: str | None
     schema_field_id: UUID | None
+    schema_field_name: str | None
+    value: str | None
     generated: bool | None
 
 class GetToolSqlRow(BaseModel):
@@ -33131,6 +33140,9 @@ class PatchToolDraftSqlParams(BaseModel):
     input_draft_id: UUID | None = None
     schema_ids: list[UUID] | None = None
     template_ids: list[UUID] | None = None
+    schema_field_item_ids: list[UUID] | None = None
+    template_array_item_ids: list[UUID] | None = None
+    template_value_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
     def to_tuple(self) -> tuple[Any, ...]:
@@ -33139,6 +33151,9 @@ class PatchToolDraftSqlParams(BaseModel):
             self.input_draft_id,
             self.schema_ids,
             self.template_ids,
+            self.schema_field_item_ids,
+            self.template_array_item_ids,
+            self.template_value_ids,
             self.expected_version,
         )
 
@@ -33153,6 +33168,9 @@ class PatchToolDraftApiRequest(BaseModel):
     input_draft_id: UUID | None = None
     schema_ids: list[UUID] | None = None
     template_ids: list[UUID] | None = None
+    schema_field_item_ids: list[UUID] | None = None
+    template_array_item_ids: list[UUID] | None = None
+    template_value_ids: list[UUID] | None = None
     expected_version: int | None = 0
 
 class PatchToolDraftApiResponse(BaseModel):
@@ -33172,6 +33190,9 @@ class SaveToolSqlParams(BaseModel):
     schema_ids: list[UUID]
     template_ids: list[UUID]
     profile_id: UUID
+    schema_field_item_ids: list[UUID] | None = None
+    template_array_item_ids: list[UUID] | None = None
+    template_value_ids: list[UUID] | None = None
     input_tool_id: UUID | None = None
     active: bool | None = True
 
@@ -33182,6 +33203,9 @@ class SaveToolSqlParams(BaseModel):
             self.schema_ids,
             self.template_ids,
             self.profile_id,
+            self.schema_field_item_ids,
+            self.template_array_item_ids,
+            self.template_value_ids,
             self.input_tool_id,
             self.active,
         )
@@ -33197,6 +33221,9 @@ class SaveToolApiRequest(BaseModel):
     description: str
     schema_ids: list[UUID]
     template_ids: list[UUID]
+    schema_field_item_ids: list[UUID] | None = None
+    template_array_item_ids: list[UUID] | None = None
+    template_value_ids: list[UUID] | None = None
     input_tool_id: UUID | None = None
     active: bool | None = True
 

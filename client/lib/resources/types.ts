@@ -11,4 +11,9 @@ export type ResourceType =
   | "flags"
   | "examples"
   | "fields"
-  | "departments";
+  | "departments"
+  | "schemas"
+  | "templates"
+  | "schema_field_items"
+  | "template_array_items"
+  | "template_values";

@@ -22,6 +22,9 @@ CREATE OR REPLACE FUNCTION api_patch_tool_draft_v4(
     input_draft_id uuid DEFAULT NULL,
     schema_ids uuid[] DEFAULT NULL,
     template_ids uuid[] DEFAULT NULL,
+    schema_field_item_ids uuid[] DEFAULT NULL,
+    template_array_item_ids uuid[] DEFAULT NULL,
+    template_value_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
 )
 RETURNS TABLE (
@@ -59,6 +62,36 @@ BEGIN
         END IF;
     END IF;
     
+    -- Validate schema_field_item IDs exist (error if missing and provided)
+    IF schema_field_item_ids IS NOT NULL AND COALESCE(array_length(schema_field_item_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(schema_field_item_ids) AS schema_field_item_id
+            WHERE NOT EXISTS (SELECT 1 FROM schema_field_items_resource WHERE id = schema_field_item_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more schema_field_item resources not found';
+        END IF;
+    END IF;
+    
+    -- Validate template_array_item IDs exist (error if missing and provided)
+    IF template_array_item_ids IS NOT NULL AND COALESCE(array_length(template_array_item_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(template_array_item_ids) AS template_array_item_id
+            WHERE NOT EXISTS (SELECT 1 FROM template_array_items_resource WHERE id = template_array_item_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more template_array_item resources not found';
+        END IF;
+    END IF;
+    
+    -- Validate template_value IDs exist (error if missing and provided)
+    IF template_value_ids IS NOT NULL AND COALESCE(array_length(template_value_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(template_value_ids) AS template_value_id
+            WHERE NOT EXISTS (SELECT 1 FROM template_values_resource WHERE id = template_value_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more template_value resources not found';
+        END IF;
+    END IF;
+    
     -- Try to update existing draft
     IF input_draft_id IS NOT NULL THEN
         -- Get existing draft's group_id
@@ -86,6 +119,9 @@ BEGIN
             -- Delete old resource links
             DELETE FROM draft_schemas WHERE draft_schemas.draft_id = v_draft_id;
             DELETE FROM draft_templates WHERE draft_templates.draft_id = v_draft_id;
+            DELETE FROM draft_schema_field_items WHERE draft_schema_field_items.draft_id = v_draft_id;
+            DELETE FROM draft_template_array_items WHERE draft_template_array_items.draft_id = v_draft_id;
+            DELETE FROM draft_template_values WHERE draft_template_values.draft_id = v_draft_id;
             
             -- Insert new resource links
             IF schema_ids IS NOT NULL AND COALESCE(array_length(schema_ids, 1), 0) > 0 THEN
@@ -102,6 +138,33 @@ BEGIN
                 SELECT v_draft_id, template_id, v_new_version, false, false
                 FROM UNNEST(template_ids) as template_id
                 ON CONFLICT ON CONSTRAINT draft_templates_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+            
+            IF schema_field_item_ids IS NOT NULL AND COALESCE(array_length(schema_field_item_ids, 1), 0) > 0 THEN
+                INSERT INTO draft_schema_field_items (draft_id, schema_field_items_id, version, generated, mcp)
+                SELECT v_draft_id, schema_field_item_id, v_new_version, false, false
+                FROM UNNEST(schema_field_item_ids) as schema_field_item_id
+                ON CONFLICT ON CONSTRAINT draft_schema_field_items_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+            
+            IF template_array_item_ids IS NOT NULL AND COALESCE(array_length(template_array_item_ids, 1), 0) > 0 THEN
+                INSERT INTO draft_template_array_items (draft_id, template_array_items_id, version, generated, mcp)
+                SELECT v_draft_id, template_array_item_id, v_new_version, false, false
+                FROM UNNEST(template_array_item_ids) as template_array_item_id
+                ON CONFLICT ON CONSTRAINT draft_template_array_items_pkey DO UPDATE
+                SET version = v_new_version,
+                    updated_at = now();
+            END IF;
+            
+            IF template_value_ids IS NOT NULL AND COALESCE(array_length(template_value_ids, 1), 0) > 0 THEN
+                INSERT INTO draft_template_values (draft_id, template_values_id, version, generated, mcp)
+                SELECT v_draft_id, template_value_id, v_new_version, false, false
+                FROM UNNEST(template_value_ids) as template_value_id
+                ON CONFLICT ON CONSTRAINT draft_template_values_pkey DO UPDATE
                 SET version = v_new_version,
                     updated_at = now();
             END IF;
@@ -137,6 +200,33 @@ BEGIN
         SELECT v_draft_id, template_id, v_new_version, false, false
         FROM UNNEST(template_ids) as template_id
         ON CONFLICT ON CONSTRAINT draft_templates_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+    
+    IF schema_field_item_ids IS NOT NULL AND COALESCE(array_length(schema_field_item_ids, 1), 0) > 0 THEN
+        INSERT INTO draft_schema_field_items (draft_id, schema_field_items_id, version, generated, mcp)
+        SELECT v_draft_id, schema_field_item_id, v_new_version, false, false
+        FROM UNNEST(schema_field_item_ids) as schema_field_item_id
+        ON CONFLICT ON CONSTRAINT draft_schema_field_items_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+    
+    IF template_array_item_ids IS NOT NULL AND COALESCE(array_length(template_array_item_ids, 1), 0) > 0 THEN
+        INSERT INTO draft_template_array_items (draft_id, template_array_items_id, version, generated, mcp)
+        SELECT v_draft_id, template_array_item_id, v_new_version, false, false
+        FROM UNNEST(template_array_item_ids) as template_array_item_id
+        ON CONFLICT ON CONSTRAINT draft_template_array_items_pkey DO UPDATE
+        SET version = v_new_version,
+            updated_at = now();
+    END IF;
+    
+    IF template_value_ids IS NOT NULL AND COALESCE(array_length(template_value_ids, 1), 0) > 0 THEN
+        INSERT INTO draft_template_values (draft_id, template_values_id, version, generated, mcp)
+        SELECT v_draft_id, template_value_id, v_new_version, false, false
+        FROM UNNEST(template_value_ids) as template_value_id
+        ON CONFLICT ON CONSTRAINT draft_template_values_pkey DO UPDATE
         SET version = v_new_version,
             updated_at = now();
     END IF;

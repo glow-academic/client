@@ -25,7 +25,8 @@ interface EntityMetadata {
     | "attempt"
     | "video"
     | "key"
-    | "eval";
+    | "eval"
+    | "tool";
 }
 
 /**
@@ -38,7 +39,7 @@ interface BreadcrumbContextType {
 }
 
 const BreadcrumbContext = createContext<BreadcrumbContextType | undefined>(
-  undefined,
+  undefined
 );
 
 /**
@@ -77,7 +78,7 @@ export function BreadcrumbProvider({
     (entityId: string) => {
       return entityMap.get(entityId);
     },
-    [entityMap],
+    [entityMap]
   );
 
   return (
@@ -96,7 +97,7 @@ export function useBreadcrumbContext() {
   const context = useContext(BreadcrumbContext);
   if (!context) {
     throw new Error(
-      "useBreadcrumbContext must be used within a BreadcrumbProvider",
+      "useBreadcrumbContext must be used within a BreadcrumbProvider"
     );
   }
   return context;

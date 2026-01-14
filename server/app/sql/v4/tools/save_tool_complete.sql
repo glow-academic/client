@@ -22,6 +22,9 @@ CREATE OR REPLACE FUNCTION api_save_tool_v4(
     schema_ids uuid[],
     template_ids uuid[],
     profile_id uuid,
+    schema_field_item_ids uuid[] DEFAULT NULL,
+    template_array_item_ids uuid[] DEFAULT NULL,
+    template_value_ids uuid[] DEFAULT NULL,
     input_tool_id uuid DEFAULT NULL,
     active boolean DEFAULT true
 )
@@ -123,10 +126,43 @@ BEGIN
         END IF;
     END IF;
     
+    -- Validate schema_field_item IDs exist
+    IF schema_field_item_ids IS NOT NULL AND COALESCE(array_length(schema_field_item_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(schema_field_item_ids) AS schema_field_item_id
+            WHERE NOT EXISTS (SELECT 1 FROM schema_field_items_resource WHERE id = schema_field_item_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more schema_field_item resources not found';
+        END IF;
+    END IF;
+    
+    -- Validate template_array_item IDs exist
+    IF template_array_item_ids IS NOT NULL AND COALESCE(array_length(template_array_item_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(template_array_item_ids) AS template_array_item_id
+            WHERE NOT EXISTS (SELECT 1 FROM template_array_items_resource WHERE id = template_array_item_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more template_array_item resources not found';
+        END IF;
+    END IF;
+    
+    -- Validate template_value IDs exist
+    IF template_value_ids IS NOT NULL AND COALESCE(array_length(template_value_ids, 1), 0) > 0 THEN
+        IF EXISTS (
+            SELECT 1 FROM UNNEST(template_value_ids) AS template_value_id
+            WHERE NOT EXISTS (SELECT 1 FROM template_values_resource WHERE id = template_value_id)
+        ) THEN
+            RAISE EXCEPTION 'One or more template_value resources not found';
+        END IF;
+    END IF;
+    
     -- Conditional: For update, remove old links first (outside CTE since we need PL/pgSQL variable)
     IF NOT is_create THEN
         DELETE FROM tool_schemas WHERE tool_id = v_tool_id;
         DELETE FROM tool_templates WHERE tool_id = v_tool_id;
+        DELETE FROM tool_schema_field_items WHERE tool_id = v_tool_id;
+        DELETE FROM tool_template_array_items WHERE tool_id = v_tool_id;
+        DELETE FROM tool_template_values WHERE tool_id = v_tool_id;
     END IF;
     
     -- Continue with tool save using SQL (tool already created/updated above)
@@ -136,6 +172,9 @@ BEGIN
             v_tool_id AS tool_id,
             COALESCE(schema_ids, ARRAY[]::uuid[]) AS schema_ids,
             COALESCE(template_ids, ARRAY[]::uuid[]) AS template_ids,
+            COALESCE(schema_field_item_ids, ARRAY[]::uuid[]) AS schema_field_item_ids,
+            COALESCE(template_array_item_ids, ARRAY[]::uuid[]) AS template_array_item_ids,
+            COALESCE(template_value_ids, ARRAY[]::uuid[]) AS template_value_ids,
             profile_id
     ),
     user_profile AS (
@@ -182,6 +221,54 @@ BEGIN
         CROSS JOIN UNNEST(x.template_ids) as template_id
         WHERE COALESCE(array_length(x.template_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT tool_templates_pkey DO UPDATE SET
+            updated_at = NOW()
+    ),
+    -- Link tool to schema_field_items (old ones already deleted above if update)
+    link_schema_field_items AS (
+        INSERT INTO tool_schema_field_items (tool_id, schema_field_item_id, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.tool_id,
+            schema_field_item_id,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN UNNEST(x.schema_field_item_ids) as schema_field_item_id
+        WHERE COALESCE(array_length(x.schema_field_item_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT tool_schema_field_items_pkey DO UPDATE SET
+            updated_at = NOW()
+    ),
+    -- Link tool to template_array_items (old ones already deleted above if update)
+    link_template_array_items AS (
+        INSERT INTO tool_template_array_items (tool_id, template_array_item_id, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.tool_id,
+            template_array_item_id,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN UNNEST(x.template_array_item_ids) as template_array_item_id
+        WHERE COALESCE(array_length(x.template_array_item_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT tool_template_array_items_pkey DO UPDATE SET
+            updated_at = NOW()
+    ),
+    -- Link tool to template_values (old ones already deleted above if update)
+    link_template_values AS (
+        INSERT INTO tool_template_values (tool_id, template_value_id, created_at, updated_at, generated, mcp)
+        SELECT 
+            x.tool_id,
+            template_value_id,
+            NOW(),
+            NOW(),
+            false,
+            false
+        FROM params x
+        CROSS JOIN UNNEST(x.template_value_ids) as template_value_id
+        WHERE COALESCE(array_length(x.template_value_ids, 1), 0) > 0
+        ON CONFLICT ON CONSTRAINT tool_template_values_pkey DO UPDATE SET
             updated_at = NOW()
     )
     SELECT 

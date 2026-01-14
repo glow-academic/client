@@ -54952,6 +54952,51 @@
             ],
             "title": "Template Ids"
           },
+          "schema_field_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Field Item Ids"
+          },
+          "template_array_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Array Item Ids"
+          },
+          "template_value_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Value Ids"
+          },
           "expected_version": {
             "anyOf": [
               {
@@ -82914,6 +82959,17 @@
             ],
             "title": "Schema Id"
           },
+          "field_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Count"
+          },
           "generated": {
             "anyOf": [
               {
@@ -82929,6 +82985,7 @@
         "type": "object",
         "required": [
           "schema_id",
+          "field_count",
           "generated"
         ],
         "title": "QGetToolV4Schema"
@@ -83016,6 +83073,17 @@
             ],
             "title": "Schema Field Id"
           },
+          "schema_field_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Field Name"
+          },
           "item_schema_id": {
             "anyOf": [
               {
@@ -83044,6 +83112,7 @@
         "required": [
           "schema_field_item_id",
           "schema_field_id",
+          "schema_field_name",
           "item_schema_id",
           "generated"
         ],
@@ -83063,6 +83132,17 @@
             ],
             "title": "Template Id"
           },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "generated": {
             "anyOf": [
               {
@@ -83078,6 +83158,7 @@
         "type": "object",
         "required": [
           "template_id",
+          "name",
           "generated"
         ],
         "title": "QGetToolV4Template"
@@ -83108,6 +83189,17 @@
             ],
             "title": "Template Id"
           },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Name"
+          },
           "schema_field_id": {
             "anyOf": [
               {
@@ -83120,6 +83212,17 @@
             ],
             "title": "Schema Field Id"
           },
+          "schema_field_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Field Name"
+          },
           "item_template_id": {
             "anyOf": [
               {
@@ -83131,6 +83234,17 @@
               }
             ],
             "title": "Item Template Id"
+          },
+          "item_template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Template Name"
           },
           "generated": {
             "anyOf": [
@@ -83148,8 +83262,11 @@
         "required": [
           "template_array_item_id",
           "template_id",
+          "template_name",
           "schema_field_id",
+          "schema_field_name",
           "item_template_id",
+          "item_template_name",
           "generated"
         ],
         "title": "QGetToolV4TemplateArrayItem"
@@ -83180,6 +83297,17 @@
             ],
             "title": "Template Id"
           },
+          "template_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Name"
+          },
           "schema_field_id": {
             "anyOf": [
               {
@@ -83191,6 +83319,28 @@
               }
             ],
             "title": "Schema Field Id"
+          },
+          "schema_field_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Field Name"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
           },
           "generated": {
             "anyOf": [
@@ -83208,7 +83358,10 @@
         "required": [
           "template_value_id",
           "template_id",
+          "template_name",
           "schema_field_id",
+          "schema_field_name",
+          "value",
           "generated"
         ],
         "title": "QGetToolV4TemplateValue"
@@ -97093,6 +97246,51 @@
             },
             "type": "array",
             "title": "Template Ids"
+          },
+          "schema_field_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schema Field Item Ids"
+          },
+          "template_array_item_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Array Item Ids"
+          },
+          "template_value_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Value Ids"
           },
           "input_tool_id": {
             "anyOf": [

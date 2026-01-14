@@ -12316,6 +12316,12 @@ export interface components {
             schema_ids?: string[] | null;
             /** Template Ids */
             template_ids?: string[] | null;
+            /** Schema Field Item Ids */
+            schema_field_item_ids?: string[] | null;
+            /** Template Array Item Ids */
+            template_array_item_ids?: string[] | null;
+            /** Template Value Ids */
+            template_value_ids?: string[] | null;
             /**
              * Expected Version
              * @default 0
@@ -17517,6 +17523,8 @@ export interface components {
         QGetToolV4Schema: {
             /** Schema Id */
             schema_id: string | null;
+            /** Field Count */
+            field_count: number | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -17537,6 +17545,8 @@ export interface components {
             schema_field_item_id: string | null;
             /** Schema Field Id */
             schema_field_id: string | null;
+            /** Schema Field Name */
+            schema_field_name: string | null;
             /** Item Schema Id */
             item_schema_id: string | null;
             /** Generated */
@@ -17546,6 +17556,8 @@ export interface components {
         QGetToolV4Template: {
             /** Template Id */
             template_id: string | null;
+            /** Name */
+            name: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -17555,10 +17567,16 @@ export interface components {
             template_array_item_id: string | null;
             /** Template Id */
             template_id: string | null;
+            /** Template Name */
+            template_name: string | null;
             /** Schema Field Id */
             schema_field_id: string | null;
+            /** Schema Field Name */
+            schema_field_name: string | null;
             /** Item Template Id */
             item_template_id: string | null;
+            /** Item Template Name */
+            item_template_name: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -17568,8 +17586,14 @@ export interface components {
             template_value_id: string | null;
             /** Template Id */
             template_id: string | null;
+            /** Template Name */
+            template_name: string | null;
             /** Schema Field Id */
             schema_field_id: string | null;
+            /** Schema Field Name */
+            schema_field_name: string | null;
+            /** Value */
+            value: string | null;
             /** Generated */
             generated: boolean | null;
         };
@@ -20356,6 +20380,12 @@ export interface components {
             schema_ids: string[];
             /** Template Ids */
             template_ids: string[];
+            /** Schema Field Item Ids */
+            schema_field_item_ids?: string[] | null;
+            /** Template Array Item Ids */
+            template_array_item_ids?: string[] | null;
+            /** Template Value Ids */
+            template_value_ids?: string[] | null;
             /** Input Tool Id */
             input_tool_id?: string | null;
             /**

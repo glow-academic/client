@@ -7,7 +7,7 @@
 
 "use client";
 
-import { GenericPicker } from "@/components/common/forms/GenericPicker";
+import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,7 +26,7 @@ type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
 
 export interface TemplateItem {
   id: string;
-  name?: string;
+  name: string;
 }
 
 export interface TemplatesProps {
@@ -39,6 +39,7 @@ export interface TemplatesProps {
   template_suggestions?: string[]; // Array of suggested resource IDs (UUIDs)
   templates?: Array<{
     template_id: string | null;
+    name?: string | null;
     generated?: boolean | null;
   }>; // All available templates from API (each includes generated field)
   disabled?: boolean; // Based on can_edit flag
@@ -55,6 +56,8 @@ export interface TemplatesProps {
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isGenerating?: boolean;
+  searchTerm?: string; // Search term for filtering templates
+  showSelectedFilter?: boolean; // Whether to show only selected templates
 }
 
 export function Templates({
@@ -75,6 +78,8 @@ export function Templates({
   createTemplatesAction,
   onGenerate,
   isGenerating = false,
+  searchTerm = "",
+  showSelectedFilter = false,
 }: TemplatesProps) {
   const ids = useMemo(() => template_ids ?? [], [template_ids]);
   const show = show_templates ?? false;
@@ -92,14 +97,36 @@ export function Templates({
     ids.forEach((id) => createdTemplateIdsRef.current.add(id));
   }, [ids]);
 
-  // Convert templates array to TemplateItem format for GenericPicker
+  // Convert templates array to TemplateItem format for SelectableGrid
   const templateItems = useMemo(() => {
     return allTemplates
-      .filter((t) => t.template_id) // Filter out nulls
+      .filter((t) => t.template_id && t.name) // Filter out nulls
       .map((t) => ({
         id: t.template_id!,
+        name: t.name!,
       }));
   }, [allTemplates]);
+
+  // Filter templates based on search term
+  const filteredTemplates = useMemo(() => {
+    let filtered = templateItems;
+
+    // Apply search filter
+    if (searchTerm && searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((template) => {
+        const searchText = `${template.name} ${template.id}`.toLowerCase();
+        return searchText.includes(searchLower);
+      });
+    }
+
+    // Apply show selected filter
+    if (showSelectedFilter) {
+      filtered = filtered.filter((template) => ids.includes(template.id));
+    }
+
+    return filtered;
+  }, [templateItems, searchTerm, showSelectedFilter, ids]);
 
   // Check if a template is suggested
   const isSuggested = useCallback(
@@ -199,41 +226,51 @@ export function Templates({
           )}
         </div>
       )}
-      <GenericPicker<TemplateItem>
-        items={templateItems}
-        itemIds={allTemplates
-          .map((t) => t.template_id)
-          .filter((id): id is string => id !== null)} // All template IDs from array, filter nulls
+      <SelectableGrid<TemplateItem>
+        items={filteredTemplates}
+        selectedId={null}
         selectedIds={ids}
-        onSelect={handleSelect}
-        multiSelect={true}
+        onSelect={(templateId) => {
+          const isSelected = ids.includes(templateId);
+          const newIds = isSelected
+            ? ids.filter((id) => id !== templateId)
+            : [...ids, templateId];
+          handleSelect(newIds);
+        }}
         getId={(item) => item.id}
-        getLabel={(item) => item.name || item.id} // Use name if available, otherwise ID
         renderItem={(item, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {isSuggested(item.id) && !isSelected && (
-                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded shrink-0">
-                  Suggested
-                </span>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="truncate">{item.name || item.id}</div>
+          <div
+            className={cn(
+              "relative flex flex-col gap-3 p-4 rounded-xl border bg-card text-card-foreground shadow-sm transition-all text-left",
+              "hover:shadow-md hover:bg-accent/50",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isSelected && "ring-2 ring-primary bg-accent"
+            )}
+          >
+            {/* Check icon - top right */}
+            {isSelected && (
+              <div className="absolute top-2 right-2 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center">
+                <Check className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
+            )}
+
+            {/* Suggested badge - top right */}
+            {isSuggested(item.id) && !isSelected && (
+              <div className="absolute top-2 right-2 z-10 px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">
+                Suggested
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {item.id.slice(0, 8)}...
+              </p>
             </div>
-            <Check
-              className={cn(
-                "ml-auto flex-shrink-0 h-4 w-4",
-                isSelected ? "opacity-100" : "opacity-0"
-              )}
-            />
           </div>
         )}
-        placeholder={placeholder}
+        emptyMessage="No templates found."
         disabled={disabled}
-        showLabel={false}
-        hideSelectedChips={false}
-        showClearAll={true}
       />
     </div>
   );

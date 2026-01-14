@@ -20,6 +20,30 @@ type CreateDraftSchemasIn = InputOf<"/api/v4/resources/schemas", "post">;
 type CreateDraftSchemasOut = OutputOf<"/api/v4/resources/schemas", "post">;
 type CreateDraftTemplatesIn = InputOf<"/api/v4/resources/templates", "post">;
 type CreateDraftTemplatesOut = OutputOf<"/api/v4/resources/templates", "post">;
+type CreateDraftSchemaFieldItemsIn = InputOf<
+  "/api/v4/resources/schema_field_items",
+  "post"
+>;
+type CreateDraftSchemaFieldItemsOut = OutputOf<
+  "/api/v4/resources/schema_field_items",
+  "post"
+>;
+type CreateDraftTemplateArrayItemsIn = InputOf<
+  "/api/v4/resources/template_array_items",
+  "post"
+>;
+type CreateDraftTemplateArrayItemsOut = OutputOf<
+  "/api/v4/resources/template_array_items",
+  "post"
+>;
+type CreateDraftTemplateValuesIn = InputOf<
+  "/api/v4/resources/template_values",
+  "post"
+>;
+type CreateDraftTemplateValuesOut = OutputOf<
+  "/api/v4/resources/template_values",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for new pages.
@@ -70,6 +94,30 @@ async function createDraftTemplates(
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.post("/resources/templates", input);
+}
+
+async function createDraftSchemaFieldItems(
+  input: CreateDraftSchemaFieldItemsIn
+): Promise<CreateDraftSchemaFieldItemsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/schema_field_items", input);
+}
+
+async function createDraftTemplateArrayItems(
+  input: CreateDraftTemplateArrayItemsIn
+): Promise<CreateDraftTemplateArrayItemsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/template_array_items", input);
+}
+
+async function createDraftTemplateValues(
+  input: CreateDraftTemplateValuesIn
+): Promise<CreateDraftTemplateValuesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/template_values", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -129,6 +177,9 @@ export default async function NewToolPage({
         patchToolDraftAction={patchToolDraft}
         createSchemasAction={createDraftSchemas}
         createTemplatesAction={createDraftTemplates}
+        createSchemaFieldItemsAction={createDraftSchemaFieldItems}
+        createTemplateArrayItemsAction={createDraftTemplateArrayItems}
+        createTemplateValuesAction={createDraftTemplateValues}
       />
     </div>
   );
