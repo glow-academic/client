@@ -90,7 +90,11 @@ resolve_current_profile_id AS (
     SELECT profile_id AS resolved_profile_id FROM params
 ),
 current_user_role AS (
-    SELECT role FROM resolve_current_profile_id rpi
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            LIMIT 1) as role 
+    FROM resolve_current_profile_id rpi
     JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
 ),
 actor_profile AS (
@@ -107,7 +111,10 @@ target_profile AS (
         (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        p.role,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = p.id 
+         LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         rl.requests_per_day,
         COALESCE(COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), ''), '') as name
@@ -117,7 +124,7 @@ target_profile AS (
     LEFT JOIN profile_request_limits prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
     WHERE p.id = (SELECT target_profile_id FROM params)
-    GROUP BY p.id, p.role, EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), rl.requests_per_day
+    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), rl.requests_per_day
 ),
 role_visibility_check AS (
     -- Check if current user can see target profile based on role hierarchy

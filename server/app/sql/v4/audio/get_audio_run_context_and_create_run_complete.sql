@@ -194,13 +194,13 @@ context_data AS (
         
         -- Model data
         m.id::text as model_id,
-        m.value as model_name,
+        (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
         COALESCE(n_prov.name, '') as provider,
         COALESCE(e.base_url, '') as base_url,
         k.key as api_key,
         
         -- Custom model (if any) - indicated by presence of base_url in endpoints
-        CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN m.value ELSE NULL END as custom_model,
+        CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) ELSE NULL END as custom_model,
         
         -- Provider data (provider is now a resource table)
         COALESCE(p_prov.id::text, '') as provider_id,

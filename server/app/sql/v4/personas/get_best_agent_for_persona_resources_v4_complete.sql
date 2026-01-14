@@ -92,7 +92,7 @@ agent_tool_resources AS (
         ) as tool_resources
     FROM eligible_agents ea
     LEFT JOIN agent_tools at ON at.agent_id = ea.agent_id AND at.active = true
-    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     GROUP BY ea.agent_id
 ),

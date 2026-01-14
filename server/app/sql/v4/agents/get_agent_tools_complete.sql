@@ -88,19 +88,39 @@ WITH tool_schema_data AS (
     LEFT JOIN schema_fields_resource sf ON sf.schema_id = s.id
     WHERE at.agent_id = socket_get_agent_tools_v4.agent_id
       AND at.active = TRUE
-      AND t.active = TRUE
+      AND EXISTS (
+          SELECT 1 FROM tool_flags tf 
+          JOIN flags_resource f ON tf.flag_id = f.id 
+          WHERE tf.tool_id = t.id 
+            AND f.name = 'active' 
+            AND tf.type = 'active'::type_tool_flags 
+            AND tf.value = true
+      )
     GROUP BY t.id, ts.schema_id
 )
 SELECT DISTINCT ON (t.id)
     t.id,
-    t.name,
-    t.description,
+    (SELECT n.name FROM tool_names tn 
+     JOIN names_resource n ON tn.name_id = n.id 
+     WHERE tn.tool_id = t.id 
+     LIMIT 1) as name,
+    (SELECT d.description FROM tool_descriptions td 
+     JOIN descriptions_resource d ON td.description_id = d.id 
+     WHERE td.tool_id = t.id 
+     LIMIT 1) as description,
     COALESCE(rt.resource::text, '') as tool_type,  -- Derive from resource enum
     COALESCE(NULL::artifacts::text, '') as agent_role,  -- Derive from agent's tools via artifact_resources
     COALESCE(tsd.arguments, '{}'::jsonb) as arguments,
     COALESCE(tsd.argument_descriptions, '{}'::jsonb) as argument_descriptions,
     COALESCE(tsd.argument_defaults, '{}'::jsonb) as argument_defaults,
-    t.active
+    EXISTS (
+        SELECT 1 FROM tool_flags tf 
+        JOIN flags_resource f ON tf.flag_id = f.id 
+        WHERE tf.tool_id = t.id 
+          AND f.name = 'active' 
+          AND tf.type = 'active'::type_tool_flags 
+          AND tf.value = true
+    ) as active
 FROM agent_tools at
 JOIN tool_artifact t ON t.id = at.tool_id
 LEFT JOIN resource_tools rt ON rt.tool_id = t.id
@@ -115,6 +135,13 @@ LEFT JOIN LATERAL (
 LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
 WHERE at.agent_id = socket_get_agent_tools_v4.agent_id
   AND at.active = TRUE
-  AND t.active = TRUE
-ORDER BY t.id, COALESCE(rt.resource::text, ''), t.name
+  AND EXISTS (
+      SELECT 1 FROM tool_flags tf 
+      JOIN flags_resource f ON tf.flag_id = f.id 
+      WHERE tf.tool_id = t.id 
+        AND f.name = 'active' 
+        AND tf.type = 'active'::type_tool_flags 
+        AND tf.value = true
+  )
+ORDER BY t.id, COALESCE(rt.resource::text, ''), (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
 $$;

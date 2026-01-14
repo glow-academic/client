@@ -46,7 +46,10 @@ actor_profile AS (
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 user_profile AS (
-    SELECT role 
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            LIMIT 1) as role
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),

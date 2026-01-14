@@ -97,14 +97,30 @@ last_names_resources AS (
 profile_insert AS (
     -- Insert all profiles without first_name, last_name, active columns
     INSERT INTO profile_artifact (
-        id, role
+        id
     )
     SELECT 
-        pd.profile_id,
-        pd.role::profile_role
+        pd.profile_id
     FROM profiles_data pd
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE existing_emails IS NOT NULL)
     RETURNING id
+),
+-- Insert roles via profile_roles junction
+roles_resources AS (
+    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT DISTINCT pd.role::profile_role, NOW(), NOW(), true, false, false, NULL::uuid
+    FROM profiles_data pd
+    WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE existing_emails IS NOT NULL)
+    ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
+    RETURNING id as role_id, role
+),
+profile_roles_insert AS (
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
+    SELECT pd.profile_id, rr.role_id, NOW(), NOW(), false, false, NULL::uuid
+    FROM profiles_data pd
+    JOIN roles_resources rr ON rr.role = pd.role::profile_role
+    WHERE EXISTS (SELECT 1 FROM profile_insert pi WHERE pi.id = pd.profile_id)
+    RETURNING profile_id
 ),
 -- Link profiles to first_names
 link_profile_first_names AS (

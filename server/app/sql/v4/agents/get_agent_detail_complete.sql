@@ -305,7 +305,10 @@ model_modalities_data AS (
 ),
 user_profile AS (
     SELECT 
-        role,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = p.id 
+         LIMIT 1) as role,
         COALESCE(
             (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' ||
             (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1),
@@ -328,7 +331,13 @@ user_has_agent_access AS (
         JOIN user_departments ud ON ud.id = ad.department_id::uuid
     ) OR EXISTS(
         SELECT 1 FROM params x
-        JOIN profile_artifact p ON p.id = x.profile_id AND p.role = 'superadmin'::profile_role
+        JOIN profile_artifact p ON p.id = x.profile_id
+        WHERE EXISTS (
+            SELECT 1 FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            AND r.role = 'superadmin'::profile_role
+        )
     ) OR (
         -- Default agents (no department links) are accessible to all
         SELECT COUNT(*) FROM params x

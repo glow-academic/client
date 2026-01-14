@@ -161,7 +161,10 @@ valid_keys AS (
     WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 profile_data AS (
-    SELECT role as user_role 
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            LIMIT 1) as user_role 
     FROM resolve_profile_id rpi
     JOIN profile_artifact p ON p.id = rpi.resolved_profile_id
 ),

@@ -175,7 +175,10 @@ history_attempts AS (
     WHERE sa.created_at >= (SELECT start_date FROM params)
       AND sa.created_at <= (SELECT end_date FROM params)
       -- Dashboard never filters by profile - always filter by roles
-      AND p_attempt.role = ANY((SELECT roles FROM params)::profile_role[])
+      AND (SELECT r.role FROM profile_roles pr_j 
+           JOIN roles_resource r ON pr_j.role_id = r.id 
+           WHERE pr_j.profile_id = p_attempt.id 
+           LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[])
       -- Simulation type filtering: general (practice_simulation = FALSE), practice (practice_simulation = TRUE), archived (archived = TRUE)
       -- If no filters provided (NULL or empty), default to general only (matching old behavior: sim.practice_simulation = FALSE)
       AND (

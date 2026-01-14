@@ -51,7 +51,7 @@ WITH descriptions_result AS (
     JOIN message_calls mc ON mc.call_id = tc.id
     JOIN message_runs mr ON mr.message_id = mc.message_id
     WHERE mr.run_id = $1
-      AND t.name = 'standard_description'
+      AND (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'standard_description'
       AND tc.completed = true
     ORDER BY tc.created_at DESC
     LIMIT 1

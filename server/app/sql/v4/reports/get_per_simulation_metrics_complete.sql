@@ -88,7 +88,7 @@ filtered_profiles AS (
         (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name
     FROM profile_artifact p
     WHERE 
-        (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR p.role = ANY((SELECT roles FROM params)::profile_role[]))
+        (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[]))
         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR EXISTS (
             SELECT 1 FROM cohort_profiles cp 
             WHERE cp.profile_id = p.id 

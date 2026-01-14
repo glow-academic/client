@@ -75,7 +75,7 @@ WITH params AS (
 get_tool_id AS (
     SELECT id as tool_id
     FROM params p
-    JOIN tool_artifact t ON t.name = p.tool_name AND t.active = true
+    JOIN tool_artifact t ON (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = p.tool_name AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     WHERE p.tool_name IS NOT NULL
     LIMIT 1
 ),

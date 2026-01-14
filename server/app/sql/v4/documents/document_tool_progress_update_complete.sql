@@ -45,15 +45,15 @@ WITH params AS (
 -- Get tool_id AND tool_type from tool_name + agent_tools junction table (for document agent)
 -- This handles create_title which has agent_role='scenario' but is linked via agent_tools
 get_tool_info AS (
-    SELECT t.id as tool_id, COALESCE(rt.resource::text, '') as tool_type, t.name as tool_name
+    SELECT t.id as tool_id, COALESCE(rt.resource::text, '') as tool_type, (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as tool_name
     FROM params p
-    JOIN tool_artifact t ON t.name = p.tool_name
+    JOIN tool_artifact t ON (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = p.tool_name
     JOIN agent_tools at ON at.tool_id = t.id
     JOIN runs r_run ON r_run.id = p.run_id
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     WHERE at.agent_id = r_run.agent_id
       AND at.active = true
-      AND t.active = true
+      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1
 ),
 -- Get or create tool_call (by call_id or tool_call_id)

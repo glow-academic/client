@@ -409,8 +409,8 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifacts::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
-                ORDER BY COALESCE(rt.resource::text, ''), t.name
+                (t.id, (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifacts::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY COALESCE(rt.resource::text, ''), (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
             ) FILTER (WHERE t.id IS NOT NULL AND (
                 p.resources IS NULL  -- Backward compatibility: include all tools
                 OR rt.resource IS NULL  -- Global tools always included
@@ -424,7 +424,7 @@ agent_tools_data AS (
     FROM selected_agent sa
     CROSS JOIN params p
     LEFT JOIN agent_tools at ON at.agent_id = sa.agent_id AND at.active = true
-    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
+    LEFT JOIN tool_artifact t ON t.id = at.tool_id AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
     
     
@@ -643,7 +643,7 @@ context_data AS (
         
         -- Model data
         m.id::text as model_id,
-        m.value as model_name,
+        (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
         COALESCE(n_prov.name, '') as provider,
         COALESCE(e.base_url, '') as base_url,
         k.key as api_key,

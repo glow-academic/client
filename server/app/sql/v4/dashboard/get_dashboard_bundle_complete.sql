@@ -2254,7 +2254,10 @@ filt AS (
                         JOIN profile_artifact p ON p.id = cp.profile_id
                         WHERE cp.cohort_id = c.id
                             AND cp.active = true
-                            AND p.role = ANY((SELECT roles FROM params)::profile_role[])
+                            AND (SELECT r.role FROM profile_roles pr_j 
+                                 JOIN roles_resource r ON pr_j.role_id = r.id 
+                                 WHERE pr_j.profile_id = p.id 
+                                 LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[])
                     ) AS profile_ids,
                     ARRAY(SELECT cs.simulation_id FROM cohort_simulations cs WHERE cs.cohort_id = c.id AND cs.active = true) AS simulation_ids
                 FROM cohort_artifact c

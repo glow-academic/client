@@ -425,14 +425,13 @@ emulation_validation AS (
                 SELECT EXISTS (
                     SELECT 1
                     FROM profile_artifact p_actual
-                    CROSS JOIN profiles_resource p_effective
+                    JOIN profile_artifact p_effective ON p_effective.id = (SELECT effective_profile_id FROM resolved_profile_ids)
                     WHERE p_actual.id = (SELECT actual_profile_id FROM resolved_profile_ids)
-                      AND p_effective.id = (SELECT effective_profile_id FROM resolved_profile_ids)
                       AND p_effective.id != p_actual.id
                       AND CASE 
-                        WHEN p_actual.role = 'superadmin'::profile_role THEN true
-                        WHEN p_actual.role = 'admin'::profile_role THEN p_effective.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
-                        WHEN p_actual.role = 'instructional'::profile_role THEN p_effective.role IN ('member'::profile_role, 'guest'::profile_role)
+                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'superadmin'::profile_role THEN true
+                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'admin'::profile_role THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
+                        WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p_actual.id LIMIT 1) = 'instructional'::profile_role THEN (SELECT r2.role FROM profile_roles pr_j2 JOIN roles_resource r2 ON pr_j2.role_id = r2.id WHERE pr_j2.profile_id = p_effective.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)
                         ELSE false
                       END
                 )
@@ -441,16 +440,24 @@ emulation_validation AS (
 ),
 actual_profile_role AS (
     -- Use actual (logged-in) user's role for emulation permissions
-    SELECT role FROM profile_artifact p WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            LIMIT 1) as role 
+    FROM profile_artifact p WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
 ),
 effective_profile_role AS (
     -- Use effective profile's role for UI permissions filtering
     -- Return NULL role when profile ID is NULL (for settings-only requests)
     SELECT 
         COALESCE(
-            (SELECT role FROM profile_artifact p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids) LIMIT 1),
+            (SELECT r.role FROM profile_roles pr_j 
+             JOIN roles_resource r ON pr_j.role_id = r.id 
+             WHERE pr_j.profile_id = p.id 
+             LIMIT 1),
             NULL::profile_role
         ) as role
+    FROM profile_artifact p WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
 ),
 scoped_roles_computed AS (
     -- Compute scoped roles based on effective profile's role
@@ -473,10 +480,13 @@ actual_profile_data AS (
         (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        p.role,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = p.id 
+         LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
-        p.last_login,
+        (SELECT l.last_login FROM profile_logins pl JOIN logins_resource l ON pl.login_id = l.id WHERE pl.profile_id = p.id LIMIT 1) as last_login,
         pa.last_active,
         p.created_at,
         p.updated_at,
@@ -495,8 +505,8 @@ actual_profile_data AS (
         LIMIT 1
     ) pa ON true
     WHERE p.id = (SELECT actual_profile_id FROM resolved_profile_ids)
-    GROUP BY p.id, p.role, EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
-             rl.requests_per_day, p.last_login, pa.last_active, 
+    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
+             rl.requests_per_day, (SELECT l.last_login FROM profile_logins pl JOIN logins_resource l ON pl.login_id = l.id WHERE pl.profile_id = p.id LIMIT 1), pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
     UNION ALL
     -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
@@ -525,10 +535,13 @@ effective_profile_data AS (
         (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1) as last_name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        p.role,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = p.id 
+         LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
-        p.last_login,
+        (SELECT l.last_login FROM profile_logins pl JOIN logins_resource l ON pl.login_id = l.id WHERE pl.profile_id = p.id LIMIT 1) as last_login,
         pa.last_active,
         p.created_at,
         p.updated_at,
@@ -547,8 +560,8 @@ effective_profile_data AS (
         LIMIT 1
     ) pa ON true
     WHERE p.id = (SELECT effective_profile_id FROM resolved_profile_ids)
-    GROUP BY p.id, p.role, EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
-             rl.requests_per_day, p.last_login, pa.last_active, 
+    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags pf WHERE pf.profile_id = p.id AND pf.type = 'active'::type_profile_flags AND pf.value = TRUE), 
+             rl.requests_per_day, (SELECT l.last_login FROM profile_logins pl JOIN logins_resource l ON pl.login_id = l.id WHERE pl.profile_id = p.id LIMIT 1), pa.last_active, 
              p.created_at, p.updated_at, pd.department_id
     UNION ALL
     -- Return single row with NULL values when profile ID is NULL (for settings-only requests)

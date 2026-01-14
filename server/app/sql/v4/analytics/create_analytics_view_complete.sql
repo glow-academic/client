@@ -276,7 +276,10 @@ SELECT
       AND sf.type = 'practice'::type_simulation_flags
       AND sf.value = TRUE
   ) AND NOT sa.archived) AS is_general,
-  pr.role                       AS profile_role,
+  (SELECT r.role FROM profile_roles pr_j 
+   JOIN roles_resource r ON pr_j.role_id = r.id 
+   WHERE pr_j.profile_id = pr.id 
+   LIMIT 1) AS profile_role,
   cbs.cohort_ids                AS cohort_ids,
   sc.created_at                 AS chat_created_at,
   -- chat_completed_at removed (use grade_created_at or time_taken_seconds as source of truth)
@@ -325,7 +328,7 @@ JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
 JOIN simulation_attempts sa ON sa.id = cfa.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
 JOIN active_sims sim          ON sim.id = sa.simulation_id       -- enforce active simulation
-JOIN profile_artifact pr ON pr.id = ap.profile_id
+LEFT JOIN profile_artifact pr ON pr.id = ap.profile_id
 JOIN active_scenarios s       ON s.id = sc.scenario_id           -- enforce active scenario
 JOIN root_map rm              ON rm.leaf_scenario_id = s.id
 LEFT JOIN scenario_first_persona sfp ON sfp.scenario_id = s.id

@@ -91,7 +91,11 @@ user_profile AS (
 ),
 current_user_role AS (
     -- Get current user's role for validation
-    SELECT p.role FROM params x JOIN profile_artifact p ON p.id = x.current_profile_id
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            LIMIT 1) as role 
+    FROM params x JOIN profile_artifact p ON p.id = x.current_profile_id
 ),
 role_validation AS (
     -- Validate role hierarchy for each profile
@@ -167,21 +171,37 @@ last_names_resources AS (
 profile_upsert AS (
     -- Insert or UPDATE profile_artifact without first_name, last_name, active columns
     INSERT INTO profile_artifact (
-        id, role, updated_at
+        id, updated_at
     )
     SELECT
         pwi.profile_id,
-        pwi.role::profile_role,
         NOW()
     FROM profile_upsert_with_idx pwi
     ON CONFLICT (id) DO UPDATE SET
-        role = CASE 
-            WHEN EXISTS (SELECT 1 FROM role_validation rv JOIN profile_upsert_with_idx pwi2 ON pwi2.profile_idx = rv.profile_idx WHERE pwi2.profile_id = profile_artifact.id AND rv.can_assign = true) 
-            THEN EXCLUDED.role::profile_role
-            ELSE profile_artifact.role::profile_role
-        END,
         updated_at = NOW()
     RETURNING id
+),
+-- Insert/update role via profile_roles junction
+role_resource_upsert AS (
+    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT DISTINCT pwi.role::profile_role, NOW(), NOW(), true, false, false, NULL::uuid
+    FROM profile_upsert_with_idx pwi
+    WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
+    ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
+    RETURNING id as role_id, role
+),
+profile_role_delete_upsert AS (
+    DELETE FROM profile_roles WHERE profile_id IN (SELECT id FROM profile_upsert)
+    RETURNING profile_id
+),
+profile_role_insert_upsert AS (
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
+    SELECT pu.id, rru.role_id, NOW(), NOW(), false, false, NULL::uuid
+    FROM profile_upsert pu
+    JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
+    JOIN role_resource_upsert rru ON rru.role = pwi.role::profile_role
+    WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
+    RETURNING profile_id
 ),
 -- Delete old profile_names links
 delete_old_names AS (

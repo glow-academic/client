@@ -82,7 +82,10 @@ user_departments AS (
 ),
 user_profile AS (
     SELECT 
-        role,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = profile_artifact.id 
+         LIMIT 1) as role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = profile_artifact.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profile_artifact ON profile_artifact.id = x.profile_id
@@ -205,10 +208,13 @@ all_profile_ids_raw AS (
     WHERE profile_ids IS NOT NULL
 ),
 -- Role-based filtering: filter profiles based on role hierarchy
-profile_roles AS (
+profile_roles_cte AS (
     SELECT 
         p.id as profile_id,
-        p.role
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = p.id 
+         LIMIT 1) as role
     FROM profile_artifact p
     WHERE p.id IN (SELECT profile_id FROM all_profile_ids_raw)
 ),
@@ -217,7 +223,7 @@ filtered_profile_ids AS (
         pr.profile_id
     FROM params x
     CROSS JOIN user_profile up
-    JOIN profile_roles pr ON pr.profile_id IN (SELECT profile_id FROM all_profile_ids_raw)
+    JOIN profile_roles_cte pr ON pr.profile_id IN (SELECT profile_id FROM all_profile_ids_raw)
     WHERE 
         -- superadmin can see all
         up.role = 'superadmin'::profile_role

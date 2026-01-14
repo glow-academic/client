@@ -72,6 +72,9 @@ VOLATILE
 AS $$
 DECLARE
     new_model_id uuid;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_value_id uuid;
     default_voices text[] := ARRAY['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse'];
     final_input_mods text[];
     final_output_mods text[];
@@ -96,16 +99,70 @@ BEGIN
 
     -- Validate permissions
     IF NOT validate_department_create_permissions(
-        (SELECT role::text FROM profile_artifact WHERE id = profile_id),
+        (SELECT r.role::text FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
         ARRAY(SELECT unnest(department_ids)::text)
     ) THEN
         RAISE EXCEPTION 'Insufficient permissions to create model';
     END IF;
 
-    -- Create model
-    INSERT INTO model_artifact (provider_id, name, description, active, value)
-    VALUES (provider_id, name, description, active, value)
+    -- Create model (without name, description, active, value - these go in junction tables)
+    INSERT INTO model_artifact (provider_id)
+    VALUES (provider_id)
     RETURNING id INTO new_model_id;
+
+    -- Insert name into names_resource and link via model_names
+    IF name IS NOT NULL AND name != '' THEN
+        INSERT INTO names_resource (name, created_at, updated_at, active, generated, mcp, call_id)
+        VALUES (name, NOW(), NOW(), true, false, false, NULL)
+        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+        RETURNING id INTO v_name_id;
+        
+        INSERT INTO model_names (model_id, name_id, created_at, updated_at, generated, mcp)
+        VALUES (new_model_id, v_name_id, NOW(), NOW(), false, false)
+        ON CONFLICT (model_id, name_id) DO NOTHING;
+    END IF;
+
+    -- Insert description into descriptions_resource and link via model_descriptions
+    IF description IS NOT NULL AND description != '' THEN
+        INSERT INTO descriptions_resource (description, created_at, updated_at, active, generated, mcp, call_id)
+        VALUES (description, NOW(), NOW(), true, false, false, NULL)
+        ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+        RETURNING id INTO v_description_id;
+        
+        INSERT INTO model_descriptions (model_id, description_id, created_at, updated_at, generated, mcp)
+        VALUES (new_model_id, v_description_id, NOW(), NOW(), false, false)
+        ON CONFLICT (model_id, description_id) DO NOTHING;
+    END IF;
+
+    -- Insert active flag into model_flags
+    IF active IS NOT NULL THEN
+        INSERT INTO model_flags (model_id, flag_id, type, value, created_at, updated_at, generated, mcp, call_id)
+        SELECT 
+            new_model_id,
+            f.id,
+            'active'::type_model_flags,
+            active,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            NULL
+        FROM flags_resource f
+        WHERE f.name = 'active'
+        ON CONFLICT (model_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    END IF;
+
+    -- Insert value into values_resource and link via model_values
+    IF value IS NOT NULL AND value != '' THEN
+        INSERT INTO values_resource (value, created_at, updated_at, active, generated, mcp, call_id)
+        VALUES (value, NOW(), NOW(), true, false, false, NULL)
+        ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+        RETURNING id INTO v_value_id;
+        
+        INSERT INTO model_values (model_id, value_id, created_at, updated_at, generated, mcp)
+        VALUES (new_model_id, v_value_id, NOW(), NOW(), false, false)
+        ON CONFLICT (model_id, value_id) DO NOTHING;
+    END IF;
 
     -- Link departments if provided
     IF array_length(department_ids, 1) > 0 THEN

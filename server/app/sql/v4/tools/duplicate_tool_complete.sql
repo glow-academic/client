@@ -41,9 +41,9 @@ user_profile AS (
 original_tool AS (
     SELECT 
         t.id,
-        t.name,
-        t.description,
-        t.active
+        (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
+        (SELECT d.description FROM tool_descriptions td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true) as active
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
 ),
@@ -61,20 +61,90 @@ original_templates AS (
 ),
 new_tool AS (
     INSERT INTO tool_artifact (
-        name,
-        description,
-        active,
         created_at,
         updated_at
     )
     SELECT 
-        name || ' Copy',
-        description,
-        active,
         NOW(),
         NOW()
     FROM original_tool ot
     RETURNING id
+),
+-- Insert name for new tool
+new_tool_name AS (
+    INSERT INTO names_resource (name, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT 
+        ot.name || ' Copy',
+        NOW(),
+        NOW(),
+        true,
+        false,
+        false,
+        NULL
+    FROM original_tool ot
+    ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    RETURNING id as name_id
+),
+link_new_tool_name AS (
+    INSERT INTO tool_names (tool_id, name_id, created_at, updated_at, generated, mcp)
+    SELECT 
+        nt.id,
+        ntn.name_id,
+        NOW(),
+        NOW(),
+        false,
+        false
+    FROM new_tool nt
+    CROSS JOIN new_tool_name ntn
+    RETURNING tool_id
+),
+-- Insert description for new tool
+new_tool_description AS (
+    INSERT INTO descriptions_resource (description, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT 
+        ot.description,
+        NOW(),
+        NOW(),
+        true,
+        false,
+        false,
+        NULL
+    FROM original_tool ot
+    WHERE ot.description IS NOT NULL
+    ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+    RETURNING id as description_id
+),
+link_new_tool_description AS (
+    INSERT INTO tool_descriptions (tool_id, description_id, created_at, updated_at, generated, mcp)
+    SELECT 
+        nt.id,
+        ntd.description_id,
+        NOW(),
+        NOW(),
+        false,
+        false
+    FROM new_tool nt
+    CROSS JOIN new_tool_description ntd
+    RETURNING tool_id
+),
+-- Insert active flag for new tool
+new_tool_active_flag AS (
+    INSERT INTO tool_flags (tool_id, flag_id, type, value, created_at, updated_at, generated, mcp, call_id)
+    SELECT 
+        nt.id,
+        f.id,
+        'active'::type_tool_flags,
+        ot.active,
+        NOW(),
+        NOW(),
+        false,
+        false,
+        NULL
+    FROM new_tool nt
+    CROSS JOIN original_tool ot
+    CROSS JOIN flags_resource f
+    WHERE f.name = 'active'
+    RETURNING tool_id
 ),
 -- Copy schema links from original tool
 copy_schemas AS (

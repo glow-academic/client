@@ -75,6 +75,9 @@ DECLARE
     v_actor_name text;
     is_create boolean;
     v_models_resource_id uuid;
+    v_name_id uuid;
+    v_description_id uuid;
+    v_value_id uuid;
     default_voices text[] := ARRAY['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse'];
     final_input_mods text[];
     final_output_mods text[];
@@ -112,14 +115,14 @@ BEGIN
     -- Validate permissions
     IF is_create THEN
         IF NOT validate_department_create_permissions(
-            (SELECT role::text FROM profile_artifact WHERE id = profile_id),
+            (SELECT r.role::text FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
             ARRAY(SELECT unnest(department_ids)::text)
         ) THEN
             RAISE EXCEPTION 'Insufficient permissions to create model';
         END IF;
     ELSE
         IF NOT validate_department_update_permissions(
-            (SELECT role::text FROM profile_artifact WHERE id = profile_id),
+            (SELECT r.role::text FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = profile_id LIMIT 1),
             ARRAY(SELECT department_id::text FROM model_departments WHERE model_id = input_model_id AND active = true),
             ARRAY(SELECT department_id::text FROM profile_departments WHERE profile_id = profile_id AND active = true)
         ) THEN
@@ -127,23 +130,76 @@ BEGIN
         END IF;
     END IF;
 
-    -- Create or UPDATE model_artifact
+    -- Create or UPDATE model_artifact (without name, description, active, value - these go in junction tables)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO model_artifact (provider_id, name, description, active, value)
-        VALUES (provider_id, name, description, active, value)
+        INSERT INTO model_artifact (provider_id)
+        VALUES (provider_id)
         RETURNING id INTO v_model_id;
     ELSE
         -- UPDATE path
         v_model_id := input_model_id;
         UPDATE model_artifact SET
             provider_id = api_save_model_v4.provider_id,
-            name = api_save_model_v4.name,
-            description = api_save_model_v4.description,
-            active = api_save_model_v4.active,
-            value = api_save_model_v4.value,
             updated_at = NOW()
         WHERE id = v_model_id;
+    END IF;
+
+    -- Handle name (insert/update via model_names junction)
+    IF name IS NOT NULL AND name != '' THEN
+        INSERT INTO names_resource (name, created_at, updated_at, active, generated, mcp, call_id)
+        VALUES (name, NOW(), NOW(), true, false, false, NULL)
+        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+        RETURNING id INTO v_name_id;
+        
+        -- Delete existing name links and insert new one
+        DELETE FROM model_names WHERE model_id = v_model_id;
+        INSERT INTO model_names (model_id, name_id, created_at, updated_at, generated, mcp)
+        VALUES (v_model_id, v_name_id, NOW(), NOW(), false, false);
+    END IF;
+
+    -- Handle description (insert/update via model_descriptions junction)
+    IF description IS NOT NULL AND description != '' THEN
+        INSERT INTO descriptions_resource (description, created_at, updated_at, active, generated, mcp, call_id)
+        VALUES (description, NOW(), NOW(), true, false, false, NULL)
+        ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+        RETURNING id INTO v_description_id;
+        
+        -- Delete existing description links and insert new one
+        DELETE FROM model_descriptions WHERE model_id = v_model_id;
+        INSERT INTO model_descriptions (model_id, description_id, created_at, updated_at, generated, mcp)
+        VALUES (v_model_id, v_description_id, NOW(), NOW(), false, false);
+    END IF;
+
+    -- Handle active flag (insert/update via model_flags junction)
+    IF active IS NOT NULL THEN
+        INSERT INTO model_flags (model_id, flag_id, type, value, created_at, updated_at, generated, mcp, call_id)
+        SELECT 
+            v_model_id,
+            f.id,
+            'active'::type_model_flags,
+            active,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            NULL
+        FROM flags_resource f
+        WHERE f.name = 'active'
+        ON CONFLICT (model_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
+    END IF;
+
+    -- Handle value (insert/update via model_values junction)
+    IF value IS NOT NULL AND value != '' THEN
+        INSERT INTO values_resource (value, created_at, updated_at, active, generated, mcp, call_id)
+        VALUES (value, NOW(), NOW(), true, false, false, NULL)
+        ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+        RETURNING id INTO v_value_id;
+        
+        -- Delete existing value links and insert new one
+        DELETE FROM model_values WHERE model_id = v_model_id;
+        INSERT INTO model_values (model_id, value_id, created_at, updated_at, generated, mcp)
+        VALUES (v_model_id, v_value_id, NOW(), NOW(), false, false);
     END IF;
 
     -- Handle provider link (via model_providers table)

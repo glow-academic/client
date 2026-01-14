@@ -48,7 +48,10 @@ self_emulation_check AS (
 ),
 requester_role AS (
     -- Get requester's role for permission check
-    SELECT role
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            LIMIT 1) as role
     FROM profile_artifact p
     WHERE p.id = (SELECT requester_profile_id FROM params)
 ),
@@ -61,8 +64,8 @@ simulatable_profiles AS (
     WHERE p.id != (SELECT requester_profile_id FROM params)
       AND CASE 
         WHEN rr.role = 'superadmin'::profile_role THEN true
-        WHEN rr.role = 'admin'::profile_role THEN p.role IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
-        WHEN rr.role = 'instructional'::profile_role THEN p.role IN ('member'::profile_role, 'guest'::profile_role)
+        WHEN rr.role = 'admin'::profile_role THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('instructional'::profile_role, 'member'::profile_role, 'guest'::profile_role)
+        WHEN rr.role = 'instructional'::profile_role THEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) IN ('member'::profile_role, 'guest'::profile_role)
         ELSE false
       END
 ),

@@ -71,7 +71,7 @@ BEGIN
     WHERE at.agent_id = api_create_scenario_rubric_grade_agents_v4.agent_id
       AND rt.resource = 'scenario_rubric_grade_agents'::resources
       AND at.active = true
-      AND t.active = true
+      AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1;
     
     -- Raise error if agent doesn't have tool for resource

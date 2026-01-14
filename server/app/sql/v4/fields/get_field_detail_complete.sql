@@ -83,7 +83,10 @@ field_exists_check AS (
 user_profile AS (
     SELECT 
         up.id,
-        up.role,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = up.id 
+         LIMIT 1) as role,
         COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = up.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = up.id AND pn2.type = 'last' LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profile_artifact up ON up.id = x.profile_id
@@ -148,7 +151,12 @@ user_has_field_access AS (
     ) OR EXISTS(
         SELECT 1 FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id
-        WHERE p.role = 'superadmin'::profile_role
+        WHERE EXISTS (
+            SELECT 1 FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            AND r.role = 'superadmin'::profile_role
+        )
     ) OR (
         SELECT NOT EXISTS(
             SELECT 1 FROM field_departments fd2

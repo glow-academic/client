@@ -179,7 +179,7 @@ profile_role_check AS (
         (SELECT resolved_profile_id FROM resolve_profile_id) as raw_profile_id,
         CASE 
             WHEN (SELECT resolved_profile_id FROM resolve_profile_id) IS NULL THEN NULL::uuid
-            WHEN (SELECT role FROM profile_artifact WHERE id = (SELECT resolved_profile_id FROM resolve_profile_id)) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = (SELECT resolved_profile_id FROM resolve_profile_id) LIMIT 1) IN ('admin', 'superadmin', 'instructional') THEN NULL::uuid
             ELSE (SELECT resolved_profile_id FROM resolve_profile_id)
         END as effective_profile_id
 ),
@@ -253,10 +253,10 @@ runs_base AS (
         -- Role filter (only if no effective profile_id)
         AND (
             (SELECT effective_profile_id FROM profile_role_check) IS NOT NULL
-            OR p.roles IS NULL
-            OR COALESCE(array_length(p.roles, 1), 0) = 0
+            OR (SELECT roles FROM params) IS NULL
+            OR COALESCE(array_length((SELECT roles FROM params), 1), 0) = 0
             OR mrp.profile_id IN (
-                SELECT id FROM profile_artifact WHERE role::text = ANY(p.roles)
+                SELECT id FROM profile_artifact p WHERE EXISTS (SELECT 1 FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id AND r.role::text = ANY((SELECT roles FROM params)::text[]))
             )
         )
         -- Cohort filter (via cohort_profiles)

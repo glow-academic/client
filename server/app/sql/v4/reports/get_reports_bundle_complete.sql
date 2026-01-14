@@ -249,13 +249,16 @@ filtered_profiles AS (
         (SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'last'::type_profile_names LIMIT 1) AS last_name, 
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
         (SELECT e2.email FROM profile_emails pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        p.role,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = p.id 
+         LIMIT 1) as role,
         p.created_at
     FROM profile_artifact p
     LEFT JOIN profile_emails pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN emails_resource e ON pe.email_id = e.id
     WHERE 
-        (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR p.role = ANY((SELECT roles FROM params)::profile_role[]))
+        (cardinality((SELECT roles FROM params)::profile_role[]) = 0 OR (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) = ANY((SELECT roles FROM params)::profile_role[]))
         AND (cardinality((SELECT cohort_ids FROM params)::uuid[]) = 0 OR EXISTS (
             SELECT 1 FROM cohort_profiles cp 
             WHERE cp.profile_id = p.id 
@@ -275,7 +278,7 @@ filtered_profiles AS (
                 WHERE pn.profile_id = p.id 
                   AND n.name ILIKE '%' || (SELECT search FROM params) || '%'
              ))
-    GROUP BY p.id, p.role, p.created_at
+    GROUP BY p.id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), p.created_at
 ),
 filt AS (
     SELECT a.* FROM analytics a

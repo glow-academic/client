@@ -52,7 +52,7 @@ usage_check AS (
 ),
 tool_info AS (
     SELECT 
-        t.name
+        (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
 ),

@@ -102,12 +102,54 @@ profile_update AS (
     -- UPDATE profile_artifact fields (only update non-NULL parameters, keep existing values for NULL)
     UPDATE profile_artifact
     SET 
-        last_login = COALESCE((SELECT last_login FROM params), last_login),
-        role = COALESCE((SELECT role FROM params)::profile_role, role),
         updated_at = NOW()
     WHERE id = (SELECT target_profile_id FROM params)
       AND EXISTS (SELECT 1 FROM profile_exists_check WHERE profile_exists = true)
     RETURNING id
+),
+-- Update last_login via profile_logins junction if provided
+login_resource AS (
+    INSERT INTO logins_resource (last_login, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT (SELECT last_login FROM params), NOW(), NOW(), true, false, false, NULL
+    FROM params
+    WHERE (SELECT last_login FROM params) IS NOT NULL
+      AND EXISTS (SELECT 1 FROM profile_update)
+    ON CONFLICT (last_login) DO UPDATE SET updated_at = NOW()
+    RETURNING id as login_id
+),
+profile_login_upsert AS (
+    DELETE FROM profile_logins WHERE profile_id IN (SELECT id FROM profile_update)
+    RETURNING profile_id
+),
+profile_login_insert AS (
+    INSERT INTO profile_logins (profile_id, login_id, created_at, updated_at, generated, mcp)
+    SELECT pu.id, lr.login_id, NOW(), NOW(), false, false
+    FROM profile_update pu
+    CROSS JOIN login_resource lr
+    WHERE EXISTS (SELECT 1 FROM profile_update)
+    RETURNING profile_id
+),
+-- Update role via profile_roles junction if provided
+role_resource_update AS (
+    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT (SELECT role FROM params)::profile_role, NOW(), NOW(), true, false, false, NULL
+    FROM params
+    WHERE (SELECT role FROM params) IS NOT NULL
+      AND EXISTS (SELECT 1 FROM profile_update)
+    ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
+    RETURNING id as role_id
+),
+profile_role_upsert AS (
+    DELETE FROM profile_roles WHERE profile_id IN (SELECT id FROM profile_update)
+    RETURNING profile_id
+),
+profile_role_insert_update AS (
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
+    SELECT pu.id, rru.role_id, NOW(), NOW(), false, false, NULL
+    FROM profile_update pu
+    CROSS JOIN role_resource_update rru
+    WHERE EXISTS (SELECT 1 FROM profile_update)
+    RETURNING profile_id
 ),
 -- Delete old first_name link if updating
 delete_old_first_name AS (

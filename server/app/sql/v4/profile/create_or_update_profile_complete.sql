@@ -63,7 +63,11 @@ user_profile AS (
 ),
 current_user_role AS (
     -- Get current user's role for validation (if provided)
-    SELECT p.role FROM params x JOIN profile_artifact p ON p.id = x.current_profile_id WHERE x.current_profile_id IS NOT NULL
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            LIMIT 1) as role 
+    FROM params x JOIN profile_artifact p ON p.id = x.current_profile_id WHERE x.current_profile_id IS NOT NULL
 ),
 role_validation AS (
     -- Validate role hierarchy: check if current user can assign target role (if current_profile_id provided)
@@ -115,21 +119,35 @@ last_name_resource AS (
 profile_upsert AS (
     -- Insert or UPDATE profile_artifact without first_name, last_name, active columns
     INSERT INTO profile_artifact (
-        id, role, updated_at
+        id, updated_at
     )
     SELECT
         COALESCE((SELECT id FROM existing_profile LIMIT 1), (SELECT profile_id_new FROM params)),  -- Use existing ID if found, else new UUID
-        (SELECT role FROM params)::profile_role,
         NOW()
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (id) DO UPDATE SET
-        role = CASE 
-            WHEN EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true) 
-            THEN EXCLUDED.role::profile_role
-            ELSE profile_artifact.role::profile_role
-        END,
         updated_at = NOW()
     RETURNING id, NOT EXISTS(SELECT 1 FROM existing_profile) as created
+),
+-- Insert/update role via profile_roles junction
+role_resource AS (
+    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT (SELECT role FROM params)::profile_role, NOW(), NOW(), true, false, false, NULL
+    WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
+    ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
+    RETURNING id as role_id
+),
+profile_role_upsert AS (
+    DELETE FROM profile_roles WHERE profile_id IN (SELECT id FROM profile_upsert)
+    RETURNING profile_id
+),
+profile_role_insert AS (
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
+    SELECT pu.id, rr.role_id, NOW(), NOW(), false, false, NULL
+    FROM profile_upsert pu
+    CROSS JOIN role_resource rr
+    WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
+    RETURNING profile_id
 ),
 -- Delete existing profile_names links for first_name
 delete_old_first_name AS (

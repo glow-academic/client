@@ -403,7 +403,10 @@ user_departments AS (
     JOIN profile_departments ON profile_departments.profile_id = x.profile_id AND profile_departments.active = true
 ),
 user_profile_role AS (
-    SELECT role
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = profile_artifact.id 
+            LIMIT 1) as role
     FROM params x
     JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),

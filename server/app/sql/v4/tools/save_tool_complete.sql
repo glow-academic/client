@@ -36,29 +36,72 @@ DECLARE
     v_tool_id uuid;
     v_actor_name text;
     is_create boolean;
+    v_name_id uuid;
+    v_description_id uuid;
 BEGIN
     -- Determine if create or update
     is_create := (input_tool_id IS NULL);
     
-    -- Create or UPDATE tool_artifact first (outside CTE)
+    -- Create or UPDATE tool_artifact first (without name, description, active - these go in junction tables)
     IF is_create THEN
         -- CREATE path
-        INSERT INTO tool_artifact (name, description, active, created_at, updated_at)
-        VALUES (name, description, active, NOW(), NOW())
+        INSERT INTO tool_artifact (created_at, updated_at)
+        VALUES (NOW(), NOW())
         RETURNING id INTO v_tool_id;
     ELSE
         -- UPDATE path
         v_tool_id := input_tool_id;
         UPDATE tool_artifact
-        SET name = api_save_tool_v4.name,
-            description = api_save_tool_v4.description,
-            active = api_save_tool_v4.active,
-            updated_at = NOW()
+        SET updated_at = NOW()
         WHERE id = v_tool_id;
         
         IF NOT FOUND THEN
             RAISE EXCEPTION 'Tool not found: %', input_tool_id;
         END IF;
+    END IF;
+
+    -- Handle name (insert/update via tool_names junction)
+    IF name IS NOT NULL AND name != '' THEN
+        INSERT INTO names_resource (name, created_at, updated_at, active, generated, mcp, call_id)
+        VALUES (name, NOW(), NOW(), true, false, false, NULL)
+        ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+        RETURNING id INTO v_name_id;
+        
+        -- Delete existing name links and insert new one
+        DELETE FROM tool_names WHERE tool_id = v_tool_id;
+        INSERT INTO tool_names (tool_id, name_id, created_at, updated_at, generated, mcp)
+        VALUES (v_tool_id, v_name_id, NOW(), NOW(), false, false);
+    END IF;
+
+    -- Handle description (insert/update via tool_descriptions junction)
+    IF description IS NOT NULL AND description != '' THEN
+        INSERT INTO descriptions_resource (description, created_at, updated_at, active, generated, mcp, call_id)
+        VALUES (description, NOW(), NOW(), true, false, false, NULL)
+        ON CONFLICT (description) DO UPDATE SET updated_at = NOW()
+        RETURNING id INTO v_description_id;
+        
+        -- Delete existing description links and insert new one
+        DELETE FROM tool_descriptions WHERE tool_id = v_tool_id;
+        INSERT INTO tool_descriptions (tool_id, description_id, created_at, updated_at, generated, mcp)
+        VALUES (v_tool_id, v_description_id, NOW(), NOW(), false, false);
+    END IF;
+
+    -- Handle active flag (insert/update via tool_flags junction)
+    IF active IS NOT NULL THEN
+        INSERT INTO tool_flags (tool_id, flag_id, type, value, created_at, updated_at, generated, mcp, call_id)
+        SELECT 
+            v_tool_id,
+            f.id,
+            'active'::type_tool_flags,
+            active,
+            NOW(),
+            NOW(),
+            false,
+            false,
+            NULL
+        FROM flags_resource f
+        WHERE f.name = 'active'
+        ON CONFLICT (tool_id, flag_id, type) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW();
     END IF;
     
     -- Validate schema IDs exist
@@ -98,7 +141,7 @@ BEGIN
     ),
     user_profile AS (
         SELECT 
-            p.role,
+            (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1) as role,
             COALESCE((SELECT n.name FROM profile_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id AND pn.type = 'first' LIMIT 1) || ' ' || (SELECT n2.name FROM profile_names pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id AND pn2.type = 'last' LIMIT 1), '') as actor_name
         FROM params x
         JOIN profile_artifact p ON p.id = x.profile_id

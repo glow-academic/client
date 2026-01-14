@@ -165,21 +165,21 @@ profile_role_lookup AS (
     SELECT 
         CASE 
             WHEN rpi.resolved_profile_id IS NULL THEN 'instructional'
-            WHEN (SELECT role FROM profile_artifact WHERE id = rpi.resolved_profile_id) = 'member' THEN 'member'
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'member' THEN 'member'
             ELSE 'instructional'
         END AS mode,
         CASE
             WHEN rpi.resolved_profile_id IS NULL THEN false
-            ELSE COALESCE((SELECT role = 'member'::profile_role FROM profile_artifact WHERE id = rpi.resolved_profile_id), false)
+            ELSE COALESCE((SELECT r.role = 'member'::profile_role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1), false)
         END AS is_member_mode,
         -- Compute role hierarchy array based on profile's role
         CASE
             WHEN rpi.resolved_profile_id IS NULL THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profile_artifact WHERE id = rpi.resolved_profile_id) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profile_artifact WHERE id = rpi.resolved_profile_id) = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profile_artifact WHERE id = rpi.resolved_profile_id) = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profile_artifact WHERE id = rpi.resolved_profile_id) = 'member' THEN ARRAY['member', 'guest']::profile_role[]
-            WHEN (SELECT role FROM profile_artifact WHERE id = rpi.resolved_profile_id) = 'guest' THEN ARRAY['guest']::profile_role[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'superadmin' THEN ARRAY['superadmin', 'admin', 'instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'admin' THEN ARRAY['admin', 'instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'instructional' THEN ARRAY['instructional', 'member', 'guest']::profile_role[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'member' THEN ARRAY['member', 'guest']::profile_role[]
+            WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = rpi.resolved_profile_id LIMIT 1) = 'guest' THEN ARRAY['guest']::profile_role[]
             ELSE ARRAY['instructional', 'member', 'guest']::profile_role[]  -- Default fallback
         END AS role_hierarchy
     FROM resolve_profile_id rpi
@@ -288,7 +288,7 @@ cohort_membership AS (
         cp.cohort_id,
         cs.simulation_id,
         (SELECT n.name FROM cohort_names cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) AS cohort_title,
-        prof.role
+        (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = prof.id LIMIT 1) as role
     FROM params p
     CROSS JOIN cohort_profiles cp
     JOIN cohort_artifact c ON c.id = cp.cohort_id
@@ -299,10 +299,10 @@ cohort_membership AS (
     CROSS JOIN resolve_profile_id rpi
     WHERE cp.active = true  -- Only active cohort memberships for non-history queries
       AND (cardinality(p.cohort_ids) = 0 OR c.id = ANY(p.cohort_ids))
-      AND prof.role = ANY(prl.role_hierarchy)  -- Use computed role hierarchy from profile_role_lookup
+      AND (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = prof.id LIMIT 1) = ANY(prl.role_hierarchy)  -- Use computed role hierarchy from profile_role_lookup
       -- When member mode, only include the current member's profile_id
       AND (NOT prl.is_member_mode OR cp.profile_id = rpi.resolved_profile_id)
-    GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, prof.role, c.id, p.department_ids
+    GROUP BY cp.profile_id, cp.cohort_id, cs.simulation_id, (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = prof.id LIMIT 1), c.id, p.department_ids
     HAVING 
         (cardinality(p.department_ids) = 0 OR COUNT(cd.cohort_id) FILTER (WHERE cd.department_id = ANY(p.department_ids)) > 0)
         OR (cardinality(p.department_ids) = 0 AND NOT EXISTS (SELECT 1 FROM cohort_departments cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true))

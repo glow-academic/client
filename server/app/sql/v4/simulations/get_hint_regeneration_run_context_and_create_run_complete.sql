@@ -311,7 +311,7 @@ context_data AS (
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,
         m.id::text as model_id,
-        m.value as model_name,
+        (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
         COALESCE(n_prov.name, '') as provider_name,
         COALESCE(e.base_url, '') as base_url,
         k.key as api_key,

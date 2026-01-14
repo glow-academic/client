@@ -45,12 +45,12 @@ actor_profile AS (
 ),
 source_model AS (
     SELECT 
-        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-        (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
-        EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE),
+        (SELECT n.name FROM model_names mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
+        (SELECT d.description FROM model_descriptions md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
+        EXISTS (SELECT 1 FROM model_flags mf WHERE mf.model_id = m.id AND mf.type = 'active'::type_model_flags AND mf.value = TRUE) as active,
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
         (SELECT p_prov.id FROM model_providers mp JOIN providers_resource p_prov ON p_prov.id = mp.providers_id WHERE mp.model_id = m.id LIMIT 1) as providers_id,
-        m.value
+        (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as value
     FROM params x
     JOIN models_resource m ON m.id = x.model_id
 ),
@@ -73,15 +73,43 @@ new_description_resource AS (
     RETURNING id as description_id, description
 ),
 duplicated_model AS (
-    INSERT INTO model_artifact (
-        value
-    )
+    INSERT INTO model_artifact (group_id)
     SELECT 
-        sm.value
+        uuidv7()  -- Generate new group_id for duplicated model
     FROM source_model sm
     CROSS JOIN model_exists_check mec
     WHERE mec.model_exists = true
     RETURNING id
+),
+-- Insert value for duplicated model
+duplicated_model_value AS (
+    INSERT INTO values_resource (value, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT 
+        sm.value,
+        NOW(),
+        NOW(),
+        true,
+        false,
+        false,
+        NULL
+    FROM source_model sm
+    CROSS JOIN duplicated_model dm
+    WHERE sm.value IS NOT NULL AND sm.value != ''
+    ON CONFLICT (value) DO UPDATE SET updated_at = NOW()
+    RETURNING id as value_id
+),
+link_duplicated_model_value AS (
+    INSERT INTO model_values (model_id, value_id, created_at, updated_at, generated, mcp)
+    SELECT 
+        dm.id,
+        dmv.value_id,
+        NOW(),
+        NOW(),
+        false,
+        false
+    FROM duplicated_model dm
+    CROSS JOIN duplicated_model_value dmv
+    RETURNING model_id
 ),
 -- Create models resource entry for duplicated model artifact
 duplicated_model_resource AS (

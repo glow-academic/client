@@ -48,7 +48,7 @@ WITH tool_call_results AS (
     -- Get all tool call results for the run
     SELECT 
         jsonb_object_agg(
-            t.name,
+            (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1),
             CASE WHEN tc.arguments_raw ~ '^[\s]*\{' THEN tc.arguments_raw::jsonb ELSE NULL END
         ) as tool_results
     FROM calls tc

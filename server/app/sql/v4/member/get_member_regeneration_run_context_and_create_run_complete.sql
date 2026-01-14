@@ -300,11 +300,11 @@ context_data AS (
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,
         m.id::text as model_id,
-        m.value as model_name,
+        (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) as model_name,
         COALESCE(n_prov.name, '') as provider,
         COALESCE(e.base_url, '') as base_url,
         k.key as api_key,
-        CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN m.value ELSE NULL END as custom_model,
+        CASE WHEN e.base_url IS NOT NULL AND e.base_url != '' THEN (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1) ELSE NULL END as custom_model,
         NULL::text as provider_id,
         COALESCE(n_prov.name, '') as provider_name,
         ma.agent_id::text as agent_id,
@@ -375,7 +375,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
              first_persona.persona_id, first_persona.persona_name,
              n_prov.name,
              pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, COALESCE(tl.temperature, 0.0), rl.reasoning_level,
-             m.id, m.value, n_prov.name, k.key, e.base_url, ma.agent_id, act_s.settings_id,
+             m.id, (SELECT v.value FROM model_values mv JOIN values_resource v ON mv.value_id = v.id WHERE mv.model_id = m.id LIMIT 1), n_prov.name, k.key, e.base_url, ma.agent_id, act_s.settings_id,
              EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'images_enabled'::type_scenario_flags AND sf.value = TRUE), 
              COALESCE((SELECT ssf.value FROM simulation_scenario_flags ssf 
                WHERE ssf.simulation_id = ss.simulation_id 

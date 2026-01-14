@@ -574,28 +574,24 @@ role_check AS (
     FROM params x
     CROSS JOIN current_attempt_profile cap
     CROSS JOIN LATERAL (
-        SELECT role::text as attempt_role,
+        SELECT (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = cap.profile_id LIMIT 1)::text as attempt_role,
             CASE 
-                WHEN role::text = 'superadmin' THEN 5
-                WHEN role::text = 'admin' THEN 4
-                WHEN role::text = 'instructional' THEN 3
-                WHEN role::text = 'member' THEN 2
+                WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = cap.profile_id LIMIT 1)::text = 'superadmin' THEN 5
+                WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = cap.profile_id LIMIT 1)::text = 'admin' THEN 4
+                WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = cap.profile_id LIMIT 1)::text = 'instructional' THEN 3
+                WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = cap.profile_id LIMIT 1)::text = 'member' THEN 2
                 ELSE 1
             END as attempt_role_level
-        FROM profile_artifact
-        WHERE id = cap.profile_id
     ) attempt_profile_role_info
     CROSS JOIN LATERAL (
-        SELECT role::text as current_role,
+        SELECT (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = x.profile_id LIMIT 1)::text as current_role,
             CASE 
-                WHEN role::text = 'superadmin' THEN 5
-                WHEN role::text = 'admin' THEN 4
-                WHEN role::text = 'instructional' THEN 3
-                WHEN role::text = 'member' THEN 2
+                WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = x.profile_id LIMIT 1)::text = 'superadmin' THEN 5
+                WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = x.profile_id LIMIT 1)::text = 'admin' THEN 4
+                WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = x.profile_id LIMIT 1)::text = 'instructional' THEN 3
+                WHEN (SELECT r.role FROM profile_roles pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = x.profile_id LIMIT 1)::text = 'member' THEN 2
                 ELSE 1
             END as current_role_level
-        FROM profile_artifact
-        WHERE id = x.profile_id
     ) current_user_role_info
 ),
 simulation_scenarios_list AS (

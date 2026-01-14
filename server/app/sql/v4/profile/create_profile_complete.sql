@@ -96,13 +96,28 @@ last_name_resource AS (
 profile_insert AS (
     -- Insert profile without first_name, last_name, active columns
     INSERT INTO profile_artifact (
-        id, role
+        id
     )
     SELECT 
-        (SELECT profile_id FROM params),
-        (SELECT role FROM params)::profile_role
+        (SELECT profile_id FROM params)
     WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
     RETURNING id
+),
+-- Insert role via profile_roles junction
+role_resource AS (
+    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT (SELECT role FROM params)::profile_role, NOW(), NOW(), true, false, false, NULL
+    WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
+    ON CONFLICT (role) DO UPDATE SET updated_at = NOW()
+    RETURNING id as role_id
+),
+profile_role_insert AS (
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
+    SELECT pi.id, rr.role_id, NOW(), NOW(), false, false, NULL
+    FROM profile_insert pi
+    CROSS JOIN role_resource rr
+    WHERE NOT EXISTS (SELECT 1 FROM email_check WHERE email_exists = true)
+    RETURNING profile_id
 ),
 -- Link profile to first_name
 link_profile_first_name AS (

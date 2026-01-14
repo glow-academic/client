@@ -52,7 +52,7 @@ WITH html_result AS (
     JOIN message_calls mc ON mc.call_id = tc.id
     JOIN message_runs mr ON mr.message_id = mc.message_id
     WHERE mr.run_id = $1
-      AND t.name = 'create_html'
+      AND (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'create_html'
       AND tc.completed = true
     ORDER BY tc.created_at DESC
     LIMIT 1
@@ -65,7 +65,7 @@ schema_result AS (
     JOIN message_calls mc ON mc.call_id = tc.id
     JOIN message_runs mr ON mr.message_id = mc.message_id
     WHERE mr.run_id = $1
-      AND t.name = 'create_schema'
+      AND (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'create_schema'
       AND tc.completed = true
     ORDER BY tc.created_at DESC
     LIMIT 1

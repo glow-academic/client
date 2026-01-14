@@ -300,7 +300,7 @@ get_prompt_tool_id AS (
     INNER JOIN runs r_run ON r_run.id = (SELECT run_id FROM params LIMIT 1)
     
     
-    WHERE t.name = 'prompt' AND t.active = true
+    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'prompt' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1
 ),
 system_tool_call AS (
@@ -439,7 +439,7 @@ get_instruct_tool_id AS (
     INNER JOIN runs r_run_instruct ON r_run_instruct.id = (SELECT run_id FROM params LIMIT 1)
     
     
-    WHERE t.name = 'instruct' AND t.active = true
+    WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'instruct' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1
 ),
 developer_calls_with_rn AS (

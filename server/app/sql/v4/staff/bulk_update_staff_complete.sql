@@ -62,13 +62,20 @@ role_param AS (
 ),
 current_user_role AS (
     -- Get current user's role for validation
-    SELECT p.role FROM params x JOIN profile_artifact p ON p.id = x.profile_id
+    SELECT (SELECT r.role FROM profile_roles pr_j 
+            JOIN roles_resource r ON pr_j.role_id = r.id 
+            WHERE pr_j.profile_id = p.id 
+            LIMIT 1) as role 
+    FROM params x JOIN profile_artifact p ON p.id = x.profile_id
 ),
 profile_validation AS (
     -- Validate each profile and check permissions
     SELECT 
         p.id,
-        p.role as current_role,
+        (SELECT r.role FROM profile_roles pr_j 
+         JOIN roles_resource r ON pr_j.role_id = r.id 
+         WHERE pr_j.profile_id = p.id 
+         LIMIT 1) as current_role,
         cur.role as validator_role,
         rp.role_value,
         -- Check if role assignment is allowed (hierarchy check)
@@ -105,12 +112,64 @@ validated_profiles AS (
     FROM profile_validation
     WHERE can_assign_role = true AND role_level_ok = true AND can_edit_default = true
 ),
+-- Get or create role resources for new roles
+role_resources AS (
+    INSERT INTO roles_resource (role, created_at, updated_at, active, generated, mcp, call_id)
+    SELECT 
+        CAST(rp.role_value AS profile_role),
+        NOW(),
+        NOW(),
+        true,
+        false,
+        false,
+        NULL
+    FROM role_param rp
+    WHERE rp.role_value IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1 FROM roles_resource r 
+          WHERE r.role = CAST(rp.role_value AS profile_role)
+      )
+    ON CONFLICT (role) DO NOTHING
+    RETURNING id as role_id, role
+),
+existing_role_resources AS (
+    SELECT r.id as role_id, r.role
+    FROM role_param rp
+    JOIN roles_resource r ON r.role = CAST(rp.role_value AS profile_role)
+    WHERE rp.role_value IS NOT NULL
+),
+all_role_resources AS (
+    SELECT role_id, role FROM role_resources
+    UNION ALL
+    SELECT role_id, role FROM existing_role_resources
+),
+-- Delete existing roles for profiles being updated
+delete_existing_roles AS (
+    DELETE FROM profile_roles pr
+    WHERE pr.profile_id IN (SELECT id FROM validated_profiles)
+    AND EXISTS (SELECT 1 FROM role_param rp WHERE rp.role_value IS NOT NULL)
+    RETURNING pr.profile_id
+),
+-- Insert new roles
+insert_new_roles AS (
+    INSERT INTO profile_roles (profile_id, role_id, created_at, updated_at, generated, mcp, call_id)
+    SELECT 
+        vp.id,
+        arr.role_id,
+        NOW(),
+        NOW(),
+        false,
+        false,
+        NULL
+    FROM validated_profiles vp
+    CROSS JOIN all_role_resources arr
+    WHERE EXISTS (SELECT 1 FROM role_param rp WHERE rp.role_value IS NOT NULL)
+    RETURNING profile_id
+),
 profile_update AS (
-    -- UPDATE profile_artifact table with dynamic SET clauses (without active column)
+    -- UPDATE profile_artifact table (just updated_at, role is now in junction table)
     UPDATE profile_artifact p
-    SET 
-        role = COALESCE((SELECT CAST(rp.role_value AS profile_role) FROM role_param rp WHERE rp.role_value IS NOT NULL LIMIT 1), p.role),
-        updated_at = NOW()
+    SET updated_at = NOW()
     WHERE p.id IN (SELECT id FROM validated_profiles)
     RETURNING p.id
 ),

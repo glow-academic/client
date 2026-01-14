@@ -24,7 +24,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT t.name
+    SELECT (SELECT n.name FROM tool_names tn 
+            JOIN names_resource n ON tn.name_id = n.id 
+            WHERE tn.tool_id = t.id 
+            LIMIT 1) as name
     FROM tool_artifact t
     WHERE t.id = $1
 $$;
