@@ -51,7 +51,7 @@ BEGIN
     LEFT JOIN tool_templates tt ON tt.tool_id = t.id
     LEFT JOIN schema_templates st ON st.template_id = tt.template_id
     WHERE at.agent_id = api_create_content_v4.agent_id
-      AND rt.resource = 'content'::resources
+      AND rt.resource = 'contents'::resources
       AND at.active = true
       AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1;

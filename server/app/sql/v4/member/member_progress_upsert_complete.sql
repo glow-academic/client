@@ -148,7 +148,7 @@ link_profile_to_run AS (
 get_speak_tool_id AS (
     SELECT t.id as tool_id
     FROM tool_artifact t
-    INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('content' AS resources)
+    INNER JOIN resource_tools rt ON rt.tool_id = t.id AND rt.resource = CAST('contents' AS resources)
     WHERE (SELECT n.name FROM tool_names tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) = 'speak' AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1
 ),
