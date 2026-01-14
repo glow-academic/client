@@ -364,6 +364,41 @@ All junction tables have:
 
 **Action Required**: Add instructions to agents missing them, or verify if instructions are intentionally optional for these agent types.
 
+### Agent Consolidation Strategy
+
+**Status**: ✅ **MIGRATION CREATED**
+
+**Purpose**: Consolidate agents to one agent per artifact, eliminating redundant agent types.
+
+**Stale Agents to be Marked**:
+- **Video Agent** → Scenario Agent (scenario artifact)
+- **Image Agent** → Scenario Agent (scenario artifact)
+- **Simulation Text Agent** → Simulation Agent (simulation artifact)
+- **Simulation Voice Agent** → Simulation Agent (simulation artifact)
+- **Grade Text** → Simulation Agent (simulation artifact)
+- **Grade Voice** → Simulation Agent (simulation artifact)
+- **TA Agent** → Scenario Agent (scenario artifact)
+- **Hint** → Scenario Agent (scenario artifact)
+
+**Migration**: `database/migrate/257_consolidate_agents_one_per_artifact.sql`
+- Identifies artifact-based agents (Scenario Agent, Simulation Agent, etc.)
+- Identifies stale agents (Video Agent, Image Agent, etc.)
+- Backfills all `agent_id` references in database tables:
+  - `runs.agent_id`
+  - `rubric_grade_agents.grade_agent_id`
+  - `rubric_grade_agents_audio.audio_agent_id`
+  - `scenario_rubric_grade_agents_resource.grade_agent_id`
+  - `groups_rubric_grade_agents_resource.grade_agent_id`
+  - `runs_rubric_grade_agents_resource.grade_agent_id`
+- Deletes stale agents after backfill is complete (cascade handles related records)
+
+**Result**: One agent per artifact:
+- **Scenario Agent** for `scenario` artifact
+- **Simulation Agent** for `simulation` artifact
+- **Rubric Agent** for `rubric` artifact
+- **Document Agent** for `document` artifact
+- etc.
+
 ### Schema Reference Validation
 
 **Status**: ⏳ **MANUAL VALIDATION REQUIRED**
