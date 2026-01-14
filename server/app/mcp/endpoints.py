@@ -7,24 +7,25 @@ from fastapi import Request, Response
 from mcp.server.fastmcp import FastMCP
 
 # Static enumeration of artifacts and resources with descriptions
+# Artifacts use singular names (matching database table names: persona_artifact, scenario_artifact, etc.)
 ARTIFACTS = [
-    "personas",
-    "scenarios",
-    "simulations",
-    "documents",
-    "departments",
-    "cohorts",
-    "evals",
-    "rubrics",
-    "settings",
-    "agents",
-    "keys",
-    "models",
-    "providers",
-    "parameters",
-    "fields",
+    "persona",
+    "scenario",
+    "simulation",
+    "document",
+    "department",
+    "cohort",
+    "eval",
+    "rubric",
+    "setting",
+    "agent",
+    "model",
+    "provider",
+    "parameter",
+    "field",
     "profile",
     "auth",
+    "tool",
 ]
 
 RESOURCES = [
@@ -109,24 +110,25 @@ RESOURCES = [
 ]
 
 # Artifact descriptions (one-sentence)
+# Keys use singular names (matching database table names)
 ARTIFACT_DESCRIPTIONS: dict[str, str] = {
-    "personas": "AI characters used in scenarios to represent different roles or perspectives",
-    "scenarios": "Practice scenarios that students interact with for learning",
-    "simulations": "Interactive simulation sessions for practice and assessment",
-    "documents": "Document resources used in scenarios and learning materials",
-    "departments": "Organizational departments for grouping users and resources",
-    "cohorts": "Student cohorts for organizing groups of learners",
-    "evals": "Evaluation configurations for assessing student performance",
-    "rubrics": "Grading rubrics for structured assessment criteria",
-    "settings": "System settings for configuration and preferences",
-    "agents": "AI agents that perform various tasks and operations",
-    "keys": "API keys for external service authentication",
-    "models": "AI models used for generation and inference",
-    "providers": "AI providers that supply models and services",
-    "parameters": "Configuration parameters for customizing behavior",
-    "fields": "Custom fields for extending artifact schemas",
+    "persona": "AI characters used in scenarios to represent different roles or perspectives",
+    "scenario": "Practice scenarios that students interact with for learning",
+    "simulation": "Interactive simulation sessions for practice and assessment",
+    "document": "Document resources used in scenarios and learning materials",
+    "department": "Organizational departments for grouping users and resources",
+    "cohort": "Student cohorts for organizing groups of learners",
+    "eval": "Evaluation configurations for assessing student performance",
+    "rubric": "Grading rubrics for structured assessment criteria",
+    "setting": "System settings for configuration and preferences",
+    "agent": "AI agents that perform various tasks and operations",
+    "model": "AI models used for generation and inference",
+    "provider": "AI providers that supply models and services",
+    "parameter": "Configuration parameters for customizing behavior",
+    "field": "Custom fields for extending artifact schemas",
     "profile": "User profiles containing account and preference information",
     "auth": "Authentication configurations for user access control",
+    "tool": "Tools for extending agent capabilities",
 }
 
 # Resource descriptions (one-sentence)
@@ -215,7 +217,30 @@ RESOURCE_DESCRIPTIONS: dict[str, str] = {
 # Combined list
 ALL_ITEMS = ARTIFACTS + RESOURCES
 
-# Static imports for persona handlers (only fully implemented artifact)
+# Helper function to route save operations to create or update based on ID presence
+# Only used for scenarios and profile which don't have unified save.py yet
+def create_save_handler(create_func: Any, update_func: Any, id_field_name: str) -> Any:
+    """Create a unified save handler that routes to create or update based on ID.
+    
+    Args:
+        create_func: Function to call for create operations
+        update_func: Function to call for update operations
+        id_field_name: Name of the ID field to check (e.g., "scenario_id", "profile_id")
+    """
+    async def save_handler(request: Any, http_request: Any, response: Any, conn: Any) -> Any:
+        # Check if ID field exists and is not None
+        request_dict = request.model_dump() if hasattr(request, "model_dump") else dict(request)
+        has_id = request_dict.get(id_field_name) is not None
+        
+        if has_id:
+            return await update_func(request, http_request, response, conn)
+        else:
+            return await create_func(request, http_request, response, conn)
+    
+    return save_handler
+
+
+# Static imports for all artifact handlers
 try:
     from app.api.v4.personas.delete import delete_persona
     from app.api.v4.personas.duplicate import duplicate_persona
@@ -232,6 +257,276 @@ try:
     }
 except ImportError:
     PERSONAS_HANDLERS = {}
+
+# Scenarios handlers (uses detail.py for get, create.py/update.py for save)
+try:
+    from app.api.v4.scenarios.create import create_scenario
+    from app.api.v4.scenarios.delete import delete_scenario
+    from app.api.v4.scenarios.detail import get_scenario_detail
+    from app.api.v4.scenarios.duplicate import duplicate_scenario
+    from app.api.v4.scenarios.list import get_scenarios_list
+    from app.api.v4.scenarios.update import update_scenario
+
+    SCENARIOS_HANDLERS = {
+        "get": get_scenario_detail,
+        "save": create_save_handler(create_scenario, update_scenario, "scenario_id"),
+        "list": get_scenarios_list,
+        "duplicate": duplicate_scenario,
+        "delete": delete_scenario,
+    }
+except ImportError:
+    SCENARIOS_HANDLERS = {}
+
+# Simulations handlers
+try:
+    from app.api.v4.simulations.delete import delete_simulation
+    from app.api.v4.simulations.duplicate import duplicate_simulation
+    from app.api.v4.simulations.get import get_simulation
+    from app.api.v4.simulations.list import get_simulations_list
+    from app.api.v4.simulations.save import save_simulation
+
+    SIMULATIONS_HANDLERS = {
+        "get": get_simulation,
+        "save": save_simulation,
+        "list": get_simulations_list,
+        "duplicate": duplicate_simulation,
+        "delete": delete_simulation,
+    }
+except ImportError:
+    SIMULATIONS_HANDLERS = {}
+
+# Documents handlers (uses unified save.py)
+try:
+    from app.api.v4.documents.delete import delete_document
+    from app.api.v4.documents.get import get_document
+    from app.api.v4.documents.list import get_documents_list
+    from app.api.v4.documents.save import save_document
+
+    DOCUMENTS_HANDLERS = {
+        "get": get_document,
+        "save": save_document,
+        "list": get_documents_list,
+        "duplicate": None,  # Documents doesn't have duplicate
+        "delete": delete_document,
+    }
+except ImportError:
+    DOCUMENTS_HANDLERS = {}
+
+# Departments handlers
+try:
+    from app.api.v4.departments.delete import delete_department
+    from app.api.v4.departments.duplicate import duplicate_department
+    from app.api.v4.departments.get import get_department
+    from app.api.v4.departments.list import get_departments_list
+    from app.api.v4.departments.save import save_department
+
+    DEPARTMENTS_HANDLERS = {
+        "get": get_department,
+        "save": save_department,
+        "list": get_departments_list,
+        "duplicate": duplicate_department,
+        "delete": delete_department,
+    }
+except ImportError:
+    DEPARTMENTS_HANDLERS = {}
+
+# Cohorts handlers
+try:
+    from app.api.v4.cohorts.delete import delete_cohort
+    from app.api.v4.cohorts.duplicate import duplicate_cohort
+    from app.api.v4.cohorts.get import get_cohort
+    from app.api.v4.cohorts.list import get_cohorts_list
+    from app.api.v4.cohorts.save import save_cohort
+
+    COHORTS_HANDLERS = {
+        "get": get_cohort,
+        "save": save_cohort,
+        "list": get_cohorts_list,
+        "duplicate": duplicate_cohort,
+        "delete": delete_cohort,
+    }
+except ImportError:
+    COHORTS_HANDLERS = {}
+
+# Evals handlers (uses unified save.py)
+try:
+    from app.api.v4.evals.delete import delete_eval
+    from app.api.v4.evals.get import get_eval
+    from app.api.v4.evals.list import get_evals_list
+    from app.api.v4.evals.save import save_eval
+
+    EVALS_HANDLERS = {
+        "get": get_eval,
+        "save": save_eval,
+        "list": get_evals_list,
+        "duplicate": None,  # Evals doesn't have duplicate
+        "delete": delete_eval,
+    }
+except ImportError:
+    EVALS_HANDLERS = {}
+
+# Rubrics handlers (uses unified save.py)
+try:
+    from app.api.v4.rubrics.delete import delete_rubric
+    from app.api.v4.rubrics.duplicate import duplicate_rubric
+    from app.api.v4.rubrics.get import get_rubric
+    from app.api.v4.rubrics.list import get_rubrics_list
+    from app.api.v4.rubrics.save import save_rubric
+
+    RUBRICS_HANDLERS = {
+        "get": get_rubric,
+        "save": save_rubric,
+        "list": get_rubrics_list,
+        "duplicate": duplicate_rubric,
+        "delete": delete_rubric,
+    }
+except ImportError:
+    RUBRICS_HANDLERS = {}
+
+# Agents handlers (uses unified save.py)
+try:
+    from app.api.v4.agents.delete import delete_agent
+    from app.api.v4.agents.duplicate import duplicate_agent
+    from app.api.v4.agents.get import get_agent
+    from app.api.v4.agents.list import list_agents
+    from app.api.v4.agents.save import save_agent
+
+    AGENTS_HANDLERS = {
+        "get": get_agent,
+        "save": save_agent,
+        "list": list_agents,
+        "duplicate": duplicate_agent,
+        "delete": delete_agent,
+    }
+except ImportError:
+    AGENTS_HANDLERS = {}
+
+# Models handlers (uses unified save.py)
+try:
+    from app.api.v4.models.delete import delete_model
+    from app.api.v4.models.duplicate import duplicate_model
+    from app.api.v4.models.get import get_model
+    from app.api.v4.models.list import get_models_list
+    from app.api.v4.models.save import save_model
+
+    MODELS_HANDLERS = {
+        "get": get_model,
+        "save": save_model,
+        "list": get_models_list,
+        "duplicate": duplicate_model,
+        "delete": delete_model,
+    }
+except ImportError:
+    MODELS_HANDLERS = {}
+
+# Providers handlers
+try:
+    from app.api.v4.providers.delete import delete_provider
+    from app.api.v4.providers.get import get_provider
+    from app.api.v4.providers.list import get_providers_list
+    from app.api.v4.providers.save import save_provider
+
+    PROVIDERS_HANDLERS = {
+        "get": get_provider,
+        "save": save_provider,
+        "list": get_providers_list,
+        "duplicate": None,  # Providers doesn't have duplicate
+        "delete": delete_provider,
+    }
+except ImportError:
+    PROVIDERS_HANDLERS = {}
+
+# Parameters handlers (uses unified save.py)
+try:
+    from app.api.v4.parameters.delete import delete_parameter
+    from app.api.v4.parameters.duplicate import duplicate_parameter
+    from app.api.v4.parameters.get import get_parameter
+    from app.api.v4.parameters.list import get_parameters_list
+    from app.api.v4.parameters.save import save_parameter
+
+    PARAMETERS_HANDLERS = {
+        "get": get_parameter,
+        "save": save_parameter,
+        "list": get_parameters_list,
+        "duplicate": duplicate_parameter,
+        "delete": delete_parameter,
+    }
+except ImportError:
+    PARAMETERS_HANDLERS = {}
+
+# Fields handlers
+try:
+    from app.api.v4.fields.delete import delete_field
+    from app.api.v4.fields.duplicate import duplicate_field
+    from app.api.v4.fields.get import get_field
+    from app.api.v4.fields.list import get_fields_list
+    from app.api.v4.fields.save import save_field
+
+    FIELDS_HANDLERS = {
+        "get": get_field,
+        "save": save_field,
+        "list": get_fields_list,
+        "duplicate": duplicate_field,
+        "delete": delete_field,
+    }
+except ImportError:
+    FIELDS_HANDLERS = {}
+
+# Profile handlers (uses create.py/update.py for save)
+try:
+    from app.api.v4.profile.create import create_profile
+    from app.api.v4.profile.delete import delete_profile
+    from app.api.v4.profile.detail import get_profile_detail
+    from app.api.v4.profile.update import update_profile
+
+    PROFILE_HANDLERS = {
+        "get": get_profile_detail,
+        "save": create_save_handler(create_profile, update_profile, "profile_id"),
+        "list": None,  # Profile doesn't have list
+        "duplicate": None,  # Profile doesn't have duplicate
+        "delete": delete_profile,
+    }
+except ImportError:
+    PROFILE_HANDLERS = {}
+
+# Auth handlers (uses unified save.py)
+try:
+    from app.api.v4.auth.delete import delete_auth
+    from app.api.v4.auth.duplicate import duplicate_auth
+    from app.api.v4.auth.get import get_auth
+    from app.api.v4.auth.list import get_auth_list
+    from app.api.v4.auth.save import save_auth
+
+    AUTH_HANDLERS = {
+        "get": get_auth,
+        "save": save_auth,
+        "list": get_auth_list,
+        "duplicate": duplicate_auth,
+        "delete": delete_auth,
+    }
+except ImportError:
+    AUTH_HANDLERS = {}
+
+# Tools handlers
+try:
+    from app.api.v4.tools.delete import delete_tool
+    from app.api.v4.tools.duplicate import duplicate_tool
+    from app.api.v4.tools.get import get_tool
+    from app.api.v4.tools.list import get_tools_list
+    from app.api.v4.tools.save import save_tool
+
+    TOOLS_HANDLERS = {
+        "get": get_tool,
+        "save": save_tool,
+        "list": get_tools_list,
+        "duplicate": duplicate_tool,
+        "delete": delete_tool,
+    }
+except ImportError:
+    TOOLS_HANDLERS = {}
+
+# Keys handlers (no CRUD endpoints found, skipping for now)
+KEYS_HANDLERS: dict[str, Any] = {}
 
 # Analytics handlers
 try:
@@ -296,7 +591,7 @@ try:
 except ImportError:
     ATTEMPTS_HANDLERS = {}
 
-# Settings handlers
+# Settings handlers (embedded in artifacts)
 try:
     from app.api.v4.settings.list import list_settings
     from app.api.v4.settings.update import update_settings
@@ -319,7 +614,8 @@ except ImportError:
 # Resource handlers (for create_resource tool)
 RESOURCE_HANDLERS: dict[str, Any] = {}
 try:
-    from app.api.v4.resources.agents import create_agent
+    from app.api.v4.resources.agents import \
+        create_agent as create_agent_resource
     from app.api.v4.resources.analyses import create_analyses
     from app.api.v4.resources.audios import create_audio
     from app.api.v4.resources.auths import create_auths
@@ -353,17 +649,20 @@ try:
     from app.api.v4.resources.items import create_items
     from app.api.v4.resources.keys import create_key
     from app.api.v4.resources.modalities import create_modalities
-    from app.api.v4.resources.models import create_model
+    from app.api.v4.resources.models import \
+        create_model as create_model_resource
     from app.api.v4.resources.names import create_name
     from app.api.v4.resources.objectives import create_objective
     from app.api.v4.resources.options import create_option
-    from app.api.v4.resources.parameters import create_parameter
+    from app.api.v4.resources.parameters import \
+        create_parameter as create_parameter_resource
     from app.api.v4.resources.personas import create_persona
     from app.api.v4.resources.points import create_point
     from app.api.v4.resources.pricing import create_pricing
     from app.api.v4.resources.problem_statements import \
         create_problem_statement
-    from app.api.v4.resources.profiles import create_profile
+    from app.api.v4.resources.profiles import \
+        create_profile as create_profile_resource
     from app.api.v4.resources.prompts import create_prompt
     from app.api.v4.resources.protocols import create_protocols
     from app.api.v4.resources.providers import create_providers
@@ -372,7 +671,8 @@ try:
     from app.api.v4.resources.reasoning_levels import create_reasoning_levels
     from app.api.v4.resources.request_limits import create_request_limits
     from app.api.v4.resources.responses import create_response
-    from app.api.v4.resources.rubrics import create_rubric
+    from app.api.v4.resources.rubrics import \
+        create_rubric as create_rubric_resource
     from app.api.v4.resources.run_positions import create_run_positions
     from app.api.v4.resources.runs import create_runs
     from app.api.v4.resources.runs_rubric_grade_agents import \
@@ -382,7 +682,8 @@ try:
         create_scenario_position
     from app.api.v4.resources.scenario_rubric_grade_agents import \
         create_scenario_rubric_grade_agent
-    from app.api.v4.resources.scenarios import create_scenario
+    from app.api.v4.resources.scenarios import \
+        create_scenario as create_scenario_resource
     from app.api.v4.resources.schema_field_items import \
         create_schema_field_item
     from app.api.v4.resources.schema_fields import create_schema_field
@@ -409,7 +710,7 @@ try:
     from app.api.v4.resources.voices import create_voices
 
     RESOURCE_HANDLERS = {
-        "agents": create_agent,
+        "agents": create_agent_resource,
         "analyses": create_analyses,
         "audios": create_audio,
         "auths": create_auths,
@@ -441,16 +742,16 @@ try:
         "items": create_items,
         "keys": create_key,
         "modalities": create_modalities,
-        "models": create_model,
+        "models": create_model_resource,
         "names": create_name,
         "objectives": create_objective,
         "options": create_option,
-        "parameters": create_parameter,
+        "parameters": create_parameter_resource,
         "personas": create_persona,
         "points": create_point,
         "pricing": create_pricing,
         "problem_statements": create_problem_statement,
-        "profiles": create_profile,
+        "profiles": create_profile_resource,
         "prompts": create_prompt,
         "protocols": create_protocols,
         "providers": create_providers,
@@ -459,14 +760,14 @@ try:
         "reasoning_levels": create_reasoning_levels,
         "request_limits": create_request_limits,
         "responses": create_response,
-        "rubrics": create_rubric,
+        "rubrics": create_rubric_resource,
         "run_positions": create_run_positions,
         "runs": create_runs,
         "runs_rubric_grade_agents": create_runs_rubric_grade_agents,
         "scenario_flags": create_scenario_flags,
         "scenario_positions": create_scenario_position,
         "scenario_rubric_grade_agents": create_scenario_rubric_grade_agent,
-        "scenarios": create_scenario,
+        "scenarios": create_scenario_resource,
         "schema_field_items": create_schema_field_item,
         "schema_fields": create_schema_field,
         "schemas": create_schema,
@@ -492,11 +793,13 @@ except ImportError:
     RESOURCE_HANDLERS = {}
 
 # Import artifact documentation functions
+# Maps singular artifact names (MCP/database) to docs functions
+# Docs functions are imported from plural API endpoints
 ARTIFACT_DOCS: dict[str, Any] = {}
 try:
     from app.api.v4.personas.docs import get_personas_docs
 
-    ARTIFACT_DOCS["personas"] = get_personas_docs
+    ARTIFACT_DOCS["persona"] = get_personas_docs
 except ImportError:
     pass
 
@@ -514,12 +817,48 @@ except ImportError:
         return {"error": "Root GLOW documentation not available."}
 
 
-# Handler mapping - maps item name to available operations
+# Mapping from singular artifact names (MCP/database) to plural API endpoint names
+# This allows MCP to use singular names matching the database while API uses plural
+ARTIFACT_TO_API_NAME: dict[str, str] = {
+    "persona": "personas",
+    "scenario": "scenarios",
+    "simulation": "simulations",
+    "document": "documents",
+    "department": "departments",
+    "cohort": "cohorts",
+    "eval": "evals",
+    "rubric": "rubrics",
+    "setting": "settings",
+    "agent": "agents",
+    "model": "models",
+    "provider": "providers",
+    "parameter": "parameters",
+    "field": "fields",
+    "profile": "profile",  # Already singular in API
+    "auth": "auth",  # Already singular in API
+    "tool": "tools",
+}
+
+# Handler mapping - maps singular artifact name (MCP/database) to available operations
+# Handlers are imported from plural API endpoints but mapped by singular names
 HANDLERS: dict[str, dict[str, Any]] = {
-    "personas": PERSONAS_HANDLERS,
-    # TODO: Add other artifacts as they get implemented
-    # "scenarios": {...},
-    # Resources will be added similarly when implemented
+    "persona": PERSONAS_HANDLERS,
+    "scenario": SCENARIOS_HANDLERS,
+    "simulation": SIMULATIONS_HANDLERS,
+    "document": DOCUMENTS_HANDLERS,
+    "department": DEPARTMENTS_HANDLERS,
+    "cohort": COHORTS_HANDLERS,
+    "eval": EVALS_HANDLERS,
+    "rubric": RUBRICS_HANDLERS,
+    "setting": SETTINGS_HANDLERS,
+    "agent": AGENTS_HANDLERS,
+    "model": MODELS_HANDLERS,
+    "provider": PROVIDERS_HANDLERS,
+    "parameter": PARAMETERS_HANDLERS,
+    "field": FIELDS_HANDLERS,
+    "profile": PROFILE_HANDLERS,
+    "auth": AUTH_HANDLERS,
+    "tool": TOOLS_HANDLERS,
 }
 
 
@@ -575,7 +914,7 @@ def get_payload_schema(name: str) -> dict[str, Any]:
 
 
 async def call_handler(
-    name: str, operation: str, payload: dict[str, Any]
+    name: str, operation: str, payload: dict[str, Any], profile_id: str
 ) -> dict[str, Any]:
     """Call a handler function with the given payload."""
     if name not in HANDLERS:
@@ -591,16 +930,14 @@ async def call_handler(
         }
 
     handler = HANDLERS[name][operation]
+    if handler is None:
+        return {
+            "error": f"Handler for {name}.{operation} is not implemented yet.",
+            "status": "not_implemented",
+        }
 
-    # TODO: Properly implement handler calling
-    # Handlers expect FastAPI Request/Response objects and database connection
-    # This requires creating proper mock objects or refactoring handlers
-    # For now, return a message indicating the handler exists but needs implementation
-    return {
-        "message": f"Handler for {name}.{operation} exists but direct calling needs implementation.",
-        "status": "handler_exists",
-        "note": "Handlers require FastAPI Request/Response objects and database connection. Consider calling via HTTP or refactoring handlers.",
-    }
+    # Call the handler using call_endpoint_handler which properly sets up Request/Response/DB context
+    return await call_endpoint_handler(handler, payload, profile_id)
 
 
 def get_request_model_from_handler(handler: Any) -> Any | None:
@@ -805,69 +1142,84 @@ def register_endpoints(server: FastMCP) -> None:
         return get_payload_schema(name)
 
     @server.tool()
-    async def get_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    async def get_artifact(
+        name: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
         """Get an artifact or resource by name.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing parameters for the get operation.
+            profile_id: Profile ID for authentication.
 
         Returns:
             The artifact/resource data or error message.
         """
-        return await call_handler(name, "get", payload)
+        return await call_handler(name, "get", payload, profile_id)
 
     @server.tool()
-    async def save_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    async def save_artifact(
+        name: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
         """Save (create or update) an artifact or resource.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing data to save.
+            profile_id: Profile ID for authentication.
 
         Returns:
             Success response or error message.
         """
-        return await call_handler(name, "save", payload)
+        return await call_handler(name, "save", payload, profile_id)
 
     @server.tool()
-    async def list_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    async def list_artifact(
+        name: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
         """List items for an artifact or resource.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing filter parameters.
+            profile_id: Profile ID for authentication.
 
         Returns:
             List of items or error message.
         """
-        return await call_handler(name, "list", payload)
+        return await call_handler(name, "list", payload, profile_id)
 
     @server.tool()
-    async def duplicate_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    async def duplicate_artifact(
+        name: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
         """Duplicate an artifact or resource.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing the item to duplicate.
+            profile_id: Profile ID for authentication.
 
         Returns:
             Duplicated item data or error message.
         """
-        return await call_handler(name, "duplicate", payload)
+        return await call_handler(name, "duplicate", payload, profile_id)
 
     @server.tool()
-    async def delete_artifact(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    async def delete_artifact(
+        name: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
         """Delete an artifact or resource.
 
         Args:
             name: The name of the artifact or resource.
             payload: The payload containing the item to delete.
+            profile_id: Profile ID for authentication.
 
         Returns:
             Success response or error message.
         """
-        return await call_handler(name, "delete", payload)
+        return await call_handler(name, "delete", payload, profile_id)
 
     # Resource-specific endpoints (create only)
     @server.tool()
@@ -929,7 +1281,7 @@ def register_endpoints(server: FastMCP) -> None:
                 "status": "not_implemented",
             }
 
-        return await call_endpoint_handler(handler, payload, profile_id)
+        return await call_endpoint_handler(handler, payload, profile_id)  # type: ignore[arg-type]
 
     @server.tool()
     def analytics_payload(type: str) -> dict[str, Any]:
@@ -955,9 +1307,10 @@ def register_endpoints(server: FastMCP) -> None:
                 "status": "not_implemented",
             }
 
-        request_model = get_request_model_from_handler(handler)
+        request_model = get_request_model_from_handler(handler)  # type: ignore[arg-type]
         if request_model and hasattr(request_model, "model_json_schema"):
-            return request_model.model_json_schema()
+            schema = request_model.model_json_schema()
+            return cast(dict[str, Any], schema)
 
         return {
             "type": "object",
@@ -1144,50 +1497,6 @@ def register_endpoints(server: FastMCP) -> None:
         }
         return await call_endpoint_handler(handler, payload_with_params, profile_id)
 
-    # Settings endpoints
-    @server.tool()
-    async def get_settings(
-        payload: dict[str, Any], profile_id: str
-    ) -> dict[str, Any]:
-        """Get settings list or detail.
-
-        Args:
-            payload: Request payload
-            profile_id: Profile ID for authentication
-
-        Returns:
-            Settings data or error message.
-        """
-        if "get" not in SETTINGS_HANDLERS:
-            return {
-                "error": "get_settings handler not available.",
-                "status": "not_implemented",
-            }
-
-        handler = SETTINGS_HANDLERS["get"]
-        return await call_endpoint_handler(handler, payload, profile_id)
-
-    @server.tool()
-    async def save_settings(
-        payload: dict[str, Any], profile_id: str
-    ) -> dict[str, Any]:
-        """Save (update) settings.
-
-        Args:
-            payload: Request payload with settings data
-            profile_id: Profile ID for authentication
-
-        Returns:
-            Updated settings or error message.
-        """
-        if "save" not in SETTINGS_HANDLERS:
-            return {
-                "error": "save_settings handler not available.",
-                "status": "not_implemented",
-            }
-
-        handler = SETTINGS_HANDLERS["save"]
-        return await call_endpoint_handler(handler, payload, profile_id)
 
     # Debug/Report Problem endpoint
     @server.tool()
