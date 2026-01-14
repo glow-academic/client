@@ -53,14 +53,14 @@ BEGIN
     LEFT JOIN tool_templates tt ON tt.tool_id = t.id
     LEFT JOIN schema_templates st ON st.template_id = tt.template_id
     WHERE at.agent_id = api_create_simulation_scenario_flags_v4.agent_id
-      AND rt.resource = 'simulation_scenario_flags'::resources
+      AND rt.resource = 'scenario_flags'::resources
       AND at.active = true
       AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1;
     
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
-        RAISE EXCEPTION 'Agent % does not have tool for resource simulation_scenario_flags', agent_id;
+        RAISE EXCEPTION 'Agent % does not have tool for resource scenario_flags', agent_id;
     END IF;
     -- Validate agent has mcp flag when mcp=true
     IF mcp = true AND agent_id IS NOT NULL THEN
@@ -123,8 +123,8 @@ BEGIN
         NOW()
     );
     
-    -- INSERT INTO simulation_scenario_flags_resource table (always insert, never update)
-    INSERT INTO simulation_scenario_flags_resource(name, description, icon_id, active, call_id, generated)
+    -- INSERT INTO scenario_flags_resource table (always insert, never update)
+    INSERT INTO scenario_flags_resource(name, description, icon_id, active, call_id, generated)
     VALUES (name, description, icon_id, true, v_call_id, true)
     ON CONFLICT (name) DO NOTHING
     RETURNING id INTO v_flag_id;
@@ -132,7 +132,7 @@ BEGIN
     -- If conflict occurred, get the existing id
     IF v_flag_id IS NULL THEN
         SELECT id INTO v_flag_id
-        FROM simulation_scenario_flags_resource
+        FROM scenario_flags_resource
         WHERE name = api_create_simulation_scenario_flags_v4.name;
     END IF;
     

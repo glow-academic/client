@@ -687,8 +687,8 @@ valid_personas_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
-                        JOIN field_conditional_parameters fcp ON fcp.field_id = pf.field_id
-                        JOIN parameter_artifact cp ON cp.id = fcp.conditional_parameter_id
+                        JOIN field_parameters fcp ON fcp.field_id = pf.field_id AND fcp.type = 'conditional'::type_field_parameters
+                        JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                         WHERE pf.persona_id = p.id
                         AND pf.active = true
                         AND fcp.active = true
@@ -722,8 +722,8 @@ valid_personas_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM persona_fields pf
-                        JOIN field_conditional_parameters fcp ON fcp.field_id = pf.field_id
-                        JOIN parameter_artifact cp ON cp.id = fcp.conditional_parameter_id
+                        JOIN field_parameters fcp ON fcp.field_id = pf.field_id AND fcp.type = 'conditional'::type_field_parameters
+                        JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                         WHERE pf.persona_id = p.id
                         AND pf.active = true
                         AND fcp.active = true
@@ -969,8 +969,8 @@ valid_documents_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM document_fields df
-                        JOIN field_conditional_parameters fcp ON fcp.field_id = df.field_id
-                        JOIN parameter_artifact cp ON cp.id = fcp.conditional_parameter_id
+                        JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::type_field_parameters
+                        JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                         WHERE df.document_id = d.id
                         AND df.active = true
                         AND fcp.active = true
@@ -991,8 +991,8 @@ valid_documents_filtered AS (
                     OR EXISTS (
                         SELECT 1 
                         FROM document_fields df
-                        JOIN field_conditional_parameters fcp ON fcp.field_id = df.field_id
-                        JOIN parameter_artifact cp ON cp.id = fcp.conditional_parameter_id
+                        JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::type_field_parameters
+                        JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                         WHERE df.document_id = d.id
                         AND df.active = true
                         AND fcp.active = true
@@ -1113,8 +1113,8 @@ document_data_base AS (
                 OR EXISTS (
                     SELECT 1 
                     FROM document_fields df
-                    JOIN field_conditional_parameters fcp ON fcp.field_id = df.field_id
-                    JOIN parameter_artifact cp ON cp.id = fcp.conditional_parameter_id
+                    JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::type_field_parameters
+                    JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                     WHERE df.document_id = d3.id
                     AND df.active = true
                     AND fcp.active = true
@@ -1135,8 +1135,8 @@ document_data_base AS (
                 OR EXISTS (
                     SELECT 1 
                     FROM document_fields df
-                    JOIN field_conditional_parameters fcp ON fcp.field_id = df.field_id
-                    JOIN parameter_artifact cp ON cp.id = fcp.conditional_parameter_id
+                    JOIN field_parameters fcp ON fcp.field_id = df.field_id AND fcp.type = 'conditional'::type_field_parameters
+                    JOIN parameter_artifact cp ON cp.id = fcp.parameter_id
                     WHERE df.document_id = d3.id
                     AND df.active = true
                     AND fcp.active = true
@@ -1463,9 +1463,9 @@ all_parameters_array AS (
 field_conditional_parameters_data AS (
     SELECT 
         fcp.field_id,
-        ARRAY_AGG(fcp.conditional_parameter_id ORDER BY fcp.conditional_parameter_id) as conditional_parameter_ids
-    FROM field_conditional_parameters fcp
-    WHERE fcp.active = true
+        ARRAY_AGG(fcp.parameter_id ORDER BY fcp.parameter_id) as conditional_parameter_ids
+    FROM field_parameters fcp
+    WHERE fcp.active = true AND fcp.type = 'conditional'::type_field_parameters
     GROUP BY fcp.field_id
 ),
 parameter_item_data AS (

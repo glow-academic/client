@@ -118,10 +118,11 @@ link_field_active_flag AS (
 ),
 link_conditional_parameters AS (
     -- Link field to conditional parameters if provided
-    INSERT INTO field_conditional_parameters (field_id, conditional_parameter_id, active, created_at, updated_at)
+    INSERT INTO field_parameters (field_id, parameter_id, type, active, created_at, updated_at)
     SELECT 
         nf.field_id,
         cond_param_id::uuid,
+        'conditional'::type_field_parameters,
         true,
         NOW(),
         NOW()
@@ -129,7 +130,7 @@ link_conditional_parameters AS (
     CROSS JOIN params x
     CROSS JOIN UNNEST(x.conditional_parameter_ids) as cond_param_id
     WHERE COALESCE(array_length(x.conditional_parameter_ids, 1), 0) > 0
-    ON CONFLICT (field_id, conditional_parameter_id) DO UPDATE SET
+    ON CONFLICT (field_id, parameter_id, type) DO UPDATE SET
         active = true,
         updated_at = NOW()
 ),

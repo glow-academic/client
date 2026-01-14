@@ -11,7 +11,18 @@ Generated: $(date)
 - **Junction Tables with call_id**: 2 (non-standard tables: `contents`, `message_calls`)
 - **Compliant Junction Tables**: 9 ✅ (up from 4)
 - **Missing Resources**: 
-  - 0 ✅ (All required resources now exist - `content` for scenario, `analyses`/`feedbacks`/`times` for eval)
+  - `runs` and `groups` resources for `eval` artifact (analogous to how simulations have `scenarios`)
+  - `run_positions` and `group_positions` resources for `eval` artifact (analogous to scenario having `scenario_positions`)
+  - `runs_rubric_grade_agents` and `groups_rubric_grade_agents` resources (to replace `eval_rubric_grade_agents`)
+  - `values` resource for `provider` artifact
+  - `names` and `descriptions` resources for `tool` artifact
+- **Issues to Fix**:
+  - Remove `eval_rubric_grade_agents` resource (flawed logic - should use `runs_rubric_grade_agents` and `groups_rubric_grade_agents` instead)
+  - Remove `tool_tools` junction table (not needed)
+  - Add `type` field to `tool_templates` junction table (enum: 'argument' or 'output')
+  - Rename `simulation_scenario_flags` resource to `scenario_flags`
+  - Replace `field` → `conditional_parameters` with `field` → `parameters` (with type enum on junction table)
+  - Add `reasoning_levels`, `temperature_levels`, `voices` resources to `agent` artifact
 - **Resource-Tool Mapping**: Each resource should have a corresponding tool in the `tool_artifact` table
 
 ## Artifact Tables Compliance
@@ -177,7 +188,19 @@ All artifact-resource pairs have corresponding junction tables.
 - `feedbacks` ✅ - Has `create_feedback` tool via `resource_tools`, has `eval_feedbacks` junction table (COMPLIANT)
 - `times` ✅ - Has `create_times` tool via `resource_tools`, has `eval_times` junction table (COMPLIANT)
 
-**All Resources**: `eval` has 9 resources: agents, analyses, departments, descriptions, feedbacks, flags, names, times, eval_rubric_grade_agents
+**Missing Resources** (analogous to how simulations have `scenarios`):
+- `runs` ❌ - Should have `runs_resource` table and `eval_runs` junction table
+- `groups` ❌ - Should have `groups_resource` table and `eval_groups` junction table
+- `run_positions` ❌ - Should have `run_positions_resource` table and `eval_run_positions` junction table (analogous to `scenario_positions`)
+- `group_positions` ❌ - Should have `group_positions_resource` table and `eval_group_positions` junction table
+
+**Flawed Resource to Remove**:
+- `eval_rubric_grade_agents` ❌ - Should be removed. Instead use:
+  - `runs_rubric_grade_agents` resource (with `runs_rubric_grade_agents_resource` table and `eval_runs_rubric_grade_agents` junction table)
+  - `groups_rubric_grade_agents` resource (with `groups_rubric_grade_agents_resource` table and `eval_groups_rubric_grade_agents` junction table)
+  - Note: `eval_runs_rubric_grade_agents` and `eval_groups_rubric_grade_agents` tables already exist but reference `rubric_grade_agent_id` directly - need to check if they should reference resources instead
+
+**Current Resources**: `eval` has 9 resources: agents, analyses, departments, descriptions, feedbacks, flags, names, times, eval_rubric_grade_agents
 
 **Note**: `eval` correctly does NOT have `strengths` or `improvements` resources (unlike `simulation`).
 
@@ -354,6 +377,196 @@ All artifact-resource pairs have corresponding junction tables.
 | tool | templates | COMPLIANT | NON-COMPLIANT: call_id nullable | tool_templates | NON-COMPLIANT: Missing generated/mcp |
 | tool | tools | COMPLIANT | COMPLIANT | tool_tools | **COMPLIANT** ✅ |
 
+## Issues Requiring Fixes
+
+### Issue 1: Eval Missing Runs and Groups Resources
+
+**Problem**: `eval` artifact should have `runs` and `groups` resources (analogous to how `simulation` has `scenarios`).
+
+**Current State**:
+- `runs` table exists (not a resource table)
+- `groups` table exists (not a resource table)
+- `runs_resource` table does NOT exist ❌
+- `groups_resource` table does NOT exist ❌
+- `runs` is NOT in resources enum ❌
+- `groups` is NOT in resources enum ❌
+- `eval` → `runs` entry does NOT exist in `artifact_resources` ❌
+- `eval` → `groups` entry does NOT exist in `artifact_resources` ❌
+- `eval_runs` junction table does NOT exist ❌
+- `eval_groups` junction table does NOT exist ❌
+
+**Required Actions**:
+1. Add `runs` and `groups` to `resources` enum
+2. Create `runs_resource` table with required columns
+3. Create `groups_resource` table with required columns
+4. Add `eval` → `runs` and `eval` → `groups` entries to `artifact_resources`
+5. Create `eval_runs` and `eval_groups` junction tables
+
+### Issue 2: Eval Missing Position Resources
+
+**Problem**: `eval` should have `run_positions` and `group_positions` resources (analogous to `scenario` having `scenario_positions`).
+
+**Current State**:
+- `run_positions` is NOT in resources enum ❌
+- `group_positions` is NOT in resources enum ❌
+- `run_positions_resource` table does NOT exist ❌
+- `group_positions_resource` table does NOT exist ❌
+- `eval` → `run_positions` entry does NOT exist in `artifact_resources` ❌
+- `eval` → `group_positions` entry does NOT exist in `artifact_resources` ❌
+- `eval_run_positions` junction table does NOT exist ❌
+- `eval_group_positions` junction table does NOT exist ❌
+
+**Required Actions**:
+1. Add `run_positions` and `group_positions` to `resources` enum
+2. Create `run_positions_resource` and `group_positions_resource` tables
+3. Add entries to `artifact_resources`
+4. Create junction tables
+
+### Issue 3: Remove eval_rubric_grade_agents (Flawed Logic)
+
+**Problem**: `eval_rubric_grade_agents` resource is flawed. Should use `runs_rubric_grade_agents` and `groups_rubric_grade_agents` instead (analogous to how `scenario` has `scenario_rubric_grade_agents`).
+
+**Current State**:
+- `eval_rubric_grade_agents` resource exists in `artifact_resources` (used by `eval` and `simulation`) ❌
+- `eval_rubric_grade_agents_resource` table exists ❌
+- `eval_eval_rubric_grade_agents` junction table exists ❌
+- `eval_runs_rubric_grade_agents` table exists (references `rubric_grade_agent_id` directly) ✅
+- `eval_groups_rubric_grade_agents` table exists (references `rubric_grade_agent_id` directly) ✅
+- `runs_rubric_grade_agents` is NOT in resources enum ❌
+- `groups_rubric_grade_agents` is NOT in resources enum ❌
+- `runs_rubric_grade_agents_resource` table does NOT exist ❌
+- `groups_rubric_grade_agents_resource` table does NOT exist ❌
+
+**Required Actions**:
+1. Add `runs_rubric_grade_agents` and `groups_rubric_grade_agents` to `resources` enum
+2. Create `runs_rubric_grade_agents_resource` and `groups_rubric_grade_agents_resource` tables (similar structure to `scenario_rubric_grade_agents_resource`)
+3. Add `eval` → `runs_rubric_grade_agents` and `eval` → `groups_rubric_grade_agents` entries to `artifact_resources`
+4. Update `eval_runs_rubric_grade_agents` and `eval_groups_rubric_grade_agents` tables to reference resources instead of direct `rubric_grade_agent_id`
+5. Remove `eval_rubric_grade_agents` from `artifact_resources` (for both `eval` and `simulation`)
+6. Drop `eval_rubric_grade_agents_resource` table
+7. Drop `eval_eval_rubric_grade_agents` junction table
+
+### Issue 4: Provider Missing Values Resource
+
+**Problem**: `provider` artifact should have `values` resource.
+
+**Current State**:
+- `values_resource` table EXISTS ✅
+- `values` is NOT in resources enum ❌
+- `provider` → `values` entry does NOT exist in `artifact_resources` ❌
+- `provider_values` junction table does NOT exist ❌
+
+**Required Actions**:
+1. Add `values` to `resources` enum
+2. Add `provider` → `values` entry to `artifact_resources`
+3. Create `provider_values` junction table
+
+### Issue 5: Tool Missing Names and Descriptions Resources
+
+**Problem**: `tool` artifact should have `names` and `descriptions` resources (like other artifacts).
+
+**Current State**:
+- `tool` has resources: schemas, templates, tools
+- `tool` does NOT have `names` resource ❌
+- `tool` does NOT have `descriptions` resource ❌
+- `tool_names` junction table EXISTS (but not connected via artifact_resources) ✅
+- `tool_descriptions` junction table EXISTS (but not connected via artifact_resources) ✅
+
+**Required Actions**:
+1. Add `tool` → `names` entry to `artifact_resources`
+2. Add `tool` → `descriptions` entry to `artifact_resources`
+3. Verify `tool_names` and `tool_descriptions` junction tables have required columns
+
+### Issue 6: Remove tool_tools Junction Table
+
+**Problem**: `tool_tools` junction table should not exist - tools shouldn't link to tools resource.
+
+**Current State**:
+- `tool_tools` junction table EXISTS ❌
+- `tool` → `tools` entry exists in `artifact_resources` ❌
+
+**Required Actions**:
+1. Remove `tool` → `tools` entry from `artifact_resources`
+2. Drop `tool_tools` junction table
+
+### Issue 7: tool_templates Missing Type Field
+
+**Problem**: `tool_templates` junction table should have a `type` enum field for 'argument' or 'output'.
+
+**Current State**:
+- `tool_templates` junction table EXISTS ✅
+- `tool_templates` does NOT have `type` column ❌
+- Current columns: tool_id, template_id, created_at, updated_at, generated, mcp, active
+
+**Required Actions**:
+1. Create `type_tool_templates` enum type with values 'argument', 'output'
+2. Add `type` column to `tool_templates` table (enum type, NOT NULL)
+
+### Issue 8: Field Should Link to Parameters (Not conditional_parameters)
+
+**Problem**: `field` artifact should NOT have a separate `conditional_parameters` resource. Instead, it should link to `parameters` resource with a `type` enum field on the junction table (value: 'conditional').
+
+**Current State**:
+- `field` has `conditional_parameters` resource in `artifact_resources` ❌
+- `conditional_parameters_resource` table exists ❌
+- `field_conditional_parameters` junction table exists ❌
+- `field` does NOT have `parameters` resource ❌
+- `field_parameters` junction table does NOT exist ❌
+
+**Required Actions**:
+1. Add `field` → `parameters` entry to `artifact_resources`
+2. Create `field_parameters` junction table with:
+   - `field_id` (uuid, NOT NULL)
+   - `parameter_id` (uuid, NOT NULL)
+   - `type` enum (NOT NULL) - with value 'conditional' (and potentially other types in future)
+   - `active` (boolean, NOT NULL, DEFAULT true)
+   - `created_at` (timestamptz, NOT NULL)
+   - `updated_at` (timestamptz, NOT NULL)
+   - `generated` (boolean, NOT NULL, DEFAULT false)
+   - `mcp` (boolean, NOT NULL, DEFAULT false)
+3. Migrate data from `field_conditional_parameters` to `field_parameters` (with type = 'conditional')
+4. Remove `field` → `conditional_parameters` entry from `artifact_resources`
+5. Drop `field_conditional_parameters` junction table
+6. Consider dropping `conditional_parameters_resource` table if no longer needed (check if used elsewhere)
+
+### Issue 9: Agent Missing reasoning_levels, temperature_levels, voices Resources
+
+**Problem**: `agent` artifact should have `reasoning_levels`, `temperature_levels`, and `voices` resources (like `model` artifact has).
+
+**Current State**:
+- `agent` does NOT have `reasoning_levels` resource ❌
+- `agent` does NOT have `temperature_levels` resource ❌
+- `agent` does NOT have `voices` resource ❌
+- `agent_reasoning_levels` junction table EXISTS ✅ (COMPLIANT - has all required columns, no call_id)
+- `agent_temperature_levels` junction table EXISTS ✅ (COMPLIANT - has all required columns, no call_id)
+- `agent_voices` junction table EXISTS ✅ (COMPLIANT - has all required columns, no call_id)
+- Junction tables are already compliant but not connected via `artifact_resources`
+
+**Required Actions**:
+1. Add `agent` → `reasoning_levels` entry to `artifact_resources`
+2. Add `agent` → `temperature_levels` entry to `artifact_resources`
+3. Add `agent` → `voices` entry to `artifact_resources`
+4. Junction tables are already compliant ✅ - no changes needed to table structure
+
+### Issue 10: Rename simulation_scenario_flags to scenario_flags
+
+**Problem**: `simulation_scenario_flags` resource should be called `scenario_flags`.
+
+**Current State**:
+- `simulation_scenario_flags` resource exists in `artifact_resources` (used by `simulation`) ❌
+- `simulation_scenario_flags_resource` table exists ❌
+- `simulation_simulation_scenario_flags` junction table exists ❌
+- `scenario_flags` junction table exists (for `scenario` → `flags`) ✅
+
+**Required Actions**:
+1. Add `scenario_flags` to `resources` enum (if not already exists)
+2. Create `scenario_flags_resource` table (or rename `simulation_scenario_flags_resource`)
+3. Add `scenario` → `scenario_flags` entry to `artifact_resources` (if needed)
+4. Create `scenario_scenario_flags` junction table (if needed)
+5. Update `simulation` → `simulation_scenario_flags` to `simulation` → `scenario_flags` in `artifact_resources`
+6. Rename `simulation_simulation_scenario_flags` to `simulation_scenario_flags` junction table
+7. Drop `simulation_scenario_flags_resource` table (or rename to `scenario_flags_resource`)
+
 ## Recommendations
 
 ### Priority 1: Fix Resource Tables
@@ -377,6 +590,72 @@ All artifact-resource pairs have corresponding junction tables.
 
 2. **Remove `call_id` column** from `contents` and `message_calls` tables if they're not needed (these appear to be non-standard tables)
 
-### Priority 3: Verify Compliance
+### Priority 3: Fix Eval Resources
+1. **Add `runs` and `groups` resources** for `eval`:
+   - Add `runs` and `groups` to `resources` enum
+   - Create `runs_resource` and `groups_resource` tables
+   - Add `eval` → `runs` and `eval` → `groups` to `artifact_resources`
+   - Create `eval_runs` and `eval_groups` junction tables
+
+2. **Add `run_positions` and `group_positions` resources** for `eval`:
+   - Add `run_positions` and `group_positions` to `resources` enum
+   - Create `run_positions_resource` and `group_positions_resource` tables
+   - Add entries to `artifact_resources`
+   - Create `eval_run_positions` and `eval_group_positions` junction tables
+
+3. **Replace `eval_rubric_grade_agents` with `runs_rubric_grade_agents` and `groups_rubric_grade_agents`**:
+   - Add `runs_rubric_grade_agents` and `groups_rubric_grade_agents` to `resources` enum
+   - Create resource tables (similar to `scenario_rubric_grade_agents_resource`)
+   - Add entries to `artifact_resources` for `eval`
+   - Update existing `eval_runs_rubric_grade_agents` and `eval_groups_rubric_grade_agents` tables to reference resources
+   - Remove `eval_rubric_grade_agents` from `artifact_resources` (for both `eval` and `simulation`)
+   - Drop `eval_rubric_grade_agents_resource` table and `eval_eval_rubric_grade_agents` junction table
+
+### Priority 4: Fix Provider and Tool Resources
+1. **Add `values` resource to `provider`**:
+   - Add `values` to `resources` enum
+   - Add `provider` → `values` entry to `artifact_resources`
+   - Create `provider_values` junction table
+
+2. **Add `names` and `descriptions` resources to `tool`**:
+   - Add `tool` → `names` entry to `artifact_resources`
+   - Add `tool` → `descriptions` entry to `artifact_resources`
+   - Verify `tool_names` and `tool_descriptions` junction tables have required columns
+
+3. **Remove `tool_tools`**:
+   - Remove `tool` → `tools` entry from `artifact_resources`
+   - Drop `tool_tools` junction table
+
+4. **Add `type` field to `tool_templates`**:
+   - Create `type_tool_templates` enum type ('argument', 'output')
+   - Add `type` column to `tool_templates` table
+
+### Priority 5: Fix Field conditional_parameters Issue
+1. **Replace `conditional_parameters` with `parameters` for field**:
+   - Add `field` → `parameters` entry to `artifact_resources`
+   - Create `type_field_parameters` enum type with value 'conditional' (and potentially others)
+   - Create `field_parameters` junction table with `type` enum column
+   - Migrate data from `field_conditional_parameters` to `field_parameters` (with type = 'conditional')
+   - Remove `field` → `conditional_parameters` entry from `artifact_resources`
+   - Drop `field_conditional_parameters` junction table
+   - Consider dropping `conditional_parameters_resource` table if no longer needed
+
+### Priority 6: Fix Agent Missing Resources
+1. **Add resources to `agent` artifact**:
+   - Add `agent` → `reasoning_levels` entry to `artifact_resources`
+   - Add `agent` → `temperature_levels` entry to `artifact_resources`
+   - Add `agent` → `voices` entry to `artifact_resources`
+   - Verify `agent_reasoning_levels`, `agent_temperature_levels`, and `agent_voices` junction tables have all required columns (they already exist and appear compliant)
+
+### Priority 7: Fix simulation_scenario_flags Naming
+1. **Rename `simulation_scenario_flags` to `scenario_flags`**:
+   - Add `scenario_flags` to `resources` enum (if not exists)
+   - Rename `simulation_scenario_flags_resource` to `scenario_flags_resource` (or create new)
+   - Update `simulation` → `simulation_scenario_flags` to `simulation` → `scenario_flags` in `artifact_resources`
+   - Rename `simulation_simulation_scenario_flags` to `simulation_scenario_flags` junction table
+   - Add `scenario` → `scenario_flags` entry to `artifact_resources` if needed
+   - Create `scenario_scenario_flags` junction table if needed
+
+### Priority 8: Verify Compliance
 - All 9 compliant junction tables serve as examples of the correct structure
 - Once all junction tables have `generated` and `mcp` columns added, compliance should be achieved

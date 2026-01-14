@@ -97,10 +97,10 @@ field_departments_data AS (
 field_conditional_parameters_agg AS (
     SELECT 
         fcp.field_id,
-        ARRAY_AGG(fcp.conditional_parameter_id::text ORDER BY (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)) as conditional_parameter_ids
-    FROM field_conditional_parameters fcp
-    JOIN parameters_resource p ON p.id = fcp.conditional_parameter_id
-    WHERE fcp.active = true
+        ARRAY_AGG(fcp.parameter_id::text ORDER BY (SELECT n.name FROM parameter_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)) as conditional_parameter_ids
+    FROM field_parameters fcp
+    JOIN parameters_resource p ON p.id = fcp.parameter_id
+    WHERE fcp.active = true AND fcp.type = 'conditional'::type_field_parameters
     GROUP BY fcp.field_id
 ),
 fields_data AS (
