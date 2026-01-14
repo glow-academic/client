@@ -35,7 +35,7 @@ WITH params AS (
 ),
 key_exists_check AS (
     SELECT EXISTS(
-        SELECT 1 FROM key_artifact WHERE id = (SELECT key_id FROM params)
+        SELECT 1 FROM keys WHERE id = (SELECT key_id FROM params)
     )::boolean as key_exists
 ),
 actor_profile AS (
@@ -55,7 +55,7 @@ key_info AS (
         k.id, 
         (SELECT n.name FROM key_names kn JOIN names_resource n ON kn.name_id = n.id WHERE kn.key_id = k.id LIMIT 1) as name
     FROM params x
-    JOIN keys_resource k ON k.id = x.key_id
+    JOIN keys k ON k.id = x.key_id
 ),
 department_keys_data AS (
     -- NOTE: department_keys table was removed in migration 74
@@ -80,7 +80,7 @@ check_permissions AS (
     GROUP BY up.role, kdd.department_ids
 ),
 delete_key AS (
-    DELETE FROM key_artifact
+    DELETE FROM keys
     WHERE id = (SELECT key_id FROM params)
     AND EXISTS (SELECT 1 FROM check_permissions WHERE can_delete = true)
     RETURNING id

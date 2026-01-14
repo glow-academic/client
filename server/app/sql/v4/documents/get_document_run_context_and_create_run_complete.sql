@@ -129,9 +129,9 @@ group_data AS (
 best_agent AS (
     SELECT a.id as agent_id
     FROM agent_artifact a
-    INNER JOIN agent_domains adom ON adom.agent_id = a.id
-    INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('document' AS artifacts)
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    
+    
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
     CROSS JOIN params p
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
@@ -159,7 +159,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -199,7 +199,7 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -306,7 +306,7 @@ agent_tools_data AS (
         ba.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(da.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_document_run_context_and_create_run_v4_tool
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifacts::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_document_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
             ) FILTER (WHERE t.id IS NOT NULL),
             '{}'::types.i_get_document_run_context_and_create_run_v4_tool[]
@@ -315,8 +315,8 @@ agent_tools_data AS (
     LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
     LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN agent_domains adom ON adom.agent_id = ba.agent_id
-    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+    
+    
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     GROUP BY ba.agent_id
 ),
@@ -370,7 +370,7 @@ context_data AS (
         -- Agent data
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
+        COALESCE(NULL::artifacts::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,
@@ -405,8 +405,8 @@ context_data AS (
 
     FROM best_agent ba
     INNER JOIN agents_resource a ON a.id = ba.agent_id
-    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
-    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+    
+    
     CROSS JOIN params p
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
@@ -438,7 +438,7 @@ context_data AS (
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     -- JOIN tools_resource data
@@ -454,7 +454,7 @@ context_data AS (
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id
@@ -505,7 +505,7 @@ existing_developer_message AS (
         m.id, 
         m.created_at,
         dmh.run_id
-    FROM message_artifact m
+    FROM messages m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN contents cnt ON cnt.id = mc.content_id
     JOIN developer_message_hash dmh ON message_content_hash(cnt.content, 'developer') = dmh.hash
@@ -513,7 +513,7 @@ existing_developer_message AS (
     LIMIT 1
 ),
 new_developer_message AS (
-    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM developer_message_hash dmh
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_message)

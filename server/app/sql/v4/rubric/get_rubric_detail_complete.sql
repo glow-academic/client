@@ -247,11 +247,11 @@ valid_agents_data AS (
         agents_table.id as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = agents_table.id LIMIT 1) as name,
         COALESCE((SELECT desc_text.description FROM agent_descriptions adesc JOIN descriptions_resource desc_text ON adesc.description_id = desc_text.id WHERE adesc.agent_id = agents_table.id LIMIT 1), '') as description,
-        ARRAY[COALESCE(da.artifact::text, '')] as roles
+        ARRAY[COALESCE(NULL::artifacts::text, '')] as roles
     FROM agent_artifact agents_table
-    JOIN agent_domains adom ON adom.agent_id = agents_table.id
-    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('rubric' AS artifacts)
-    LEFT JOIN agent_departments ad ON ad.agent_id = agents_table.id AND ad.active = true
+    
+    
+    LEFT JOIN agent_departments ad ON NULL::uuid = agents_table.id AND ad.active = true
     CROSS JOIN rubric_data rd
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = agents_table.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
@@ -266,11 +266,7 @@ valid_agents_data AS (
             WHERE ad3.agent_id = agents_table.id 
             AND ad3.active = true
         )
-        OR EXISTS (
-            SELECT 1 FROM rubric_domains rd_link 
-            JOIN agent_domains adom ON adom.domain_id = rd_link.domain_id 
-            WHERE rd_link.rubric_id = rd.rubric_id AND adom.agent_id = agents_table.id
-        )
+        -- Domain check removed - no longer needed
     )
 ),
 agents_aggregated AS (

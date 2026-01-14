@@ -96,7 +96,7 @@ SELECT DISTINCT ON (t.id)
     t.name,
     t.description,
     COALESCE(rt.resource::text, '') as tool_type,  -- Derive from resource enum
-    COALESCE(da.artifact::text, '') as agent_role,  -- Derive from agent's tools via artifact_resources
+    COALESCE(NULL::artifacts::text, '') as agent_role,  -- Derive from agent's tools via artifact_resources
     COALESCE(tsd.arguments, '{}'::jsonb) as arguments,
     COALESCE(tsd.argument_descriptions, '{}'::jsonb) as argument_descriptions,
     COALESCE(tsd.argument_defaults, '{}'::jsonb) as argument_defaults,

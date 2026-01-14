@@ -47,7 +47,7 @@ BEGIN
     v_artifact_id := api_create_keys_v4.key_id;
     
     -- Validate that key artifact exists
-    IF NOT EXISTS (SELECT 1 FROM key_artifact WHERE id = v_artifact_id) THEN
+    IF NOT EXISTS (SELECT 1 FROM keys WHERE id = v_artifact_id) THEN
         RAISE EXCEPTION 'Key artifact % does not exist', v_artifact_id;
     END IF;
     -- Lookup tool_id from agent_tools + resource_tools
@@ -130,16 +130,16 @@ BEGIN
         NOW()
     );
     
-    -- INSERT INTO keys_resource table (always insert, never update)
-    -- INSERT INTO keys_resource table (always insert, never update)
+    -- INSERT INTO keys table (always insert, never update)
+    -- INSERT INTO keys table (always insert, never update)
     -- Create resource with new unique id and key_id FK
-    INSERT INTO keys_resource(id, key_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
+    INSERT INTO keys(id, key_id, active, generated, mcp, call_id, group_id, created_at, updated_at)
     VALUES (uuidv7(), v_artifact_id, true, true, mcp, v_call_id, api_create_keys_v4.group_id, NOW(), NOW())
     RETURNING id INTO v_resource_id;
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
-    INSERT INTO message_artifact (id, role, completed, audio, created_at, updated_at)
+    INSERT INTO messages (id, role, completed, audio, created_at, updated_at)
     VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
     
     -- Link message to call
@@ -148,7 +148,7 @@ BEGIN
     
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO run_artifact (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
+    INSERT INTO runs (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
     VALUES (v_run_id, agent_id, 0, 0, 0, NOW(), NOW());
     
     -- Link run to message

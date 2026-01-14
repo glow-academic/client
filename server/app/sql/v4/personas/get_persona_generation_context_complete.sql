@@ -58,33 +58,10 @@ selected_department AS (
             (SELECT department_id FROM persona_department),
             (SELECT department_id FROM profile_primary_department)
         ) as department_id
-),
--- Find domain for persona artifact
--- Domains link to artifacts via domain_artifacts junction table
--- We need to find a domain that has artifact = 'persona'
--- Priority: any domain with persona artifact (domains are not department-specific)
-default_persona_domain AS (
-    SELECT d.id as domain_id
-    FROM domains d
-    JOIN domain_artifacts da ON da.domain_id = d.id AND da.artifact = 'persona'::artifacts
-    LIMIT 1
-),
--- Get final domain_id
-final_domain AS (
-    SELECT 
-        (SELECT domain_id FROM default_persona_domain) as domain_id
-),
--- Get agent_id from domain via agent_domains junction table
-domain_agent AS (
-    SELECT ad.agent_id
-    FROM final_domain fd
-    JOIN agent_domains ad ON ad.domain_id = fd.domain_id
-    WHERE fd.domain_id IS NOT NULL
-    LIMIT 1
 )
+-- Domain-based agent assignment removed - return NULL
 SELECT 
-    fd.domain_id,
-    da.agent_id
-FROM final_domain fd
-LEFT JOIN domain_agent da ON true
+    NULL::uuid as domain_id,
+    NULL::uuid as agent_id
+FROM selected_department
 $$;

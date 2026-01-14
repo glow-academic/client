@@ -107,8 +107,8 @@ model_run_departments_via_agents AS (
         mrc.run_id,
         ad.department_id
     FROM model_run_costs mrc
-    JOIN run_artifact mr ON mr.id = mrc.run_id
-    JOIN agent_departments ad ON ad.agent_id = mr.agent_id AND ad.active = true
+    JOIN runs mr ON mr.id = mrc.run_id
+    JOIN agent_departments ad ON NULL::uuid = mr.agent_id AND ad.active = true
     WHERE mr.agent_id IS NOT NULL
     AND ad.department_id IN (SELECT department_id FROM user_departments)
 ),

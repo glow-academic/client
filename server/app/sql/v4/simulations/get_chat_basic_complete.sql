@@ -28,6 +28,6 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT id, completed, scenario_id
-FROM chat_artifact
+FROM chats
 WHERE id = chat_id
 $$;

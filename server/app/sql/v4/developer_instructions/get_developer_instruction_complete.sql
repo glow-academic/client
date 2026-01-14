@@ -40,8 +40,8 @@ SELECT
 FROM instructions_resource i
 JOIN agent_instructions ai ON ai.instruction_id = i.id
 JOIN agents_resource a ON a.id = ai.agent_id
-JOIN agent_domains adom ON adom.agent_id = a.id
-JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST(agent_role_val AS artifacts)
+
+
 LEFT JOIN instruction_schemas ins ON ins.instruction_id = i.id
 WHERE i.active = true
 LIMIT 1

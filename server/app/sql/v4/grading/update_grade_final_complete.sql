@@ -1,4 +1,4 @@
--- UPDATE grade_artifact record with final values
+-- UPDATE grades record with final values
 -- Converted to PostgreSQL function pattern
 -- Uses safe drop/recreate pattern: drop function first, then recreate
 -- 1) Drop function first
@@ -32,8 +32,8 @@ AS $$
 DECLARE
     v_conversation_id uuid;
 BEGIN
-    -- UPDATE grade_artifact
-    UPDATE grade_artifact 
+    -- UPDATE grades
+    UPDATE grades 
     SET description = description_param,
         passed = passed_param,
         score = score_param

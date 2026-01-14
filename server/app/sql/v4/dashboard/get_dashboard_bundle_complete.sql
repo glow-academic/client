@@ -813,21 +813,21 @@ filt AS (
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
                     (sg.score::numeric / NULLIF((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = rga.rubric_id AND rp.type = 'total'::type_rubric_points LIMIT 1), 0)) * 100.0 AS norm
-                FROM grade_artifact sg
+                FROM grades sg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = sg.rubric_grade_agent_id
-                JOIN run_artifact r_stag ON r_stag.id = sg.run_id
+                JOIN runs r_stag ON r_stag.id = sg.run_id
                 JOIN group_runs gr_stag ON gr_stag.run_id = r_stag.id
                 JOIN groups g_stag ON g_stag.id = gr_stag.group_id
                 JOIN chat_groups cg_stag ON cg_stag.group_id = g_stag.id
-                JOIN chat_artifact c_stag ON c_stag.id = cg_stag.chat_id
+                JOIN chats c_stag ON c_stag.id = cg_stag.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN rubrics_resource r ON r.id = rga.rubric_id
                 WHERE EXISTS (
-                    SELECT 1 FROM run_artifact r_check
+                    SELECT 1 FROM runs r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN groups g_check ON g_check.id = gr_check.group_id
                     JOIN chat_groups cg_check ON cg_check.group_id = g_check.id
-                    JOIN chat_artifact c_check ON c_check.id = cg_check.chat_id
+                    JOIN chats c_check ON c_check.id = cg_check.chat_id
                     WHERE r_check.id = sg.run_id
                 )
             ),
@@ -1313,11 +1313,11 @@ filt AS (
             -- Get all chats that have grades in the date range (not filtered by analytics attempt_created_at)
             filtered_chats AS (
                 SELECT DISTINCT c.id AS chat_id
-                FROM grade_artifact scg
-                JOIN run_artifact r ON r.id = scg.run_id
+                FROM grades scg
+                JOIN runs r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chat_artifact c ON c.id = gg.chat_id
+                JOIN chats c ON c.id = gg.chat_id
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE scg.created_at >= (SELECT start_date FROM params)
@@ -1348,7 +1348,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chat_artifact c
+                FROM chats c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats)
@@ -1375,12 +1375,12 @@ filt AS (
                         rga_fallback_scenario.rubric_id,
                         sfsr.rubric_id
                     ) AS rubric_id
-                FROM grade_artifact scg
+                FROM grades scg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-                JOIN run_artifact r ON r.id = scg.run_id
+                JOIN runs r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chat_artifact c ON c.id = gg.chat_id
+                JOIN chats c ON c.id = gg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN chat_scenario_info csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = csi.simulation_id
@@ -1392,10 +1392,10 @@ filt AS (
                   AND rga.rubric_id IS NULL
                   AND rga_fallback_scenario.rubric_id IS NULL
                 WHERE EXISTS (
-                    SELECT 1 FROM run_artifact r_check
+                    SELECT 1 FROM runs r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chat_artifact c_check ON c_check.id = gg_check.chat_id
+                    JOIN chats c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = scg.run_id
                 )
                   AND COALESCE(
@@ -2427,7 +2427,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chat_artifact c
+                FROM chats c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filt_for_skills)
@@ -2455,12 +2455,12 @@ filt AS (
                            sfsr.rubric_id
                        ) AS rubric_id,
                        scg.created_at
-                FROM grade_artifact scg
+                FROM grades scg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-                JOIN run_artifact r ON r.id = scg.run_id
+                JOIN runs r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chat_artifact c ON c.id = gg.chat_id
+                JOIN chats c ON c.id = gg.chat_id
                 LEFT JOIN chat_scenario_info_skills csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = csi.simulation_id
                   AND sssrga_fallback.scenario_id = csi.scenario_id
@@ -2471,10 +2471,10 @@ filt AS (
                   AND rga.rubric_id IS NULL
                   AND srga_fallback.id IS NULL
                 WHERE EXISTS (
-                    SELECT 1 FROM run_artifact r_check
+                    SELECT 1 FROM runs r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chat_artifact c_check ON c_check.id = gg_check.chat_id
+                    JOIN chats c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = scg.run_id
                 )
                   AND c.id IN (SELECT chat_id FROM filt_for_skills)

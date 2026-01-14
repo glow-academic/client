@@ -55,7 +55,7 @@ messages_data AS (
         array_position(p.message_ids, m.id) as pos
     FROM params p
     CROSS JOIN unnest(p.message_ids) AS msg_id
-    JOIN message_artifact m ON m.id = msg_id
+    JOIN messages m ON m.id = msg_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     LEFT JOIN contents cnt ON cnt.id = mc.content_id
     LEFT JOIN message_audios ma ON ma.message_id = m.id

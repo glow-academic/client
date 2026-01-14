@@ -48,7 +48,7 @@ pending_groups AS (
 SELECT 
     na.attempt_id::text,
     ed.eval_id::text,
-    COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
+    COALESCE(eNULL::uuids, ARRAY[]::text[]) as agent_ids,
     ed.dynamic,
     na.infinite_mode,
     ed.use_groups,

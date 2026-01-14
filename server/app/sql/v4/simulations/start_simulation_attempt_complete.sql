@@ -132,8 +132,8 @@ simulation_data AS (
         (SELECT (SELECT d2.description FROM department_descriptions dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1) FROM scenario_descriptions sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE) as active,
         EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = s.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
-        (SELECT sd.agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = s.id AND sd.type = 'text'::type_simulation_domains LIMIT 1) as simulation_text_domain_id,
-        (SELECT sd.agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = s.id AND sd.type = 'voice'::type_simulation_domains LIMIT 1) as simulation_voice_domain_id,
+        (SELECT sd.agent_domain_id 
+        (SELECT sd.agent_domain_id 
         (SELECT rga.rubric_id FROM simulation_scenarios ss 
          JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga ON sssrga.simulation_id = ss.simulation_id AND sssrga.scenario_id = ss.scenario_id
          JOIN scenario_rubric_grade_agents_resource srga ON srga.id = sssrga.scenario_rubric_grade_agent_id
@@ -331,8 +331,8 @@ scenario_full_data_raw AS (
     CROSS JOIN chosen_scenario_id csi
     LEFT JOIN scenario_personas sp ON sp.scenario_id = s.id AND sp.active = true
     CROSS JOIN simulation_data sd_agents
-    LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_agents.simulation_text_domain_id
-    LEFT JOIN agents_resource a ON a.id = adom_text.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    
+    LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     LEFT JOIN agent_models am ON am.agent_id = a.id
     LEFT JOIN models_resource m ON m.id = am.model_id
     -- Join temperature and reasoning FROM model_artifact levels via agent
@@ -363,7 +363,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     WHERE s.id = csi.scenario_id
     GROUP BY s.id, (SELECT n.name FROM scenario_names sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), ps.problem_statement, EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = TRUE), 
              CASE WHEN ps.problem_statement IS NULL OR ps.problem_statement = '' THEN true ELSE false END, sp.persona_id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = sp.persona_id LIMIT 1), pr_prompt_dept.system_prompt, pr_prompt_default.system_prompt, 
@@ -378,7 +378,7 @@ scenario_full_data AS (
 ),
 -- Create simulation chat (only for scenarios, not videos)
 new_chat AS (
-    INSERT INTO chat_artifact (
+    INSERT INTO chats (
         created_at, title, scenario_id, completed, updated_at
     )
     SELECT 

@@ -39,17 +39,10 @@ create_child_document AS (
     VALUES (gen_random_uuid(), NOW(), NOW())
     RETURNING id as document_id
 ),
--- Link document to agent domain if provided
+-- Domain-based agent assignment removed - no longer needed
 link_child_document_agent_domain AS (
-    INSERT INTO document_agent_domains (document_id, agent_domain_id, created_at, updated_at)
-    SELECT 
-        ccd.document_id,
-        api_complete_document_creation_v4.document_domain_id,
-        NOW(),
-        NOW()
-    FROM create_child_document ccd
-    WHERE api_complete_document_creation_v4.document_domain_id IS NOT NULL
-    ON CONFLICT (document_id, agent_domain_id) DO UPDATE SET updated_at = NOW()
+    -- Placeholder CTE (removed domain logic)
+    SELECT NULL::uuid as dummy FROM create_child_document LIMIT 0
 ),
 -- Link document to name
 link_document_name AS (

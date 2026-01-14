@@ -207,7 +207,7 @@ runs_base AS (
         EXISTS (SELECT 1 FROM simulation_flags sf WHERE sf.simulation_id = sim.id AND sf.type = 'practice'::type_simulation_flags AND sf.value = TRUE) as practice_simulation,
         sa.archived,
         gr.group_id
-    FROM run_artifact mr
+    FROM runs mr
     LEFT JOIN run_models mrm ON mrm.run_id = mr.id AND mrm.active = true
     LEFT JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     LEFT JOIN run_personas mrper ON mrper.run_id = mr.id AND mrper.active = true
@@ -220,11 +220,11 @@ runs_base AS (
         SELECT DISTINCT c.id AS chat_id
         FROM groups g2
         JOIN chat_groups cg ON cg.group_id = g2.id
-        JOIN chat_artifact c ON c.id = cg.chat_id
+        JOIN chats c ON c.id = cg.chat_id
         WHERE g2.id = g.id
         LIMIT 1
     ) chat_lookup ON true
-    LEFT JOIN chat_artifact c ON c.id = chat_lookup.chat_id
+    LEFT JOIN chats c ON c.id = chat_lookup.chat_id
     LEFT JOIN attempt_chats ac ON ac.chat_id = c.id
     LEFT JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     LEFT JOIN simulation_artifact sim ON sim.id = sa.simulation_id

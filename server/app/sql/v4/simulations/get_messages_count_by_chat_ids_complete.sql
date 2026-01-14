@@ -27,13 +27,13 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT c.id AS chat_id, COUNT(*) as message_count
-FROM chat_artifact c
+FROM chats c
 JOIN chat_groups cg ON cg.chat_id = c.id
 JOIN groups g ON g.id = cg.group_id
 JOIN group_runs gr ON gr.group_id = g.id
-JOIN run_artifact r ON r.id = gr.run_id
+JOIN runs r ON r.id = gr.run_id
 JOIN message_runs mr ON mr.run_id = r.id
-JOIN message_artifact m ON m.id = mr.message_id
+JOIN messages m ON m.id = mr.message_id
 WHERE c.id = ANY(chat_ids)
 GROUP BY c.id
 $$;

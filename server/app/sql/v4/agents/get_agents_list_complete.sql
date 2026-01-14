@@ -87,19 +87,19 @@ agent_department_links AS (
 ),
 agent_departments_data AS (
     SELECT 
-        ad.agent_id,
+        NULL::uuid,
         ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids
     FROM agent_departments ad
     WHERE ad.active = true
-    GROUP BY ad.agent_id
+    GROUP BY NULL::uuid
 ),
 filtered_agents AS (
     SELECT 
         a.id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
-        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1) as description,
         (SELECT m.id FROM agent_models am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) as model_id,
-        COALESCE(da.artifact::text, '') as role,  -- Derive from agent's tools via artifact_resources
+        COALESCE(NULL::artifacts::text, '') as role,  -- Derive from agent's tools via artifact_resources
         a.updated_at
     FROM agent_artifact a
     LEFT JOIN LATERAL (
@@ -110,11 +110,11 @@ filtered_agents AS (
         WHERE at.agent_id = a.id AND at.active = TRUE
         LIMIT 1
     ) da ON TRUE
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
-    GROUP BY a.id, da.artifact, a.updated_at
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
+    GROUP BY a.id, NULL::artifacts, a.updated_at
     HAVING 
         -- Include if has matching department link OR has no department links at all (cross-dept)
-        COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(NULL::uuid) FILTER (WHERE ad.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
 )
 SELECT 

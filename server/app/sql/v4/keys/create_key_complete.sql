@@ -87,7 +87,7 @@ description_resource AS (
 ),
 new_key AS (
     -- Create key (without name/description/active columns)
-    INSERT INTO key_artifact (key, created_at, updated_at)
+    INSERT INTO keys (key, created_at, updated_at)
     SELECT key, NOW(), NOW()
     FROM params
     RETURNING id as key_id, key

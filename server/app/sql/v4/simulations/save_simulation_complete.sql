@@ -257,41 +257,21 @@ BEGIN
     ),
     -- UPDATE simulation_artifact text domain
     update_simulation_text_domain AS (
-        DELETE FROM simulation_agent_domains 
+        DELETE 
         WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
           AND type = 'text'::type_simulation_domains
         AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
     ),
     link_simulation_text_domain AS (
-        INSERT INTO simulation_agent_domains (simulation_id, agent_domain_id, type, created_at, updated_at)
+        
         SELECT 
             x.simulation_id,
-            COALESCE(x.simulation_text_domain_id, (SELECT agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = x.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)),
+            COALESCE(x.simulation_text_domain_id, (SELECT agent_domain_id 
             'text'::type_simulation_domains,
             NOW(),
             NOW()
         FROM params x
-        WHERE COALESCE(x.simulation_text_domain_id, (SELECT agent_domain_id FROM simulation_agent_domains sd WHERE sd.simulation_id = x.simulation_id AND sd.type = 'text'::type_simulation_domains LIMIT 1)) IS NOT NULL
-        ON CONFLICT (simulation_id, agent_domain_id, type) DO UPDATE SET updated_at = NOW()
-    ),
-    -- UPDATE simulation_artifact voice domain
-    update_simulation_voice_domain AS (
-        DELETE FROM simulation_agent_domains 
-        WHERE simulation_id = (SELECT p.simulation_id FROM params p LIMIT 1)
-          AND type = 'voice'::type_simulation_domains
-        AND (SELECT p.simulation_id FROM params p LIMIT 1) IS NOT NULL
-    ),
-    link_simulation_voice_domain AS (
-        INSERT INTO simulation_agent_domains (simulation_id, agent_domain_id, type, created_at, updated_at)
-        SELECT 
-            x.simulation_id,
-            x.simulation_voice_domain_id,
-            'voice'::type_simulation_domains,
-            NOW(),
-            NOW()
-        FROM params x
-        WHERE x.simulation_voice_domain_id IS NOT NULL
-        ON CONFLICT (simulation_id, agent_domain_id, type) DO UPDATE SET updated_at = NOW()
+        WHERE COALESCE(x.simulation_text_domain_id, (SELECT agent_domain_id 
     ),
     replace_time_limits AS (
         DELETE FROM scenario_time_limits 
@@ -550,9 +530,9 @@ BEGIN
             (srga).rubric_id,
             COALESCE(
                 (SELECT a.id FROM rubric_domains rd 
-                 JOIN agent_domains adom ON adom.domain_id = rd.domain_id
-                 JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
-                 JOIN agent_artifact a ON a.id = adom.agent_id
+                 
+                 
+                 JOIN agent_artifact a ON a.id = NULL::uuid
                  WHERE rd.rubric_id = (srga).rubric_id
                    AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
                  LIMIT 1),

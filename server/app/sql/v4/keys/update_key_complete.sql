@@ -102,14 +102,14 @@ description_resource AS (
     RETURNING id as description_id
 ),
 update_key AS (
-    -- UPDATE key_artifact (without name/description/active columns)
-    UPDATE key_artifact
+    -- UPDATE keys (without name/description/active columns)
+    UPDATE keys
     SET 
         key = x.key,
         updated_at = NOW()
     FROM params x
-    WHERE key_artifact.id = x.key_id
-    RETURNING key_artifact.id as key_id, key_artifact.key, (SELECT name FROM params) as key_name
+    WHERE keys.id = x.key_id
+    RETURNING keys.id as key_id, keys.key, (SELECT name FROM params) as key_name
 ),
 -- Remove old name links
 remove_old_name AS (
@@ -147,7 +147,7 @@ link_key_description AS (
     CROSS JOIN description_resource dr
     ON CONFLICT (key_id, description_id) DO UPDATE SET updated_at = NOW()
 ),
--- UPDATE key_artifact active flag
+-- UPDATE keys active flag
 update_key_active_flag AS (
     UPDATE key_flags SET
         value = (SELECT active FROM params),

@@ -74,7 +74,7 @@ WITH scenario_dept AS (
         s.id as scenario_id,
         (SELECT sd.department_id FROM scenario_departments sd 
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
-    FROM chat_artifact sc
+    FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
@@ -123,7 +123,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT ap.profile_id FROM attempt_profiles ap 
                             JOIN attempt_chats ac ON ac.attempt_id = ap.attempt_id 
@@ -174,7 +174,7 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -293,7 +293,7 @@ SELECT
         '[]'::json
     ) as documents
 
-FROM chat_artifact sc
+FROM chats sc
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
@@ -313,9 +313,8 @@ LEFT JOIN (
 ) first_persona ON first_persona.scenario_id = s.id
 
 -- Text agent joins (use simulation agent instead of persona agent)
-LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
-LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
-LEFT JOIN agents_resource a ON a.id = adom_text.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+
+LEFT JOIN agents_resource a ON a.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
 LEFT JOIN agent_models am ON am.agent_id = a.id
 LEFT JOIN models_resource m ON m.id = am.model_id
 LEFT JOIN agent_temperature_levels atl ON atl.agent_id = a.id AND atl.active = true
@@ -342,12 +341,11 @@ CROSS JOIN active_settings act_s
 LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
     AND spk.settings_id = act_s.settings_id 
     AND spk.active = true
-LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 
 -- Voice agent joins (use simulation agent instead of persona agent)
-LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
-LEFT JOIN agents_resource a_voice ON a_voice.id = adom_voice.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
+
+LEFT JOIN agents_resource a_voice ON a_voice.id = NULL::uuid AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a_voice.id AND af.type = 'active'::type_agent_flags AND af.value = TRUE)
 LEFT JOIN agent_models am_voice ON am_voice.agent_id = a_voice.id
 LEFT JOIN models_resource m_voice ON m_voice.id = am_voice.model_id
 LEFT JOIN agent_temperature_levels atl_voice ON atl_voice.agent_id = a_voice.id AND atl_voice.active = true
@@ -374,7 +372,7 @@ CROSS JOIN active_settings act_s_voice
 LEFT JOIN setting_provider_keys spk_voice ON spk_voice.providers_id = p_voice_prov.id 
     AND spk_voice.settings_id = act_s_voice.settings_id 
     AND spk_voice.active = true
-LEFT JOIN keys_resource k_voice ON k_voice.id = spk_voice.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
+LEFT JOIN keys k_voice ON k_voice.id = spk_voice.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k_voice.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
 LEFT JOIN scenario_documents sd ON sd.scenario_id = s.id
 LEFT JOIN documents_resource doc ON doc.id = sd.document_id

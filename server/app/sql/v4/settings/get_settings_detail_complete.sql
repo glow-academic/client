@@ -437,7 +437,7 @@ settings_keys_data AS (
             ),
             '{}'::types.q_get_settings_detail_v4_key[]
         ) as keys
-    FROM key_artifact k
+    FROM keys k
     LEFT JOIN key_departments_data kdd ON kdd.key_id = k.id
     CROSS JOIN user_profile_role upr
     WHERE 

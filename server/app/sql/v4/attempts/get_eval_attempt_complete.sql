@@ -152,10 +152,10 @@ eval_info AS (
         e.id as eval_id,
         (SELECT n.name FROM eval_names en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as eval_name,
         (SELECT d.description FROM eval_descriptions ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1) as eval_description,
-        COALESCE(ead.agent_ids, ARRAY[]::text[]) as agent_ids,
+        COALESCE(eNULL::uuids, ARRAY[]::text[]) as agent_ids,
         EXISTS (SELECT 1 FROM eval_flags ef WHERE ef.eval_id = e.id AND ef.type = 'dynamic'::type_eval_flags AND ef.value = true) AS dynamic,
         -- Get first rubric and eval_agent from junction table
-        -- Get first rubric FROM run_artifact (when use_groups = false) or groups (when use_groups = true)
+        -- Get first rubric FROM runs (when use_groups = false) or groups (when use_groups = true)
         (SELECT rga.rubric_id 
          FROM (
              SELECT errga.rubric_grade_agent_id, errga.created_at
@@ -320,7 +320,7 @@ runs_with_details AS (
         -- Grade is on the eval_agent run (test.run_id), not original run
         (
             SELECT g.score
-            FROM grade_artifact g
+            FROM grades g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
@@ -328,7 +328,7 @@ runs_with_details AS (
         ) as grade_score,
         (
             SELECT g.passed
-            FROM grade_artifact g
+            FROM grades g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
@@ -336,14 +336,14 @@ runs_with_details AS (
         ) as grade_passed,
         (
             SELECT g.created_at
-            FROM grade_artifact g
+            FROM grades g
             JOIN test_runs tr ON tr.run_id = g.run_id
             JOIN tests t ON t.id = tr.test_id
             WHERE t.id = rws.test_id
             LIMIT 1
         ) as grade_created_at
     FROM runs_with_status rws
-    JOIN run_artifact r ON r.id = rws.run_id
+    JOIN runs r ON r.id = rws.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN models_resource m ON m.id = rm.model_id
     LEFT JOIN agents_resource a ON a.id = r.agent_id

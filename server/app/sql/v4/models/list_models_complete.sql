@@ -86,23 +86,13 @@ user_profile AS (
     JOIN profile_artifact ON profile_artifact.id = x.profile_id
 ),
 -- Pre-aggregate simulation usage counts for all models
--- Simulations are linked to models via simulation_text_domain_id/simulation_voice_domain_id -> domains -> agents -> model_id
+-- Domain-based agent lookup removed - return empty result
 simulation_usage AS (
     SELECT 
         am.model_id,
         COUNT(*) as usage_count
     FROM (
-        SELECT adom_text.agent_id
-        FROM simulation_artifact sim
-        LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
-        LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
-        WHERE sd_text.agent_domain_id IS NOT NULL
-        UNION ALL
-        SELECT adom_voice.agent_id
-        FROM simulation_artifact sim
-        LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-        LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
-        WHERE sd_voice.agent_domain_id IS NOT NULL
+        SELECT NULL::uuid as agent_id WHERE false
     ) combined_agents
     JOIN agents_resource a ON a.id = combined_agents.agent_id AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     JOIN agent_models am ON am.agent_id = a.id

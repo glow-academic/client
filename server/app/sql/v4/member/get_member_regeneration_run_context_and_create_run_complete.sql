@@ -122,7 +122,7 @@ previous_messages_all_runs AS (
     FROM previous_runs_in_group prig
     JOIN group_runs gr ON gr.run_id = prig.run_id
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message_artifact m ON m.id = mr.message_id
+    JOIN messages m ON m.id = mr.message_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     ORDER BY gr.idx ASC, m.created_at ASC
@@ -142,7 +142,7 @@ scenario_dept AS (
         s.id as scenario_id,
         (SELECT sd.department_id FROM scenario_departments sd 
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
-    FROM chat_artifact sc
+    FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
@@ -190,7 +190,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     CROSS JOIN params p
     WHERE mrp.profile_id = (SELECT ap.profile_id FROM attempt_profiles ap 
@@ -238,7 +238,7 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -275,8 +275,8 @@ active_settings AS (
 member_agent AS (
     SELECT a.id as agent_id
     FROM agent_artifact a
-    JOIN agent_domains adom ON adom.agent_id = a.id
-    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('agent' AS artifacts)
+    
+    
     WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     ORDER BY a.created_at ASC
     LIMIT 1
@@ -317,7 +317,7 @@ context_data AS (
         prl.req_per_day,
         COALESCE(rt.runs_today_count, 0::bigint) as runs_today_count,
         rt.earliest_run_created_at
-    FROM chat_artifact sc
+    FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
@@ -361,7 +361,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
@@ -391,7 +391,7 @@ documents_data AS (
             (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), u.file_path, u.mime_type)::types.i_member_regen_run_context_create_run_v4_document
             ORDER BY d.id
         ) FILTER (WHERE d.id IS NOT NULL AND sd.active = true) as documents
-    FROM chat_artifact sc
+    FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
@@ -404,7 +404,7 @@ documents_data AS (
     GROUP BY sc.id
 ),
 create_run AS (
-    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id
@@ -448,7 +448,7 @@ link_existing_messages AS (
     FROM previous_runs_in_group prig
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message_artifact m ON m.id = mr.message_id
+    JOIN messages m ON m.id = mr.message_id
     WHERE m.role IN ('system'::message_role, 'developer'::message_role)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()

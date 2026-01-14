@@ -198,7 +198,7 @@ attempt_status_summary AS (
     LEFT JOIN eval_runs er ON er.eval_id = aea.eval_id
     GROUP BY aea.attempt_id, aea.eval_id
 ),
--- Derive status FROM run_artifact counts
+-- Derive status FROM runs counts
 attempts_with_status AS (
     SELECT 
         aea.*,

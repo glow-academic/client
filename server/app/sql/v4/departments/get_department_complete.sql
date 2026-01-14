@@ -849,7 +849,7 @@ keys_data AS (
         END as description,
         EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) as active,
         false as generated  -- Keys are not AI-generated
-    FROM key_artifact k
+    FROM keys k
     WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND (
         (SELECT department_id FROM params) IS NULL
@@ -874,7 +874,7 @@ key_suggestions_data AS (
     SELECT 
         COALESCE(
             (SELECT ARRAY_AGG(k.id ORDER BY k.created_at DESC)
-             FROM key_artifact k
+             FROM keys k
              WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE)
              LIMIT 20),
             ARRAY[]::uuid[]
@@ -900,14 +900,14 @@ model_key_associations AS (
 -- Additional detail endpoint CTEs
 runs_for_department_via_agents AS (
     SELECT DISTINCT mr.id as run_id
-    FROM run_artifact mr
-    JOIN agent_departments ad ON ad.agent_id = mr.agent_id AND ad.active = true
+    FROM runs mr
+    JOIN agent_departments ad ON NULL::uuid = mr.agent_id AND ad.active = true
     WHERE ad.department_id = (SELECT department_id FROM params) AND mr.agent_id IS NOT NULL
     AND (SELECT department_id FROM params) IS NOT NULL
 ),
 runs_for_department_via_personas AS (
     SELECT DISTINCT mr.id as run_id
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_personas mrp ON mrp.run_id = mr.id AND mrp.active = true
     JOIN persona_departments pd ON pd.persona_id = mrp.persona_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)
@@ -915,7 +915,7 @@ runs_for_department_via_personas AS (
 ),
 runs_for_department_via_profiles AS (
     SELECT DISTINCT mr.id as run_id
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id AND mrp.active = true
     JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
     WHERE pd.department_id = (SELECT department_id FROM params)

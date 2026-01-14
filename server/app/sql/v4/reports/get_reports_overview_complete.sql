@@ -790,7 +790,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chat_artifact c
+                FROM chats c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats_for_stagnation)
@@ -816,12 +816,12 @@ filt AS (
                     c_stag.id AS simulation_chat_id,
                     sg.created_at,
                     (sg.score::numeric / NULLIF(COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), p_fallback_first.value, 0), 0)) * 100.0 AS norm
-                FROM grade_artifact sg
+                FROM grades sg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = sg.rubric_grade_agent_id
-                JOIN run_artifact r_stag ON r_stag.id = sg.run_id
+                JOIN runs r_stag ON r_stag.id = sg.run_id
                 JOIN group_runs gr_stag ON gr_stag.run_id = r_stag.id
                 JOIN grade_groups gg_stag ON gg_stag.group_id = gr_stag.group_id
-                JOIN chat_artifact c_stag ON c_stag.id = gg_stag.chat_id
+                JOIN chats c_stag ON c_stag.id = gg_stag.chat_id
                 JOIN filtered_chats_for_stagnation fc ON fc.chat_id = c_stag.id
                 LEFT JOIN chat_scenario_info_stagnation csi ON csi.chat_id = c_stag.id
                 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = csi.simulation_id
@@ -838,10 +838,10 @@ filt AS (
                 LEFT JOIN rubric_points rp_fallback_first ON rp_fallback_first.rubric_id = r_fallback_first.id AND rp_fallback_first.type = 'total'
                 LEFT JOIN points_resource p_fallback_first ON p_fallback_first.id = rp_fallback_first.point_id
                 WHERE EXISTS (
-                    SELECT 1 FROM run_artifact r_check
+                    SELECT 1 FROM runs r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chat_artifact c_check ON c_check.id = gg_check.chat_id
+                    JOIN chats c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = sg.run_id
                 )
                   AND COALESCE((SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND rp.type = 'total' LIMIT 1), (SELECT p.value FROM rubric_points rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r_fallback_scenario.id AND rp.type = 'total' LIMIT 1), p_fallback_first.value, 0) > 0
@@ -1338,7 +1338,7 @@ filt AS (
                     c.id AS chat_id,
                     c.scenario_id,
                     sa.simulation_id
-                FROM chat_artifact c
+                FROM chats c
                 JOIN attempt_chats ac ON ac.chat_id = c.id
                 JOIN simulation_attempts sa ON sa.id = ac.attempt_id
                 WHERE c.id IN (SELECT chat_id FROM filtered_chats)
@@ -1365,12 +1365,12 @@ filt AS (
                         rga_fallback_scenario.rubric_id,
                         sfsr.rubric_id
                     ) AS rubric_id
-                FROM grade_artifact scg
+                FROM grades scg
                 LEFT JOIN rubric_grade_agents rga ON rga.id = scg.rubric_grade_agent_id
-                JOIN run_artifact r ON r.id = scg.run_id
+                JOIN runs r ON r.id = scg.run_id
                 JOIN group_runs gr ON gr.run_id = r.id
                 JOIN grade_groups gg ON gg.group_id = gr.group_id
-                JOIN chat_artifact c ON c.id = gg.chat_id
+                JOIN chats c ON c.id = gg.chat_id
                 JOIN filtered_chats fc ON fc.chat_id = c.id
                 LEFT JOIN chat_scenario_info_overview csi ON csi.chat_id = c.id
                 LEFT JOIN simulation_scenarios_scenario_rubric_grade_agents sssrga_fallback ON sssrga_fallback.simulation_id = csi.simulation_id
@@ -1382,10 +1382,10 @@ filt AS (
                   AND rga.rubric_id IS NULL
                   AND rga_fallback_scenario.rubric_id IS NULL
                 WHERE EXISTS (
-                    SELECT 1 FROM run_artifact r_check
+                    SELECT 1 FROM runs r_check
                     JOIN group_runs gr_check ON gr_check.run_id = r_check.id
                     JOIN grade_groups gg_check ON gg_check.group_id = gr_check.group_id
-                    JOIN chat_artifact c_check ON c_check.id = gg_check.chat_id
+                    JOIN chats c_check ON c_check.id = gg_check.chat_id
                     WHERE r_check.id = scg.run_id
                 )
                   AND COALESCE(

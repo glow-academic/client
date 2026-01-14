@@ -62,10 +62,10 @@ eligible_agents AS (
     )
     -- Must have persona artifact (via agent_domains -> domain_artifacts)
     AND EXISTS (
-        SELECT 1 FROM agent_domains adom
-        JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-        WHERE adom.agent_id = a.id
-          AND da.artifact = 'persona'::artifacts
+        SELECT 1 
+        
+        WHERE NULL::uuid = a.id
+          AND NULL::artifacts = 'persona'::artifacts
     )
     -- Must be available to user's departments (via agent_departments) or cross-department
     AND (
@@ -73,7 +73,7 @@ eligible_agents AS (
         EXISTS (
             SELECT 1 FROM agent_departments ad
             JOIN user_departments ud ON ad.department_id = ud.department_id
-            WHERE ad.agent_id = a.id AND ad.active = true
+            WHERE NULL::uuid = a.id AND ad.active = true
         )
         -- OR agent has no department links (cross-department)
         OR NOT EXISTS (
@@ -132,7 +132,7 @@ agent_department_preference AS (
             WHEN sd.department_id IS NOT NULL 
                  AND EXISTS (
                      SELECT 1 FROM agent_departments ad
-                     WHERE ad.agent_id = ascores.agent_id 
+                     WHERE NULL::uuid = ascores.agent_id 
                        AND ad.department_id = sd.department_id 
                        AND ad.active = true
                  )

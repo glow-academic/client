@@ -83,7 +83,7 @@ existing_run AS (
         r.agent_id,
         gd.group_id,
         gd.trace_id
-    FROM run_artifact r
+    FROM runs r
     CROSS JOIN params p
     LEFT JOIN group_runs gr ON gr.run_id = r.id
     LEFT JOIN groups g ON g.id = gr.group_id
@@ -111,7 +111,7 @@ selected_agent AS (
       AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     LIMIT 1
 ),
--- Get profile FROM run_artifact
+-- Get profile FROM runs
 run_profile AS (
     SELECT rp.profile_id
     FROM run_profiles rp
@@ -132,7 +132,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     CROSS JOIN run_profile rp
     WHERE mrp.profile_id = rp.profile_id
@@ -171,7 +171,7 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -280,7 +280,7 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(da.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifacts::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
             ) FILTER (WHERE t.id IS NOT NULL AND (
                 p.resources IS NULL  -- Backward compatibility: include all tools
@@ -298,8 +298,8 @@ agent_tools_data AS (
     LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN agent_domains adom ON adom.agent_id = sa.agent_id
-    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+    
+    
     GROUP BY sa.agent_id
 ),
 -- Get developer instruction templates (array) for the agent
@@ -498,7 +498,7 @@ department_data AS (
     SELECT 
         COALESCE(
             (SELECT ad.department_id FROM agent_departments ad 
-             JOIN selected_agent sa ON ad.agent_id = sa.agent_id 
+             JOIN selected_agent sa ON NULL::uuid = sa.agent_id 
              WHERE ad.active = true LIMIT 1),
             (SELECT ppd.department_id FROM profile_primary_department ppd)
         ) as department_id
@@ -508,7 +508,7 @@ department_name_data AS (
     FROM department_data dd
     LEFT JOIN departments_resource d ON d.id = dd.department_id
 ),
--- Get upload info if exists (for audio input) - get FROM message_artifact linked to run
+-- Get upload info if exists (for audio input) - get FROM messages linked to run
 upload_info AS (
     SELECT DISTINCT
         u.id as upload_id,
@@ -527,7 +527,7 @@ context_data AS (
         -- Agent data
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
+        COALESCE(NULL::artifacts::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,  -- Don't append developer instructions here - Python will handle it
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,
@@ -561,11 +561,11 @@ context_data AS (
 
     FROM selected_agent sa
     INNER JOIN agents_resource a ON a.id = sa.agent_id
-    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
-    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+    
+    
     CROSS JOIN run_profile rp
     -- Try department-specific prompt first, fall back to default prompt
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = ad.department_id AND adp_prompt.active = true
     LEFT JOIN prompts_resource pr_prompt_dept ON pr_prompt_dept.id = adp_prompt.prompt_id
     LEFT JOIN agent_prompts ap_default ON ap_default.agent_id = a.id AND ap_default.active = true
@@ -594,7 +594,7 @@ context_data AS (
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     -- JOIN tools_resource data

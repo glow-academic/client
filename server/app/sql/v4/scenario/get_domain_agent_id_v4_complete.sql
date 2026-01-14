@@ -24,9 +24,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT ad.agent_id
-    FROM domains d
-    JOIN agent_domains ad ON ad.domain_id = d.id
-    WHERE d.id = $1
-    LIMIT 1
+    -- Domain-based agent lookup removed - return NULL
+    SELECT NULL::uuid as agent_id
+    WHERE false
 $$;

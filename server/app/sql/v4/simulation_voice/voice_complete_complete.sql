@@ -51,7 +51,7 @@ WITH params AS (
 ),
 -- Finalize all incomplete assistant messages for this run
 finalize_messages AS (
-    UPDATE message_artifact
+    UPDATE messages
     SET completed = true,
         updated_at = NOW()
     FROM params p
@@ -68,7 +68,7 @@ finalize_messages AS (
 complete_run AS (
     SELECT p.run_id
     FROM params p
-    WHERE EXISTS (SELECT 1 FROM run_artifact WHERE run_artifact.id = p.run_id)
+    WHERE EXISTS (SELECT 1 FROM runs WHERE runs.id = p.run_id)
 )
 SELECT 
     (SELECT EXISTS(SELECT 1 FROM complete_run)) as success,

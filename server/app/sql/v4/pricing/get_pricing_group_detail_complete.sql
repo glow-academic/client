@@ -166,18 +166,18 @@ runs_metadata AS (
         rp.profile_id,
         rper.persona_id
     FROM group_runs_list grl
-    JOIN run_artifact r ON r.id = grl.run_id
+    JOIN runs r ON r.id = grl.run_id
     LEFT JOIN run_models rm ON rm.run_id = r.id AND rm.active = true
     LEFT JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     LEFT JOIN run_personas rper ON rper.run_id = r.id AND rper.active = true
 ),
--- Get department IDs FROM run_artifact (via agent or profile)
+-- Get department IDs FROM runs (via agent or profile)
 runs_departments AS (
     SELECT DISTINCT
         d.id as department_id
     FROM runs_metadata rm
     LEFT JOIN agents_resource a ON a.id = rm.agent_id
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
     LEFT JOIN departments_resource d ON d.id = ad.department_id AND EXISTS (SELECT 1 FROM department_flags df WHERE df.department_id = d.id AND df.type = 'active'::type_department_flags AND df.value = true)
     WHERE d.id IS NOT NULL
 ),
@@ -231,7 +231,7 @@ run_chats_map AS (
         c.id as chat_id
     FROM run_groups_map rg
     JOIN chat_groups cg ON cg.group_id = rg.group_id
-    JOIN chat_artifact c ON c.id = cg.chat_id
+    JOIN chats c ON c.id = cg.chat_id
 ),
 -- Find first run (idx = 0) for each group
 first_runs_map AS (
@@ -271,11 +271,11 @@ messages_with_tree AS (
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
         JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
-        JOIN run_artifact r ON r.id = gr.run_id
+        JOIN runs r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
-        JOIN message_artifact m ON m.id = mr.message_id
+        JOIN messages m ON m.id = mr.message_id
         JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chat_artifact c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         
         UNION ALL
         
@@ -291,7 +291,7 @@ messages_with_tree AS (
             mp.depth + 1 as depth,
             mp.path_root_id,
             mp.run_idx
-        FROM message_artifact m
+        FROM messages m
         JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
         JOIN message_path mp ON mp.id = mt.child_id
         WHERE mp.depth < 50
@@ -323,11 +323,11 @@ messages_with_tree AS (
         JOIN run_groups_map rgm ON rgm.run_id = rcm.run_id
         JOIN groups g ON g.id = rgm.group_id
         JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
-        JOIN run_artifact r ON r.id = gr.run_id
+        JOIN runs r ON r.id = gr.run_id
         JOIN message_runs mr ON mr.run_id = r.id AND mr.run_id = rcm.run_id
-        JOIN message_artifact m ON m.id = mr.message_id
+        JOIN messages m ON m.id = mr.message_id
         JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chat_artifact c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_tree mt 
             WHERE mt.child_id = m.id AND mt.active = true
@@ -356,9 +356,9 @@ messages_with_tree AS (
         JOIN group_runs gr ON gr.group_id = g.id AND gr.run_id = rcm.run_id
         JOIN first_runs_map frm ON frm.group_id = g.id AND frm.first_run_id != rcm.run_id
         JOIN message_runs mr ON mr.run_id = frm.first_run_id
-        JOIN message_artifact m ON m.id = mr.message_id AND m.role IN ('system'::message_role, 'developer'::message_role)
+        JOIN messages m ON m.id = mr.message_id AND m.role IN ('system'::message_role, 'developer'::message_role)
         JOIN chat_groups cg ON cg.group_id = g.id
-        JOIN chat_artifact c ON c.id = cg.chat_id AND c.id = rcm.chat_id
+        JOIN chats c ON c.id = cg.chat_id AND c.id = rcm.chat_id
         WHERE NOT EXISTS (
             SELECT 1 FROM message_path mp 
             WHERE mp.id = m.id AND mp.run_id = rcm.run_id
@@ -453,7 +453,7 @@ runs_with_messages AS (
     LEFT JOIN LATERAL (
         SELECT m.id, m.created_at
         FROM message_runs mr
-        JOIN message_artifact m ON m.id = mr.message_id
+        JOIN messages m ON m.id = mr.message_id
         WHERE mr.run_id = current_run.run_id
         AND m.role IN ('user'::message_role, 'assistant'::message_role)
         ORDER BY 
@@ -472,7 +472,7 @@ runs_with_messages AS (
                 m.completed,
                 current_run.run_idx as run_idx,
                 0 as depth_from_latest
-            FROM message_artifact m
+            FROM messages m
             LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id
             WHERE m.id = latest_msg.id
             
@@ -494,7 +494,7 @@ runs_with_messages AS (
                     ap.run_idx
                 ) as run_idx,
                 ap.depth_from_latest + 1 as depth_from_latest
-            FROM message_artifact m
+            FROM messages m
             JOIN message_tree mt ON mt.parent_id = m.id AND mt.active = true
             JOIN ancestor_path ap ON ap.id = mt.child_id
             LEFT JOIN messages_with_content mwc ON mwc.id = m.id AND mwc.run_id = current_run.run_id

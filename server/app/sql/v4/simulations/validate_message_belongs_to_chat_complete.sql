@@ -27,13 +27,13 @@ LANGUAGE sql
 STABLE
 AS $$
 SELECT m.id
-FROM message_artifact m
+FROM messages m
 JOIN message_runs mr ON mr.message_id = m.id
-JOIN run_artifact r ON r.id = mr.run_id
+JOIN runs r ON r.id = mr.run_id
 JOIN group_runs gr ON gr.run_id = r.id
 JOIN groups g ON g.id = gr.group_id
 JOIN chat_groups cg ON cg.group_id = g.id
-JOIN chat_artifact c ON c.id = cg.chat_id
+JOIN chats c ON c.id = cg.chat_id
 WHERE c.id = chat_id
   AND m.id = message_id
 LIMIT 1

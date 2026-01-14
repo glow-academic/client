@@ -32,10 +32,10 @@ AS $$
 WITH agent_has_scenario_artifact AS (
     -- Check if agent has scenario artifact
     SELECT EXISTS (
-        SELECT 1 FROM agent_domains adom
-        JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-        WHERE adom.agent_id = p_agent_id
-        AND da.artifact = 'scenario'::artifacts
+        SELECT 1 
+        
+        WHERE NULL::uuid = p_agent_id
+        AND NULL::artifacts = 'scenario'::artifacts
     ) as has_scenario
 ),
 -- Get parameters for scenario (if scenario_id provided and agent has scenario artifact)

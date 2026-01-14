@@ -161,7 +161,7 @@ agent_info AS (
     SELECT 
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) AS name,
-        (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) AS description,
+        (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1) AS description,
         (SELECT m.id::text FROM agent_models am JOIN models_resource m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) AS model_id,
         EXISTS (
             SELECT 1 FROM agent_flags af
@@ -171,7 +171,7 @@ agent_info AS (
               AND af.type = 'active'::type_agent_flags
               AND af.value = TRUE
         ) AS active,
-        COALESCE(da.artifact::text, '') as role  -- Derive from agent's tools via artifact_resources
+        COALESCE(NULL::artifacts::text, '') as role  -- Derive from agent's tools via artifact_resources
     FROM params x
     JOIN agents_resource a ON a.id = x.agent_id
     LEFT JOIN LATERAL (
@@ -260,11 +260,11 @@ prompt_mapping_data AS (
 ),
 agent_departments_data AS (
     SELECT 
-        ad.agent_id::text as agent_id,
+        NULL::uuid::text as agent_id,
         ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids
     FROM params x
-    JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
-    GROUP BY ad.agent_id
+    JOIN agent_departments ad ON NULL::uuid = x.agent_id AND ad.active = true
+    GROUP BY NULL::uuid
 ),
 agent_department_prompt_links_data AS (
     SELECT 
@@ -324,7 +324,7 @@ user_has_agent_access AS (
     -- Check if user has access to agent via department links
     SELECT EXISTS(
         SELECT 1 FROM params x
-        JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
+        JOIN agent_departments ad ON NULL::uuid = x.agent_id AND ad.active = true
         JOIN user_departments ud ON ud.id = ad.department_id::uuid
     ) OR EXISTS(
         SELECT 1 FROM params x
@@ -332,7 +332,7 @@ user_has_agent_access AS (
     ) OR (
         -- Default agents (no department links) are accessible to all
         SELECT COUNT(*) FROM params x
-        JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
+        JOIN agent_departments ad ON NULL::uuid = x.agent_id AND ad.active = true
     ) = 0 as has_access
 ),
 valid_departments_data AS (

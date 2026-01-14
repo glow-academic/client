@@ -41,7 +41,7 @@ messages_data AS (
         au.upload_id
     FROM params p
     JOIN message_runs mr ON mr.run_id = p.run_id
-    JOIN message_artifact m ON m.id = mr.message_id
+    JOIN messages m ON m.id = mr.message_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     LEFT JOIN message_audios ma ON ma.message_id = m.id

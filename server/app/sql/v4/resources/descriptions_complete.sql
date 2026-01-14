@@ -128,7 +128,7 @@ BEGIN
     
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
-    INSERT INTO message_artifact (id, role, completed, audio, created_at, updated_at)
+    INSERT INTO messages (id, role, completed, audio, created_at, updated_at)
     VALUES (v_message_id, 'assistant'::message_role, false, false, NOW(), NOW());
     
     -- Link message to call
@@ -137,7 +137,7 @@ BEGIN
     
     -- Create run record
     v_run_id := uuidv7();
-    INSERT INTO run_artifact (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
+    INSERT INTO runs (id, agent_id, input_tokens, output_tokens, cached_input_tokens, created_at, updated_at)
     VALUES (v_run_id, agent_id, 0, 0, 0, NOW(), NOW());
     
     -- Link run to message

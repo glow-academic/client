@@ -98,7 +98,7 @@ scenario_dept AS (
         (SELECT sd.department_id FROM scenario_departments sd 
          WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as department_id
     FROM params p
-    JOIN chat_artifact sc ON sc.id = p.chat_id
+    JOIN chats sc ON sc.id = p.chat_id
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
@@ -174,7 +174,7 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -223,7 +223,7 @@ documents_data AS (
             ARRAY[]::types.i_get_voice_run_context_v4_document[]
         ) as documents
     FROM params p
-    JOIN chat_artifact sc ON sc.id = p.chat_id
+    JOIN chats sc ON sc.id = p.chat_id
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
     INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
@@ -291,21 +291,17 @@ SELECT
     -- Profile data
     pf.profile_id,
     -- Agent data (text - kept for compatibility)
-    adom_text.agent_id as agent_id,
+    NULL::uuid as agent_id,
     -- Voice agent data (preferred for voice mode)
-    adom_voice.agent_id as voice_agent_id,
+    NULL::uuid as voice_agent_id,
     -- Documents data (composite type array)
     COALESCE(dd.documents, ARRAY[]::types.i_get_voice_run_context_v4_document[]) as documents
 FROM params p_params
-JOIN chat_artifact sc ON sc.id = p_params.chat_id
+JOIN chats sc ON sc.id = p_params.chat_id
 JOIN attempt_chats ac ON ac.chat_id = sc.id
 INNER JOIN simulation_attempts sa ON sa.id = ac.attempt_id
 INNER JOIN scenarios_resource s ON s.id = sc.scenario_id
 INNER JOIN simulation_artifact sim ON sim.id = sa.simulation_id
-LEFT JOIN simulation_agent_domains sd_text ON sd_text.simulation_id = sim.id AND sd_text.type = 'text'::type_simulation_domains
-LEFT JOIN agent_domains adom_text ON adom_text.domain_id = sd_text.agent_domain_id
-LEFT JOIN simulation_agent_domains sd_voice ON sd_voice.simulation_id = sim.id AND sd_voice.type = 'voice'::type_simulation_domains
-LEFT JOIN agent_domains adom_voice ON adom_voice.domain_id = sd_voice.agent_domain_id
 LEFT JOIN scenario_problem_statements sps ON sps.scenario_id = s.id AND sps.active = true
 LEFT JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id
 LEFT JOIN chat_groups cg ON cg.chat_id = sc.id

@@ -169,7 +169,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -204,7 +204,7 @@ dept_specific_settings AS (
     JOIN department_settings sd ON sd.settings_id = s.id
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     WHERE ppd.department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) 
+      AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true) 
       AND sd.active = true
     LIMIT 1
 ),
@@ -212,7 +212,7 @@ settings_with_keys AS (
     -- Settings that have at least one active provider key
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -223,7 +223,7 @@ dept_specific_settings_with_keys AS (
     JOIN profile_primary_department ppd ON sd.department_id = ppd.department_id
     JOIN settings_with_keys swk ON swk.settings_id = s.id
     WHERE ppd.department_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true) AND sd.active = true
+      AND EXISTS (SELECT 1 FROM setting_flags sf WHERE sf.setting_id = s.id AND sf.type = 'active'::type_setting_flags AND sf.value = true) AND sd.active = true
     LIMIT 1
 ),
 default_settings_with_keys AS (
@@ -257,7 +257,7 @@ context_data AS (
         -- Agent data (via department_agents junction for 'scenario' role)
         a.id::text as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        COALESCE(da.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
+        COALESCE(NULL::artifacts::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(tl.temperature, 0.0) as temperature,
         rl.reasoning_level as reasoning,
@@ -304,7 +304,7 @@ context_data AS (
         -- Includes all parent document info needed for child creation
         COALESCE(
             (SELECT ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), (SELECT dad.agent_domain_id::text FROM document_agent_domains dad WHERE dad.document_id = d.id LIMIT 1), ds.schema_id, dh.html_id::text, u.file_path)::types.i_get_scenario_run_context_and_create_run_v4_document_template
+                (d.id::text, (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1), COALESCE((SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''), NULL::text, ds.schema_id, h.id::text, COALESCE(u.file_path, ''))::types.i_get_scenario_run_context_and_create_run_v4_document_template
                 ORDER BY array_position(p.document_ids, d.id)
             )::types.i_get_scenario_run_context_and_create_run_v4_document_template[]
             FROM document_artifact d
@@ -360,8 +360,8 @@ context_data AS (
 
     FROM best_agent ba
     INNER JOIN agents_resource a ON a.id = ba.agent_id
-    LEFT JOIN agent_domains adom ON adom.agent_id = a.id
-    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+    
+    
     CROSS JOIN params p
     -- Try department-specific prompt first, fall back to default prompt
     LEFT JOIN agent_department_prompts adp_prompt ON adp_prompt.agent_id = a.id AND adp_prompt.department_id = p.department_id AND adp_prompt.active = true
@@ -393,7 +393,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s_key.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     LEFT JOIN personas_resource pers ON pers.id = p.persona_id
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
@@ -404,7 +404,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id

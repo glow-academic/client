@@ -458,7 +458,7 @@ model_all_keys AS (
     LEFT JOIN provider_names pn ON pn.provider_id = pr.id
     LEFT JOIN names_resource n_prov ON n_prov.id = pn.name_id
     JOIN setting_provider_keys spk ON spk.providers_id = p.id AND spk.active = true
-    JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     JOIN setting_artifact s ON s.id = spk.settings_id AND EXISTS (SELECT 1 FROM scenario_flags sf WHERE sf.scenario_id = s.id AND sf.type = 'active'::type_scenario_flags AND sf.value = true)
     JOIN department_settings ds ON ds.settings_id = s.id AND ds.active = true
     WHERE m.id = (SELECT model_id FROM params)
@@ -477,7 +477,7 @@ model_all_keys AS (
         COALESCE((SELECT d.description FROM key_descriptions kd JOIN descriptions_resource d ON kd.description_id = d.id WHERE kd.key_id = k.id LIMIT 1), '') as description,
         EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE),
         NULL::uuid[] as department_ids
-    FROM key_artifact k
+    FROM keys k
     CROSS JOIN resolve_profile_id rpi
     WHERE EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     AND (

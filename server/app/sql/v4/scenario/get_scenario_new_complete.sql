@@ -956,7 +956,7 @@ parameter_data AS (
     LEFT JOIN field_departments fd ON fd.field_id = f.id AND fd.active = true
     CROSS JOIN user_departments ud
     WHERE EXISTS (SELECT 1 FROM persona_flags pf WHERE pf.persona_id = p.id AND pf.type = 'active'::type_persona_flags AND pf.value = true)
-    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'document_parameter'::type_parameter_flags AND pf.value = TRUE), EXISTS (SELECT 1 FROM parameter_flags pf WHERE pf.parameter_id = p.id AND pf.type = 'persona_parameter'::type_parameter_flags AND pf.value = TRUE)
+    GROUP BY p.id, (SELECT n.name FROM persona_names pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1), (SELECT d.description FROM persona_descriptions pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1)
     HAVING 
         COUNT(fd.field_id) FILTER (WHERE fd.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM field_departments fd2 
@@ -1128,12 +1128,12 @@ expected_agent_role AS (
 default_scenario_agent AS (
     SELECT a.id::text as agent_id
     FROM agent_artifact a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
     CROSS JOIN expected_agent_role ear
-    JOIN agent_domains adom ON adom.agent_id = a.id
-    JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-    WHERE da.artifact = CAST(ear.role AS artifacts)
+    
+    
+    WHERE NULL::artifacts = CAST(ear.role AS artifacts)
     AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         ad.department_id = rdfa.department_id
@@ -1146,11 +1146,11 @@ default_scenario_agent AS (
 default_image_agent AS (
     SELECT a.id::text as agent_id
     FROM agent_artifact a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
-    JOIN agent_domains adom_image ON adom_image.agent_id = a.id
-    JOIN domain_artifacts da_image ON da_image.domain_id = adom_image.domain_id AND da_image.artifact = CAST('scenario' AS artifacts)
-    WHERE EXISTS (SELECT 1 FROM agent_domains adom2 JOIN domain_artifacts da2 ON da2.domain_id = adom2.domain_id WHERE adom2.agent_id = a.id AND da2.artifact = CAST('scenario' AS artifacts))
+    
+    
+    WHERE EXISTS (SELECT 1 
     AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         ad.department_id = rdfa.department_id
@@ -1165,10 +1165,7 @@ default_video_agent AS (
     FROM agent_artifact a
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN resolved_department_for_agents rdfa
-    JOIN agent_domains adom_video ON adom_video.agent_id = a.id
-    JOIN domain_artifacts da_video ON da_video.domain_id = adom_video.domain_id AND da_video.artifact = CAST('scenario' AS artifacts)
-    WHERE EXISTS (SELECT 1 FROM agent_domains adom2 JOIN domain_artifacts da2 ON da2.domain_id = adom2.domain_id WHERE adom2.agent_id = a.id AND da2.artifact = CAST('scenario' AS artifacts))
-    AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         ad.department_id = rdfa.department_id
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)
@@ -1178,18 +1175,16 @@ default_video_agent AS (
     LIMIT 1
 ),
 agent_filtered AS (
-    SELECT a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, '') as role
+    SELECT 
+        a.id, 
+        (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as name,
+        (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
+        NULL::text as role
     FROM agent_artifact a
-    JOIN agent_domains adom ON adom.agent_id = a.id
-    JOIN domain_artifacts da ON da.domain_id = adom.domain_id
     LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
     CROSS JOIN expected_agent_role ear
-    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true) 
-    AND (
-        da.artifact = CAST(ear.role AS artifacts)
-        OR da.artifact = CAST('scenario' AS artifacts)
-    )
-    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), COALESCE(da.artifact::text, ''), ear.role
+    WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
+    GROUP BY a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), ear.role
     HAVING 
         COUNT(ad.agent_id) FILTER (WHERE ad.department_id IN (SELECT id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM agent_departments ad2 WHERE ad2.agent_id = a.id AND ad2.active = true)

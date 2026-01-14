@@ -70,24 +70,14 @@ update_document AS (
     WHERE d.id = p.document_id
     RETURNING d.id
 ),
--- Update document_agent_domains if document_domain_id provided
+-- Domain-based agent assignment removed - no longer needed
 update_document_agent_domain AS (
-    -- Delete existing links
-    DELETE FROM document_agent_domains
-    WHERE document_id = (SELECT document_id FROM params)
-      AND (SELECT document_domain_id FROM params) IS NOT NULL
+    -- Placeholder CTE (removed domain logic)
+    SELECT NULL::uuid as dummy FROM params LIMIT 0
 ),
 link_document_agent_domain AS (
-    -- Insert new link if document_domain_id provided
-    INSERT INTO document_agent_domains (document_id, agent_domain_id, created_at, updated_at)
-    SELECT 
-        p.document_id,
-        p.document_domain_id,
-        NOW(),
-        NOW()
-    FROM params p
-    WHERE p.document_domain_id IS NOT NULL
-    ON CONFLICT (document_id, agent_domain_id) DO UPDATE SET updated_at = NOW()
+    -- Placeholder CTE (removed domain logic)
+    SELECT NULL::uuid as dummy FROM params LIMIT 0
 ),
 -- Update name if provided
 update_document_name AS (

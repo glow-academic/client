@@ -249,12 +249,12 @@ user_departments AS (
 -- Conditional: Get agent department data only if agent_id provided
 agent_departments_data AS (
     SELECT 
-        ad.agent_id,
+        NULL::uuid,
         ARRAY_AGG(ad.department_id ORDER BY ad.created_at) as department_ids
     FROM params x
-    JOIN agent_departments ad ON ad.agent_id = x.agent_id AND ad.active = true
+    JOIN agent_departments ad ON NULL::uuid = x.agent_id AND ad.active = true
     WHERE x.agent_id IS NOT NULL
-    GROUP BY ad.agent_id
+    GROUP BY NULL::uuid
 ),
 agent_department_access_check AS (
     SELECT 
@@ -263,7 +263,7 @@ agent_department_access_check AS (
             WHEN up.role = 'superadmin'::profile_role THEN true
             WHEN EXISTS (
                 SELECT 1 FROM agent_departments ad 
-                WHERE ad.agent_id = a.id 
+                WHERE NULL::uuid = a.id 
                 AND ad.active = true 
                 AND ad.department_id IN (SELECT department_id FROM user_departments)
             ) THEN true
@@ -428,10 +428,10 @@ description_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dd.descriptions_id FROM draft_descriptions dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT ad.description_id FROM agent_descriptions ad WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1)
+            (SELECT ad.description_id FROM agent_descriptions ad WHERE NULL::uuid = (SELECT agent_id FROM params) LIMIT 1)
         ) as description_id,
         (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM draft_descriptions dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1) as draft_description_resource,
-        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1) as agent_description_resource
+        (SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_agent_v4_description_resource FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = (SELECT agent_id FROM params) LIMIT 1) as agent_description_resource
     FROM params
 ),
 flag_resource_data AS (
@@ -459,7 +459,7 @@ agent_info AS (
     SELECT 
         a.id::uuid as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) AS name,
-        (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) AS description,
+        (SELECT d.description FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1) AS description,
         (SELECT m.id FROM agent_models am JOIN model_artifact m ON am.model_id = m.id WHERE am.agent_id = a.id LIMIT 1) AS model_id,
         EXISTS (
             SELECT 1 FROM agent_flags af
@@ -469,7 +469,7 @@ agent_info AS (
               AND af.type = 'active'::type_agent_flags
               AND af.value = TRUE
         ) AS active,
-        COALESCE(da.artifact::text, 'assistant') as role  -- Derive from agent's tools via artifact_resources, default to 'assistant'
+        COALESCE(NULL::artifacts::text, 'assistant') as role  -- Derive from agent's tools via artifact_resources, default to 'assistant'
     FROM params x
     JOIN agent_artifact a ON a.id = x.agent_id
     LEFT JOIN LATERAL (
@@ -1067,7 +1067,7 @@ prompt_mapping_data_safe AS (
 agent_department_for_agents AS (
     SELECT ad.department_id
     FROM params p
-    JOIN agent_departments ad ON ad.agent_id = p.agent_id AND ad.active = true
+    JOIN agent_departments ad ON NULL::uuid = p.agent_id AND ad.active = true
     WHERE p.agent_id IS NOT NULL
     LIMIT 1
 ),
@@ -1112,7 +1112,7 @@ name_agent_data AS (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1144,7 +1144,7 @@ name_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1185,7 +1185,7 @@ description_agent_data AS (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1217,7 +1217,7 @@ description_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1258,7 +1258,7 @@ models_agent_data AS (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1290,7 +1290,7 @@ models_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1331,7 +1331,7 @@ prompts_agent_data AS (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1363,7 +1363,7 @@ prompts_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1404,7 +1404,7 @@ instructions_agent_data AS (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1436,7 +1436,7 @@ instructions_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1477,7 +1477,7 @@ departments_agent_data AS (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1509,7 +1509,7 @@ departments_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1550,7 +1550,7 @@ flag_agent_data AS (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1582,7 +1582,7 @@ flag_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )

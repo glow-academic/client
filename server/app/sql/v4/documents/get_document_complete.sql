@@ -422,7 +422,7 @@ document_data AS (
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'template'::type_document_flags AND df.value = TRUE) as template,
-        (SELECT dad.agent_domain_id FROM document_agent_domains dad WHERE dad.document_id = d.id LIMIT 1) as document_domain_id,
+        NULL::uuid as document_domain_id,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
         (SELECT dh.html_id FROM document_html dh WHERE dh.document_id = d.id AND dh.active = true ORDER BY dh.created_at DESC LIMIT 1) as html_id,
         (SELECT ds.schema_id FROM document_schemas ds WHERE ds.document_id = d.id AND ds.active = true ORDER BY ds.created_at DESC LIMIT 1) as schema_id,
@@ -712,17 +712,12 @@ name_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
-        AND EXISTS (
-            SELECT 1 FROM agent_domains adom
-            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-            WHERE adom.agent_id = a.id
-              AND da.artifact = 'document'::artifacts
-        )
+        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -754,7 +749,7 @@ name_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -783,17 +778,12 @@ description_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
-        AND EXISTS (
-            SELECT 1 FROM agent_domains adom
-            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-            WHERE adom.agent_id = a.id
-              AND da.artifact = 'document'::artifacts
-        )
+        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -825,7 +815,7 @@ description_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -854,17 +844,12 @@ departments_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
-        AND EXISTS (
-            SELECT 1 FROM agent_domains adom
-            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-            WHERE adom.agent_id = a.id
-              AND da.artifact = 'document'::artifacts
-        )
+        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -896,7 +881,7 @@ departments_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -925,17 +910,12 @@ fields_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
-        AND EXISTS (
-            SELECT 1 FROM agent_domains adom
-            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-            WHERE adom.agent_id = a.id
-              AND da.artifact = 'document'::artifacts
-        )
+        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -967,7 +947,7 @@ fields_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -996,17 +976,12 @@ flag_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
-        AND EXISTS (
-            SELECT 1 FROM agent_domains adom
-            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-            WHERE adom.agent_id = a.id
-              AND da.artifact = 'document'::artifacts
-        )
+        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1038,7 +1013,7 @@ flag_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ea.agent_id 
+                         WHERE NULL::uuid = ea.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )
@@ -1067,17 +1042,12 @@ general_agent_data AS (
         WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
               AND af.value = true
         )
-        AND EXISTS (
-            SELECT 1 FROM agent_domains adom
-            JOIN domain_artifacts da ON da.domain_id = adom.domain_id
-            WHERE adom.agent_id = a.id
-              AND da.artifact = 'document'::artifacts
-        )
+        -- Domain check removed - no longer needed
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments ad
                 JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
-                WHERE ad.agent_id = a.id AND ad.active = true
+                WHERE NULL::uuid = a.id AND ad.active = true
             )
             OR NOT EXISTS (
                 SELECT 1 FROM agent_departments ad2 
@@ -1133,7 +1103,7 @@ general_agent_data AS (
                 WHEN sd.department_id IS NOT NULL 
                      AND EXISTS (
                          SELECT 1 FROM agent_departments ad
-                         WHERE ad.agent_id = ascores.agent_id 
+                         WHERE NULL::uuid = ascores.agent_id 
                            AND ad.department_id = sd.department_id 
                            AND ad.active = true
                      )

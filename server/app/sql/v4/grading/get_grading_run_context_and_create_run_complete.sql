@@ -128,7 +128,7 @@ chat_info AS (
         g.trace_id,
         sc.created_at,
         sc.completed
-    FROM chat_artifact sc
+    FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
     LEFT JOIN groups g ON g.id = cg.group_id
@@ -204,7 +204,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -241,7 +241,7 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -408,7 +408,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
@@ -440,7 +440,7 @@ standards_aggregated AS (
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id

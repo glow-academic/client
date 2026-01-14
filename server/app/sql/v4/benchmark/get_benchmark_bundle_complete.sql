@@ -410,7 +410,7 @@ attempt_status_summary AS (
     LEFT JOIN eval_runs er ON er.eval_id = aea.eval_id
     GROUP BY aea.attempt_id, aea.eval_id
 ),
--- Derive status FROM run_artifact counts
+-- Derive status FROM runs counts
 attempts_with_status AS (
     SELECT 
         aea.*,
@@ -553,7 +553,7 @@ departments_array AS (
 agents_array AS (
     SELECT COALESCE(
         ARRAY_AGG(
-            (a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '')
+            (a.id, (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), '')
             )::types.q_get_benchmark_bundle_v4_agent
             ORDER BY (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1)
         ),

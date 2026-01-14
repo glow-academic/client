@@ -74,21 +74,21 @@ WITH params AS (
 ),
 target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, cnt.content, m.created_at
-    FROM message_artifact m
+    FROM messages m
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     JOIN message_runs mr ON mr.message_id = m.id
-    JOIN run_artifact r ON r.id = mr.run_id
+    JOIN runs r ON r.id = mr.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chat_artifact c ON c.id = cg.chat_id
+    JOIN chats c ON c.id = cg.chat_id
     CROSS JOIN params p
     WHERE m.id = p.message_id AND c.id = p.chat_id
 ),
 chat_info AS (
     SELECT sc.id, ac.attempt_id, sc.scenario_id, g.trace_id, sc.title
-    FROM chat_artifact sc
+    FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     LEFT JOIN chat_groups cg ON cg.chat_id = sc.id
     LEFT JOIN groups g ON g.id = cg.group_id
@@ -117,9 +117,9 @@ profile_info AS (
 best_agent AS (
     SELECT a.id as agent_id
     FROM agent_artifact a
-    INNER JOIN agent_domains adom ON adom.agent_id = a.id
-    INNER JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('message' AS artifacts)  -- hint maps to message artifact
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    
+    
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
     AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         -- Include if agent is linked to the specified department
@@ -146,7 +146,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = profile_id
       AND mrp.active = true
@@ -184,7 +184,7 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -234,7 +234,7 @@ document_data AS (
     WHERE sd.scenario_id = si.id AND sd.active = true
 ),
 -- Get or create group (for trace_id and group_id)
--- If group_id provided (regeneration), use existing group; otherwise create/get FROM chat_artifact
+-- If group_id provided (regeneration), use existing group; otherwise create/get FROM chats
 existing_group_from_param AS (
     SELECT g.id as group_id, g.trace_id
     FROM params p
@@ -345,7 +345,7 @@ agent_tools_data AS (
         ba.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(da.artifact::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
+                (t.id, t.name, COALESCE(t.description, ''), COALESCE(rt.resource::text, ''), COALESCE(NULL::artifacts::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), t.active)::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(rt.resource::text, ''), t.name
             ),
             '{}'::types.i_get_text_run_context_and_create_run_v4_tool[]
@@ -354,8 +354,8 @@ agent_tools_data AS (
     LEFT JOIN agent_tools at ON at.agent_id = ba.agent_id AND at.active = true
     LEFT JOIN tool_artifact t ON t.id = at.tool_id AND t.active = true
     LEFT JOIN resource_tools rt ON rt.tool_id = t.id
-    LEFT JOIN agent_domains adom ON adom.agent_id = ba.agent_id
-    LEFT JOIN domain_artifacts da ON da.domain_id = adom.domain_id
+    
+    
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     GROUP BY ba.agent_id
 ),
@@ -367,8 +367,8 @@ developer_instruction_data AS (
         ins.schema_id as developer_instruction_schema_id
     FROM best_agent ba
     INNER JOIN agents_resource a ON a.id = ba.agent_id
-    LEFT JOIN agent_domains adom_dev ON adom_dev.agent_id = a.id
-    LEFT JOIN domain_artifacts da_dev ON da_dev.domain_id = adom_dev.domain_id
+    
+    
     LEFT JOIN agent_instructions ai ON ai.agent_id = a.id
     LEFT JOIN instructions_resource i ON i.id = ai.instruction_id AND i.active = true
     LEFT JOIN instruction_schemas ins ON ins.instruction_id = i.id
@@ -387,7 +387,7 @@ context_data AS (
     SELECT 
         -- Only fields needed for dispatch
         a.id::text as agent_id,
-        COALESCE(da_ctx.artifact::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
+        NULL::text as agent_role,  -- Domain-based agent role removed
         ci.id::text as chat_id
     FROM target_message tm
     CROSS JOIN chat_info ci
@@ -396,8 +396,8 @@ context_data AS (
     CROSS JOIN best_agent ba
     CROSS JOIN params p_params
     INNER JOIN agents_resource a ON a.id = ba.agent_id
-    LEFT JOIN agent_domains adom_ctx ON adom_ctx.agent_id = a.id
-    LEFT JOIN domain_artifacts da_ctx ON da_ctx.domain_id = adom_ctx.domain_id
+    
+    
     -- NO rate limit check - handled in generate/start.py
     -- NO run creation - handled in generate/start.py
     -- NO tools, developer instructions, etc. - fetched by modality handlers

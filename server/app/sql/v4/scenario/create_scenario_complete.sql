@@ -346,14 +346,10 @@ link_flags AS (
     CROSS JOIN params p
     WHERE p.problem_statement_enabled IS NOT NULL
 ),
+-- Domain-based agent assignment removed - no longer needed
 link_video_domain AS (
-    -- Link video domain to scenario (if provided)
-    INSERT INTO scenario_agent_domains (scenario_id, agent_domain_id, type, created_at, updated_at)
-    SELECT ns.id, p.video_domain_id, 'video'::type_scenario_domains, NOW(), NOW()
-    FROM new_scenario ns
-    CROSS JOIN params p
-    WHERE p.video_domain_id IS NOT NULL
-    ON CONFLICT (scenario_id, agent_domain_id, type) DO UPDATE SET updated_at = NOW()
+    -- Placeholder CTE (removed domain logic)
+    SELECT NULL::uuid as dummy FROM new_scenario LIMIT 0
 ),
 link_departments AS (
     -- Link departments if provided

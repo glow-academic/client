@@ -252,72 +252,14 @@ BEGIN
             updated_at = NOW()
     ),
     -- Update document_agent_domains if document_domain_id provided
+    -- Domain-based agent assignment removed - no longer needed
     update_document_agent_domain AS (
-        -- Delete existing links
-        DELETE FROM document_agent_domains
-        WHERE document_id = (SELECT document_id FROM params)
-          AND (SELECT document_domain_id FROM params) IS NOT NULL
+        -- Placeholder CTE (removed domain logic)
+        SELECT NULL::uuid as dummy FROM params LIMIT 0
     ),
     link_document_agent_domain AS (
-        -- Insert new link if document_domain_id provided
-        INSERT INTO document_agent_domains (document_id, agent_domain_id, created_at, updated_at)
-        SELECT 
-            p.document_id,
-            p.document_domain_id,
-            NOW(),
-            NOW()
-        FROM params p
-        WHERE p.document_domain_id IS NOT NULL
-        ON CONFLICT (document_id, agent_domain_id) DO UPDATE SET updated_at = NOW()
-    ),
-    -- Template handling: create template if html_id and schema_id are provided
-    create_template AS (
-        -- Create template (just values, no schema/HTML refs) if html_id and schema_id are provided
-        INSERT INTO templates_resource (name, created_at, updated_at)
-        SELECT 
-            COALESCE((SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = (SELECT document_id FROM params) LIMIT 1), 'Template'),
-            NOW(),
-            NOW()
-        FROM params p
-        WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
-          AND NOT EXISTS (
-              SELECT 1 FROM document_templates dt
-              JOIN document_html dh ON dh.document_id = dt.document_id AND dh.html_id = p.html_id AND dh.active = true
-              JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.schema_id = p.schema_id AND ds.active = true
-              WHERE dt.active = true
-          )
-        RETURNING id as template_id
-    ),
-    get_existing_template AS (
-        -- Get existing template if it exists (matching html_id and schema_id via document_html and document_schemas)
-        SELECT DISTINCT dt.template_id
-        FROM params p
-        JOIN document_templates dt ON dt.active = true
-        JOIN document_html dh ON dh.document_id = dt.document_id AND dh.html_id = p.html_id AND dh.active = true
-        JOIN document_schemas ds ON ds.document_id = dt.document_id AND ds.schema_id = p.schema_id AND ds.active = true
-        WHERE p.html_id IS NOT NULL AND p.schema_id IS NOT NULL
-        LIMIT 1
-    ),
-    template_id AS (
-        SELECT template_id FROM create_template
-        UNION ALL
-        SELECT template_id FROM get_existing_template
-        WHERE EXISTS (SELECT 1 FROM params WHERE html_id IS NOT NULL AND schema_id IS NOT NULL)
-        LIMIT 1
-    ),
-    link_template_schema AS (
-        -- Link template to schema via schema_templates junction table
-        INSERT INTO schema_templates (schema_id, template_id, created_at, updated_at)
-        SELECT 
-            p.schema_id,
-            ti.template_id,
-            NOW(),
-            NOW()
-        FROM template_id ti
-        CROSS JOIN params p
-        WHERE p.schema_id IS NOT NULL
-        ON CONFLICT (schema_id, template_id) DO UPDATE SET
-            updated_at = NOW()
+        -- Placeholder CTE (removed domain logic)
+        SELECT NULL::uuid as dummy FROM params LIMIT 0
     ),
     deactivate_previous_templates AS (
         -- Deactivate all previous templates if new one is provided

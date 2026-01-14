@@ -132,12 +132,12 @@ finalize_tool_call AS (
 get_existing_message AS (
     SELECT m.id as message_id
     FROM params p
-    JOIN message_artifact m ON m.id = p.message_id
+    JOIN messages m ON m.id = p.message_id
     WHERE p.message_id IS NOT NULL
     LIMIT 1
 ),
 create_message_if_needed AS (
-    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
     SELECT 'assistant'::message_role, p.is_complete, true, NOW(), NOW()
     FROM params p
     WHERE p.message_id IS NULL
@@ -163,7 +163,7 @@ link_call_to_message AS (
     CROSS JOIN selected_message sm
     ON CONFLICT (message_id, call_id) DO NOTHING
 ),
--- Insert or UPDATE message_artifact content
+-- Insert or UPDATE messages content
 insert_content_if_needed AS (
     INSERT INTO contents (content, created_at, updated_at)
     SELECT p.message_contents, NOW(), NOW()
@@ -203,7 +203,7 @@ update_message_content AS (
 ),
 -- Mark message as completed if is_complete
 complete_message AS (
-    UPDATE message_artifact m
+    UPDATE messages m
     SET completed = p_params.is_complete,
         updated_at = NOW()
     FROM params p_params

@@ -152,7 +152,7 @@ recent_runs AS (
     SELECT 
         mrp.profile_id,
         COUNT(*) as run_count
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mr.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY mrp.profile_id
@@ -259,7 +259,7 @@ total_requests_by_date AS (
     SELECT 
         DATE(mr.created_at) as date,
         COUNT(*) as count
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     JOIN profile_departments pd ON pd.profile_id = mrp.profile_id AND pd.active = true
     WHERE pd.department_id IN (SELECT department_id FROM user_departments)

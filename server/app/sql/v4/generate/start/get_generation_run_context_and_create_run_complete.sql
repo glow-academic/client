@@ -99,7 +99,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -147,7 +147,7 @@ rate_limit_check AS (
 ),
 -- Create run
 create_run AS (
-    INSERT INTO run_artifact (input_tokens, output_tokens, agent_id)
+    INSERT INTO runs (input_tokens, output_tokens, agent_id)
     SELECT 0, 0, sa.agent_id
     FROM selected_agent sa
     CROSS JOIN rate_limit_check rlc
@@ -203,7 +203,7 @@ existing_developer_messages AS (
         m.id as message_id,
         dmh.run_id,
         dmh.hash
-    FROM message_artifact m
+    FROM messages m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN contents cnt ON cnt.id = mc.content_id
     JOIN developer_message_hash_array dmh ON message_content_hash(cnt.content, 'developer') = dmh.hash
@@ -220,7 +220,7 @@ new_developer_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_developer_messages e WHERE e.hash = dmh.hash)
 ),
 new_developer_messages AS (
-    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
     SELECT 'developer'::message_role, false, false, NOW(), NOW()
     FROM new_developer_messages_data
     RETURNING id, created_at, updated_at
@@ -311,7 +311,7 @@ existing_user_messages AS (
         m.id as message_id,
         umh.run_id,
         umh.hash
-    FROM message_artifact m
+    FROM messages m
     JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
     JOIN contents cnt ON cnt.id = mc.content_id
     JOIN user_message_hash_array umh ON message_content_hash(cnt.content, 'user') = umh.hash
@@ -328,7 +328,7 @@ new_user_messages_data AS (
     WHERE NOT EXISTS (SELECT 1 FROM existing_user_messages e WHERE e.hash = umh.hash)
 ),
 new_user_messages AS (
-    INSERT INTO message_artifact (role, completed, audio, created_at, updated_at)
+    INSERT INTO messages (role, completed, audio, created_at, updated_at)
     SELECT 'user'::message_role, false, false, NOW(), NOW()
     FROM new_user_messages_data
     RETURNING id, created_at, updated_at
@@ -408,7 +408,7 @@ link_existing_messages AS (
     FROM previous_runs_in_group prig
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message_artifact m ON m.id = mr.message_id
+    JOIN messages m ON m.id = mr.message_id
     WHERE m.role IN ('system'::message_role, 'developer'::message_role)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()

@@ -25,5 +25,5 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-SELECT created_at FROM message_artifact WHERE id = message_id
+SELECT created_at FROM messages WHERE id = message_id
 $$;

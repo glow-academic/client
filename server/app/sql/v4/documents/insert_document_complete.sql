@@ -71,38 +71,10 @@ insert_doc AS (
     )
     RETURNING id as document_id
 ),
--- Link document to agent domain if default document agent exists
+-- Domain-based agent assignment removed - no longer needed
 link_document_agent_domain AS (
-    INSERT INTO document_agent_domains (document_id, agent_domain_id, created_at, updated_at)
-    SELECT 
-        id.document_id,
-        dd.domain_id,
-        NOW(),
-        NOW()
-    FROM insert_doc id
-    CROSS JOIN (
-        SELECT adom.domain_id
-        FROM agent_domains adom
-        JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = 'document'::artifacts
-        JOIN agents_resource a ON a.id = adom.agent_id
-        WHERE EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags 
-            AND af.value = true
-        )
-        LIMIT 1
-    ) dd
-    ON CONFLICT (document_id, agent_domain_id) DO UPDATE SET updated_at = NOW()
-),
--- Link document to name
-link_document_name AS (
-    INSERT INTO document_names (document_id, name_id, created_at, updated_at)
-    SELECT 
-        id.document_id,
-        nr.name_id,
-        NOW(),
-        NOW()
-    FROM insert_doc id
-    CROSS JOIN name_resource nr
-    ON CONFLICT (document_id, name_id) DO UPDATE SET updated_at = NOW()
+    -- Placeholder CTE (removed domain logic)
+    SELECT NULL::uuid as dummy FROM insert_doc LIMIT 0
 ),
 -- Link document to description
 link_document_description AS (

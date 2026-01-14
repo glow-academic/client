@@ -35,10 +35,10 @@ WITH params AS (
 best_agent AS (
     SELECT a.id as agent_id
     FROM agent_artifact a
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
     CROSS JOIN params p
-    JOIN agent_domains adom ON adom.agent_id = a.id
-    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('document' AS artifacts)
+    
+    
     AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
     AND (
         -- Include if agent is linked to the specified department (if provided)
@@ -65,7 +65,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     WHERE mrp.profile_id = (SELECT profile_id FROM params)
       AND mrp.active = true
@@ -105,7 +105,7 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -201,7 +201,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id
     AND spk.settings_id = act_s.settings_id 
     AND spk.active = true
-    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     -- Validate rate limit: raises exception if exceeded (function returns TRUE if valid)
@@ -209,7 +209,7 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
 ),
 create_run AS (
     -- Create run record with all junction records (atomic with context query)
-    INSERT INTO run_artifact (input_tokens, output_tokens, key_id, agent_id)
+    INSERT INTO runs (input_tokens, output_tokens, key_id, agent_id)
     SELECT 0, 0, NULL, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id

@@ -32,7 +32,7 @@ AS $$
 SELECT 
     u.file_path,
     ds.schema_id,
-    (SELECT dad.agent_domain_id::text FROM document_agent_domains dad WHERE dad.document_id = d.id LIMIT 1),
+    NULL::text as document_domain_id,
     (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
     (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
 FROM document_artifact d

@@ -24,10 +24,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT ad.agent_id
+    SELECT NULL::uuid
     FROM document_artifact doc
-    JOIN document_agent_domains dad ON dad.document_id = doc.id
-    JOIN agent_domains ad ON ad.domain_id = dad.agent_domain_id
+    
+    
     WHERE doc.id = $1
     LIMIT 1
 $$;

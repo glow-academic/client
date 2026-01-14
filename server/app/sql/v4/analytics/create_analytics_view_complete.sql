@@ -58,14 +58,14 @@ latest_grade AS (
          COALESCE(t.time_taken, 0)::numeric AS time_taken_seconds,
          rga.rubric_id,
          g.created_at
-  FROM grade_artifact g
+  FROM grades g
   LEFT JOIN rubric_grade_agents rga ON rga.id = g.rubric_grade_agent_id
   LEFT JOIN grade_times gt ON gt.grade_id = g.id AND gt.active = TRUE
   LEFT JOIN times_resource t ON t.id = gt.time_id
-  JOIN run_artifact r ON r.id = g.run_id
+  JOIN runs r ON r.id = g.run_id
   JOIN group_runs gr ON gr.run_id = r.id
   JOIN grade_groups gg ON gg.group_id = gr.group_id
-  JOIN chat_artifact c ON c.id = gg.chat_id
+  JOIN chats c ON c.id = gg.chat_id
   -- Simulation grades only (derive from relationship via grade_groups → groups → group_runs → runs)
   ORDER BY c.id, g.created_at DESC
 ),
@@ -151,13 +151,13 @@ message_counts AS (
     COUNT(*)::int                                AS num_messages_total,
     COUNT(*) FILTER (WHERE m.role = 'user')::int    AS num_query_messages,
     COUNT(*) FILTER (WHERE m.role = 'assistant')::int AS num_response_messages
-  FROM chat_artifact c
+  FROM chats c
   JOIN chat_groups cg ON cg.chat_id = c.id
   JOIN groups g ON g.id = cg.group_id
   JOIN group_runs gr ON gr.group_id = g.id
-  JOIN run_artifact r ON r.id = gr.run_id
+  JOIN runs r ON r.id = gr.run_id
   JOIN message_runs mr ON mr.run_id = r.id
-  JOIN message_artifact m ON m.id = mr.message_id
+  JOIN messages m ON m.id = mr.message_id
   GROUP BY c.id
 ),
 -- Per-message time deltas (seconds) computed in-order, then aggregated to int[]
@@ -175,13 +175,13 @@ message_deltas AS (
       ELSE NULL
     END AS delta_seconds,
     m.created_at
-  FROM chat_artifact c
+  FROM chats c
   JOIN chat_groups cg ON cg.chat_id = c.id
   JOIN groups g ON g.id = cg.group_id
   JOIN group_runs gr ON gr.group_id = g.id
-  JOIN run_artifact r ON r.id = gr.run_id
+  JOIN runs r ON r.id = gr.run_id
   JOIN message_runs mr ON mr.run_id = r.id
-  JOIN message_artifact m ON m.id = mr.message_id
+  JOIN messages m ON m.id = mr.message_id
 ),
 message_deltas_agg AS (
   SELECT chat_id,
@@ -320,7 +320,7 @@ SELECT
     scfd.department_id,
     pfd.department_id
   ) AS department_id
-FROM chat_artifact sc
+FROM chats sc
 JOIN chat_first_attempt cfa ON cfa.chat_id = sc.id
 JOIN simulation_attempts sa ON sa.id = cfa.attempt_id
 LEFT JOIN attempt_profiles ap ON ap.attempt_id = sa.id AND ap.active = TRUE
@@ -410,7 +410,7 @@ CREATE INDEX analytics_attempt_created_at_idx
 
 -- Latest grade per chat fast path (via grade_groups → groups → group_runs → runs)
 CREATE INDEX IF NOT EXISTS grades_run_created_idx
-  ON grade_artifact (run_id, created_at DESC);
+  ON grades (run_id, created_at DESC);
 
 -- Feedback lookup by grade (via grade_feedbacks junction table)
 -- Note: grade_id column removed FROM feedbacks_resource table, use grade_feedbacks junction table instead
@@ -439,7 +439,7 @@ CREATE INDEX analytics_simulation_idx
 -- Additional indexes for skill performance optimization
 -- Latest grade per (run, rubric_grade_agent) fast path
 CREATE INDEX IF NOT EXISTS grades_run_rubric_grade_agent_created_idx
-  ON grade_artifact (run_id, rubric_grade_agent_id, created_at DESC);
+  ON grades (run_id, rubric_grade_agent_id, created_at DESC);
 
 -- Group id + rubric (via junction table - we filter rsg.rubric_id = lg.rubric_id)
 CREATE INDEX IF NOT EXISTS rubric_standard_groups_rubric_standard_group_idx
@@ -465,7 +465,7 @@ CREATE INDEX IF NOT EXISTS message_runs_run_created_idx
   ON message_runs (run_id, created_at);
 
 CREATE INDEX IF NOT EXISTS chats_id_created_idx
-  ON chat_artifact (id, created_at);
+  ON chats (id, created_at);
 
 CREATE INDEX IF NOT EXISTS group_runs_group_id_idx
   ON group_runs (group_id);

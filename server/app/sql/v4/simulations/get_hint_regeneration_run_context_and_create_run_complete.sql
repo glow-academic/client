@@ -125,7 +125,7 @@ previous_messages_all_runs AS (
     FROM previous_runs_in_group prig
     JOIN group_runs gr ON gr.run_id = prig.run_id
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message_artifact m ON m.id = mr.message_id
+    JOIN messages m ON m.id = mr.message_id
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     ORDER BY gr.idx ASC, m.created_at ASC  -- Order by run idx first, then message created_at
@@ -143,21 +143,21 @@ previous_messages_array AS (
 ),
 target_message AS (
     SELECT m.id, c.id AS chat_id, m.role, cnt.content, m.created_at
-    FROM message_artifact m
+    FROM messages m
     LEFT JOIN message_contents mc ON mc.message_id = m.id AND mc.idx = 0
         LEFT JOIN contents cnt ON cnt.id = mc.content_id
     JOIN message_runs mr ON mr.message_id = m.id
-    JOIN run_artifact r ON r.id = mr.run_id
+    JOIN runs r ON r.id = mr.run_id
     JOIN group_runs gr ON gr.run_id = r.id
     JOIN groups g ON g.id = gr.group_id
     JOIN chat_groups cg ON cg.group_id = g.id
-    JOIN chat_artifact c ON c.id = cg.chat_id
+    JOIN chats c ON c.id = cg.chat_id
     CROSS JOIN params p
     WHERE m.id = p.message_id AND c.id = p.chat_id
 ),
 chat_info AS (
     SELECT sc.id, ac.attempt_id, sc.scenario_id, gd.trace_id, sc.title
-    FROM chat_artifact sc
+    FROM chats sc
     JOIN attempt_chats ac ON ac.chat_id = sc.id
     CROSS JOIN group_data gd
     JOIN target_message tm ON tm.chat_id = sc.id
@@ -190,7 +190,7 @@ best_agent AS (
     CROSS JOIN params p
     WHERE a.id = p.hint_agent_id
     AND EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
-    AND EXISTS (SELECT 1 FROM agent_domains adom JOIN domain_artifacts da ON da.domain_id = adom.domain_id WHERE adom.agent_id = a.id AND da.artifact = CAST('message' AS artifacts))
+    -- Domain check removed - no longer needed
 ),
 profile_rate_limit AS (
     -- Get rate limit for the profile (via attempt_profiles)
@@ -204,7 +204,7 @@ runs_today AS (
     SELECT 
         COUNT(*)::bigint as runs_today_count,
         MIN(mr.created_at) as earliest_run_created_at
-    FROM run_artifact mr
+    FROM runs mr
     JOIN run_profiles mrp ON mrp.run_id = mr.id
     CROSS JOIN params p
     WHERE mrp.profile_id = p.profile_id
@@ -243,7 +243,7 @@ dept_specific_settings AS (
 settings_with_keys AS (
     SELECT DISTINCT spk.settings_id
     FROM setting_provider_keys spk
-    JOIN keys_resource k ON k.id = spk.key_id
+    JOIN keys k ON k.id = spk.key_id
     WHERE spk.active = true AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
 ),
 dept_specific_settings_with_keys AS (
@@ -362,13 +362,13 @@ LEFT JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id AND rl.
     LEFT JOIN setting_provider_keys spk ON spk.providers_id = p_prov.id 
         AND spk.settings_id = act_s.settings_id 
         AND spk.active = true
-    LEFT JOIN keys_resource k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    LEFT JOIN keys k ON k.id = spk.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     -- Validate rate limit: raises exception if exceeded
     WHERE validate_rate_limit(prl.req_per_day, COALESCE(rt.runs_today_count, 0)) = TRUE
 ),
 create_run AS (
     -- Create run record
-    INSERT INTO run_artifact (input_tokens, output_tokens, agent_id)
+    INSERT INTO runs (input_tokens, output_tokens, agent_id)
     SELECT 0, 0, cd.agent_id::uuid
     FROM context_data cd
     RETURNING id as run_id
@@ -411,7 +411,7 @@ link_existing_messages AS (
     FROM previous_runs_in_group prig
     CROSS JOIN create_run cr
     JOIN message_runs mr ON mr.run_id = prig.run_id
-    JOIN message_artifact m ON m.id = mr.message_id
+    JOIN messages m ON m.id = mr.message_id
     WHERE m.role IN ('system'::message_role, 'developer'::message_role)
     ON CONFLICT (message_id, run_id)
     DO UPDATE SET updated_at = NOW()

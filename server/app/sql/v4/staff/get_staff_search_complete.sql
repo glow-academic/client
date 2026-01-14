@@ -127,7 +127,7 @@ recent_runs AS (
     SELECT
         rp.profile_id,
         COUNT(*) as run_count
-    FROM run_artifact r
+    FROM runs r
     JOIN run_profiles rp ON rp.run_id = r.id AND rp.active = true
     WHERE r.created_at >= NOW() - INTERVAL '24 hours'
     GROUP BY rp.profile_id

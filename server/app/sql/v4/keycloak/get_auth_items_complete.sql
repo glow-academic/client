@@ -37,7 +37,7 @@ dept_encrypted_items AS (
     JOIN items_resource i ON i.id = ai_j.item_id
     JOIN setting_auth_keys sak ON sak.auth_item_id = i.id AND sak.active = true
     JOIN dept_settings ds ON sak.settings_id = ds.settings_id
-    JOIN keys_resource k ON k.id = sak.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    JOIN keys k ON k.id = sak.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id AND i.encrypted = true
 ),
 -- Fall back to default settings if department-specific has no keys
@@ -47,7 +47,7 @@ default_encrypted_items AS (
     JOIN items_resource i ON i.id = ai_j.item_id
     JOIN setting_auth_keys sak ON sak.auth_item_id = i.id AND sak.active = true
     JOIN default_settings ds ON sak.settings_id = ds.settings_id
-    JOIN keys_resource k ON k.id = sak.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
+    JOIN keys k ON k.id = sak.key_id AND EXISTS (SELECT 1 FROM key_flags kf WHERE kf.key_id = k.id AND kf.type = 'active'::type_key_flags AND kf.value = TRUE) = true
     WHERE ai_j.auth_id = api_get_auth_items_v4.auth_id 
       AND i.encrypted = true
       -- Only use default if department-specific didn't have this key

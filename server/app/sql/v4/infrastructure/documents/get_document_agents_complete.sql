@@ -30,12 +30,10 @@ STABLE
 AS $$
     SELECT 
         NULL::uuid as classify_agent_id,
-        ad.agent_id as document_agent_id,
+        NULL::uuid as document_agent_id,
         (SELECT n.name FROM document_names dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = doc.id LIMIT 1) as name,
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = doc.id LIMIT 1) as description
     FROM document_artifact doc
-    LEFT JOIN document_agent_domains dad ON dad.document_id = doc.id
-    LEFT JOIN agent_domains ad ON ad.domain_id = dad.agent_domain_id
     WHERE doc.id = $1
     LIMIT 1
 $$;

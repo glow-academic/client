@@ -107,7 +107,7 @@ auth_data AS (
         ) as name,
         COALESCE(
             (SELECT payload->>'description' FROM draft_payload_data),
-            (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1)
+            (SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1)
         ) as description,
         COALESCE(
             (SELECT (payload->>'active')::boolean FROM draft_payload_data),

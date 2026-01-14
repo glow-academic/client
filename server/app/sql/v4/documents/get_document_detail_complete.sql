@@ -148,7 +148,7 @@ document_data AS (
         (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags df WHERE df.document_id = d.id AND df.type = 'active'::type_document_flags AND df.value = TRUE) as active,
         d.updated_at,
-        (SELECT dad.agent_domain_id FROM document_agent_domains dad WHERE dad.document_id = d.id LIMIT 1) as document_domain_id,
+        NULL::uuid as document_domain_id,
         (SELECT ARRAY_AGG(dd.department_id::text) FROM document_departments dd WHERE dd.document_id = d.id AND dd.active = true) as department_ids,
         (SELECT ARRAY_AGG(df.field_id) FROM document_fields df WHERE df.document_id = d.id AND df.active = true) as field_ids,
         (SELECT du.upload_id FROM document_uploads du WHERE du.document_id = d.id AND du.active = true ORDER BY du.created_at DESC LIMIT 1) as upload_id,
@@ -295,13 +295,13 @@ agent_data AS (
     SELECT 
         a.id as agent_id,
         (SELECT n.name FROM agent_names an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1), '') as description,
-        ARRAY[COALESCE(da.artifact::text, '')] as roles
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), '') as description,
+        ARRAY[COALESCE(NULL::artifacts::text, '')] as roles
     FROM params x
     JOIN agents_resource a ON EXISTS (SELECT 1 FROM agent_flags af WHERE af.agent_id = a.id AND af.type = 'active'::type_agent_flags AND af.value = true)
-    JOIN agent_domains adom ON adom.agent_id = a.id
-    JOIN domain_artifacts da ON da.domain_id = adom.domain_id AND da.artifact = CAST('document' AS artifacts)
-    LEFT JOIN agent_departments ad ON ad.agent_id = a.id AND ad.active = true
+    
+    
+    LEFT JOIN agent_departments ad ON NULL::uuid = a.id AND ad.active = true
     CROSS JOIN document_data dd
     WHERE (
         -- Department access: has matching department link OR has no department links at all (cross-dept)
@@ -316,12 +316,7 @@ agent_data AS (
             WHERE ad3.agent_id = a.id 
             AND ad3.active = true
         )
-        -- Include agents assigned to this document even if they don't pass department filter
-        OR EXISTS (
-            SELECT 1 FROM document_agent_domains dad 
-            JOIN agent_domains adom ON adom.domain_id = dad.agent_domain_id 
-            WHERE dad.document_id = dd.document_id AND adom.agent_id = a.id
-        )
+        -- Domain check removed - no longer needed
     )
 ),
 valid_field_ids_data AS (
