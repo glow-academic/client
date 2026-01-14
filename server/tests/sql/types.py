@@ -1130,89 +1130,6 @@ class CreateKeyDepartmentLinkApiResponse(BaseModel):
 
 
 
-# Generated from: create_test_key
-
-class CreateTestKeySqlParams(BaseModel):
-
-    key_name: str
-    key_value: str
-    key_description: str | None = None
-    key_active: bool | None = True
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.key_name,
-            self.key_value,
-            self.key_description,
-            self.key_active,
-        )
-
-class CreateTestKeySqlRow(BaseModel):
-
-    key_id: UUID | None = None
-    name: str | None = None
-    key: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-class CreateTestKeyApiRequest(BaseModel):
-
-    key_name: str
-    key_value: str
-    key_description: str | None = None
-    key_active: bool | None = True
-
-class CreateTestKeyApiResponse(BaseModel):
-
-    key_id: UUID | None = None
-    name: str | None = None
-    key: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-
-
-# Generated from: get_key_by_id
-
-class GetKeyByIdSqlParams(BaseModel):
-
-    input_key_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.input_key_id,
-        )
-
-class GetKeyByIdSqlRow(BaseModel):
-
-    key_id: UUID | None = None
-    name: str | None = None
-    key: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-class GetKeyByIdApiRequest(BaseModel):
-
-    input_key_id: UUID
-
-class GetKeyByIdApiResponse(BaseModel):
-
-    key_id: UUID | None = None
-    name: str | None = None
-    key: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    created_at: str | None = None
-    updated_at: str | None = None
-
-
-
 # Generated from: get_key_department_links
 
 class GetKeyDepartmentLinksSqlParams(BaseModel):
@@ -4000,18 +3917,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateKeyDepartmentLinkApiRequest",
         "CreateKeyDepartmentLinkApiResponse",
     ),
-    "tests/sql/v4/integration/api/keys/test_create_test_key_v4_complete.sql": (
-        "CreateTestKeySqlParams",
-        "CreateTestKeySqlRow",
-        "CreateTestKeyApiRequest",
-        "CreateTestKeyApiResponse",
-    ),
-    "tests/sql/v4/integration/api/keys/test_get_key_by_id_v4_complete.sql": (
-        "GetKeyByIdSqlParams",
-        "GetKeyByIdSqlRow",
-        "GetKeyByIdApiRequest",
-        "GetKeyByIdApiResponse",
-    ),
     "tests/sql/v4/integration/api/keys/test_get_key_department_links_v4_complete.sql": (
         "GetKeyDepartmentLinksSqlParams",
         "GetKeyDepartmentLinksSqlRow",
@@ -4722,16 +4627,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["tests/sql/v4/integration/api/keys/test_create_key_department_link_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/keys/test_create_test_key_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["tests/sql/v4/integration/api/keys/test_get_key_by_id_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
