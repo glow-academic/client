@@ -1153,6 +1153,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/analyses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Analyses
+         * @description Create analyses resource (always INSERT).
+         */
+        post: operations["create_analyses_api_v4_resources_analyses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/auths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Auths
+         * @description Create auths resource (always INSERT).
+         */
+        post: operations["create_auths_api_v4_resources_auths_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/audios": {
         parameters: {
             query?: never;
@@ -1493,7 +1533,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/flags": {
+    "/api/v4/resources/conditional_parameters": {
         parameters: {
             query?: never;
             header?: never;
@@ -1503,10 +1543,70 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Flag
-         * @description Create flags resource (always INSERT).
+         * Create Conditional Parameters
+         * @description Create conditional_parameters resource (always INSERT).
          */
-        post: operations["create_flag_api_v4_resources_flags_post"];
+        post: operations["create_conditional_parameters_api_v4_resources_conditional_parameters_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/contents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Contents
+         * @description Create contents resource (always INSERT).
+         */
+        post: operations["create_contents_api_v4_resources_contents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Conversation
+         * @description Create conversations resource (always INSERT).
+         */
+        post: operations["create_conversation_api_v4_resources_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/debug_info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Debug Info
+         * @description Create debug_info resource (always INSERT).
+         */
+        post: operations["create_debug_info_api_v4_resources_debug_info_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1573,6 +1673,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/emails": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Emails
+         * @description Create emails resource (always INSERT).
+         */
+        post: operations["create_emails_api_v4_resources_emails_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/endpoints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Endpoints
+         * @description Create endpoints resource (always INSERT).
+         */
+        post: operations["create_endpoints_api_v4_resources_endpoints_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/examples": {
         parameters: {
             query?: never;
@@ -1587,6 +1727,26 @@ export interface paths {
          * @description Create examples resource (always INSERT).
          */
         post: operations["create_example_api_v4_resources_examples_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/feedbacks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Feedbacks
+         * @description Create feedbacks resource (always INSERT).
+         */
+        post: operations["create_feedbacks_api_v4_resources_feedbacks_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1613,7 +1773,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/icons": {
+    "/api/v4/resources/flags": {
         parameters: {
             query?: never;
             header?: never;
@@ -1623,17 +1783,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Icon
-         * @description Create icons resource (always INSERT).
+         * Create Flag
+         * @description Create flags resource (always INSERT).
          */
-        post: operations["create_icon_api_v4_resources_icons_post"];
+        post: operations["create_flag_api_v4_resources_flags_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/points": {
+    "/api/v4/resources/group_positions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1643,17 +1803,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Point
-         * @description Create points resource (always INSERT).
+         * Create Group Positions
+         * @description Create group_positions resource (always INSERT).
          */
-        post: operations["create_point_api_v4_resources_points_post"];
+        post: operations["create_group_positions_api_v4_resources_group_positions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/thresholds": {
+    "/api/v4/resources/groups": {
         parameters: {
             query?: never;
             header?: never;
@@ -1663,17 +1823,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Threshold
-         * @description Create thresholds resource (always INSERT).
+         * Create Groups
+         * @description Create groups resource (always INSERT).
          */
-        post: operations["create_threshold_api_v4_resources_thresholds_post"];
+        post: operations["create_groups_api_v4_resources_groups_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/content": {
+    "/api/v4/resources/groups_rubric_grade_agents": {
         parameters: {
             query?: never;
             header?: never;
@@ -1683,30 +1843,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Content
-         * @description Create content resource (always INSERT).
+         * Create Groups Rubric Grade Agents
+         * @description Create groups_rubric_grade_agents resource (always INSERT).
          */
-        post: operations["create_content_api_v4_resources_content_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/html": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Html
-         * @description Create html resource (always INSERT).
-         */
-        post: operations["create_html_api_v4_resources_html_post"];
+        post: operations["create_groups_rubric_grade_agents_api_v4_resources_groups_rubric_grade_agents_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1733,6 +1873,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/html": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Html
+         * @description Create html resource (always INSERT).
+         */
+        post: operations["create_html_api_v4_resources_html_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/icons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Icon
+         * @description Create icons resource (always INSERT).
+         */
+        post: operations["create_icon_api_v4_resources_icons_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/thresholds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Threshold
+         * @description Create thresholds resource (always INSERT).
+         */
+        post: operations["create_threshold_api_v4_resources_thresholds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/images": {
         parameters: {
             query?: never;
@@ -1753,7 +1953,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/videos": {
+    "/api/v4/resources/improvements": {
         parameters: {
             query?: never;
             header?: never;
@@ -1763,10 +1963,70 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Video
-         * @description Create videos resource (always INSERT).
+         * Create Improvement
+         * @description Create improvements resource (always INSERT).
          */
-        post: operations["create_video_api_v4_resources_videos_post"];
+        post: operations["create_improvement_api_v4_resources_improvements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/instructions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Instruction
+         * @description Create instructions resource (always INSERT).
+         */
+        post: operations["create_instruction_api_v4_resources_instructions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Items
+         * @description Create items resource (always INSERT).
+         */
+        post: operations["create_items_api_v4_resources_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/modalities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Modalities
+         * @description Create modalities resource (always INSERT).
+         */
+        post: operations["create_modalities_api_v4_resources_modalities_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1813,6 +2073,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/points": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Point
+         * @description Create points resource (always INSERT).
+         */
+        post: operations["create_point_api_v4_resources_points_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/pricing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Pricing
+         * @description Create pricing resource (always INSERT).
+         */
+        post: operations["create_pricing_api_v4_resources_pricing_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/problem_statements": {
         parameters: {
             query?: never;
@@ -1853,6 +2153,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/resources/protocols": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Protocols
+         * @description Create protocols resource (always INSERT).
+         */
+        post: operations["create_protocols_api_v4_resources_protocols_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Providers
+         * @description Create providers resource (always INSERT).
+         */
+        post: operations["create_providers_api_v4_resources_providers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/qualities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Qualities
+         * @description Create qualities resource (always INSERT).
+         */
+        post: operations["create_qualities_api_v4_resources_qualities_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/resources/questions": {
         parameters: {
             query?: never;
@@ -1867,6 +2227,46 @@ export interface paths {
          * @description Create questions resource (always INSERT).
          */
         post: operations["create_questions_api_v4_resources_questions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/reasoning_levels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Reasoning Levels
+         * @description Create reasoning_levels resource (always INSERT).
+         */
+        post: operations["create_reasoning_levels_api_v4_resources_reasoning_levels_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/request_limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Request Limits
+         * @description Create request_limits resource (always INSERT).
+         */
+        post: operations["create_request_limits_api_v4_resources_request_limits_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1893,7 +2293,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/analyses": {
+    "/api/v4/resources/run_positions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1903,17 +2303,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Analyses
-         * @description Create analyses resource (always INSERT).
+         * Create Run Positions
+         * @description Create run_positions resource (always INSERT).
          */
-        post: operations["create_analyses_api_v4_resources_analyses_post"];
+        post: operations["create_run_positions_api_v4_resources_run_positions_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/instructions": {
+    "/api/v4/resources/runs": {
         parameters: {
             query?: never;
             header?: never;
@@ -1923,17 +2323,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Instruction
-         * @description Create instructions resource (always INSERT).
+         * Create Runs
+         * @description Create runs resource (always INSERT).
          */
-        post: operations["create_instruction_api_v4_resources_instructions_post"];
+        post: operations["create_runs_api_v4_resources_runs_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/improvements": {
+    "/api/v4/resources/runs_rubric_grade_agents": {
         parameters: {
             query?: never;
             header?: never;
@@ -1943,17 +2343,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Improvement
-         * @description Create improvements resource (always INSERT).
+         * Create Runs Rubric Grade Agents
+         * @description Create runs_rubric_grade_agents resource (always INSERT).
          */
-        post: operations["create_improvement_api_v4_resources_improvements_post"];
+        post: operations["create_runs_rubric_grade_agents_api_v4_resources_runs_rubric_grade_agents_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/strengths": {
+    "/api/v4/resources/scenario_flags": {
         parameters: {
             query?: never;
             header?: never;
@@ -1963,110 +2363,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Strength
-         * @description Create strengths resource (always INSERT).
+         * Create Scenario Flags
+         * @description Create scenario_flags resource (always INSERT).
          */
-        post: operations["create_strength_api_v4_resources_strengths_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/feedbacks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Feedbacks
-         * @description Create feedbacks resource (always INSERT).
-         */
-        post: operations["create_feedbacks_api_v4_resources_feedbacks_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/conversations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Conversation
-         * @description Create conversations resource (always INSERT).
-         */
-        post: operations["create_conversation_api_v4_resources_conversations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/debug_info": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Debug Info
-         * @description Create debug_info resource (always INSERT).
-         */
-        post: operations["create_debug_info_api_v4_resources_debug_info_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/schemas": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Schema
-         * @description Create schemas resource (always INSERT).
-         */
-        post: operations["create_schema_api_v4_resources_schemas_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v4/resources/schema_fields": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Schema Field
-         * @description Create schema_fields resource (always INSERT).
-         */
-        post: operations["create_schema_field_api_v4_resources_schema_fields_post"];
+        post: operations["create_scenario_flags_api_v4_resources_scenario_flags_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2093,7 +2393,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/templates": {
+    "/api/v4/resources/schema_fields": {
         parameters: {
             query?: never;
             header?: never;
@@ -2103,10 +2403,90 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Template
-         * @description Create templates resource (always INSERT).
+         * Create Schema Field
+         * @description Create schema_fields resource (always INSERT).
          */
-        post: operations["create_template_api_v4_resources_templates_post"];
+        post: operations["create_schema_field_api_v4_resources_schema_fields_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/schemas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Schema
+         * @description Create schemas resource (always INSERT).
+         */
+        post: operations["create_schema_api_v4_resources_schemas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/slugs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Slugs
+         * @description Create slugs resource (always INSERT).
+         */
+        post: operations["create_slugs_api_v4_resources_slugs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/standard_groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Standard Group
+         * @description Create standard_groups resource (always INSERT).
+         */
+        post: operations["create_standard_group_api_v4_resources_standard_groups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/strengths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Strength
+         * @description Create strengths resource (always INSERT).
+         */
+        post: operations["create_strength_api_v4_resources_strengths_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2153,7 +2533,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v4/resources/standard_groups": {
+    "/api/v4/resources/templates": {
         parameters: {
             query?: never;
             header?: never;
@@ -2163,10 +2543,50 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Create Standard Group
-         * @description Create standard_groups resource (always INSERT).
+         * Create Template
+         * @description Create templates resource (always INSERT).
          */
-        post: operations["create_standard_group_api_v4_resources_standard_groups_post"];
+        post: operations["create_template_api_v4_resources_templates_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/temperature_levels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Temperature Levels
+         * @description Create temperature_levels resource (always INSERT).
+         */
+        post: operations["create_temperature_levels_api_v4_resources_temperature_levels_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/texts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Texts
+         * @description Create texts resource (always INSERT).
+         */
+        post: operations["create_texts_api_v4_resources_texts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2187,6 +2607,86 @@ export interface paths {
          * @description Create times resource (always INSERT).
          */
         post: operations["create_time_api_v4_resources_times_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Tools
+         * @description Create tools resource (always INSERT).
+         */
+        post: operations["create_tools_api_v4_resources_tools_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Values
+         * @description Create values resource (always INSERT).
+         */
+        post: operations["create_values_api_v4_resources_values_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/videos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Video
+         * @description Create videos resource (always INSERT).
+         */
+        post: operations["create_video_api_v4_resources_videos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/resources/voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Voices
+         * @description Create voices resource (always INSERT).
+         */
+        post: operations["create_voices_api_v4_resources_voices_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5632,6 +6132,29 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** AuthsApiRequest */
+        AuthsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** AuthsApiResponse */
+        AuthsApiResponse: {
+            /** Auths Id */
+            auths_id?: string | null;
+        };
         /** BaseModel */
         BaseModel: Record<string, never>;
         /**
@@ -6039,6 +6562,29 @@ export interface components {
             /** Color Id */
             color_id?: string | null;
         };
+        /** ConditionalParametersApiRequest */
+        ConditionalParametersApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ConditionalParametersApiResponse */
+        ConditionalParametersApiResponse: {
+            /** Conditional Parameters Id */
+            conditional_parameters_id?: string | null;
+        };
         /**
          * ConnectionConfirmedPayload
          * @description Response indicating WebSocket connection was confirmed.
@@ -6053,8 +6599,8 @@ export interface components {
             /** Server Time */
             server_time: number;
         };
-        /** ContentApiRequest */
-        ContentApiRequest: {
+        /** ContentsApiRequest */
+        ContentsApiRequest: {
             /**
              * Agent Id
              * Format: uuid
@@ -6073,10 +6619,10 @@ export interface components {
              */
             mcp: boolean | null;
         };
-        /** ContentApiResponse */
-        ContentApiResponse: {
-            /** Content Id */
-            content_id?: string | null;
+        /** ContentsApiResponse */
+        ContentsApiResponse: {
+            /** Contents Id */
+            contents_id?: string | null;
         };
         /** ConversationsApiRequest */
         ConversationsApiRequest: {
@@ -7024,6 +7570,29 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** EmailsApiRequest */
+        EmailsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** EmailsApiResponse */
+        EmailsApiResponse: {
+            /** Emails Id */
+            emails_id?: string | null;
+        };
         /**
          * EndAllCompletedPayload
          * @description Response indicating end all operation completed.
@@ -7094,6 +7663,29 @@ export interface components {
             previous_chat_map?: {
                 [key: string]: string | null;
             } | null;
+        };
+        /** EndpointsApiRequest */
+        EndpointsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** EndpointsApiResponse */
+        EndpointsApiResponse: {
+            /** Endpoints Id */
+            endpoints_id?: string | null;
         };
         /** EvalsApiRequest */
         EvalsApiRequest: {
@@ -11501,6 +12093,75 @@ export interface components {
             /** Tools */
             tools?: components["schemas"]["QGetToolsListV4Tool"][] | null;
         };
+        /** GroupPositionsApiRequest */
+        GroupPositionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GroupPositionsApiResponse */
+        GroupPositionsApiResponse: {
+            /** Group Positions Id */
+            group_positions_id?: string | null;
+        };
+        /** GroupsApiRequest */
+        GroupsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GroupsApiResponse */
+        GroupsApiResponse: {
+            /** Groups Id */
+            groups_id?: string | null;
+        };
+        /** GroupsRubricGradeAgentsApiRequest */
+        GroupsRubricGradeAgentsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GroupsRubricGradeAgentsApiResponse */
+        GroupsRubricGradeAgentsApiResponse: {
+            /** Groups Rubric Grade Agents Id */
+            groups_rubric_grade_agents_id?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -11874,6 +12535,29 @@ export interface components {
             /** Instruction Id */
             instruction_id?: string | null;
         };
+        /** ItemsApiRequest */
+        ItemsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ItemsApiResponse */
+        ItemsApiResponse: {
+            /** Items Id */
+            items_id?: string | null;
+        };
         /** KeysApiRequest */
         KeysApiRequest: {
             /**
@@ -11956,6 +12640,29 @@ export interface components {
             voice_mode: boolean;
             /** Upload Id */
             upload_id?: string | null;
+        };
+        /** ModalitiesApiRequest */
+        ModalitiesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ModalitiesApiResponse */
+        ModalitiesApiResponse: {
+            /** Modalities Id */
+            modalities_id?: string | null;
         };
         /** ModelsApiRequest */
         ModelsApiRequest: {
@@ -12263,6 +12970,29 @@ export interface components {
             /** Point Id */
             point_id?: string | null;
         };
+        /** PricingApiRequest */
+        PricingApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** PricingApiResponse */
+        PricingApiResponse: {
+            /** Pricing Id */
+            pricing_id?: string | null;
+        };
         /** ProblemStatementsApiRequest */
         ProblemStatementsApiRequest: {
             /**
@@ -12359,6 +13089,52 @@ export interface components {
         PromptsApiResponse: {
             /** Prompt Id */
             prompt_id?: string | null;
+        };
+        /** ProtocolsApiRequest */
+        ProtocolsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ProtocolsApiResponse */
+        ProtocolsApiResponse: {
+            /** Protocols Id */
+            protocols_id?: string | null;
+        };
+        /** ProvidersApiRequest */
+        ProvidersApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ProvidersApiResponse */
+        ProvidersApiResponse: {
+            /** Providers Id */
+            providers_id?: string | null;
         };
         /** QCreateScenarioV4Parameter */
         QCreateScenarioV4Parameter: {
@@ -19536,6 +20312,29 @@ export interface components {
             /** Timestamps */
             timestamps: number[] | null;
         };
+        /** QualitiesApiRequest */
+        QualitiesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** QualitiesApiResponse */
+        QualitiesApiResponse: {
+            /** Qualities Id */
+            qualities_id?: string | null;
+        };
         /** QuestionsApiRequest */
         QuestionsApiRequest: {
             /**
@@ -19565,6 +20364,29 @@ export interface components {
             /** Question Id */
             question_id?: string | null;
         };
+        /** ReasoningLevelsApiRequest */
+        ReasoningLevelsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ReasoningLevelsApiResponse */
+        ReasoningLevelsApiResponse: {
+            /** Reasoning Levels Id */
+            reasoning_levels_id?: string | null;
+        };
         /** RefreshAnalyticsApiRequest */
         RefreshAnalyticsApiRequest: Record<string, never>;
         /** RefreshAnalyticsApiResponse */
@@ -19585,6 +20407,29 @@ export interface components {
              * Format: uuid
              */
             document_id: string;
+        };
+        /** RequestLimitsApiRequest */
+        RequestLimitsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** RequestLimitsApiResponse */
+        RequestLimitsApiResponse: {
+            /** Request Limits Id */
+            request_limits_id?: string | null;
         };
         /**
          * ResolveFeedbackRequest
@@ -19670,6 +20515,75 @@ export interface components {
         RubricsApiResponse: {
             /** Id */
             id?: string | null;
+        };
+        /** RunPositionsApiRequest */
+        RunPositionsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** RunPositionsApiResponse */
+        RunPositionsApiResponse: {
+            /** Run Positions Id */
+            run_positions_id?: string | null;
+        };
+        /** RunsApiRequest */
+        RunsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** RunsApiResponse */
+        RunsApiResponse: {
+            /** Runs Id */
+            runs_id?: string | null;
+        };
+        /** RunsRubricGradeAgentsApiRequest */
+        RunsRubricGradeAgentsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** RunsRubricGradeAgentsApiResponse */
+        RunsRubricGradeAgentsApiResponse: {
+            /** Runs Rubric Grade Agents Id */
+            runs_rubric_grade_agents_id?: string | null;
         };
         /** SaveAgentApiRequest */
         SaveAgentApiRequest: {
@@ -20200,6 +21114,29 @@ export interface components {
             /** Actor Name */
             actor_name?: string | null;
         };
+        /** ScenarioFlagsApiRequest */
+        ScenarioFlagsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ScenarioFlagsApiResponse */
+        ScenarioFlagsApiResponse: {
+            /** Scenario Flags Id */
+            scenario_flags_id?: string | null;
+        };
         /** ScenarioPositionsApiRequest */
         ScenarioPositionsApiRequest: {
             /**
@@ -20707,6 +21644,29 @@ export interface components {
             /** Id */
             id?: string | null;
         };
+        /** SlugsApiRequest */
+        SlugsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** SlugsApiResponse */
+        SlugsApiResponse: {
+            /** Slugs Id */
+            slugs_id?: string | null;
+        };
         /** StandardGroupsApiRequest */
         StandardGroupsApiRequest: {
             /**
@@ -20857,6 +21817,29 @@ export interface components {
             /** Strength Id */
             strength_id?: string | null;
         };
+        /** TemperatureLevelsApiRequest */
+        TemperatureLevelsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** TemperatureLevelsApiResponse */
+        TemperatureLevelsApiResponse: {
+            /** Temperature Levels Id */
+            temperature_levels_id?: string | null;
+        };
         /** TemplateArrayItemsApiRequest */
         TemplateArrayItemsApiRequest: {
             /**
@@ -20961,6 +21944,29 @@ export interface components {
             /** Template Id */
             template_id?: string | null;
         };
+        /** TextsApiRequest */
+        TextsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** TextsApiResponse */
+        TextsApiResponse: {
+            /** Texts Id */
+            texts_id?: string | null;
+        };
         /** ThresholdsApiRequest */
         ThresholdsApiRequest: {
             /**
@@ -21010,6 +22016,29 @@ export interface components {
         TimesApiResponse: {
             /** Time Id */
             time_id?: string | null;
+        };
+        /** ToolsApiRequest */
+        ToolsApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ToolsApiResponse */
+        ToolsApiResponse: {
+            /** Tools Id */
+            tools_id?: string | null;
         };
         /** UpdateDocumentApiRequest */
         UpdateDocumentApiRequest: {
@@ -21320,6 +22349,29 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /** ValuesApiRequest */
+        ValuesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** ValuesApiResponse */
+        ValuesApiResponse: {
+            /** Values Id */
+            values_id?: string | null;
+        };
         /** VideosApiRequest */
         VideosApiRequest: {
             /**
@@ -21348,6 +22400,29 @@ export interface components {
         VideosApiResponse: {
             /** Video Id */
             video_id?: string | null;
+        };
+        /** VoicesApiRequest */
+        VoicesApiRequest: {
+            /**
+             * Agent Id
+             * Format: uuid
+             */
+            agent_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** VoicesApiResponse */
+        VoicesApiResponse: {
+            /** Voices Id */
+            voices_id?: string | null;
         };
     };
     responses: never;
@@ -23434,6 +24509,80 @@ export interface operations {
             };
         };
     };
+    create_analyses_api_v4_resources_analyses_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalysesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_auths_api_v4_resources_auths_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_audio_api_v4_resources_audios_post: {
         parameters: {
             query?: never;
@@ -24063,7 +25212,7 @@ export interface operations {
             };
         };
     };
-    create_flag_api_v4_resources_flags_post: {
+    create_conditional_parameters_api_v4_resources_conditional_parameters_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24076,7 +25225,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["FlagsApiRequest"];
+                "application/json": components["schemas"]["ConditionalParametersApiRequest"];
             };
         };
         responses: {
@@ -24086,7 +25235,118 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FlagsApiResponse"];
+                    "application/json": components["schemas"]["ConditionalParametersApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_contents_api_v4_resources_contents_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContentsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_conversation_api_v4_resources_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_debug_info_api_v4_resources_debug_info_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DebugInfoApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebugInfoApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24211,6 +25471,80 @@ export interface operations {
             };
         };
     };
+    create_emails_api_v4_resources_emails_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_endpoints_api_v4_resources_endpoints_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndpointsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_example_api_v4_resources_examples_post: {
         parameters: {
             query?: never;
@@ -24235,6 +25569,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExamplesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_feedbacks_api_v4_resources_feedbacks_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbacksApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbacksApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24285,7 +25656,7 @@ export interface operations {
             };
         };
     };
-    create_icon_api_v4_resources_icons_post: {
+    create_flag_api_v4_resources_flags_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24298,7 +25669,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IconsApiRequest"];
+                "application/json": components["schemas"]["FlagsApiRequest"];
             };
         };
         responses: {
@@ -24308,7 +25679,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IconsApiResponse"];
+                    "application/json": components["schemas"]["FlagsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24322,7 +25693,7 @@ export interface operations {
             };
         };
     };
-    create_point_api_v4_resources_points_post: {
+    create_group_positions_api_v4_resources_group_positions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24335,7 +25706,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PointsApiRequest"];
+                "application/json": components["schemas"]["GroupPositionsApiRequest"];
             };
         };
         responses: {
@@ -24345,7 +25716,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PointsApiResponse"];
+                    "application/json": components["schemas"]["GroupPositionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24359,7 +25730,7 @@ export interface operations {
             };
         };
     };
-    create_threshold_api_v4_resources_thresholds_post: {
+    create_groups_api_v4_resources_groups_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24372,7 +25743,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ThresholdsApiRequest"];
+                "application/json": components["schemas"]["GroupsApiRequest"];
             };
         };
         responses: {
@@ -24382,7 +25753,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ThresholdsApiResponse"];
+                    "application/json": components["schemas"]["GroupsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24396,7 +25767,7 @@ export interface operations {
             };
         };
     };
-    create_content_api_v4_resources_content_post: {
+    create_groups_rubric_grade_agents_api_v4_resources_groups_rubric_grade_agents_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24409,7 +25780,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ContentApiRequest"];
+                "application/json": components["schemas"]["GroupsRubricGradeAgentsApiRequest"];
             };
         };
         responses: {
@@ -24419,44 +25790,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_html_api_v4_resources_html_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HtmlApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HtmlApiResponse"];
+                    "application/json": components["schemas"]["GroupsRubricGradeAgentsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24507,6 +25841,117 @@ export interface operations {
             };
         };
     };
+    create_html_api_v4_resources_html_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HtmlApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HtmlApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_icon_api_v4_resources_icons_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IconsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IconsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_threshold_api_v4_resources_thresholds_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThresholdsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThresholdsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_image_api_v4_resources_images_post: {
         parameters: {
             query?: never;
@@ -24544,7 +25989,7 @@ export interface operations {
             };
         };
     };
-    create_video_api_v4_resources_videos_post: {
+    create_improvement_api_v4_resources_improvements_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24557,7 +26002,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VideosApiRequest"];
+                "application/json": components["schemas"]["ImprovementsApiRequest"];
             };
         };
         responses: {
@@ -24567,7 +26012,118 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VideosApiResponse"];
+                    "application/json": components["schemas"]["ImprovementsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_instruction_api_v4_resources_instructions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstructionsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstructionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_items_api_v4_resources_items_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItemsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_modalities_api_v4_resources_modalities_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModalitiesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModalitiesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24655,6 +26211,80 @@ export interface operations {
             };
         };
     };
+    create_point_api_v4_resources_points_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PointsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_pricing_api_v4_resources_pricing_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PricingApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PricingApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_problem_statement_api_v4_resources_problem_statements_post: {
         parameters: {
             query?: never;
@@ -24729,6 +26359,117 @@ export interface operations {
             };
         };
     };
+    create_protocols_api_v4_resources_protocols_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProtocolsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_providers_api_v4_resources_providers_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProvidersApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProvidersApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_qualities_api_v4_resources_qualities_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QualitiesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualitiesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_questions_api_v4_resources_questions_post: {
         parameters: {
             query?: never;
@@ -24753,6 +26494,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QuestionsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_reasoning_levels_api_v4_resources_reasoning_levels_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReasoningLevelsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReasoningLevelsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_request_limits_api_v4_resources_request_limits_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestLimitsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestLimitsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24803,7 +26618,7 @@ export interface operations {
             };
         };
     };
-    create_analyses_api_v4_resources_analyses_post: {
+    create_run_positions_api_v4_resources_run_positions_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24816,7 +26631,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnalysesApiRequest"];
+                "application/json": components["schemas"]["RunPositionsApiRequest"];
             };
         };
         responses: {
@@ -24826,7 +26641,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnalysesApiResponse"];
+                    "application/json": components["schemas"]["RunPositionsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24840,7 +26655,7 @@ export interface operations {
             };
         };
     };
-    create_instruction_api_v4_resources_instructions_post: {
+    create_runs_api_v4_resources_runs_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24853,7 +26668,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["InstructionsApiRequest"];
+                "application/json": components["schemas"]["RunsApiRequest"];
             };
         };
         responses: {
@@ -24863,7 +26678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstructionsApiResponse"];
+                    "application/json": components["schemas"]["RunsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24877,7 +26692,7 @@ export interface operations {
             };
         };
     };
-    create_improvement_api_v4_resources_improvements_post: {
+    create_runs_rubric_grade_agents_api_v4_resources_runs_rubric_grade_agents_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24890,7 +26705,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ImprovementsApiRequest"];
+                "application/json": components["schemas"]["RunsRubricGradeAgentsApiRequest"];
             };
         };
         responses: {
@@ -24900,7 +26715,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImprovementsApiResponse"];
+                    "application/json": components["schemas"]["RunsRubricGradeAgentsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -24914,7 +26729,7 @@ export interface operations {
             };
         };
     };
-    create_strength_api_v4_resources_strengths_post: {
+    create_scenario_flags_api_v4_resources_scenario_flags_post: {
         parameters: {
             query?: never;
             header?: {
@@ -24927,7 +26742,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StrengthsApiRequest"];
+                "application/json": components["schemas"]["ScenarioFlagsApiRequest"];
             };
         };
         responses: {
@@ -24937,192 +26752,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StrengthsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_feedbacks_api_v4_resources_feedbacks_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FeedbacksApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FeedbacksApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_conversation_api_v4_resources_conversations_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConversationsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ConversationsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_debug_info_api_v4_resources_debug_info_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DebugInfoApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DebugInfoApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_schema_api_v4_resources_schemas_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SchemasApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchemasApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_schema_field_api_v4_resources_schema_fields_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Effective-Profile-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SchemaFieldsApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SchemaFieldsApiResponse"];
+                    "application/json": components["schemas"]["ScenarioFlagsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25173,7 +26803,7 @@ export interface operations {
             };
         };
     };
-    create_template_api_v4_resources_templates_post: {
+    create_schema_field_api_v4_resources_schema_fields_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25186,7 +26816,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["TemplatesApiRequest"];
+                "application/json": components["schemas"]["SchemaFieldsApiRequest"];
             };
         };
         responses: {
@@ -25196,7 +26826,155 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TemplatesApiResponse"];
+                    "application/json": components["schemas"]["SchemaFieldsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_schema_api_v4_resources_schemas_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchemasApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchemasApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_slugs_api_v4_resources_slugs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlugsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlugsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_standard_group_api_v4_resources_standard_groups_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StandardGroupsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardGroupsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_strength_api_v4_resources_strengths_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StrengthsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StrengthsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25284,7 +27062,7 @@ export interface operations {
             };
         };
     };
-    create_standard_group_api_v4_resources_standard_groups_post: {
+    create_template_api_v4_resources_templates_post: {
         parameters: {
             query?: never;
             header?: {
@@ -25297,7 +27075,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["StandardGroupsApiRequest"];
+                "application/json": components["schemas"]["TemplatesApiRequest"];
             };
         };
         responses: {
@@ -25307,7 +27085,81 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StandardGroupsApiResponse"];
+                    "application/json": components["schemas"]["TemplatesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_temperature_levels_api_v4_resources_temperature_levels_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TemperatureLevelsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TemperatureLevelsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_texts_api_v4_resources_texts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TextsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -25345,6 +27197,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TimesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_tools_api_v4_resources_tools_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolsApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_values_api_v4_resources_values_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValuesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValuesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_video_api_v4_resources_videos_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VideosApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VideosApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_voices_api_v4_resources_voices_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoicesApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoicesApiResponse"];
                 };
             };
             /** @description Validation Error */

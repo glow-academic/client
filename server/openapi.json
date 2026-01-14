@@ -5440,6 +5440,200 @@
         ]
       }
     },
+    "/api/v4/resources/analyses": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Analyses",
+        "description": "Create analyses resource (always INSERT).",
+        "operationId": "create_analyses_api_v4_resources_analyses_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/auths": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Auths",
+        "description": "Create auths resource (always INSERT).",
+        "operationId": "create_auths_api_v4_resources_auths_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
     "/api/v4/resources/audios": {
       "post": {
         "tags": [
@@ -7089,15 +7283,15 @@
         ]
       }
     },
-    "/api/v4/resources/flags": {
+    "/api/v4/resources/conditional_parameters": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Flag",
-        "description": "Create flags resource (always INSERT).",
-        "operationId": "create_flag_api_v4_resources_flags_post",
+        "summary": "Create Conditional Parameters",
+        "description": "Create conditional_parameters resource (always INSERT).",
+        "operationId": "create_conditional_parameters_api_v4_resources_conditional_parameters_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7153,7 +7347,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FlagsApiRequest"
+                "$ref": "#/components/schemas/ConditionalParametersApiRequest"
               }
             }
           }
@@ -7164,7 +7358,298 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FlagsApiResponse"
+                  "$ref": "#/components/schemas/ConditionalParametersApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/contents": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Contents",
+        "description": "Create contents resource (always INSERT).",
+        "operationId": "create_contents_api_v4_resources_contents_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/conversations": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Conversation",
+        "description": "Create conversations resource (always INSERT).",
+        "operationId": "create_conversation_api_v4_resources_conversations_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/debug_info": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Debug Info",
+        "description": "Create debug_info resource (always INSERT).",
+        "operationId": "create_debug_info_api_v4_resources_debug_info_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebugInfoApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebugInfoApiResponse"
                 }
               }
             }
@@ -7477,6 +7962,200 @@
         ]
       }
     },
+    "/api/v4/resources/emails": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Emails",
+        "description": "Create emails resource (always INSERT).",
+        "operationId": "create_emails_api_v4_resources_emails_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/endpoints": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Endpoints",
+        "description": "Create endpoints resource (always INSERT).",
+        "operationId": "create_endpoints_api_v4_resources_endpoints_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndpointsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EndpointsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
     "/api/v4/resources/examples": {
       "post": {
         "tags": [
@@ -7553,6 +8232,103 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExamplesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/feedbacks": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Feedbacks",
+        "description": "Create feedbacks resource (always INSERT).",
+        "operationId": "create_feedbacks_api_v4_resources_feedbacks_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbacksApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbacksApiResponse"
                 }
               }
             }
@@ -7671,15 +8447,15 @@
         ]
       }
     },
-    "/api/v4/resources/icons": {
+    "/api/v4/resources/flags": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Icon",
-        "description": "Create icons resource (always INSERT).",
-        "operationId": "create_icon_api_v4_resources_icons_post",
+        "summary": "Create Flag",
+        "description": "Create flags resource (always INSERT).",
+        "operationId": "create_flag_api_v4_resources_flags_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7735,7 +8511,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IconsApiRequest"
+                "$ref": "#/components/schemas/FlagsApiRequest"
               }
             }
           }
@@ -7746,7 +8522,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/IconsApiResponse"
+                  "$ref": "#/components/schemas/FlagsApiResponse"
                 }
               }
             }
@@ -7768,15 +8544,15 @@
         ]
       }
     },
-    "/api/v4/resources/points": {
+    "/api/v4/resources/group_positions": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Point",
-        "description": "Create points resource (always INSERT).",
-        "operationId": "create_point_api_v4_resources_points_post",
+        "summary": "Create Group Positions",
+        "description": "Create group_positions resource (always INSERT).",
+        "operationId": "create_group_positions_api_v4_resources_group_positions_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7832,7 +8608,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PointsApiRequest"
+                "$ref": "#/components/schemas/GroupPositionsApiRequest"
               }
             }
           }
@@ -7843,7 +8619,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PointsApiResponse"
+                  "$ref": "#/components/schemas/GroupPositionsApiResponse"
                 }
               }
             }
@@ -7865,15 +8641,15 @@
         ]
       }
     },
-    "/api/v4/resources/thresholds": {
+    "/api/v4/resources/groups": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Threshold",
-        "description": "Create thresholds resource (always INSERT).",
-        "operationId": "create_threshold_api_v4_resources_thresholds_post",
+        "summary": "Create Groups",
+        "description": "Create groups resource (always INSERT).",
+        "operationId": "create_groups_api_v4_resources_groups_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -7929,7 +8705,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ThresholdsApiRequest"
+                "$ref": "#/components/schemas/GroupsApiRequest"
               }
             }
           }
@@ -7940,7 +8716,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ThresholdsApiResponse"
+                  "$ref": "#/components/schemas/GroupsApiResponse"
                 }
               }
             }
@@ -7962,15 +8738,15 @@
         ]
       }
     },
-    "/api/v4/resources/content": {
+    "/api/v4/resources/groups_rubric_grade_agents": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Content",
-        "description": "Create content resource (always INSERT).",
-        "operationId": "create_content_api_v4_resources_content_post",
+        "summary": "Create Groups Rubric Grade Agents",
+        "description": "Create groups_rubric_grade_agents resource (always INSERT).",
+        "operationId": "create_groups_rubric_grade_agents_api_v4_resources_groups_rubric_grade_agents_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8026,7 +8802,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ContentApiRequest"
+                "$ref": "#/components/schemas/GroupsRubricGradeAgentsApiRequest"
               }
             }
           }
@@ -8037,104 +8813,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ContentApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/html": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Html",
-        "description": "Create html resource (always INSERT).",
-        "operationId": "create_html_api_v4_resources_html_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HtmlApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HtmlApiResponse"
+                  "$ref": "#/components/schemas/GroupsRubricGradeAgentsApiResponse"
                 }
               }
             }
@@ -8253,6 +8932,297 @@
         ]
       }
     },
+    "/api/v4/resources/html": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Html",
+        "description": "Create html resource (always INSERT).",
+        "operationId": "create_html_api_v4_resources_html_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HtmlApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HtmlApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/icons": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Icon",
+        "description": "Create icons resource (always INSERT).",
+        "operationId": "create_icon_api_v4_resources_icons_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IconsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IconsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/thresholds": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Threshold",
+        "description": "Create thresholds resource (always INSERT).",
+        "operationId": "create_threshold_api_v4_resources_thresholds_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThresholdsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThresholdsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
     "/api/v4/resources/images": {
       "post": {
         "tags": [
@@ -8350,15 +9320,15 @@
         ]
       }
     },
-    "/api/v4/resources/videos": {
+    "/api/v4/resources/improvements": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Video",
-        "description": "Create videos resource (always INSERT).",
-        "operationId": "create_video_api_v4_resources_videos_post",
+        "summary": "Create Improvement",
+        "description": "Create improvements resource (always INSERT).",
+        "operationId": "create_improvement_api_v4_resources_improvements_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8414,7 +9384,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VideosApiRequest"
+                "$ref": "#/components/schemas/ImprovementsApiRequest"
               }
             }
           }
@@ -8425,7 +9395,298 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/VideosApiResponse"
+                  "$ref": "#/components/schemas/ImprovementsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/instructions": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Instruction",
+        "description": "Create instructions resource (always INSERT).",
+        "operationId": "create_instruction_api_v4_resources_instructions_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstructionsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructionsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/items": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Items",
+        "description": "Create items resource (always INSERT).",
+        "operationId": "create_items_api_v4_resources_items_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItemsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/modalities": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Modalities",
+        "description": "Create modalities resource (always INSERT).",
+        "operationId": "create_modalities_api_v4_resources_modalities_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModalitiesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModalitiesApiResponse"
                 }
               }
             }
@@ -8641,6 +9902,200 @@
         ]
       }
     },
+    "/api/v4/resources/points": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Point",
+        "description": "Create points resource (always INSERT).",
+        "operationId": "create_point_api_v4_resources_points_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PointsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PointsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/pricing": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Pricing",
+        "description": "Create pricing resource (always INSERT).",
+        "operationId": "create_pricing_api_v4_resources_pricing_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
     "/api/v4/resources/problem_statements": {
       "post": {
         "tags": [
@@ -8835,6 +10290,297 @@
         ]
       }
     },
+    "/api/v4/resources/protocols": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Protocols",
+        "description": "Create protocols resource (always INSERT).",
+        "operationId": "create_protocols_api_v4_resources_protocols_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProtocolsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProtocolsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/providers": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Providers",
+        "description": "Create providers resource (always INSERT).",
+        "operationId": "create_providers_api_v4_resources_providers_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProvidersApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProvidersApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/qualities": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Qualities",
+        "description": "Create qualities resource (always INSERT).",
+        "operationId": "create_qualities_api_v4_resources_qualities_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualitiesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualitiesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
     "/api/v4/resources/questions": {
       "post": {
         "tags": [
@@ -8911,6 +10657,200 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/QuestionsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/reasoning_levels": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Reasoning Levels",
+        "description": "Create reasoning_levels resource (always INSERT).",
+        "operationId": "create_reasoning_levels_api_v4_resources_reasoning_levels_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasoningLevelsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReasoningLevelsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/request_limits": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Request Limits",
+        "description": "Create request_limits resource (always INSERT).",
+        "operationId": "create_request_limits_api_v4_resources_request_limits_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestLimitsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestLimitsApiResponse"
                 }
               }
             }
@@ -9029,15 +10969,15 @@
         ]
       }
     },
-    "/api/v4/resources/analyses": {
+    "/api/v4/resources/run_positions": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Analyses",
-        "description": "Create analyses resource (always INSERT).",
-        "operationId": "create_analyses_api_v4_resources_analyses_post",
+        "summary": "Create Run Positions",
+        "description": "Create run_positions resource (always INSERT).",
+        "operationId": "create_run_positions_api_v4_resources_run_positions_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9093,7 +11033,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AnalysesApiRequest"
+                "$ref": "#/components/schemas/RunPositionsApiRequest"
               }
             }
           }
@@ -9104,7 +11044,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AnalysesApiResponse"
+                  "$ref": "#/components/schemas/RunPositionsApiResponse"
                 }
               }
             }
@@ -9126,15 +11066,15 @@
         ]
       }
     },
-    "/api/v4/resources/instructions": {
+    "/api/v4/resources/runs": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Instruction",
-        "description": "Create instructions resource (always INSERT).",
-        "operationId": "create_instruction_api_v4_resources_instructions_post",
+        "summary": "Create Runs",
+        "description": "Create runs resource (always INSERT).",
+        "operationId": "create_runs_api_v4_resources_runs_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9190,7 +11130,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/InstructionsApiRequest"
+                "$ref": "#/components/schemas/RunsApiRequest"
               }
             }
           }
@@ -9201,7 +11141,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InstructionsApiResponse"
+                  "$ref": "#/components/schemas/RunsApiResponse"
                 }
               }
             }
@@ -9223,15 +11163,15 @@
         ]
       }
     },
-    "/api/v4/resources/improvements": {
+    "/api/v4/resources/runs_rubric_grade_agents": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Improvement",
-        "description": "Create improvements resource (always INSERT).",
-        "operationId": "create_improvement_api_v4_resources_improvements_post",
+        "summary": "Create Runs Rubric Grade Agents",
+        "description": "Create runs_rubric_grade_agents resource (always INSERT).",
+        "operationId": "create_runs_rubric_grade_agents_api_v4_resources_runs_rubric_grade_agents_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9287,7 +11227,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ImprovementsApiRequest"
+                "$ref": "#/components/schemas/RunsRubricGradeAgentsApiRequest"
               }
             }
           }
@@ -9298,7 +11238,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImprovementsApiResponse"
+                  "$ref": "#/components/schemas/RunsRubricGradeAgentsApiResponse"
                 }
               }
             }
@@ -9320,15 +11260,15 @@
         ]
       }
     },
-    "/api/v4/resources/strengths": {
+    "/api/v4/resources/scenario_flags": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Strength",
-        "description": "Create strengths resource (always INSERT).",
-        "operationId": "create_strength_api_v4_resources_strengths_post",
+        "summary": "Create Scenario Flags",
+        "description": "Create scenario_flags resource (always INSERT).",
+        "operationId": "create_scenario_flags_api_v4_resources_scenario_flags_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -9384,7 +11324,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StrengthsApiRequest"
+                "$ref": "#/components/schemas/ScenarioFlagsApiRequest"
               }
             }
           }
@@ -9395,492 +11335,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StrengthsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/feedbacks": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Feedbacks",
-        "description": "Create feedbacks resource (always INSERT).",
-        "operationId": "create_feedbacks_api_v4_resources_feedbacks_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/FeedbacksApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FeedbacksApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/conversations": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Conversation",
-        "description": "Create conversations resource (always INSERT).",
-        "operationId": "create_conversation_api_v4_resources_conversations_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConversationsApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ConversationsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/debug_info": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Debug Info",
-        "description": "Create debug_info resource (always INSERT).",
-        "operationId": "create_debug_info_api_v4_resources_debug_info_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DebugInfoApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DebugInfoApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/schemas": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Schema",
-        "description": "Create schemas resource (always INSERT).",
-        "operationId": "create_schema_api_v4_resources_schemas_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SchemasApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SchemasApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "x-cache-tags": [
-          "v4",
-          "resources"
-        ]
-      }
-    },
-    "/api/v4/resources/schema_fields": {
-      "post": {
-        "tags": [
-          "v4",
-          "resources"
-        ],
-        "summary": "Create Schema Field",
-        "description": "Create schema_fields resource (always INSERT).",
-        "operationId": "create_schema_field_api_v4_resources_schema_fields_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Effective-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Effective-Profile-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SchemaFieldsApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SchemaFieldsApiResponse"
+                  "$ref": "#/components/schemas/ScenarioFlagsApiResponse"
                 }
               }
             }
@@ -9999,15 +11454,15 @@
         ]
       }
     },
-    "/api/v4/resources/templates": {
+    "/api/v4/resources/schema_fields": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Template",
-        "description": "Create templates resource (always INSERT).",
-        "operationId": "create_template_api_v4_resources_templates_post",
+        "summary": "Create Schema Field",
+        "description": "Create schema_fields resource (always INSERT).",
+        "operationId": "create_schema_field_api_v4_resources_schema_fields_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10063,7 +11518,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TemplatesApiRequest"
+                "$ref": "#/components/schemas/SchemaFieldsApiRequest"
               }
             }
           }
@@ -10074,7 +11529,395 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TemplatesApiResponse"
+                  "$ref": "#/components/schemas/SchemaFieldsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/schemas": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Schema",
+        "description": "Create schemas resource (always INSERT).",
+        "operationId": "create_schema_api_v4_resources_schemas_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchemasApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemasApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/slugs": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Slugs",
+        "description": "Create slugs resource (always INSERT).",
+        "operationId": "create_slugs_api_v4_resources_slugs_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlugsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SlugsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/standard_groups": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Standard Group",
+        "description": "Create standard_groups resource (always INSERT).",
+        "operationId": "create_standard_group_api_v4_resources_standard_groups_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandardGroupsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardGroupsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/strengths": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Strength",
+        "description": "Create strengths resource (always INSERT).",
+        "operationId": "create_strength_api_v4_resources_strengths_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StrengthsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrengthsApiResponse"
                 }
               }
             }
@@ -10290,15 +12133,15 @@
         ]
       }
     },
-    "/api/v4/resources/standard_groups": {
+    "/api/v4/resources/templates": {
       "post": {
         "tags": [
           "v4",
           "resources"
         ],
-        "summary": "Create Standard Group",
-        "description": "Create standard_groups resource (always INSERT).",
-        "operationId": "create_standard_group_api_v4_resources_standard_groups_post",
+        "summary": "Create Template",
+        "description": "Create templates resource (always INSERT).",
+        "operationId": "create_template_api_v4_resources_templates_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10354,7 +12197,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StandardGroupsApiRequest"
+                "$ref": "#/components/schemas/TemplatesApiRequest"
               }
             }
           }
@@ -10365,7 +12208,201 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StandardGroupsApiResponse"
+                  "$ref": "#/components/schemas/TemplatesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/temperature_levels": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Temperature Levels",
+        "description": "Create temperature_levels resource (always INSERT).",
+        "operationId": "create_temperature_levels_api_v4_resources_temperature_levels_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemperatureLevelsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemperatureLevelsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/texts": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Texts",
+        "description": "Create texts resource (always INSERT).",
+        "operationId": "create_texts_api_v4_resources_texts_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TextsApiResponse"
                 }
               }
             }
@@ -10463,6 +12500,394 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TimesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/tools": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Tools",
+        "description": "Create tools resource (always INSERT).",
+        "operationId": "create_tools_api_v4_resources_tools_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolsApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/values": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Values",
+        "description": "Create values resource (always INSERT).",
+        "operationId": "create_values_api_v4_resources_values_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValuesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValuesApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/videos": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Video",
+        "description": "Create videos resource (always INSERT).",
+        "operationId": "create_video_api_v4_resources_videos_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideosApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideosApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "x-cache-tags": [
+          "v4",
+          "resources"
+        ]
+      }
+    },
+    "/api/v4/resources/voices": {
+      "post": {
+        "tags": [
+          "v4",
+          "resources"
+        ],
+        "summary": "Create Voices",
+        "description": "Create voices resource (always INSERT).",
+        "operationId": "create_voices_api_v4_resources_voices_post",
+        "parameters": [
+          {
+            "name": "X-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Profile-Id"
+            }
+          },
+          {
+            "name": "X-Effective-Profile-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Effective-Profile-Id"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoicesApiRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoicesApiResponse"
                 }
               }
             }
@@ -23770,6 +26195,56 @@
         "type": "object",
         "title": "AuthorizeEmulationApiResponse"
       },
+      "AuthsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "AuthsApiRequest"
+      },
+      "AuthsApiResponse": {
+        "properties": {
+          "auths_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auths Id"
+          }
+        },
+        "type": "object",
+        "title": "AuthsApiResponse"
+      },
       "BaseModel": {
         "properties": {},
         "type": "object",
@@ -24866,6 +27341,56 @@
         "type": "object",
         "title": "ColorsApiResponse"
       },
+      "ConditionalParametersApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ConditionalParametersApiRequest"
+      },
+      "ConditionalParametersApiResponse": {
+        "properties": {
+          "conditional_parameters_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conditional Parameters Id"
+          }
+        },
+        "type": "object",
+        "title": "ConditionalParametersApiResponse"
+      },
       "ConnectionConfirmedPayload": {
         "properties": {
           "sid": {
@@ -24909,7 +27434,7 @@
         "title": "ConnectionConfirmedPayload",
         "description": "Response indicating WebSocket connection was confirmed."
       },
-      "ContentApiRequest": {
+      "ContentsApiRequest": {
         "properties": {
           "agent_id": {
             "type": "string",
@@ -24944,11 +27469,11 @@
           "group_id",
           "content"
         ],
-        "title": "ContentApiRequest"
+        "title": "ContentsApiRequest"
       },
-      "ContentApiResponse": {
+      "ContentsApiResponse": {
         "properties": {
-          "content_id": {
+          "contents_id": {
             "anyOf": [
               {
                 "type": "string",
@@ -24958,11 +27483,11 @@
                 "type": "null"
               }
             ],
-            "title": "Content Id"
+            "title": "Contents Id"
           }
         },
         "type": "object",
-        "title": "ContentApiResponse"
+        "title": "ContentsApiResponse"
       },
       "ConversationsApiRequest": {
         "properties": {
@@ -28163,6 +30688,56 @@
         "type": "object",
         "title": "DuplicateToolApiResponse"
       },
+      "EmailsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "EmailsApiRequest"
+      },
+      "EmailsApiResponse": {
+        "properties": {
+          "emails_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emails Id"
+          }
+        },
+        "type": "object",
+        "title": "EmailsApiResponse"
+      },
       "EndAllCompletedPayload": {
         "properties": {
           "success": {
@@ -28356,6 +30931,56 @@
         ],
         "title": "EndSimulationPayload",
         "description": "Request to end simulation chat."
+      },
+      "EndpointsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "EndpointsApiRequest"
+      },
+      "EndpointsApiResponse": {
+        "properties": {
+          "endpoints_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoints Id"
+          }
+        },
+        "type": "object",
+        "title": "EndpointsApiResponse"
       },
       "EvalsApiRequest": {
         "properties": {
@@ -52390,6 +55015,156 @@
         "type": "object",
         "title": "GetToolsListApiResponse"
       },
+      "GroupPositionsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "GroupPositionsApiRequest"
+      },
+      "GroupPositionsApiResponse": {
+        "properties": {
+          "group_positions_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Group Positions Id"
+          }
+        },
+        "type": "object",
+        "title": "GroupPositionsApiResponse"
+      },
+      "GroupsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "GroupsApiRequest"
+      },
+      "GroupsApiResponse": {
+        "properties": {
+          "groups_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups Id"
+          }
+        },
+        "type": "object",
+        "title": "GroupsApiResponse"
+      },
+      "GroupsRubricGradeAgentsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "GroupsRubricGradeAgentsApiRequest"
+      },
+      "GroupsRubricGradeAgentsApiResponse": {
+        "properties": {
+          "groups_rubric_grade_agents_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups Rubric Grade Agents Id"
+          }
+        },
+        "type": "object",
+        "title": "GroupsRubricGradeAgentsApiResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -53841,6 +56616,56 @@
         "type": "object",
         "title": "InstructionsApiResponse"
       },
+      "ItemsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ItemsApiRequest"
+      },
+      "ItemsApiResponse": {
+        "properties": {
+          "items_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items Id"
+          }
+        },
+        "type": "object",
+        "title": "ItemsApiResponse"
+      },
       "KeysApiRequest": {
         "properties": {
           "agent_id": {
@@ -54056,6 +56881,56 @@
         ],
         "title": "MemberProgressPayload",
         "description": "Request to upsert user message and run."
+      },
+      "ModalitiesApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ModalitiesApiRequest"
+      },
+      "ModalitiesApiResponse": {
+        "properties": {
+          "modalities_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities Id"
+          }
+        },
+        "type": "object",
+        "title": "ModalitiesApiResponse"
       },
       "ModelsApiRequest": {
         "properties": {
@@ -55024,6 +57899,56 @@
         "type": "object",
         "title": "PointsApiResponse"
       },
+      "PricingApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "PricingApiRequest"
+      },
+      "PricingApiResponse": {
+        "properties": {
+          "pricing_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pricing Id"
+          }
+        },
+        "type": "object",
+        "title": "PricingApiResponse"
+      },
       "ProblemStatementsApiRequest": {
         "properties": {
           "agent_id": {
@@ -55275,6 +58200,106 @@
         },
         "type": "object",
         "title": "PromptsApiResponse"
+      },
+      "ProtocolsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ProtocolsApiRequest"
+      },
+      "ProtocolsApiResponse": {
+        "properties": {
+          "protocols_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Protocols Id"
+          }
+        },
+        "type": "object",
+        "title": "ProtocolsApiResponse"
+      },
+      "ProvidersApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ProvidersApiRequest"
+      },
+      "ProvidersApiResponse": {
+        "properties": {
+          "providers_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers Id"
+          }
+        },
+        "type": "object",
+        "title": "ProvidersApiResponse"
       },
       "QCreateScenarioV4Parameter": {
         "properties": {
@@ -95057,6 +98082,56 @@
         ],
         "title": "QUpdateScenarioV4QuestionTimestamp"
       },
+      "QualitiesApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "QualitiesApiRequest"
+      },
+      "QualitiesApiResponse": {
+        "properties": {
+          "qualities_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualities Id"
+          }
+        },
+        "type": "object",
+        "title": "QualitiesApiResponse"
+      },
       "QuestionsApiRequest": {
         "properties": {
           "agent_id": {
@@ -95121,6 +98196,56 @@
         },
         "type": "object",
         "title": "QuestionsApiResponse"
+      },
+      "ReasoningLevelsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ReasoningLevelsApiRequest"
+      },
+      "ReasoningLevelsApiResponse": {
+        "properties": {
+          "reasoning_levels_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Levels Id"
+          }
+        },
+        "type": "object",
+        "title": "ReasoningLevelsApiResponse"
       },
       "RefreshAnalyticsApiRequest": {
         "properties": {},
@@ -95190,6 +98315,56 @@
           "document_id"
         ],
         "title": "RenderTemplateApiRequest"
+      },
+      "RequestLimitsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "RequestLimitsApiRequest"
+      },
+      "RequestLimitsApiResponse": {
+        "properties": {
+          "request_limits_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Limits Id"
+          }
+        },
+        "type": "object",
+        "title": "RequestLimitsApiResponse"
       },
       "ResolveFeedbackRequest": {
         "properties": {
@@ -95356,6 +98531,156 @@
         },
         "type": "object",
         "title": "RubricsApiResponse"
+      },
+      "RunPositionsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "RunPositionsApiRequest"
+      },
+      "RunPositionsApiResponse": {
+        "properties": {
+          "run_positions_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Positions Id"
+          }
+        },
+        "type": "object",
+        "title": "RunPositionsApiResponse"
+      },
+      "RunsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "RunsApiRequest"
+      },
+      "RunsApiResponse": {
+        "properties": {
+          "runs_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Id"
+          }
+        },
+        "type": "object",
+        "title": "RunsApiResponse"
+      },
+      "RunsRubricGradeAgentsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "RunsRubricGradeAgentsApiRequest"
+      },
+      "RunsRubricGradeAgentsApiResponse": {
+        "properties": {
+          "runs_rubric_grade_agents_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs Rubric Grade Agents Id"
+          }
+        },
+        "type": "object",
+        "title": "RunsRubricGradeAgentsApiResponse"
       },
       "SaveAgentApiRequest": {
         "properties": {
@@ -97496,6 +100821,56 @@
         "type": "object",
         "title": "SaveToolApiResponse"
       },
+      "ScenarioFlagsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ScenarioFlagsApiRequest"
+      },
+      "ScenarioFlagsApiResponse": {
+        "properties": {
+          "scenario_flags_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Flags Id"
+          }
+        },
+        "type": "object",
+        "title": "ScenarioFlagsApiResponse"
+      },
       "ScenarioPositionsApiRequest": {
         "properties": {
           "agent_id": {
@@ -98558,6 +101933,56 @@
         "type": "object",
         "title": "SimulationsApiResponse"
       },
+      "SlugsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "SlugsApiRequest"
+      },
+      "SlugsApiResponse": {
+        "properties": {
+          "slugs_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slugs Id"
+          }
+        },
+        "type": "object",
+        "title": "SlugsApiResponse"
+      },
       "StandardGroupsApiRequest": {
         "properties": {
           "agent_id": {
@@ -98872,6 +102297,56 @@
         "type": "object",
         "title": "StrengthsApiResponse"
       },
+      "TemperatureLevelsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "TemperatureLevelsApiRequest"
+      },
+      "TemperatureLevelsApiResponse": {
+        "properties": {
+          "temperature_levels_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature Levels Id"
+          }
+        },
+        "type": "object",
+        "title": "TemperatureLevelsApiResponse"
+      },
       "TemplateArrayItemsApiRequest": {
         "properties": {
           "agent_id": {
@@ -99077,6 +102552,56 @@
         "type": "object",
         "title": "TemplatesApiResponse"
       },
+      "TextsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "TextsApiRequest"
+      },
+      "TextsApiResponse": {
+        "properties": {
+          "texts_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Texts Id"
+          }
+        },
+        "type": "object",
+        "title": "TextsApiResponse"
+      },
       "ThresholdsApiRequest": {
         "properties": {
           "agent_id": {
@@ -99186,6 +102711,56 @@
         },
         "type": "object",
         "title": "TimesApiResponse"
+      },
+      "ToolsApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ToolsApiRequest"
+      },
+      "ToolsApiResponse": {
+        "properties": {
+          "tools_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools Id"
+          }
+        },
+        "type": "object",
+        "title": "ToolsApiResponse"
       },
       "UpdateDocumentApiRequest": {
         "properties": {
@@ -100430,6 +104005,56 @@
         ],
         "title": "ValidationError"
       },
+      "ValuesApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "ValuesApiRequest"
+      },
+      "ValuesApiResponse": {
+        "properties": {
+          "values_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Values Id"
+          }
+        },
+        "type": "object",
+        "title": "ValuesApiResponse"
+      },
       "VideosApiRequest": {
         "properties": {
           "agent_id": {
@@ -100494,6 +104119,56 @@
         },
         "type": "object",
         "title": "VideosApiResponse"
+      },
+      "VoicesApiRequest": {
+        "properties": {
+          "agent_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Agent Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "mcp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcp",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "agent_id",
+          "group_id"
+        ],
+        "title": "VoicesApiRequest"
+      },
+      "VoicesApiResponse": {
+        "properties": {
+          "voices_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voices Id"
+          }
+        },
+        "type": "object",
+        "title": "VoicesApiResponse"
       }
     }
   }

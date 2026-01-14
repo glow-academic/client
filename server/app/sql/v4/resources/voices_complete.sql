@@ -1,7 +1,7 @@
--- Create content resource
+-- Create voices resource
 -- Always INSERT operation (preserves all information)
--- Parameters: agent_id (uuid, required, first), content text
--- Returns: content_id (uuid)
+-- Parameters: agent_id (uuid, required, first), group_id (uuid, required, second), mcp (boolean, optional, third), and resource-specific fields
+-- Returns: voices_id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -11,25 +11,24 @@ BEGIN
     FOR r IN 
         SELECT oidvectortypes(proargtypes) as sig 
         FROM pg_proc 
-        WHERE proname = 'api_create_content_v4'
+        WHERE proname = 'api_create_voices_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_create_content_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_create_voices_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION api_create_content_v4(agent_id uuid,
+CREATE OR REPLACE FUNCTION api_create_voices_v4(agent_id uuid,
     group_id uuid,
-    content text,
     mcp boolean DEFAULT false)
 RETURNS TABLE (
-    content_id uuid
+    voices_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
 AS $$
 DECLARE
-    v_content_id uuid;
+    v_voices_id uuid;
     v_call_id uuid;
     v_tool_id uuid;
     v_template_id uuid;
@@ -50,21 +49,22 @@ BEGIN
     JOIN resource_tools rt ON rt.tool_id = t.id
     LEFT JOIN tool_templates tt ON tt.tool_id = t.id
     LEFT JOIN schema_templates st ON st.template_id = tt.template_id
-    WHERE at.agent_id = api_create_content_v4.agent_id
-      AND rt.resource = 'contents'::resources
+    WHERE at.agent_id = api_create_voices_v4.agent_id
+      AND rt.resource = 'voices'::resources
       AND at.active = true
       AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
     LIMIT 1;
     
     -- Raise error if agent doesn't have tool for resource
     IF v_tool_id IS NULL THEN
-        RAISE EXCEPTION 'Agent % does not have tool for resource content', agent_id;
+        RAISE EXCEPTION 'Agent % does not have tool for resource voices', agent_id;
     END IF;
+    
     -- Validate agent has mcp flag when mcp=true
     IF mcp = true AND agent_id IS NOT NULL THEN
         IF NOT EXISTS (
             SELECT 1 FROM agent_flags 
-            WHERE agent_id = api_create_content_v4.agent_id 
+            WHERE agent_id = api_create_voices_v4.agent_id 
               AND type = 'mcp'::type_agent_flags 
               AND value = true
         ) THEN
@@ -74,7 +74,7 @@ BEGIN
     
     -- Dynamically build arguments_raw FROM schema_fields_resource and Jinja templates
     -- Build a JSONB object with all function parameters first (for lookup)
-    v_params_jsonb := jsonb_build_object('content', content);
+    v_params_jsonb := '{}'::jsonb;
     
     -- For each schema field, extract variable names from template or use field name directly
     FOR v_arg_key, v_arg_value IN
@@ -112,7 +112,7 @@ BEGIN
     )
     VALUES (
         v_call_id,
-        'content_' || v_call_id::text,
+        'voices_' || v_call_id::text,
         v_tool_id,
         v_template_id,
         v_arguments_raw,
@@ -121,12 +121,12 @@ BEGIN
         NOW()
     );
     
-    -- INSERT into contents table (always insert, never update)
-    INSERT INTO contents(content, active, call_id)
-    VALUES (content, true, v_call_id)
-    RETURNING id INTO v_content_id;
-
-        
+    -- INSERT INTO voices_resource table (always insert, never update)
+    -- Note: Column names and values need to be adjusted based on actual table schema
+    INSERT INTO voices_resource(active, call_id, mcp)
+    VALUES (true, v_call_id, mcp)
+    RETURNING id INTO v_voices_id;
+    
     -- Create message record (assistant role, not completed)
     v_message_id := uuidv7();
     INSERT INTO messages (id, role, completed, audio, created_at, updated_at)
@@ -147,14 +147,13 @@ BEGIN
     
     -- Link run to group (calculate idx)
     INSERT INTO group_runs (group_id, run_id, idx, created_at, updated_at)
-    VALUES (
-        api_create_content_v4.group_id,
+    SELECT 
+        api_create_voices_v4.group_id,
         v_run_id,
-        COALESCE((SELECT MAX(gr.idx) FROM group_runs gr WHERE gr.group_id = api_create_content_v4.group_id), -1) + 1,
+        COALESCE((SELECT MAX(gr.idx) FROM group_runs gr WHERE gr.group_id = api_create_voices_v4.group_id), -1) + 1,
         NOW(),
-        NOW()
-    );
+        NOW();
     
-    RETURN QUERY SELECT v_content_id;
+    RETURN QUERY SELECT v_voices_id;
 END;
 $$;

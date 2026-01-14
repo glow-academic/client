@@ -21787,6 +21787,37 @@ class AudiosApiResponse(BaseModel):
 
 
 
+# Generated from: auths
+
+class AuthsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class AuthsSqlRow(BaseModel):
+
+    auths_id: UUID | None = None
+
+class AuthsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class AuthsApiResponse(BaseModel):
+
+    auths_id: UUID | None = None
+
+
+
 # Generated from: cohorts
 
 class CohortsSqlParams(BaseModel):
@@ -21861,9 +21892,40 @@ class ColorsApiResponse(BaseModel):
 
 
 
-# Generated from: content
+# Generated from: conditional_parameters
 
-class ContentSqlParams(BaseModel):
+class ConditionalParametersSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ConditionalParametersSqlRow(BaseModel):
+
+    conditional_parameters_id: UUID | None = None
+
+class ConditionalParametersApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ConditionalParametersApiResponse(BaseModel):
+
+    conditional_parameters_id: UUID | None = None
+
+
+
+# Generated from: contents
+
+class ContentsSqlParams(BaseModel):
 
     agent_id: UUID
     group_id: UUID
@@ -21878,20 +21940,20 @@ class ContentSqlParams(BaseModel):
             self.mcp,
         )
 
-class ContentSqlRow(BaseModel):
+class ContentsSqlRow(BaseModel):
 
-    content_id: UUID | None = None
+    contents_id: UUID | None = None
 
-class ContentApiRequest(BaseModel):
+class ContentsApiRequest(BaseModel):
 
     agent_id: UUID
     group_id: UUID
     content: str
     mcp: bool | None = False
 
-class ContentApiResponse(BaseModel):
+class ContentsApiResponse(BaseModel):
 
-    content_id: UUID | None = None
+    contents_id: UUID | None = None
 
 
 
@@ -22062,6 +22124,68 @@ class DocumentsApiRequest(BaseModel):
 class DocumentsApiResponse(BaseModel):
 
     id: UUID | None = None
+
+
+
+# Generated from: emails
+
+class EmailsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class EmailsSqlRow(BaseModel):
+
+    emails_id: UUID | None = None
+
+class EmailsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class EmailsApiResponse(BaseModel):
+
+    emails_id: UUID | None = None
+
+
+
+# Generated from: endpoints
+
+class EndpointsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class EndpointsSqlRow(BaseModel):
+
+    endpoints_id: UUID | None = None
+
+class EndpointsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class EndpointsApiResponse(BaseModel):
+
+    endpoints_id: UUID | None = None
 
 
 
@@ -22244,6 +22368,99 @@ class FlagsApiRequest(BaseModel):
 class FlagsApiResponse(BaseModel):
 
     flag_id: UUID | None = None
+
+
+
+# Generated from: group_positions
+
+class GroupPositionsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class GroupPositionsSqlRow(BaseModel):
+
+    group_positions_id: UUID | None = None
+
+class GroupPositionsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class GroupPositionsApiResponse(BaseModel):
+
+    group_positions_id: UUID | None = None
+
+
+
+# Generated from: groups
+
+class GroupsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class GroupsSqlRow(BaseModel):
+
+    groups_id: UUID | None = None
+
+class GroupsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class GroupsApiResponse(BaseModel):
+
+    groups_id: UUID | None = None
+
+
+
+# Generated from: groups_rubric_grade_agents
+
+class GroupsRubricGradeAgentsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class GroupsRubricGradeAgentsSqlRow(BaseModel):
+
+    groups_rubric_grade_agents_id: UUID | None = None
+
+class GroupsRubricGradeAgentsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class GroupsRubricGradeAgentsApiResponse(BaseModel):
+
+    groups_rubric_grade_agents_id: UUID | None = None
 
 
 
@@ -22469,6 +22686,37 @@ class InstructionsApiResponse(BaseModel):
 
 
 
+# Generated from: items
+
+class ItemsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ItemsSqlRow(BaseModel):
+
+    items_id: UUID | None = None
+
+class ItemsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ItemsApiResponse(BaseModel):
+
+    items_id: UUID | None = None
+
+
+
 # Generated from: keys
 
 class KeysSqlParams(BaseModel):
@@ -22500,6 +22748,37 @@ class KeysApiRequest(BaseModel):
 class KeysApiResponse(BaseModel):
 
     id: UUID | None = None
+
+
+
+# Generated from: modalities
+
+class ModalitiesSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ModalitiesSqlRow(BaseModel):
+
+    modalities_id: UUID | None = None
+
+class ModalitiesApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ModalitiesApiResponse(BaseModel):
+
+    modalities_id: UUID | None = None
 
 
 
@@ -22744,6 +23023,37 @@ class PointsApiResponse(BaseModel):
 
 
 
+# Generated from: pricing
+
+class PricingSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class PricingSqlRow(BaseModel):
+
+    pricing_id: UUID | None = None
+
+class PricingApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class PricingApiResponse(BaseModel):
+
+    pricing_id: UUID | None = None
+
+
+
 # Generated from: problem_statements
 
 class ProblemStatementsSqlParams(BaseModel):
@@ -22854,6 +23164,99 @@ class PromptsApiResponse(BaseModel):
 
 
 
+# Generated from: protocols
+
+class ProtocolsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ProtocolsSqlRow(BaseModel):
+
+    protocols_id: UUID | None = None
+
+class ProtocolsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ProtocolsApiResponse(BaseModel):
+
+    protocols_id: UUID | None = None
+
+
+
+# Generated from: providers
+
+class ProvidersSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ProvidersSqlRow(BaseModel):
+
+    providers_id: UUID | None = None
+
+class ProvidersApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ProvidersApiResponse(BaseModel):
+
+    providers_id: UUID | None = None
+
+
+
+# Generated from: qualities
+
+class QualitiesSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class QualitiesSqlRow(BaseModel):
+
+    qualities_id: UUID | None = None
+
+class QualitiesApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class QualitiesApiResponse(BaseModel):
+
+    qualities_id: UUID | None = None
+
+
+
 # Generated from: questions
 
 class QuestionsSqlParams(BaseModel):
@@ -22891,6 +23294,68 @@ class QuestionsApiRequest(BaseModel):
 class QuestionsApiResponse(BaseModel):
 
     question_id: UUID | None = None
+
+
+
+# Generated from: reasoning_levels
+
+class ReasoningLevelsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ReasoningLevelsSqlRow(BaseModel):
+
+    reasoning_levels_id: UUID | None = None
+
+class ReasoningLevelsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ReasoningLevelsApiResponse(BaseModel):
+
+    reasoning_levels_id: UUID | None = None
+
+
+
+# Generated from: request_limits
+
+class RequestLimitsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class RequestLimitsSqlRow(BaseModel):
+
+    request_limits_id: UUID | None = None
+
+class RequestLimitsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class RequestLimitsApiResponse(BaseModel):
+
+    request_limits_id: UUID | None = None
 
 
 
@@ -22962,6 +23427,130 @@ class RubricsApiRequest(BaseModel):
 class RubricsApiResponse(BaseModel):
 
     id: UUID | None = None
+
+
+
+# Generated from: run_positions
+
+class RunPositionsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class RunPositionsSqlRow(BaseModel):
+
+    run_positions_id: UUID | None = None
+
+class RunPositionsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class RunPositionsApiResponse(BaseModel):
+
+    run_positions_id: UUID | None = None
+
+
+
+# Generated from: runs
+
+class RunsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class RunsSqlRow(BaseModel):
+
+    runs_id: UUID | None = None
+
+class RunsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class RunsApiResponse(BaseModel):
+
+    runs_id: UUID | None = None
+
+
+
+# Generated from: runs_rubric_grade_agents
+
+class RunsRubricGradeAgentsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class RunsRubricGradeAgentsSqlRow(BaseModel):
+
+    runs_rubric_grade_agents_id: UUID | None = None
+
+class RunsRubricGradeAgentsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class RunsRubricGradeAgentsApiResponse(BaseModel):
+
+    runs_rubric_grade_agents_id: UUID | None = None
+
+
+
+# Generated from: scenario_flags
+
+class ScenarioFlagsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ScenarioFlagsSqlRow(BaseModel):
+
+    scenario_flags_id: UUID | None = None
+
+class ScenarioFlagsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ScenarioFlagsApiResponse(BaseModel):
+
+    scenario_flags_id: UUID | None = None
 
 
 
@@ -23310,6 +23899,37 @@ class SimulationsApiResponse(BaseModel):
 
 
 
+# Generated from: slugs
+
+class SlugsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class SlugsSqlRow(BaseModel):
+
+    slugs_id: UUID | None = None
+
+class SlugsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class SlugsApiResponse(BaseModel):
+
+    slugs_id: UUID | None = None
+
+
+
 # Generated from: standard_groups
 
 class StandardGroupsSqlParams(BaseModel):
@@ -23393,6 +24013,37 @@ class StrengthsApiRequest(BaseModel):
 class StrengthsApiResponse(BaseModel):
 
     strength_id: UUID | None = None
+
+
+
+# Generated from: temperature_levels
+
+class TemperatureLevelsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class TemperatureLevelsSqlRow(BaseModel):
+
+    temperature_levels_id: UUID | None = None
+
+class TemperatureLevelsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class TemperatureLevelsApiResponse(BaseModel):
+
+    temperature_levels_id: UUID | None = None
 
 
 
@@ -23519,6 +24170,37 @@ class TemplatesApiResponse(BaseModel):
 
 
 
+# Generated from: texts
+
+class TextsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class TextsSqlRow(BaseModel):
+
+    texts_id: UUID | None = None
+
+class TextsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class TextsApiResponse(BaseModel):
+
+    texts_id: UUID | None = None
+
+
+
 # Generated from: thresholds
 
 class ThresholdsSqlParams(BaseModel):
@@ -23587,6 +24269,68 @@ class TimesApiResponse(BaseModel):
 
 
 
+# Generated from: tools
+
+class ToolsSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ToolsSqlRow(BaseModel):
+
+    tools_id: UUID | None = None
+
+class ToolsApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ToolsApiResponse(BaseModel):
+
+    tools_id: UUID | None = None
+
+
+
+# Generated from: values
+
+class ValuesSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class ValuesSqlRow(BaseModel):
+
+    values_id: UUID | None = None
+
+class ValuesApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class ValuesApiResponse(BaseModel):
+
+    values_id: UUID | None = None
+
+
+
 # Generated from: videos
 
 class VideosSqlParams(BaseModel):
@@ -23624,6 +24368,37 @@ class VideosApiRequest(BaseModel):
 class VideosApiResponse(BaseModel):
 
     video_id: UUID | None = None
+
+
+
+# Generated from: voices
+
+class VoicesSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.mcp,
+        )
+
+class VoicesSqlRow(BaseModel):
+
+    voices_id: UUID | None = None
+
+class VoicesApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    mcp: bool | None = False
+
+class VoicesApiResponse(BaseModel):
+
+    voices_id: UUID | None = None
 
 
 
@@ -35290,6 +36065,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "AudiosApiRequest",
         "AudiosApiResponse",
     ),
+    "app/sql/v4/resources/auths_complete.sql": (
+        "AuthsSqlParams",
+        "AuthsSqlRow",
+        "AuthsApiRequest",
+        "AuthsApiResponse",
+    ),
     "app/sql/v4/resources/cohorts_complete.sql": (
         "CohortsSqlParams",
         "CohortsSqlRow",
@@ -35302,11 +36083,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ColorsApiRequest",
         "ColorsApiResponse",
     ),
-    "app/sql/v4/resources/content_complete.sql": (
-        "ContentSqlParams",
-        "ContentSqlRow",
-        "ContentApiRequest",
-        "ContentApiResponse",
+    "app/sql/v4/resources/conditional_parameters_complete.sql": (
+        "ConditionalParametersSqlParams",
+        "ConditionalParametersSqlRow",
+        "ConditionalParametersApiRequest",
+        "ConditionalParametersApiResponse",
+    ),
+    "app/sql/v4/resources/contents_complete.sql": (
+        "ContentsSqlParams",
+        "ContentsSqlRow",
+        "ContentsApiRequest",
+        "ContentsApiResponse",
     ),
     "app/sql/v4/resources/conversations_complete.sql": (
         "ConversationsSqlParams",
@@ -35338,6 +36125,18 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "DocumentsApiRequest",
         "DocumentsApiResponse",
     ),
+    "app/sql/v4/resources/emails_complete.sql": (
+        "EmailsSqlParams",
+        "EmailsSqlRow",
+        "EmailsApiRequest",
+        "EmailsApiResponse",
+    ),
+    "app/sql/v4/resources/endpoints_complete.sql": (
+        "EndpointsSqlParams",
+        "EndpointsSqlRow",
+        "EndpointsApiRequest",
+        "EndpointsApiResponse",
+    ),
     "app/sql/v4/resources/evals_complete.sql": (
         "EvalsSqlParams",
         "EvalsSqlRow",
@@ -35367,6 +36166,24 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "FlagsSqlRow",
         "FlagsApiRequest",
         "FlagsApiResponse",
+    ),
+    "app/sql/v4/resources/group_positions_complete.sql": (
+        "GroupPositionsSqlParams",
+        "GroupPositionsSqlRow",
+        "GroupPositionsApiRequest",
+        "GroupPositionsApiResponse",
+    ),
+    "app/sql/v4/resources/groups_complete.sql": (
+        "GroupsSqlParams",
+        "GroupsSqlRow",
+        "GroupsApiRequest",
+        "GroupsApiResponse",
+    ),
+    "app/sql/v4/resources/groups_rubric_grade_agents_complete.sql": (
+        "GroupsRubricGradeAgentsSqlParams",
+        "GroupsRubricGradeAgentsSqlRow",
+        "GroupsRubricGradeAgentsApiRequest",
+        "GroupsRubricGradeAgentsApiResponse",
     ),
     "app/sql/v4/resources/hints_complete.sql": (
         "HintsSqlParams",
@@ -35404,11 +36221,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InstructionsApiRequest",
         "InstructionsApiResponse",
     ),
+    "app/sql/v4/resources/items_complete.sql": (
+        "ItemsSqlParams",
+        "ItemsSqlRow",
+        "ItemsApiRequest",
+        "ItemsApiResponse",
+    ),
     "app/sql/v4/resources/keys_complete.sql": (
         "KeysSqlParams",
         "KeysSqlRow",
         "KeysApiRequest",
         "KeysApiResponse",
+    ),
+    "app/sql/v4/resources/modalities_complete.sql": (
+        "ModalitiesSqlParams",
+        "ModalitiesSqlRow",
+        "ModalitiesApiRequest",
+        "ModalitiesApiResponse",
     ),
     "app/sql/v4/resources/models_complete.sql": (
         "ModelsSqlParams",
@@ -35452,6 +36281,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PointsApiRequest",
         "PointsApiResponse",
     ),
+    "app/sql/v4/resources/pricing_complete.sql": (
+        "PricingSqlParams",
+        "PricingSqlRow",
+        "PricingApiRequest",
+        "PricingApiResponse",
+    ),
     "app/sql/v4/resources/problem_statements_complete.sql": (
         "ProblemStatementsSqlParams",
         "ProblemStatementsSqlRow",
@@ -35470,11 +36305,41 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PromptsApiRequest",
         "PromptsApiResponse",
     ),
+    "app/sql/v4/resources/protocols_complete.sql": (
+        "ProtocolsSqlParams",
+        "ProtocolsSqlRow",
+        "ProtocolsApiRequest",
+        "ProtocolsApiResponse",
+    ),
+    "app/sql/v4/resources/providers_complete.sql": (
+        "ProvidersSqlParams",
+        "ProvidersSqlRow",
+        "ProvidersApiRequest",
+        "ProvidersApiResponse",
+    ),
+    "app/sql/v4/resources/qualities_complete.sql": (
+        "QualitiesSqlParams",
+        "QualitiesSqlRow",
+        "QualitiesApiRequest",
+        "QualitiesApiResponse",
+    ),
     "app/sql/v4/resources/questions_complete.sql": (
         "QuestionsSqlParams",
         "QuestionsSqlRow",
         "QuestionsApiRequest",
         "QuestionsApiResponse",
+    ),
+    "app/sql/v4/resources/reasoning_levels_complete.sql": (
+        "ReasoningLevelsSqlParams",
+        "ReasoningLevelsSqlRow",
+        "ReasoningLevelsApiRequest",
+        "ReasoningLevelsApiResponse",
+    ),
+    "app/sql/v4/resources/request_limits_complete.sql": (
+        "RequestLimitsSqlParams",
+        "RequestLimitsSqlRow",
+        "RequestLimitsApiRequest",
+        "RequestLimitsApiResponse",
     ),
     "app/sql/v4/resources/responses_complete.sql": (
         "ResponsesSqlParams",
@@ -35487,6 +36352,30 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RubricsSqlRow",
         "RubricsApiRequest",
         "RubricsApiResponse",
+    ),
+    "app/sql/v4/resources/run_positions_complete.sql": (
+        "RunPositionsSqlParams",
+        "RunPositionsSqlRow",
+        "RunPositionsApiRequest",
+        "RunPositionsApiResponse",
+    ),
+    "app/sql/v4/resources/runs_complete.sql": (
+        "RunsSqlParams",
+        "RunsSqlRow",
+        "RunsApiRequest",
+        "RunsApiResponse",
+    ),
+    "app/sql/v4/resources/runs_rubric_grade_agents_complete.sql": (
+        "RunsRubricGradeAgentsSqlParams",
+        "RunsRubricGradeAgentsSqlRow",
+        "RunsRubricGradeAgentsApiRequest",
+        "RunsRubricGradeAgentsApiResponse",
+    ),
+    "app/sql/v4/resources/scenario_flags_complete.sql": (
+        "ScenarioFlagsSqlParams",
+        "ScenarioFlagsSqlRow",
+        "ScenarioFlagsApiRequest",
+        "ScenarioFlagsApiResponse",
     ),
     "app/sql/v4/resources/scenario_positions_complete.sql": (
         "ScenarioPositionsSqlParams",
@@ -35542,6 +36431,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SimulationsApiRequest",
         "SimulationsApiResponse",
     ),
+    "app/sql/v4/resources/slugs_complete.sql": (
+        "SlugsSqlParams",
+        "SlugsSqlRow",
+        "SlugsApiRequest",
+        "SlugsApiResponse",
+    ),
     "app/sql/v4/resources/standard_groups_complete.sql": (
         "StandardGroupsSqlParams",
         "StandardGroupsSqlRow",
@@ -35553,6 +36448,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StrengthsSqlRow",
         "StrengthsApiRequest",
         "StrengthsApiResponse",
+    ),
+    "app/sql/v4/resources/temperature_levels_complete.sql": (
+        "TemperatureLevelsSqlParams",
+        "TemperatureLevelsSqlRow",
+        "TemperatureLevelsApiRequest",
+        "TemperatureLevelsApiResponse",
     ),
     "app/sql/v4/resources/template_array_items_complete.sql": (
         "TemplateArrayItemsSqlParams",
@@ -35572,6 +36473,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TemplatesApiRequest",
         "TemplatesApiResponse",
     ),
+    "app/sql/v4/resources/texts_complete.sql": (
+        "TextsSqlParams",
+        "TextsSqlRow",
+        "TextsApiRequest",
+        "TextsApiResponse",
+    ),
     "app/sql/v4/resources/thresholds_complete.sql": (
         "ThresholdsSqlParams",
         "ThresholdsSqlRow",
@@ -35584,11 +36491,29 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "TimesApiRequest",
         "TimesApiResponse",
     ),
+    "app/sql/v4/resources/tools_complete.sql": (
+        "ToolsSqlParams",
+        "ToolsSqlRow",
+        "ToolsApiRequest",
+        "ToolsApiResponse",
+    ),
+    "app/sql/v4/resources/values_complete.sql": (
+        "ValuesSqlParams",
+        "ValuesSqlRow",
+        "ValuesApiRequest",
+        "ValuesApiResponse",
+    ),
     "app/sql/v4/resources/videos_complete.sql": (
         "VideosSqlParams",
         "VideosSqlRow",
         "VideosApiRequest",
         "VideosApiResponse",
+    ),
+    "app/sql/v4/resources/voices_complete.sql": (
+        "VoicesSqlParams",
+        "VoicesSqlRow",
+        "VoicesApiRequest",
+        "VoicesApiResponse",
     ),
     "app/sql/v4/rubric/create_rubric_complete.sql": (
         "CreateRubricSqlParams",
@@ -38320,6 +39245,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/auths_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/cohorts_complete.sql"]
     ) -> SqlString: ...
 
@@ -38330,7 +39260,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/v4/resources/content_complete.sql"]
+        file_path: Literal["app/sql/v4/resources/conditional_parameters_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/contents_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -38360,6 +39295,16 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/emails_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/endpoints_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/evals_complete.sql"]
     ) -> SqlString: ...
 
@@ -38381,6 +39326,21 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/flags_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/group_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/groups_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/groups_rubric_grade_agents_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -38415,7 +39375,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/items_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/keys_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/modalities_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -38455,6 +39425,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/pricing_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/problem_statements_complete.sql"]
     ) -> SqlString: ...
 
@@ -38470,7 +39445,32 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/protocols_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/providers_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/qualities_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/questions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/reasoning_levels_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/request_limits_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -38481,6 +39481,26 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/rubrics_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/run_positions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/runs_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/runs_rubric_grade_agents_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/scenario_flags_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -38530,12 +39550,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/slugs_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/standard_groups_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/strengths_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/temperature_levels_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -38555,6 +39585,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/texts_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/thresholds_complete.sql"]
     ) -> SqlString: ...
 
@@ -38565,7 +39600,22 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/tools_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/values_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/resources/videos_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/voices_complete.sql"]
     ) -> SqlString: ...
 
     @overload

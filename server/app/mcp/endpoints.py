@@ -28,40 +28,84 @@ ARTIFACTS = [
 ]
 
 RESOURCES = [
-    "names",
-    "colors",
-    "flags",
-    "descriptions",
-    "examples",
-    "icons",
-    "points",
-    "thresholds",
-    "content",
-    "html",
-    "hints",
-    "images",
-    "videos",
-    "objectives",
-    "options",
-    "problem_statements",
-    "prompts",
-    "questions",
-    "responses",
+    "agents",
     "analyses",
-    "instructions",
-    "improvements",
-    "strengths",
-    "feedbacks",
+    "audios",
+    "auths",
+    "cohorts",
+    "colors",
+    "conditional_parameters",
+    "contents",
     "conversations",
     "debug_info",
-    "schemas",
-    "schema_fields",
+    "departments",
+    "descriptions",
+    "documents",
+    "emails",
+    "endpoints",
+    "evals",
+    "examples",
+    "feedbacks",
+    "fields",
+    "flags",
+    "group_positions",
+    "groups",
+    "groups_rubric_grade_agents",
+    "hints",
+    "html",
+    "icons",
+    "images",
+    "improvements",
+    "instructions",
+    "items",
+    "keys",
+    "modalities",
+    "models",
+    "names",
+    "objectives",
+    "options",
+    "parameters",
+    "personas",
+    "points",
+    "pricing",
+    "problem_statements",
+    "profiles",
+    "prompts",
+    "protocols",
+    "providers",
+    "qualities",
+    "questions",
+    "reasoning_levels",
+    "request_limits",
+    "responses",
+    "rubrics",
+    "run_positions",
+    "runs",
+    "runs_rubric_grade_agents",
+    "scenario_flags",
+    "scenario_positions",
+    "scenario_rubric_grade_agents",
+    "scenarios",
     "schema_field_items",
-    "templates",
+    "schema_fields",
+    "schemas",
+    "settings",
+    "simulation_scenario_flags",
+    "simulations",
+    "slugs",
+    "standard_groups",
+    "strengths",
+    "temperature_levels",
     "template_array_items",
     "template_values",
-    "standard_groups",
+    "templates",
+    "texts",
+    "thresholds",
     "times",
+    "tools",
+    "values",
+    "videos",
+    "voices",
 ]
 
 # Artifact descriptions (one-sentence)
@@ -95,7 +139,7 @@ RESOURCE_DESCRIPTIONS: dict[str, str] = {
     "icons": "Icon resources for UI visual representation",
     "points": "Point resources for scoring and evaluation",
     "thresholds": "Threshold resources for defining limits and boundaries",
-    "content": "Content resources containing text or media",
+    "contents": "Content resources containing text or media",
     "html": "HTML content resources for rich text formatting",
     "hints": "Hint resources providing guidance and tips",
     "images": "Image resources for visual content",
@@ -121,6 +165,51 @@ RESOURCE_DESCRIPTIONS: dict[str, str] = {
     "template_values": "Template value resources for variable substitution",
     "standard_groups": "Standard group resources for organizing criteria",
     "times": "Time resources for duration and scheduling",
+    "agents": "Agent resources for AI agent configurations",
+    "analyses": "Analysis resources containing evaluation results",
+    "audios": "Audio resources for sound content",
+    "auths": "Authentication resource configurations",
+    "cohorts": "Cohort resources for student groups",
+    "conditional_parameters": "Conditional parameter resources for dynamic configurations",
+    "departments": "Department resources for organizational structure",
+    "documents": "Document resources for file and content management",
+    "emails": "Email resources for communication",
+    "endpoints": "Endpoint resources for API configurations",
+    "evals": "Evaluation resources for assessment configurations",
+    "fields": "Field resources for custom data fields",
+    "group_positions": "Group position resources for ordering",
+    "groups": "Group resources for organizing runs and sessions",
+    "groups_rubric_grade_agents": "Groups rubric grade agent resources for grading configurations",
+    "items": "Item resources for list elements",
+    "keys": "Key resources for API authentication",
+    "modalities": "Modality resources for interaction types",
+    "models": "Model resources for AI model configurations",
+    "parameters": "Parameter resources for configuration settings",
+    "personas": "Persona resources for AI character definitions",
+    "pricing": "Pricing resources for cost configurations",
+    "profiles": "Profile resources for user profiles",
+    "protocols": "Protocol resources for communication standards",
+    "providers": "Provider resources for AI service providers",
+    "qualities": "Quality resources for content quality settings",
+    "reasoning_levels": "Reasoning level resources for AI reasoning configurations",
+    "request_limits": "Request limit resources for rate limiting",
+    "rubrics": "Rubric resources for grading criteria",
+    "run_positions": "Run position resources for ordering runs",
+    "runs": "Run resources for execution tracking",
+    "runs_rubric_grade_agents": "Runs rubric grade agent resources for run grading",
+    "scenario_flags": "Scenario flag resources for scenario configurations",
+    "scenario_positions": "Scenario position resources for ordering scenarios",
+    "scenario_rubric_grade_agents": "Scenario rubric grade agent resources for scenario grading",
+    "scenarios": "Scenario resources for practice scenarios",
+    "settings": "Setting resources for system configuration",
+    "simulation_scenario_flags": "Simulation scenario flag resources for simulation configurations",
+    "simulations": "Simulation resources for interactive sessions",
+    "slugs": "Slug resources for URL-friendly identifiers",
+    "temperature_levels": "Temperature level resources for AI model temperature settings",
+    "texts": "Text resources for text content",
+    "tools": "Tool resources for tool configurations",
+    "values": "Value resources for configuration values",
+    "voices": "Voice resources for voice configurations",
 }
 
 # Combined list
@@ -226,6 +315,181 @@ try:
     FEEDBACK_HANDLER: Any = create_feedback
 except ImportError:
     FEEDBACK_HANDLER: Any = None
+
+# Resource handlers (for create_resource tool)
+RESOURCE_HANDLERS: dict[str, Any] = {}
+try:
+    from app.api.v4.resources.agents import create_agent
+    from app.api.v4.resources.analyses import create_analyses
+    from app.api.v4.resources.audios import create_audio
+    from app.api.v4.resources.auths import create_auths
+    from app.api.v4.resources.cohorts import create_cohort
+    from app.api.v4.resources.colors import create_color
+    from app.api.v4.resources.conditional_parameters import \
+        create_conditional_parameters
+    from app.api.v4.resources.contents import create_contents
+    from app.api.v4.resources.conversations import create_conversation
+    from app.api.v4.resources.debug_info import create_debug_info
+    from app.api.v4.resources.departments import create_department
+    from app.api.v4.resources.descriptions import create_description
+    from app.api.v4.resources.documents import create_document
+    from app.api.v4.resources.emails import create_emails
+    from app.api.v4.resources.endpoints import create_endpoints
+    from app.api.v4.resources.evals import create_eval
+    from app.api.v4.resources.examples import create_example
+    from app.api.v4.resources.feedbacks import create_feedbacks
+    from app.api.v4.resources.fields import create_field
+    from app.api.v4.resources.flags import create_flag
+    from app.api.v4.resources.group_positions import create_group_positions
+    from app.api.v4.resources.groups import create_groups
+    from app.api.v4.resources.groups_rubric_grade_agents import \
+        create_groups_rubric_grade_agents
+    from app.api.v4.resources.hints import create_hint
+    from app.api.v4.resources.html import create_html
+    from app.api.v4.resources.icons import create_icon
+    from app.api.v4.resources.images import create_image
+    from app.api.v4.resources.improvements import create_improvement
+    from app.api.v4.resources.instructions import create_instruction
+    from app.api.v4.resources.items import create_items
+    from app.api.v4.resources.keys import create_key
+    from app.api.v4.resources.modalities import create_modalities
+    from app.api.v4.resources.models import create_model
+    from app.api.v4.resources.names import create_name
+    from app.api.v4.resources.objectives import create_objective
+    from app.api.v4.resources.options import create_option
+    from app.api.v4.resources.parameters import create_parameter
+    from app.api.v4.resources.personas import create_persona
+    from app.api.v4.resources.points import create_point
+    from app.api.v4.resources.pricing import create_pricing
+    from app.api.v4.resources.problem_statements import \
+        create_problem_statement
+    from app.api.v4.resources.profiles import create_profile
+    from app.api.v4.resources.prompts import create_prompt
+    from app.api.v4.resources.protocols import create_protocols
+    from app.api.v4.resources.providers import create_providers
+    from app.api.v4.resources.qualities import create_qualities
+    from app.api.v4.resources.questions import create_questions
+    from app.api.v4.resources.reasoning_levels import create_reasoning_levels
+    from app.api.v4.resources.request_limits import create_request_limits
+    from app.api.v4.resources.responses import create_response
+    from app.api.v4.resources.rubrics import create_rubric
+    from app.api.v4.resources.run_positions import create_run_positions
+    from app.api.v4.resources.runs import create_runs
+    from app.api.v4.resources.runs_rubric_grade_agents import \
+        create_runs_rubric_grade_agents
+    from app.api.v4.resources.scenario_flags import create_scenario_flags
+    from app.api.v4.resources.scenario_positions import \
+        create_scenario_position
+    from app.api.v4.resources.scenario_rubric_grade_agents import \
+        create_scenario_rubric_grade_agent
+    from app.api.v4.resources.scenarios import create_scenario
+    from app.api.v4.resources.schema_field_items import \
+        create_schema_field_item
+    from app.api.v4.resources.schema_fields import create_schema_field
+    from app.api.v4.resources.schemas import create_schema
+    from app.api.v4.resources.settings import create_setting
+    from app.api.v4.resources.simulation_scenario_flags import \
+        create_simulation_scenario_flag
+    from app.api.v4.resources.simulations import create_simulation
+    from app.api.v4.resources.slugs import create_slugs
+    from app.api.v4.resources.standard_groups import create_standard_group
+    from app.api.v4.resources.strengths import create_strength
+    from app.api.v4.resources.temperature_levels import \
+        create_temperature_levels
+    from app.api.v4.resources.template_array_items import \
+        create_template_array_item
+    from app.api.v4.resources.template_values import create_template_value
+    from app.api.v4.resources.templates import create_template
+    from app.api.v4.resources.texts import create_texts
+    from app.api.v4.resources.thresholds import create_threshold
+    from app.api.v4.resources.times import create_time
+    from app.api.v4.resources.tools import create_tools
+    from app.api.v4.resources.values import create_values
+    from app.api.v4.resources.videos import create_video
+    from app.api.v4.resources.voices import create_voices
+
+    RESOURCE_HANDLERS = {
+        "agents": create_agent,
+        "analyses": create_analyses,
+        "audios": create_audio,
+        "auths": create_auths,
+        "cohorts": create_cohort,
+        "colors": create_color,
+        "conditional_parameters": create_conditional_parameters,
+        "contents": create_contents,
+        "conversations": create_conversation,
+        "debug_info": create_debug_info,
+        "departments": create_department,
+        "descriptions": create_description,
+        "documents": create_document,
+        "emails": create_emails,
+        "endpoints": create_endpoints,
+        "evals": create_eval,
+        "examples": create_example,
+        "feedbacks": create_feedbacks,
+        "fields": create_field,
+        "flags": create_flag,
+        "group_positions": create_group_positions,
+        "groups": create_groups,
+        "groups_rubric_grade_agents": create_groups_rubric_grade_agents,
+        "hints": create_hint,
+        "html": create_html,
+        "icons": create_icon,
+        "images": create_image,
+        "improvements": create_improvement,
+        "instructions": create_instruction,
+        "items": create_items,
+        "keys": create_key,
+        "modalities": create_modalities,
+        "models": create_model,
+        "names": create_name,
+        "objectives": create_objective,
+        "options": create_option,
+        "parameters": create_parameter,
+        "personas": create_persona,
+        "points": create_point,
+        "pricing": create_pricing,
+        "problem_statements": create_problem_statement,
+        "profiles": create_profile,
+        "prompts": create_prompt,
+        "protocols": create_protocols,
+        "providers": create_providers,
+        "qualities": create_qualities,
+        "questions": create_questions,
+        "reasoning_levels": create_reasoning_levels,
+        "request_limits": create_request_limits,
+        "responses": create_response,
+        "rubrics": create_rubric,
+        "run_positions": create_run_positions,
+        "runs": create_runs,
+        "runs_rubric_grade_agents": create_runs_rubric_grade_agents,
+        "scenario_flags": create_scenario_flags,
+        "scenario_positions": create_scenario_position,
+        "scenario_rubric_grade_agents": create_scenario_rubric_grade_agent,
+        "scenarios": create_scenario,
+        "schema_field_items": create_schema_field_item,
+        "schema_fields": create_schema_field,
+        "schemas": create_schema,
+        "settings": create_setting,
+        "simulation_scenario_flags": create_simulation_scenario_flag,
+        "simulations": create_simulation,
+        "slugs": create_slugs,
+        "standard_groups": create_standard_group,
+        "strengths": create_strength,
+        "temperature_levels": create_temperature_levels,
+        "template_array_items": create_template_array_item,
+        "template_values": create_template_value,
+        "templates": create_template,
+        "texts": create_texts,
+        "thresholds": create_threshold,
+        "times": create_time,
+        "tools": create_tools,
+        "values": create_values,
+        "videos": create_video,
+        "voices": create_voices,
+    }
+except ImportError:
+    RESOURCE_HANDLERS = {}
 
 # Import artifact documentation functions
 ARTIFACT_DOCS: dict[str, Any] = {}
@@ -607,29 +871,34 @@ def register_endpoints(server: FastMCP) -> None:
 
     # Resource-specific endpoints (create only)
     @server.tool()
-    async def create_resource(name: str, payload: dict[str, Any]) -> dict[str, Any]:
+    async def create_resource(
+        name: str, payload: dict[str, Any], profile_id: str
+    ) -> dict[str, Any]:
         """Create a resource.
 
         Args:
             name: The name of the resource.
             payload: The payload containing data to create the resource.
+            profile_id: Profile ID for authentication.
 
         Returns:
             Success response or error message.
         """
         # Resources are create-only, not full CRUD
-        # TODO: Implement actual resource creation handler
         if name not in RESOURCES:
             return {
                 "error": f"'{name}' is not a valid resource.",
                 "status": "invalid_resource",
             }
 
-        return {
-            "message": f"Resource creation for '{name}' needs implementation.",
-            "status": "not_implemented",
-            "note": "Resources are create-only. Use POST /api/v4/resources/{name} endpoint.",
-        }
+        if name not in RESOURCE_HANDLERS:
+            return {
+                "error": f"Resource '{name}' handler not implemented.",
+                "status": "not_implemented",
+            }
+
+        handler = RESOURCE_HANDLERS[name]
+        return await call_endpoint_handler(handler, payload, profile_id)
 
     # Analytics endpoints
     @server.tool()

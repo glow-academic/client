@@ -13,6 +13,7 @@ import {
   ColumnFiltersState,
   SortingState,
   VisibilityState,
+  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -373,10 +374,16 @@ export default function Tools({
                             className="flex items-center gap-2 hover:underline"
                             onClick={header.column.getToggleSortingHandler()}
                           >
-                            {header.renderHeader()}
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
                           </button>
                         ) : (
-                          header.renderHeader()
+                          flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )
                         )}
                       </TableHead>
                     ))}
@@ -398,7 +405,12 @@ export default function Tools({
                       }}
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>{cell.renderCell()}</TableCell>
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
                       ))}
                     </TableRow>
                   ))

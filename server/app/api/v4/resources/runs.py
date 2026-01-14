@@ -1,4 +1,4 @@
-"""content endpoint - v4 API following DHH principles."""
+"""runs endpoint - v4 API following DHH principles."""
 
 from typing import Annotated, Any, cast
 
@@ -7,10 +7,10 @@ from app.infra.v4.activity.audit import audit_activity, audit_set
 from app.infra.v4.error.handle_route_error import handle_route_error
 from app.main import get_db
 from app.sql.types import (
-    ContentApiRequest,
-    ContentApiResponse,
-    ContentSqlParams,
-    ContentSqlRow,
+    RunsApiRequest,
+    RunsApiResponse,
+    RunsSqlParams,
+    RunsSqlRow,
     load_sql_query,
 )
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -18,30 +18,30 @@ from utils.cache.invalidate_tags import invalidate_tags
 from utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/v4/resources/content_complete.sql"
+SQL_PATH = "app/sql/v4/resources/runs_complete.sql"
 
 
 router = APIRouter()
 
 
 @router.post(
-    "/content",
-    response_model=ContentApiResponse,
+    "/runs",
+    response_model=RunsApiResponse,
     dependencies=[
         audit_activity(
-            "content.created",
-            "{{ actor.name }} created content",
+            "runs.created",
+            "{{ actor.name }} created runs",
         )
     ],
 )
-async def create_content(
-    request: ContentApiRequest,
+async def create_runs(
+    request: RunsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ContentApiResponse:
-    """Create content resource (always INSERT)."""
-    tags = ["resources", "content"]
+) -> RunsApiResponse:
+    """Create runs resource (always INSERT)."""
+    tags = ["resources", "runs"]
 
     sql_query = load_sql_query(SQL_PATH)
     sql_params: tuple[Any, ...] | None = None
@@ -56,21 +56,20 @@ async def create_content(
             )
 
         async with conn.transaction():
-            # Convert API request to SQL params (use double star pattern)
-            # Frontend sends snake_case (content) - auto-generated types match SQL function signature
             # Get mcp flag from header (set by router-level dependency)
             mcp = getattr(http_request.state, "mcp", False) or False
 
             # Convert API request to SQL params (use double star pattern)
+            # Frontend sends snake_case (runs) - auto-generated types match SQL function signature
             # Add mcp from header (not in request body)
             request_dict = request.model_dump()
             request_dict["mcp"] = mcp
-            params = ContentSqlParams(**request_dict)
+            params = RunsSqlParams(**request_dict)
             sql_params = params.to_tuple()
 
             # Execute SQL with typed helper - automatically detects and calls function if present
             result = cast(
-                ContentSqlRow,
+                RunsSqlRow,
                 await execute_sql_typed(
                     conn,
                     SQL_PATH,
@@ -78,18 +77,18 @@ async def create_content(
                 ),
             )
 
-            if not result or not result.content_id:
-                raise ValueError("Failed to create content")
+            if not result or not result.runs_id:
+                raise ValueError("Failed to create runs")
 
             # Set audit context
             audit_set(
                 http_request,
                 actor={"id": profile_id},
-                content={"id": str(result.content_id)},
+                runs={"id": str(result.runs_id)},
             )
 
         # Convert SQL result to API response (auto-generated types)
-        api_response = ContentApiResponse.model_validate(result.model_dump())
+        api_response = RunsApiResponse.model_validate(result.model_dump())
 
         # Invalidate cache after mutation
         await invalidate_tags(tags)
@@ -104,7 +103,7 @@ async def create_content(
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
-            operation="create_content",
+            operation="create_runs",
             sql_query=sql_query,
             sql_params=sql_params,
             request=http_request,
