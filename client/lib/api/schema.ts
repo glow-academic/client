@@ -6285,8 +6285,6 @@ export interface components {
             department_ids?: string[] | null;
             /** Standard Groups */
             standard_groups?: components["schemas"]["ICreateRubricV4StandardGroup"][] | null;
-            /** Rubric Domain Id */
-            rubric_domain_id?: string | null;
         };
         /** CreateRubricApiResponse */
         CreateRubricApiResponse: {
@@ -6321,8 +6319,6 @@ export interface components {
             parameters: components["schemas"]["QCreateScenarioV4Parameter"][];
             /** Description */
             description?: string | null;
-            /** Video Domain Id */
-            video_domain_id?: string | null;
             /** Problem Statement Name */
             problem_statement_name?: string | null;
             /** Problem Statement Versions */
@@ -8210,8 +8206,6 @@ export interface components {
             template_file_path?: string | null;
             /** Templates */
             templates?: components["schemas"]["QGetDocumentV4Template"][] | null;
-            /** Document Domain Id */
-            document_domain_id?: string | null;
             /** General Agent Id */
             general_agent_id?: string | null;
         };
@@ -10196,8 +10190,6 @@ export interface components {
             active?: boolean | null;
             /** Can Edit */
             can_edit?: boolean | null;
-            /** Rubric Domain Id */
-            rubric_domain_id?: string | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
             /** Actor Name */
@@ -10410,12 +10402,6 @@ export interface components {
             questions_enabled?: boolean | null;
             /** Problem Statement Enabled */
             problem_statement_enabled?: boolean | null;
-            /** Scenario Domain Id */
-            scenario_domain_id?: string | null;
-            /** Image Domain Id */
-            image_domain_id?: string | null;
-            /** Video Domain Id */
-            video_domain_id?: string | null;
             /** Valid Agent Ids */
             valid_agent_ids?: string[] | null;
             /** Can Edit */
@@ -11022,10 +11008,6 @@ export interface components {
             valid_video_ids?: string[] | null;
             /** Practice Simulation */
             practice_simulation?: boolean | null;
-            /** Simulation Text Domain Id */
-            simulation_text_domain_id?: string | null;
-            /** Simulation Voice Domain Id */
-            simulation_voice_domain_id?: string | null;
             /** Member Agent Id */
             member_agent_id?: string | null;
             /** Can Duplicate */
@@ -19829,8 +19811,6 @@ export interface components {
             html_id?: string | null;
             /** Schema Id */
             schema_id?: string | null;
-            /** Document Domain Id */
-            document_domain_id?: string | null;
         };
         /** SaveDocumentApiResponse */
         SaveDocumentApiResponse: {
@@ -20062,8 +20042,6 @@ export interface components {
             pass_points_id?: string | null;
             /** Standard Group Ids */
             standard_group_ids?: string[] | null;
-            /** Rubric Domain Id */
-            rubric_domain_id?: string | null;
         };
         /** SaveRubricApiResponse */
         SaveRubricApiResponse: {
@@ -20126,16 +20104,6 @@ export interface components {
             scenario_text_enabled: boolean[];
             /** Scenario Rubric Grade Agents */
             scenario_rubric_grade_agents: components["schemas"]["ISaveSimulationV4ScenarioRubricGradeAgent"][];
-            /**
-             * Simulation Text Domain Id
-             * Format: uuid
-             */
-            simulation_text_domain_id: string;
-            /**
-             * Simulation Voice Domain Id
-             * Format: uuid
-             */
-            simulation_voice_domain_id: string;
             /** Input Simulation Id */
             input_simulation_id?: string | null;
             /** Description Id */
@@ -21062,8 +21030,6 @@ export interface components {
             department_id?: string | null;
             /** Field Ids */
             field_ids?: string[] | null;
-            /** Document Domain Id */
-            document_domain_id?: string | null;
             /** Html Id */
             html_id?: string | null;
             /** Schema Id */
@@ -21183,8 +21149,6 @@ export interface components {
             department_ids?: string[] | null;
             /** Standard Groups */
             standard_groups?: components["schemas"]["IUpdateRubricV4StandardGroup"][] | null;
-            /** Rubric Domain Id */
-            rubric_domain_id?: string | null;
         };
         /** UpdateRubricApiResponse */
         UpdateRubricApiResponse: {
@@ -21226,8 +21190,6 @@ export interface components {
             parameters: components["schemas"]["QUpdateScenarioV4Parameter"][];
             /** Description */
             description?: string | null;
-            /** Video Domain Id */
-            video_domain_id?: string | null;
             /** Problem Statement Name */
             problem_statement_name?: string | null;
             /** Department Ids */
@@ -21248,10 +21210,6 @@ export interface components {
             question_ids?: string[] | null;
             /** Question Timestamps */
             question_timestamps?: components["schemas"]["QUpdateScenarioV4QuestionTimestamp"][] | null;
-            /** Scenario Domain Id */
-            scenario_domain_id?: string | null;
-            /** Image Domain Id */
-            image_domain_id?: string | null;
         };
         /** UpdateScenarioApiResponse */
         UpdateScenarioApiResponse: {

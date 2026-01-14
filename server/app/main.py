@@ -736,34 +736,7 @@ from app.socket.v4 import router as socket_v4_router  # noqa: E402
 
 fastapi_app.include_router(socket_v4_router)
 
-# Mount artifacts/resources MCP server
-from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
-
-# Mount artifacts/resources MCP server
-# FastMCP's streamable_http_app() creates a route at /mcp internally
-# Mount at root (/) so the /mcp route in the sub-app becomes /mcp in the main app
-# This allows FastMCP to handle requests at /mcp directly
-# Note: Cursor expects /mcp/messages and /mcp/sse/messages, but FastMCP uses /mcp
-# We'll create proxy routes below to forward these to /mcp
-mcp_app = artifacts_resources_mcp_server.streamable_http_app()
-fastapi_app.mount(
-    "/",
-    mcp_app,
-    name="Artifacts-Resources-MCP",
-)
-
-# Note: Path rewriting for /mcp/messages and /mcp/sse/messages is handled
-# in McpOAuthMiddleware (server/app/mcp/oauth.py) to forward these to /mcp
-# where FastMCP handles them. The middleware rewrites the path before forwarding.
-
-# Create the combined ASGI app with Socket.IO
-app = socketio.ASGIApp(sio, fastapi_app, socketio_path=socket_path)
-
-# Add specific logger for evaluation
-eval_logger = logging.getLogger("app.agents.generic")
-eval_logger.setLevel(logging.INFO)
-
-
+# Root-level endpoints (must be registered before MCP mount to avoid route interception)
 @fastapi_app.get("/")
 async def root_info() -> JSONResponse:
     """
@@ -896,6 +869,34 @@ async def init_system() -> JSONResponse:
                 "error": str(e),
             },
         )
+
+
+# Mount artifacts/resources MCP server
+from app.mcp import mcp_server as artifacts_resources_mcp_server  # noqa: E402
+
+# Mount artifacts/resources MCP server
+# FastMCP's streamable_http_app() creates a route at /mcp internally
+# Mount at root (/) so the /mcp route in the sub-app becomes /mcp in the main app
+# This allows FastMCP to handle requests at /mcp directly
+# Note: Cursor expects /mcp/messages and /mcp/sse/messages, but FastMCP uses /mcp
+# We'll create proxy routes below to forward these to /mcp
+mcp_app = artifacts_resources_mcp_server.streamable_http_app()
+fastapi_app.mount(
+    "/",
+    mcp_app,
+    name="Artifacts-Resources-MCP",
+)
+
+# Note: Path rewriting for /mcp/messages and /mcp/sse/messages is handled
+# in McpOAuthMiddleware (server/app/mcp/oauth.py) to forward these to /mcp
+# where FastMCP handles them. The middleware rewrites the path before forwarding.
+
+# Create the combined ASGI app with Socket.IO
+app = socketio.ASGIApp(sio, fastapi_app, socketio_path=socket_path)
+
+# Add specific logger for evaluation
+eval_logger = logging.getLogger("app.agents.generic")
+eval_logger.setLevel(logging.INFO)
 
 
 if __name__ == "__main__":

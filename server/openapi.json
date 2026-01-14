@@ -25708,18 +25708,6 @@
               }
             ],
             "title": "Standard Groups"
-          },
-          "rubric_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Domain Id"
           }
         },
         "type": "object",
@@ -25826,18 +25814,6 @@
               }
             ],
             "title": "Description"
-          },
-          "video_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Domain Id"
           },
           "problem_statement_name": {
             "anyOf": [
@@ -33991,18 +33967,6 @@
               }
             ],
             "title": "Templates"
-          },
-          "document_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Domain Id"
           },
           "general_agent_id": {
             "anyOf": [
@@ -44793,18 +44757,6 @@
             ],
             "title": "Can Edit"
           },
-          "rubric_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Domain Id"
-          },
           "valid_agent_ids": {
             "anyOf": [
               {
@@ -46020,39 +45972,6 @@
               }
             ],
             "title": "Problem Statement Enabled"
-          },
-          "scenario_domain_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Domain Id"
-          },
-          "image_domain_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Domain Id"
-          },
-          "video_domain_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Domain Id"
           },
           "valid_agent_ids": {
             "anyOf": [
@@ -49702,30 +49621,6 @@
               }
             ],
             "title": "Practice Simulation"
-          },
-          "simulation_text_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Text Domain Id"
-          },
-          "simulation_voice_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Voice Domain Id"
           },
           "member_agent_id": {
             "anyOf": [
@@ -96044,18 +95939,6 @@
               }
             ],
             "title": "Schema Id"
-          },
-          "document_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Domain Id"
           }
         },
         "type": "object",
@@ -96950,18 +96833,6 @@
               }
             ],
             "title": "Standard Group Ids"
-          },
-          "rubric_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Domain Id"
           }
         },
         "type": "object",
@@ -97189,16 +97060,6 @@
             "type": "array",
             "title": "Scenario Rubric Grade Agents"
           },
-          "simulation_text_domain_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Text Domain Id"
-          },
-          "simulation_voice_domain_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Simulation Voice Domain Id"
-          },
           "input_simulation_id": {
             "anyOf": [
               {
@@ -97374,9 +97235,7 @@
           "scenario_time_limit_seconds",
           "scenario_audio_enabled",
           "scenario_text_enabled",
-          "scenario_rubric_grade_agents",
-          "simulation_text_domain_id",
-          "simulation_voice_domain_id"
+          "scenario_rubric_grade_agents"
         ],
         "title": "SaveSimulationApiRequest"
       },
@@ -99405,18 +99264,6 @@
             ],
             "title": "Field Ids"
           },
-          "document_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Document Domain Id"
-          },
           "html_id": {
             "anyOf": [
               {
@@ -99889,18 +99736,6 @@
               }
             ],
             "title": "Standard Groups"
-          },
-          "rubric_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rubric Domain Id"
           }
         },
         "type": "object",
@@ -100024,18 +99859,6 @@
               }
             ],
             "title": "Description"
-          },
-          "video_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Domain Id"
           },
           "problem_statement_name": {
             "anyOf": [
@@ -100171,30 +99994,6 @@
               }
             ],
             "title": "Question Timestamps"
-          },
-          "scenario_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Domain Id"
-          },
-          "image_domain_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Domain Id"
           }
         },
         "type": "object",
