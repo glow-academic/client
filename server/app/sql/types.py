@@ -19422,6 +19422,90 @@ class GetProfileByEmailApiResponse(BaseModel):
 
 
 
+# Generated from: get_profile
+
+class GetProfileSqlParams(BaseModel):
+
+    profile_id: UUID
+    target_profile_id: UUID | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.profile_id,
+            self.target_profile_id,
+        )
+
+class QGetProfileV4Cohort(BaseModel):
+
+    cohort_id: UUID | None
+    name: str | None
+    description: str | None
+
+
+
+
+class QGetProfileV4Department(BaseModel):
+
+    department_id: UUID | None
+    name: str | None
+    description: str | None
+
+class GetProfileSqlRow(BaseModel):
+
+    actor_name: str | None = None
+    profile_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    primary_department_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_cohort_ids: list[UUID] | None = None
+    departments: list[QGetProfileV4Department] | None = None
+    cohorts: list[QGetProfileV4Cohort] | None = None
+    role_options: list[str] | None = None
+
+class GetProfileApiRequest(BaseModel):
+
+    target_profile_id: UUID | None = None
+
+class GetProfileApiResponse(BaseModel):
+
+    actor_name: str | None = None
+    profile_exists: bool | None = None
+    can_edit: bool | None = None
+    disabled_reason: str | None = None
+    group_id: UUID | None = None
+    profile_id: UUID | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    name: str | None = None
+    emails: list[str] | None = None
+    primary_email: str | None = None
+    role: str | None = None
+    active: bool | None = None
+    requests_per_day: int | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    primary_department_id: UUID | None = None
+    valid_department_ids: list[UUID] | None = None
+    valid_cohort_ids: list[UUID] | None = None
+    departments: list[QGetProfileV4Department] | None = None
+    cohorts: list[QGetProfileV4Cohort] | None = None
+    role_options: list[str] | None = None
+
+
+
 # Generated from: get_profile_context
 
 class GetProfileContextSqlParams(BaseModel):
@@ -20016,6 +20100,72 @@ class ProfileStaffCreateOrUpdateStaffApiResponse(BaseModel):
     profile_ids: list[UUID] | None = None
     created_count: int | None = None
     updated_count: int | None = None
+    actor_name: str | None = None
+
+
+
+# Generated from: save_profile
+
+class SaveProfileSqlParams(BaseModel):
+
+    actor_profile_id: UUID
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    role: str | None = None
+    active: bool | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    primary_email_index: int | None = None
+    primary_department_index: int | None = None
+    input_profile_id: UUID | None = None
+    last_login: str
+    last_active: str
+    requests_per_day: int | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.actor_profile_id,
+            self.first_name,
+            self.last_name,
+            self.emails,
+            self.role,
+            self.active,
+            self.cohort_ids,
+            self.department_ids,
+            self.primary_email_index,
+            self.primary_department_index,
+            self.input_profile_id,
+            self.last_login,
+            self.last_active,
+            self.requests_per_day,
+        )
+
+class SaveProfileSqlRow(BaseModel):
+
+    profile_id: UUID | None = None
+    actor_name: str | None = None
+
+class SaveProfileApiRequest(BaseModel):
+
+    actor_profile_id: UUID
+    first_name: str | None = None
+    last_name: str | None = None
+    emails: list[str] | None = None
+    role: str | None = None
+    active: bool | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    primary_email_index: int | None = None
+    primary_department_index: int | None = None
+    input_profile_id: UUID | None = None
+    last_login: str
+    last_active: str
+    requests_per_day: int | None = None
+
+class SaveProfileApiResponse(BaseModel):
+
+    profile_id: UUID | None = None
     actor_name: str | None = None
 
 
@@ -36633,6 +36783,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfileByEmailApiRequest",
         "GetProfileByEmailApiResponse",
     ),
+    "app/sql/v4/profile/get_profile_complete.sql": (
+        "GetProfileSqlParams",
+        "GetProfileSqlRow",
+        "GetProfileApiRequest",
+        "GetProfileApiResponse",
+    ),
     "app/sql/v4/profile/get_profile_context_complete.sql": (
         "GetProfileContextSqlParams",
         "GetProfileContextSqlRow",
@@ -36674,6 +36830,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ProfileStaffCreateOrUpdateStaffSqlRow",
         "ProfileStaffCreateOrUpdateStaffApiRequest",
         "ProfileStaffCreateOrUpdateStaffApiResponse",
+    ),
+    "app/sql/v4/profile/save_profile_complete.sql": (
+        "SaveProfileSqlParams",
+        "SaveProfileSqlRow",
+        "SaveProfileApiRequest",
+        "SaveProfileApiResponse",
     ),
     "app/sql/v4/profile/search_simulatable_profiles_complete.sql": (
         "SearchSimulatableProfilesSqlParams",
@@ -39865,6 +40027,11 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/profile/get_profile_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/profile/get_profile_context_complete.sql"]
     ) -> SqlString: ...
 
@@ -39896,6 +40063,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/profile/profile_staff_create_or_update_staff_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/profile/save_profile_complete.sql"]
     ) -> SqlString: ...
 
     @overload

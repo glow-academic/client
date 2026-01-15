@@ -208,6 +208,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v4/scenarios/get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Scenario
+         * @description Get scenario information - handles both new (scenario_id = NULL) and detail (scenario_id provided).
+         *
+         *     Validation Logic:
+         *     - New mode: Check for valid departments
+         *     - Detail mode: Check scenario_exists and access
+         */
+        post: operations["get_scenario_api_v4_scenarios_get_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v4/scenarios/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Scenario
+         * @description Save scenario - handles both create (input_scenario_id = NULL) and update (input_scenario_id provided).
+         */
+        post: operations["save_scenario_api_v4_scenarios_save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v4/scenarios/list": {
         parameters: {
             query?: never;
@@ -4600,7 +4644,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/enter": {
+    "/socket/v4/client/simulation/enter": {
         parameters: {
             query?: never;
             header?: never;
@@ -4613,14 +4657,14 @@ export interface paths {
          * Simulation Enter Api
          * @description Client-to-server event: Update chat created_at timestamp when entering a chat.
          */
-        post: operations["simulation_enter_api_socket_v4_client_simulations_enter_post"];
+        post: operations["simulation_enter_api_socket_v4_client_simulation_enter_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/join": {
+    "/socket/v4/client/simulation/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -4633,14 +4677,14 @@ export interface paths {
          * Simulation Join Api
          * @description Client-to-server event: Join a simulation chat room for real-time updates.
          */
-        post: operations["simulation_join_api_socket_v4_client_simulations_join_post"];
+        post: operations["simulation_join_api_socket_v4_client_simulation_join_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/leave": {
+    "/socket/v4/client/simulation/leave": {
         parameters: {
             query?: never;
             header?: never;
@@ -4653,14 +4697,14 @@ export interface paths {
          * Simulation Leave Api
          * @description Client-to-server event: Leave a simulation chat room.
          */
-        post: operations["simulation_leave_api_socket_v4_client_simulations_leave_post"];
+        post: operations["simulation_leave_api_socket_v4_client_simulation_leave_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/start": {
+    "/socket/v4/client/simulation/start": {
         parameters: {
             query?: never;
             header?: never;
@@ -4673,14 +4717,14 @@ export interface paths {
          * Simulation Start Api
          * @description Client-to-server event: Start simulation attempt.
          */
-        post: operations["simulation_start_api_socket_v4_client_simulations_start_post"];
+        post: operations["simulation_start_api_socket_v4_client_simulation_start_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/end": {
+    "/socket/v4/client/simulation/end": {
         parameters: {
             query?: never;
             header?: never;
@@ -4693,14 +4737,14 @@ export interface paths {
          * Simulation Text End Api
          * @description Client-to-server event: End simulation chat.
          */
-        post: operations["simulation_text_end_api_socket_v4_client_simulations_end_post"];
+        post: operations["simulation_text_end_api_socket_v4_client_simulation_end_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/next": {
+    "/socket/v4/client/simulation/next": {
         parameters: {
             query?: never;
             header?: never;
@@ -4713,14 +4757,14 @@ export interface paths {
          * Simulation Next Api
          * @description Internal event: Create next scenario for attempt.
          */
-        post: operations["simulation_next_api_socket_v4_client_simulations_next_post"];
+        post: operations["simulation_next_api_socket_v4_client_simulation_next_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/advance": {
+    "/socket/v4/client/simulation/advance": {
         parameters: {
             query?: never;
             header?: never;
@@ -4733,14 +4777,14 @@ export interface paths {
          * Simulation Advance Api
          * @description Internal event: Attach scenario to simulation.
          */
-        post: operations["simulation_advance_api_socket_v4_client_simulations_advance_post"];
+        post: operations["simulation_advance_api_socket_v4_client_simulation_advance_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/stop": {
+    "/socket/v4/client/simulation/stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -4753,14 +4797,14 @@ export interface paths {
          * Simulation Text Stop Api
          * @description Client-to-server event: Stop an active simulation run.
          */
-        post: operations["simulation_text_stop_api_socket_v4_client_simulations_stop_post"];
+        post: operations["simulation_text_stop_api_socket_v4_client_simulation_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/voice_stop": {
+    "/socket/v4/client/simulation/voice_stop": {
         parameters: {
             query?: never;
             header?: never;
@@ -4773,14 +4817,14 @@ export interface paths {
          * Simulation Voice Stop Api
          * @description Client-to-server event: Stop a voice simulation session.
          */
-        post: operations["simulation_voice_stop_api_socket_v4_client_simulations_voice_stop_post"];
+        post: operations["simulation_voice_stop_api_socket_v4_client_simulation_voice_stop_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/client/simulations/member/progress": {
+    "/socket/v4/client/simulation/member/progress": {
         parameters: {
             query?: never;
             header?: never;
@@ -4793,7 +4837,7 @@ export interface paths {
          * Endpoint Handler
          * @description Server-to-client event: {description}
          */
-        post: operations["handle_simulations_member_progress_member_progress"];
+        post: operations["handle_attempts_simulation_member_progress_member_progress"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4873,7 +4917,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["handle_benchmark_start_start"];
+        post: operations["handle_attempts_benchmark_start_start"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4973,7 +5017,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["handle_benchmark_run_start_run_start"];
+        post: operations["handle_attempts_benchmark_run_start_run_start"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4993,7 +5037,7 @@ export interface paths {
          * Endpoint Handler
          * @description Client-to-server event: {description}
          */
-        post: operations["handle_benchmark_runs_start_all_runs_start_all"];
+        post: operations["handle_attempts_benchmark_runs_start_all_runs_start_all"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5040,7 +5084,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/enter_response": {
+    "/socket/v4/server/simulation/enter_response": {
         parameters: {
             query?: never;
             header?: never;
@@ -5053,14 +5097,14 @@ export interface paths {
          * Simulation Enter Response Api
          * @description Server-to-client event: Successfully updated chat created_at timestamp.
          */
-        post: operations["simulation_enter_response_api_socket_v4_server_simulations_enter_response_post"];
+        post: operations["simulation_enter_response_api_socket_v4_server_simulation_enter_response_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/enter_error": {
+    "/socket/v4/server/simulation/enter_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5073,14 +5117,14 @@ export interface paths {
          * Simulation Enter Error Api
          * @description Server-to-client event: Error occurred while updating chat created_at timestamp.
          */
-        post: operations["simulation_enter_error_api_socket_v4_server_simulations_enter_error_post"];
+        post: operations["simulation_enter_error_api_socket_v4_server_simulation_enter_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/joined": {
+    "/socket/v4/server/simulation/joined": {
         parameters: {
             query?: never;
             header?: never;
@@ -5093,14 +5137,14 @@ export interface paths {
          * Simulation Joined Api
          * @description Server-to-client event: Successfully joined simulation chat room.
          */
-        post: operations["simulation_joined_api_socket_v4_server_simulations_joined_post"];
+        post: operations["simulation_joined_api_socket_v4_server_simulation_joined_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/join_error": {
+    "/socket/v4/server/simulation/join_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5113,14 +5157,14 @@ export interface paths {
          * Simulation Join Error Api
          * @description Server-to-client event: Error occurred while joining simulation chat room.
          */
-        post: operations["simulation_join_error_api_socket_v4_server_simulations_join_error_post"];
+        post: operations["simulation_join_error_api_socket_v4_server_simulation_join_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/leave_error": {
+    "/socket/v4/server/simulation/leave_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5133,14 +5177,14 @@ export interface paths {
          * Simulation Leave Error Api
          * @description Server-to-client event: Error occurred while leaving simulation chat room.
          */
-        post: operations["simulation_leave_error_api_socket_v4_server_simulations_leave_error_post"];
+        post: operations["simulation_leave_error_api_socket_v4_server_simulation_leave_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/start_error": {
+    "/socket/v4/server/simulation/start_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5153,14 +5197,14 @@ export interface paths {
          * Simulation Start Error Api
          * @description Server-to-client event: Error occurred while starting simulation.
          */
-        post: operations["simulation_start_error_api_socket_v4_server_simulations_start_error_post"];
+        post: operations["simulation_start_error_api_socket_v4_server_simulation_start_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/started": {
+    "/socket/v4/server/simulation/started": {
         parameters: {
             query?: never;
             header?: never;
@@ -5173,14 +5217,14 @@ export interface paths {
          * Simulation Started Api
          * @description Server-to-client event: Simulation started successfully.
          */
-        post: operations["simulation_started_api_socket_v4_server_simulations_started_post"];
+        post: operations["simulation_started_api_socket_v4_server_simulation_started_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/end_error": {
+    "/socket/v4/server/simulation/end_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5193,14 +5237,14 @@ export interface paths {
          * Simulation Text End Error Api
          * @description Server-to-client event: Error occurred while ending simulation.
          */
-        post: operations["simulation_text_end_error_api_socket_v4_server_simulations_end_error_post"];
+        post: operations["simulation_text_end_error_api_socket_v4_server_simulation_end_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/ended": {
+    "/socket/v4/server/simulation/ended": {
         parameters: {
             query?: never;
             header?: never;
@@ -5213,14 +5257,14 @@ export interface paths {
          * Simulation Ended Api
          * @description Server-to-client event: Simulation ended successfully.
          */
-        post: operations["simulation_ended_api_socket_v4_server_simulations_ended_post"];
+        post: operations["simulation_ended_api_socket_v4_server_simulation_ended_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/end_all_started": {
+    "/socket/v4/server/simulation/end_all_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -5233,14 +5277,14 @@ export interface paths {
          * End All Started Api
          * @description Server-to-client event: Ending all chats started.
          */
-        post: operations["end_all_started_api_socket_v4_server_simulations_end_all_started_post"];
+        post: operations["end_all_started_api_socket_v4_server_simulation_end_all_started_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/end_chat_started": {
+    "/socket/v4/server/simulation/end_chat_started": {
         parameters: {
             query?: never;
             header?: never;
@@ -5253,14 +5297,14 @@ export interface paths {
          * End Chat Started Api
          * @description Server-to-client event: Ending chat started.
          */
-        post: operations["end_chat_started_api_socket_v4_server_simulations_end_chat_started_post"];
+        post: operations["end_chat_started_api_socket_v4_server_simulation_end_chat_started_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/end_all_completed": {
+    "/socket/v4/server/simulation/end_all_completed": {
         parameters: {
             query?: never;
             header?: never;
@@ -5273,14 +5317,14 @@ export interface paths {
          * End All Completed Api
          * @description Server-to-client event: Ending all chats completed.
          */
-        post: operations["end_all_completed_api_socket_v4_server_simulations_end_all_completed_post"];
+        post: operations["end_all_completed_api_socket_v4_server_simulation_end_all_completed_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/next_error": {
+    "/socket/v4/server/simulation/next_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5293,14 +5337,14 @@ export interface paths {
          * Simulation Next Error Api
          * @description Server-to-client event: Error occurred in simulation next.
          */
-        post: operations["simulation_next_error_api_socket_v4_server_simulations_next_error_post"];
+        post: operations["simulation_next_error_api_socket_v4_server_simulation_next_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/advance_error": {
+    "/socket/v4/server/simulation/advance_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5313,14 +5357,14 @@ export interface paths {
          * Simulation Advance Error Api
          * @description Server-to-client event: Error occurred in simulation advance.
          */
-        post: operations["simulation_advance_error_api_socket_v4_server_simulations_advance_error_post"];
+        post: operations["simulation_advance_error_api_socket_v4_server_simulation_advance_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/advanced": {
+    "/socket/v4/server/simulation/advanced": {
         parameters: {
             query?: never;
             header?: never;
@@ -5333,14 +5377,14 @@ export interface paths {
          * Simulation Advanced Api
          * @description Server-to-client event: Simulation advanced successfully.
          */
-        post: operations["simulation_advanced_api_socket_v4_server_simulations_advanced_post"];
+        post: operations["simulation_advanced_api_socket_v4_server_simulation_advanced_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/stopped": {
+    "/socket/v4/server/simulation/stopped": {
         parameters: {
             query?: never;
             header?: never;
@@ -5353,14 +5397,14 @@ export interface paths {
          * Simulation Stopped Api
          * @description Server-to-client event: Simulation stopped successfully.
          */
-        post: operations["simulation_stopped_api_socket_v4_server_simulations_stopped_post"];
+        post: operations["simulation_stopped_api_socket_v4_server_simulation_stopped_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/message_cancelled": {
+    "/socket/v4/server/simulation/message_cancelled": {
         parameters: {
             query?: never;
             header?: never;
@@ -5373,14 +5417,14 @@ export interface paths {
          * Simulation Message Cancelled Api
          * @description Server-to-client event: Simulation message was cancelled.
          */
-        post: operations["simulation_message_cancelled_api_socket_v4_server_simulations_message_cancelled_post"];
+        post: operations["simulation_message_cancelled_api_socket_v4_server_simulation_message_cancelled_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/stop_error": {
+    "/socket/v4/server/simulation/stop_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5393,14 +5437,14 @@ export interface paths {
          * Simulation Text Stop Error Api
          * @description Server-to-client event: Error occurred while stopping simulation.
          */
-        post: operations["simulation_text_stop_error_api_socket_v4_server_simulations_stop_error_post"];
+        post: operations["simulation_text_stop_error_api_socket_v4_server_simulation_stop_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/voice_stop_response": {
+    "/socket/v4/server/simulation/voice_stop_response": {
         parameters: {
             query?: never;
             header?: never;
@@ -5413,14 +5457,14 @@ export interface paths {
          * Simulation Voice Stop Response Api
          * @description Server-to-client event: Voice simulation stop response.
          */
-        post: operations["simulation_voice_stop_response_api_socket_v4_server_simulations_voice_stop_response_post"];
+        post: operations["simulation_voice_stop_response_api_socket_v4_server_simulation_voice_stop_response_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/voice_stop_error": {
+    "/socket/v4/server/simulation/voice_stop_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5433,14 +5477,14 @@ export interface paths {
          * Simulation Voice Stop Error Api
          * @description Server-to-client event: Error occurred while stopping voice simulation.
          */
-        post: operations["simulation_voice_stop_error_api_socket_v4_server_simulations_voice_stop_error_post"];
+        post: operations["simulation_voice_stop_error_api_socket_v4_server_simulation_voice_stop_error_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/socket/v4/server/simulations/member/progress_error": {
+    "/socket/v4/server/simulation/member/progress_error": {
         parameters: {
             query?: never;
             header?: never;
@@ -5453,7 +5497,7 @@ export interface paths {
          * Member Progress Error Api
          * @description Server-to-client event: Error occurred in member progress.
          */
-        post: operations["member_progress_error_api_socket_v4_server_simulations_member_progress_error_post"];
+        post: operations["member_progress_error_api_socket_v4_server_simulation_member_progress_error_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10376,6 +10420,179 @@ export interface components {
             simulations?: components["schemas"]["QGetRubricsListV4Simulation"][] | null;
             /** Simulation Options */
             simulation_options?: components["schemas"]["QGetRubricsListV4Simulation"][] | null;
+        };
+        /** GetScenarioApiRequest */
+        GetScenarioApiRequest: {
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Use Image */
+            use_image?: boolean | null;
+            /** Use Objectives */
+            use_objectives?: boolean | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Problem Statement Ids */
+            problem_statement_ids?: string[] | null;
+            /** Template Document Ids */
+            template_document_ids?: string[] | null;
+            /** Use Video */
+            use_video?: boolean | null;
+            /** Filter Department Ids */
+            filter_department_ids?: string[] | null;
+            /** Filter Persona Ids */
+            filter_persona_ids?: string[] | null;
+            /** Filter Document Ids */
+            filter_document_ids?: string[] | null;
+            /** Filter Parameter Ids */
+            filter_parameter_ids?: string[] | null;
+            /** Filter Field Ids */
+            filter_field_ids?: string[] | null;
+            /** Persona Search */
+            persona_search?: string | null;
+            /** Document Search */
+            document_search?: string | null;
+            /** Parameter Search */
+            parameter_search?: string | null;
+            /** Persona Show Selected */
+            persona_show_selected?: boolean | null;
+            /** Document Show Selected */
+            document_show_selected?: boolean | null;
+            /** Parameter Show Selected */
+            parameter_show_selected?: boolean | null;
+            /** Field Show Selected By Param */
+            field_show_selected_by_param?: components["schemas"]["QGetScenarioV4FieldParamFilter"][] | null;
+            /** Draft Id */
+            draft_id?: string | null;
+            /**
+             * Mcp
+             * @default false
+             */
+            mcp: boolean | null;
+        };
+        /** GetScenarioApiResponse */
+        GetScenarioApiResponse: {
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Scenario Exists */
+            scenario_exists?: boolean | null;
+            /** Can Edit */
+            can_edit?: boolean | null;
+            /** Disabled Reason */
+            disabled_reason?: string | null;
+            /** Group Id */
+            group_id?: string | null;
+            /** Scenario Id */
+            scenario_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Parent Scenario Id */
+            parent_scenario_id?: string | null;
+            /** Hints Enabled */
+            hints_enabled?: boolean | null;
+            /** Objectives Enabled */
+            objectives_enabled?: boolean | null;
+            /** Image Input Enabled */
+            image_input_enabled?: boolean | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Document Ids */
+            document_ids?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Valid Persona Ids */
+            valid_persona_ids?: string[] | null;
+            /** Valid Document Ids */
+            valid_document_ids?: string[] | null;
+            /** Valid Department Ids */
+            valid_department_ids?: string[] | null;
+            /** Active Usage Count */
+            active_usage_count?: number | null;
+            /** User Role */
+            user_role?: string | null;
+            /** Parameter Ids */
+            parameter_ids?: string[] | null;
+            /** Valid Parameter Ids */
+            valid_parameter_ids?: string[] | null;
+            /** Valid Field Ids */
+            valid_field_ids?: string[] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Persona Range Min */
+            persona_range_min?: number | null;
+            /** Persona Range Max */
+            persona_range_max?: number | null;
+            /** Document Range Min */
+            document_range_min?: number | null;
+            /** Document Range Max */
+            document_range_max?: number | null;
+            /** Parameter Range Min */
+            parameter_range_min?: number | null;
+            /** Parameter Range Max */
+            parameter_range_max?: number | null;
+            /** Video Enabled */
+            video_enabled?: boolean | null;
+            /** Questions Enabled */
+            questions_enabled?: boolean | null;
+            /** Problem Statement Enabled */
+            problem_statement_enabled?: boolean | null;
+            /** Valid Agent Ids */
+            valid_agent_ids?: string[] | null;
+            /** Can Duplicate */
+            can_duplicate?: boolean | null;
+            /** Can Delete */
+            can_delete?: boolean | null;
+            /** Field Ranges */
+            field_ranges?: components["schemas"]["QGetScenarioV4FieldRange"][] | null;
+            /** Personas */
+            personas?: components["schemas"]["QGetScenarioV4Persona"][] | null;
+            /** Documents */
+            documents?: components["schemas"]["QGetScenarioV4Document"][] | null;
+            /** Parameters */
+            parameters?: components["schemas"]["QGetScenarioV4Parameter"][] | null;
+            /** Fields */
+            fields?: components["schemas"]["QGetScenarioV4Field"][] | null;
+            /** Departments */
+            departments?: components["schemas"]["QGetScenarioV4Department"][] | null;
+            /** Agents */
+            agents?: components["schemas"]["QGetScenarioV4Agent"][] | null;
+            /** Simulations */
+            simulations?: components["schemas"]["QGetScenarioV4Simulation"][] | null;
+            /** Objectives */
+            objectives?: components["schemas"]["QGetScenarioV4Objective"][] | null;
+            /** Problem Statements */
+            problem_statements?: components["schemas"]["QGetScenarioV4ProblemStatement"][] | null;
+            /** Scenario Images */
+            scenario_images?: components["schemas"]["QGetScenarioV4ScenarioImage"][] | null;
+            /** Scenario Videos */
+            scenario_videos?: components["schemas"]["QGetScenarioV4ScenarioVideo"][] | null;
+            /** Questions */
+            questions?: components["schemas"]["QGetScenarioV4Question"][] | null;
+            /** Objectives History */
+            objectives_history?: components["schemas"]["QGetScenarioV4ObjectiveWithDepartments"][] | null;
+            /** Document Details */
+            document_details?: components["schemas"]["QGetScenarioV4DocumentDetail"][] | null;
+            /** Parameters Detail */
+            parameters_detail?: components["schemas"]["QGetScenarioV4ParameterDetail"][] | null;
+            /** Draft Version */
+            draft_version?: number | null;
+            /** Draft Field Show Selected */
+            draft_field_show_selected?: unknown | null;
+            /** Draft Field Ranges */
+            draft_field_ranges?: unknown | null;
+            /** Draft Randomize Parameter Items */
+            draft_randomize_parameter_items?: unknown | null;
         };
         /** GetScenarioDetailApiRequest */
         GetScenarioDetailApiRequest: {
@@ -16321,6 +16538,266 @@ export interface components {
             /** Upload Id */
             upload_id: string | null;
         };
+        /** QGetScenarioV4Agent */
+        QGetScenarioV4Agent: {
+            /** Agent Id */
+            agent_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Roles */
+            roles: string[] | null;
+        };
+        /** QGetScenarioV4Department */
+        QGetScenarioV4Department: {
+            /** Department Id */
+            department_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Persona Ids */
+            persona_ids: string[] | null;
+            /** Document Ids */
+            document_ids: string[] | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+        };
+        /** QGetScenarioV4Document */
+        QGetScenarioV4Document: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+            /** Parent Document Id */
+            parent_document_id: string | null;
+        };
+        /** QGetScenarioV4DocumentDetail */
+        QGetScenarioV4DocumentDetail: {
+            /** Document Id */
+            document_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Updated At */
+            updated_at: string | null;
+            /** Extension */
+            extension: string | null;
+            /** Scenario Ids */
+            scenario_ids: string[] | null;
+            /** Can Edit */
+            can_edit: boolean | null;
+            /** Can Delete */
+            can_delete: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+            /** Is Template */
+            is_template: boolean | null;
+            /** Parent Document Id */
+            parent_document_id: string | null;
+        };
+        /** QGetScenarioV4Field */
+        QGetScenarioV4Field: {
+            /** Field Id */
+            field_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Parameter Name */
+            parameter_name: string | null;
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids: string[] | null;
+        };
+        /** QGetScenarioV4FieldParamFilter */
+        QGetScenarioV4FieldParamFilter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Show Selected */
+            show_selected: boolean | null;
+        };
+        /** QGetScenarioV4FieldRange */
+        QGetScenarioV4FieldRange: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Min Count */
+            min_count: number | null;
+            /** Max Count */
+            max_count: number | null;
+        };
+        /** QGetScenarioV4Objective */
+        QGetScenarioV4Objective: {
+            /** Objective Id */
+            objective_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+        };
+        /** QGetScenarioV4ObjectiveWithDepartments */
+        QGetScenarioV4ObjectiveWithDepartments: {
+            /** Objective */
+            objective: string | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
+        /** QGetScenarioV4Parameter */
+        QGetScenarioV4Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Document Parameter */
+            document_parameter: boolean | null;
+            /** Persona Parameter */
+            persona_parameter: boolean | null;
+            /** Scenario Parameter */
+            scenario_parameter: boolean | null;
+            /** Video Parameter */
+            video_parameter: boolean | null;
+        };
+        /** QGetScenarioV4ParameterDetail */
+        QGetScenarioV4ParameterDetail: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+            /** Valid Field Ids */
+            valid_field_ids: string[] | null;
+        };
+        /** QGetScenarioV4Persona */
+        QGetScenarioV4Persona: {
+            /** Persona Id */
+            persona_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Color */
+            color: string | null;
+            /** Icon */
+            icon: string | null;
+            /** Image Model */
+            image_model: boolean | null;
+            /** Parameter Ids */
+            parameter_ids: string[] | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+            /** Example */
+            example: string | null;
+        };
+        /** QGetScenarioV4ProblemStatement */
+        QGetScenarioV4ProblemStatement: {
+            /** Problem Statement Id */
+            problem_statement_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Problem Statement */
+            problem_statement: string | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /** QGetScenarioV4Question */
+        QGetScenarioV4Question: {
+            /** Id */
+            id: string | null;
+            /** Question Text */
+            question_text: string | null;
+            /** Allow Multiple */
+            allow_multiple: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** Options */
+            options: components["schemas"]["QGetScenarioV4QuestionOption"][] | null;
+            /** Times */
+            times: number[] | null;
+        };
+        /** QGetScenarioV4QuestionOption */
+        QGetScenarioV4QuestionOption: {
+            /** Id */
+            id: string | null;
+            /** Option Text */
+            option_text: string | null;
+            /** Is Correct */
+            is_correct: boolean | null;
+        };
+        /** QGetScenarioV4ScenarioImage */
+        QGetScenarioV4ScenarioImage: {
+            /** Upload Id */
+            upload_id: string | null;
+            /** Name */
+            name: string | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Active */
+            active: boolean | null;
+            /** Created At */
+            created_at: string | null;
+            /** Updated At */
+            updated_at: string | null;
+        };
+        /** QGetScenarioV4ScenarioVideo */
+        QGetScenarioV4ScenarioVideo: {
+            /** Id */
+            id: string | null;
+            /** Name */
+            name: string | null;
+            /** Length Seconds */
+            length_seconds: number | null;
+            /** Completed */
+            completed: boolean | null;
+            /** Active */
+            active: boolean | null;
+            /** File Path */
+            file_path: string | null;
+            /** Mime Type */
+            mime_type: string | null;
+            /** Upload Id */
+            upload_id: string | null;
+        };
+        /** QGetScenarioV4Simulation */
+        QGetScenarioV4Simulation: {
+            /** Simulation Id */
+            simulation_id: string | null;
+            /** Name */
+            name: string | null;
+            /** Description */
+            description: string | null;
+            /** Time Limit */
+            time_limit: number | null;
+            /** Department Ids */
+            department_ids: string[] | null;
+        };
         /** QGetSettingV4Auth */
         QGetSettingV4Auth: {
             /** Auth Id */
@@ -19555,6 +20032,22 @@ export interface components {
             /** Count */
             count: number | null;
         };
+        /** QSaveScenarioV4Parameter */
+        QSaveScenarioV4Parameter: {
+            /** Parameter Id */
+            parameter_id: string | null;
+            /** Field Ids */
+            field_ids: string[] | null;
+        };
+        /** QSaveScenarioV4QuestionTimestamp */
+        QSaveScenarioV4QuestionTimestamp: {
+            /** Question Id */
+            question_id: string | null;
+            /** Video Id */
+            video_id: string | null;
+            /** Timestamps */
+            timestamps: number[] | null;
+        };
         /** QSearchSimulatableProfilesV4Profile */
         QSearchSimulatableProfilesV4Profile: {
             /** Profile Id */
@@ -20306,6 +20799,66 @@ export interface components {
         SaveRubricApiResponse: {
             /** Rubric Id */
             rubric_id?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /** SaveScenarioApiRequest */
+        SaveScenarioApiRequest: {
+            /** Name */
+            name: string;
+            /** Active */
+            active: boolean;
+            /** Objectives Enabled */
+            objectives_enabled: boolean;
+            /** Images Enabled */
+            images_enabled: boolean;
+            /** Video Enabled */
+            video_enabled: boolean;
+            /** Questions Enabled */
+            questions_enabled: boolean;
+            /** Problem Statement Enabled */
+            problem_statement_enabled: boolean;
+            /** Problem Statement */
+            problem_statement: string;
+            /** Document Ids */
+            document_ids: string[];
+            /** Objective Ids */
+            objective_ids: string[];
+            /** Parameters */
+            parameters: components["schemas"]["QSaveScenarioV4Parameter"][];
+            /** Input Scenario Id */
+            input_scenario_id?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Problem Statement Name */
+            problem_statement_name?: string | null;
+            /** Problem Statement Versions */
+            problem_statement_versions?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Persona Ids */
+            persona_ids?: string[] | null;
+            /** Template Document Ids */
+            template_document_ids?: string[] | null;
+            /** Upload Ids */
+            upload_ids?: string[] | null;
+            /** Image Names */
+            image_names?: string[] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Active Video Id */
+            active_video_id?: string | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Question Timestamps */
+            question_timestamps?: components["schemas"]["QSaveScenarioV4QuestionTimestamp"][] | null;
+            /** Run Id */
+            run_id?: string | null;
+        };
+        /** SaveScenarioApiResponse */
+        SaveScenarioApiResponse: {
+            /** Scenario Id */
+            scenario_id?: string | null;
             /** Actor Name */
             actor_name?: string | null;
         };
@@ -22034,6 +22587,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SearchSimulatableProfilesApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_scenario_api_v4_scenarios_get_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetScenarioApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_scenario_api_v4_scenarios_save_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Profile-Id"?: string | null;
+                "X-Effective-Profile-Id"?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveScenarioApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaveScenarioApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -30070,7 +30697,7 @@ export interface operations {
             };
         };
     };
-    simulation_enter_api_socket_v4_client_simulations_enter_post: {
+    simulation_enter_api_socket_v4_client_simulation_enter_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30105,7 +30732,7 @@ export interface operations {
             };
         };
     };
-    simulation_join_api_socket_v4_client_simulations_join_post: {
+    simulation_join_api_socket_v4_client_simulation_join_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30140,7 +30767,7 @@ export interface operations {
             };
         };
     };
-    simulation_leave_api_socket_v4_client_simulations_leave_post: {
+    simulation_leave_api_socket_v4_client_simulation_leave_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30175,7 +30802,7 @@ export interface operations {
             };
         };
     };
-    simulation_start_api_socket_v4_client_simulations_start_post: {
+    simulation_start_api_socket_v4_client_simulation_start_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30210,7 +30837,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_end_api_socket_v4_client_simulations_end_post: {
+    simulation_text_end_api_socket_v4_client_simulation_end_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30245,7 +30872,7 @@ export interface operations {
             };
         };
     };
-    simulation_next_api_socket_v4_client_simulations_next_post: {
+    simulation_next_api_socket_v4_client_simulation_next_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30280,7 +30907,7 @@ export interface operations {
             };
         };
     };
-    simulation_advance_api_socket_v4_client_simulations_advance_post: {
+    simulation_advance_api_socket_v4_client_simulation_advance_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30315,7 +30942,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_stop_api_socket_v4_client_simulations_stop_post: {
+    simulation_text_stop_api_socket_v4_client_simulation_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30350,7 +30977,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_stop_api_socket_v4_client_simulations_voice_stop_post: {
+    simulation_voice_stop_api_socket_v4_client_simulation_voice_stop_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30385,7 +31012,7 @@ export interface operations {
             };
         };
     };
-    handle_simulations_member_progress_member_progress: {
+    handle_attempts_simulation_member_progress_member_progress: {
         parameters: {
             query?: never;
             header?: never;
@@ -30525,7 +31152,7 @@ export interface operations {
             };
         };
     };
-    handle_benchmark_start_start: {
+    handle_attempts_benchmark_start_start: {
         parameters: {
             query?: never;
             header?: never;
@@ -30700,7 +31327,7 @@ export interface operations {
             };
         };
     };
-    handle_benchmark_run_start_run_start: {
+    handle_attempts_benchmark_run_start_run_start: {
         parameters: {
             query?: never;
             header?: never;
@@ -30735,7 +31362,7 @@ export interface operations {
             };
         };
     };
-    handle_benchmark_runs_start_all_runs_start_all: {
+    handle_attempts_benchmark_runs_start_all_runs_start_all: {
         parameters: {
             query?: never;
             header?: never;
@@ -30840,7 +31467,7 @@ export interface operations {
             };
         };
     };
-    simulation_enter_response_api_socket_v4_server_simulations_enter_response_post: {
+    simulation_enter_response_api_socket_v4_server_simulation_enter_response_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30875,7 +31502,7 @@ export interface operations {
             };
         };
     };
-    simulation_enter_error_api_socket_v4_server_simulations_enter_error_post: {
+    simulation_enter_error_api_socket_v4_server_simulation_enter_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30910,7 +31537,7 @@ export interface operations {
             };
         };
     };
-    simulation_joined_api_socket_v4_server_simulations_joined_post: {
+    simulation_joined_api_socket_v4_server_simulation_joined_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30945,7 +31572,7 @@ export interface operations {
             };
         };
     };
-    simulation_join_error_api_socket_v4_server_simulations_join_error_post: {
+    simulation_join_error_api_socket_v4_server_simulation_join_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -30980,7 +31607,7 @@ export interface operations {
             };
         };
     };
-    simulation_leave_error_api_socket_v4_server_simulations_leave_error_post: {
+    simulation_leave_error_api_socket_v4_server_simulation_leave_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31015,7 +31642,7 @@ export interface operations {
             };
         };
     };
-    simulation_start_error_api_socket_v4_server_simulations_start_error_post: {
+    simulation_start_error_api_socket_v4_server_simulation_start_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31050,7 +31677,7 @@ export interface operations {
             };
         };
     };
-    simulation_started_api_socket_v4_server_simulations_started_post: {
+    simulation_started_api_socket_v4_server_simulation_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31085,7 +31712,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_end_error_api_socket_v4_server_simulations_end_error_post: {
+    simulation_text_end_error_api_socket_v4_server_simulation_end_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31120,7 +31747,7 @@ export interface operations {
             };
         };
     };
-    simulation_ended_api_socket_v4_server_simulations_ended_post: {
+    simulation_ended_api_socket_v4_server_simulation_ended_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31155,7 +31782,7 @@ export interface operations {
             };
         };
     };
-    end_all_started_api_socket_v4_server_simulations_end_all_started_post: {
+    end_all_started_api_socket_v4_server_simulation_end_all_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31190,7 +31817,7 @@ export interface operations {
             };
         };
     };
-    end_chat_started_api_socket_v4_server_simulations_end_chat_started_post: {
+    end_chat_started_api_socket_v4_server_simulation_end_chat_started_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31225,7 +31852,7 @@ export interface operations {
             };
         };
     };
-    end_all_completed_api_socket_v4_server_simulations_end_all_completed_post: {
+    end_all_completed_api_socket_v4_server_simulation_end_all_completed_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31260,7 +31887,7 @@ export interface operations {
             };
         };
     };
-    simulation_next_error_api_socket_v4_server_simulations_next_error_post: {
+    simulation_next_error_api_socket_v4_server_simulation_next_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31295,7 +31922,7 @@ export interface operations {
             };
         };
     };
-    simulation_advance_error_api_socket_v4_server_simulations_advance_error_post: {
+    simulation_advance_error_api_socket_v4_server_simulation_advance_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31330,7 +31957,7 @@ export interface operations {
             };
         };
     };
-    simulation_advanced_api_socket_v4_server_simulations_advanced_post: {
+    simulation_advanced_api_socket_v4_server_simulation_advanced_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31365,7 +31992,7 @@ export interface operations {
             };
         };
     };
-    simulation_stopped_api_socket_v4_server_simulations_stopped_post: {
+    simulation_stopped_api_socket_v4_server_simulation_stopped_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31400,7 +32027,7 @@ export interface operations {
             };
         };
     };
-    simulation_message_cancelled_api_socket_v4_server_simulations_message_cancelled_post: {
+    simulation_message_cancelled_api_socket_v4_server_simulation_message_cancelled_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31435,7 +32062,7 @@ export interface operations {
             };
         };
     };
-    simulation_text_stop_error_api_socket_v4_server_simulations_stop_error_post: {
+    simulation_text_stop_error_api_socket_v4_server_simulation_stop_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31470,7 +32097,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_stop_response_api_socket_v4_server_simulations_voice_stop_response_post: {
+    simulation_voice_stop_response_api_socket_v4_server_simulation_voice_stop_response_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31505,7 +32132,7 @@ export interface operations {
             };
         };
     };
-    simulation_voice_stop_error_api_socket_v4_server_simulations_voice_stop_error_post: {
+    simulation_voice_stop_error_api_socket_v4_server_simulation_voice_stop_error_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -31540,7 +32167,7 @@ export interface operations {
             };
         };
     };
-    member_progress_error_api_socket_v4_server_simulations_member_progress_error_post: {
+    member_progress_error_api_socket_v4_server_simulation_member_progress_error_post: {
         parameters: {
             query?: never;
             header?: never;

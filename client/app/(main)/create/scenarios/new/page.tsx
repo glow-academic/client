@@ -150,11 +150,13 @@ export default async function NewScenarioPage({
       document_show_selected: q.documentShowSelected ?? null,
       persona_show_selected: q.personaShowSelected ?? null,
       parameter_show_selected: q.parameterShowSelected ?? null,
-      field_show_selected_by_param: fieldShowSelectedByParam 
-        ? Object.entries(fieldShowSelectedByParam).map(([parameter_id, show_selected]) => ({
-            parameter_id,
-            show_selected,
-          }))
+      field_show_selected_by_param: fieldShowSelectedByParam
+        ? Object.entries(fieldShowSelectedByParam).map(
+            ([parameter_id, show_selected]) => ({
+              parameter_id,
+              show_selected,
+            })
+          )
         : null,
       use_image: q.useImage ?? null,
       use_video: q.useVideo ?? null,

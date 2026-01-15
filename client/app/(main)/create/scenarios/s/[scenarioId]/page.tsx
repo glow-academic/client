@@ -101,37 +101,55 @@ const getScenario = async (
   const body: GetScenarioIn["body"] = {
     scenario_id: scenarioId,
   };
-  
+
   if (filterParams) {
     if (filterParams.draftId) body.draft_id = filterParams.draftId;
-    if (filterParams.departmentIds) body.filter_department_ids = filterParams.departmentIds;
-    if (filterParams.personaIds) body.filter_persona_ids = filterParams.personaIds;
-    if (filterParams.documentIds) body.filter_document_ids = filterParams.documentIds;
-    if (filterParams.templateDocumentIds) body.template_document_ids = filterParams.templateDocumentIds;
-    if (filterParams.parameterIds) body.filter_parameter_ids = filterParams.parameterIds;
-    if (filterParams.parameterItemIds) body.filter_field_ids = filterParams.parameterItemIds;
-    if (filterParams.personaSearch) body.persona_search = filterParams.personaSearch;
-    if (filterParams.documentSearch) body.document_search = filterParams.documentSearch;
-    if (filterParams.parameterSearch) body.parameter_search = filterParams.parameterSearch;
-    if (filterParams.documentShowSelected !== undefined) body.document_show_selected = filterParams.documentShowSelected;
-    // Note: document_show_template, persona_min, persona_max, document_min, document_max, 
+    if (filterParams.departmentIds)
+      body.filter_department_ids = filterParams.departmentIds;
+    if (filterParams.personaIds)
+      body.filter_persona_ids = filterParams.personaIds;
+    if (filterParams.documentIds)
+      body.filter_document_ids = filterParams.documentIds;
+    if (filterParams.templateDocumentIds)
+      body.template_document_ids = filterParams.templateDocumentIds;
+    if (filterParams.parameterIds)
+      body.filter_parameter_ids = filterParams.parameterIds;
+    if (filterParams.parameterItemIds)
+      body.filter_field_ids = filterParams.parameterItemIds;
+    if (filterParams.personaSearch)
+      body.persona_search = filterParams.personaSearch;
+    if (filterParams.documentSearch)
+      body.document_search = filterParams.documentSearch;
+    if (filterParams.parameterSearch)
+      body.parameter_search = filterParams.parameterSearch;
+    if (filterParams.documentShowSelected !== undefined)
+      body.document_show_selected = filterParams.documentShowSelected;
+    // Note: document_show_template, persona_min, persona_max, document_min, document_max,
     // parameter_selection_min, parameter_selection_max, field_ranges are not part of the API request
-    if (filterParams.personaShowSelected !== undefined) body.persona_show_selected = filterParams.personaShowSelected;
-    if (filterParams.parameterShowSelected !== undefined) body.parameter_show_selected = filterParams.parameterShowSelected;
+    if (filterParams.personaShowSelected !== undefined)
+      body.persona_show_selected = filterParams.personaShowSelected;
+    if (filterParams.parameterShowSelected !== undefined)
+      body.parameter_show_selected = filterParams.parameterShowSelected;
     // Convert Record<string, boolean> to array format expected by API
     if (filterParams.fieldShowSelectedByParam) {
-      body.field_show_selected_by_param = Object.entries(filterParams.fieldShowSelectedByParam).map(([parameter_id, show_selected]) => ({
+      body.field_show_selected_by_param = Object.entries(
+        filterParams.fieldShowSelectedByParam
+      ).map(([parameter_id, show_selected]) => ({
         parameter_id,
         show_selected,
       }));
     }
-    if (filterParams.useImage !== undefined) body.use_image = filterParams.useImage;
-    if (filterParams.useVideo !== undefined) body.use_video = filterParams.useVideo;
+    if (filterParams.useImage !== undefined)
+      body.use_image = filterParams.useImage;
+    if (filterParams.useVideo !== undefined)
+      body.use_video = filterParams.useVideo;
     if (filterParams.imageIds) body.image_ids = filterParams.imageIds;
-    if (filterParams.objectiveIds) body.objective_ids = filterParams.objectiveIds;
-    if (filterParams.problemStatementIds) body.problem_statement_ids = filterParams.problemStatementIds;
+    if (filterParams.objectiveIds)
+      body.objective_ids = filterParams.objectiveIds;
+    if (filterParams.problemStatementIds)
+      body.problem_statement_ids = filterParams.problemStatementIds;
   }
-  
+
   return api.post(
     "/scenarios/get",
     {
@@ -295,7 +313,10 @@ export default async function EditScenarioPage({
       q.parameterShowSelected !== null
     )
       filterParams.parameterShowSelected = q.parameterShowSelected;
-    if (fieldShowSelectedByParam !== undefined && fieldShowSelectedByParam !== null)
+    if (
+      fieldShowSelectedByParam !== undefined &&
+      fieldShowSelectedByParam !== null
+    )
       filterParams.fieldShowSelectedByParam = fieldShowSelectedByParam;
     if (q.personaMin !== undefined && q.personaMin !== null)
       filterParams.personaMin = q.personaMin;
@@ -331,7 +352,9 @@ export default async function EditScenarioPage({
 
     const scenarioDetail = await getScenario(
       scenarioId,
-      Object.keys(filterParams).length > 0 ? (filterParams as Parameters<typeof getScenario>[1]) : undefined
+      Object.keys(filterParams).length > 0
+        ? (filterParams as Parameters<typeof getScenario>[1])
+        : undefined
     );
 
     return (

@@ -32,10 +32,7 @@ type CreateDraftDescriptionsOut = OutputOf<
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftSettingsIn = InputOf<"/api/v4/resources/settings", "post">;
-type CreateDraftSettingsOut = OutputOf<
-  "/api/v4/resources/settings",
-  "post"
->;
+type CreateDraftSettingsOut = OutputOf<"/api/v4/resources/settings", "post">;
 
 type CreateKeyIn = InputOf<"/api/v4/keys/create", "post">;
 type CreateKeyOut = OutputOf<"/api/v4/keys/create", "post">;
@@ -44,7 +41,7 @@ type DecryptKeyOut = OutputOf<"/api/v4/keys/decrypt", "post">;
 type UpdateKeyIn = InputOf<"/api/v4/keys/update", "post">;
 type UpdateKeyOut = OutputOf<"/api/v4/keys/update", "post">;
 type KeysListOut = OutputOf<"/api/v4/keys/list", "post">;
-type SettingsDetailOut = OutputOf<"/api/v4/settings/detail", "post">;
+// SettingsDetailOut removed - use GetSettingOut from unified /settings/get endpoint instead
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -238,7 +235,6 @@ export type {
   PatchDepartmentDraftOut,
   SaveDepartmentIn,
   SaveDepartmentOut,
-  SettingsDetailOut,
   UpdateKeyIn,
   UpdateKeyOut,
 };

@@ -37,7 +37,8 @@ async function createGuestProfile(
 ): Promise<void> {
   const { firstName, lastName } = parseName(name);
   try {
-    await api.post("/profile/create", {
+    // Convert to unified save endpoint
+    await api.post("/profile/save", {
       body: {
         first_name: firstName,
         last_name: lastName,
@@ -47,6 +48,7 @@ async function createGuestProfile(
         active: true,
         cohort_ids: [],
         department_ids: [],
+        input_profile_id: null, // NULL for create mode
       },
     });
   } catch (error) {
@@ -140,21 +142,23 @@ export const {
             body: { email: user.email || "" },
           });
           // API response has profile_id directly, not nested in profile object
-          existingProfile = profileResponse.profile_id ? {
-            id: profileResponse.profile_id,
-            role: profileResponse.role || "guest",
-          } : null;
+          existingProfile = profileResponse.profile_id
+            ? {
+                id: profileResponse.profile_id,
+                role: profileResponse.role || "guest",
+              }
+            : null;
         } catch {
           // Profile not found, will create new one
           existingProfile = null;
         }
 
         if (existingProfile) {
-          // V3 API - update existing profile lastLogin
+          // Unified API - update existing profile lastLogin
           try {
-            await api.post("/profile/update", {
+            await api.post("/profile/save", {
               body: {
-                target_profile_id: existingProfile.id,
+                input_profile_id: existingProfile.id,
                 last_login: new Date().toISOString(),
                 last_active: new Date().toISOString(),
               },
@@ -199,21 +203,23 @@ export const {
               body: { email: user.email },
             });
             // API response has profile_id directly, not nested in profile object
-            existingProfile = profileResponse.profile_id ? {
-              id: profileResponse.profile_id,
-              role: profileResponse.role || "guest",
-            } : null;
+            existingProfile = profileResponse.profile_id
+              ? {
+                  id: profileResponse.profile_id,
+                  role: profileResponse.role || "guest",
+                }
+              : null;
           } catch {
             // Profile not found
             existingProfile = null;
           }
 
           if (existingProfile) {
-            // V3 API - update profile
+            // Unified API - update profile
             try {
-              await api.post("/profile/update", {
+              await api.post("/profile/save", {
                 body: {
-                  target_profile_id: existingProfile.id,
+                  input_profile_id: existingProfile.id,
                   first_name: firstName,
                   last_name: lastName,
                   last_login: new Date().toISOString(),
@@ -251,10 +257,12 @@ export const {
             body: { email: user.email },
           });
           // API response has profile_id directly, not nested in profile object
-          profile = profileResponse.profile_id ? {
-            id: profileResponse.profile_id,
-            role: profileResponse.role || "guest",
-          } : null;
+          profile = profileResponse.profile_id
+            ? {
+                id: profileResponse.profile_id,
+                role: profileResponse.role || "guest",
+              }
+            : null;
         } catch (error) {
           // Profile not found - create it synchronously as fallback
           // This handles race conditions where createUser event hasn't completed yet
@@ -266,10 +274,12 @@ export const {
                 body: { email: user.email },
               });
               // API response has profile_id directly, not nested in profile object
-              profile = profileResponse.profile_id ? {
-                id: profileResponse.profile_id,
-                role: profileResponse.role || "guest",
-              } : null;
+              profile = profileResponse.profile_id
+                ? {
+                    id: profileResponse.profile_id,
+                    role: profileResponse.role || "guest",
+                  }
+                : null;
             } catch (retryError) {
               // eslint-disable-next-line no-console
               console.error(
@@ -329,7 +339,7 @@ export const {
       return token;
     },
 
-      // 🌐 Expose to client session
+    // 🌐 Expose to client session
     async session({ session, token }) {
       // Ensure user object exists (for guest/default account users resolved from cookies)
       if (!session.user && token["profileId"]) {

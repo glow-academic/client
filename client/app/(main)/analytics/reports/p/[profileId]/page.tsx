@@ -16,6 +16,9 @@ import { Suspense } from "react";
 import { getLayoutContext } from "../../../../layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
+type GetProfileIn = InputOf<"/api/v4/profile/get", "post">;
+type GetProfileOut = OutputOf<"/api/v4/profile/get", "post">;
+// Keep old types for backward compatibility during migration
 type ProfileDetailIn = InputOf<"/api/v4/profile/detail", "post">;
 type ProfileDetailOut = OutputOf<"/api/v4/profile/detail", "post">;
 type ReportsOverviewIn = InputOf<"/api/v4/reports/overview", "post">;
@@ -25,12 +28,19 @@ type ReportsHistoryOut = OutputOf<"/api/v4/reports/history", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for profileContext (permissions, role, navigation).
+ * Uses unified get endpoint.
  */
 const getProfileDetail = async (
   _profileId: string,
-  input: ProfileDetailIn,
-): Promise<ProfileDetailOut> => {
-  return api.post("/profile/detail", input, {
+  input: ProfileDetailIn
+): Promise<GetProfileOut> => {
+  // Convert to unified get endpoint format
+  const getInput: GetProfileIn = {
+    body: {
+      target_profile_id: input.body.target_profile_id,
+    },
+  };
+  return api.post("/profile/get", getInput, {
     cache: "no-store",
     headers: {
       "X-Bypass-Cache": "1",
@@ -44,7 +54,7 @@ const getProfileDetail = async (
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getReportsOverview = async (
-  input: ReportsOverviewIn,
+  input: ReportsOverviewIn
 ): Promise<ReportsOverviewOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -64,7 +74,7 @@ const getReportsOverview = async (
  * Sending X-Bypass-Cache header only on hard refresh to bypass Redis cache.
  */
 const getReportsHistory = async (
-  input: ReportsHistoryIn,
+  input: ReportsHistoryIn
 ): Promise<ReportsHistoryOut> => {
   const bypassCache = await isHardRefresh();
 
@@ -79,9 +89,7 @@ const getReportsHistory = async (
 };
 
 /** ---- Inline filters function for profile reports page ---- */
-async function getProfileReportsFilters(
-  searchParams?: URLSearchParams,
-) {
+async function getProfileReportsFilters(searchParams?: URLSearchParams) {
   // Use cached layout context (reuses data already fetched by layout)
   const profileContext = await getLayoutContext({
     body: {},
@@ -152,7 +160,7 @@ async function getProfileReportsFilters(
 
 export async function generateMetadata(
   { params }: { params: Promise<{ profileId: string }> },
-  _parent: ResolvingMetadata,
+  _parent: ResolvingMetadata
 ): Promise<Metadata> {
   const { profileId } = await params;
 
@@ -207,7 +215,7 @@ export default async function ReportsPage({
   // Get filters from search params or defaults
   const defaultFilters = await getProfileReportsFilters(
     searchParamsObj.toString() ? searchParamsObj : undefined
-  );    
+  );
   const reportsFilters = {
     start_date: defaultFilters.start_date,
     end_date: defaultFilters.end_date,
@@ -266,7 +274,9 @@ export default async function ReportsPage({
     defaultFilters.department_ids.join(","),
     defaultFilters.roles.join(","),
     (
-      defaultFilters as typeof defaultFilters & { simulation_filters?: string[] }
+      defaultFilters as typeof defaultFilters & {
+        simulation_filters?: string[];
+      }
     ).simulation_filters?.join(",") || "general",
   ].join("|");
 
@@ -411,14 +421,16 @@ async function ReportHistorySection({
       ...(count !== undefined && { count }),
     };
   });
-  const simulationOptions = (historyData.simulation_options || []).map((opt) => {
-    const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
-    return {
-      value: String(opt["value"] || ""),
-      label: String(opt["label"] || ""),
-      ...(count !== undefined && { count }),
-    };
-  });
+  const simulationOptions = (historyData.simulation_options || []).map(
+    (opt) => {
+      const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
+      return {
+        value: String(opt["value"] || ""),
+        label: String(opt["label"] || ""),
+        ...(count !== undefined && { count }),
+      };
+    }
+  );
   const scenarioOptions = (historyData.scenario_options || []).map((opt) => {
     const count = typeof opt["count"] === "number" ? opt["count"] : undefined;
     return {
@@ -455,6 +467,8 @@ async function ReportHistorySection({
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
+  GetProfileIn,
+  GetProfileOut,
   ProfileDetailIn,
   ProfileDetailOut,
   ReportsHistoryIn,
@@ -464,4 +478,4 @@ export type {
 };
 
 // Export ProfileItem type derived from server response
-export type ProfileItem = ProfileDetailOut;
+export type ProfileItem = GetProfileOut;

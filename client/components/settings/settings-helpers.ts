@@ -3,13 +3,13 @@
  * API returns arrays (composite types), but frontend uses dicts internally
  */
 
-import type { SettingsDetailOut } from "@/app/(main)/settings/page";
+import type { GetSettingOut } from "@/app/(main)/settings/s/[settingId]/page";
 
 /**
  * Convert provider keys array to mapping dict
  */
 export function convertProviderKeysToMapping(
-  providerKeys: SettingsDetailOut["provider_keys"] | undefined
+  providerKeys: GetSettingOut["provider_keys"] | undefined
 ): Record<string, string> {
   if (!providerKeys) return {};
   const mapping: Record<string, string> = {};
@@ -25,7 +25,7 @@ export function convertProviderKeysToMapping(
  * Convert auth keys array to mapping dict
  */
 export function convertAuthKeysToMapping(
-  authKeys: SettingsDetailOut["auth_keys"] | undefined
+  authKeys: GetSettingOut["auth_keys"] | undefined
 ): Record<string, Record<string, string>> {
   if (!authKeys) return {};
   const mapping: Record<string, Record<string, string>> = {};
@@ -46,7 +46,7 @@ export function convertAuthKeysToMapping(
  * Convert auth values array to mapping dict
  */
 export function convertAuthValuesToMapping(
-  authValues: SettingsDetailOut["auth_values"] | undefined
+  authValues: GetSettingOut["auth_values"] | undefined
 ): Record<string, Record<string, string>> {
   if (!authValues) return {};
   const mapping: Record<string, Record<string, string>> = {};
@@ -134,4 +134,3 @@ export function convertAuthValuesMappingToArray(
     })),
   }));
 }
-

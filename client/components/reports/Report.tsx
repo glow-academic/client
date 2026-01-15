@@ -7,7 +7,7 @@
 "use client";
 
 import type {
-  ProfileDetailOut,
+  GetProfileOut,
   ReportsOverviewOut,
 } from "@/app/(main)/analytics/reports/p/[profileId]/page";
 import Dashboard from "@/components/dashboard/Dashboard";
@@ -51,7 +51,7 @@ const getRoleDisplayName = (role: string) => {
 
 export interface ReportProps {
   profileId: string;
-  profileData: ProfileDetailOut;
+  profileData: GetProfileOut;
   dashboardData: ReportsOverviewOut;
 }
 
@@ -76,7 +76,7 @@ export default function Report({
             role: profileData.role || "",
           }
         : null,
-    [profileData],
+    [profileData]
   );
 
   // Set breadcrumb context when profile data is loaded
