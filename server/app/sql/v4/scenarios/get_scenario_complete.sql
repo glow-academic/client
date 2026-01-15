@@ -257,6 +257,23 @@ CREATE TYPE types.q_get_scenario_v4_field_range AS (
     max_count integer
 );
 
+-- Flag resource composite type (with generated boolean, NOT group_id)
+CREATE TYPE types.q_get_scenario_v4_flag_resource AS (
+    id uuid,
+    name text,
+    description text,
+    icon_id uuid,
+    generated boolean
+);
+
+-- Range resource composite type (with generated boolean, NOT group_id)
+CREATE TYPE types.q_get_scenario_v4_range_resource AS (
+    id uuid,
+    min_count integer,
+    max_count integer,
+    generated boolean
+);
+
 -- 4) Recreate function
 CREATE OR REPLACE FUNCTION api_get_scenario_v4(
     profile_id uuid,
@@ -316,6 +333,37 @@ RETURNS TABLE (
     problem_statement_required boolean,
     problem_statement_suggestions uuid[],
     problem_statements types.q_get_scenario_v4_problem_statement_resource[],
+    -- Single-select resources: flags (one per flag type)
+    active_flag_id uuid,
+    active_flag_resource types.q_get_scenario_v4_flag_resource,
+    show_active_flag boolean,
+    active_flag_agent_id uuid,
+    active_flag_required boolean,
+    objectives_enabled_flag_id uuid,
+    objectives_enabled_flag_resource types.q_get_scenario_v4_flag_resource,
+    show_objectives_enabled_flag boolean,
+    objectives_enabled_flag_agent_id uuid,
+    objectives_enabled_flag_required boolean,
+    images_enabled_flag_id uuid,
+    images_enabled_flag_resource types.q_get_scenario_v4_flag_resource,
+    show_images_enabled_flag boolean,
+    images_enabled_flag_agent_id uuid,
+    images_enabled_flag_required boolean,
+    video_enabled_flag_id uuid,
+    video_enabled_flag_resource types.q_get_scenario_v4_flag_resource,
+    show_video_enabled_flag boolean,
+    video_enabled_flag_agent_id uuid,
+    video_enabled_flag_required boolean,
+    questions_enabled_flag_id uuid,
+    questions_enabled_flag_resource types.q_get_scenario_v4_flag_resource,
+    show_questions_enabled_flag boolean,
+    questions_enabled_flag_agent_id uuid,
+    questions_enabled_flag_required boolean,
+    problem_statement_enabled_flag_id uuid,
+    problem_statement_enabled_flag_resource types.q_get_scenario_v4_flag_resource,
+    show_problem_statement_enabled_flag boolean,
+    problem_statement_enabled_flag_agent_id uuid,
+    problem_statement_enabled_flag_required boolean,
     -- Multi-select resources: departments
     department_ids uuid[],
     department_resources types.q_get_scenario_v4_department[],
@@ -396,6 +444,36 @@ RETURNS TABLE (
     parameters_required boolean,
     parameter_suggestions uuid[],
     parameters types.q_get_scenario_v4_parameter[],
+    -- Single-select resources: ranges (one per range type)
+    persona_range_id uuid,
+    persona_range_resource types.q_get_scenario_v4_range_resource,
+    show_persona_range boolean,
+    persona_range_agent_id uuid,
+    persona_range_required boolean,
+    persona_range_suggestions uuid[],
+    persona_ranges types.q_get_scenario_v4_range_resource[],
+    document_range_id uuid,
+    document_range_resource types.q_get_scenario_v4_range_resource,
+    show_document_range boolean,
+    document_range_agent_id uuid,
+    document_range_required boolean,
+    document_range_suggestions uuid[],
+    document_ranges types.q_get_scenario_v4_range_resource[],
+    parameter_range_id uuid,
+    parameter_range_resource types.q_get_scenario_v4_range_resource,
+    show_parameter_range boolean,
+    parameter_range_agent_id uuid,
+    parameter_range_required boolean,
+    parameter_range_suggestions uuid[],
+    parameter_ranges types.q_get_scenario_v4_range_resource[],
+    -- Multi-select resources: field_ranges (per parameter)
+    field_range_ids uuid[],
+    field_range_resources types.q_get_scenario_v4_range_resource[],
+    show_field_ranges boolean,
+    field_ranges_agent_id uuid,
+    field_ranges_required boolean,
+    field_range_suggestions uuid[],
+    field_ranges types.q_get_scenario_v4_range_resource[],
     -- Multi-resource combination agent IDs
     basic_agent_id uuid,
     content_agent_id uuid,
@@ -418,19 +496,12 @@ RETURNS TABLE (
     user_role text,
     valid_parameter_ids text[],
     valid_field_ids text[],
-    persona_range_min integer,
-    persona_range_max integer,
-    document_range_min integer,
-    document_range_max integer,
-    parameter_range_min integer,
-    parameter_range_max integer,
     video_enabled boolean,
     questions_enabled boolean,
     problem_statement_enabled boolean,
     valid_agent_ids text[],
     can_duplicate boolean,
     can_delete boolean,
-    field_ranges types.q_get_scenario_v4_field_range[],
     agents types.q_get_scenario_v4_agent[],
     simulations types.q_get_scenario_v4_simulation[],
     objectives_history types.q_get_scenario_v4_objective_with_departments[],
@@ -718,6 +789,171 @@ problem_statement_resource_data AS (
             WHERE sps.scenario_id = (SELECT scenario_id FROM params) AND sps.active = true
             LIMIT 1
         ) as problem_statement_resource
+    FROM params
+),
+-- Flag resource data CTEs (one per flag type, following Persona.tsx pattern)
+active_flag_resource_data AS (
+    SELECT 
+        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'active' 
+         AND ssf.active = true 
+         LIMIT 1) as active_flag_id,
+        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'active' 
+         AND ssf.active = true 
+         LIMIT 1) as active_flag_resource
+    FROM params
+),
+objectives_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'objectives_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as objectives_enabled_flag_id,
+        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'objectives_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as objectives_enabled_flag_resource
+    FROM params
+),
+images_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'images_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as images_enabled_flag_id,
+        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'images_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as images_enabled_flag_resource
+    FROM params
+),
+video_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'video_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as video_enabled_flag_id,
+        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'video_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as video_enabled_flag_resource
+    FROM params
+),
+questions_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'questions_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as questions_enabled_flag_id,
+        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'questions_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as questions_enabled_flag_resource
+    FROM params
+),
+problem_statement_enabled_flag_resource_data AS (
+    SELECT 
+        (SELECT ssf.scenario_flags_id FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'problem_statement_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as problem_statement_enabled_flag_id,
+        (SELECT ROW(sfr.id, sfr.name, COALESCE(sfr.description, ''), sfr.icon_id, COALESCE(sfr.generated, false))::types.q_get_scenario_v4_flag_resource 
+         FROM scenario_scenario_flags ssf 
+         JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flags_id 
+         WHERE ssf.scenario_id = (SELECT scenario_id FROM params) 
+         AND sfr.name = 'problem_statement_enabled' 
+         AND ssf.active = true 
+         LIMIT 1) as problem_statement_enabled_flag_resource
+    FROM params
+),
+-- Range resource data CTEs (one per range type, following Persona.tsx pattern)
+persona_range_resource_data AS (
+    SELECT 
+        (SELECT sr.range_id FROM scenario_ranges sr 
+         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
+         AND sr.type = 'persona'::type_scenario_ranges 
+         LIMIT 1) as persona_range_id,
+        (SELECT ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource 
+         FROM scenario_ranges sr 
+         JOIN ranges_resource rr ON rr.id = sr.range_id 
+         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
+         AND sr.type = 'persona'::type_scenario_ranges 
+         LIMIT 1) as persona_range_resource
+    FROM params
+),
+document_range_resource_data AS (
+    SELECT 
+        (SELECT sr.range_id FROM scenario_ranges sr 
+         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
+         AND sr.type = 'document'::type_scenario_ranges 
+         LIMIT 1) as document_range_id,
+        (SELECT ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource 
+         FROM scenario_ranges sr 
+         JOIN ranges_resource rr ON rr.id = sr.range_id 
+         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
+         AND sr.type = 'document'::type_scenario_ranges 
+         LIMIT 1) as document_range_resource
+    FROM params
+),
+parameter_range_resource_data AS (
+    SELECT 
+        (SELECT sr.range_id FROM scenario_ranges sr 
+         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
+         AND sr.type = 'parameter'::type_scenario_ranges 
+         LIMIT 1) as parameter_range_id,
+        (SELECT ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource 
+         FROM scenario_ranges sr 
+         JOIN ranges_resource rr ON rr.id = sr.range_id 
+         WHERE sr.scenario_id = (SELECT scenario_id FROM params) 
+         AND sr.type = 'parameter'::type_scenario_ranges 
+         LIMIT 1) as parameter_range_resource
+    FROM params
+),
+field_range_resource_data AS (
+    SELECT 
+        COALESCE(
+            (SELECT ARRAY_AGG(sr.range_id)
+             FROM scenario_ranges sr 
+             WHERE sr.scenario_id = (SELECT scenario_id FROM params LIMIT 1) 
+             AND sr.type = 'field'::type_scenario_ranges),
+            ARRAY[]::uuid[]
+        ) as field_range_ids,
+        COALESCE(
+            (SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
+             FROM scenario_ranges sr 
+             JOIN ranges_resource rr ON rr.id = sr.range_id 
+             WHERE sr.scenario_id = (SELECT scenario_id FROM params LIMIT 1) 
+             AND sr.type = 'field'::type_scenario_ranges),
+            ARRAY[]::types.q_get_scenario_v4_range_resource[]
+        ) as field_range_resources
     FROM params
 ),
 -- Suggestions CTEs (UUID arrays, two-part filtering: linked to scenarios OR same group with generated=true)
@@ -2222,38 +2458,6 @@ user_departments_for_agents AS (
 expected_agent_role AS (
     SELECT 'scenario'::text as role
 ),
-scenario_persona_ranges_data AS (
-    SELECT 
-        COALESCE(spr.min_count, 1) as persona_min,
-        COALESCE(spr.max_count, 3) as persona_max
-    FROM scenario_core sc
-    LEFT JOIN scenario_persona_ranges spr ON spr.scenario_id = sc.id
-),
-scenario_document_ranges_data AS (
-    SELECT 
-        COALESCE(sdr.min_count, 0) as document_min,
-        COALESCE(sdr.max_count, 3) as document_max
-    FROM scenario_core sc
-    LEFT JOIN scenario_document_ranges sdr ON sdr.scenario_id = sc.id
-),
-scenario_parameter_ranges_data AS (
-    SELECT 
-        COALESCE(spr.min_count, 0) as parameter_min,
-        COALESCE(spr.max_count, 3) as parameter_max
-    FROM scenario_core sc
-    LEFT JOIN scenario_parameter_ranges spr ON spr.scenario_id = sc.id
-),
-scenario_field_ranges_data AS (
-    SELECT 
-        sc.id as scenario_id,
-        COALESCE(
-            ARRAY_AGG((sfr.parameter_id, sfr.min_count, sfr.max_count)::types.q_get_scenario_v4_field_range ORDER BY sfr.parameter_id),
-            ARRAY[]::types.q_get_scenario_v4_field_range[]
-        ) as field_ranges
-    FROM scenario_core sc
-    LEFT JOIN scenario_field_ranges sfr ON sfr.scenario_id = sc.id
-    GROUP BY sc.id
-),
 valid_agents_array AS (
     SELECT 
         a.id as agent_id,
@@ -2479,6 +2683,38 @@ documents_agent_data AS (
 parameters_agent_data AS (
     SELECT NULL::uuid as agent_id WHERE false
 ),
+-- Flag agent selection CTEs (one per flag type)
+active_flag_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+objectives_enabled_flag_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+images_enabled_flag_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+video_enabled_flag_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+questions_enabled_flag_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+problem_statement_enabled_flag_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+-- Range agent selection CTEs (one per range type)
+persona_range_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+document_range_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+parameter_range_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
+field_ranges_agent_data AS (
+    SELECT NULL::uuid as agent_id WHERE false
+),
 basic_agent_data AS (
     SELECT NULL::uuid as agent_id WHERE false
 ),
@@ -2568,7 +2804,19 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = rt.tool_id
             WHERE rt.resource = 'parameters'::resources 
               AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
-        ) as parameters_has_tools
+        ) as parameters_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'scenario_flags'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as scenario_flags_has_tools,
+        EXISTS (
+            SELECT 1 FROM resource_tools rt
+            JOIN tool_artifact t ON t.id = rt.tool_id
+            WHERE rt.resource = 'ranges'::resources 
+              AND EXISTS (SELECT 1 FROM tool_flags tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'active' AND tf.type = 'active'::type_tool_flags AND tf.value = true)
+        ) as ranges_has_tools
     FROM params x
 ),
 missing_tools_check AS (
@@ -2703,6 +2951,55 @@ SELECT
         WHEN sc.problem_statement_enabled THEN COALESCE((SELECT problem_statements FROM problem_statements_suggestions_objects), ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[])
         ELSE ARRAY[]::types.q_get_scenario_v4_problem_statement_resource[]
     END as problem_statements,
+    -- Single-select resources: flags (one per flag type)
+    afrd.active_flag_id,
+    afrd.active_flag_resource,
+    CASE 
+        WHEN NOT tec.scenario_flags_has_tools THEN false
+        ELSE true
+    END as show_active_flag,
+    (SELECT agent_id FROM active_flag_agent_data) as active_flag_agent_id,
+    false as active_flag_required,
+    oefrd.objectives_enabled_flag_id,
+    oefrd.objectives_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.scenario_flags_has_tools THEN false
+        ELSE true
+    END as show_objectives_enabled_flag,
+    (SELECT agent_id FROM objectives_enabled_flag_agent_data) as objectives_enabled_flag_agent_id,
+    false as objectives_enabled_flag_required,
+    iefrd.images_enabled_flag_id,
+    iefrd.images_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.scenario_flags_has_tools THEN false
+        ELSE true
+    END as show_images_enabled_flag,
+    (SELECT agent_id FROM images_enabled_flag_agent_data) as images_enabled_flag_agent_id,
+    false as images_enabled_flag_required,
+    vefrd.video_enabled_flag_id,
+    vefrd.video_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.scenario_flags_has_tools THEN false
+        ELSE true
+    END as show_video_enabled_flag,
+    (SELECT agent_id FROM video_enabled_flag_agent_data) as video_enabled_flag_agent_id,
+    false as video_enabled_flag_required,
+    qefrd.questions_enabled_flag_id,
+    qefrd.questions_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.scenario_flags_has_tools THEN false
+        ELSE true
+    END as show_questions_enabled_flag,
+    (SELECT agent_id FROM questions_enabled_flag_agent_data) as questions_enabled_flag_agent_id,
+    false as questions_enabled_flag_required,
+    (SELECT problem_statement_enabled_flag_id FROM problem_statement_enabled_flag_resource_data) as problem_statement_enabled_flag_id,
+    (SELECT problem_statement_enabled_flag_resource FROM problem_statement_enabled_flag_resource_data) as problem_statement_enabled_flag_resource,
+    CASE 
+        WHEN NOT tec.scenario_flags_has_tools THEN false
+        ELSE true
+    END as show_problem_statement_enabled_flag,
+    (SELECT agent_id FROM problem_statement_enabled_flag_agent_data) as problem_statement_enabled_flag_agent_id,
+    false as problem_statement_enabled_flag_required,
     -- Multi-select resources: departments
     COALESCE(
         (SELECT 
@@ -3017,6 +3314,71 @@ SELECT
     END as parameters_required,
     ARRAY[]::uuid[] as parameter_suggestions,
     '{}'::types.q_get_scenario_v4_parameter[] as parameters,
+    -- Single-select resources: ranges (one per range type)
+    prrd.persona_range_id,
+    prrd.persona_range_resource,
+    CASE 
+        WHEN NOT tec.ranges_has_tools THEN false
+        ELSE true
+    END as show_persona_range,
+    (SELECT agent_id FROM persona_range_agent_data) as persona_range_agent_id,
+    false as persona_range_required,
+    ARRAY[]::uuid[] as persona_range_suggestions,
+    COALESCE((
+        SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
+        FROM ranges_resource rr
+        WHERE rr.active = true
+        LIMIT 100
+    ), '{}'::types.q_get_scenario_v4_range_resource[]) as persona_ranges,
+    drrd.document_range_id,
+    drrd.document_range_resource,
+    CASE 
+        WHEN NOT tec.ranges_has_tools THEN false
+        ELSE true
+    END as show_document_range,
+    (SELECT agent_id FROM document_range_agent_data) as document_range_agent_id,
+    false as document_range_required,
+    ARRAY[]::uuid[] as document_range_suggestions,
+    COALESCE((
+        SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
+        FROM ranges_resource rr
+        WHERE rr.active = true
+        LIMIT 100
+    ), '{}'::types.q_get_scenario_v4_range_resource[]) as document_ranges,
+    (SELECT parameter_range_id FROM parameter_range_resource_data) as parameter_range_id,
+    (SELECT parameter_range_resource FROM parameter_range_resource_data) as parameter_range_resource,
+    CASE 
+        WHEN NOT tec.ranges_has_tools THEN false
+        ELSE true
+    END as show_parameter_range,
+    (SELECT agent_id FROM parameter_range_agent_data) as parameter_range_agent_id,
+    false as parameter_range_required,
+    ARRAY[]::uuid[] as parameter_range_suggestions,
+    COALESCE((
+        SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
+        FROM (
+            SELECT id, min_count, max_count, generated
+            FROM ranges_resource
+            WHERE active = true
+            LIMIT 100
+        ) rr
+    ), '{}'::types.q_get_scenario_v4_range_resource[]) as parameter_ranges,
+    -- Multi-select resources: field_ranges (per parameter)
+    frrd.field_range_ids,
+    frrd.field_range_resources,
+    CASE 
+        WHEN NOT tec.ranges_has_tools THEN false
+        ELSE true
+    END as show_field_ranges,
+    (SELECT agent_id FROM field_ranges_agent_data) as field_ranges_agent_id,
+    false as field_ranges_required,
+    ARRAY[]::uuid[] as field_range_suggestions,
+    COALESCE((
+        SELECT ARRAY_AGG(ROW(rr.id, rr.min_count, rr.max_count, COALESCE(rr.generated, false))::types.q_get_scenario_v4_range_resource ORDER BY rr.min_count, rr.max_count)
+        FROM ranges_resource rr
+        WHERE rr.active = true
+        LIMIT 100
+    ), '{}'::types.q_get_scenario_v4_range_resource[]) as field_ranges,
     -- Multi-resource combination agent IDs
     (SELECT agent_id FROM basic_agent_data) as basic_agent_id,
     (SELECT agent_id FROM content_agent_data) as content_agent_id,
@@ -3059,12 +3421,6 @@ SELECT
         SELECT ARRAY_AGG(field_id::text ORDER BY parameter_name, name)
         FROM all_fields_array
     ), ARRAY[]::text[]) as valid_field_ids,
-    COALESCE((SELECT persona_min FROM scenario_persona_ranges_data), 1) as persona_range_min,
-    COALESCE((SELECT persona_max FROM scenario_persona_ranges_data), 3) as persona_range_max,
-    COALESCE((SELECT document_min FROM scenario_document_ranges_data), 0) as document_range_min,
-    COALESCE((SELECT document_max FROM scenario_document_ranges_data), 3) as document_range_max,
-    COALESCE((SELECT parameter_min FROM scenario_parameter_ranges_data), 0) as parameter_range_min,
-    COALESCE((SELECT parameter_max FROM scenario_parameter_ranges_data), 3) as parameter_range_max,
     sc.video_enabled,
     sc.questions_enabled,
     sc.problem_statement_enabled,
@@ -3081,7 +3437,6 @@ SELECT
         WHEN up.role != 'superadmin' THEN false
         ELSE true
     END as can_delete,
-    COALESCE(sfrd.field_ranges, ARRAY[]::types.q_get_scenario_v4_field_range[]) as field_ranges,
     -- Backward compatibility arrays (kept for legacy support)
     COALESCE((
         SELECT ARRAY_AGG((vaa.agent_id, vaa.name, vaa.description, vaa.roles)::types.q_get_scenario_v4_agent ORDER BY vaa.name)
@@ -3130,9 +3485,18 @@ CROSS JOIN draft_group_data dgd
 CROSS JOIN name_resource_data nrd
 CROSS JOIN description_resource_data drd
 CROSS JOIN problem_statement_resource_data psrd
+CROSS JOIN active_flag_resource_data afrd
+CROSS JOIN objectives_enabled_flag_resource_data oefrd
+CROSS JOIN images_enabled_flag_resource_data iefrd
+CROSS JOIN video_enabled_flag_resource_data vefrd
+CROSS JOIN questions_enabled_flag_resource_data qefrd
+CROSS JOIN problem_statement_enabled_flag_resource_data psefrd
+CROSS JOIN persona_range_resource_data prrd
+CROSS JOIN document_range_resource_data drrd
+CROSS JOIN parameter_range_resource_data parrd
+CROSS JOIN field_range_resource_data frrd
 LEFT JOIN scenario_simulation_attributes ssa_attr ON ssa_attr.scenario_id = sc.id
 LEFT JOIN scenario_personas_agg spa ON true
 LEFT JOIN scenario_documents_agg sd ON true
 LEFT JOIN scenario_simulations_agg ssa ON true
-LEFT JOIN scenario_field_ranges_data sfrd ON sfrd.scenario_id = sc.id
 $$;

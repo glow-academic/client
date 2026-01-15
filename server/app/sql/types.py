@@ -12628,12 +12628,70 @@ class UpdateFieldApiResponse(BaseModel):
 
 
 
-# Generated from: get_text_run_context_and_create_run
+# Generated from: get_generation_run_context_and_create_run
 
 class IPersonaResourceV4(BaseModel):
 
     resource_type: str | None
     resource_ids: list[UUID] | None
+
+class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
+
+    agent_id: UUID
+    profile_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
+        return (
+            self.agent_id,
+            self.profile_id,
+            self.message_ids,
+            self.department_id,
+            self.group_id,
+            self.developer_instructions,
+            self.user_instructions,
+            resources_tuples,
+        )
+
+class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
+
+class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
+
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    department_id: UUID | None = None
+    group_id: UUID | None = None
+    developer_instructions: list[str] | None = None
+    user_instructions: list[str] | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
+
+    run_id: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    message_ids: list[UUID] | None = None
+    output_modalities: list[str] | None = None
+
+
+
+# Generated from: get_text_run_context_and_create_run
 
 class GetTextRunContextAndCreateRunSqlParams(BaseModel):
 
@@ -12736,6 +12794,94 @@ class GetTextRunContextAndCreateRunApiResponse(BaseModel):
     context: Any | None = None
     department_name: str | None = None
     developer_message_id: UUID | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+
+
+# Generated from: get_text_run_context_for_existing_run
+
+class GetTextRunContextForExistingRunSqlParams(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        # Convert resources composite array to tuples for asyncpg
+        resources_tuples = [
+            (conn.resource_type, conn.resource_ids)
+            for conn in (self.resources or [])
+        ]
+        return (
+            self.run_id,
+            self.agent_id,
+            self.message_ids,
+            self.group_id,
+            resources_tuples,
+        )
+
+class GetTextRunContextForExistingRunSqlRow(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
+    department_name: str | None = None
+    upload_id: UUID | None = None
+    file_path: str | None = None
+    mime_type: str | None = None
+
+class GetTextRunContextForExistingRunApiRequest(BaseModel):
+
+    run_id: UUID
+    agent_id: UUID
+    message_ids: list[UUID] | None = None
+    group_id: UUID | None = None
+    resources: list[IPersonaResourceV4] | None = None
+
+class GetTextRunContextForExistingRunApiResponse(BaseModel):
+
+    agent_id: str | None = None
+    agent_name: str | None = None
+    agent_role: str | None = None
+    system_prompt: str | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    model_id: str | None = None
+    model_name: str | None = None
+    provider: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+    profile_id: str | None = None
+    req_per_day: int | None = None
+    runs_today_count: int | None = None
+    earliest_run_created_at: str | None = None
+    group_id: UUID | None = None
+    trace_id: str | None = None
+    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
+    developer_instruction_templates: list[str] | None = None
+    context: Any | None = None
+    department_name: str | None = None
     upload_id: UUID | None = None
     file_path: str | None = None
     mime_type: str | None = None
@@ -24289,6 +24435,43 @@ class QuestionsApiResponse(BaseModel):
 
 
 
+# Generated from: ranges
+
+class RangesSqlParams(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    min_count: int
+    max_count: int
+    mcp: bool | None = False
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.agent_id,
+            self.group_id,
+            self.min_count,
+            self.max_count,
+            self.mcp,
+        )
+
+class RangesSqlRow(BaseModel):
+
+    range_id: UUID | None = None
+
+class RangesApiRequest(BaseModel):
+
+    agent_id: UUID
+    group_id: UUID
+    min_count: int
+    max_count: int
+    mcp: bool | None = False
+
+class RangesApiResponse(BaseModel):
+
+    range_id: UUID | None = None
+
+
+
 # Generated from: reasoning_levels
 
 class ReasoningLevelsSqlParams(BaseModel):
@@ -29399,11 +29582,13 @@ class QGetScenarioV4Field(BaseModel):
 
 
 
-class QGetScenarioV4FieldRange(BaseModel):
+class QGetScenarioV4FlagResource(BaseModel):
 
-    parameter_id: UUID | None
-    min_count: int | None
-    max_count: int | None
+    id: UUID | None
+    name: str | None
+    description: str | None
+    icon_id: UUID | None
+    generated: bool | None
 
 
 
@@ -29503,6 +29688,16 @@ class QGetScenarioV4QuestionResource(BaseModel):
 
 
 
+class QGetScenarioV4RangeResource(BaseModel):
+
+    id: UUID | None
+    min_count: int | None
+    max_count: int | None
+    generated: bool | None
+
+
+
+
 class QGetScenarioV4Simulation(BaseModel):
 
     simulation_id: UUID | None
@@ -29563,6 +29758,36 @@ class GetScenarioSqlRow(BaseModel):
     problem_statement_required: bool | None = None
     problem_statement_suggestions: list[UUID] | None = None
     problem_statements: list[QGetScenarioV4ProblemStatementResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    objectives_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_objectives_enabled_flag: bool | None = None
+    objectives_enabled_flag_agent_id: UUID | None = None
+    objectives_enabled_flag_required: bool | None = None
+    images_enabled_flag_id: UUID | None = None
+    images_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_images_enabled_flag: bool | None = None
+    images_enabled_flag_agent_id: UUID | None = None
+    images_enabled_flag_required: bool | None = None
+    video_enabled_flag_id: UUID | None = None
+    video_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_video_enabled_flag: bool | None = None
+    video_enabled_flag_agent_id: UUID | None = None
+    video_enabled_flag_required: bool | None = None
+    questions_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_questions_enabled_flag: bool | None = None
+    questions_enabled_flag_agent_id: UUID | None = None
+    questions_enabled_flag_required: bool | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_problem_statement_enabled_flag: bool | None = None
+    problem_statement_enabled_flag_agent_id: UUID | None = None
+    problem_statement_enabled_flag_required: bool | None = None
     department_ids: list[UUID] | None = None
     department_resources: list[QGetScenarioV4Department] | None = None
     show_departments: bool | None = None
@@ -29633,6 +29858,34 @@ class GetScenarioSqlRow(BaseModel):
     parameters_required: bool | None = None
     parameter_suggestions: list[UUID] | None = None
     parameters: list[QGetScenarioV4Parameter] | None = None
+    persona_range_id: UUID | None = None
+    persona_range_resource: QGetScenarioV4RangeResource | None = None
+    show_persona_range: bool | None = None
+    persona_range_agent_id: UUID | None = None
+    persona_range_required: bool | None = None
+    persona_range_suggestions: list[UUID] | None = None
+    persona_ranges: list[QGetScenarioV4RangeResource] | None = None
+    document_range_id: UUID | None = None
+    document_range_resource: QGetScenarioV4RangeResource | None = None
+    show_document_range: bool | None = None
+    document_range_agent_id: UUID | None = None
+    document_range_required: bool | None = None
+    document_range_suggestions: list[UUID] | None = None
+    document_ranges: list[QGetScenarioV4RangeResource] | None = None
+    parameter_range_id: UUID | None = None
+    parameter_range_resource: QGetScenarioV4RangeResource | None = None
+    show_parameter_range: bool | None = None
+    parameter_range_agent_id: UUID | None = None
+    parameter_range_required: bool | None = None
+    parameter_range_suggestions: list[UUID] | None = None
+    parameter_ranges: list[QGetScenarioV4RangeResource] | None = None
+    field_range_ids: list[UUID] | None = None
+    field_range_resources: list[QGetScenarioV4RangeResource] | None = None
+    show_field_ranges: bool | None = None
+    field_ranges_agent_id: UUID | None = None
+    field_ranges_required: bool | None = None
+    field_range_suggestions: list[UUID] | None = None
+    field_ranges: list[QGetScenarioV4RangeResource] | None = None
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
@@ -29653,19 +29906,12 @@ class GetScenarioSqlRow(BaseModel):
     user_role: str | None = None
     valid_parameter_ids: list[str] | None = None
     valid_field_ids: list[str] | None = None
-    persona_range_min: int | None = None
-    persona_range_max: int | None = None
-    document_range_min: int | None = None
-    document_range_max: int | None = None
-    parameter_range_min: int | None = None
-    parameter_range_max: int | None = None
     video_enabled: bool | None = None
     questions_enabled: bool | None = None
     problem_statement_enabled: bool | None = None
     valid_agent_ids: list[str] | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
-    field_ranges: list[QGetScenarioV4FieldRange] | None = None
     agents: list[QGetScenarioV4Agent] | None = None
     simulations: list[QGetScenarioV4Simulation] | None = None
     objectives_history: list[QGetScenarioV4ObjectiveWithDepartments] | None = None
@@ -29728,6 +29974,36 @@ class GetScenarioApiResponse(BaseModel):
     problem_statement_required: bool | None = None
     problem_statement_suggestions: list[UUID] | None = None
     problem_statements: list[QGetScenarioV4ProblemStatementResource] | None = None
+    active_flag_id: UUID | None = None
+    active_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_active_flag: bool | None = None
+    active_flag_agent_id: UUID | None = None
+    active_flag_required: bool | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    objectives_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_objectives_enabled_flag: bool | None = None
+    objectives_enabled_flag_agent_id: UUID | None = None
+    objectives_enabled_flag_required: bool | None = None
+    images_enabled_flag_id: UUID | None = None
+    images_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_images_enabled_flag: bool | None = None
+    images_enabled_flag_agent_id: UUID | None = None
+    images_enabled_flag_required: bool | None = None
+    video_enabled_flag_id: UUID | None = None
+    video_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_video_enabled_flag: bool | None = None
+    video_enabled_flag_agent_id: UUID | None = None
+    video_enabled_flag_required: bool | None = None
+    questions_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_questions_enabled_flag: bool | None = None
+    questions_enabled_flag_agent_id: UUID | None = None
+    questions_enabled_flag_required: bool | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_resource: QGetScenarioV4FlagResource | None = None
+    show_problem_statement_enabled_flag: bool | None = None
+    problem_statement_enabled_flag_agent_id: UUID | None = None
+    problem_statement_enabled_flag_required: bool | None = None
     department_ids: list[UUID] | None = None
     department_resources: list[QGetScenarioV4Department] | None = None
     show_departments: bool | None = None
@@ -29798,6 +30074,34 @@ class GetScenarioApiResponse(BaseModel):
     parameters_required: bool | None = None
     parameter_suggestions: list[UUID] | None = None
     parameters: list[QGetScenarioV4Parameter] | None = None
+    persona_range_id: UUID | None = None
+    persona_range_resource: QGetScenarioV4RangeResource | None = None
+    show_persona_range: bool | None = None
+    persona_range_agent_id: UUID | None = None
+    persona_range_required: bool | None = None
+    persona_range_suggestions: list[UUID] | None = None
+    persona_ranges: list[QGetScenarioV4RangeResource] | None = None
+    document_range_id: UUID | None = None
+    document_range_resource: QGetScenarioV4RangeResource | None = None
+    show_document_range: bool | None = None
+    document_range_agent_id: UUID | None = None
+    document_range_required: bool | None = None
+    document_range_suggestions: list[UUID] | None = None
+    document_ranges: list[QGetScenarioV4RangeResource] | None = None
+    parameter_range_id: UUID | None = None
+    parameter_range_resource: QGetScenarioV4RangeResource | None = None
+    show_parameter_range: bool | None = None
+    parameter_range_agent_id: UUID | None = None
+    parameter_range_required: bool | None = None
+    parameter_range_suggestions: list[UUID] | None = None
+    parameter_ranges: list[QGetScenarioV4RangeResource] | None = None
+    field_range_ids: list[UUID] | None = None
+    field_range_resources: list[QGetScenarioV4RangeResource] | None = None
+    show_field_ranges: bool | None = None
+    field_ranges_agent_id: UUID | None = None
+    field_ranges_required: bool | None = None
+    field_range_suggestions: list[UUID] | None = None
+    field_ranges: list[QGetScenarioV4RangeResource] | None = None
     basic_agent_id: UUID | None = None
     content_agent_id: UUID | None = None
     general_agent_id: UUID | None = None
@@ -29818,19 +30122,12 @@ class GetScenarioApiResponse(BaseModel):
     user_role: str | None = None
     valid_parameter_ids: list[str] | None = None
     valid_field_ids: list[str] | None = None
-    persona_range_min: int | None = None
-    persona_range_max: int | None = None
-    document_range_min: int | None = None
-    document_range_max: int | None = None
-    parameter_range_min: int | None = None
-    parameter_range_max: int | None = None
     video_enabled: bool | None = None
     questions_enabled: bool | None = None
     problem_statement_enabled: bool | None = None
     valid_agent_ids: list[str] | None = None
     can_duplicate: bool | None = None
     can_delete: bool | None = None
-    field_ranges: list[QGetScenarioV4FieldRange] | None = None
     agents: list[QGetScenarioV4Agent] | None = None
     simulations: list[QGetScenarioV4Simulation] | None = None
     objectives_history: list[QGetScenarioV4ObjectiveWithDepartments] | None = None
@@ -37307,11 +37604,23 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateFieldApiRequest",
         "UpdateFieldApiResponse",
     ),
+    "app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql": (
+        "GetGenerationRunContextAndCreateRunSqlParams",
+        "GetGenerationRunContextAndCreateRunSqlRow",
+        "GetGenerationRunContextAndCreateRunApiRequest",
+        "GetGenerationRunContextAndCreateRunApiResponse",
+    ),
     "app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql": (
         "GetTextRunContextAndCreateRunSqlParams",
         "GetTextRunContextAndCreateRunSqlRow",
         "GetTextRunContextAndCreateRunApiRequest",
         "GetTextRunContextAndCreateRunApiResponse",
+    ),
+    "app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql": (
+        "GetTextRunContextForExistingRunSqlParams",
+        "GetTextRunContextForExistingRunSqlRow",
+        "GetTextRunContextForExistingRunApiRequest",
+        "GetTextRunContextForExistingRunApiResponse",
     ),
     "app/sql/v4/generate/text/get_text_tool_call_results_complete.sql": (
         "GetTextToolCallResultsSqlParams",
@@ -38590,6 +38899,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "QuestionsSqlRow",
         "QuestionsApiRequest",
         "QuestionsApiResponse",
+    ),
+    "app/sql/v4/resources/ranges_complete.sql": (
+        "RangesSqlParams",
+        "RangesSqlRow",
+        "RangesApiRequest",
+        "RangesApiResponse",
     ),
     "app/sql/v4/resources/reasoning_levels_complete.sql": (
         "ReasoningLevelsSqlParams",
@@ -40821,7 +41136,17 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
+        file_path: Literal["app/sql/v4/generate/start/get_generation_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
         file_path: Literal["app/sql/v4/generate/text/get_text_run_context_and_create_run_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/generate/text/get_text_run_context_for_existing_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41887,6 +42212,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/v4/resources/questions_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/v4/resources/ranges_complete.sql"]
     ) -> SqlString: ...
 
     @overload

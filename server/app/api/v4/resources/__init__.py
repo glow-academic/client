@@ -187,6 +187,9 @@ from app.api.v4.resources.runs_rubric_grade_agents.create import \
     router as runs_rubric_grade_agents_router
 
 router.include_router(runs_rubric_grade_agents_router)
+from app.api.v4.resources.ranges.create import router as ranges_router
+
+router.include_router(ranges_router)
 from app.api.v4.resources.scenario_flags.create import \
     router as scenario_flags_router
 

@@ -239,15 +239,15 @@ BEGIN
     valid_parameter_ids := COALESCE(valid_parameter_ids, ARRAY[]::uuid[]);
     valid_field_ids := COALESCE(valid_field_ids, ARRAY[]::uuid[]);
     
-    -- Get ranges from database (scenario-specific or defaults)
-    SELECT 
-        COALESCE((SELECT min_count FROM scenario_persona_ranges WHERE scenario_id = api_randomize_scenario_v4.scenario_id), 1),
-        COALESCE((SELECT max_count FROM scenario_persona_ranges WHERE scenario_id = api_randomize_scenario_v4.scenario_id), 3),
-        COALESCE((SELECT min_count FROM scenario_document_ranges WHERE scenario_id = api_randomize_scenario_v4.scenario_id), 0),
-        COALESCE((SELECT max_count FROM scenario_document_ranges WHERE scenario_id = api_randomize_scenario_v4.scenario_id), 3),
-        COALESCE((SELECT min_count FROM scenario_parameter_ranges WHERE scenario_id = api_randomize_scenario_v4.scenario_id), 0),
-        COALESCE((SELECT max_count FROM scenario_parameter_ranges WHERE scenario_id = api_randomize_scenario_v4.scenario_id), 3)
-    INTO 
+    -- Get ranges from database (scenario-specific or defaults) using new scenario_ranges structure
+    SELECT
+        COALESCE((SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'persona'::type_scenario_ranges LIMIT 1), 1),
+        COALESCE((SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'persona'::type_scenario_ranges LIMIT 1), 3),
+        COALESCE((SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'document'::type_scenario_ranges LIMIT 1), 0),
+        COALESCE((SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'document'::type_scenario_ranges LIMIT 1), 3),
+        COALESCE((SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'parameter'::type_scenario_ranges LIMIT 1), 0),
+        COALESCE((SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_randomize_scenario_v4.scenario_id AND sr.type = 'parameter'::type_scenario_ranges LIMIT 1), 3)
+    INTO
         allowed_persona_min,
         allowed_persona_max,
         allowed_document_min,

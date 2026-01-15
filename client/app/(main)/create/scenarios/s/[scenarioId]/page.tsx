@@ -34,6 +34,40 @@ type UpdateScenarioIn = InputOf<"/api/v4/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v4/scenarios/update", "post">;
 type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
 type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
+// Resource creation types
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftProblemStatementsIn = InputOf<
+  "/api/v4/resources/problem_statements",
+  "post"
+>;
+type CreateDraftProblemStatementsOut = OutputOf<
+  "/api/v4/resources/problem_statements",
+  "post"
+>;
+type CreateDraftObjectivesIn = InputOf<"/api/v4/resources/objectives", "post">;
+type CreateDraftObjectivesOut = OutputOf<
+  "/api/v4/resources/objectives",
+  "post"
+>;
+type CreateDraftRangesIn = InputOf<"/api/v4/resources/ranges", "post">;
+type CreateDraftRangesOut = OutputOf<"/api/v4/resources/ranges", "post">;
+type CreateDraftScenarioFlagsIn = InputOf<
+  "/api/v4/resources/scenario_flags",
+  "post"
+>;
+type CreateDraftScenarioFlagsOut = OutputOf<
+  "/api/v4/resources/scenario_flags",
+  "post"
+>;
 // GenerateAIScenario types - using WebSocket event types
 type GenerateAIScenarioIn = {
   departmentId: string;
@@ -219,6 +253,54 @@ async function patchScenarioDraft(
   return api.patch("/scenarios/draft", input);
 }
 
+async function createDraftNames(
+  input: CreateDraftNamesIn
+): Promise<CreateDraftNamesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/names", input);
+}
+
+async function createDraftDescriptions(
+  input: CreateDraftDescriptionsIn
+): Promise<CreateDraftDescriptionsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/descriptions", input);
+}
+
+async function createDraftProblemStatements(
+  input: CreateDraftProblemStatementsIn
+): Promise<CreateDraftProblemStatementsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/problem_statements", input);
+}
+
+async function createDraftObjectives(
+  input: CreateDraftObjectivesIn
+): Promise<CreateDraftObjectivesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/objectives", input);
+}
+
+async function createDraftRanges(
+  input: CreateDraftRangesIn
+): Promise<CreateDraftRangesOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/ranges", input);
+}
+
+async function createDraftScenarioFlags(
+  input: CreateDraftScenarioFlagsIn
+): Promise<CreateDraftScenarioFlagsOut> {
+  "use server";
+  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
+  return api.post("/resources/scenario_flags", input);
+}
+
 /** ---- Server renders client with typed data and actions ---- */
 export default async function EditScenarioPage({
   params,
@@ -369,6 +451,12 @@ export default async function EditScenarioPage({
           scenarioDetail={scenarioDetail}
           updateScenarioAction={updateScenario}
           patchScenarioDraftAction={patchScenarioDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createProblemStatementsAction={createDraftProblemStatements}
+          createObjectivesAction={createDraftObjectives}
+          createRangesAction={createDraftRanges}
+          createScenarioFlagsAction={createDraftScenarioFlags}
         />
       </div>
     );

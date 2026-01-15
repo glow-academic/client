@@ -1790,34 +1790,43 @@ expected_agent_role AS (
 ),
 scenario_persona_ranges_data AS (
     SELECT 
-        COALESCE(spr.min_count, 1) as persona_min,
-        COALESCE(spr.max_count, 3) as persona_max
+        COALESCE(rr.min_count, 1) as persona_min,
+        COALESCE(rr.max_count, 3) as persona_max
     FROM scenario_core sc
-    LEFT JOIN scenario_persona_ranges spr ON spr.scenario_id = sc.id
+    LEFT JOIN scenario_ranges sr ON sr.scenario_id = sc.id AND sr.type = 'persona'::type_scenario_ranges
+    LEFT JOIN ranges_resource rr ON rr.id = sr.range_id
 ),
 scenario_document_ranges_data AS (
     SELECT 
-        COALESCE(sdr.min_count, 0) as document_min,
-        COALESCE(sdr.max_count, 3) as document_max
+        COALESCE(rr.min_count, 0) as document_min,
+        COALESCE(rr.max_count, 3) as document_max
     FROM scenario_core sc
-    LEFT JOIN scenario_document_ranges sdr ON sdr.scenario_id = sc.id
+    LEFT JOIN scenario_ranges sr ON sr.scenario_id = sc.id AND sr.type = 'document'::type_scenario_ranges
+    LEFT JOIN ranges_resource rr ON rr.id = sr.range_id
 ),
 scenario_parameter_ranges_data AS (
     SELECT 
-        COALESCE(spr.min_count, 0) as parameter_min,
-        COALESCE(spr.max_count, 3) as parameter_max
+        COALESCE(rr.min_count, 0) as parameter_min,
+        COALESCE(rr.max_count, 3) as parameter_max
     FROM scenario_core sc
-    LEFT JOIN scenario_parameter_ranges spr ON spr.scenario_id = sc.id
+    LEFT JOIN scenario_ranges sr ON sr.scenario_id = sc.id AND sr.type = 'parameter'::type_scenario_ranges
+    LEFT JOIN ranges_resource rr ON rr.id = sr.range_id
 ),
 scenario_field_ranges_data AS (
     SELECT 
         sc.id as scenario_id,
         COALESCE(
-            ARRAY_AGG((sfr.parameter_id, sfr.min_count, sfr.max_count)::types.q_get_scenario_detail_v4_field_range ORDER BY sfr.parameter_id),
+            ARRAY_AGG((p.id, rr.min_count, rr.max_count)::types.q_get_scenario_detail_v4_field_range ORDER BY p.id)
+            FILTER (WHERE p.id IS NOT NULL),
             ARRAY[]::types.q_get_scenario_detail_v4_field_range[]
         ) as field_ranges
     FROM scenario_core sc
-    LEFT JOIN scenario_field_ranges sfr ON sfr.scenario_id = sc.id
+    LEFT JOIN scenario_ranges sr ON sr.scenario_id = sc.id AND sr.type = 'field'::type_scenario_ranges
+    LEFT JOIN ranges_resource rr ON rr.id = sr.range_id
+    -- Note: Field ranges are per scenario in new structure, not per parameter
+    -- We return one range per parameter that has fields linked to the scenario
+    LEFT JOIN scenario_parameters sp ON sp.scenario_id = sc.id AND sp.active = true
+    LEFT JOIN parameter_artifact p ON p.id = sp.parameter_id
     GROUP BY sc.id
 ),
 valid_agents_array AS (

@@ -744,42 +744,99 @@ link_problem_statement_departments AS (
         active = true,
         updated_at = NOW()
 ),
--- Update/create randomization ranges for scenario
--- Upsert persona ranges (create if not exists, update if exists)
-upsert_persona_ranges AS (
-    INSERT INTO scenario_persona_ranges (scenario_id, min_count, max_count)
-    SELECT us.scenario_id, 1, 3
-    FROM update_scenario us
-    ON CONFLICT (scenario_id) DO UPDATE SET
-        updated_at = NOW()
+-- Range handling: Create/update ranges_resource and link via scenario_ranges
+create_persona_range_resource AS (
+    -- Create or get default persona range (min=1, max=3)
+    INSERT INTO ranges_resource (min_count, max_count, active, generated, mcp, created_at, updated_at)
+    SELECT 1, 3, true, false, false, NOW(), NOW()
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ranges_resource WHERE min_count = 1 AND max_count = 3
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id
 ),
-upsert_document_ranges AS (
-    INSERT INTO scenario_document_ranges (scenario_id, min_count, max_count)
-    SELECT us.scenario_id, 0, 3
-    FROM update_scenario us
-    ON CONFLICT (scenario_id) DO UPDATE SET
-        updated_at = NOW()
+get_persona_range_id AS (
+    SELECT COALESCE(
+        (SELECT id FROM create_persona_range_resource LIMIT 1),
+        (SELECT id FROM ranges_resource WHERE min_count = 1 AND max_count = 3 LIMIT 1)
+    ) as range_id
 ),
-upsert_parameter_ranges AS (
-    INSERT INTO scenario_parameter_ranges (scenario_id, min_count, max_count)
-    SELECT us.scenario_id, 0, 3
+upsert_persona_range AS (
+    INSERT INTO scenario_ranges (scenario_id, range_id, type, generated, mcp, created_at, updated_at)
+    SELECT us.scenario_id, gpri.range_id, 'persona'::type_scenario_ranges, false, false, NOW(), NOW()
     FROM update_scenario us
-    ON CONFLICT (scenario_id) DO UPDATE SET
-        updated_at = NOW()
+    CROSS JOIN get_persona_range_id gpri
+    ON CONFLICT (scenario_id, range_id, type) DO UPDATE SET updated_at = NOW()
 ),
-upsert_field_ranges AS (
-    -- Upsert field ranges for each parameter linked to the scenario
-    INSERT INTO scenario_field_ranges (scenario_id, parameter_id, min_count, max_count)
-    SELECT 
-        us.scenario_id,
-        param_id::uuid,
-        1,  -- default min
-        3   -- default max
+create_document_range_resource AS (
+    -- Create or get default document range (min=0, max=3)
+    INSERT INTO ranges_resource (min_count, max_count, active, generated, mcp, created_at, updated_at)
+    SELECT 0, 3, true, false, false, NOW(), NOW()
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ranges_resource WHERE min_count = 0 AND max_count = 3
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id
+),
+get_document_range_id AS (
+    SELECT COALESCE(
+        (SELECT id FROM create_document_range_resource LIMIT 1),
+        (SELECT id FROM ranges_resource WHERE min_count = 0 AND max_count = 3 LIMIT 1)
+    ) as range_id
+),
+upsert_document_range AS (
+    INSERT INTO scenario_ranges (scenario_id, range_id, type, generated, mcp, created_at, updated_at)
+    SELECT us.scenario_id, gdri.range_id, 'document'::type_scenario_ranges, false, false, NOW(), NOW()
     FROM update_scenario us
-    CROSS JOIN UNNEST((SELECT parameter_ids FROM params)) as param_id
-    WHERE COALESCE(array_length((SELECT parameter_ids FROM params), 1), 0) > 0
-    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
-        updated_at = NOW()
+    CROSS JOIN get_document_range_id gdri
+    ON CONFLICT (scenario_id, range_id, type) DO UPDATE SET updated_at = NOW()
+),
+create_parameter_range_resource AS (
+    -- Create or get default parameter range (min=0, max=3)
+    INSERT INTO ranges_resource (min_count, max_count, active, generated, mcp, created_at, updated_at)
+    SELECT 0, 3, true, false, false, NOW(), NOW()
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ranges_resource WHERE min_count = 0 AND max_count = 3
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id
+),
+get_parameter_range_id AS (
+    SELECT COALESCE(
+        (SELECT id FROM create_parameter_range_resource LIMIT 1),
+        (SELECT id FROM ranges_resource WHERE min_count = 0 AND max_count = 3 LIMIT 1)
+    ) as range_id
+),
+upsert_parameter_range AS (
+    INSERT INTO scenario_ranges (scenario_id, range_id, type, generated, mcp, created_at, updated_at)
+    SELECT us.scenario_id, gpri.range_id, 'parameter'::type_scenario_ranges, false, false, NOW(), NOW()
+    FROM update_scenario us
+    CROSS JOIN get_parameter_range_id gpri
+    ON CONFLICT (scenario_id, range_id, type) DO UPDATE SET updated_at = NOW()
+),
+create_field_range_resource AS (
+    -- Create or get default field range (min=1, max=3)
+    INSERT INTO ranges_resource (min_count, max_count, active, generated, mcp, created_at, updated_at)
+    SELECT 1, 3, true, false, false, NOW(), NOW()
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ranges_resource WHERE min_count = 1 AND max_count = 3
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id
+),
+get_field_range_id AS (
+    SELECT COALESCE(
+        (SELECT id FROM create_field_range_resource LIMIT 1),
+        (SELECT id FROM ranges_resource WHERE min_count = 1 AND max_count = 3 LIMIT 1)
+    ) as range_id
+),
+upsert_field_range AS (
+    -- Note: Field ranges are per scenario (not per parameter) in new structure
+    INSERT INTO scenario_ranges (scenario_id, range_id, type, generated, mcp, created_at, updated_at)
+    SELECT us.scenario_id, gfri.range_id, 'field'::type_scenario_ranges, false, false, NOW(), NOW()
+    FROM update_scenario us
+    CROSS JOIN get_field_range_id gfri
+    ON CONFLICT (scenario_id, range_id, type) DO UPDATE SET updated_at = NOW()
 )
 SELECT 
     sec.scenario_exists::boolean as scenario_exists,

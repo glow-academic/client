@@ -29,6 +29,40 @@ type UpdateScenarioIn = InputOf<"/api/v4/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v4/scenarios/update", "post">;
 type PatchScenarioDraftIn = InputOf<"/api/v4/scenarios/draft", "patch">;
 type PatchScenarioDraftOut = OutputOf<"/api/v4/scenarios/draft", "patch">;
+// Resource creation types
+type CreateDraftNamesIn = InputOf<"/api/v4/resources/names", "post">;
+type CreateDraftNamesOut = OutputOf<"/api/v4/resources/names", "post">;
+type CreateDraftDescriptionsIn = InputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftDescriptionsOut = OutputOf<
+  "/api/v4/resources/descriptions",
+  "post"
+>;
+type CreateDraftProblemStatementsIn = InputOf<
+  "/api/v4/resources/problem_statements",
+  "post"
+>;
+type CreateDraftProblemStatementsOut = OutputOf<
+  "/api/v4/resources/problem_statements",
+  "post"
+>;
+type CreateDraftObjectivesIn = InputOf<"/api/v4/resources/objectives", "post">;
+type CreateDraftObjectivesOut = OutputOf<
+  "/api/v4/resources/objectives",
+  "post"
+>;
+type CreateDraftRangesIn = InputOf<"/api/v4/resources/ranges", "post">;
+type CreateDraftRangesOut = OutputOf<"/api/v4/resources/ranges", "post">;
+type CreateDraftScenarioFlagsIn = InputOf<
+  "/api/v4/resources/scenario_flags",
+  "post"
+>;
+type CreateDraftScenarioFlagsOut = OutputOf<
+  "/api/v4/resources/scenario_flags",
+  "post"
+>;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -177,6 +211,12 @@ export default async function NewScenarioPage({
         scenarioDetailDefault={scenarioDetailDefault}
         createScenarioAction={createScenario}
         patchScenarioDraftAction={patchScenarioDraft}
+        createNamesAction={createDraftNames}
+        createDescriptionsAction={createDraftDescriptions}
+        createProblemStatementsAction={createDraftProblemStatements}
+        createObjectivesAction={createDraftObjectives}
+        createRangesAction={createDraftRanges}
+        createScenarioFlagsAction={createDraftScenarioFlags}
       />
     </div>
   );

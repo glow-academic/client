@@ -291,14 +291,14 @@ get_or_create_description AS (
     RETURNING id as description_id
 ),
 get_flag_ids AS (
-    -- Get flag IDs for all scenario flags
+    -- Get flag IDs for all scenario flags from scenario_flags_resource
     SELECT 
-        (SELECT id FROM flags_resource WHERE name = 'active' LIMIT 1) as active_flag_id,
-        (SELECT id FROM flags_resource WHERE name = 'objectives_enabled' LIMIT 1) as objectives_enabled_flag_id,
-        (SELECT id FROM flags_resource WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id,
-        (SELECT id FROM flags_resource WHERE name = 'video_enabled' LIMIT 1) as video_enabled_flag_id,
-        (SELECT id FROM flags_resource WHERE name = 'questions_enabled' LIMIT 1) as questions_enabled_flag_id,
-        (SELECT id FROM flags_resource WHERE name = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled_flag_id
+        (SELECT id FROM scenario_flags_resource WHERE name = 'active' LIMIT 1) as active_flag_id,
+        (SELECT id FROM scenario_flags_resource WHERE name = 'objectives_enabled' LIMIT 1) as objectives_enabled_flag_id,
+        (SELECT id FROM scenario_flags_resource WHERE name = 'images_enabled' LIMIT 1) as images_enabled_flag_id,
+        (SELECT id FROM scenario_flags_resource WHERE name = 'video_enabled' LIMIT 1) as video_enabled_flag_id,
+        (SELECT id FROM scenario_flags_resource WHERE name = 'questions_enabled' LIMIT 1) as questions_enabled_flag_id,
+        (SELECT id FROM scenario_flags_resource WHERE name = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled_flag_id
 ),
 -- Conditional: Create or update scenario_artifact
 new_scenario AS (
@@ -343,43 +343,51 @@ link_description AS (
     ON CONFLICT ON CONSTRAINT scenario_descriptions_pkey DO UPDATE SET updated_at = NOW()
 ),
 link_flags AS (
-    -- Link all scenario flags
-    INSERT INTO scenario_flags (scenario_id, flag_id, type, value, created_at, updated_at)
-    SELECT sir.scenario_id, gfi.active_flag_id, 'active'::type_scenario_flags, p.active, NOW(), NOW()
+    -- Link all scenario flags using scenario_scenario_flags junction table (resource-based)
+    -- Delete existing flags first, then insert new ones
+    DELETE FROM scenario_scenario_flags 
+    WHERE scenario_id = (SELECT scenario_id FROM scenario_id_resolved LIMIT 1)
+),
+insert_flags AS (
+    INSERT INTO scenario_scenario_flags (scenario_id, scenario_flags_id, active, generated, mcp, created_at, updated_at)
+    SELECT sir.scenario_id, gfi.active_flag_id, p.active, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
-    WHERE p.active IS NOT NULL
+    WHERE p.active IS NOT NULL AND gfi.active_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.objectives_enabled_flag_id, 'objectives_enabled'::type_scenario_flags, p.objectives_enabled, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.objectives_enabled_flag_id, p.objectives_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
-    WHERE p.objectives_enabled IS NOT NULL
+    WHERE p.objectives_enabled IS NOT NULL AND gfi.objectives_enabled_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.images_enabled_flag_id, 'images_enabled'::type_scenario_flags, p.images_enabled, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.images_enabled_flag_id, p.images_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
-    WHERE p.images_enabled IS NOT NULL
+    WHERE p.images_enabled IS NOT NULL AND gfi.images_enabled_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.video_enabled_flag_id, 'video_enabled'::type_scenario_flags, p.video_enabled, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.video_enabled_flag_id, p.video_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
-    WHERE p.video_enabled IS NOT NULL
+    WHERE p.video_enabled IS NOT NULL AND gfi.video_enabled_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.questions_enabled_flag_id, 'questions_enabled'::type_scenario_flags, p.questions_enabled, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.questions_enabled_flag_id, p.questions_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
-    WHERE p.questions_enabled IS NOT NULL
+    WHERE p.questions_enabled IS NOT NULL AND gfi.questions_enabled_flag_id IS NOT NULL
     UNION ALL
-    SELECT sir.scenario_id, gfi.problem_statement_enabled_flag_id, 'problem_statement_enabled'::type_scenario_flags, p.problem_statement_enabled, NOW(), NOW()
+    SELECT sir.scenario_id, gfi.problem_statement_enabled_flag_id, p.problem_statement_enabled, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
     CROSS JOIN get_flag_ids gfi
     CROSS JOIN params p
-    WHERE p.problem_statement_enabled IS NOT NULL
+    WHERE p.problem_statement_enabled IS NOT NULL AND gfi.problem_statement_enabled_flag_id IS NOT NULL
+    ON CONFLICT (scenario_id, scenario_flags_id) DO UPDATE SET
+        active = EXCLUDED.active,
+        updated_at = NOW()
 ),
 -- Domain-based agent assignment removed - no longer needed
 link_video_domain AS (
@@ -784,39 +792,99 @@ link_problem_statement_departments AS (
         active = true,
         updated_at = NOW()
 ),
-create_persona_ranges AS (
-    INSERT INTO scenario_persona_ranges (scenario_id, min_count, max_count)
-    SELECT sir.scenario_id, 1, 3
-    FROM scenario_id_resolved sir
-    ON CONFLICT (scenario_id) DO UPDATE SET
-        updated_at = NOW()
+-- Range handling: Create/update ranges_resource and link via scenario_ranges
+-- Note: For now, we create default ranges if not provided. In the future, range IDs should be passed as parameters.
+create_persona_range_resource AS (
+    -- Create or get default persona range (min=1, max=3)
+    INSERT INTO ranges_resource (min_count, max_count, active, generated, mcp, created_at, updated_at)
+    SELECT 1, 3, true, false, false, NOW(), NOW()
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ranges_resource WHERE min_count = 1 AND max_count = 3
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id
 ),
-create_document_ranges AS (
-    INSERT INTO scenario_document_ranges (scenario_id, min_count, max_count)
-    SELECT sir.scenario_id, 0, 3
-    FROM scenario_id_resolved sir
-    ON CONFLICT (scenario_id) DO UPDATE SET
-        updated_at = NOW()
+get_persona_range_id AS (
+    SELECT COALESCE(
+        (SELECT id FROM create_persona_range_resource LIMIT 1),
+        (SELECT id FROM ranges_resource WHERE min_count = 1 AND max_count = 3 LIMIT 1)
+    ) as range_id
 ),
-create_parameter_ranges AS (
-    INSERT INTO scenario_parameter_ranges (scenario_id, min_count, max_count)
-    SELECT sir.scenario_id, 0, 3
+link_persona_range AS (
+    INSERT INTO scenario_ranges (scenario_id, range_id, type, generated, mcp, created_at, updated_at)
+    SELECT sir.scenario_id, gpri.range_id, 'persona'::type_scenario_ranges, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
-    ON CONFLICT (scenario_id) DO UPDATE SET
-        updated_at = NOW()
+    CROSS JOIN get_persona_range_id gpri
+    ON CONFLICT (scenario_id, range_id, type) DO UPDATE SET updated_at = NOW()
 ),
-create_field_ranges AS (
-    INSERT INTO scenario_field_ranges (scenario_id, parameter_id, min_count, max_count)
-    SELECT 
-        sir.scenario_id,
-        param_id::uuid,
-        1,
-        3
+create_document_range_resource AS (
+    -- Create or get default document range (min=0, max=3)
+    INSERT INTO ranges_resource (min_count, max_count, active, generated, mcp, created_at, updated_at)
+    SELECT 0, 3, true, false, false, NOW(), NOW()
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ranges_resource WHERE min_count = 0 AND max_count = 3
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id
+),
+get_document_range_id AS (
+    SELECT COALESCE(
+        (SELECT id FROM create_document_range_resource LIMIT 1),
+        (SELECT id FROM ranges_resource WHERE min_count = 0 AND max_count = 3 LIMIT 1)
+    ) as range_id
+),
+link_document_range AS (
+    INSERT INTO scenario_ranges (scenario_id, range_id, type, generated, mcp, created_at, updated_at)
+    SELECT sir.scenario_id, gdri.range_id, 'document'::type_scenario_ranges, false, false, NOW(), NOW()
     FROM scenario_id_resolved sir
-    CROSS JOIN UNNEST((SELECT parameter_ids FROM params)) as param_id
-    WHERE COALESCE(array_length((SELECT parameter_ids FROM params), 1), 0) > 0
-    ON CONFLICT (scenario_id, parameter_id) DO UPDATE SET
-        updated_at = NOW()
+    CROSS JOIN get_document_range_id gdri
+    ON CONFLICT (scenario_id, range_id, type) DO UPDATE SET updated_at = NOW()
+),
+create_parameter_range_resource AS (
+    -- Create or get default parameter range (min=0, max=3)
+    INSERT INTO ranges_resource (min_count, max_count, active, generated, mcp, created_at, updated_at)
+    SELECT 0, 3, true, false, false, NOW(), NOW()
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ranges_resource WHERE min_count = 0 AND max_count = 3
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id
+),
+get_parameter_range_id AS (
+    SELECT COALESCE(
+        (SELECT id FROM create_parameter_range_resource LIMIT 1),
+        (SELECT id FROM ranges_resource WHERE min_count = 0 AND max_count = 3 LIMIT 1)
+    ) as range_id
+),
+link_parameter_range AS (
+    INSERT INTO scenario_ranges (scenario_id, range_id, type, generated, mcp, created_at, updated_at)
+    SELECT sir.scenario_id, gpri.range_id, 'parameter'::type_scenario_ranges, false, false, NOW(), NOW()
+    FROM scenario_id_resolved sir
+    CROSS JOIN get_parameter_range_id gpri
+    ON CONFLICT (scenario_id, range_id, type) DO UPDATE SET updated_at = NOW()
+),
+create_field_range_resource AS (
+    -- Create or get default field range (min=1, max=3)
+    INSERT INTO ranges_resource (min_count, max_count, active, generated, mcp, created_at, updated_at)
+    SELECT 1, 3, true, false, false, NOW(), NOW()
+    WHERE NOT EXISTS (
+        SELECT 1 FROM ranges_resource WHERE min_count = 1 AND max_count = 3
+    )
+    ON CONFLICT DO NOTHING
+    RETURNING id
+),
+get_field_range_id AS (
+    SELECT COALESCE(
+        (SELECT id FROM create_field_range_resource LIMIT 1),
+        (SELECT id FROM ranges_resource WHERE min_count = 1 AND max_count = 3 LIMIT 1)
+    ) as range_id
+),
+link_field_range AS (
+    INSERT INTO scenario_ranges (scenario_id, range_id, type, generated, mcp, created_at, updated_at)
+    SELECT sir.scenario_id, gfri.range_id, 'field'::type_scenario_ranges, false, false, NOW(), NOW()
+    FROM scenario_id_resolved sir
+    CROSS JOIN get_field_range_id gfri
+    ON CONFLICT (scenario_id, range_id, type) DO UPDATE SET updated_at = NOW()
 )
 SELECT 
     sir.scenario_id as scenario_id,

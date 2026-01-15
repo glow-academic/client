@@ -7,7 +7,6 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Simulation from "@/components/simulations/Simulation";
-import { NewSimulation } from "@/components/simulations/NewSimulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -41,10 +40,7 @@ type CreateDraftDepartmentsOut = OutputOf<
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
-type CreateDraftScenariosOut = OutputOf<
-  "/api/v4/resources/scenarios",
-  "post"
->;
+type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
   "/api/v4/resources/simulation_scenario_flags",
   "post"
@@ -99,7 +95,9 @@ const getSimulationDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveSimulation(input: SaveSimulationIn): Promise<SaveSimulationOut> {
+async function saveSimulation(
+  input: SaveSimulationIn
+): Promise<SaveSimulationOut> {
   "use server";
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
@@ -250,7 +248,7 @@ export default async function NewSimulationPage({
       data-page="simulation-new"
       aria-label="Create new simulation page"
     >
-      <NewSimulation
+      <Simulation
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         simulationData={simulationDataDefault}
         saveSimulationAction={saveSimulation}

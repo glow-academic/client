@@ -7,15 +7,10 @@
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import Simulation from "@/components/simulations/Simulation";
-import { NewSimulation } from "@/components/simulations/NewSimulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
-import {
-  createLoader,
-  parseAsBoolean,
-  parseAsString,
-} from "nuqs/server";
+import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/api/v4/simulations/get", "post">;
@@ -45,10 +40,7 @@ type CreateDraftDepartmentsOut = OutputOf<
 type CreateDraftFlagsIn = InputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftFlagsOut = OutputOf<"/api/v4/resources/flags", "post">;
 type CreateDraftScenariosIn = InputOf<"/api/v4/resources/scenarios", "post">;
-type CreateDraftScenariosOut = OutputOf<
-  "/api/v4/resources/scenarios",
-  "post"
->;
+type CreateDraftScenariosOut = OutputOf<"/api/v4/resources/scenarios", "post">;
 type CreateDraftScenarioFlagsIn = InputOf<
   "/api/v4/resources/simulation_scenario_flags",
   "post"
@@ -76,11 +68,11 @@ type CreateDraftScenarioRubricGradeAgentsOut = OutputOf<
 
 // Export types for client component (type-only imports)
 export type {
-  GetSimulationOut as SimulationDataOut,
-  SaveSimulationIn,
-  SaveSimulationOut,
   PatchSimulationDraftIn,
   PatchSimulationDraftOut,
+  SaveSimulationIn,
+  SaveSimulationOut,
+  GetSimulationOut as SimulationDataOut,
 };
 
 /** ---- Direct fetch (no caching - source of truth) ----
@@ -278,7 +270,7 @@ export default async function EditSimulationPage({
         data-page="simulation-edit"
         data-simulation-id={simulationId}
       >
-        <NewSimulation
+        <Simulation
           simulationId={simulationId}
           simulationData={simulationData}
           saveSimulationAction={saveSimulation}

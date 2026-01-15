@@ -34,40 +34,45 @@ STABLE
 AS $$
 SELECT 
     COALESCE(
-        (SELECT min_count FROM scenario_persona_ranges WHERE scenario_id = api_get_randomization_ranges_v4.scenario_id),
+        (SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_get_randomization_ranges_v4.scenario_id AND sr.type = 'persona'::type_scenario_ranges LIMIT 1),
         1
     ) as persona_min,
     COALESCE(
-        (SELECT max_count FROM scenario_persona_ranges WHERE scenario_id = api_get_randomization_ranges_v4.scenario_id),
+        (SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_get_randomization_ranges_v4.scenario_id AND sr.type = 'persona'::type_scenario_ranges LIMIT 1),
         3
     ) as persona_max,
     COALESCE(
-        (SELECT min_count FROM scenario_document_ranges WHERE scenario_id = api_get_randomization_ranges_v4.scenario_id),
+        (SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_get_randomization_ranges_v4.scenario_id AND sr.type = 'document'::type_scenario_ranges LIMIT 1),
         0
     ) as document_min,
     COALESCE(
-        (SELECT max_count FROM scenario_document_ranges WHERE scenario_id = api_get_randomization_ranges_v4.scenario_id),
+        (SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_get_randomization_ranges_v4.scenario_id AND sr.type = 'document'::type_scenario_ranges LIMIT 1),
         3
     ) as document_max,
     COALESCE(
-        (SELECT min_count FROM scenario_parameter_ranges WHERE scenario_id = api_get_randomization_ranges_v4.scenario_id),
+        (SELECT rr.min_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_get_randomization_ranges_v4.scenario_id AND sr.type = 'parameter'::type_scenario_ranges LIMIT 1),
         0
     ) as parameter_min,
     COALESCE(
-        (SELECT max_count FROM scenario_parameter_ranges WHERE scenario_id = api_get_randomization_ranges_v4.scenario_id),
+        (SELECT rr.max_count FROM scenario_ranges sr JOIN ranges_resource rr ON rr.id = sr.range_id WHERE sr.scenario_id = api_get_randomization_ranges_v4.scenario_id AND sr.type = 'parameter'::type_scenario_ranges LIMIT 1),
         3
     ) as parameter_max,
     COALESCE(
         (
             SELECT jsonb_object_agg(
-                parameter_id::text,
+                p.id::text,
                 jsonb_build_object(
-                    'min', min_count,
-                    'max', max_count
+                    'min', rr.min_count,
+                    'max', rr.max_count
                 )
             )
-            FROM scenario_field_ranges
-            WHERE scenario_id = api_get_randomization_ranges_v4.scenario_id
+            FROM scenario_ranges sr
+            JOIN ranges_resource rr ON rr.id = sr.range_id
+            CROSS JOIN parameter_artifact p
+            WHERE sr.scenario_id = api_get_randomization_ranges_v4.scenario_id
+            AND sr.type = 'field'::type_scenario_ranges
+            -- Note: field ranges are per parameter, but new structure doesn't store parameter_id
+            -- This returns all field ranges for the scenario (one per parameter if they exist)
         ),
         '{}'::jsonb
     ) as field_ranges_json

@@ -1,367 +1,258 @@
-"""Scenario page handler - handles randomization logic, then routes to artifacts/generate.py."""
+"""Scenario generation router - unified handler for all scenario resource types."""
 
 import json
 import uuid
 from typing import Any, cast
 
-import asyncpg  # type: ignore
 from app.infra.v4.websocket.find_profile_by_socket import \
     find_profile_by_socket
 from app.infra.v4.websocket.get_db_connection import get_db_connection
 from app.infra.v4.websocket.typed_emit import emit_to_internal
 from app.main import get_internal_sio, sio
 from app.socket.v4.artifacts.error import GenerateErrorApiRequest
-from app.sql.types import (GetDepartmentsForProfileSqlParams,
-                           GetDepartmentsForProfileSqlRow,
-                           GetDomainAgentIdV4SqlParams,
-                           GetDomainAgentIdV4SqlRow,
-                           GetRandomizationRangesSqlParams,
-                           GetRandomizationRangesSqlRow,
-                           GetScenarioDepartmentsSqlParams,
-                           GetScenarioDepartmentsSqlRow,
-                           GetScenarioParameterIdsV4SqlParams,
-                           GetScenarioParameterIdsV4SqlRow,
-                           RandomizeScenarioSqlParams, RandomizeScenarioSqlRow)
+from app.sql.types import (GetScenarioApiRequest, GetScenarioSqlParams,
+                           GetScenarioSqlRow)
 from fastapi import APIRouter
-from pydantic import BaseModel
-from utils.sql_helper import execute_sql_typed, load_sql
+from utils.logging.db_logger import get_logger
+from utils.sql_helper import execute_sql_typed
+
+logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
 client_router = APIRouter()
 server_router = APIRouter()
 
+SQL_PATH = "app/sql/v4/scenarios/get_scenario_complete.sql"
 
-class GenerateScenarioPayload(BaseModel):
-    """Request to generate a scenario."""
+# Scenario resource types
+SCENARIO_RESOURCE_TYPES = [
+    "names",
+    "descriptions",
+    "problem_statements",
+    "objectives",
+    "ranges",
+    "scenario_flags",
+    "images",
+    "videos",
+    "questions",
+    "departments",
+    "fields",
+    "personas",
+    "documents",
+    "parameters",
+]
 
-    scenarioId: str | None = None
-    departmentId: str
-    scenarioDomainId: str
-    personaIds: list[str] | None = None
-    documentIds: list[str] | None = None
-    fieldIds: list[str] | None = None
-    profileId: str | None = None
-    randomizeType: str | None = (
-        None  # "all", "persona", "document", "parameters", "parameter_{paramId}"
-    )
-    skipGeneration: bool = False  # If True, only randomize, don't generate
-    attemptId: str | None = None
-    simulationId: str | None = None
+
+class GenerateScenarioPayload(GetScenarioApiRequest):
+    """Request to generate scenario resources - extends GET API request with generation-specific fields."""
+
+    agent_type: str | None = None  # Optional: "name", "description", "basic", "content", "general"/"all"
+    resource_types: list[str]  # Required: which resource types to generate
+    user_instructions: list[str] | None = None  # Optional: user instructions
 
 
-async def _generate_scenario_impl(
+async def _scenario_generate_impl(
     sid: str, data: GenerateScenarioPayload, profile_id: uuid.UUID
 ) -> None:
-    """Handle scenario generation - randomization then route to artifacts."""
+    """Handle scenario generation - emit generate_artifact for each resource type, then emit client event."""
     try:
-        # Convert string IDs to UUIDs
-        department_id = uuid.UUID(data.departmentId)
-        persona_ids = (
-            [uuid.UUID(p) for p in data.personaIds] if data.personaIds else None
-        )
-        document_ids = (
-            [uuid.UUID(d) for d in data.documentIds] if data.documentIds else None
-        )
-        field_ids = [uuid.UUID(f) for f in data.fieldIds] if data.fieldIds else None
-        scenario_id_uuid = uuid.UUID(data.scenarioId) if data.scenarioId else None
+        # Validate resource types
+        resource_types = data.resource_types
+        if not resource_types:
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="resource_types must be provided",
+                    artifact_type="scenario",
+                    group_id=None,
+                    resource_type="scenario",
+                ),
+                sid=sid,
+            )
+            return
 
-        # Filter out empty lists
-        if document_ids and len(document_ids) == 0:
-            document_ids = None
+        invalid_types = [
+            rt for rt in resource_types if rt not in SCENARIO_RESOURCE_TYPES
+        ]
+        if invalid_types:
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=f"Invalid resource types: {', '.join(invalid_types)}",
+                    artifact_type="scenario",
+                    group_id=None,
+                    resource_type="scenario",
+                ),
+                sid=sid,
+            )
+            return
 
+        # Map agent_type to agent_id from response (will be done after fetching scenario data)
+
+        # Call get_scenario_v4 SQL function (same as GET API endpoint)
         async with get_db_connection() as conn:
-            # Step 1: Randomize missing values using SQL function
-            needs_persona = not persona_ids or len(persona_ids) == 0
-            needs_documents = not document_ids or len(document_ids) == 0
-            needs_fields = not field_ids or len(field_ids) == 0
+            # Convert payload to SQL params (same as GET endpoint)
+            params = GetScenarioSqlParams(
+                profile_id=profile_id,
+                scenario_id=data.scenario_id,
+                use_image=data.use_image,
+                use_objectives=data.use_objectives,
+                document_ids=data.document_ids,
+                problem_statement_ids=data.problem_statement_ids,
+                template_document_ids=data.template_document_ids,
+                use_video=data.use_video,
+                filter_department_ids=data.filter_department_ids,
+                filter_persona_ids=data.filter_persona_ids,
+                filter_document_ids=data.filter_document_ids,
+                filter_parameter_ids=data.filter_parameter_ids,
+                filter_field_ids=data.filter_field_ids,
+                persona_search=data.persona_search,
+                document_search=data.document_search,
+                parameter_search=data.parameter_search,
+                persona_show_selected=data.persona_show_selected,
+                document_show_selected=data.document_show_selected,
+                parameter_show_selected=data.parameter_show_selected,
+                field_show_selected_by_param=data.field_show_selected_by_param,
+                draft_id=data.draft_id,
+                mcp=getattr(data, "mcp", False) or False,
+            )
 
-            # Determine which values need randomization based on randomizeType
-            randomize_type = data.randomizeType or "all"
-            if data.randomizeType:
-                if data.randomizeType == "persona":
-                    needs_persona = True
-                    needs_documents = False
-                    needs_fields = False
-                elif data.randomizeType == "document":
-                    needs_persona = False
-                    needs_documents = True
-                    needs_fields = False
-                elif data.randomizeType == "parameters":
-                    needs_persona = False
-                    needs_documents = False
-                    needs_fields = True
-                elif data.randomizeType.startswith("parameter_"):
-                    needs_persona = False
-                    needs_documents = False
-                    needs_fields = True
-                else:  # "all" or None
-                    pass
+            result = cast(
+                GetScenarioSqlRow,
+                await execute_sql_typed(conn, SQL_PATH, params=params),
+            )
 
-            randomized_selections = None
-            if needs_persona or needs_documents or needs_fields:
-                # Get department IDs (from scenario, then profile, then use provided)
-                department_ids_list: list[uuid.UUID] = []
-                if department_id:
-                    department_ids_list = [department_id]
-                elif scenario_id_uuid:
-                    # Try scenario departments first - fetch all rows
-                    dept_params = GetScenarioDepartmentsSqlParams(
-                        scenario_id=scenario_id_uuid
-                    )
-                    sql_get_depts = load_sql(
-                        "app/sql/v4/scenario/get_scenario_departments_complete.sql"
-                    )
-                    dept_rows = await conn.fetch(sql_get_depts, scenario_id_uuid)
-                    if dept_rows:
-                        department_ids_list = [
-                            uuid.UUID(str(row["department_id"]))
-                            for row in dept_rows
-                            if row.get("department_id")
-                        ]
-
-                if not department_ids_list and profile_id:
-                    # Fallback to profile departments - fetch all rows
-                    profile_dept_params = GetDepartmentsForProfileSqlParams(
-                        profile_id=profile_id
-                    )
-                    sql_get_profile_depts = load_sql(
-                        "app/sql/v4/profile/get_departments_for_profile_complete.sql"
-                    )
-                    profile_dept_rows = await conn.fetch(
-                        sql_get_profile_depts, profile_id
-                    )
-                    if profile_dept_rows:
-                        department_ids_list = [
-                            uuid.UUID(str(row["id"]))
-                            for row in profile_dept_rows
-                            if row.get("id")
-                        ]
-
-                # Get randomization ranges
-                persona_min = 1
-                persona_max = 3
-                document_min = 0
-                document_max = 3
-                parameter_selection_min = 0
-                parameter_selection_max = 3
-                field_ranges_json: dict[str, dict[str, int]] = {}
-
-                if scenario_id_uuid:
-                    ranges_params = GetRandomizationRangesSqlParams(
-                        scenario_id=scenario_id_uuid
-                    )
-                    ranges_result = cast(
-                        GetRandomizationRangesSqlRow,
-                        await execute_sql_typed(
-                            conn,
-                            "app/sql/v4/scenario/get_randomization_ranges_complete.sql",
-                            params=ranges_params,
-                        ),
-                    )
-                    if ranges_result:
-                        persona_min = ranges_result.persona_min or 1
-                        persona_max = ranges_result.persona_max or 3
-                        document_min = ranges_result.document_min or 0
-                        document_max = ranges_result.document_max or 3
-                        parameter_selection_min = ranges_result.parameter_min or 0
-                        parameter_selection_max = ranges_result.parameter_max or 3
-                        if ranges_result.field_ranges_json:
-                            if isinstance(ranges_result.field_ranges_json, str):
-                                try:
-                                    field_ranges_json = json.loads(
-                                        ranges_result.field_ranges_json
-                                    )
-                                except json.JSONDecodeError:
-                                    field_ranges_json = {}
-                            elif isinstance(ranges_result.field_ranges_json, dict):
-                                field_ranges_json = ranges_result.field_ranges_json
-
-                # Extract parameter_ids from field_ids if needed
-                parameter_ids: list[uuid.UUID] = []
-                if field_ids:
-                    # Get parameter_ids from fields table directly
-                    param_params = GetScenarioParameterIdsV4SqlParams(
-                        field_ids=[uuid.UUID(fid) for fid in field_ids]
-                    )
-                    from utils.sql_helper import load_sql
-                    param_sql = load_sql("app/sql/v4/scenario/get_scenario_parameter_ids_v4_complete.sql")
-                    param_rows = await conn.fetch(param_sql, [uuid.UUID(fid) for fid in field_ids])
-                    parameter_ids = [
-                        uuid.UUID(str(row["parameter_id"]))
-                        for row in param_rows
-                        if row.get("parameter_id")
-                    ]
-
-                # Call SQL randomization function
-                # SQL function handles NULL scenario_id, but type system requires UUID
-                # Use dummy UUID if None - SQL function will handle it
-                randomize_params = RandomizeScenarioSqlParams(
-                    scenario_id=scenario_id_uuid
-                    if scenario_id_uuid
-                    else uuid.UUID("00000000-0000-0000-0000-000000000000"),
-                    profile_id=profile_id,
-                    randomize_type=randomize_type,
-                    department_ids=department_ids_list,
-                    persona_ids=persona_ids or [],
-                    document_ids=document_ids or [],
-                    parameter_ids=parameter_ids,
-                    field_ids=field_ids or [],
-                    persona_min=persona_min,
-                    persona_max=persona_max,
-                    document_min=document_min,
-                    document_max=document_max,
-                    parameter_selection_min=parameter_selection_min,
-                    parameter_selection_max=parameter_selection_max,
-                    field_ranges_json=field_ranges_json,
-                )
-
-                randomize_result = cast(
-                    RandomizeScenarioSqlRow,
-                    await execute_sql_typed(
-                        conn,
-                        "app/sql/v4/scenario/randomize_scenario_complete.sql",
-                        params=randomize_params,
-                    ),
-                )
-
-                # Map results back to expected format
-                randomized_selections = {
-                    "persona_ids": (
-                        randomize_result.randomized_persona_ids
-                        if randomize_result.randomized_persona_ids
-                        else None
-                    ),
-                    "document_ids": (
-                        randomize_result.randomized_document_ids
-                        if randomize_result.randomized_document_ids
-                        else None
-                    ),
-                    "field_ids": (
-                        randomize_result.randomized_field_ids
-                        if randomize_result.randomized_field_ids
-                        else None
-                    ),
-                    "department_id": (
-                        department_ids_list[0] if department_ids_list else None
-                    ),
+            # Map agent_type to agent_id from response
+            agent_id: uuid.UUID | None = None
+            if data.agent_type:
+                agent_type_map = {
+                    "name": result.name_agent_id,
+                    "description": result.description_agent_id,
+                    "basic": result.basic_agent_id,
+                    "content": result.content_agent_id,
+                    "general": result.general_agent_id,
+                    "all": result.general_agent_id,
                 }
+                agent_id = agent_type_map.get(data.agent_type)
 
-                # Update values with randomized selections
-                if randomized_selections.get("persona_ids") and needs_persona:
-                    persona_ids = randomized_selections["persona_ids"]
-                if randomized_selections.get("document_ids") and needs_documents:
-                    document_ids = randomized_selections["document_ids"]
-                if randomized_selections.get("field_ids") and needs_fields:
-                    field_ids = randomized_selections["field_ids"]
-                if randomized_selections.get("department_id"):
-                    department_id = randomized_selections["department_id"]
-
-                # Link randomized selections to scenario if scenarioId is provided
-                if scenario_id_uuid:
-                    # Link persona
-                    if randomized_selections.get("persona_ids"):
-                        sql = load_sql(
-                            "app/sql/v4/scenario/insert_scenario_persona_link.sql"
-                        )
-                        for persona_id_val in randomized_selections["persona_ids"]:
-                            await conn.execute(
-                                sql, scenario_id_uuid, persona_id_val, True
-                            )
-
-                    # Link documents
-                    if randomized_selections.get("document_ids"):
-                        sql = load_sql(
-                            "app/sql/v4/scenario/insert_scenario_document_link.sql"
-                        )
-                        for doc_id_val in randomized_selections["document_ids"]:
-                            await conn.execute(sql, scenario_id_uuid, doc_id_val, True)
-
-                    # Link parameters
-                    if randomized_selections.get("field_ids"):
-                        sql = load_sql(
-                            "app/sql/v4/scenario/insert_scenario_parameter_link.sql"
-                        )
-                        for field_id_val in randomized_selections["field_ids"]:
-                            await conn.execute(
-                                sql, scenario_id_uuid, field_id_val, True
-                            )
-
-                    # Link department
-                    if randomized_selections.get("department_id"):
-                        sql = load_sql(
-                            "app/sql/v4/scenario/insert_scenario_department_link.sql"
-                        )
-                        await conn.execute(
-                            sql,
-                            scenario_id_uuid,
-                            randomized_selections["department_id"],
-                            True,
-                        )
-
-                # Emit randomization complete event
-                await sio.emit(
-                    "scenario_randomize_complete",
-                    {
-                        "success": True,
-                        "randomized_selections": {
-                            "personaIds": (
-                                [str(p) for p in randomized_selections["persona_ids"]]
-                                if randomized_selections.get("persona_ids")
-                                else None
-                            ),
-                            "documentIds": (
-                                [str(d) for d in randomized_selections["document_ids"]]
-                                if randomized_selections.get("document_ids")
-                                else None
-                            ),
-                            "fieldIds": (
-                                [str(f) for f in randomized_selections["field_ids"]]
-                                if randomized_selections.get("field_ids")
-                                else None
-                            ),
-                        },
-                        "message": "Randomized missing scenario values",
-                    },
-                    room=sid,
+            if not agent_id:
+                await emit_to_internal(
+                    "generate_error",
+                    GenerateErrorApiRequest(
+                        sid=sid,
+                        error_message=f"No agent found for agent_type: {data.agent_type}",
+                        artifact_type="scenario",
+                        group_id=None,
+                        resource_type="scenario",
+                    ),
+                    sid=sid,
                 )
-
-            # If skipGeneration is True, stop here after randomization
-            if data.skipGeneration:
                 return
 
-            # Step 2: Get developer instruction using new renderer with resource-schema-based context
-            from app.infra.v4.developer_instructions.render_developer_instruction import \
-                render_developer_instruction
+            # Extract resource IDs from arrays and build resources array (composite type format)
+            resources: list[dict[str, Any]] = []
 
-            # Get agent_id from scenario domain
-            scenario_domain_id = uuid.UUID(data.scenarioDomainId)
-            domain_params = GetDomainAgentIdV4SqlParams(domain_id=scenario_domain_id)
-            domain_result = cast(
-                SocketGetDomainAgentIdSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    "app/sql/v4/scenario/get_domain_agent_id_v4_complete.sql",
-                    params=domain_params,
-                ),
-            )
-            agent_id = domain_result.agent_id if domain_result else None
+            # Extract IDs from each resource array
+            if result.names:
+                resources.append({
+                    "resource_type": "names",
+                    "resource_ids": [str(n.id) for n in result.names if n.id]
+                })
+            if result.descriptions:
+                resources.append({
+                    "resource_type": "descriptions",
+                    "resource_ids": [str(d.id) for d in result.descriptions if d.id]
+                })
+            if result.problem_statements:
+                resources.append({
+                    "resource_type": "problem_statements",
+                    "resource_ids": [str(ps.id) for ps in result.problem_statements if ps.id]
+                })
+            if result.objectives:
+                resources.append({
+                    "resource_type": "objectives",
+                    "resource_ids": [str(o.id) for o in result.objectives if o.id]
+                })
+            if result.persona_ranges:
+                resources.append({
+                    "resource_type": "ranges",
+                    "resource_ids": [str(r.id) for r in result.persona_ranges if r.id]
+                })
+            if result.document_ranges:
+                resources.append({
+                    "resource_type": "ranges",
+                    "resource_ids": [str(r.id) for r in result.document_ranges if r.id]
+                })
+            if result.parameter_ranges:
+                resources.append({
+                    "resource_type": "ranges",
+                    "resource_ids": [str(r.id) for r in result.parameter_ranges if r.id]
+                })
+            if result.field_ranges:
+                resources.append({
+                    "resource_type": "ranges",
+                    "resource_ids": [str(r.id) for r in result.field_ranges if r.id]
+                })
+            if result.departments:
+                resources.append({
+                    "resource_type": "departments",
+                    "resource_ids": [str(d.department_id) for d in result.departments if d.department_id]
+                })
+            if result.fields:
+                resources.append({
+                    "resource_type": "fields",
+                    "resource_ids": [str(f.field_id) for f in result.fields if f.field_id]
+                })
+            if result.personas:
+                resources.append({
+                    "resource_type": "personas",
+                    "resource_ids": [str(p.persona_id) for p in result.personas if p.persona_id]
+                })
+            if result.documents:
+                resources.append({
+                    "resource_type": "documents",
+                    "resource_ids": [str(d.document_id) for d in result.documents if d.document_id]
+                })
+            if result.parameters:
+                resources.append({
+                    "resource_type": "parameters",
+                    "resource_ids": [str(p.parameter_id) for p in result.parameters if p.parameter_id]
+                })
+            if result.images:
+                resources.append({
+                    "resource_type": "images",
+                    "resource_ids": [str(i.id) for i in result.images if i.id]
+                })
+            if result.videos:
+                resources.append({
+                    "resource_type": "videos",
+                    "resource_ids": [str(v.id) for v in result.videos if v.id]
+                })
+            if result.questions:
+                resources.append({
+                    "resource_type": "questions",
+                    "resource_ids": [str(q.id) for q in result.questions if q.id]
+                })
 
-            # Step 3: Route to generate_artifact (which will create run and handle generation)
-            resource_id = (
-                str(scenario_id_uuid) if scenario_id_uuid else str(uuid.uuid4())
-            )
+            # Get group_id from response if available
+            group_id: uuid.UUID | None = result.group_id
 
+            # Emit single generate_artifact event with all resource types
             await internal_sio.emit(
                 "generate_artifact",
                 {
                     "sid": sid,
-                    "domain_id": str(scenario_domain_id),
-                    "resource_id": resource_id,
-                    "resource_type": "scenario",
-                    "group_id": None,  # Will be created by generate_artifact
-                    "user_instructions": None,
-                    "message_ids": None,
+                    "artifact_type": "scenario",
+                    "agent_id": str(agent_id),  # Use agent_id from mapping
+                    "resource_types": resource_types,  # Pass all resource types at once
+                    "group_id": str(group_id) if group_id else None,
+                    "resources": resources,  # Pass resources array
+                    "user_instructions": data.user_instructions
+                    if data.user_instructions
+                    else None,
                 },
             )
 
@@ -370,8 +261,8 @@ async def _generate_scenario_impl(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to generate scenario: {str(e)}",
-                resource_id=data.scenarioId,
+                error_message=f"Failed to generate scenario resources: {str(e)}",
+                artifact_type="scenario",
                 group_id=None,
                 resource_type="scenario",
             ),
@@ -391,7 +282,7 @@ async def scenario_generate(sid: str, data: dict[str, Any]) -> None:
                 GenerateErrorApiRequest(
                     sid=sid,
                     error_message="Profile not found. Please reconnect.",
-                    resource_id=data.get("scenarioId"),
+                    artifact_type="scenario",
                     group_id=None,
                     resource_type="scenario",
                 ),
@@ -399,14 +290,14 @@ async def scenario_generate(sid: str, data: dict[str, Any]) -> None:
             )
             return
         profile_id = uuid.UUID(profile_id_str)
-        await _generate_scenario_impl(sid, payload, profile_id)
+        await _scenario_generate_impl(sid, payload, profile_id)
     except Exception as e:
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
                 error_message=f"Invalid request: {str(e)}",
-                resource_id=data.get("scenarioId"),
+                artifact_type="scenario",
                 group_id=None,
                 resource_type="scenario",
             ),
@@ -416,22 +307,38 @@ async def scenario_generate(sid: str, data: dict[str, Any]) -> None:
 
 @internal_sio.on("scenario_generate")  # type: ignore
 async def scenario_generate_internal(data: dict[str, Any]) -> None:
-    """Handle scenario_generate event from internal bus (server-to-server).
-
-    Routes directly to artifacts/generate.py which will create run and handle generation.
-    """
+    """Handle scenario_generate event from internal bus (server-to-server)."""
     try:
-        # Route to artifacts/generate.py which will create run and handle generation
-        await internal_sio.emit("generate_artifact", data)
-    except Exception as e:
         sid = data.get("sid", "")
+        if not sid:
+            return
+
+        profile_id_str = await find_profile_by_socket(sid)
+        if not profile_id_str:
+            await emit_to_internal(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message="Profile not found. Please reconnect.",
+                    artifact_type="scenario",
+                    group_id=None,
+                    resource_type="scenario",
+                ),
+                sid=sid,
+            )
+            return
+
+        profile_id = uuid.UUID(profile_id_str)
+        payload = GenerateScenarioPayload(**data)
+        await _scenario_generate_impl(sid, payload, profile_id)
+    except Exception as e:
         await emit_to_internal(
             "generate_error",
             GenerateErrorApiRequest(
                 sid=sid,
-                error_message=f"Failed to route scenario generation: {str(e)}",
-                resource_id=data.get("resource_id"),
-                group_id=data.get("group_id"),
+                error_message=f"Invalid request: {str(e)}",
+                artifact_type="scenario",
+                group_id=None,
                 resource_type="scenario",
             ),
             sid=sid,
